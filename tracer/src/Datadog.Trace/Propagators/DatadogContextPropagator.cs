@@ -49,12 +49,30 @@ namespace Datadog.Trace.Propagators
                 carrierSetter.Set(carrier, HttpHeaderNames.SamplingPriority, samplingPriorityString);
             }
 
-            var propagatedTraceTags = context.TraceContext?.Tags.ToPropagationHeader() ??
-                                      context.PropagatedTags?.ToPropagationHeader();
+            var propagatedTags = context.TraceContext?.Tags ?? context.PropagatedTags;
 
-            if (!string.IsNullOrEmpty(propagatedTraceTags))
+            // if needed, inject the upper 64 bits of the trace id into the propagated tags
+            if (context.TraceId128.Upper > 0 && propagatedTags?.GetTag(Tags.Propagated.TraceIdUpper) == null)
             {
-                carrierSetter.Set(carrier, HttpHeaderNames.PropagatedTags, propagatedTraceTags!);
+                if (propagatedTags == null)
+                {
+                    // try to get the max header length from:
+                    // 1. the tracer associated to this span context
+                    // 2. the global tracer
+                    // 3. fallback to the default value
+                    var settings = context.TraceContext?.Tracer?.Settings ?? Tracer.Instance?.Settings;
+                    var maxHeaderLength = settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength;
+                    propagatedTags = new TraceTagCollection(maxHeaderLength);
+                }
+
+                propagatedTags.SetTag(Tags.Propagated.TraceIdUpper, HexString.ToHexString(context.TraceId128.Upper));
+            }
+
+            var propagatedTagsHeader = propagatedTags?.ToPropagationHeader();
+
+            if (!string.IsNullOrEmpty(propagatedTagsHeader))
+            {
+                carrierSetter.Set(carrier, HttpHeaderNames.PropagatedTags, propagatedTagsHeader!);
             }
         }
 
@@ -89,17 +107,11 @@ namespace Datadog.Trace.Propagators
 
         // combine the lower 64 bits from "x-datadog-trace-id" with the
         // upper 64 bits from "_dd.p.tid" into a 128-bit trace id
-        private TraceId GetFullTraceId(ulong lower, TraceTagCollection tags)
+        private static TraceId GetFullTraceId(ulong lower, TraceTagCollection tags)
         {
-            if (lower == 0)
-            {
-                return TraceId.Zero;
-            }
-
             var upperHex = tags.GetTag(Tags.Propagated.TraceIdUpper);
 
-            if (!string.IsNullOrEmpty(upperHex) &&
-                ulong.TryParse(upperHex, NumberStyles.AllowHexSpecifier, provider: null, out var upper))
+            if (!string.IsNullOrEmpty(upperHex) && HexString.TryParseUInt64(upperHex!, out var upper))
             {
                 return new TraceId(upper, lower);
             }
