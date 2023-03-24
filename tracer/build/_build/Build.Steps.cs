@@ -96,11 +96,46 @@ partial class Build
     [LazyPathExecutable(name: "otool")] readonly Lazy<Tool> OTool;
     [LazyPathExecutable(name: "lipo")] readonly Lazy<Tool> Lipo;
 
+    IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatformForTracer
+    {
+        get
+        {
+            if (TargetPlatform == MSBuildTargetPlatform.x64 || TargetPlatform == ARM64TargetPlatform)
+            {
+                if (ForceARM64BuildInWindows)
+                {
+                    return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, ARM64ECTargetPlatform, ARM64TargetPlatform };
+                }
+                else
+                {
+                    return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 };
+                }
+            }
+            else if (TargetPlatform == MSBuildTargetPlatform.x86)
+            {
+                return new[] { MSBuildTargetPlatform.x86 };
+            }
 
-    IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform =>
-        Equals(TargetPlatform, MSBuildTargetPlatform.x64)
-            ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
-            : new[] { MSBuildTargetPlatform.x86 };
+            return new[] { TargetPlatform };
+        }
+    }
+
+    IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatformForProfiler
+    {
+        get
+        {
+            if (TargetPlatform == MSBuildTargetPlatform.x64)
+            {
+                return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 };
+            }
+            else if (TargetPlatform == MSBuildTargetPlatform.x86)
+            {
+                return new[] { MSBuildTargetPlatform.x86 };
+            }
+
+            return new[] { TargetPlatform };
+        }
+    }
 
     bool IsArm64 => RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
     string UnixArchitectureIdentifier => IsArm64 ? "arm64" : TargetPlatform.ToString();
@@ -193,10 +228,7 @@ partial class Build
         .Executes(() =>
         {
             // If we're building for x64, build for x86 too
-            var platforms =
-                Equals(TargetPlatform, MSBuildTargetPlatform.x64)
-                    ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
-                    : new[] { MSBuildTargetPlatform.x86 };
+            var platforms = ArchitecturesForPlatformForTracer;
 
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
             // Build native tracer assets
@@ -524,7 +556,7 @@ partial class Build
       .After(CompileNativeSrc, PublishManagedTracer)
       .Executes(() =>
        {
-           foreach (var architecture in ArchitecturesForPlatform)
+           foreach (var architecture in ArchitecturesForPlatformForTracer)
            {
                var source = NativeTracerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                             $"{NativeTracerProject.Name}.pdb";
@@ -539,7 +571,7 @@ partial class Build
         .After(CompileNativeSrc, PublishManagedTracer)
         .Executes(() =>
         {
-            foreach (var architecture in ArchitecturesForPlatform)
+            foreach (var architecture in ArchitecturesForPlatformForTracer)
             {
                 // Copy native tracer assets
                 var source = NativeTracerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
@@ -598,7 +630,7 @@ partial class Build
                     .AddProperty("RunWixToolsOutOfProc", true)
                     .SetProperty("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetMaxCpuCount(null)
-                    .CombineWith(ArchitecturesForPlatform, (o, arch) => o
+                    .CombineWith(ArchitecturesForPlatformForTracer, (o, arch) => o
                         .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
                         .SetTargetPlatform(arch)),
                 degreeOfParallelism: 2);

@@ -29,6 +29,7 @@ using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using Target = Nuke.Common.Target;
+using System.Runtime.InteropServices;
 
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
@@ -46,6 +47,9 @@ partial class Build
 
     [Parameter("Additional environment variables, in the format KEY1=Value1 Key2=Value2 to use when running the IIS Sample")]
     readonly string[] ExtraEnvVars;
+
+    [Parameter("Force ARM64 build in Windows")]
+    readonly bool ForceARM64BuildInWindows;
 
     [LazyLocalExecutable(@"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\gacutil.exe")]
     readonly Lazy<Tool> GacUtil;
@@ -349,4 +353,22 @@ partial class Build
             MoveFile(source, dest, FileExistsPolicy.Overwrite, createDirectories: true);
         }
     }
+
+    private static MSBuildTargetPlatform GetDefaultTargetPlatform()
+    {
+        if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+        {
+            return ARM64TargetPlatform;
+        }
+
+        if (RuntimeInformation.OSArchitecture == Architecture.X86)
+        {
+            return MSBuildTargetPlatform.x86;
+        }
+
+        return MSBuildTargetPlatform.x64;
+    }
+
+    private static MSBuildTargetPlatform ARM64TargetPlatform = (MSBuildTargetPlatform)"ARM64";
+    private static MSBuildTargetPlatform ARM64ECTargetPlatform = (MSBuildTargetPlatform)"ARM64EC";
 }
