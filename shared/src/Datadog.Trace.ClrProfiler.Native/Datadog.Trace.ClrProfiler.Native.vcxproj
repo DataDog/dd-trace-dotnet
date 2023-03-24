@@ -27,11 +27,7 @@
     <DOTNET-TRACER-REPO-ROOT-PATH>..\..\..\</DOTNET-TRACER-REPO-ROOT-PATH>
     <SHARED-LIB-PATH>$(DOTNET-TRACER-REPO-ROOT-PATH)shared/src/native-lib/</SHARED-LIB-PATH>
     <LIB_INCLUDES>$(SHARED-LIB-PATH)coreclr\src\pal\prebuilt\inc</LIB_INCLUDES>
-    <SHARED-LIB-PLATFORM Condition="'$(Platform)'=='x64'">x64</SHARED-LIB-PLATFORM>
-    <SHARED-LIB-PLATFORM Condition="'$(Platform)'=='Win32' OR '$(Platform)'=='x86'">x86</SHARED-LIB-PLATFORM>
-    <SHARED-LIB-INCLUDES>$(SHARED-LIB-PATH)fmt_$(SHARED-LIB-PLATFORM)-windows-static\include;$(SHARED-LIB-PATH)spdlog\include</SHARED-LIB-INCLUDES>
-    <SHARED-LIB-BINARIES Condition="'$(Configuration)'=='Release'">$(SHARED-LIB-PATH)fmt_$(SHARED-LIB-PLATFORM)-windows-static\lib\fmt.lib</SHARED-LIB-BINARIES>
-    <SHARED-LIB-BINARIES Condition="'$(Configuration)'=='Debug'">$(SHARED-LIB-PATH)fmt_$(SHARED-LIB-PLATFORM)-windows-static\debug\lib\fmtd.lib</SHARED-LIB-BINARIES>
+    <SHARED-LIB-INCLUDES>$(SHARED-LIB-PATH)fmt\include;$(SHARED-LIB-PATH)spdlog\include</SHARED-LIB-INCLUDES>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -123,7 +119,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -153,7 +149,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -175,7 +171,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -203,7 +199,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -249,6 +245,10 @@
     <ClCompile Include="instrumented_assembly_generator\method_signature.cpp" />
     <ClCompile Include="exported_functions.cpp" />
     <ClCompile Include="runtimeid_store.cpp" />
+  </ItemGroup>
+  <ItemGroup Label="fmt">
+	  <ClCompile Include="..\..\..\shared\src\native-lib\fmt\src\format.cc" />
+	  <ClCompile Include="..\..\..\shared\src\native-lib\fmt\src\posix.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Datadog.Trace.ClrProfiler.Native.def" />
