@@ -7,8 +7,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Iast.Settings;
 
 namespace Datadog.Trace.Iast;
@@ -18,11 +20,45 @@ internal static class IastModule
     private const string OperationNameWeakHash = "weak_hashing";
     private const string OperationNameWeakCipher = "weak_cipher";
     private const string OperationNameSqlInjection = "sql_injection";
+    private const string OperationNameCommandInjection = "command_injection";
     private static IastSettings iastSettings = Iast.Instance.Settings;
 
     public static Scope? OnSqlQuery(string query, IntegrationId integrationId)
     {
         return GetScope(query, integrationId, VulnerabilityTypeName.SqlInjection, OperationNameSqlInjection, true);
+    }
+
+    public static Scope? OnCommandInjection(string file, string argumentLine, Collection<string> argumentList, IntegrationId integrationId)
+    {
+        var evidence = BuildCommandInjectionEvidence(file, argumentLine, argumentList);
+        return string.IsNullOrEmpty(evidence) ? null : GetScope(evidence, integrationId, VulnerabilityTypeName.CommandInjection, OperationNameCommandInjection, true);
+    }
+
+    private static string BuildCommandInjectionEvidence(string file, string argumentLine, Collection<string>? argumentList)
+    {
+        if (string.IsNullOrEmpty(file))
+        {
+            return string.Empty;
+        }
+
+        if ((argumentList is not null) && (argumentList.Count > 0))
+        {
+            var joinList = StringModuleImpl.OnStringJoin(string.Join(" ", argumentList), argumentList);
+            var fileWithSpace = file + " ";
+            _ = StringModuleImpl.PropagateTaint(file, fileWithSpace) as string;
+            return StringModuleImpl.OnStringConcat(fileWithSpace, joinList, string.Concat(fileWithSpace, joinList));
+        }
+
+        if (!string.IsNullOrEmpty(argumentLine))
+        {
+            var fileWithSpace = file + " ";
+            _ = StringModuleImpl.PropagateTaint(file, fileWithSpace) as string;
+            return StringModuleImpl.OnStringConcat(fileWithSpace, argumentLine, string.Concat(fileWithSpace, argumentLine));
+        }
+        else
+        {
+            return file;
+        }
     }
 
     public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId)
@@ -74,7 +110,7 @@ internal static class IastModule
         var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
 
         // We do not have, for now, tainted objects in console apps, so further checking is not neccessary.
-        if (!isRequest && vulnerabilityType == VulnerabilityTypeName.SqlInjection)
+        if (!isRequest && taintedFromEvidenceRequired)
         {
             return null;
         }
