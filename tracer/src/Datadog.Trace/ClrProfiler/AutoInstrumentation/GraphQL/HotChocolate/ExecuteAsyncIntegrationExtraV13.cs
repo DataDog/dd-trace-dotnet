@@ -38,10 +38,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         /// OnMethodBegin callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <typeparam name="TOperationContext">Type of the first parameter</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="operationContext">Operation context</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, OperationContext operationContext)
+        internal static CallTargetState OnMethodBegin<TTarget, TOperationContext>(TTarget instance, TOperationContext operationContext)
+            where TOperationContext : IOperationContextV13
         {
             HotChocolateCommon.UpdateScopeFromExecuteAsyncV13(Tracer.Instance, operationContext);
             return CallTargetState.GetDefault();
