@@ -63,16 +63,19 @@
     TraceId: Id_4,
     SpanId: Id_5,
     Name: aspnet_core.request,
-    Resource: GET /shutdown,
+    Resource: POST /graphql/{*slug},
     Service: Samples.HotChocolate,
     Type: web,
     Tags: {
+      aspnet_core.endpoint: Hot Chocolate GraphQL Pipeline,
+      aspnet_core.route: /graphql/{**slug},
       component: aspnet_core,
       env: integration_tests,
-      http.method: GET,
+      http.method: POST,
       http.request.headers.host: localhost:00000,
+      http.route: /graphql/{**slug},
       http.status_code: 200,
-      http.url: http://localhost:00000/shutdown,
+      http.url: http://localhost:00000/graphql,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
@@ -133,7 +136,7 @@
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /graphql/{**slug},
-      http.status_code: 200,
+      http.status_code: 400,
       http.url: http://localhost:00000/graphql,
       language: dotnet,
       runtime-id: Guid_1,
@@ -152,37 +155,6 @@
   {
     TraceId: Id_10,
     SpanId: Id_11,
-    Name: aspnet_core.request,
-    Resource: POST /graphql/{*slug},
-    Service: Samples.HotChocolate,
-    Type: web,
-    Tags: {
-      aspnet_core.endpoint: Hot Chocolate GraphQL Pipeline,
-      aspnet_core.route: /graphql/{**slug},
-      component: aspnet_core,
-      env: integration_tests,
-      http.method: POST,
-      http.request.headers.host: localhost:00000,
-      http.route: /graphql/{**slug},
-      http.status_code: 400,
-      http.url: http://localhost:00000/graphql,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_12,
-    SpanId: Id_13,
     Name: aspnet_core.request,
     Resource: POST /graphql/{*slug},
     Service: Samples.HotChocolate,
@@ -214,13 +186,13 @@
     }
   },
   {
-    TraceId: Id_6,
-    SpanId: Id_14,
+    TraceId: Id_4,
+    SpanId: Id_12,
     Name: graphql.execute,
     Resource: Query operation,
     Service: Samples.HotChocolate-graphql,
     Type: graphql,
-    ParentId: Id_7,
+    ParentId: Id_5,
     Tags: {
       component: HotChocolate,
       env: integration_tests,
@@ -243,13 +215,13 @@
     }
   },
   {
-    TraceId: Id_8,
-    SpanId: Id_15,
+    TraceId: Id_6,
+    SpanId: Id_13,
     Name: graphql.execute,
     Resource: Mutation operation,
     Service: Samples.HotChocolate-graphql,
     Type: graphql,
-    ParentId: Id_9,
+    ParentId: Id_7,
     Tags: {
       component: HotChocolate,
       env: integration_tests,
@@ -271,13 +243,13 @@ mutation m {
     }
   },
   {
-    TraceId: Id_10,
-    SpanId: Id_16,
+    TraceId: Id_8,
+    SpanId: Id_14,
     Name: graphql.execute,
     Resource: Uncompleted operation,
     Service: Samples.HotChocolate-graphql,
     Type: graphql,
-    ParentId: Id_11,
+    ParentId: Id_9,
     Error: 1,
     Tags: {
       component: HotChocolate,
@@ -316,13 +288,13 @@ errors: [
     }
   },
   {
-    TraceId: Id_12,
-    SpanId: Id_17,
+    TraceId: Id_10,
+    SpanId: Id_15,
     Name: graphql.execute,
     Resource: Uncompleted operation,
     Service: Samples.HotChocolate-graphql,
     Type: graphql,
-    ParentId: Id_13,
+    ParentId: Id_11,
     Error: 1,
     Tags: {
       component: HotChocolate,
