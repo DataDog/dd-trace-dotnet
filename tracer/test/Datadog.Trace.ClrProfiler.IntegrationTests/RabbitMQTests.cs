@@ -24,8 +24,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class RabbitMQTests : TracingIntegrationTest
     {
         private const string ExpectedServiceName = "Samples.RabbitMQ-rabbitmq";
-        private static readonly Regex GeneratedQueueRegex = new(@"(amqp\.queue\:) amq\.gen\-.*,");
-        private static readonly Regex GeneratedRoutingKeyRegex = new(@"(amqp\.routing_key\:) amq\.gen\-.*,");
 
         public RabbitMQTests(ITestOutputHelper output)
             : base("RabbitMQ", output)
