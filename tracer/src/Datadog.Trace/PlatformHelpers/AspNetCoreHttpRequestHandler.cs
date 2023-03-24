@@ -179,14 +179,14 @@ namespace Datadog.Trace.PlatformHelpers
                 {
                     if (!string.IsNullOrEmpty(span.Tags.GetTag("http.response.headers.sample_correlation_identifier")))
                     {
-                        var procDumpExecutable = DownloadProcdumpZipAndExtract().Result;
-                        var args = $"-ma {Process.GetCurrentProcess().Id} -accepteula";
-                        CaptureMemoryDump(procDumpExecutable, args);
-
-                        Console.WriteLine(span);
-                        Console.WriteLine(httpContext);
-
-                        Environment.FailFast("wrong header");
+                        CaptureDumpAndFail("wrong header");
+                    }
+                }
+                else if (httpContext.Request.Path.ToString().Contains("not-found"))
+                {
+                    if (string.IsNullOrEmpty(span.Tags.GetTag("http.status_code")))
+                    {
+                        CaptureDumpAndFail("missing status code");
                     }
                 }
 
@@ -225,6 +225,15 @@ namespace Datadog.Trace.PlatformHelpers
                     security.CheckAndBlock(httpContext, span);
                 }
             }
+        }
+
+        private void CaptureDumpAndFail(string message)
+        {
+            var procDumpExecutable = DownloadProcdumpZipAndExtract().Result;
+            var args = $"-ma {Process.GetCurrentProcess().Id} -accepteula";
+            CaptureMemoryDump(procDumpExecutable, args);
+
+            Environment.FailFast(message);
         }
 
         private async Task<string> DownloadProcdumpZipAndExtract()
