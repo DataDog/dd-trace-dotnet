@@ -11,6 +11,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
+using static System.Net.WebRequestMethods;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -31,6 +32,7 @@ namespace Datadog.Trace.TestHelpers
             _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
             _httpClient.DefaultRequestHeaders.Add(TracingHeaderName1WithMapping, TracingHeaderValue1);
             _httpClient.DefaultRequestHeaders.Add(TracingHeaderName2, TracingHeaderValue2);
+            _httpClient.DefaultRequestHeaders.ConnectionClose = true;
         }
 
         public Process Process { get; private set; }
