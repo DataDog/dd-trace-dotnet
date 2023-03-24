@@ -33,6 +33,7 @@ namespace Samples
         private static readonly MethodInfo TraceIdProperty = SpanContextType?.GetProperty("TraceId")?.GetMethod;
         private static readonly MethodInfo SpanIdProperty = SpanContextType?.GetProperty("SpanId")?.GetMethod;
         private static readonly MethodInfo SpanProperty = ScopeType?.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
+        private static readonly MethodInfo SpanContextProperty = SpanType?.GetProperty("Context", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
         private static readonly MethodInfo CorrelationIdentifierTraceIdProperty = CorrelationIdentifierType?.GetProperty("TraceId", BindingFlags.Public | BindingFlags.Static)?.GetMethod;
         private static readonly MethodInfo SetResourceNameProperty = SpanType?.GetProperty("ResourceName", BindingFlags.NonPublic | BindingFlags.Instance)?.SetMethod;
         private static readonly MethodInfo SetTagMethod = SpanType?.GetMethod("SetTag", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -183,6 +184,20 @@ namespace Samples
             var parentScope = genericMethod.Invoke(scopeExtractor, new object[] { carrier, getter });
             traceId = (ulong) TraceIdProperty.Invoke(parentScope, null);
             spanId = (ulong) SpanIdProperty.Invoke(parentScope, null);
+        }
+
+        public static ulong GetTraceId(IDisposable scope)
+        {
+            var span = SpanProperty.Invoke(scope, Array.Empty<object>());
+            var context = SpanContextProperty.Invoke(span, Array.Empty<object>());
+            return (ulong) TraceIdProperty.Invoke(context, Array.Empty<object>());
+        }
+
+        public static ulong GetSpanId(IDisposable scope)
+        {
+            var span = SpanProperty.Invoke(scope, Array.Empty<object>());
+            var context = SpanContextProperty.Invoke(span, Array.Empty<object>());
+            return (ulong) SpanIdProperty.Invoke(context, Array.Empty<object>());
         }
 
         public static Task ForceTracerFlushAsync()
