@@ -48,5 +48,33 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             HotChocolateCommon.UpdateScopeFromExecuteAsyncV13(Tracer.Instance, operationContext);
             return CallTargetState.GetDefault();
         }
+
+        internal static TQueryResult OnMethodEnd<TTarget, TQueryResult>(TTarget instance, TQueryResult queryResult, Exception exception, in CallTargetState state)
+            where TQueryResult : IQueryResult
+        {
+            Scope scope = state.Scope;
+            if (scope is null)
+            {
+                return queryResult;
+            }
+
+            try
+            {
+                if (exception != null)
+                {
+                    scope.Span?.SetException(exception);
+                }
+                else if (queryResult != null && queryResult.Errors != null)
+                {
+                    HotChocolateCommon.RecordExecutionErrorsIfPresent(scope.Span, HotChocolateCommon.ErrorType, queryResult.Errors);
+                }
+            }
+            finally
+            {
+                scope.Dispose();
+            }
+
+            return queryResult;
+        }
     }
 }
