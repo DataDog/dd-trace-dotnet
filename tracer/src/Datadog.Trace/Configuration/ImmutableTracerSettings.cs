@@ -122,7 +122,10 @@ namespace Datadog.Trace.Configuration
             IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
             AzureAppServiceMetadata = settings.AzureAppServiceMetadata;
 
-            static string? GetExplicitSettingOrTag(string? explicitSetting, IDictionary<string, string> globalTags, string tag)
+            TraceId128BitGenerationEnabled = settings.TraceId128BitGenerationEnabled;
+            TraceId128BitLoggingEnabled = settings.TraceId128BitLoggingEnabled;
+
+            static string? GetExplicitSettingOrTag(string explicitSetting, IDictionary<string, string> globalTags, string tag)
             {
                 if (!string.IsNullOrWhiteSpace(explicitSetting))
                 {
