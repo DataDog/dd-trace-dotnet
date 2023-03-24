@@ -120,7 +120,7 @@ namespace Datadog.Trace.Activity.Handlers
                 // but if Activity.IdFormat is not ActivityIdFormat.W3C, they may be null or unparsable
                 if (w3cActivity is { TraceId: { } activityTraceId, SpanId: { } activitySpanId })
                 {
-                    if (traceId.IsZero())
+                    if (traceId == TraceId.Zero)
                     {
                         _ = HexString.TryParseTraceId(activityTraceId, out traceId);
                     }

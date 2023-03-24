@@ -380,7 +380,7 @@ namespace Datadog.Trace
                 var samplingPriority = DistributedTracer.Instance.GetSamplingPriority();
                 traceContext.SetSamplingPriority(samplingPriority);
 
-                if (traceId.IsZero() &&
+                if (traceId == TraceId.Zero &&
                     Activity.ActivityListener.GetCurrentActivity() is Activity.DuckTypes.IW3CActivity { TraceId: { } activityTraceId })
                 {
                     // if there's an existing Activity we try to use its TraceId,
@@ -392,7 +392,7 @@ namespace Datadog.Trace
 
             var finalServiceName = serviceName ?? DefaultServiceName;
 
-            if (traceId.IsZero())
+            if (traceId == TraceId.Zero)
             {
                 // generate the trace id here using the 128-bit setting
                 // instead of letting the SpanContext generate it in its ctor

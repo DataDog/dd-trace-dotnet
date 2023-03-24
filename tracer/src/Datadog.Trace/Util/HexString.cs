@@ -149,7 +149,7 @@ internal static class HexString
             return ToHexString(value.Lower);
         }
 
-        if (value.IsZero())
+        if (value == TraceId.Zero)
         {
             return "00000000000000000000000000000000";
         }

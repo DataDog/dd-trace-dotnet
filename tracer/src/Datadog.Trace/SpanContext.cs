@@ -147,7 +147,7 @@ namespace Datadog.Trace
             // if trace id was not provided, generate a new one using the global settings
             var useAllBits = Tracer.Instance?.Settings?.TraceId128BitGenerationEnabled ?? false;
 
-            TraceId128 = traceId.IsZero()
+            TraceId128 = traceId == Trace.TraceId.Zero
                           ? RandomIdGenerator.Shared.NextTraceId(useAllBits)
                           : traceId;
 

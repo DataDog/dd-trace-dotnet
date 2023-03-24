@@ -244,7 +244,7 @@ namespace Datadog.Trace.Propagators
             var w3cTraceId = header.AsSpan(start: 3, length: 32);
             var w3cSpanId = header.AsSpan(start: 36, length: 16);
 
-            if (!HexString.TryParseTraceId(w3cTraceId, out traceId) || traceId.IsZero())
+            if (!HexString.TryParseTraceId(w3cTraceId, out traceId) || traceId == TraceId.Zero)
             {
                 return false;
             }
@@ -270,7 +270,7 @@ namespace Datadog.Trace.Propagators
             rawTraceId = header.Substring(startIndex: 3, length: 32);
             rawSpanId = header.Substring(startIndex: 36, length: 16);
 
-            if (!HexString.TryParseTraceId(rawTraceId, out traceId) || traceId.IsZero())
+            if (!HexString.TryParseTraceId(rawTraceId, out traceId) || traceId == TraceId.Zero)
             {
                 return false;
             }

@@ -50,7 +50,7 @@ namespace Datadog.Trace.Propagators
 
             var rawTraceId = ParseUtility.ParseString(carrier, carrierGetter, TraceId)?.Trim();
 
-            if (rawTraceId == null || !HexString.TryParseTraceId(rawTraceId, out var traceId) || traceId.IsZero())
+            if (rawTraceId == null || !HexString.TryParseTraceId(rawTraceId, out var traceId) || traceId == Trace.TraceId.Zero)
             {
                 return false;
             }
