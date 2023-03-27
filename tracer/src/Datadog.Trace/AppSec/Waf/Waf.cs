@@ -144,6 +144,26 @@ namespace Datadog.Trace.AppSec.Waf
             return Context.GetContext(contextHandle, this, _wafLibraryInvoker);
         }
 
+        public UpdateResult Update(IDictionary<string, object> arguments)
+        {
+            var argsToDispose = new List<Obj>();
+            var encodedArgs = Encoder.Encode(arguments, _wafLibraryInvoker, argsToDispose);
+            if (encodedArgs == null)
+            {
+                return UpdateResult.FromUnusableRules();
+            }
+
+            DdwafRuleSetInfo? rulesetInfo = null;
+            // only if rules are provided will the waf give metrics
+            if (arguments.ContainsKey("rules"))
+            {
+                rulesetInfo = new DdwafRuleSetInfo();
+            }
+
+            var updated = UpdateWafAndDisposeItems(encodedArgs, argsToDispose, rulesetInfo);
+            return updated;
+        }
+
         public UpdateResult UpdateRules(string rules)
         {
             var rulesetInfo = new DdwafRuleSetInfo();

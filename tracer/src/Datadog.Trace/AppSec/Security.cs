@@ -32,12 +32,15 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
         private readonly SecuritySettings _settings;
+        private readonly Dictionary<string, AsmRemoteConfigurationProduct> _products;
         private readonly RemoteConfigurationStatus _remoteConfigurationStatus = new();
+        private readonly RemoteConfigurationManager _remoteConfigurationManager;
+        private Subscription _rcmSubscription;
         private LibraryInitializationResult _libraryInitializationResult;
         private IWaf _waf;
         private WafLibraryInvoker _wafLibraryInvoker;
         private AppSecRateLimiter _rateLimiter;
-        private bool _enabled = false;
+        private bool _enabled;
         private InitResult _wafInitResult;
 
         static Security()
@@ -54,9 +57,13 @@ namespace Datadog.Trace.AppSec
         {
             try
             {
+                Log.Information("anna: initialize security");
+                _products = AsmRemoteConfigurationProducts.GetAll();
+                _remoteConfigurationManager = RemoteConfigurationManager.Instance;
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
                 _waf = waf;
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
+                Log.Information("anna: here {CanBeEnabled}", _settings.CanBeEnabled);
 
                 if (_settings.CanBeEnabled)
                 {
@@ -65,8 +72,9 @@ namespace Datadog.Trace.AppSec
                         InitWafAndInstrumentations();
                     }
 
-                    AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged += FeaturesProductConfigChanged;
-                    AsmRemoteConfigurationProducts.AsmDDProduct.ConfigChanged += AsmDDProductConfigChanged;
+                    SubscribeToChanges(AsmRemoteConfigurationProducts.AsmFeaturesProduct.Name, AsmRemoteConfigurationProducts.AsmDdProduct.Name);
+                    // AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged += FeaturesProductConfigChanged;
+                    // AsmRemoteConfigurationProducts.AsmDdProduct.ConfigChanged += AsmDDProductConfigChanged;
                 }
                 else
                 {
@@ -113,6 +121,62 @@ namespace Datadog.Trace.AppSec
         internal SecuritySettings Settings => _settings;
 
         internal string DdlibWafVersion => _waf?.Version;
+
+        internal void SubscribeToChanges(params string[] productNames)
+        {
+            void RcmSubscription(RemoteConfigurationManager remoteConfigurationManager)
+            {
+                if (_rcmSubscription is null)
+                {
+                    _rcmSubscription = remoteConfigurationManager.SubscribeToChanges(
+                        (configsByProduct, removedConfigs) =>
+                        {
+                            foreach (var config in configsByProduct)
+                            {
+                                var product = _products[config.Key];
+                                var removedConfigsForThisProduct = removedConfigs?[product.Name];
+                                product.UpdateRemoteConfigurationStatus(config.Value, removedConfigsForThisProduct, _remoteConfigurationStatus);
+                            }
+
+                            var dic = _remoteConfigurationStatus.ToDictionary();
+                            var result = _waf?.Update(dic);
+
+                            var applyDetails = new List<ApplyDetails>();
+                            var allRemoteConfigurations = configsByProduct.SelectMany(c => c.Value);
+                            if (result.Success)
+                            {
+                                foreach (var config in allRemoteConfigurations)
+                                {
+                                    applyDetails.Add(ApplyDetails.FromOk(config.Path.Path));
+                                }
+                            }
+                            else
+                            {
+                                foreach (var config in allRemoteConfigurations)
+                                {
+                                    applyDetails.Add(ApplyDetails.FromError(config.Path.Path, result.ErrorMessage));
+                                }
+                            }
+
+                            return applyDetails;
+                        },
+                        productNames);
+                }
+                else
+                {
+                    _rcmSubscription.SubscribeProducts(productNames);
+                }
+            }
+
+            if (_remoteConfigurationManager is null)
+            {
+                RemoteConfigurationManager.CallbackWithInitializedInstance(RcmSubscription);
+            }
+            else
+            {
+                RcmSubscription(_remoteConfigurationManager);
+            }
+        }
 
         internal BlockingAction GetBlockingAction(string id, string[] requestAcceptHeaders)
         {
@@ -541,8 +605,9 @@ namespace Datadog.Trace.AppSec
         {
             if (!_enabled)
             {
-                AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged += AsmDataProductConfigChanged;
-                AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged += AsmProductConfigChanged;
+                SubscribeToChanges(AsmRemoteConfigurationProducts.AsmDataProduct.Name, AsmRemoteConfigurationProducts.AsmProduct.Name);
+                // AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged += AsmDataProductConfigChanged;
+                // AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged += AsmProductConfigChanged;
                 AsmRemoteConfigurationProducts.AsmDataProduct.ConfigRemoved += AsmDataProductConfigRemoved;
                 AsmRemoteConfigurationProducts.AsmProduct.ConfigRemoved += AsmProductConfigRemoved;
                 AddAppsecSpecificInstrumentations();
@@ -559,10 +624,12 @@ namespace Datadog.Trace.AppSec
         {
             if (_enabled)
             {
-                AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
-                AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged -= AsmProductConfigChanged;
+                _rcmSubscription.UnsubscribeProducts(AsmRemoteConfigurationProducts.AsmDataProduct.Name, AsmRemoteConfigurationProducts.AsmProduct.Name);
+                // AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
+                // AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged -= AsmProductConfigChanged;
                 AsmRemoteConfigurationProducts.AsmDataProduct.ConfigRemoved -= AsmDataProductConfigRemoved;
                 AsmRemoteConfigurationProducts.AsmProduct.ConfigRemoved -= AsmProductConfigRemoved;
+
                 RemoveAppsecSpecificInstrumentations();
 
                 _enabled = false;
@@ -589,12 +656,13 @@ namespace Datadog.Trace.AppSec
 
         private void RunShutdown()
         {
-            AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
-            AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged -= AsmProductConfigChanged;
+            // AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
+            // AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged -= AsmProductConfigChanged;
             AsmRemoteConfigurationProducts.AsmDataProduct.ConfigRemoved -= AsmDataProductConfigRemoved;
             AsmRemoteConfigurationProducts.AsmProduct.ConfigRemoved -= AsmProductConfigRemoved;
-            AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged -= FeaturesProductConfigChanged;
-            AsmRemoteConfigurationProducts.AsmDDProduct.ConfigChanged -= AsmDDProductConfigChanged;
+            // AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged -= FeaturesProductConfigChanged;
+            // AsmRemoteConfigurationProducts.AsmDdProduct.ConfigChanged -= AsmDDProductConfigChanged;
+            _remoteConfigurationManager.UnsubscribeToChanges(_rcmSubscription);
             Dispose();
         }
     }

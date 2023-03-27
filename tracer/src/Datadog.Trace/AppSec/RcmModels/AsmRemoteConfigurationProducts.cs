@@ -5,7 +5,8 @@
 
 #nullable enable
 
-using Datadog.Trace.Configuration;
+using System.Collections.Generic;
+using Datadog.Trace.AppSec.RcmModels;
 
 namespace Datadog.Trace.AppSec;
 
@@ -15,7 +16,9 @@ internal static class AsmRemoteConfigurationProducts
 
     public static AsmDataProduct AsmDataProduct { get; } = new();
 
-    public static AsmDDProduct AsmDDProduct { get; } = new();
+    public static AsmDdProduct AsmDdProduct { get; } = new();
 
     public static AsmProduct AsmProduct { get; } = new();
+
+    public static Dictionary<string, AsmRemoteConfigurationProduct> GetAll() => new() { { AsmProduct.Name, AsmProduct }, { AsmDdProduct.Name, AsmDdProduct }, { AsmDataProduct.Name, AsmDataProduct }, { AsmFeaturesProduct.Name, AsmFeaturesProduct } };
 }

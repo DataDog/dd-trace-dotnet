@@ -11,6 +11,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.RcmModels;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;

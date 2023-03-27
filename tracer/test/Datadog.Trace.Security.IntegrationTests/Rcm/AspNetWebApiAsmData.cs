@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec.RcmModels;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
