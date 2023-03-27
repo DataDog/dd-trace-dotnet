@@ -125,17 +125,29 @@ namespace Datadog.Trace.Tests.Propagators
             spanIdHeader.Should().Be("000000003ade68b1");
         }
 
-        [Fact]
-        public void Extract_IHeadersCollection()
+        [Theory]
+        [InlineData("00000000075bcd15", "000000003ade68b1", "1", 0, 123456789, 987654321, "00000000075bcd15", "000000003ade68b1", SamplingPriorityValues.AutoKeep)]
+        [InlineData("00000000075bcd15", "000000003ade68b1", "0", 0, 123456789, 987654321, "00000000075bcd15", "000000003ade68b1", SamplingPriorityValues.AutoReject)]
+        [InlineData("1234567890abcdef1122334455667788", "000000003ade68b1", "1", 0x1234567890abcdef, 0x1122334455667788, 987654321, "1234567890abcdef1122334455667788", "000000003ade68b1", SamplingPriorityValues.AutoKeep)]
+        public void Extract_IHeadersCollection(
+            string traceIdHeader,
+            string spanIdHeader,
+            string sampledHeader,
+            ulong traceIdUpper,
+            ulong traceIdLower,
+            ulong spanId,
+            string rawTraceId,
+            string rawSpanId,
+            int samplingPriority)
         {
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
 
             headers.Setup(h => h.GetValues("x-b3-traceid"))
-                   .Returns(new[] { "000000000000000000000000075bcd15" });
+                   .Returns(new[] { traceIdHeader });
             headers.Setup(h => h.GetValues("x-b3-spanid"))
-                   .Returns(new[] { "000000003ade68b1" });
+                   .Returns(new[] { spanIdHeader });
             headers.Setup(h => h.GetValues("x-b3-sampled"))
-                   .Returns(new[] { "1" });
+                   .Returns(new[] { sampledHeader });
 
             var result = B3Propagator.Extract(headers.Object);
 
@@ -147,28 +159,39 @@ namespace Datadog.Trace.Tests.Propagators
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           TraceId128 = (TraceId)123456789,
-                           TraceId = 123456789,
-                           SpanId = 987654321,
-                           RawTraceId = "000000000000000000000000075bcd15",
-                           RawSpanId = "000000003ade68b1",
+                           TraceId128 = new TraceId(traceIdUpper, traceIdLower),
+                           TraceId = traceIdLower,
+                           SpanId = spanId,
+                           RawTraceId = rawTraceId,
+                           RawSpanId = rawSpanId,
                            Origin = null,
-                           SamplingPriority = SamplingPriorityValues.AutoKeep,
+                           SamplingPriority = samplingPriority,
                        });
         }
 
-        [Fact]
-
-        public void Extract_CarrierAndDelegate()
+        [Theory]
+        [InlineData("00000000075bcd15", "000000003ade68b1", "1", 0, 123456789, 987654321, "00000000075bcd15", "000000003ade68b1", SamplingPriorityValues.AutoKeep)]
+        [InlineData("00000000075bcd15", "000000003ade68b1", "0", 0, 123456789, 987654321, "00000000075bcd15", "000000003ade68b1", SamplingPriorityValues.AutoReject)]
+        [InlineData("1234567890abcdef1122334455667788", "000000003ade68b1", "1", 0x1234567890abcdef, 0x1122334455667788, 987654321, "1234567890abcdef1122334455667788", "000000003ade68b1", SamplingPriorityValues.AutoKeep)]
+        public void Extract_CarrierAndDelegate(
+            string traceIdHeader,
+            string spanIdHeader,
+            string sampledHeader,
+            ulong traceIdUpper,
+            ulong traceIdLower,
+            ulong spanId,
+            string rawTraceId,
+            string rawSpanId,
+            int samplingPriority)
         {
             // using IHeadersCollection for convenience, but carrier could be any type
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
             headers.Setup(h => h.GetValues("x-b3-traceid"))
-                   .Returns(new[] { "000000000000000000000000075bcd15" });
+                   .Returns(new[] { traceIdHeader });
             headers.Setup(h => h.GetValues("x-b3-spanid"))
-                   .Returns(new[] { "000000003ade68b1" });
+                   .Returns(new[] { spanIdHeader });
             headers.Setup(h => h.GetValues("x-b3-sampled"))
-                   .Returns(new[] { "1" });
+                   .Returns(new[] { sampledHeader });
 
             var result = B3Propagator.Extract(headers.Object, (carrier, name) => carrier.GetValues(name));
 
@@ -180,13 +203,13 @@ namespace Datadog.Trace.Tests.Propagators
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
-                           TraceId128 = (TraceId)123456789,
-                           TraceId = 123456789,
-                           SpanId = 987654321,
-                           RawTraceId = "000000000000000000000000075bcd15",
-                           RawSpanId = "000000003ade68b1",
+                           TraceId128 = new TraceId(traceIdUpper, traceIdLower),
+                           TraceId = traceIdLower,
+                           SpanId = spanId,
+                           RawTraceId = rawTraceId,
+                           RawSpanId = rawSpanId,
                            Origin = null,
-                           SamplingPriority = SamplingPriorityValues.AutoKeep,
+                           SamplingPriority = samplingPriority,
                        });
         }
 

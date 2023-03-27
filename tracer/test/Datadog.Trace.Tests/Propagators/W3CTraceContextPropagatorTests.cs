@@ -178,18 +178,24 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Theory]
-        [InlineData("00-000000000000000000000000075bcd15-000000003ade68b1-00", 123456789, 987654321, false, "000000000000000000000000075bcd15", "000000003ade68b1")]
-        [InlineData("00-0000000000000000000000003ade68b1-00000000075bcd15-01", 987654321, 123456789, true, "0000000000000000000000003ade68b1", "00000000075bcd15")]
-        [InlineData("01-0000000000000000000000003ade68b1-00000000075bcd15-01", 987654321, 123456789, true, "0000000000000000000000003ade68b1", "00000000075bcd15")]       // allow other versions, version=01
-        [InlineData("02-000000000000000000000000075bcd15-000000003ade68b1-00-1234", 123456789, 987654321, false, "000000000000000000000000075bcd15", "000000003ade68b1")] // allow more data after trace-flags if the version is not 00
-        [InlineData("00-0000000000000000000000003ade68b1-00000000075bcd15-02", 987654321, 123456789, false, "0000000000000000000000003ade68b1", "00000000075bcd15")]      // allow unknown flags, trace-flags=02, sampled=false
-        [InlineData("00-0000000000000000000000003ade68b1-00000000075bcd15-03", 987654321, 123456789, true, "0000000000000000000000003ade68b1", "00000000075bcd15")]       // allow unknown flags, trace-flags=03, sampled=true
-        public void TryParseTraceParent(string header, ulong traceId, ulong spanId, bool sampled, string rawTraceId, string rawParentId)
+        [InlineData("00-000000000000000000000000075bcd15-000000003ade68b1-00", 0, 123456789, 987654321, false, "000000000000000000000000075bcd15", "000000003ade68b1")]
+        [InlineData("00-0000000000000000000000003ade68b1-00000000075bcd15-01", 0, 987654321, 123456789, true, "0000000000000000000000003ade68b1", "00000000075bcd15")]
+        [InlineData("00-1234567890abcdef1122334455667788-00000000075bcd15-01", 0x1234567890abcdef, 0x1122334455667788, 123456789, true, "1234567890abcdef1122334455667788", "00000000075bcd15")] // 128-bit trace id
+        [InlineData("01-0000000000000000000000003ade68b1-00000000075bcd15-01", 0, 987654321, 123456789, true, "0000000000000000000000003ade68b1", "00000000075bcd15")]                           // allow other versions, version=01
+        [InlineData("02-000000000000000000000000075bcd15-000000003ade68b1-00-1234", 0, 123456789, 987654321, false, "000000000000000000000000075bcd15", "000000003ade68b1")]                     // allow more data after trace-flags if the version is not 00
+        [InlineData("00-0000000000000000000000003ade68b1-00000000075bcd15-02", 0, 987654321, 123456789, false, "0000000000000000000000003ade68b1", "00000000075bcd15")]                          // allow unknown flags, trace-flags=02, sampled=false
+        [InlineData("00-0000000000000000000000003ade68b1-00000000075bcd15-03", 0, 987654321, 123456789, true, "0000000000000000000000003ade68b1", "00000000075bcd15")]                           // allow unknown flags, trace-flags=03, sampled=true
+        public void TryParseTraceParent(
+            string header,
+            ulong traceIdUpper,
+            ulong traceIdLower,
+            ulong spanId,
+            bool sampled,
+            string rawTraceId,
+            string rawParentId)
         {
-            // TODO: add 128-bit test cases
-
             var expected = new W3CTraceParent(
-                traceId: (TraceId)traceId,
+                traceId: new TraceId(traceIdUpper, traceIdLower),
                 parentId: spanId,
                 sampled: sampled,
                 rawTraceId: rawTraceId,
