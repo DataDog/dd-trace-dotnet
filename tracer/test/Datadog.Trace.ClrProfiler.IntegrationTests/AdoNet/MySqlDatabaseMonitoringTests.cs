@@ -148,6 +148,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
             settings.AddSimpleScrubber("out.host: localhost", "out.host: mysql");
+            settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: mysql");
 
             var fileName = nameof(MySqlDatabaseMonitoringTests);
 #if NET5_0_OR_GREATER

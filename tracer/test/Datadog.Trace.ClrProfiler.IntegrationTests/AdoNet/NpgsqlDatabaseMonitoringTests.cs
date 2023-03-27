@@ -133,6 +133,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
             settings.AddSimpleScrubber("out.host: localhost", "out.host: postgres");
+            settings.AddSimpleScrubber("out.host: postgres_arm64", "out.host: postgres");
 
             var fileName = nameof(NpgsqlDatabaseMonitoringTests);
 #if NET462
