@@ -17,7 +17,7 @@ public class CommandInjectionTests : InstrumentationTestsBase
     private string untaintedProcessName = "nonexisting2.exe";
     private string taintedArgument = "taintedArgument";
     private string untaintedArgument = "untaintedArgument";
-    private string vulnerabilityType = "COMMAND_INJECTION";
+    private string commandInjectionType = "COMMAND_INJECTION";
 
     public CommandInjectionTests()
     {
@@ -32,7 +32,7 @@ public class CommandInjectionTests : InstrumentationTestsBase
     public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable()
     {
         TestProcessCall(() => Process.Start(new ProcessStartInfo(taintedProcessName) { UseShellExecute = true }));
-        AssertVulnerable(vulnerabilityType, taintedProcessName);
+        AssertVulnerable(commandInjectionType, ":+-nonexisting1.exe-+:");
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public class CommandInjectionTests : InstrumentationTestsBase
     public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable2()
     {
         TestProcessCall(() => Process.Start(new ProcessStartInfo(taintedProcessName) { UseShellExecute = false }));
-        AssertVulnerable(vulnerabilityType, taintedProcessName);
+        AssertVulnerable(commandInjectionType, ":+-nonexisting1.exe-+:");
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class CommandInjectionTests : InstrumentationTestsBase
     public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable3()
     {
         TestProcessCall(() => Process.Start(taintedProcessName, untaintedArgument, "user", new SecureString(), "domain"));
-        AssertVulnerable(vulnerabilityType, taintedProcessName + " " + untaintedArgument);
+        AssertVulnerable(commandInjectionType, ":+-nonexisting1.exe-+: untaintedArgument");
     }
 
     [Trait("Category", "LinuxUnsupported")]
@@ -73,7 +73,15 @@ public class CommandInjectionTests : InstrumentationTestsBase
     public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable4()
     {
         TestProcessCall(() => Process.Start(untaintedProcessName, taintedArgument, "user", new SecureString(), "domain"));
-        AssertVulnerable(vulnerabilityType, untaintedProcessName + " " + taintedArgument);
+        AssertVulnerable(commandInjectionType, "nonexisting2.exe :+-taintedArgument-+:");
+    }
+
+        [Trait("Category", "LinuxUnsupported")]
+    [Fact]
+    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable5()
+    {
+        TestProcessCall(() => Process.Start(taintedProcessName, taintedArgument, "user", new SecureString(), "domain"));
+        AssertVulnerable(commandInjectionType, ":+-nonexisting1.exe-+: :+-taintedArgument-+:");
     }
 
     [Trait("Category", "LinuxUnsupported")]
@@ -90,10 +98,10 @@ public class CommandInjectionTests : InstrumentationTestsBase
 
     [Trait("Category", "LinuxUnsupported")]
     [Fact]
-    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable5()
+    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable6()
     {
         TestProcessCall(() => Process.Start(taintedProcessName, "user", new SecureString(), "domain"));
-        AssertVulnerable(vulnerabilityType, taintedProcessName + " " + untaintedArgument);
+        AssertVulnerable(commandInjectionType, ":+-nonexisting1.exe-+:");
     }
 
     [Trait("Category", "LinuxUnsupported")]
@@ -109,22 +117,32 @@ public class CommandInjectionTests : InstrumentationTestsBase
     // Process Start()
 
     [Fact]
-    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable6()
+    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable7()
     {
         Process process = new Process();
         process.StartInfo = new ProcessStartInfo(taintedProcessName, untaintedArgument);
         TestProcessCall(() => process.Start());
-        AssertVulnerable(vulnerabilityType, taintedProcessName + " " + untaintedArgument);
+        AssertVulnerable(commandInjectionType, ":+-nonexisting1.exe-+: untaintedArgument");
     }
 
     [Fact]
-    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable7()
+    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable8()
     {
         Process process = new Process();
         process.StartInfo = new ProcessStartInfo(untaintedProcessName, taintedArgument);
         TestProcessCall(() => process.Start());
-        AssertVulnerable(vulnerabilityType, untaintedProcessName + " " + taintedArgument);
+        AssertVulnerable(commandInjectionType, "nonexisting2.exe :+-taintedArgument-+:");
     }
+
+    [Fact]
+    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable9()
+    {
+        Process process = new Process();
+        process.StartInfo = new ProcessStartInfo(taintedProcessName, taintedArgument);
+        TestProcessCall(() => process.Start());
+        AssertVulnerable(commandInjectionType, ":+-nonexisting1.exe-+: :+-taintedArgument-+:");
+    }
+
     [Fact]
     public void GivenAProcess_WhenStartUntaintedProcess_ThenIsNotVulnerable3()
     {
@@ -135,23 +153,33 @@ public class CommandInjectionTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable8()
+    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable10()
     {
         Process process = new Process();
         process.StartInfo.FileName = taintedProcessName;
         process.StartInfo.Arguments = untaintedArgument;
         TestProcessCall(() => process.Start());
-        AssertVulnerable(vulnerabilityType, taintedProcessName + " " + untaintedArgument);
+        AssertVulnerable(commandInjectionType, ":+-nonexisting1.exe-+: untaintedArgument");
     }
 
     [Fact]
-    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable9()
+    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable11()
     {
         Process process = new Process();
         process.StartInfo.FileName = untaintedProcessName;
         process.StartInfo.Arguments = taintedArgument;
         TestProcessCall(() => process.Start());
-        AssertVulnerable(vulnerabilityType, untaintedProcessName + " " + taintedArgument);
+        AssertVulnerable(commandInjectionType, "nonexisting2.exe :+-taintedArgument-+:");
+    }
+
+    [Fact]
+    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable12()
+    {
+        Process process = new Process();
+        process.StartInfo.FileName = taintedProcessName;
+        process.StartInfo.Arguments = taintedArgument;
+        TestProcessCall(() => process.Start());
+        AssertVulnerable(commandInjectionType, ":+-nonexisting1.exe-+: :+-taintedArgument-+:");
     }
 
     [Fact]
@@ -167,10 +195,10 @@ public class CommandInjectionTests : InstrumentationTestsBase
     // Process Start(string fileName)
 
     [Fact]
-    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable10()
+    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable13()
     {
         TestProcessCall(() => Process.Start(taintedProcessName));
-        AssertVulnerable(vulnerabilityType, taintedProcessName);
+        AssertVulnerable(commandInjectionType, ":+-nonexisting1.exe-+:");
     }
 
     [Fact]
@@ -183,17 +211,24 @@ public class CommandInjectionTests : InstrumentationTestsBase
     // Process Start(string fileName, string arguments)
 
     [Fact]
-    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable11()
+    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable14()
     {
         TestProcessCall(() => Process.Start(taintedProcessName, untaintedArgument));
-        AssertVulnerable(vulnerabilityType, taintedProcessName + " " + untaintedArgument);
+        AssertVulnerable(commandInjectionType, ":+-nonexisting1.exe-+: untaintedArgument");
     }
 
     [Fact]
-    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable12()
+    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable15()
     {
         TestProcessCall(() => Process.Start(untaintedProcessName, taintedArgument));
-        AssertVulnerable(vulnerabilityType, untaintedProcessName + " " + taintedArgument);
+        AssertVulnerable(commandInjectionType, "nonexisting2.exe :+-taintedArgument-+:");
+    }
+
+    [Fact]
+    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable16()
+    {
+        TestProcessCall(() => Process.Start(taintedProcessName, taintedArgument));
+        AssertVulnerable(commandInjectionType, ":+-nonexisting1.exe-+: :+-taintedArgument-+:");
     }
 
     [Fact]
@@ -207,24 +242,31 @@ public class CommandInjectionTests : InstrumentationTestsBase
     // Process Start(string fileName, string arguments)
 
     [Fact]
-    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable13()
+    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable17()
     {
         TestProcessCall(() => Process.Start(taintedProcessName, new List<string>() { untaintedArgument }));
-        AssertVulnerable(vulnerabilityType, taintedProcessName + " " + untaintedArgument);
+        AssertVulnerable(commandInjectionType, ":+-nonexisting1.exe-+: untaintedArgument");
     }
 
     [Fact]
-    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable14()
+    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable18()
     {
-        TestProcessCall(() => Process.Start(taintedProcessName, new List<string>() { taintedArgument }));
-        AssertVulnerable(vulnerabilityType, taintedProcessName + " " + taintedArgument);
+        TestProcessCall(() => Process.Start(untaintedProcessName, new List<string>() { taintedArgument }));
+        AssertVulnerable(commandInjectionType, "nonexisting2.exe :+-taintedArgument-+:");
+    }
+
+    [Fact]
+    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable19()
+    {
+        TestProcessCall(() => Process.Start(taintedProcessName, new List<string>() { taintedArgument, taintedArgument }));
+        AssertVulnerable(commandInjectionType, ":+-nonexisting1.exe-+: :+-taintedArgument-+: :+-taintedArgument-+:");
     }
 
     [Fact]
     public void GivenAProcess_WhenStartNotTaintedProcess_ThenIsNotVulnerable7()
     {
         TestProcessCall(() => Process.Start(untaintedProcessName, new List<string>() { untaintedArgument, untaintedArgument }));
-        AssertVulnerable(vulnerabilityType, taintedProcessName + " " + untaintedArgument);
+        AssertNotVulnerable();
     }
 #endif
     private void TestProcessCall(Func<object> expression)
