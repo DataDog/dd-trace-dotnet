@@ -148,7 +148,6 @@ namespace Datadog.Trace.ClrProfiler
 
                 // HotChocolate
                new ("HotChocolate.Execution", "HotChocolate.Execution.Processing.MutationExecutor", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<HotChocolate.Execution.IExecutionResult>", "HotChocolate.Execution.Processing.IOperationContext" }, 11, 0, 0, 11, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"),
-               new ("HotChocolate.Execution", "HotChocolate.Execution.Processing.MutationExecutor", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<HotChocolate.Execution.IQueryResult>", "HotChocolate.Execution.Processing.OperationContext" }, 13, 0, 0, 13, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtraV13"),
                new ("HotChocolate.Execution", "HotChocolate.Execution.Processing.QueryExecutor", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<HotChocolate.Execution.IExecutionResult>", "HotChocolate.Execution.Processing.IOperationContext" }, 11, 0, 0, 12, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"),
                new ("HotChocolate.Execution", "HotChocolate.Execution.Processing.QueryExecutor", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<HotChocolate.Execution.IQueryResult>", "HotChocolate.Execution.Processing.OperationContext" }, 13, 0, 0, 13, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtraV13"),
                new ("HotChocolate.Execution", "HotChocolate.Execution.RequestExecutor", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<HotChocolate.Execution.IExecutionResult>", "HotChocolate.Execution.IQueryRequest", "System.Threading.CancellationToken" }, 11, 0, 0, 12, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegration"),
@@ -662,7 +661,6 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server.ServerCallHandlerInstrumentation"
                     => Datadog.Trace.Configuration.IntegrationId.Grpc,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtraV13"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtraV13"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegration"
