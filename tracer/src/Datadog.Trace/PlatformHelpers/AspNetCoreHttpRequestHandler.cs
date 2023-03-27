@@ -6,11 +6,7 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Configuration;
@@ -175,14 +171,6 @@ namespace Datadog.Trace.PlatformHelpers
 
                 span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
 
-                if (httpContext.Request.Path.ToString().Contains("bad-request"))
-                {
-                    if (!string.IsNullOrEmpty(span.Tags.GetTag("http.response.headers.sample_correlation_identifier")))
-                    {
-                        CaptureDumpAndFail("wrong header");
-                    }
-                }
-
                 if (security.Settings.Enabled)
                 {
                     var transport = new SecurityCoordinator(security, httpContext, span);
@@ -218,61 +206,6 @@ namespace Datadog.Trace.PlatformHelpers
                     security.CheckAndBlock(httpContext, span);
                 }
             }
-        }
-
-        private void CaptureDumpAndFail(string message)
-        {
-            var procDumpExecutable = DownloadProcdumpZipAndExtract().Result;
-            var args = $"-ma {Process.GetCurrentProcess().Id} -accepteula";
-            CaptureMemoryDump(procDumpExecutable, args);
-
-            Environment.FailFast(message);
-        }
-
-        private async Task<string> DownloadProcdumpZipAndExtract()
-        {
-            // We don't know if procdump is available, so download it fresh
-            const string url = @"https://download.sysinternals.com/files/Procdump.zip";
-            var client = new HttpClient();
-            var zipFilePath = Path.GetTempFileName();
-            Console.WriteLine($"Downloading Procdump to '{zipFilePath}'");
-            using (var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
-            {
-                using var bodyStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-                using Stream streamToWriteTo = File.Open(zipFilePath, FileMode.Create);
-                await bodyStream.CopyToAsync(streamToWriteTo).ConfigureAwait(false);
-            }
-
-            var unpackedDirectory = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetTempFileName()));
-            Console.WriteLine($"Procdump downloaded. Unpacking to '{unpackedDirectory}'");
-            System.IO.Compression.ZipFile.ExtractToDirectory(zipFilePath, unpackedDirectory);
-
-            var procDump = Path.Combine(unpackedDirectory, "procdump.exe");
-            return procDump;
-        }
-
-        private bool CaptureMemoryDump(string tool, string args)
-        {
-            Console.WriteLine($"Capturing memory dump using '{tool} {args}'");
-
-            using var dumpToolProcess = Process.Start(new ProcessStartInfo(tool, args)
-            {
-                UseShellExecute = false,
-                CreateNoWindow = true,
-            });
-
-            dumpToolProcess.WaitForExit();
-
-            if (dumpToolProcess.ExitCode == 0)
-            {
-                Console.WriteLine($"Memory dump successfully captured using '{tool} {args}'.");
-            }
-            else
-            {
-                Console.WriteLine($"Failed to capture memory dump using '{tool} {args}'. {tool}'s exit code was {dumpToolProcess.ExitCode}.");
-            }
-
-            return true;
         }
 
         /// <summary>

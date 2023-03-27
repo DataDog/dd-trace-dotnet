@@ -32,7 +32,10 @@ namespace Datadog.Trace.TestHelpers
             _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
             _httpClient.DefaultRequestHeaders.Add(TracingHeaderName1WithMapping, TracingHeaderValue1);
             _httpClient.DefaultRequestHeaders.Add(TracingHeaderName2, TracingHeaderValue2);
+
+#if NETCOREAPP2_1
             _httpClient.DefaultRequestHeaders.ConnectionClose = true;
+#endif
         }
 
         public Process Process { get; private set; }
