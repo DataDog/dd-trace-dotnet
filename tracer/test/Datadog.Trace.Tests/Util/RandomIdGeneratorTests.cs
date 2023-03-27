@@ -167,7 +167,7 @@ public class RandomIdGeneratorTests
     }
 
     [Fact]
-    public void Configure_64Bit_TraceId()
+    public void Configure_128Bit_TraceId_Disabled()
     {
         var settings = new TracerSettings { TraceId128BitGenerationEnabled = false };
 
@@ -187,7 +187,7 @@ public class RandomIdGeneratorTests
     }
 
     [Fact]
-    public void Configure_128Bit_TraceId()
+    public void Configure_128Bit_TraceId_Enabled()
     {
         var settings = new TracerSettings { TraceId128BitGenerationEnabled = true };
 
