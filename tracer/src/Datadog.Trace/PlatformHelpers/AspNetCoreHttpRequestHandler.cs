@@ -170,7 +170,6 @@ namespace Datadog.Trace.PlatformHelpers
                 }
 
                 span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
-
                 if (security.Settings.Enabled)
                 {
                     var transport = new SecurityCoordinator(security, httpContext, span);

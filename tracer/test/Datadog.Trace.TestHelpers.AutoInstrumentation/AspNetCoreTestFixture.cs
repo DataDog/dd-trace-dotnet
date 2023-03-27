@@ -11,7 +11,6 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
-using static System.Net.WebRequestMethods;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -34,6 +33,7 @@ namespace Datadog.Trace.TestHelpers
             _httpClient.DefaultRequestHeaders.Add(TracingHeaderName2, TracingHeaderValue2);
 
 #if NETCOREAPP2_1
+            // Keep-alive is causing some weird failures on aspnetcore 2.1
             _httpClient.DefaultRequestHeaders.ConnectionClose = true;
 #endif
         }
