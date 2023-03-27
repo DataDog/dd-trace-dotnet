@@ -20,6 +20,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
     public class AsyncMethodDebuggerState
     {
         /// <summary>
+        /// Gets a disabled state
+        /// </summary>
+        private static readonly AsyncMethodDebuggerState _disabledState = new() { IsActive = false };
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="AsyncMethodDebuggerState"/> class.
         /// </summary>
         internal AsyncMethodDebuggerState(string probeId, ref ProbeData probeData)
@@ -105,12 +110,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// </summary>
         /// <returns>Invalid live debugger state</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static AsyncDebuggerState CreateInvalidatedDebuggerState()
+        public static AsyncMethodDebuggerState CreateInvalidatedDebuggerState()
         {
-            var state = new AsyncMethodDebuggerState();
-            state.IsActive = false;
-
-            return new AsyncDebuggerState(state);
+            return _disabledState;
         }
 
         /// <summary>

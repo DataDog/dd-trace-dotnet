@@ -30,17 +30,20 @@ private:
                                              DebuggerTokens* debuggerTokens, bool isStatic,
                                              const std::vector<TypeSignature>& methodArgsOrLocals, int numArgsOrLocals,
                                              ILRewriterWrapper& rewriterWrapper, ULONG callTargetStateIndex,
-                                             ILInstr** beginCallInstruction, bool isArgs, ProbeType probeType) const;
+                                      ILInstr** beginCallInstruction, bool isArgs,
+                                      ProbeType probeType,
+                                      mdFieldDef isReEntryFieldTok = mdFieldDefNil) const;
     HRESULT WriteCallsToLogArg(ModuleMetadata& moduleMetadata,
                                       DebuggerTokens* debuggerTokens, bool isStatic,
                                       const std::vector<TypeSignature>& args, int numArgs,
-                                      ILRewriterWrapper& rewriterWrapper, ULONG callTargetStateIndex,
-                                      ILInstr** beginCallInstruction, ProbeType probeType) const;
+                                      ILRewriterWrapper& rewriterWrapper, ULONG callTargetStateIndex, 
+        ILInstr** beginCallInstruction, ProbeType probeType, mdFieldDef isReEntryFieldTok = mdFieldDefNil) const;
     HRESULT WriteCallsToLogLocal(ModuleMetadata& moduleMetadata,
                                         DebuggerTokens* debuggerTokens, bool isStatic,
                                         const std::vector<TypeSignature>& locals, int numLocals,
                                         ILRewriterWrapper& rewriterWrapper, ULONG callTargetStateIndex,
-                                        ILInstr** beginCallInstruction, ProbeType probeType) const;
+                                 ILInstr** beginCallInstruction, ProbeType probeType,
+                                 mdFieldDef isReEntryFieldTok = mdFieldDefNil) const;
     static HRESULT LoadInstanceIntoStack(FunctionInfo* caller, bool isStatic, const ILRewriterWrapper& rewriterWrapper,
                                          ILInstr** outLoadArgumentInstr, CallTargetTokens* callTargetTokens);
     HRESULT CallLineProbe(int instrumentedMethodIndex, ModuleID module_id,
@@ -50,6 +53,7 @@ private:
                                  int numLocals, ILRewriterWrapper& rewriterWrapper, ULONG lineProbeCallTargetStateIndex,
                                  std::vector<EHClause>& lineProbesEHClauses, const std::vector<ILInstr*>& branchTargets,
                                  const std::shared_ptr<LineProbeDefinition>& lineProbe, bool isAsyncMethod) const;
+
     HRESULT ApplyLineProbes(int instrumentedMethodIndex, LineProbeDefinitions& lineProbes,
                             ModuleID module_id, ModuleMetadata& module_metadata, FunctionInfo* caller,
                             DebuggerTokens* debuggerTokens, mdToken function_token, bool isStatic,
@@ -57,6 +61,7 @@ private:
                             std::vector<TypeSignature>& methodLocals, int numLocals, ILRewriterWrapper& rewriterWrapper,
                             ULONG lineProbeCallTargetStateIndex, std::vector<EHClause>& lineProbesEHClauses,
                             bool isAsyncMethod) const;
+
     HRESULT ApplyMethodProbe(ModuleID module_id, ModuleMetadata& module_metadata,
                              FunctionInfo* caller, DebuggerTokens* debuggerTokens, mdToken function_token,
                              TypeSignature retFuncArg, bool isVoid, bool isStatic,
@@ -67,28 +72,51 @@ private:
                              ULONG callTargetReturnIndex, ULONG returnValueIndex, mdToken callTargetReturnToken,
                              ILInstr* firstInstruction, int instrumentedMethodIndex, ILInstr* const& beforeLineProbe,
                              std::vector<EHClause>& newClauses) const;
+
+    HRESULT ApplyMethodSpanProbe(ModuleID module_id, ModuleMetadata& module_metadata, FunctionInfo* caller,
+                            DebuggerTokens* debuggerTokens, mdToken function_token, TypeSignature retFuncArg,
+                            bool isVoid, bool isStatic, const std::vector<TypeSignature>& methodArguments, int numArgs, 
+                            const std::shared_ptr<SpanProbeOnMethodDefinition>& spanProbe, ILRewriter& rewriter,
+                            const std::vector<TypeSignature>& methodLocals, int numLocals,
+                                 ILRewriterWrapper& rewriterWrapper, ULONG spanMethodStateIndex, ULONG exceptionIndex,
+                            ULONG callTargetReturnIndex, ULONG returnValueIndex, mdToken callTargetReturnToken,
+                            int instrumentedMethodIndex, ILInstr*& beforeLineProbe, std::vector<EHClause>& newClauses) const;
+
     HRESULT EndAsyncMethodProbe(ILRewriterWrapper& rewriterWrapper,
                                        ModuleMetadata& module_metadata, DebuggerTokens* debuggerTokens,
                                        FunctionInfo* caller, bool isStatic, TypeSignature* methodReturnType,
-                                       const std::vector<TypeSignature>& methodLocals, int numLocals,
-                                       ULONG callTargetStateIndex, ULONG callTargetReturnIndex,
-                                       std::vector<EHClause>& newClauses, ILInstr** setResultEndMethodTryStartInstr,
-                                       ILInstr** endMethodOriginalCodeFirstInstr) const;
+                                       const std::vector<TypeSignature>& methodLocals, int numLocals, 
+                                       ULONG callTargetReturnIndex, mdFieldDef isReEntryFieldTok,
+                                       std::vector<EHClause>& newClauses) const;
+    HRESULT EndAsyncMethodSpanProbe(ILRewriterWrapper& rewriterWrapper, ModuleMetadata& module_metadata,
+                                DebuggerTokens* debuggerTokens, FunctionInfo* caller, bool isStatic,
+                                TypeSignature* methodReturnType, const std::vector<TypeSignature>& methodLocals,
+                                int numLocals, ULONG callTargetReturnIndex,
+                                mdFieldDef isReEntryFieldTok,
+                                std::vector<EHClause>& newClauses) const;
     static HRESULT LoadProbeIdIntoStack(ModuleID moduleId, const ModuleMetadata& moduleMetadata, mdToken functionToken,
                                         const shared::WSTRING& methodProbeId, const ILRewriterWrapper& rewriterWrapper);
     static void LogDebugCallerInfo(const FunctionInfo* caller, int instrumentedMethodIndex) ;
-    HRESULT ApplyAsyncMethodProbe(ModuleID moduleId, ModuleMetadata& moduleMetadata,
+    HRESULT ApplyAsyncMethodProbe(const shared::WSTRING& methodProbeId, ModuleID moduleId, ModuleMetadata& moduleMetadata,
                                   FunctionInfo* caller, DebuggerTokens* debuggerTokens, mdToken functionToken,
-                                  bool isStatic, TypeSignature* methodReturnType, const shared::WSTRING& methodProbeId,
+                                  bool isStatic, TypeSignature* methodReturnType,
                                   const std::vector<TypeSignature>& methodLocals, int numLocals,
-                                  ILRewriterWrapper& rewriterWrapper, ULONG asyncMethodStateIndex,
+                                  ILRewriterWrapper& rewriterWrapper,
                                   ULONG callTargetReturnIndex, ULONG returnValueIndex, mdToken callTargetReturnToken,
                                   ILInstr* firstInstruction, int instrumentedMethodIndex,
                                   ILInstr* const& beforeLineProbe, std::vector<EHClause>& newClauses) const;
+    HRESULT ApplyAsyncMethodSpanProbe(const std::shared_ptr<SpanProbeOnMethodDefinition>& spanProbe,
+                                  ModuleID moduleId, ModuleMetadata& moduleMetadata, FunctionInfo* caller,
+                                  DebuggerTokens* debuggerTokens, mdToken functionToken, bool isStatic,
+                                  TypeSignature* methodReturnType, const std::vector<TypeSignature>& methodLocals,
+                                  int numLocals, ILRewriterWrapper& rewriterWrapper, ULONG callTargetReturnIndex,
+                                  ULONG returnValueIndex, mdToken callTargetReturnToken, ILInstr* firstInstruction,
+                                  int instrumentedMethodIndex, ILInstr* const& beforeLineProbe,
+                                  std::vector<EHClause>& newClauses) const;
 
     HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
                     MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes,
-                    SpanProbeDefinitions& spanProbes) const;
+                    SpanProbeOnMethodDefinitions& spanProbesOnMethod) const;
     HRESULT IsTypeByRefLike(ModuleMetadata& module_metadata, const TypeSignature& typeSig,
                                    const mdAssemblyRef& corLibAssemblyRef, bool& isTypeIsByRefLike) const;
     HRESULT IsTypeTokenByRefLike(ModuleMetadata& module_metadata, mdToken typeDefOrRefOrSpecToken,
@@ -106,11 +134,11 @@ public:
     static HRESULT GetTaskReturnType(const ILInstr* instruction, ModuleMetadata& moduleMetadata,
                                      const std::vector<TypeSignature>& methodLocals, TypeSignature* returnType);
     static void MarkAllProbesAsError(MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes,
-                                     SpanProbeDefinitions& spanProbes,
+                                     SpanProbeOnMethodDefinitions& spanOnMethodProbes,
                                      const WSTRING& reasoning);
     static void MarkAllLineProbesAsError(LineProbeDefinitions& lineProbes, const WSTRING& reasoning);
     static void MarkAllMethodProbesAsError(MethodProbeDefinitions& methodProbes, const WSTRING& reasoning);
-    static void MarkAllSpanProbesAsError(SpanProbeDefinitions& spanProbes, const WSTRING& reasoning);
+    static void MarkAllSpanOnMethodProbesAsError(SpanProbeOnMethodDefinitions& spanProbes, const WSTRING& reasoning);
 };
 
 } // namespace debugger

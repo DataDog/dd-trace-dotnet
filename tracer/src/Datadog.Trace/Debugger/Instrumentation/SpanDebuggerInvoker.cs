@@ -40,39 +40,20 @@ namespace Datadog.Trace.Debugger.Instrumentation
             resourceName ??= "unknown-resource";
             operationName ??= "unknown-operation";
 
-            return new SpanDebuggerState(TraceAnnotationsIntegration.CreateSpan(resourceName, operationName, IntegrationId));
+            var scope = TraceAnnotationsIntegration.CreateSpan(resourceName, operationName, IntegrationId);
+            scope.Span.Tags.SetTag("debugger.probeid", probeId);
+            return new SpanDebuggerState(scope);
         }
 
         /// <summary>
         /// [Non Async] End Method with Void return value invoker
         /// </summary>
-        /// <typeparam name="TTarget">Target type</typeparam>
-        /// <param name="instance">Instance value</param>
         /// <param name="exception">Exception value</param>
         /// <param name="state">Debugger state</param>
-        /// <returns>CallTarget return structure</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DebuggerReturn EndSpan<TTarget>(TTarget instance, Exception exception, ref SpanDebuggerState state)
+        public static void EndSpan(Exception exception, ref SpanDebuggerState state)
         {
             state.Scope.DisposeWithException(exception);
-            return DebuggerReturn.GetDefault();
-        }
-
-        /// <summary>
-        /// [Non Async] End Method with Return value invoker
-        /// </summary>
-        /// <typeparam name="TTarget">Target type</typeparam>
-        /// <typeparam name="TReturn">Return type</typeparam>
-        /// <param name="instance">Instance value</param>
-        /// <param name="returnValue">Return value</param>
-        /// <param name="exception">Exception value</param>
-        /// <param name="state">Debugger state</param>
-        /// <returns>LiveDebugger return structure</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DebuggerReturn<TReturn> EndSpan<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref SpanDebuggerState state)
-        {
-            state.Scope.DisposeWithException(exception);
-            return new DebuggerReturn<TReturn>(returnValue);
         }
 
         /// <summary>
@@ -107,61 +88,33 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="resourceName">The resource name</param>
         /// <param name="operationName">The operation name</param>
         /// <param name="isReEntryToMoveNext">Indication if we are dealing with re-entry</param>
-        /// <returns>Live debugger state</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static AsyncDebuggerState BeginSpan(string probeId, string resourceName, string operationName, ref AsyncDebuggerState isReEntryToMoveNext)
+        public static void BeginSpan(string probeId, string resourceName, string operationName, ref AsyncDebuggerState isReEntryToMoveNext)
         {
-            if (isReEntryToMoveNext.State != null)
+            if (isReEntryToMoveNext.SpanState.HasValue)
             {
                 // Re-enter.
-                return isReEntryToMoveNext;
+                return;
             }
 
             var spanState = BeginSpan(probeId, resourceName, operationName);
-            isReEntryToMoveNext = new AsyncDebuggerState(spanState);
-            return isReEntryToMoveNext;
+            isReEntryToMoveNext.SpanState = spanState;
         }
 
         /// <summary>
         /// [Async] End Method with Void return value invoker
         /// </summary>
-        /// <typeparam name="TTarget">Target type</typeparam>
-        /// <param name="instance">Instance value</param>
         /// <param name="exception">Exception value</param>
         /// <param name="state">Debugger state</param>
-        /// <returns>CallTarget return structure</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DebuggerReturn EndSpan<TTarget>(TTarget instance, Exception exception, ref AsyncDebuggerState state)
+        public static void EndSpan(Exception exception, ref AsyncDebuggerState state)
         {
-            if (state.State is not AsyncMethodDebuggerState asyncState || !asyncState.IsActive)
+            if (!state.SpanState.HasValue || !state.SpanState.Value.IsActive)
             {
-                return DebuggerReturn.GetDefault();
+                return;
             }
 
-            asyncState.Scope.DisposeWithException(exception);
-            return DebuggerReturn.GetDefault();
-        }
-
-        /// <summary>
-        /// [Async] End Method with Return value invoker
-        /// </summary>
-        /// <typeparam name="TTarget">Target type</typeparam>
-        /// <typeparam name="TReturn">Return type</typeparam>
-        /// <param name="instance">Instance value</param>
-        /// <param name="returnValue">Return value</param>
-        /// <param name="exception">Exception value</param>
-        /// <param name="state">Debugger state</param>
-        /// <returns>LiveDebugger return structure</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DebuggerReturn<TReturn> EndSpan<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref AsyncDebuggerState state)
-        {
-            if (state.State is not AsyncMethodDebuggerState asyncState || !asyncState.IsActive)
-            {
-                return new DebuggerReturn<TReturn>(returnValue);
-            }
-
-            asyncState.Scope.DisposeWithException(exception);
-            return new DebuggerReturn<TReturn>(returnValue);
+            state.SpanState.Value.Scope.DisposeWithException(exception);
         }
 
         /// <summary>
@@ -174,14 +127,14 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             try
             {
-                if (state.State is not AsyncMethodDebuggerState asyncState || !asyncState.IsActive)
+                if (state.SpanState.HasValue && state.SpanState.Value.IsActive)
                 {
                     // Already encountered `LogException`
                     return;
                 }
 
                 Log.Warning(exception, "Error caused by our instrumentation");
-                asyncState.IsActive = false;
+                state.SpanState = new SpanDebuggerState { IsActive = false };
             }
             catch
             {

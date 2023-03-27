@@ -11,16 +11,15 @@ namespace debugger
 /// <summary>
 /// DebuggerRejitPreprocessor
 /// </summary>
-class DebuggerRejitPreprocessor : public RejitPreprocessor<MethodProbeDefinition>
+class DebuggerRejitPreprocessor : public RejitPreprocessor<std::shared_ptr<MethodProbeDefinition>>
 {
 public:
     using RejitPreprocessor::RejitPreprocessor;
 
-    ULONG PreprocessLineProbes(const std::vector<ModuleID>& modules,
-                                  const LineProbeDefinitions& lineProbes,
+    ULONG PreprocessLineProbes(const std::vector<ModuleID>& modules, const std::vector<LineProbeDefinition>& lineProbes,
                                std::vector<MethodIdentifier>& rejitRequests) const;
-    void EnqueuePreprocessLineProbes(const std::vector<ModuleID>& modules,
-                               const LineProbeDefinitions& lineProbes,
+    void EnqueuePreprocessLineProbes(const std::vector<ModuleID> modules,
+                                     const std::vector<LineProbeDefinition> lineProbes,
                                std::promise<std::vector<MethodIdentifier>>* promise) const;
 
 protected:
@@ -28,27 +27,27 @@ protected:
                                       ComPtr<IMetaDataImport2> metadataImport, ComPtr<IMetaDataEmit2> metadataEmit,
                                       ComPtr<IMetaDataAssemblyImport> assemblyImport,
                                       ComPtr<IMetaDataAssemblyEmit> assemblyEmit,
-                                      const MethodProbeDefinition& definition,
+                                      const std::shared_ptr<MethodProbeDefinition>& definition,
                                       const MethodReference& targetMethod) final;
-    const MethodReference& GetTargetMethod(const MethodProbeDefinition& methodProbe) final;
-    const bool GetIsDerived(const MethodProbeDefinition& definition) final;
-    const bool GetIsInterface(const MethodProbeDefinition& definition) final;
-    const bool GetIsExactSignatureMatch(const MethodProbeDefinition& definition) final;
+    const MethodReference& GetTargetMethod(const std::shared_ptr<MethodProbeDefinition>& methodProbe) final;
+    const bool GetIsDerived(const std::shared_ptr<MethodProbeDefinition>& definition) final;
+    const bool GetIsInterface(const std::shared_ptr<MethodProbeDefinition>& definition) final;
+    const bool GetIsExactSignatureMatch(const std::shared_ptr<MethodProbeDefinition>& definition) final;
     const std::unique_ptr<RejitHandlerModuleMethod>
     CreateMethod(mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo,
-                 const MethodProbeDefinition& methodProbe) final;
+                 const std::shared_ptr<MethodProbeDefinition>& methodProbe) final;
     const std::unique_ptr<RejitHandlerModuleMethod>
     CreateMethod(mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo) const;
-    void UpdateMethod(RejitHandlerModuleMethod* methodHandler, const MethodProbeDefinition& methodProbe) override;
-    static void UpdateMethod(RejitHandlerModuleMethod* methodHandler, const ProbeDefinition_S& probe);
+    void UpdateMethod(RejitHandlerModuleMethod* methodHandler, const std::shared_ptr<MethodProbeDefinition>& methodProbe) override;
     [[nodiscard]] std::tuple<HRESULT, mdMethodDef, FunctionInfo> PickMethodToRejit(
         const ComPtr<IMetaDataImport2>& metadataImport,
         const ComPtr<IMetaDataEmit2>& metadataEmit,
         mdTypeDef typeDef,
         mdMethodDef methodDef,
         const FunctionInfo& functionInfo) const;
-    bool ShouldSkipModule(const ModuleInfo& moduleInfo, const MethodProbeDefinition& methodProbe) final;
-    void EnqueueNewMethod(const MethodProbeDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
+    bool ShouldSkipModule(const ModuleInfo& moduleInfo, const std::shared_ptr<MethodProbeDefinition>& methodProbe) final;
+    void EnqueueNewMethod(const std::shared_ptr<MethodProbeDefinition>& definition,
+                          ComPtr<IMetaDataImport2>& metadataImport,
                           ComPtr<IMetaDataEmit2>& metadataEmit, const ModuleInfo& moduleInfo, mdTypeDef typeDef,
                           std::vector<MethodIdentifier>& rejitRequests, unsigned methodDef,
                           const FunctionInfo& functionInfo, RejitHandlerModule* moduleHandler) override;

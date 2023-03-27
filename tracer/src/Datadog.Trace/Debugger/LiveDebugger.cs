@@ -174,6 +174,8 @@ namespace Datadog.Trace.Debugger
 
                 var methodProbes = new List<NativeMethodProbeDefinition>();
                 var lineProbes = new List<NativeLineProbeDefinition>();
+                var spanProbes = new List<NativeSpanProbeDefinition>();
+
                 foreach (var probe in addedProbes)
                 {
                     switch (GetProbeLocationType(probe))
@@ -202,13 +204,18 @@ namespace Datadog.Trace.Debugger
                             var nativeDefinition = new NativeMethodProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
                             methodProbes.Add(nativeDefinition);
                             break;
+                        case ProbeLocationType.MethodSpan:
+                            var spanProbe = probe as SpanProbe;
+                            var spanDefinition = new NativeSpanProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
+                            spanProbes.Add(spanDefinition);
+                            break;
                         case ProbeLocationType.Unrecognized:
                             break;
                     }
                 }
 
                 using var disposable = new DisposableEnumerable<NativeMethodProbeDefinition>(methodProbes);
-                DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), Array.Empty<NativeRemoveProbeRequest>());
+                DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), Array.Empty<NativeRemoveProbeRequest>());
 
                 _probeStatusPoller.AddProbes(addedProbes.Select(probe => probe.Id).ToArray());
 
@@ -249,7 +256,7 @@ namespace Datadog.Trace.Debugger
                 var revertProbes = removedProbesIds
                    .Select(probeId => new NativeRemoveProbeRequest(probeId));
 
-                DebuggerNativeMethods.InstrumentProbes(Array.Empty<NativeMethodProbeDefinition>(), Array.Empty<NativeLineProbeDefinition>(), revertProbes.ToArray());
+                DebuggerNativeMethods.InstrumentProbes(Array.Empty<NativeMethodProbeDefinition>(), Array.Empty<NativeLineProbeDefinition>(), Array.Empty<NativeSpanProbeDefinition>(), revertProbes.ToArray());
 
                 _probeStatusPoller.RemoveProbes(removedProbesIds);
 
@@ -266,6 +273,11 @@ namespace Datadog.Trace.Debugger
 
         private ProbeLocationType GetProbeLocationType(ProbeDefinition probe)
         {
+            if (probe is SpanProbe)
+            {
+                return ProbeLocationType.MethodSpan;
+            }
+
             if (!string.IsNullOrEmpty(probe.Where.MethodName))
             {
                 return ProbeLocationType.Method;

@@ -1,3 +1,8 @@
+// <copyright file="AsyncDebuggerState.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -19,21 +24,36 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// </summary>
         public AsyncDebuggerState()
         {
-            State = null;
+            SpanState = null;
+            LogState = null;
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncDebuggerState"/> struct.
         /// </summary>
-        /// <param name="state">Customized underlying state that is being used by instrumentation code that is being applied on async methods</param>
-        public AsyncDebuggerState(object state)
+        /// <param name="spanState">The span state</param>
+        public AsyncDebuggerState(SpanDebuggerState spanState)
         {
-            State = state;
+            SpanState = spanState;
         }
 
         /// <summary>
-        /// Gets the state
+        /// Initializes a new instance of the <see cref="AsyncDebuggerState"/> struct.
         /// </summary>
-        public object State { get; }
+        /// <param name="logState">The log state</param>
+        public AsyncDebuggerState(AsyncMethodDebuggerState logState)
+        {
+            LogState = logState;
+        }
+
+        /// <summary>
+        /// Gets or sets the span state
+        /// </summary>
+        public SpanDebuggerState? SpanState { get; set; }
+
+        /// <summary>
+        /// Gets or sets the log state
+        /// </summary>
+        public AsyncMethodDebuggerState LogState { get; set; }
     }
 }

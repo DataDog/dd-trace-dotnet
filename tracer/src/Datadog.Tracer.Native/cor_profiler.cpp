@@ -1861,12 +1861,13 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
 
 void CorProfiler::InstrumentProbes(debugger::DebuggerMethodProbeDefinition* methodProbes, int methodProbesLength,
                                    debugger::DebuggerLineProbeDefinition* lineProbes, int lineProbesLength,
+                                   debugger::DebuggerMethodSpanProbeDefinition* spanProbes, int spanProbesLength,
                                    debugger::DebuggerRemoveProbesDefinition* removeProbes, int revertProbesLength) const
 {
     if (debugger_instrumentation_requester != nullptr)
     {
         debugger_instrumentation_requester->InstrumentProbes(methodProbes, methodProbesLength, lineProbes,
-                                                             lineProbesLength, removeProbes, revertProbesLength);
+                                                             lineProbesLength, spanProbes, spanProbesLength, removeProbes, revertProbesLength);
     }
 }
 

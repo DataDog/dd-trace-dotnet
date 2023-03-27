@@ -507,7 +507,7 @@ internal partial class ProbeExpressionParser<T>
 
         // add exception
         var exceptionParameterExpression = Expression.Parameter(typeof(Exception));
-        var exceptionVariable = Expression.Variable(typeof(Exception), "@exceptions");
+        var exceptionVariable = Expression.Variable(typeof(Exception), "@exception");
         expressions.Add(Expression.Assign(exceptionVariable, exceptionParameterExpression));
         scopeMembers.Add(exceptionVariable);
 
