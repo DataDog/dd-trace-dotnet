@@ -164,7 +164,7 @@
     <!-- Integration: RabbitMQ.Client -->
     <!-- Assembly: RabbitMQ.Client -->
     <!-- Latest package https://www.nuget.org/packages/RabbitMQ.Client/6.4.0 -->
-    <PackageReference Include="RabbitMQ.Client" Version="6.4.0" />
+    <PackageReference Include="RabbitMQ.Client" Version="6.5.0" />
 
     <!-- Integration: Serilog -->
     <!-- Assembly: Serilog -->
