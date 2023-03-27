@@ -17,10 +17,10 @@ public:
     using RejitPreprocessor::RejitPreprocessor;
 
     ULONG PreprocessLineProbes(const std::vector<ModuleID>& modules, const std::vector<LineProbeDefinition>& lineProbes,
-                               std::vector<MethodIdentifier>& rejitRequests) const;
+                               std::vector<MethodIdentifier>& rejitRequests);
     void EnqueuePreprocessLineProbes(const std::vector<ModuleID> modules,
                                      const std::vector<LineProbeDefinition> lineProbes,
-                               std::promise<std::vector<MethodIdentifier>>* promise) const;
+                               std::promise<std::vector<MethodIdentifier>>* promise);
 
 protected:
     void ProcessTypesForRejit(std::vector<MethodIdentifier>& rejitRequests, const ModuleInfo& moduleInfo,
@@ -39,6 +39,7 @@ protected:
     const std::unique_ptr<RejitHandlerModuleMethod>
     CreateMethod(mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo) const;
     void UpdateMethod(RejitHandlerModuleMethod* methodHandler, const std::shared_ptr<MethodProbeDefinition>& methodProbe) override;
+    void UpdateMethodInternal(RejitHandlerModuleMethod* methodHandler, const std::shared_ptr<ProbeDefinition>& probe);
     [[nodiscard]] std::tuple<HRESULT, mdMethodDef, FunctionInfo> PickMethodToRejit(
         const ComPtr<IMetaDataImport2>& metadataImport,
         const ComPtr<IMetaDataEmit2>& metadataEmit,

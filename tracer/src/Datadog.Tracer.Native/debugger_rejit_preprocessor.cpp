@@ -12,7 +12,7 @@ namespace debugger
 // DebuggerRejitPreprocessor
 
 ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID>& modules,
-    const std::vector<LineProbeDefinition>& lineProbes, std::vector<MethodIdentifier>& rejitRequests) const
+    const std::vector<LineProbeDefinition>& lineProbes, std::vector<MethodIdentifier>& rejitRequests)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -119,7 +119,7 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID
                 };
 
             RejitHandlerModuleMethodUpdaterFunc updater = [=, request = lineProbe](RejitHandlerModuleMethod* method) {
-                //return UpdateMethod(method, std::dynamic_pointer_caststd::make_shared<LineProbeDefinition>(request));
+                UpdateMethodInternal(method, std::make_shared<LineProbeDefinition>(request));
             };
 
             moduleHandler->CreateMethodIfNotExists(methodDef, creator, updater);
@@ -135,7 +135,7 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID
 
 void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(const std::vector<ModuleID> modulesVector,
                                                             const std::vector<LineProbeDefinition> lineProbes,
-                                                            std::promise<std::vector<MethodIdentifier>>* promise) const
+                                                            std::promise<std::vector<MethodIdentifier>>* promise)
 {
     std::vector<MethodIdentifier> rejitRequests;
 
@@ -250,15 +250,22 @@ DebuggerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandle
     return std::make_unique<DebuggerRejitHandlerModuleMethod>(methodDef, module, functionInfo, std::make_unique<DebuggerMethodRewriter>(m_corProfiler));
 }
 
-void DebuggerRejitPreprocessor::UpdateMethod(RejitHandlerModuleMethod* methodHandler, const std::shared_ptr<MethodProbeDefinition>& probe)
+void DebuggerRejitPreprocessor::UpdateMethod(RejitHandlerModuleMethod* methodHandler, const std::shared_ptr<MethodProbeDefinition>& methodProbe)
+{
+    UpdateMethodInternal(methodHandler, methodProbe);
+}
+
+void DebuggerRejitPreprocessor::UpdateMethodInternal(RejitHandlerModuleMethod* methodHandler, const std::shared_ptr<ProbeDefinition>& probe)
 {
     const auto debuggerMethodHandler = dynamic_cast<DebuggerRejitHandlerModuleMethod*>(methodHandler);
 
     if (debuggerMethodHandler == nullptr)
     {
-        Logger::Warn("Tried to place Debugger Probe on a method that have been instrumented already be the Tracer/Ci instrumentation.",
-            "ProbeId: ", probe->probeId);
-        ProbesMetadataTracker::Instance()->SetErrorProbeStatus(probe->probeId, invalid_probe_method_already_instrumented);
+        Logger::Warn("Tried to place Debugger Probe on a method that have been instrumented already be the Tracer/Ci "
+                     "instrumentation.",
+                     "ProbeId: ", probe->probeId);
+        ProbesMetadataTracker::Instance()->SetErrorProbeStatus(probe->probeId,
+                                                               invalid_probe_method_already_instrumented);
         return;
     }
 
