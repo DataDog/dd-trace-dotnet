@@ -22,6 +22,7 @@ internal partial class ProbeExpressionParser<T>
     private const string @Exceptions = "@exceptions";
     private const string @Duration = "@duration";
     private const string @It = "@it";
+    private const string @This = "this";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeExpressionParser<T>));
     private static readonly LabelTarget ReturnTarget = Expression.Label(typeof(T));
@@ -294,6 +295,11 @@ internal partial class ProbeExpressionParser<T>
                             {
                                 // skip comment
                                 return ParseTree(reader, parameters, itParameter);
+                            }
+
+                            if (readerValue == This)
+                            {
+                                return GetParameterExpression(parameters, ScopeMemberKind.This);
                             }
 
                             if (readerValue == Return)
