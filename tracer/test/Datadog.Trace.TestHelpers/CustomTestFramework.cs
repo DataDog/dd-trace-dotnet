@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,6 +12,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
+using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
@@ -90,9 +92,54 @@ namespace Datadog.Trace.TestHelpers
             {
             }
 
+            protected override async Task<RunSummary> RunTestCollectionsAsync(IMessageBus messageBus, CancellationTokenSource cancellationTokenSource)
+            {
+                var collections = OrderTestCollections().Select(
+                    pair =>
+                    new
+                    {
+                        Collection = pair.Item1,
+                        TestCases = pair.Item2,
+                        DisableParallelization = IsParallelizationDisabled(pair.Item1)
+                    })
+                    .ToList();
+
+                var summary = new RunSummary();
+
+                using var runner = new ConcurrentRunner();
+
+                var tasks = new List<Task<RunSummary>>();
+
+                foreach (var test in collections.Where(t => !t.DisableParallelization))
+                {
+                    tasks.Add(runner.RunAsync(async () => await RunTestCollectionAsync(messageBus, test.Collection, test.TestCases, cancellationTokenSource)));
+                }
+
+                await Task.WhenAll(tasks);
+
+                foreach (var task in tasks)
+                {
+                    summary.Aggregate(task.Result);
+                }
+
+                // Single threaded collections
+                foreach (var test in collections.Where(t => t.DisableParallelization))
+                {
+                    summary.Aggregate(await RunTestCollectionAsync(messageBus, test.Collection, test.TestCases, cancellationTokenSource));
+                }
+
+                return summary;
+            }
+
             protected override Task<RunSummary> RunTestCollectionAsync(IMessageBus messageBus, ITestCollection testCollection, IEnumerable<IXunitTestCase> testCases, CancellationTokenSource cancellationTokenSource)
             {
                 return new CustomTestCollectionRunner(testCollection, testCases, DiagnosticMessageSink, messageBus, TestCaseOrderer, new ExceptionAggregator(Aggregator), cancellationTokenSource).RunAsync();
+            }
+
+            private static bool IsParallelizationDisabled(ITestCollection collection)
+            {
+                var attr = collection.CollectionDefinition?.GetCustomAttributes(typeof(CollectionDefinitionAttribute)).SingleOrDefault();
+                return attr?.GetNamedArgument<bool>(nameof(CollectionDefinitionAttribute.DisableParallelization)) is true;
             }
         }
 
@@ -170,6 +217,53 @@ namespace Datadog.Trace.TestHelpers
                 {
                     _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"ERROR: {test} ({ex.Message})"));
                     throw;
+                }
+            }
+        }
+
+        private class ConcurrentRunner : IDisposable
+        {
+            private readonly BlockingCollection<Func<Task>> _queue;
+
+            public ConcurrentRunner()
+            {
+                _queue = new();
+
+                for (int i = 0; i < Environment.ProcessorCount; i++)
+                {
+                    Task.Run(DoWork);
+                }
+            }
+
+            public void Dispose()
+            {
+                _queue.CompleteAdding();
+            }
+
+            public Task<T> RunAsync<T>(Func<Task<T>> action)
+            {
+                var tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+                _queue.Add(async () =>
+                {
+                    try
+                    {
+                        tcs.TrySetResult(await action());
+                    }
+                    catch (Exception ex)
+                    {
+                        tcs.TrySetException(ex);
+                    }
+                });
+
+                return tcs.Task;
+            }
+
+            private async Task DoWork()
+            {
+                foreach (var item in _queue.GetConsumingEnumerable())
+                {
+                    await item();
                 }
             }
         }

@@ -113,7 +113,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions Condition=" '$(EnableASAN)'=='true' ">/INFERASANLIBS:NO /wholearchive:clang_rt.asan_dbg-i386.lib /wholearchive:clang_rt.asan_cxx_dbg-i386.lib %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration Condition=" '$(EnableASAN)'=='true' ">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
@@ -145,7 +144,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions Condition=" '$(EnableASAN)'=='true' ">/INFERASANLIBS:NO /wholearchive:clang_rt.asan-i386.lib /wholearchive:clang_rt.asan_cxx-i386.lib %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration Condition=" '$(EnableASAN)'=='true' ">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
@@ -173,7 +171,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions Condition=" '$(EnableASAN)'=='true' ">/INFERASANLIBS:NO /wholearchive:clang_rt.asan_dbg-x86_64.lib /wholearchive:clang_rt.asan_cxx_dbg-x86_64.lib %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration Condition=" '$(EnableASAN)'=='true' ">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
@@ -207,7 +204,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions Condition=" '$(EnableASAN)'=='true' ">/INFERASANLIBS:NO /wholearchive:clang_rt.asan-x86_64.lib /wholearchive:clang_rt.asan_cxx-x86_64.lib %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration Condition=" '$(EnableASAN)'=='true' ">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>

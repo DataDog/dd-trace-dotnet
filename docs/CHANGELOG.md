@@ -19,6 +19,81 @@
 
 
 
+
+## [Release 2.27.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.27.0)
+
+## Summary
+
+Tracer
+- Support for isolated functions in Azure
+- Support for GraphQL 7
+- Performance improvements in the startup time. We had slowly decreased performances since 2.9.0 by adding more features, we're back to an equivalent state now.
+
+## Changes
+
+### Tracer
+* Add a size limit to the serialization temp buffer (#3830)
+* [Tracer] add support for GraphQL 7 (#3842)
+* Optimize startup time (#3856)
+* [Tracer] Protect against null Activity TraceId (#3870)
+* [Tracing] parse propagated tags during header extraction (#3872)
+* Initial support for isolated Azure Functions (v4) (#3900)
+* Capture exceptions in Azure Functions (#3905)
+* Exclude `App_LocalResources.` deps from telemetry (#3906)
+* Performance improvements (#3907)
+* Record SourceContext in direct submission logs (#3910)
+* Add usr.id when propagating (#3912)
+* Add recording of HTTP status code to Azure Functions HTTP triggers (#3914)
+* Capture the querystring in `http.url` for client HTTP spans (#3935)
+
+### CI Visibility
+* [CI Visibility] Update CI Environment Variables spec (#3878)
+* [CI Visibility] - Fixes git parser when using a SSH signature (#3940)
+
+### ASM
+* [ASM] Update rules WAF rules to 1.5.2 (#3896)
+* [ASM] Correct casing for tag values in SDK (#3893)
+* [ASM] Optimize http body parsing (#3853)
+* [ASM] Taint String Substring and ToCharArray methods (#3854)
+* [ASM] Taint string.Remove() and string.Insert() methods in IAST (#3877)
+* [ASM] Taint string.Join, ToUpper and ToLower methods in IAST (#3897)
+* [ASM] Instrumentate String.Trim(), String.TrimStart(), String.TrimEnd() in IAST. (#3911)
+* [ASM] Instrument String.PadLeft() and String.PadRight() methods (#3918)
+* [ASM] Add integration tests for global rules switch (#3886)
+
+### Continuous Profiler
+* [Profiler ] Fixes in FrameStore (#3861)
+* [Profiler] Add support for Portable PDB in the profiler (#3904)
+
+### Debugger
+* [Dynamic Instrumentation] Add metric probe for dynamic instrumentation (#3727)
+* [Dynamic Instrumentation] Deploy dotnet to debugger backend demo applications (#3920)
+
+### Miscellaneous
+* [Test Package Versions Bump] Updating package versions (#3759)
+* Improve OSX dev experience (#3863)
+* [Tracer] Implement all system-tests W3C tracecontext behaviors (#3873)
+* Fix modules locking (#3892)
+* Use a wrapper for synchronized access to collections (#3895)
+* DSM - Span and Pathway linking (#3902)
+* [Test Package Versions Bump] Updating package versions (#3929)
+
+### Build / Test
+* Swap Samples.Telemetry to use .NET Activity (#3819)
+* Refine CodeOwners (#3860)
+* Fix the clone-repo template for hotfixes (#3866)
+* [Test] Fix flakiness in Aerospike integration test - Attempt 1 (#3890)
+* Add processors benchmarks (#3898)
+* Add support for attach jetbrains products in Benchmark tests (#3903)
+* Remove unused reference to Datadog.Trace in HttpMessageHandler.StackOverflowException (#3923)
+* Fix codeowners file around ASM folders. (#3926)
+* Test Azure Functions out of process on .NET 7 (#3927)
+* Fix a few issues with Samples.Shared (#3934)
+* Fix native compilation warning (#3932)
+
+
+[Changes since 2.26.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.26.0...v2.27.0)
+
 ## [Release 2.26.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.26.0)
 
 ## Summary
