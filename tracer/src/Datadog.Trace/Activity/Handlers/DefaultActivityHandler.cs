@@ -99,12 +99,13 @@ namespace Datadog.Trace.Activity.Handlers
 
                 // We convert the activity traceId and spanId to use it in the
                 // Datadog span creation.
-                if (w3cActivity.TraceId is { } w3cTraceId && w3cActivity.SpanId is { } w3cSpanId && !remoteActivityContext)
+                if (w3cActivity.TraceId is { } w3cTraceId && w3cActivity.SpanId is { } w3cSpanId)
                 {
                     // If the Activity has an ActivityIdFormat.Hierarchical instead of W3C it's TraceId & SpanId will be null
                     traceId ??= Convert.ToUInt64(w3cTraceId.Substring(16), 16);
                     spanId = Convert.ToUInt64(w3cSpanId, 16);
                     rawTraceId = w3cTraceId;
+                }
             }
 
             try
@@ -121,7 +122,7 @@ namespace Datadog.Trace.Activity.Handlers
                 }
 
                 activityKey ??= activity.Id;
-                ActivityMappingById.GetOrAdd(activityKey, _ => new(activity.Instance, CreateScopeFromActivity(activity, parent, traceId, spanId, rawTraceId, rawSpanId)));
+                ActivityMappingById.GetOrAdd(activityKey, _ => new(activity.Instance!, CreateScopeFromActivity(activity, parent, traceId, spanId, rawTraceId, rawSpanId)));
             }
             catch (Exception ex)
             {

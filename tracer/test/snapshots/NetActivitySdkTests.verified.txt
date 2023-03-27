@@ -2,18 +2,16 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: Samples.NetActivitySdk.server,
-    Resource: Ctor1,
+    Name: opentelemetry.internal,
+    Resource: Child-NonW3CId,
     Service: Samples.NetActivitySdk,
-    Type: web,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_1,
-      runtime-id: Guid_2,
-      span.kind: server,
+      runtime-id: Guid_1,
+      span.kind: internal,
       version: 1.0.0,
       _dd.p.dm: -0
     },
@@ -29,10 +27,36 @@
     TraceId: Id_3,
     SpanId: Id_4,
     Name: Samples.NetActivitySdk.server,
+    Resource: Ctor1,
+    Service: Samples.NetActivitySdk,
+    Type: web,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_6,
+    Name: Samples.NetActivitySdk.server,
     Resource: Ctor2,
     Service: Samples.NetActivitySdk,
     Type: web,
-    ParentId: Id_5,
+    ParentId: Id_7,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -51,13 +75,13 @@
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_6,
+    TraceId: Id_5,
+    SpanId: Id_8,
     Name: Samples.NetActivitySdk.server,
     Resource: Ctor3,
     Service: Samples.NetActivitySdk,
     Type: web,
-    ParentId: Id_5,
+    ParentId: Id_7,
     Tags: {
       attribute-string: str,
       env: integration_tests,
@@ -78,13 +102,13 @@
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_7,
+    TraceId: Id_5,
+    SpanId: Id_9,
     Name: Samples.NetActivitySdk.server,
     Resource: Ctor4,
     Service: Samples.NetActivitySdk,
     Type: web,
-    ParentId: Id_6,
+    ParentId: Id_8,
     Tags: {
       attribute-string: str,
       env: integration_tests,
@@ -100,8 +124,8 @@
     }
   },
   {
-    TraceId: Id_8,
-    SpanId: Id_9,
+    TraceId: Id_10,
+    SpanId: Id_11,
     Name: Samples.NetActivitySdk.internal,
     Resource: ErrorSpan,
     Service: Samples.NetActivitySdk,
@@ -114,7 +138,7 @@
       otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_ERROR,
       otel.trace_id: Guid_4,
-      runtime-id: Guid_2,
+      runtime-id: Guid_1,
       span.kind: internal,
       version: 1.0.0,
       _dd.p.dm: -0
@@ -128,13 +152,13 @@
     }
   },
   {
-    TraceId: Id_8,
-    SpanId: Id_10,
+    TraceId: Id_10,
+    SpanId: Id_12,
     Name: Samples.NetActivitySdk.internal,
     Resource: OkSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_9,
+    ParentId: Id_11,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -146,13 +170,13 @@
     }
   },
   {
-    TraceId: Id_8,
-    SpanId: Id_11,
+    TraceId: Id_10,
+    SpanId: Id_13,
     Name: Samples.NetActivitySdk.internal,
     Resource: UnsetStatusSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_10,
+    ParentId: Id_12,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -164,13 +188,13 @@
     }
   },
   {
-    TraceId: Id_8,
-    SpanId: Id_12,
+    TraceId: Id_10,
+    SpanId: Id_14,
     Name: Samples.NetActivitySdk.internal,
     Resource: ParentSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_11,
+    ParentId: Id_13,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -182,13 +206,13 @@
     }
   },
   {
-    TraceId: Id_8,
-    SpanId: Id_13,
+    TraceId: Id_10,
+    SpanId: Id_15,
     Name: opentelemetry.internal,
     Resource: ChildSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_12,
+    ParentId: Id_14,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -199,13 +223,13 @@
     }
   },
   {
-    TraceId: Id_8,
-    SpanId: Id_14,
+    TraceId: Id_10,
+    SpanId: Id_16,
     Name: Samples.NetActivitySdk.internal,
     Resource: W3CParentSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_12,
+    ParentId: Id_14,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -217,34 +241,10 @@
     }
   },
   {
-    TraceId: Id_8,
-    SpanId: Id_15,
+    TraceId: Id_10,
+    SpanId: Id_17,
     Name: opentelemetry.internal,
-    Resource: Parent-NonW3CId,
-    Service: Samples.NetActivitySdk,
-    Type: custom,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      otel.status_code: STATUS_CODE_UNSET,
-      runtime-id: Guid_2,
-      span.kind: internal,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_16,
-    SpanId: Id_18,
-    Name: opentelemetry.internal,
-    Resource: Child-NonW3CId,
+    Resource: W3CChildSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
     ParentId: Id_16,
@@ -252,13 +252,49 @@
       env: integration_tests,
       language: dotnet,
       otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_4,
       span.kind: internal,
       version: 1.0.0
     }
   },
   {
-    TraceId: Id_18,
+    TraceId: Id_10,
+    SpanId: Id_18,
+    Name: Samples.NetActivitySdk.internal,
+    Resource: IAmMiscSpan,
+    Service: Samples.NetActivitySdk,
+    Type: custom,
+    ParentId: Id_16,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_4,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_10,
     SpanId: Id_19,
+    Name: opentelemetry.internal,
+    Resource: MiscSpan2,
+    Service: Samples.NetActivitySdk,
+    Type: custom,
+    ParentId: Id_18,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_4,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_20,
+    SpanId: Id_21,
     Name: Samples.NetActivitySdk.internal,
     Resource: RootSpan,
     Service: Samples.NetActivitySdk,
@@ -269,7 +305,7 @@
       otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_5,
-      runtime-id: Guid_2,
+      runtime-id: Guid_1,
       span.kind: internal,
       version: 1.0.0,
       _dd.p.dm: -0
@@ -283,13 +319,13 @@
     }
   },
   {
-    TraceId: Id_18,
-    SpanId: Id_20,
+    TraceId: Id_20,
+    SpanId: Id_22,
     Name: Saying hello!,
     Resource: AddTagsActivity,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_19,
+    ParentId: Id_21,
     Tags: {
       attribute-bool: true,
       attribute-boolArray: [false,true,false],
@@ -315,13 +351,13 @@
     }
   },
   {
-    TraceId: Id_18,
-    SpanId: Id_21,
+    TraceId: Id_20,
+    SpanId: Id_23,
     Name: Samples.NetActivitySdk.internal,
     Resource: SetTagsActivity,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_19,
+    ParentId: Id_21,
     Tags: {
       attribute-bool: true,
       attribute-boolArray: [false,true,false],
@@ -348,31 +384,31 @@
     }
   },
   {
-    TraceId: Id_18,
-    SpanId: Id_22,
+    TraceId: Id_20,
+    SpanId: Id_24,
     Name: Samples.NetActivitySdk.internal,
     Resource: NameEvent,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_19,
+    ParentId: Id_21,
     Tags: {
       env: integration_tests,
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_4,
+      otel.trace_id: Guid_5,
       span.kind: internal,
       version: 1.0.0
     }
   },
   {
-    TraceId: Id_18,
-    SpanId: Id_23,
+    TraceId: Id_20,
+    SpanId: Id_25,
     Name: Samples.NetActivitySdk.internal,
     Resource: AddBaggage,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_19,
+    ParentId: Id_21,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -384,13 +420,13 @@
     }
   },
   {
-    TraceId: Id_18,
-    SpanId: Id_24,
+    TraceId: Id_20,
+    SpanId: Id_26,
     Name: Samples.NetActivitySdk.internal,
     Resource: NameDateEvent,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_22,
+    ParentId: Id_24,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -402,28 +438,10 @@
     }
   },
   {
-    TraceId: Id_18,
-    SpanId: Id_25,
+    TraceId: Id_20,
+    SpanId: Id_27,
     Name: Samples.NetActivitySdk.internal,
     Resource: SetBaggage,
-    Service: Samples.NetActivitySdk,
-    Type: custom,
-    ParentId: Id_23,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      otel.library.name: Samples.NetActivitySdk,
-      otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_4,
-      span.kind: internal,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_18,
-    SpanId: Id_26,
-    Name: Samples.NetActivitySdk.internal,
-    Resource: EmptyTagsEvent,
     Service: Samples.NetActivitySdk,
     Type: custom,
     ParentId: Id_25,
@@ -438,8 +456,26 @@
     }
   },
   {
-    TraceId: Id_18,
-    SpanId: Id_27,
+    TraceId: Id_20,
+    SpanId: Id_28,
+    Name: Samples.NetActivitySdk.internal,
+    Resource: EmptyTagsEvent,
+    Service: Samples.NetActivitySdk,
+    Type: custom,
+    ParentId: Id_26,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.NetActivitySdk,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_5,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_20,
+    SpanId: Id_29,
     Name: Samples.NetActivitySdk.internal,
     Resource: TagsEvent,
     Service: Samples.NetActivitySdk,
@@ -456,55 +492,19 @@
     }
   },
   {
-    TraceId: Id_18,
-    SpanId: Id_28,
+    TraceId: Id_20,
+    SpanId: Id_30,
     Name: Samples.NetActivitySdk.internal,
     Resource: MultipleEvents,
     Service: Samples.NetActivitySdk,
     Type: custom,
-    ParentId: Id_27,
+    ParentId: Id_29,
     Tags: {
       env: integration_tests,
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_5,
-      span.kind: internal,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_18,
-    SpanId: Id_28,
-    Name: Samples.NetActivitySdk.internal,
-    Resource: MultipleEvents,
-    Service: Samples.NetActivitySdk,
-    Type: custom,
-    ParentId: Id_27,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      otel.library.name: Samples.NetActivitySdk,
-      otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_4,
-      span.kind: internal,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_29,
-    Name: Samples.NetActivitySdk.internal,
-    Resource: MultipleEvents,
-    Service: Samples.NetActivitySdk,
-    Type: custom,
-    ParentId: Id_28,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      otel.library.name: Samples.NetActivitySdk,
-      otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_4,
       span.kind: internal,
       version: 1.0.0
     }
