@@ -46,10 +46,16 @@ namespace Datadog.Trace.Activity.Handlers
 
             // for non-IW3CActivity interfaces we'll use Activity.Id as the key as they don't have a guaranteed TraceId+SpanId
             // for IW3CActivity interfaces we'll use the Activity.TraceId + Activity.SpanId as the key
+            // have to also validate that the TraceId and SpanId actually exist and aren't null - as they can be in some cases
             string? activityKey = null;
 
             if (activity is IW3CActivity w3cActivity)
             {
+                if (w3cActivity.TraceId is { } activityTraceId && w3cActivity.SpanId is { } activitySpanId)
+                {
+                    activityKey = activityTraceId + activitySpanId;
+                }
+
                 // If the user has specified a parent context, get the parent Datadog SpanContext
                 if (w3cActivity.ParentSpanId is not null
                  && w3cActivity.ParentId is { } parentId)
@@ -58,20 +64,31 @@ namespace Datadog.Trace.Activity.Handlers
                     // This is a result of an issue with OTel v1.0.1 (unsure if OTel or us tbh) where the
                     // ".ParentId" matched for the Trace+Span IDs but not for the flags portion
                     // Doing a lookup on just the TraceId+ParentSpanId seems to be more resilient
-                    if (ActivityMappingById.TryGetValue(w3cActivity.TraceId + w3cActivity.ParentSpanId, out ActivityMapping mapping))
+                    if (w3cActivity.TraceId is { } && w3cActivity.ParentSpanId is { } parentSpanId)
                     {
-                        parent = mapping.Scope.Span.Context;
+                        if (ActivityMappingById.TryGetValue(w3cActivity.TraceId + w3cActivity.ParentSpanId, out ActivityMapping mapping))
+                        {
+                            parent = mapping.Scope.Span.Context;
+                        }
+                        else
+                        {
+                            // create a new parent span context for the ActivityContext
+                            var newActivityTraceId = Convert.ToUInt64(w3cActivity.TraceId.Substring(16), 16);
+                            var newActivitySpanId = Convert.ToUInt64(w3cActivity.ParentSpanId, 16);
+                            parent = Tracer.Instance.CreateSpanContext(SpanContext.None, traceId: newActivityTraceId, spanId: newActivitySpanId);
+                        }
                     }
                     else
                     {
-                        // create a new parent span context for the ActivityContext
-                        var activityTraceId = Convert.ToUInt64(w3cActivity.TraceId.Substring(16), 16);
-                        var activitySpanId = Convert.ToUInt64(w3cActivity.ParentSpanId, 16);
-                        parent = Tracer.Instance.CreateSpanContext(SpanContext.None, traceId: activityTraceId, spanId: activitySpanId);
+                        // we don't have a TraceId and/or SpanId - default to the .Id
+                        if (ActivityMappingById.TryGetValue(w3cActivity.Id, out ActivityMapping mapping))
+                        {
+                            parent = mapping.Scope.Span.Context;
+                        }
+
+                        // TODO we have a parent ID/parent Span Id but didn't find it in the mapping
                     }
                 }
-
-                activityKey = w3cActivity.TraceId + w3cActivity.SpanId;
 
                 if (parent is null && activeSpan is not null)
                 {
