@@ -679,7 +679,19 @@ again:
             // That's why we order the Exception Clauses right before applying them.
 
             std::sort(m_pEH, m_pEH + m_nEH,
-                  [](EHClause a, EHClause b) { return a.m_pTryBegin->m_offset > b.m_pTryBegin->m_offset && a.m_pTryEnd->m_offset < b.m_pTryEnd->m_offset; });
+                  [](EHClause a, EHClause b) { 
+                        int aLength = a.m_pTryEnd->m_offset - a.m_pTryBegin->m_offset;
+                        int bLength = b.m_pTryEnd->m_offset - b.m_pTryBegin->m_offset;
+
+                        if (aLength != bLength)
+                        {
+                            return aLength > bLength;
+                        }
+
+                        return a.m_pTryBegin->m_offset < b.m_pTryBegin->m_offset;
+                });
+
+            std::reverse(m_pEH, m_pEH + m_nEH);
 
             for (unsigned iEH = 0; iEH < m_nEH; iEH++)
             {

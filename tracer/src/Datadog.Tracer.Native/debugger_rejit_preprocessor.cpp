@@ -12,7 +12,7 @@ namespace debugger
 // DebuggerRejitPreprocessor
 
 ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID>& modules,
-    const LineProbeDefinitions& lineProbes, std::vector<MethodIdentifier>& rejitRequests) const
+    const std::vector<LineProbeDefinition>& lineProbes, std::vector<MethodIdentifier>& rejitRequests) const
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -67,12 +67,12 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID
 
         for (const auto& lineProbe : lineProbes)
         {
-            if (lineProbe->mvid != analyzingModuleMvid)
+            if (lineProbe.mvid != analyzingModuleMvid)
             {
                 continue;
             }
 
-            const auto methodDef = lineProbe->methodId;
+            const auto methodDef = lineProbe.methodId;
 
             const auto caller = GetFunctionInfo(metadataImport, methodDef);
             if (!caller.IsValid())
@@ -119,7 +119,7 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID
                 };
 
             RejitHandlerModuleMethodUpdaterFunc updater = [=, request = lineProbe](RejitHandlerModuleMethod* method) {
-                return UpdateMethod(method, request);
+                //return UpdateMethod(method, std::dynamic_pointer_caststd::make_shared<LineProbeDefinition>(request));
             };
 
             moduleHandler->CreateMethodIfNotExists(methodDef, creator, updater);
@@ -133,9 +133,9 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID
     return rejitCount;
 }
 
-void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(const std::vector<ModuleID>& modulesVector,
-    const LineProbeDefinitions& lineProbes,
-    std::promise<std::vector<MethodIdentifier>>* promise) const
+void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(const std::vector<ModuleID> modulesVector,
+                                                            const std::vector<LineProbeDefinition> lineProbes,
+                                                            std::promise<std::vector<MethodIdentifier>>* promise) const
 {
     std::vector<MethodIdentifier> rejitRequests;
 
@@ -175,10 +175,10 @@ void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(const std::vector<Mo
 void DebuggerRejitPreprocessor::ProcessTypesForRejit(
     std::vector<MethodIdentifier>& rejitRequests, const ModuleInfo& moduleInfo, ComPtr<IMetaDataImport2> metadataImport,
     ComPtr<IMetaDataEmit2> metadataEmit, ComPtr<IMetaDataAssemblyImport> assemblyImport,
-    ComPtr<IMetaDataAssemblyEmit> assemblyEmit, const MethodProbeDefinition& definition,
+    ComPtr<IMetaDataAssemblyEmit> assemblyEmit, const std::shared_ptr<MethodProbeDefinition>& definition,
     const MethodReference& targetMethod)
 {
-    const auto instrumentationTargetTypeName = definition.target_method.type.name;
+    const auto instrumentationTargetTypeName = definition->target_method.type.name;
 
     // Is full name requested?
     auto nameParts = shared::Split(instrumentationTargetTypeName, '.');
@@ -214,29 +214,31 @@ void DebuggerRejitPreprocessor::ProcessTypesForRejit(
     }
 }
 
-const MethodReference& DebuggerRejitPreprocessor::GetTargetMethod(const MethodProbeDefinition& methodProbe)
+const MethodReference& DebuggerRejitPreprocessor::GetTargetMethod(const std::shared_ptr<MethodProbeDefinition>& methodProbe)
 {
-    return methodProbe.target_method;
+    return methodProbe->target_method;
 }
 
-const bool DebuggerRejitPreprocessor::GetIsDerived(const MethodProbeDefinition& methodProbe)
+const bool DebuggerRejitPreprocessor::GetIsDerived(const std::shared_ptr<MethodProbeDefinition>& methodProbe)
 {
     return false; // TODO
 }
 
-const bool DebuggerRejitPreprocessor::GetIsInterface(const MethodProbeDefinition& methodProbe)
+const bool DebuggerRejitPreprocessor::GetIsInterface(const std::shared_ptr<MethodProbeDefinition>& methodProbe)
 {
     return false; // TODO
 }
 
-const bool DebuggerRejitPreprocessor::GetIsExactSignatureMatch(const MethodProbeDefinition& methodProbe)
+const bool
+DebuggerRejitPreprocessor::GetIsExactSignatureMatch(const std::shared_ptr<MethodProbeDefinition>& methodProbe)
 {
-    return methodProbe.is_exact_signature_match;
+    return methodProbe->is_exact_signature_match;
 }
 
 const std::unique_ptr<RejitHandlerModuleMethod>
 DebuggerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module,
-                                        const FunctionInfo& functionInfo, const MethodProbeDefinition& methodProbe)
+                                        const FunctionInfo& functionInfo,
+                                        const std::shared_ptr<MethodProbeDefinition>& methodProbe)
 {
     return std::make_unique<DebuggerRejitHandlerModuleMethod>(methodDef, module, functionInfo, std::make_unique<DebuggerMethodRewriter>(m_corProfiler));
 }
@@ -248,13 +250,7 @@ DebuggerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandle
     return std::make_unique<DebuggerRejitHandlerModuleMethod>(methodDef, module, functionInfo, std::make_unique<DebuggerMethodRewriter>(m_corProfiler));
 }
 
-void DebuggerRejitPreprocessor::UpdateMethod(RejitHandlerModuleMethod* methodHandler,
-                                             const MethodProbeDefinition& methodProbe)
-{
-    UpdateMethod(methodHandler, std::make_shared<MethodProbeDefinition>(methodProbe));
-}
-
-void DebuggerRejitPreprocessor::UpdateMethod(RejitHandlerModuleMethod* methodHandler, const ProbeDefinition_S& probe)
+void DebuggerRejitPreprocessor::UpdateMethod(RejitHandlerModuleMethod* methodHandler, const std::shared_ptr<MethodProbeDefinition>& probe)
 {
     const auto debuggerMethodHandler = dynamic_cast<DebuggerRejitHandlerModuleMethod*>(methodHandler);
 
@@ -271,7 +267,7 @@ void DebuggerRejitPreprocessor::UpdateMethod(RejitHandlerModuleMethod* methodHan
         probe->probeId, debuggerMethodHandler->GetModule()->GetModuleId(), debuggerMethodHandler->GetMethodDef());
 }
 
-void DebuggerRejitPreprocessor::EnqueueNewMethod(const MethodProbeDefinition& definition,
+void DebuggerRejitPreprocessor::EnqueueNewMethod(const std::shared_ptr<MethodProbeDefinition>& definition,
                                                  ComPtr<IMetaDataImport2>& metadataImport,
                                                  ComPtr<IMetaDataEmit2>& metadataEmit, const ModuleInfo& moduleInfo,
                                                  mdTypeDef typeDef, std::vector<MethodIdentifier>& rejitRequests,
@@ -416,7 +412,7 @@ std::tuple<HRESULT, mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::PickMe
     return TransformKickOffToMoveNext(metadataImport, metadataEmit, moveNextMethod, nestedAsyncClassOrStruct);
 }
 
-bool DebuggerRejitPreprocessor::ShouldSkipModule(const ModuleInfo& moduleInfo, const MethodProbeDefinition& methodProbe)
+bool DebuggerRejitPreprocessor::ShouldSkipModule(const ModuleInfo& moduleInfo, const std::shared_ptr<MethodProbeDefinition>& methodProbe)
 {
     return false;
 }

@@ -122,10 +122,10 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
             signatureTypes.push_back(methodArguments[i].GetTypeTokName(metadataImport));
         }
         
-        const auto& methodProbe = MethodProbeDefinition(
+        const auto& methodProbe = std::make_shared<MethodProbeDefinition>(MethodProbeDefinition(
             WStr("ProbeId"),
             MethodReference(targetAssembly, caller.type.name, caller.name, minVersion, maxVersion, signatureTypes),
-            /* is_exact_signature_match */ false);
+            /* is_exact_signature_match */ false));
 
         const auto numReJITs = m_debugger_rejit_preprocessor->RequestRejitForLoadedModules(
             std::vector{module_id},
@@ -256,16 +256,15 @@ void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemo
 void DebuggerProbesInstrumentationRequester::AddMethodProbes(
     debugger::DebuggerMethodProbeDefinition* methodProbes, 
     int methodProbesLength,
+    debugger::DebuggerMethodSpanProbeDefinition* spanProbes,
+    int spanProbesLength,
     std::set<MethodIdentifier>& rejitRequests)
 {
-    if (methodProbes != nullptr)
+    std::vector<std::shared_ptr<MethodProbeDefinition>> methodProbeDefinitions;
+
+    if (methodProbes != nullptr && methodProbesLength > 0)
     {
-        Logger::Info("InitializeLiveDebugger: received ", methodProbesLength, " integrations from managed side.");
-
-        if (methodProbesLength <= 0) 
-            return;
-
-        std::vector<MethodProbeDefinition> methodProbeDefinitions;
+        Logger::Info("InitializeLiveDebugger: received ", methodProbesLength, " method probes from managed side.");
 
         for (int i = 0; i < methodProbesLength; i++)
         {
@@ -310,40 +309,91 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(
                               signatureTypes.size(), ")");
             }
 
-            methodProbeDefinitions.push_back(methodProbe);
+            methodProbeDefinitions.push_back(std::make_shared<MethodProbeDefinition>(methodProbe));
             ProbesMetadataTracker::Instance()->CreateNewProbeIfNotExists(probeId);
         }
+    }
 
-        if (methodProbeDefinitions.empty())
+    if (spanProbes != nullptr && spanProbesLength > 0)
+    {
+        Logger::Info("InitializeLiveDebugger: received ", methodProbesLength, " span probes from managed side.");
+
+        for (int i = 0; i < spanProbesLength; i++)
         {
-            Logger::Debug("[AddMethodProbes] Early exiting, there are no new method probes to be added.");
-            return;
-        }
+            const DebuggerMethodSpanProbeDefinition& current = spanProbes[i];
 
-        std::scoped_lock<std::mutex> moduleLock(m_corProfiler->module_ids_lock_);
+            if (ProbeIdExists(current.probeId))
+            {
+                Logger::Debug("[AddMethodProbes] Method Probe Id: ", current.probeId, " is already processed.");
+                continue;
+            }
 
-        auto promise = std::make_shared<std::promise<std::vector<MethodIdentifier>>>();
-        std::future<std::vector<MethodIdentifier>> future = promise->get_future();
-        m_debugger_rejit_preprocessor->EnqueuePreprocessRejitRequests(m_corProfiler->module_ids_, methodProbeDefinitions, promise);
+            const shared::WSTRING& probeId = shared::WSTRING(current.probeId);
+            const shared::WSTRING& targetType = shared::WSTRING(current.targetType);
+            const shared::WSTRING& targetMethod = shared::WSTRING(current.targetMethod);
 
-        const auto& methodProbeRequests = future.get();
+            std::vector<shared::WSTRING> signatureTypes;
+            for (int sIdx = 0; sIdx < current.targetParameterTypesLength; sIdx++)
+            {
+                const auto& currentSignature = current.targetParameterTypes[sIdx];
+                if (currentSignature != nullptr)
+                {
+                    signatureTypes.push_back(shared::WSTRING(currentSignature));
+                }
+            }
 
-        if (!methodProbeRequests.empty())
-        {
-            rejitRequests.insert(methodProbeRequests.begin(), methodProbeRequests.end());
+            // If the Method Probe request has a signature associated with it, then find that exact match.
+            // Otherwise, instrument all overloads of that method regardless of their signature.
+            bool isExactSignatureMatch = current.targetParameterTypesLength > 0;
+
+            // In the Debugger product, we don't care about module versioning. Thus we intentionally avoid it.
+            const static Version& minVersion = Version(0, 0, 0, 0);
+            const static Version& maxVersion = Version(65535, 65535, 65535, 0);
+
+            const auto& spanProbe = SpanProbeOnMethodDefinition(
+                probeId, MethodReference({}, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
+                isExactSignatureMatch);
+
+            if (Logger::IsDebugEnabled())
+            {
+                Logger::Debug("  * Target: ", targetType, ".", targetMethod, "(", signatureTypes.size(), ")");
+            }
+
+            methodProbeDefinitions.push_back(std::make_shared<SpanProbeOnMethodDefinition>(spanProbe));
+            ProbesMetadataTracker::Instance()->CreateNewProbeIfNotExists(probeId);
         }
-        else
-        {
-            Logger::Warn(
-                "Received empty list of method probe requests from EnqueuePreprocessRejitRequests after enqueuing ",
-                methodProbesLength, " method probes.");
-        }
-        
-        m_probes.reserve(m_probes.size() + methodProbeDefinitions.size());
-        for (const auto& methodProbe : methodProbeDefinitions)
-        {
-            m_probes.push_back(std::make_shared<MethodProbeDefinition>(methodProbe));
-        }
+    }
+
+    if (methodProbeDefinitions.empty())
+    {
+        Logger::Debug("[AddMethodProbes] Early exiting, there are no new method probes to be added.");
+        return;
+    }
+
+    std::scoped_lock<std::mutex> moduleLock(m_corProfiler->module_ids_lock_);
+
+    auto promise = std::make_shared<std::promise<std::vector<MethodIdentifier>>>();
+    std::future<std::vector<MethodIdentifier>> future = promise->get_future();
+    m_debugger_rejit_preprocessor->EnqueuePreprocessRejitRequests(m_corProfiler->module_ids_, methodProbeDefinitions,
+                                                                  promise);
+
+    const auto& methodProbeRequests = future.get();
+
+    if (!methodProbeRequests.empty())
+    {
+        rejitRequests.insert(methodProbeRequests.begin(), methodProbeRequests.end());
+    }
+    else
+    {
+        Logger::Warn(
+            "Received empty list of method probe requests from EnqueuePreprocessRejitRequests after enqueuing ",
+            methodProbesLength, " method probes.");
+    }
+
+    m_probes.reserve(m_probes.size() + methodProbeDefinitions.size());
+    for (const auto& methodProbe : methodProbeDefinitions)
+    {
+        m_probes.push_back(methodProbe);
     }
 }
 
@@ -359,7 +409,7 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(
         if (lineProbesLength <= 0)
             return;
         
-        LineProbeDefinitions lineProbeDefinitions;
+        std::vector<LineProbeDefinition> lineProbeDefinitions;
 
         for (int i = 0; i < lineProbesLength; i++)
         {
@@ -373,7 +423,7 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(
 
             const shared::WSTRING& probeId = shared::WSTRING(current.probeId);
             const shared::WSTRING& probeFilePath = shared::WSTRING(current.probeFilePath);
-            const auto& lineProbe = std::make_shared<LineProbeDefinition>(LineProbeDefinition(probeId, current.bytecodeOffset, current.lineNumber, current.mvid, current.methodId, probeFilePath));
+            const auto& lineProbe = LineProbeDefinition(probeId, current.bytecodeOffset, current.lineNumber, current.mvid, current.methodId, probeFilePath);
             
             lineProbeDefinitions.push_back(lineProbe);
         }
@@ -406,7 +456,7 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(
         m_probes.reserve(m_probes.size() + lineProbeDefinitions.size());
         for (const auto& lineProbe : lineProbeDefinitions)
         {
-            m_probes.push_back(lineProbe);
+            //m_probes.push_back(lineProbe);
         }
 
         Logger::Info("LiveDebugger: Total method probes added: ", m_probes.size());
@@ -476,6 +526,8 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(debugger::Debugger
                                                               int methodProbesLength,
                                                               debugger::DebuggerLineProbeDefinition* lineProbes,
                                                               int lineProbesLength,
+                                                              debugger::DebuggerMethodSpanProbeDefinition* spanProbes,
+                                                              int spanProbesLength,
                                                               debugger::DebuggerRemoveProbesDefinition* removeProbes,
                                                               int removeProbesLength)
 {
@@ -485,7 +537,7 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(debugger::Debugger
     RemoveProbes(removeProbes, removeProbesLength, revertRequests);
 
     std::set<MethodIdentifier> rejitRequests{};
-    AddMethodProbes(methodProbes, methodProbesLength, rejitRequests);
+    AddMethodProbes(methodProbes, methodProbesLength, spanProbes, spanProbesLength, rejitRequests);
     AddLineProbes(lineProbes, lineProbesLength, rejitRequests);
 
     std::set<MethodIdentifier> reInstrumentRequests{};
@@ -594,7 +646,7 @@ DebuggerRejitPreprocessor* DebuggerProbesInstrumentationRequester::GetPreprocess
 
 void DebuggerProbesInstrumentationRequester::RequestRejitForLoadedModule(const ModuleID moduleId)
 {
-    std::vector<MethodProbeDefinition> methodProbes;
+    std::vector<std::shared_ptr<MethodProbeDefinition>> methodProbes;
 
     std::lock_guard lock(m_probes_mutex);
 
@@ -603,7 +655,7 @@ void DebuggerProbesInstrumentationRequester::RequestRejitForLoadedModule(const M
         const auto methodProbe = std::dynamic_pointer_cast<MethodProbeDefinition>(probe);
         if (methodProbe != nullptr)
         {
-            methodProbes.emplace_back(*methodProbe);
+            methodProbes.emplace_back(methodProbe);
         }
     }
     

@@ -188,6 +188,7 @@ public:
                                 WCHAR* configuration_string_ptr);
     void InstrumentProbes(debugger::DebuggerMethodProbeDefinition* methodProbes, int methodProbesLength,
                    debugger::DebuggerLineProbeDefinition* lineProbes, int lineProbesLength,
+                   debugger::DebuggerMethodSpanProbeDefinition* spanProbes, int spanProbesLength,
                    debugger::DebuggerRemoveProbesDefinition* revertProbes, int revertProbesLength) const;
     int GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses);
 
