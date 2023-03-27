@@ -31,5 +31,7 @@ namespace Datadog.Trace.AppSec.Waf
         bool UpdateRulesData(List<RuleData> rulesData);
 
         bool UpdateRulesStatus(List<RuleOverride> res, List<JToken> exclusions);
+
+        UpdateResult Update(IDictionary<string, object> arguments);
     }
 }
