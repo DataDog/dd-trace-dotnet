@@ -186,6 +186,8 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData("00-0000000000000000000000003ade68b1-00000000075bcd15-03", 987654321, 123456789, true, "0000000000000000000000003ade68b1", "00000000075bcd15")]       // allow unknown flags, trace-flags=03, sampled=true
         public void TryParseTraceParent(string header, ulong traceId, ulong spanId, bool sampled, string rawTraceId, string rawParentId)
         {
+            // TODO: add 128-bit test cases
+
             var expected = new W3CTraceParent(
                 traceId: (TraceId)traceId,
                 parentId: spanId,

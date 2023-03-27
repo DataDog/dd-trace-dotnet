@@ -402,7 +402,7 @@ namespace Datadog.Trace
         {
             return context switch
                    {
-                       // if there is not context or it has a zero trace id,
+                       // if there is no context or it has a zero trace id,
                        // use the specified fallback value
                        null or { TraceId: 0 } => fallback,
 
