@@ -125,7 +125,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-            var filteredSpans = spans.Where(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase));
+            var filteredSpans = spans.Where(s => s.ParentId.HasValue).ToList();
 
             filteredSpans.Count().Should().Be(expectedSpanCount);
             ValidatePresentDbmTag(spans, propagationLevel);
@@ -144,7 +144,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 _ => ".disabled",
             });
 
-            await VerifyHelper.VerifySpans(spans, settings)
+            await VerifyHelper.VerifySpans(filteredSpans, settings)
                 .DisableRequireUniquePrefix()
                 .UseFileName(fileName);
         }

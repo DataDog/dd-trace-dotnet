@@ -3,61 +3,10 @@
     TraceId: Id_1,
     SpanId: Id_2,
     Name: postgres.query,
-    Resource:
-
-/*** Load all supported types ***/
-SELECT ns.nspname, a.typname, a.oid, a.typrelid, a.typbasetype,
-CASE WHEN pg_proc.proname='array_recv' THEN 'a' ELSE a.typtype END AS type,
-CASE
-  WHEN pg_proc.proname='array_recv' THEN a.typelem
-  WHEN a.typtype='r' THEN rngsubtype
-  ELSE 0
-END AS elemoid,
-CASE
-  WHEN pg_proc.proname IN ('array_recv','oidvectorrecv') THEN 3    /* Arrays last */
-  WHEN a.typtype='r' THEN 2                                        /* Ranges before */
-  WHEN a.typtype='d' THEN 1                                        /* Domains before */
-  ELSE 0                                                           /* Base types first */
-END AS ord
-FROM pg_type AS a
-JOIN pg_namespace AS ns ON (ns.oid = a.typnamespace)
-JOIN pg_proc ON pg_proc.oid = a.typreceive
-LEFT OUTER JOIN pg_class AS cls ON (cls.oid = a.typrelid)
-LEFT OUTER JOIN pg_type AS b ON (b.oid = a.typelem)
-LEFT OUTER JOIN pg_class AS elemcls ON (elemcls.oid = b.typrelid)
-LEFT OUTER JOIN pg_range ON (pg_range.rngtypid = a.oid) 
-WHERE
-  a.typtype IN ('b', 'r', 'e', 'd') OR         /* Base, range, enum, domain */
-  (a.typtype = 'c' AND cls.relkind='c') OR /* User-defined free-standing composites (not table composites) by default */
-  (pg_proc.proname='array_recv' AND (
-    b.typtype IN ('b', 'r', 'e', 'd') OR       /* Array of base, range, enum, domain */
-    (b.typtype = 'p' AND b.typname IN ('record', 'void')) OR /* Arrays of special supported pseudo-types */
-    (b.typtype = 'c' AND elemcls.relkind='c')  /* Array of user-defined free-standing composites (not table composites) */
-  )) OR
-  (a.typtype = 'p' AND a.typname IN ('record', 'void'))  /* Some special supported pseudo-types */
-ORDER BY ord;
-
-/*** Load field definitions for (free-standing) composite types ***/
-SELECT typ.oid, att.attname, att.atttypid
-FROM pg_type AS typ
-JOIN pg_namespace AS ns ON (ns.oid = typ.typnamespace)
-JOIN pg_class AS cls ON (cls.oid = typ.typrelid)
-JOIN pg_attribute AS att ON (att.attrelid = typ.typrelid)
-WHERE
-  (typ.typtype = 'c' AND cls.relkind='c') AND
-  attnum > 0 AND     /* Don't load system attributes */
-  NOT attisdropped
-ORDER BY typ.oid, att.attnum;
-
-
-/*** Load enum fields ***/
-SELECT pg_type.oid, enumlabel
-FROM pg_enum
-JOIN pg_type ON pg_type.oid=enumtypid
-ORDER BY oid, enumsortorder;
-,
+    Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
     Type: sql,
+    ParentId: Id_3,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -66,19 +15,14 @@ ORDER BY oid, enumsortorder;
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.dbm_trace_injected: true,
-      _dd.p.dm: -0
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_4,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -100,7 +44,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_6,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -122,7 +66,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_8,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -144,7 +88,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_10,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -166,7 +110,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_12,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -188,7 +132,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_14,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -210,7 +154,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_16,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -232,7 +176,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_18,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -254,7 +198,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_20,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -276,7 +220,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_22,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -298,7 +242,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_24,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -320,7 +264,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_26,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -342,13 +286,13 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_28,
+    TraceId: Id_28,
+    SpanId: Id_29,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_29,
+    ParentId: Id_30,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -364,7 +308,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_31,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -386,7 +330,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_33,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -408,7 +352,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_35,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -430,7 +374,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_37,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -452,7 +396,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_39,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -474,7 +418,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_41,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -496,7 +440,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_43,
     Name: postgres.query,
     Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -518,13 +462,13 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_1,
     SpanId: Id_45,
     Name: postgres.query,
-    Resource: DELETE FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_46,
+    ParentId: Id_3,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -540,13 +484,35 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
+    SpanId: Id_46,
+    Name: postgres.query,
+    Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_5,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: testing,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
     SpanId: Id_47,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_5,
+    ParentId: Id_7,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -562,34 +528,12 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_48,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_7,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: testing,
-      out.host: postgres,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_3,
-    SpanId: Id_49,
-    Name: postgres.query,
-    Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.Npgsql-postgres,
-    Type: sql,
     ParentId: Id_9,
     Tags: {
       component: Npgsql,
@@ -606,8 +550,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_50,
+    TraceId: Id_1,
+    SpanId: Id_49,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
@@ -628,8 +572,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_51,
+    TraceId: Id_1,
+    SpanId: Id_50,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
@@ -650,8 +594,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_52,
+    TraceId: Id_1,
+    SpanId: Id_51,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
@@ -672,8 +616,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_53,
+    TraceId: Id_1,
+    SpanId: Id_52,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
@@ -694,8 +638,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_54,
+    TraceId: Id_1,
+    SpanId: Id_53,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
@@ -716,8 +660,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_55,
+    TraceId: Id_1,
+    SpanId: Id_54,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
@@ -738,8 +682,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_56,
+    TraceId: Id_1,
+    SpanId: Id_55,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
@@ -760,8 +704,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_57,
+    TraceId: Id_1,
+    SpanId: Id_56,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
@@ -782,8 +726,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_58,
+    TraceId: Id_1,
+    SpanId: Id_57,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
@@ -804,13 +748,13 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_59,
+    TraceId: Id_28,
+    SpanId: Id_58,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_29,
+    ParentId: Id_30,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -826,8 +770,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_60,
+    TraceId: Id_28,
+    SpanId: Id_59,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
@@ -848,8 +792,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_61,
+    TraceId: Id_28,
+    SpanId: Id_60,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
@@ -870,8 +814,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_62,
+    TraceId: Id_28,
+    SpanId: Id_61,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
@@ -892,8 +836,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_63,
+    TraceId: Id_28,
+    SpanId: Id_62,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
@@ -914,8 +858,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_64,
+    TraceId: Id_28,
+    SpanId: Id_63,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
@@ -936,8 +880,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_65,
+    TraceId: Id_28,
+    SpanId: Id_64,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
@@ -958,8 +902,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_66,
+    TraceId: Id_28,
+    SpanId: Id_65,
     Name: postgres.query,
     Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.Npgsql-postgres,
@@ -980,13 +924,13 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_67,
+    TraceId: Id_1,
+    SpanId: Id_66,
     Name: postgres.query,
-    Resource: DROP TABLE IF EXISTS "Npgsql-Test-GUID"; CREATE TABLE "Npgsql-Test-GUID" (Id int PRIMARY KEY, Name varchar(100));,
+    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_46,
+    ParentId: Id_3,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1002,8 +946,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_68,
+    TraceId: Id_1,
+    SpanId: Id_67,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
@@ -1024,8 +968,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_69,
+    TraceId: Id_1,
+    SpanId: Id_68,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
@@ -1046,8 +990,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_70,
+    TraceId: Id_1,
+    SpanId: Id_69,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
@@ -1068,8 +1012,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_71,
+    TraceId: Id_1,
+    SpanId: Id_70,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
@@ -1090,8 +1034,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_72,
+    TraceId: Id_1,
+    SpanId: Id_71,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
@@ -1112,8 +1056,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_73,
+    TraceId: Id_1,
+    SpanId: Id_72,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
@@ -1134,8 +1078,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_74,
+    TraceId: Id_1,
+    SpanId: Id_73,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
@@ -1156,8 +1100,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_75,
+    TraceId: Id_1,
+    SpanId: Id_74,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
@@ -1178,8 +1122,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_76,
+    TraceId: Id_1,
+    SpanId: Id_75,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
@@ -1200,8 +1144,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_77,
+    TraceId: Id_1,
+    SpanId: Id_76,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
@@ -1222,8 +1166,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_78,
+    TraceId: Id_1,
+    SpanId: Id_77,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
@@ -1244,8 +1188,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_79,
+    TraceId: Id_1,
+    SpanId: Id_78,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
@@ -1266,13 +1210,13 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_80,
+    TraceId: Id_28,
+    SpanId: Id_79,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_29,
+    ParentId: Id_30,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1288,8 +1232,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_81,
+    TraceId: Id_28,
+    SpanId: Id_80,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
@@ -1310,8 +1254,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_82,
+    TraceId: Id_28,
+    SpanId: Id_81,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
@@ -1332,8 +1276,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_83,
+    TraceId: Id_28,
+    SpanId: Id_82,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
@@ -1354,8 +1298,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_84,
+    TraceId: Id_28,
+    SpanId: Id_83,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
@@ -1376,8 +1320,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_85,
+    TraceId: Id_28,
+    SpanId: Id_84,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
@@ -1398,8 +1342,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_86,
+    TraceId: Id_28,
+    SpanId: Id_85,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
@@ -1420,8 +1364,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_87,
+    TraceId: Id_28,
+    SpanId: Id_86,
     Name: postgres.query,
     Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.Npgsql-postgres,
@@ -1442,13 +1386,13 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_88,
+    TraceId: Id_1,
+    SpanId: Id_87,
     Name: postgres.query,
-    Resource: INSERT INTO "Npgsql-Test-GUID" (Id, Name) VALUES (@Id, @Name);,
+    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_46,
+    ParentId: Id_3,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -1464,7 +1408,29 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
+    SpanId: Id_88,
+    Name: postgres.query,
+    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Service: Samples.Npgsql-postgres,
+    Type: sql,
+    ParentId: Id_3,
+    Tags: {
+      component: Npgsql,
+      db.name: postgres,
+      db.type: postgres,
+      env: testing,
+      out.host: postgres,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
     SpanId: Id_89,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1486,7 +1452,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_90,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1508,7 +1474,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_91,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1530,7 +1496,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_92,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1552,7 +1518,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_93,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1574,7 +1540,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_94,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1596,7 +1562,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_95,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1618,7 +1584,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_96,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1640,7 +1606,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_97,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1662,7 +1628,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_98,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1684,7 +1650,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_99,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1706,7 +1672,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_100,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1728,7 +1694,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_101,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1750,7 +1716,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_102,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1772,7 +1738,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_103,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1794,7 +1760,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_104,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1816,7 +1782,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_105,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1838,7 +1804,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_106,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1860,7 +1826,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_107,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1882,7 +1848,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_108,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1904,7 +1870,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_109,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1926,7 +1892,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_110,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1948,7 +1914,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_111,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1970,7 +1936,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_112,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -1992,13 +1958,13 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_28,
     SpanId: Id_113,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_29,
+    ParentId: Id_30,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2014,13 +1980,13 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_28,
     SpanId: Id_114,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_29,
+    ParentId: Id_30,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2036,7 +2002,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_115,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -2058,7 +2024,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_116,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -2080,7 +2046,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_117,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -2102,7 +2068,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_118,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -2124,7 +2090,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_119,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -2146,7 +2112,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_120,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -2168,7 +2134,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_121,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -2190,7 +2156,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_122,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -2212,7 +2178,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_123,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -2234,7 +2200,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_124,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -2256,7 +2222,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_125,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -2278,7 +2244,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_126,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -2300,7 +2266,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_127,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -2322,7 +2288,7 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_28,
     SpanId: Id_128,
     Name: postgres.query,
     Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
@@ -2344,13 +2310,13 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_1,
     SpanId: Id_129,
     Name: postgres.query,
-    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_46,
+    ParentId: Id_3,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2366,13 +2332,13 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
+    TraceId: Id_1,
     SpanId: Id_130,
     Name: postgres.query,
-    Resource: SELECT * FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_46,
+    ParentId: Id_5,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2388,13 +2354,13 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_131,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_5,
+    ParentId: Id_7,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2410,34 +2376,12 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_1,
     SpanId: Id_132,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_7,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: testing,
-      out.host: postgres,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_3,
-    SpanId: Id_133,
-    Name: postgres.query,
-    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
-    Service: Samples.Npgsql-postgres,
-    Type: sql,
     ParentId: Id_9,
     Tags: {
       component: Npgsql,
@@ -2454,8 +2398,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_134,
+    TraceId: Id_1,
+    SpanId: Id_133,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2476,8 +2420,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_135,
+    TraceId: Id_1,
+    SpanId: Id_134,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2498,8 +2442,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_136,
+    TraceId: Id_1,
+    SpanId: Id_135,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2520,8 +2464,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_137,
+    TraceId: Id_1,
+    SpanId: Id_136,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2542,8 +2486,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_138,
+    TraceId: Id_1,
+    SpanId: Id_137,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2564,8 +2508,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_139,
+    TraceId: Id_1,
+    SpanId: Id_138,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2586,8 +2530,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_140,
+    TraceId: Id_1,
+    SpanId: Id_139,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2608,8 +2552,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_141,
+    TraceId: Id_1,
+    SpanId: Id_140,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2630,8 +2574,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_142,
+    TraceId: Id_1,
+    SpanId: Id_141,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2652,13 +2596,13 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_143,
+    TraceId: Id_28,
+    SpanId: Id_142,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_29,
+    ParentId: Id_30,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2674,8 +2618,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_144,
+    TraceId: Id_28,
+    SpanId: Id_143,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2696,8 +2640,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_145,
+    TraceId: Id_28,
+    SpanId: Id_144,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2718,8 +2662,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_146,
+    TraceId: Id_28,
+    SpanId: Id_145,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2740,8 +2684,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_147,
+    TraceId: Id_28,
+    SpanId: Id_146,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2762,8 +2706,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_148,
+    TraceId: Id_28,
+    SpanId: Id_147,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2784,8 +2728,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_149,
+    TraceId: Id_28,
+    SpanId: Id_148,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2806,8 +2750,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_150,
+    TraceId: Id_28,
+    SpanId: Id_149,
     Name: postgres.query,
     Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2828,13 +2772,13 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_151,
+    TraceId: Id_1,
+    SpanId: Id_150,
     Name: postgres.query,
-    Resource: SELECT Name FROM "Npgsql-Test-GUID" WHERE Id=@Id;,
+    Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_46,
+    ParentId: Id_3,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -2850,8 +2794,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_152,
+    TraceId: Id_1,
+    SpanId: Id_151,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2872,8 +2816,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_153,
+    TraceId: Id_1,
+    SpanId: Id_152,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2894,8 +2838,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_154,
+    TraceId: Id_1,
+    SpanId: Id_153,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2916,8 +2860,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_155,
+    TraceId: Id_1,
+    SpanId: Id_154,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2938,8 +2882,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_156,
+    TraceId: Id_1,
+    SpanId: Id_155,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2960,8 +2904,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_157,
+    TraceId: Id_1,
+    SpanId: Id_156,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -2982,8 +2926,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_158,
+    TraceId: Id_1,
+    SpanId: Id_157,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -3004,8 +2948,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_159,
+    TraceId: Id_1,
+    SpanId: Id_158,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -3026,8 +2970,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_160,
+    TraceId: Id_1,
+    SpanId: Id_159,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -3048,8 +2992,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_161,
+    TraceId: Id_1,
+    SpanId: Id_160,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -3070,8 +3014,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_162,
+    TraceId: Id_1,
+    SpanId: Id_161,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -3092,8 +3036,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_163,
+    TraceId: Id_1,
+    SpanId: Id_162,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -3114,13 +3058,13 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_3,
-    SpanId: Id_164,
+    TraceId: Id_28,
+    SpanId: Id_163,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
     Type: sql,
-    ParentId: Id_29,
+    ParentId: Id_30,
     Tags: {
       component: Npgsql,
       db.name: postgres,
@@ -3136,8 +3080,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_165,
+    TraceId: Id_28,
+    SpanId: Id_164,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -3158,8 +3102,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_166,
+    TraceId: Id_28,
+    SpanId: Id_165,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -3180,8 +3124,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_167,
+    TraceId: Id_28,
+    SpanId: Id_166,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -3202,8 +3146,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_168,
+    TraceId: Id_28,
+    SpanId: Id_167,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -3224,8 +3168,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_169,
+    TraceId: Id_28,
+    SpanId: Id_168,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -3246,8 +3190,8 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_170,
+    TraceId: Id_28,
+    SpanId: Id_169,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
@@ -3268,35 +3212,13 @@ ORDER BY oid, enumsortorder;
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_171,
+    TraceId: Id_28,
+    SpanId: Id_170,
     Name: postgres.query,
     Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
     Service: Samples.Npgsql-postgres,
     Type: sql,
     ParentId: Id_44,
-    Tags: {
-      component: Npgsql,
-      db.name: postgres,
-      db.type: postgres,
-      env: testing,
-      out.host: postgres,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_30,
-    SpanId: Id_172,
-    Name: postgres.query,
-    Resource: UPDATE "Npgsql-Test-GUID" SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.Npgsql-postgres,
-    Type: sql,
-    ParentId: Id_46,
     Tags: {
       component: Npgsql,
       db.name: postgres,
