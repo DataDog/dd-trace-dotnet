@@ -4,6 +4,7 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -64,7 +65,12 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
         {
             EnableIast(enableIast);
+            SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
+            SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
+            SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
+            SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
             SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+            SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "sqli"));
             DisableObfuscationQueryString();
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
 
