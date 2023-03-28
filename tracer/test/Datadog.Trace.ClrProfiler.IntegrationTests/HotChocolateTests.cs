@@ -13,20 +13,23 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.WebSockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Newtonsoft.Json.Linq;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class HotChocolate12Tests : HotChocolateTests
+    public class HotChocolate13Tests : HotChocolateTests
     {
-        public HotChocolate12Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base("HotChocolate", fixture, output, nameof(HotChocolate12Tests))
+        public HotChocolate13Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base("HotChocolate", fixture, output, nameof(HotChocolate13Tests))
         {
         }
 
@@ -35,8 +38,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task SubmitsTraces(string packageVersion)
+        public async Task SubmitsTracesHttp(string packageVersion)
             => await RunSubmitsTraces(packageVersion);
+
+        [SkippableTheory]
+        [MemberData(nameof(PackageVersions.HotChocolate), MemberType = typeof(PackageVersions))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        public async Task SubmitsTracesWebsockets(string packageVersion)
+            => await RunSubmitsTraces(packageVersion, true);
     }
 
     [UsesVerify]
@@ -71,13 +82,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _ => Result.DefaultSuccess,
             };
 
-        protected async Task RunSubmitsTraces(string packageVersion = "")
+        protected async Task RunSubmitsTraces(string packageVersion = "", bool usingWebsockets = false)
         {
             SetInstrumentationVerification();
 
             await Fixture.TryStartApp(this);
             var testStart = DateTime.UtcNow;
-            var expectedSpans = SubmitRequests(Fixture.HttpPort);
+            var expectedSpans = await SubmitRequests(Fixture.HttpPort, usingWebsockets);
 
             var spans = Fixture.Agent.WaitForSpans(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
             foreach (var span in spans)
@@ -90,33 +101,61 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
             await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName("HotChocolateTests.SubmitsTraces")
+                                  .UseFileName($"HotChocolateTests{(usingWebsockets ? "Websockets" : string.Empty)}.SubmitsTraces")
                                   .DisableRequireUniquePrefix(); // all package versions should be the same
 
             VerifyInstrumentation(Fixture.Process);
         }
 
-        private int SubmitRequests(int aspNetCorePort)
+        private async Task<int> SubmitRequests(int aspNetCorePort, bool usingWebsockets)
         {
             var expectedGraphQlValidateSpanCount = 0;
             var expectedGraphQlExecuteSpanCount = 0;
+            var expectedAspNetcoreRequestSpanCount = 0;
 
-            // SUCCESS: query using GET
-            SubmitGraphqlRequest(url: "/graphql?query=" + WebUtility.UrlEncode("query{book{title author{name}}}"), httpMethod: "GET", graphQlRequestBody: null);
+            if (usingWebsockets)
+            {
+                await SubmitWebsocketRequests();
+            }
+            else
+            {
+                SubmitHttpRequests();
+            }
 
-            // SUCCESS: query using POST (default)
-            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""{book{title author{name}}}""}");
+            void SubmitHttpRequests()
+            {
+                // SUCCESS: query using GET
+                SubmitGraphqlRequest(url: "/graphql?query=" + WebUtility.UrlEncode("query{book{title author{name}}}"), httpMethod: "GET", graphQlRequestBody: null);
 
-            // SUCCESS: mutation
-            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: "{\"query\":\"mutation m{addBook(book:{title:\\\"New Book\\\"}){book{title}}}\"}");
+                // SUCCESS: query using POST (default)
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""{book{title author{name}}}""}");
 
-            // FAILURE: query fails 'validate' step
-            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""{boook{title author{name}}}""}");
+                // SUCCESS: mutation
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""mutation m{addBook(book:{title:\""New Book\""}){book{title}}}""}");
 
-            // FAILURE: query fails 'execute' step
-            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}");
+                // FAILURE: query fails 'validate' step
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""{boook{title author{name}}}""}");
 
-            return expectedGraphQlExecuteSpanCount + expectedGraphQlValidateSpanCount;
+                // FAILURE: query fails 'execute' step
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}");
+            }
+
+            async Task SubmitWebsocketRequests()
+            {
+                // SUCCESS: query using Websocket
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""{book{title author{name}}}"",""variables"": {}}}", false);
+
+                // SUCCESS: mutation using Websocket
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""mutation m{addBook(book:{title:\""New Book\""}){book{title}}}"",""variables"": {}}}", false);
+
+                // FAILURE: query fails 'execute' step using Websocket
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""subscription NotImplementedSub{throwNotImplementedException{name}}"",""variables"": {}}}", false);
+
+                // FAILURE: query fails 'validate' step using Websocket
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""{boook{title author{name}}}"",""variables"": {}}}", true);
+            }
+
+            return expectedGraphQlExecuteSpanCount + expectedGraphQlValidateSpanCount + expectedAspNetcoreRequestSpanCount;
 
             void SubmitGraphqlRequest(
                 string url,
@@ -131,7 +170,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     expectedGraphQlExecuteSpanCount++;
                 }
 
+                expectedAspNetcoreRequestSpanCount++;
                 SubmitRequest(
+                    aspNetCorePort,
+                    new RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
+            }
+
+            async Task SubmitGraphqlWebsocketRequest(
+                string url,
+                string httpMethod,
+                string graphQlRequestBody,
+                bool failsValidation = false)
+            {
+                expectedGraphQlValidateSpanCount++;
+
+                if (!failsValidation)
+                {
+                    expectedGraphQlExecuteSpanCount++;
+                }
+
+                expectedAspNetcoreRequestSpanCount++;
+                await SubmitWebsocketRequest(
                     aspNetCorePort,
                     new RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
             }
@@ -189,6 +248,123 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         Output.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
                     }
                 }
+            }
+        }
+
+        private async Task SubmitWebsocketRequest(int aspNetCorePort, RequestInfo requestInfo)
+        {
+            var uri = new Uri($"ws://localhost:{aspNetCorePort}{requestInfo.Url}");
+            var webSocket = new ClientWebSocket();
+            webSocket.Options.AddSubProtocol("graphql-ws");
+
+            try
+            {
+                await webSocket.ConnectAsync(uri, CancellationToken.None);
+                Output.WriteLine("[websocket] WebSocket connection established");
+
+                // GraphQL First packet initialization
+                const string initPayload = @"{
+                    ""type"": ""connection_init"",
+                    ""payload"": {""Accept"":""application/json""}
+                }";
+                var initBuffer = System.Text.Encoding.UTF8.GetBytes(initPayload);
+                var initSegment = new ArraySegment<byte>(initBuffer);
+                await webSocket.SendAsync(initSegment, WebSocketMessageType.Text, true, CancellationToken.None);
+                Output.WriteLine("[websocket] Connection initialized (init packet sent) 1/2");
+                await WaitForMessage();
+                Output.WriteLine("[websocket] Connection initialized (init packet received) 2/2");
+
+                // Send test request
+                Output.WriteLine($"[websocket] Send request: {requestInfo.RequestBody}");
+                var buffer = System.Text.Encoding.UTF8.GetBytes(requestInfo.RequestBody);
+                var segment = new ArraySegment<byte>(buffer);
+                await webSocket.SendAsync(segment, WebSocketMessageType.Text, true, CancellationToken.None);
+                Output.WriteLine("[websocket] Request sent");
+                Output.WriteLine("[websocket] Waiting for the response:");
+                await WaitForMessage();
+                Output.WriteLine("[websocket] Response received.");
+
+                // Terminate the GraphQl Websocket connection
+                Output.WriteLine("[websocket] Send connection_terminate...");
+                const string terminatePayload = @"{
+                    ""type"": ""connection_terminate"",
+                    ""payload"": {}
+                }";
+                var terminateBuffer = System.Text.Encoding.UTF8.GetBytes(terminatePayload);
+                var terminateSegment = new ArraySegment<byte>(terminateBuffer);
+                await webSocket.SendAsync(terminateSegment, WebSocketMessageType.Text, true, CancellationToken.None);
+                Output.WriteLine("[websocket] connection_terminate sent");
+                await WaitForMessage();
+            }
+            catch (Exception ex)
+            {
+                Output.WriteLine($"[websocket] WebSocket connection error: {ex.Message}");
+            }
+            finally
+            {
+                try
+                {
+                    if (webSocket.State == WebSocketState.Open)
+                    {
+                        await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
+                        Output.WriteLine("[websocket] WebSocket connection closed");
+                    }
+                }
+                catch (Exception e)
+                {
+                    Output.WriteLine("[websocket][debug][err] Failed to close with NormalClosure: " + e.Message);
+                }
+
+                webSocket.Dispose();
+                Output.WriteLine("[websocket] Websocket connection disposed.");
+            }
+
+            async Task WaitForMessage()
+            {
+                Output.WriteLine("[websocket][debug] Start waiting for a message!");
+                Output.WriteLine("[websocket][debug] Websocket state: " + webSocket.State);
+                var ms = new MemoryStream();
+                while (webSocket.State == WebSocketState.Open)
+                {
+                    WebSocketReceiveResult res;
+                    do
+                    {
+                        var messageBuffer = WebSocket.CreateClientBuffer(1024, 16);
+                        res = await webSocket.ReceiveAsync(messageBuffer, CancellationToken.None);
+                        ms.Write(messageBuffer.Array, messageBuffer.Offset, res.Count);
+                    }
+                    while (!res.EndOfMessage);
+
+                    Output.WriteLine("[websocket][debug] Message type: " + res.MessageType);
+                    if (res.MessageType == WebSocketMessageType.Close)
+                    {
+                        Output.WriteLine($"[websocket][debug] Close websocket on message close: {res.CloseStatus}: {res.CloseStatusDescription}");
+                        await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
+                        break;
+                    }
+
+                    // Message received from the websocket
+                    var msgString = Encoding.UTF8.GetString(ms.ToArray());
+                    ms = new MemoryStream(); // Reset Stream
+
+                    if (msgString.Length == 0)
+                    {
+                        Output.WriteLine("[websocket][debug] Received an empty message.");
+                        continue;
+                    }
+
+                    // Check if the data received is a 'complete' message
+                    Output.WriteLine("[websocket] before json: " + msgString);
+                    var jsonObj = JObject.Parse(msgString);
+                    var typeData = jsonObj.GetValue("type")?.Value<string>();
+                    if (typeData is "complete" or "error" or "connection_ack")
+                    {
+                        Output.WriteLine("[websocket][debug] Complete or Error or Connection_ack Message");
+                        break;
+                    }
+                }
+
+                Output.WriteLine("[websocket] Stopped waiting for a message");
             }
         }
 
