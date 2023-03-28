@@ -14,15 +14,15 @@ internal class AsmDataProduct : AsmRemoteConfigurationProduct
 {
     public override string Name => "ASM_DATA";
 
-    internal override void UpdateRemoteConfigurationStatus(List<RemoteConfiguration> files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, RemoteConfigurationStatus remoteConfigurationStatus)
+    internal override void UpdateRemoteConfigurationStatus(List<RemoteConfiguration> files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus)
     {
         if (removedConfigsForThisProduct != null)
         {
             foreach (var configurationPath in removedConfigsForThisProduct)
             {
-                if (remoteConfigurationStatus.RulesDataByFile.ContainsKey(configurationPath.Path))
+                if (configurationStatus.RulesDataByFile.ContainsKey(configurationPath.Path))
                 {
-                    remoteConfigurationStatus.RulesDataByFile.Remove(configurationPath.Path);
+                    configurationStatus.RulesDataByFile.Remove(configurationPath.Path);
                 }
             }
         }
@@ -31,7 +31,11 @@ internal class AsmDataProduct : AsmRemoteConfigurationProduct
         {
             var rawFile = new NamedRawFile(file.Path, file.Contents);
             var asmDataConfig = rawFile.Deserialize<RcmModels.AsmData.Payload>();
-            remoteConfigurationStatus.RulesDataByFile[rawFile.Path.Path] = asmDataConfig.TypedFile!.RulesData;
+            var rulesData = asmDataConfig.TypedFile!.RulesData;
+            if (rulesData != null)
+            {
+                configurationStatus.RulesDataByFile[rawFile.Path.Path] = rulesData;
+            }
         }
     }
 }

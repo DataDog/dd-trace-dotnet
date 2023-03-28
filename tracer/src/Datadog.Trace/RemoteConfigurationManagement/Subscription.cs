@@ -13,8 +13,11 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal class Subscription
     {
-        public Subscription(Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, List<ApplyDetails>> callback, params string[] productKeys)
+        private readonly Action _onChange;
+
+        public Subscription(Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, List<ApplyDetails>> callback, Action onChange, params string[] productKeys)
         {
+            _onChange = onChange;
             ProductKeys = productKeys.ToList();
             Callback = callback;
         }
@@ -36,6 +39,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         public void SubscribeProducts(params string[] names)
         {
             ProductKeys.AddRange(names);
+            _onChange();
         }
     }
 }
