@@ -76,9 +76,14 @@ internal static class DebuggerTestHelper
         return probes.Aggregate(0, (accuNumOfSnapshots, next) => accuNumOfSnapshots + next.ExpectedNumberOfSnapshots);
     }
 
-    internal static bool IsMetricProbe(ProbeAttributeBase[] probeData)
+    internal static bool ContainsMetricProbe(ProbeAttributeBase[] probeData)
     {
-        return probeData.Any(p => !string.IsNullOrEmpty(p.MetricKind));
+        return probeData.Any(IsMetricProbe);
+    }
+
+    internal static bool IsMetricProbe(ProbeAttributeBase probeAttr)
+    {
+        return probeAttr is MetricOnMethodProbeTestDataAttribute or MetricOnLineProbeTestDataAttribute;
     }
 
     internal static (ProbeAttributeBase ProbeTestData, ProbeDefinition Probe)[] GetAllProbes(Type type, string targetFramework, bool unlisted, DeterministicGuidGenerator guidGenerator)
@@ -111,7 +116,7 @@ internal static class DebuggerTestHelper
                     probes.Add((testAttribute, CreateLogMethodProbe(m, guidGenerator)));
                 }
 
-                if (!string.IsNullOrEmpty(testAttribute.MetricKind))
+                if (testAttribute is MetricOnMethodProbeTestDataAttribute or MetricOnLineProbeTestDataAttribute)
                 {
                     probes.Add((testAttribute, CreateMetricMethodProbe(m, guidGenerator)));
                 }
@@ -238,7 +243,7 @@ internal static class DebuggerTestHelper
         return snapshot;
     }
 
-    private static MetricProbe WithMetric(this MetricProbe probe, MethodProbeTestDataAttribute probeTestData)
+    private static MetricProbe WithMetric(this MetricProbe probe, MetricOnMethodProbeTestDataAttribute probeTestData)
     {
         probe.Value = new SnapshotSegment(null, probeTestData.MetricJson, string.Empty);
         probe.Kind = ParseEnum<MetricKind>(probeTestData.MetricKind);
@@ -248,7 +253,7 @@ internal static class DebuggerTestHelper
 
     private static ProbeDefinition CreateMetricMethodProbe(MethodBase method, DeterministicGuidGenerator guidGenerator)
     {
-        var probeTestData = GetProbeTestData(method, out var typeName);
+        var probeTestData = GetProbeTestData(method, out var typeName) as MetricOnMethodProbeTestDataAttribute;
 
         if (probeTestData == null || string.IsNullOrEmpty(probeTestData.MetricKind))
         {

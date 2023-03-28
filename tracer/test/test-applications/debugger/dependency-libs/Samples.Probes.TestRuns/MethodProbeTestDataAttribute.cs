@@ -16,14 +16,11 @@ namespace Samples.Probes.TestRuns
             string conditionJson = null,
             string templateJson = null,
             string templateStr = null,
-            string metricJson = null,
-            string metricName = null,
-            string metricKind = null,
 			string probeId = null,
             bool captureSnapshot = true,
             string evaluateAt = null,
             params string[] skipOnFramework)
-            : base(skip, phase, unlisted, expectedNumberOfSnapshots, skipOnFramework, conditionJson: conditionJson, templateJson: templateJson, templateStr: templateStr, metricJson: metricJson, metricName: metricName, metricKind: metricKind, probeId: probeId, evaluateAt: evaluateAt, captureSnapshot: captureSnapshot)
+            : base(skip, phase, unlisted, expectedNumberOfSnapshots, skipOnFramework, conditionJson: conditionJson, templateJson: templateJson, templateStr: templateStr, probeId: probeId, evaluateAt: evaluateAt, captureSnapshot: captureSnapshot)
         {
 
             ReturnTypeName = returnTypeName;

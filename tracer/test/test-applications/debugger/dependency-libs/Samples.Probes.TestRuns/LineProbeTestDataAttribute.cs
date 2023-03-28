@@ -15,13 +15,10 @@ public class LineProbeTestDataAttribute : ProbeAttributeBase
                                       string conditionJson = null,
                                       string templateJson = null,
                                       string templateStr = null,
-                                      string metricJson = null,
-                                      string metricKind = null,
-                                      string metricName = null,
 									  string probeId = null,
                                       bool captureSnapshot = true,
                                       params string[] skipOnFramework)
-        : base(skip, phase, unlisted, expectedNumberOfSnapshots, skipOnFramework, evaluateAt: Const.Exit, conditionJson: conditionJson, templateJson: templateJson, templateStr: templateStr, captureSnapshot: captureSnapshot, metricJson: metricJson, metricKind: metricKind, metricName: metricName, probeId: probeId)
+        : base(skip, phase, unlisted, expectedNumberOfSnapshots, skipOnFramework, evaluateAt: Const.Exit, conditionJson: conditionJson, templateJson: templateJson, templateStr: templateStr, captureSnapshot: captureSnapshot, probeId: probeId)
     {
         LineNumber = lineNumber;
         ColumnNumber = columnNumber;

@@ -306,14 +306,15 @@ public class ProbesTests : TestHelper
 
                 await sample.RunCodeSample();
 
-                if (DebuggerTestHelper.IsMetricProbe(probeData))
+                if (DebuggerTestHelper.ContainsMetricProbe(probeData))
                 {
-                    var requests = await agent.WaitForStatsdRequests(probeData.Count(d => d.MetricName != null));
+                    var requests = await agent.WaitForStatsdRequests(probeData.Count(DebuggerTestHelper.IsMetricProbe));
                     requests.Should().OnlyContain(s => s.Contains($"service:{EnvironmentHelper.SampleName}"));
 
                     foreach (var probeAttributeBase in probeData)
                     {
-                        var req = requests.SingleOrDefault(r => r.Contains(probeAttributeBase.MetricName));
+                        var metricName = (probeAttributeBase as MetricOnMethodProbeTestDataAttribute)?.MetricName ?? (probeAttributeBase as MetricOnLineProbeTestDataAttribute)?.MetricName;
+                        var req = requests.SingleOrDefault(r => r.Contains(metricName));
                         Assert.NotNull(req);
                         req.Should().Contain($"service:{EnvironmentHelper.SampleName}");
                     }
