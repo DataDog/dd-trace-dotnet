@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using BenchmarkDotNet.Diagnosers;
@@ -122,16 +123,16 @@ internal class DatadogExporter : IExporter
                     var description = report.BenchmarkCase.Job?.DisplayInfo;
                     if (description is not null)
                     {
-                        var match = new Regex(@".*\((.*)\)").Match(description);
-                        if (match.Success && match.Groups.Count == 2)
+                        var matchCollections = new Regex(@"\(([^\(\)]+)\)").Matches(description);
+                        if (matchCollections.Count > 0)
                         {
                             // In the example: Runtime=.NET Framework 4.7.2, Toolchain=net472, IterationTime=2.0000 s
-                            description = match.Groups[1].Value;
+                            description = string.Join(", ", matchCollections.OfType<Match>().Select(x => x.Groups[1].Value));
                         }
                         else if (description?.StartsWith("Job-") == true)
                         {
                             // If we cannot extract the description but we know there's a random Id, we prefer to skip the description value.
-                            description = string.Empty;
+                            description = null;
                         }
                     }
 
