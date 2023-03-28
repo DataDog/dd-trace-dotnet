@@ -48,20 +48,26 @@ namespace Datadog.Trace.AppSec.Waf
         /// empty string means use default embedded in the WAF</param>
         /// <param name="obfuscationParameterValueRegex">the regex that will be used to obfuscate possible sensitive data in values that are highlighted WAF as potentially malicious,
         /// empty string means use default embedded in the WAF</param>
-        /// <param name="rulesFile">can be null, means use rules embedded in the manifest </param>
-        /// <param name="rulesJson">can be null. RemoteConfig rules json. Takes precedence over rulesFile </param>
+        /// <param name="embeddedRulesetPath">can be null, means use rules embedded in the manifest </param>
+        /// <param name="rulesFromRcm">can be null. RemoteConfig rules json. Takes precedence over rulesFile </param>
         /// <returns>the waf wrapper around waf native</returns>
-        internal static InitResult Create(WafLibraryInvoker wafLibraryInvoker, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? rulesFile = null, string? rulesJson = null)
+        internal static InitResult Create(WafLibraryInvoker wafLibraryInvoker, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? embeddedRulesetPath = null, JToken? rulesFromRcm = null)
         {
             var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
             InitResult initResult;
-            if (!string.IsNullOrEmpty(rulesJson))
+            var argsToDispose = new List<Obj>();
+
+            if (rulesFromRcm != null)
             {
-                initResult = wafConfigurator.ConfigureFromRemoteConfig(rulesJson!, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+                var configObj = Encoder.Encode(rulesFromRcm, wafLibraryInvoker, argsToDispose, applySafetyLimits: false);
+                initResult = wafConfigurator.ConfigureAndDispose(configObj, "RemoteConfig", argsToDispose, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
             }
             else
             {
-                initResult = wafConfigurator.Configure(rulesFile, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+                var jtokenRoot = WafConfigurator.DeserializeEmbeddedRules(embeddedRulesetPath);
+                var configObj = Encoder.Encode(jtokenRoot!, wafLibraryInvoker, argsToDispose, applySafetyLimits: false);
+                initResult = wafConfigurator.ConfigureAndDispose(configObj, embeddedRulesetPath, argsToDispose, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+                initResult.EmbeddedRules = jtokenRoot;
             }
 
             return initResult;
@@ -147,34 +153,24 @@ namespace Datadog.Trace.AppSec.Waf
         public UpdateResult Update(IDictionary<string, object> arguments)
         {
             var argsToDispose = new List<Obj>();
-            var encodedArgs = Encoder.Encode(arguments, _wafLibraryInvoker, argsToDispose);
-            if (encodedArgs == null)
+            UpdateResult updated;
+            try
             {
-                return UpdateResult.FromUnusableRules();
+                var encodedArgs = Encoder.Encode(arguments, _wafLibraryInvoker, argsToDispose, false);
+                DdwafRuleSetInfo? rulesetInfo = null;
+                // only if rules are provided will the waf give metrics
+                if (arguments.ContainsKey("rules"))
+                {
+                    rulesetInfo = new DdwafRuleSetInfo();
+                }
+
+                updated = UpdateWafAndDisposeItems(encodedArgs, argsToDispose, rulesetInfo);
+            }
+            catch
+            {
+                updated = UpdateResult.FromUnusableRules();
             }
 
-            DdwafRuleSetInfo? rulesetInfo = null;
-            // only if rules are provided will the waf give metrics
-            if (arguments.ContainsKey("rules"))
-            {
-                rulesetInfo = new DdwafRuleSetInfo();
-            }
-
-            var updated = UpdateWafAndDisposeItems(encodedArgs, argsToDispose, rulesetInfo);
-            return updated;
-        }
-
-        public UpdateResult UpdateRules(string rules)
-        {
-            var rulesetInfo = new DdwafRuleSetInfo();
-            var argsToDispose = new List<Obj>();
-            var rulesObj = _wafConfigurator.GetConfigObjFromRemoteJson(rules, argsToDispose);
-            if (rulesObj == null)
-            {
-                return UpdateResult.FromUnusableRules();
-            }
-
-            var updated = UpdateWafAndDisposeItems(rulesObj, argsToDispose, rulesetInfo);
             return updated;
         }
 

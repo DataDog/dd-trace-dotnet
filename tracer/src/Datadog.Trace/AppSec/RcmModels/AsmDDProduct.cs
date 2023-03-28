@@ -5,10 +5,11 @@
 
 #nullable enable
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Datadog.Trace.AppSec.RcmModels;
+using Datadog.Trace.AppSec.RcmModels.AsmDd;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec;
 
@@ -16,16 +17,31 @@ internal class AsmDdProduct : AsmRemoteConfigurationProduct
 {
     public override string Name => "ASM_DD";
 
-    internal override void UpdateRemoteConfigurationStatus(List<RemoteConfiguration> files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, RemoteConfigurationStatus remoteConfigurationStatus)
+    internal override void UpdateRemoteConfigurationStatus(List<RemoteConfiguration> files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus)
     {
-        var firstFile = files.FirstOrDefault();
-        var asmDd = new NamedRawFile(firstFile!.Path, firstFile.Contents);
-        using var stream = new MemoryStream(asmDd.RawFile);
-        using var streamReader = new StreamReader(stream);
-        var contents = streamReader.ReadToEnd();
-        if (!string.IsNullOrEmpty(contents))
+        if (files.Count > 0)
         {
-            remoteConfigurationStatus.RemoteRulesJson = contents;
+            var firstFile = files.First();
+            var asmDd = new NamedRawFile(firstFile!.Path, firstFile.Contents);
+            var result = asmDd.Deserialize<JToken>();
+            if (result.TypedFile != null)
+            {
+                var ruleSet = RuleSet.From(result.TypedFile);
+                configurationStatus.RulesByFile[result.TypedFile.Path] = ruleSet;
+            }
+        }
+
+        if (removedConfigsForThisProduct != null)
+        {
+            foreach (var removedConfig in removedConfigsForThisProduct)
+            {
+                configurationStatus.RulesByFile.Remove(removedConfig.Path);
+            }
+
+            if (configurationStatus.RulesByFile.Count == 0)
+            {
+                configurationStatus.FallbackToEmbeddedRulesetAtNextUpdate = true;
+            }
         }
     }
 }

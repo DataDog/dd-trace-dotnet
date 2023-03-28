@@ -24,7 +24,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         /// <returns>the subscription</returns>
         public Subscription SubscribeToChanges(Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, List<ApplyDetails>> callback, params string[] productKeys)
         {
-            var subscription = new Subscription(callback, productKeys);
+            var subscription = new Subscription(callback, RefreshProductKeys, productKeys);
             _subscriptions.Add(subscription);
             RefreshProductKeys();
             return subscription;

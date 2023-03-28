@@ -16,24 +16,24 @@ internal class AsmProduct : AsmRemoteConfigurationProduct
 {
     public override string Name => "ASM";
 
-    internal override void UpdateRemoteConfigurationStatus(List<RemoteConfiguration> files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, RemoteConfigurationStatus remoteConfigurationStatus)
+    internal override void UpdateRemoteConfigurationStatus(List<RemoteConfiguration> files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus)
     {
         var asmConfigs = files.Select(configContent => new NamedRawFile(configContent.Path, configContent.Contents).Deserialize<RcmModels.Asm.Payload>());
         if (removedConfigsForThisProduct != null)
         {
             foreach (var configurationPath in removedConfigsForThisProduct)
             {
-                if (remoteConfigurationStatus.RulesOverridesByFile.ContainsKey(configurationPath.Path))
+                if (configurationStatus.RulesOverridesByFile.ContainsKey(configurationPath.Path))
                 {
-                    remoteConfigurationStatus.RulesOverridesByFile.Remove(configurationPath.Path);
+                    configurationStatus.RulesOverridesByFile.Remove(configurationPath.Path);
                 }
 
-                if (remoteConfigurationStatus.ExclusionsByFile.ContainsKey(configurationPath.Path))
+                if (configurationStatus.ExclusionsByFile.ContainsKey(configurationPath.Path))
                 {
-                    remoteConfigurationStatus.ExclusionsByFile.Remove(configurationPath.Path);
+                    configurationStatus.ExclusionsByFile.Remove(configurationPath.Path);
                 }
 
-                // todo actions by file ?
+                // todo remove actions by file ?
             }
         }
 
@@ -46,12 +46,12 @@ internal class AsmProduct : AsmRemoteConfigurationProduct
 
             if (asmConfig.TypedFile.RuleOverrides != null)
             {
-                remoteConfigurationStatus.RulesOverridesByFile[asmConfig.Name] = asmConfig.TypedFile.RuleOverrides;
+                configurationStatus.RulesOverridesByFile[asmConfig.Name] = asmConfig.TypedFile.RuleOverrides;
             }
 
             if (asmConfig.TypedFile.Exclusions != null)
             {
-                remoteConfigurationStatus.ExclusionsByFile[asmConfig.Name] = asmConfig.TypedFile.Exclusions;
+                configurationStatus.ExclusionsByFile[asmConfig.Name] = asmConfig.TypedFile.Exclusions;
             }
 
             if (asmConfig.TypedFile.Actions != null)
@@ -60,13 +60,13 @@ internal class AsmProduct : AsmRemoteConfigurationProduct
                 {
                     if (action.Id is not null)
                     {
-                        remoteConfigurationStatus.Actions[action.Id] = action;
+                        configurationStatus.Actions[action.Id] = action;
                     }
                 }
 
                 if (asmConfig.TypedFile.Actions.Length == 0)
                 {
-                    remoteConfigurationStatus.Actions.Clear();
+                    configurationStatus.Actions.Clear();
                 }
             }
         }

@@ -16,13 +16,13 @@ internal class AsmFeaturesProduct : AsmRemoteConfigurationProduct
 {
     public override string Name => "ASM_FEATURES";
 
-    internal override void UpdateRemoteConfigurationStatus(List<RemoteConfiguration> files, List<RemoteConfigurationPath> removedConfigsForThisProduct, RemoteConfigurationStatus remoteConfigurationStatus)
+    internal override void UpdateRemoteConfigurationStatus(List<RemoteConfiguration> files, List<RemoteConfigurationPath> removedConfigsForThisProduct, ConfigurationStatus configurationStatus)
     {
         var file = files.FirstOrDefault();
         if (file != null)
         {
             var asmFeatures = new NamedRawFile(file.Path, file.Contents).Deserialize<AsmFeatures>();
-            remoteConfigurationStatus.EnableAsm = asmFeatures.TypedFile?.Asm.Enabled;
+            configurationStatus.EnableAsm = asmFeatures.TypedFile?.Asm.Enabled;
         }
     }
 }

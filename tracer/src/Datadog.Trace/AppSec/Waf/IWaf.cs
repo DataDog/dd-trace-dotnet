@@ -21,13 +21,6 @@ namespace Datadog.Trace.AppSec.Waf
 
         internal DDWAF_RET_CODE Run(IntPtr contextHandle, IntPtr rawArgs, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds);
 
-        /// <summary>
-        /// only this one returns a rulsetinfo from the waf
-        /// </summary>
-        /// <param name="rules">json rules</param>
-        /// <returns>returns InitOrUpdateResult</returns>
-        UpdateResult UpdateRules(string rules);
-
         bool UpdateRulesData(List<RuleData> rulesData);
 
         bool UpdateRulesStatus(List<RuleOverride> res, List<JToken> exclusions);
