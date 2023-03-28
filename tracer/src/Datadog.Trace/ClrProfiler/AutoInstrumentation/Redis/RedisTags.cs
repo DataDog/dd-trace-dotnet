@@ -26,6 +26,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
         [Tag(Trace.Tags.OutPort)]
         public string Port { get; set; }
 
+        // Always use metrics for "number like" tags. Even though it's not really a "metric"
+        // that should be summed/averaged, it's important to record it as such so that we
+        // don't use "string-like" searching/sorting. e.g. sorting db.redis.database_index
+        // should give 1, 2, 3... not 1, 10, 2... as it would otherwise.
         [Metric(Trace.Metrics.RedisDatabaseIndex)]
         public double? DatabaseIndex { get; set; }
     }
