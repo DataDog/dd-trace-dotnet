@@ -177,7 +177,7 @@ public class IastInstrumentationUnitTests : TestHelper
 #else
             if (EnvironmentTools.IsLinux())
             {
-                arguments += " --filter (Category!=LinuxUnsupported)";
+                arguments += " --TestCaseFilter:\"Category!=LinuxUnsupported\"";
             }
 #endif
             SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests"));
