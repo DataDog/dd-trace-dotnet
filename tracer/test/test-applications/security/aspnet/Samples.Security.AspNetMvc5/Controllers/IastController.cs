@@ -4,8 +4,8 @@ using System.Data.SQLite;
 using System;
 using System.Text;
 using Samples.Security.Data;
-using System.Diagnostics;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Net;
 
 namespace Samples.Security.AspNetCore5.Controllers
@@ -36,7 +36,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         public ActionResult SqlQuery(string username, string query)
         {
             try
-            { 
+            {
                 if (dbConnection is null)
                 {
                     dbConnection = IastControllerHelper.CreateDatabase();

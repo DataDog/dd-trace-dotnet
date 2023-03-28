@@ -25,19 +25,3 @@ class ClassForStringTest
     }
 }
 
-public class VulnerabilityList
-{
-    public List<TestVulnerability> Vulnerabilities { get; set; }
-}
-
-public class TestVulnerability
-{
-    public string type { get; set; }
-
-    public EvidenceForTest Evidence { get; set; }
-}
-
-public class EvidenceForTest
-{
-    public string Value { get; set; }
-}
