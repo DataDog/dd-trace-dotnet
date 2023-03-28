@@ -109,7 +109,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private async Task<int> SubmitRequests(int aspNetCorePort, bool usingWebsockets)
         {
-            var expectedGraphQlValidateSpanCount = 0;
             var expectedGraphQlExecuteSpanCount = 0;
             var expectedAspNetcoreRequestSpanCount = 0;
 
@@ -143,34 +142,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             async Task SubmitWebsocketRequests()
             {
                 // SUCCESS: query using Websocket
-                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""{book{title author{name}}}"",""variables"": {}}}", false);
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""{book{title author{name}}}"",""variables"": {}}}");
 
                 // SUCCESS: mutation using Websocket
-                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""mutation m{addBook(book:{title:\""New Book\""}){book{title}}}"",""variables"": {}}}", false);
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""mutation m{addBook(book:{title:\""New Book\""}){book{title}}}"",""variables"": {}}}");
 
                 // FAILURE: query fails 'execute' step using Websocket
-                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""subscription NotImplementedSub{throwNotImplementedException{name}}"",""variables"": {}}}", false);
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""subscription NotImplementedSub{throwNotImplementedException{name}}"",""variables"": {}}}");
 
                 // FAILURE: query fails 'validate' step using Websocket
-                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""{boook{title author{name}}}"",""variables"": {}}}", true);
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""{boook{title author{name}}}"",""variables"": {}}}");
             }
 
-            return expectedGraphQlExecuteSpanCount + expectedGraphQlValidateSpanCount + expectedAspNetcoreRequestSpanCount;
+            return expectedGraphQlExecuteSpanCount + expectedAspNetcoreRequestSpanCount;
 
             void SubmitGraphqlRequest(
                 string url,
                 string httpMethod,
-                string graphQlRequestBody,
-                bool failsValidation = false)
+                string graphQlRequestBody)
             {
-                expectedGraphQlValidateSpanCount++;
-
-                if (!failsValidation)
-                {
-                    expectedGraphQlExecuteSpanCount++;
-                }
-
+                expectedGraphQlExecuteSpanCount++;
                 expectedAspNetcoreRequestSpanCount++;
+
                 SubmitRequest(
                     aspNetCorePort,
                     new RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
@@ -179,17 +172,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             async Task SubmitGraphqlWebsocketRequest(
                 string url,
                 string httpMethod,
-                string graphQlRequestBody,
-                bool failsValidation = false)
+                string graphQlRequestBody)
             {
-                expectedGraphQlValidateSpanCount++;
-
-                if (!failsValidation)
-                {
-                    expectedGraphQlExecuteSpanCount++;
-                }
-
+                expectedGraphQlExecuteSpanCount++;
                 expectedAspNetcoreRequestSpanCount++;
+
                 await SubmitWebsocketRequest(
                     aspNetCorePort,
                     new RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
