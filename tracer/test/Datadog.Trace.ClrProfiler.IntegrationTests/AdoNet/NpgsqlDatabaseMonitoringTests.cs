@@ -6,14 +6,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
+    [UsesVerify]
     public class NpgsqlDatabaseMonitoringTests : TracingIntegrationTest
     {
         public NpgsqlDatabaseMonitoringTests(ITestOutputHelper output)
@@ -28,49 +32,49 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.Npgsql), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitDbmCommentedSpanspropagationNotSet(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationNotSet(string packageVersion)
         {
-            SubmitDbmCommentedSpans(packageVersion, string.Empty);
+            await SubmitDbmCommentedSpans(packageVersion, string.Empty);
         }
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.Npgsql), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitDbmCommentedSpanspropagationIntValue(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationIntValue(string packageVersion)
         {
-            SubmitDbmCommentedSpans(packageVersion, "100");
+            await SubmitDbmCommentedSpans(packageVersion, "100");
         }
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.Npgsql), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitDbmCommentedSpanspropagationUnsupportedValue(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationRandomValue(string packageVersion)
         {
-            SubmitDbmCommentedSpans(packageVersion, "randomValue");
+            await SubmitDbmCommentedSpans(packageVersion, "randomValue");
         }
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.Npgsql), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitDbmCommentedSpanspropagationDisabled(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationDisabled(string packageVersion)
         {
-            SubmitDbmCommentedSpans(packageVersion, "disabled");
+            await SubmitDbmCommentedSpans(packageVersion, "disabled");
         }
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.Npgsql), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitDbmCommentedSpanspropagationService(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationService(string packageVersion)
         {
-            SubmitDbmCommentedSpans(packageVersion, "service");
+            await SubmitDbmCommentedSpans(packageVersion, "service");
         }
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.Npgsql), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitDbmCommentedSpanspropagationFull(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationFull(string packageVersion)
         {
-            SubmitDbmCommentedSpans(packageVersion, "full");
+            await SubmitDbmCommentedSpans(packageVersion, "full");
         }
 
         // Check that the spans have been tagged after the comment was propagated
@@ -80,19 +84,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             {
                 foreach (var span in spans)
                 {
-                    Assert.True(span.Tags?.ContainsKey(Tags.DbmDataPropagated));
+                    span.Tags?.Should().ContainKey(Tags.DbmDataPropagated);
                 }
             }
             else
             {
                 foreach (var span in spans)
                 {
-                    Assert.False(span.Tags?.ContainsKey(Tags.DbmDataPropagated));
+                    span.Tags?.Should().NotContainKey(Tags.DbmDataPropagated);
                 }
             }
         }
 
-        private void SubmitDbmCommentedSpans(string packageVersion, string propagationLevel)
+        private async Task SubmitDbmCommentedSpans(string packageVersion, string propagationLevel)
         {
             if (propagationLevel != string.Empty)
             {
@@ -121,10 +125,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-            int actualSpanCount = spans.Count(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase)); // Remove unexpected DB spans from the calculation
+            var filteredSpans = spans.Where(s => s.ParentId.HasValue).ToList();
 
-            actualSpanCount.Should().Be(expectedSpanCount);
+            filteredSpans.Count().Should().Be(expectedSpanCount);
             ValidatePresentDbmTag(spans, propagationLevel);
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
+            settings.AddSimpleScrubber("out.host: localhost", "out.host: postgres");
+            settings.AddSimpleScrubber("out.host: postgres_arm64", "out.host: postgres");
+
+            var fileName = nameof(NpgsqlDatabaseMonitoringTests);
+#if NET462
+            fileName = fileName + "Net462";
+#endif
+            fileName = fileName + (propagationLevel switch
+            {
+                "service" or "full" => ".enabled",
+                _ => ".disabled",
+            });
+
+            await VerifyHelper.VerifySpans(filteredSpans, settings)
+                .DisableRequireUniquePrefix()
+                .UseFileName(fileName);
         }
     }
 }

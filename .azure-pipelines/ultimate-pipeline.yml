@@ -3684,8 +3684,6 @@ stages:
       name: $(poolName)
     timeoutInMinutes: 30 #default value
 
-    # These VMs have the Datadog Agent installed directly, as they don't run docker, and timeit doesn't support agentless yet
-
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -3708,27 +3706,17 @@ stages:
         workingDirectory: $(System.DefaultWorkingDirectory)/tracer/test/test-applications/integrations/Samples.$(sampleName)
       displayName: 'dotnet build Release $(sampleName)'
 
-    - task: GoTool@0
-      displayName: 'Install Go 1.16'
-      inputs:
-        version: '1.16'
-        GOPATH: $(Agent.TempDirectory)
-      retryCountOnTaskFailure: 5
-
-    - task: Go@0
-      displayName: 'Install timeit tool'
-      inputs:
-        command: 'install'
-        arguments: 'github.com/tonyredondo/timeit@latest'
-        workingDirectory: $(System.DefaultWorkingDirectory)
-      retryCountOnTaskFailure: 5
-
     - script: run.cmd
       workingDirectory: $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.$(sampleName)
       displayName: Execute Samples.$(sampleName) benchmark
       env:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
+        DOTNET_ROOT: $(LOCALAPPDATA)\Microsoft\dotnet
+        DD_API_KEY: $(ddApiKey)
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
+        DD_CIVISIBILITY_LOGS_ENABLED: 0
+        DD_CIVISIBILITY_ITR_ENABLED: 0
 
     - powershell: |
         mkdir -p $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
@@ -3742,12 +3730,6 @@ stages:
       artifact: execution_time_benchmarks_windows_x64_$(sampleName)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
-
-    - task: PowerShell@2
-      displayName: Wait 20 seconds to agent flush before finishing pipeline
-      inputs:
-        targetType: 'inline'
-        script: 'Start-Sleep -s 20'
 
   - job: compare
     timeoutInMinutes: 60 #default value
@@ -3811,6 +3793,12 @@ stages:
 
     steps:
       - checkout: none
+
+      - task: UsePythonVersion@0
+        inputs:
+            versionSpec: '3.9.x'
+        displayName: Install python 3.9
+
       - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
 
@@ -3826,6 +3814,7 @@ stages:
           echo Moving $PACKAGE_NAME to system-tests/binaries
           mv $(Build.ArtifactStagingDirectory)/$PACKAGE_NAME system-tests/binaries/
         displayName: Move dotnet binary to system test folder
+
       - script: ./build.sh dotnet
         workingDirectory: system-tests
         displayName: Build images
