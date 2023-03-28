@@ -72,6 +72,41 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
+        public async Task NestedApp()
+        {
+            EnsureWindowsAndX64();
+
+            var siteName = "sample/nested/app";
+
+            var buildPs1 = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "build.ps1");
+
+            try
+            {
+                // GacFixture is not compatible with .NET Core, use the Nuke target instead
+                Process.Start("powershell", $"{buildPs1} GacAdd --framework net461").WaitForExit();
+
+                using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
+
+                using var console = ConsoleHelper.Redirect();
+
+                var result = await CheckIisCommand.ExecuteAsync(
+                                 new CheckIisSettings { SiteName = siteName },
+                                 iisFixture.IisExpress.ConfigFile,
+                                 iisFixture.IisExpress.Process.Id,
+                                 MockRegistryService());
+
+                result.Should().Be(0);
+
+                console.Output.Should().Contain(Resources.IisNoIssue);
+            }
+            finally
+            {
+                Process.Start("powershell", $"{buildPs1} GacRemove --framework net461").WaitForExit();
+            }
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public async Task OutOfProcess()
         {
             EnsureWindowsAndX64();
