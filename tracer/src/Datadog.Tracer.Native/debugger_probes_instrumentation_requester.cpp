@@ -406,7 +406,7 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(debugger::DebuggerLin
 
         if (lineProbesLength <= 0) return;
 
-        std::vector<LineProbeDefinition> lineProbeDefinitions;
+        std::vector<std::shared_ptr<LineProbeDefinition>> lineProbeDefinitions;
 
         for (int i = 0; i < lineProbesLength; i++)
         {
@@ -420,8 +420,8 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(debugger::DebuggerLin
 
             const shared::WSTRING& probeId = shared::WSTRING(current.probeId);
             const shared::WSTRING& probeFilePath = shared::WSTRING(current.probeFilePath);
-            const auto& lineProbe = LineProbeDefinition(probeId, current.bytecodeOffset, current.lineNumber,
-                                                        current.mvid, current.methodId, probeFilePath);
+            const auto& lineProbe = std::make_shared<LineProbeDefinition>(LineProbeDefinition(probeId, current.bytecodeOffset, current.lineNumber,
+                                                        current.mvid, current.methodId, probeFilePath));
 
             lineProbeDefinitions.push_back(lineProbe);
         }
@@ -436,8 +436,7 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(debugger::DebuggerLin
 
         std::promise<std::vector<MethodIdentifier>> promise;
         std::future<std::vector<MethodIdentifier>> future = promise.get_future();
-        m_debugger_rejit_preprocessor->EnqueuePreprocessLineProbes(modules.Ref(), lineProbeDefinitions,
-                                                                   &promise);
+        m_debugger_rejit_preprocessor->EnqueuePreprocessLineProbes(modules.Ref(), lineProbeDefinitions, &promise);
 
         const auto& lineProbeRequests = future.get();
 
@@ -454,7 +453,7 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(debugger::DebuggerLin
         m_probes.reserve(m_probes.size() + lineProbeDefinitions.size());
         for (const auto& lineProbe : lineProbeDefinitions)
         {
-            // m_probes.push_back(lineProbe);
+            m_probes.push_back(lineProbe);
         }
 
         Logger::Info("LiveDebugger: Total method probes added: ", m_probes.size());

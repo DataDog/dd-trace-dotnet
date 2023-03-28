@@ -16,10 +16,10 @@ class DebuggerRejitPreprocessor : public RejitPreprocessor<std::shared_ptr<Metho
 public:
     using RejitPreprocessor::RejitPreprocessor;
 
-    ULONG PreprocessLineProbes(const std::vector<ModuleID>& modules, const std::vector<LineProbeDefinition>& lineProbes,
+    ULONG PreprocessLineProbes(const std::vector<ModuleID>& modules, const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
                                std::vector<MethodIdentifier>& rejitRequests);
-    void EnqueuePreprocessLineProbes(const std::vector<ModuleID> modules,
-                                     const std::vector<LineProbeDefinition> lineProbes,
+    void EnqueuePreprocessLineProbes(const std::vector<ModuleID>& modules,
+                                     const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
                                std::promise<std::vector<MethodIdentifier>>* promise);
 
 protected:

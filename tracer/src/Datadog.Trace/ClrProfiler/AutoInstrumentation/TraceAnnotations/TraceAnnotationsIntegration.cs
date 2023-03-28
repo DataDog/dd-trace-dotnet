@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
                 new RuntimeHandleTuple(methodHandle, typeHandle),
                 key => TraceAnnotationInfoFactory.Create(MethodBase.GetMethodFromHandle(key.MethodHandle, key.TypeHandle)));
 
-            return new CallTargetState(CreateSpan(info.ResourceName, info.OperationName, IntegrationId));
+            return new CallTargetState(CreateScope(info.ResourceName, info.OperationName, IntegrationId));
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
         /// <param name="operationName">The operation name</param>
         /// <param name="integrationId">The integration generating the span</param>
         /// <returns>Calltarget state value</returns>
-        internal static Scope CreateSpan(string resourceName, string operationName, IntegrationId integrationId)
+        internal static Scope CreateScope(string resourceName, string operationName, IntegrationId integrationId)
         {
             var tags = new TraceAnnotationTags();
             var scope = Tracer.Instance.StartActiveInternal(operationName, tags: tags);

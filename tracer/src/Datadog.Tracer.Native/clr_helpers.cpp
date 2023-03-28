@@ -1032,7 +1032,7 @@ shared::WSTRING GetStringValueFromBlob(PCCOR_SIGNATURE& signature)
         converter.from_bytes(reinterpret_cast<const char*>(signature), reinterpret_cast<const char*>(signature) + size);
     wstr.assign(temp.begin(), temp.end());
     signature += size;
-    return std::move(wstr);
+    return wstr;
 }
 
 HRESULT HasAsyncStateMachineAttribute(const ComPtr<IMetaDataImport2>& metadataImport, const mdMethodDef methodDefToken, bool& hasAsyncAttribute)

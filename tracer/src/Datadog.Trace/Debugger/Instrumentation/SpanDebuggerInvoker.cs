@@ -40,7 +40,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             resourceName ??= "unknown-resource";
             operationName ??= "unknown-operation";
 
-            var scope = TraceAnnotationsIntegration.CreateSpan(resourceName, operationName, IntegrationId);
+            var scope = TraceAnnotationsIntegration.CreateScope(resourceName, operationName, IntegrationId);
             scope.Span.Tags.SetTag("debugger.probeid", probeId);
             return new SpanDebuggerState(scope);
         }

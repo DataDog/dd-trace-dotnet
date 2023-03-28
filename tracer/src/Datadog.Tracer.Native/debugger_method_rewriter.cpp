@@ -499,7 +499,7 @@ HRESULT DebuggerMethodRewriter::ApplyLineProbes(
 
     Logger::Info("Applying ", lineProbes.size(), " line probe(s) instrumentation.");
 
-    const auto branchTargets = std::move(GetBranchTargets(&rewriter));
+    const auto& branchTargets = GetBranchTargets(&rewriter);
 
     for (const auto& lineProbe : lineProbes)
     {
@@ -552,7 +552,7 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
 
     rewriterWrapper.SetILPosition(beforeLineProbe);
 
-    const auto branchTargets = std::move(GetBranchTargets(rewriterWrapper.GetILRewriter()));
+    const auto& branchTargets = GetBranchTargets(rewriterWrapper.GetILRewriter());
 
     for (const auto& branchInstr : branchTargets)
     {
@@ -830,7 +830,7 @@ HRESULT DebuggerMethodRewriter::ApplyMethodSpanProbe(
 
     // Define ResourceName as string
     WSTRING resourceName =
-        spanProbe->target_method.type.name.substr(spanProbe->target_method.type.name.find_last_of(L'.') + 1) +
+        spanProbe->target_method.type.name.substr(spanProbe->target_method.type.name.find_last_of(WStr('.')) + 1) +
         WStr(".") + spanProbe->target_method.method_name;
 
     mdString resourceNameIdToken;
@@ -1441,7 +1441,7 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
 
     rewriterWrapper.SetILPosition(beforeLineProbe);
 
-    const auto branchTargets = std::move(GetBranchTargets(rewriterWrapper.GetILRewriter()));
+    const auto& branchTargets = GetBranchTargets(rewriterWrapper.GetILRewriter());
 
     for (const auto& branchInstr : branchTargets)
     {
@@ -1521,8 +1521,6 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
         }
     }
 
-    //AdjustBranchTargets(beforeLineProbe, beforeLineProbe, std::move(GetBranchTargets(rewriterWrapper.GetILRewriter())));
-
     // ***
     // ENDING OF THE METHOD EXECUTION
     // ***
@@ -1575,7 +1573,7 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodSpanProbe(
 
     rewriterWrapper.SetILPosition(beforeLineProbe);
 
-    const auto branchTargets = std::move(GetBranchTargets(rewriterWrapper.GetILRewriter()));
+    const auto& branchTargets = GetBranchTargets(rewriterWrapper.GetILRewriter());
 
     for (const auto& branchInstr : branchTargets)
     {
@@ -1663,8 +1661,6 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodSpanProbe(
             branchInstr->m_pTarget = tryInstruction->m_pNext;
         }
     }
-
-    //AdjustBranchTargets(beforeLineProbe, beforeLineProbe, std::move(GetBranchTargets(rewriterWrapper.GetILRewriter())));
 
     // ***
     // ENDING OF THE METHOD EXECUTION

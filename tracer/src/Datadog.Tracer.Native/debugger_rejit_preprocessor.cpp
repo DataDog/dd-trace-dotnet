@@ -12,7 +12,7 @@ namespace debugger
 // DebuggerRejitPreprocessor
 
 ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID>& modules,
-    const std::vector<LineProbeDefinition>& lineProbes, std::vector<MethodIdentifier>& rejitRequests)
+    const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes, std::vector<MethodIdentifier>& rejitRequests)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -67,12 +67,12 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID
 
         for (const auto& lineProbe : lineProbes)
         {
-            if (lineProbe.mvid != analyzingModuleMvid)
+            if (lineProbe->mvid != analyzingModuleMvid)
             {
                 continue;
             }
 
-            const auto methodDef = lineProbe.methodId;
+            const auto methodDef = lineProbe->methodId;
 
             const auto caller = GetFunctionInfo(metadataImport, methodDef);
             if (!caller.IsValid())
@@ -119,7 +119,7 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID
                 };
 
             RejitHandlerModuleMethodUpdaterFunc updater = [=, request = lineProbe](RejitHandlerModuleMethod* method) {
-                UpdateMethodInternal(method, std::make_shared<LineProbeDefinition>(request));
+                UpdateMethodInternal(method, request);
             };
 
             moduleHandler->CreateMethodIfNotExists(methodDef, creator, updater);
@@ -133,8 +133,8 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID
     return rejitCount;
 }
 
-void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(const std::vector<ModuleID> modulesVector,
-                                                            const std::vector<LineProbeDefinition> lineProbes,
+void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(const std::vector<ModuleID>& modulesVector,
+                                                            const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
                                                             std::promise<std::vector<MethodIdentifier>>* promise)
 {
     std::vector<MethodIdentifier> rejitRequests;
