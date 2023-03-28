@@ -4,7 +4,10 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Linq;
+using Datadog.Profiler.IntegrationTests;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 

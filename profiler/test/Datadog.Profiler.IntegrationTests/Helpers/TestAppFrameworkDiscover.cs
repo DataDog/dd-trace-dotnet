@@ -54,7 +54,7 @@ namespace Datadog.Profiler.SmokeTests
                     results.Add(
                         new XunitTestCase(
                                 MessageSink,
-                                TestMethodDisplay.Method,
+                                TestMethodDisplay.ClassAndMethod,
                                 TestMethodDisplayOptions.All,
                                 testMethod,
                                 new object[] { appName, System.IO.Path.GetFileName(folder), appAssembly }));

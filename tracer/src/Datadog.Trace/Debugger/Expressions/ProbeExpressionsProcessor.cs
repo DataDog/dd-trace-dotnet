@@ -46,7 +46,7 @@ namespace Datadog.Trace.Debugger.Expressions
             }
             catch (Exception e)
             {
-                Log.Error(e, $"Failed to create probe processor for probe: {probe.Id}");
+                Log.Error(e, "Failed to create probe processor for probe: {Id}", probe.Id);
             }
         }
 

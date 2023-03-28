@@ -27,7 +27,6 @@
       "type": "SQL_INJECTION",
       
       "evidence": {
-        "value": "SELECT Surname from Persons where name = 'Vicent'",
         "valueParts": [
           {
             "value": "SELECT Surname from Persons where name = 'Vicent'",

@@ -58,13 +58,20 @@ namespace Datadog.Trace.Debugger.Expressions
                 probeType,
                 location,
                 evaluateAt,
+                (probe as MetricProbe)?.Kind,
+                (probe as MetricProbe)?.MetricName,
                 HasCondition(),
                 probe.Tags);
         }
 
         internal ProbeInfo ProbeInfo { get; }
 
-        private static DebuggerExpression? Convert(SnapshotSegment segment)
+        private bool IsMetricCountWithoutExpression => ProbeInfo.ProbeType == ProbeType.Metric && _metric == null && ProbeInfo.MetricKind == MetricKind.COUNT;
+
+        [DebuggerStepThrough]
+        private bool HasCondition() => _condition.HasValue;
+
+        private DebuggerExpression? ToDebuggerExpression(SnapshotSegment segment)
         {
             return segment == null ? null : new DebuggerExpression(segment.Dsl, segment.Json?.ToString(), segment.Str);
         }
@@ -79,9 +86,9 @@ namespace Datadog.Trace.Debugger.Expressions
         private void SetExpressions(ProbeDefinition probe)
         {
             // ReSharper disable once PossibleInvalidOperationException
-            _templates = (probe as LogProbe)?.Segments?.Where(seg => seg != null).Select(seg => Convert(seg).Value).ToArray();
-            _condition = Convert((probe as LogProbe)?.When);
-            _metric = Convert((probe as MetricProbe)?.Value);
+            _templates = (probe as LogProbe)?.Segments?.Where(seg => seg != null).Select(seg => ToDebuggerExpression(seg).Value).ToArray();
+            _condition = ToDebuggerExpression((probe as LogProbe)?.When);
+            _metric = ToDebuggerExpression((probe as MetricProbe)?.Value);
         }
 
         private ProbeExpressionEvaluator GetOrCreateEvaluator()
@@ -109,6 +116,7 @@ namespace Datadog.Trace.Debugger.Expressions
                             evaluationResult = Evaluate(snapshotCreator, out var shouldStopCapture);
                             if (shouldStopCapture)
                             {
+                                snapshotCreator.Stop();
                                 return false;
                             }
 
@@ -173,6 +181,7 @@ namespace Datadog.Trace.Debugger.Expressions
                                         evaluationResult = Evaluate(snapshotCreator, out var shouldStopCapture);
                                         if (shouldStopCapture)
                                         {
+                                            snapshotCreator.Stop();
                                             return false;
                                         }
 
@@ -213,7 +222,7 @@ namespace Datadog.Trace.Debugger.Expressions
             }
             catch (Exception e)
             {
-                Log.Error(e, "Failed to process probe. Probe Id: " + ProbeInfo.ProbeId);
+                Log.Error(e, "Failed to process probe. Probe Id: {ProbeId}", ProbeInfo.ProbeId);
                 return false;
             }
         }
@@ -224,19 +233,32 @@ namespace Datadog.Trace.Debugger.Expressions
             shouldStopCapture = false;
             try
             {
-                if (ProbeInfo.ProbeType != ProbeType.Metric)
+                if (IsMetricCountWithoutExpression)
                 {
-                    // we taking the duration at the evaluation time - this might be different from what we have in the snapshot
-                    snapshotCreator.SetDuration();
+                    evaluationResult = new ExpressionEvaluationResult { Metric = 1 };
                 }
+                else
+                {
+                    if (ProbeInfo.ProbeType != ProbeType.Metric)
+                    {
+                        // we taking the duration at the evaluation time - this might be different from what we have in the snapshot
+                        snapshotCreator.SetDuration();
+                    }
 
-                evaluationResult = GetOrCreateEvaluator().Evaluate(snapshotCreator.MethodScopeMembers);
+                    evaluationResult = GetOrCreateEvaluator().Evaluate(snapshotCreator.MethodScopeMembers);
+                }
             }
             catch (Exception e)
             {
                 // if the evaluation failed stop capturing
-                Log.Error(e, "Failed to evaluate expression for probe: " + ProbeInfo.ProbeId);
-                snapshotCreator.Stop();
+                Log.Error(e, "Failed to evaluate expression for probe: {ProbeId}", ProbeInfo.ProbeId);
+                shouldStopCapture = true;
+                return evaluationResult;
+            }
+
+            if (evaluationResult.IsNull())
+            {
+                Log.Error("Evaluation result should not be null. Probe: {ProbeId}", ProbeInfo.ProbeId);
                 shouldStopCapture = true;
                 return evaluationResult;
             }
@@ -244,7 +266,6 @@ namespace Datadog.Trace.Debugger.Expressions
             if (evaluationResult.Condition is false && !evaluationResult.HasError)
             {
                 // if the expression evaluated to false
-                snapshotCreator.Stop();
                 shouldStopCapture = true;
                 return evaluationResult;
             }
@@ -253,14 +274,17 @@ namespace Datadog.Trace.Debugger.Expressions
                 !evaluationResult.HasError &&
                 !ProbeRateLimiter.Instance.Sample(ProbeInfo.ProbeId))
             {
-                snapshotCreator.Stop();
                 shouldStopCapture = true;
                 return evaluationResult;
             }
 
             if (evaluationResult.Metric.HasValue)
             {
-                LiveDebugger.Instance.SendMetrics();
+                LiveDebugger.Instance.SendMetrics(ProbeInfo.MetricKind.Value, ProbeInfo.MetricName, evaluationResult.Metric.Value);
+                // snapshot creator is created for all probes in the method invokers,
+                // if it is a metric probe, once we sent the value, we can stop the invokers working and dispose the snapshot creator
+                snapshotCreator.Dispose();
+                shouldStopCapture = true;
             }
 
             return evaluationResult;
@@ -449,12 +473,6 @@ namespace Datadog.Trace.Debugger.Expressions
                 default:
                     throw new ArgumentOutOfRangeException(nameof(info.MethodState));
             }
-        }
-
-        [DebuggerStepThrough]
-        private bool HasCondition()
-        {
-            return _condition.HasValue;
         }
     }
 }

@@ -5,10 +5,6 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 {
     public class TemplateWithDurationAtEntry : IRun
     {
-        private const string Dsl = @"{
-  ""dsl"": ""Result is {ref @duration}""
-}";
-
         private const string Json = @"{
         ""ref"": ""@duration""
 }";
@@ -21,11 +17,10 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData(
-            templateDsl: Dsl,
             templateJson: Json,
             templateStr: "Result is: ",
             captureSnapshot: true,
-            evaluateAt: 0,
+            evaluateAt: "Entry",
             returnTypeName: "System.Int32",
             parametersTypeName: new[] { "System.Int32" })]
         public int Method(int seed)

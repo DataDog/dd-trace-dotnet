@@ -19,33 +19,17 @@
               }
             },
             "staticFields": {
-              "Condition_EvaluatesToFalse_Dsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"local < arg\"\r\n}"
-              },
               "Condition_EvaluatesToFalse_Json": {
                 "type": "String",
                 "value": "{\r\n    \"lt\": [\r\n      {\"ref\": \"local\"},\r\n      {\"ref\": \"arg\"}\r\n    ]\r\n}"
-              },
-              "Condition_EvaluatesToTrue_Dsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"local > arg\"\r\n}"
               },
               "Condition_EvaluatesToTrue_Json": {
                 "type": "String",
                 "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"local\"},\r\n      {\"ref\": \"arg\"}\r\n    ]\r\n}"
               },
-              "Phase1_TemplateDsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"Result is: {ref arg}\"\r\n}"
-              },
               "Phase1_TemplateJson": {
                 "type": "String",
                 "value": "{\r\n        \"ref\": \"arg\"\r\n}"
-              },
-              "TemplateDsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"This is a new Template, the local is: {ref local}\"\r\n}"
               },
               "TemplateJson": {
                 "type": "String",
@@ -75,33 +59,17 @@
               }
             },
             "staticFields": {
-              "Condition_EvaluatesToFalse_Dsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"local < arg\"\r\n}"
-              },
               "Condition_EvaluatesToFalse_Json": {
                 "type": "String",
                 "value": "{\r\n    \"lt\": [\r\n      {\"ref\": \"local\"},\r\n      {\"ref\": \"arg\"}\r\n    ]\r\n}"
-              },
-              "Condition_EvaluatesToTrue_Dsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"local > arg\"\r\n}"
               },
               "Condition_EvaluatesToTrue_Json": {
                 "type": "String",
                 "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"local\"},\r\n      {\"ref\": \"arg\"}\r\n    ]\r\n}"
               },
-              "Phase1_TemplateDsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"Result is: {ref arg}\"\r\n}"
-              },
               "Phase1_TemplateJson": {
                 "type": "String",
                 "value": "{\r\n        \"ref\": \"arg\"\r\n}"
-              },
-              "TemplateDsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"This is a new Template, the local is: {ref local}\"\r\n}"
               },
               "TemplateJson": {
                 "type": "String",
@@ -143,7 +111,7 @@
       "snapshot": {
         "captures": {
           "lines": {
-            "92": {
+            "70": {
               "arguments": {
                 "arg": {
                   "type": "Double",
@@ -161,33 +129,17 @@
                 }
               },
               "staticFields": {
-                "Condition_EvaluatesToFalse_Dsl": {
-                  "type": "String",
-                  "value": "{\r\n  \"dsl\": \"local < arg\"\r\n}"
-                },
                 "Condition_EvaluatesToFalse_Json": {
                   "type": "String",
                   "value": "{\r\n    \"lt\": [\r\n      {\"ref\": \"local\"},\r\n      {\"ref\": \"arg\"}\r\n    ]\r\n}"
-                },
-                "Condition_EvaluatesToTrue_Dsl": {
-                  "type": "String",
-                  "value": "{\r\n  \"dsl\": \"local > arg\"\r\n}"
                 },
                 "Condition_EvaluatesToTrue_Json": {
                   "type": "String",
                   "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"local\"},\r\n      {\"ref\": \"arg\"}\r\n    ]\r\n}"
                 },
-                "Phase1_TemplateDsl": {
-                  "type": "String",
-                  "value": "{\r\n  \"dsl\": \"Result is: {ref arg}\"\r\n}"
-                },
                 "Phase1_TemplateJson": {
                   "type": "String",
                   "value": "{\r\n        \"ref\": \"arg\"\r\n}"
-                },
-                "TemplateDsl": {
-                  "type": "String",
-                  "value": "{\r\n  \"dsl\": \"This is a new Template, the local is: {ref local}\"\r\n}"
                 },
                 "TemplateJson": {
                   "type": "String",
@@ -205,7 +157,7 @@
           "location": {
             "file": "ConditionAndTemplateChangeTest.cs",
             "lines": [
-              92
+              70
             ]
           }
         },

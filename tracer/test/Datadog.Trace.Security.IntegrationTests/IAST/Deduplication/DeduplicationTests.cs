@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Security.IntegrationTests.IAST;
@@ -36,8 +36,10 @@ public class DeduplicationTests : TestHelper
     [InlineData(true)]
     public async Task SubmitsTraces(bool deduplicationEnabled)
     {
-        SetEnvironmentVariable("DD_IAST_ENABLED", "true");
+        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+        SetEnvironmentVariable("DD_IAST_ENABLED", "1");
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", deduplicationEnabled.ToString());
+        SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory));
 
         int expectedSpanCount = deduplicationEnabled ? 1 : 5;
         var filename = deduplicationEnabled ? "iast.deduplication.deduplicated" : "iast.deduplication.duplicated";
@@ -55,4 +57,3 @@ public class DeduplicationTests : TestHelper
         VerifyInstrumentation(process.Process);
     }
 }
-#endif

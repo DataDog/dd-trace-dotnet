@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.Instrumentation.Registry;
+using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
 
@@ -30,40 +30,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
         // 2. async method that has been called from another async method (async caller) -
         // i.e. a probe was placed on two async methods that have a caller callee relationship (e.g. Async1 calls Async2 and we have probes on both of them)
         // 2.1. async method that participate in a recursive call so we enter the same state machine type more than once but in a different context
-        // For case 1, it's simple because we can store all data in AsyncLocal and for each entry to the BeginMethod (through the state machine object),
-        // we can inspect the AsyncLocal to see if we already created the context or not
-        // but for cases 2 and 2.1 the AsyncLocal of the callee will drive the context from the caller
-        // so we can't deterministically know if the context is a continuation or first entry of the callee
-        // To address this problem, we adding a new bool field to the state machine object that we setting to true on the first execution,
-        // so we can differentiate between the first entry and reentry.
-
-        /// <summary>
-        /// Create a new context and save the parent.
-        /// We call this method from the async kick off method before the state machine is created,
-        /// so for each async state machine, this method will be called exactly once.
-        /// The IsFirstEntry property of the AsyncMethodDebuggerState will be "true"
-        /// then, in the first state machine step, we set this property to "false", thus
-        /// we can deduce that any further invocation is not a new logical call but rather a
-        /// continuation from an "await" expression.
-        /// </summary>
-        /// <param name="kickoffInfo">The async kickoff method info</param>
-        /// <param name="probeId">The probe ID</param>
-        /// <param name="methodMetadataIndex">The method metadata info index</param>
-        /// <param name="probeMetadataIndex">The probe metadata info index</param>
-        /// <param name="instance">The instance object of the method</param>
-        /// <returns>Live debugger state</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static AsyncMethodDebuggerState SetContext<TTarget>(AsyncHelper.AsyncKickoffMethodInfo kickoffInfo, string probeId, int methodMetadataIndex, int probeMetadataIndex, TTarget instance)
-        {
-            var newState = new AsyncMethodDebuggerState(probeId, probeMetadataIndex)
-            {
-                KickoffInvocationTarget = kickoffInfo.KickoffParentObject,
-                StartTime = DateTimeOffset.UtcNow,
-                MethodMetadataIndex = methodMetadataIndex,
-                MoveNextInvocationTarget = instance
-            };
-            return newState;
-        }
+        // For case 1, it's simple because we can store all data in the field we embed during module load and for each entry to the BeginMethod (through the state machine object),
+        // To address them, we embed a field inside the State Machine of type `AsyncMethodDebuggerState` and use it to determine if we are
+        // in a reenter by simply checking if it's null, in case it's not we can just use it to keep collecting contextual information.
 
         /// <summary>
         /// Begin Method Invoker
@@ -99,23 +68,29 @@ namespace Datadog.Trace.Debugger.Instrumentation
             var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance, stateMachineType);
             if (kickoffInfo.KickoffParentObject == null && kickoffInfo.KickoffMethod.IsStatic == false)
             {
-                Log.Warning($"{nameof(BeginMethod)}: hoisted 'this' has not found. {kickoffInfo.KickoffParentType.Name}.{kickoffInfo.KickoffMethod.Name}");
+                Log.Warning(nameof(BeginMethod) + ": hoisted 'this' has not found. {KickoffParentType}.{KickoffMethod}", kickoffInfo.KickoffParentType.Name, kickoffInfo.KickoffMethod.Name);
             }
 
             if (!MethodMetadataCollection.Instance.TryCreateAsyncMethodMetadataIfNotExists(instance, methodMetadataIndex, in methodHandle, in typeHandle, kickoffInfo))
             {
-                Log.Warning($"BeginMethod: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance.GetType().Name}, methodMetadataId = {methodMetadataIndex}, probeId = {probeId}");
+                Log.Warning("BeginMethod: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {Type}, instance type name = {Name}, methodMetadataId = {MethodMetadataIndex}, probeId = {ProbeId}", typeof(TTarget), instance.GetType().Name, methodMetadataIndex, probeId);
                 return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
             }
 
-            if (!ProbeMetadataCollection.Instance.TryCreateProbeMetadataIfNotExists(probeMetadataIndex, probeId))
+            ref var probeData = ref ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probeId);
+            if (probeData.IsEmpty())
             {
-                Log.Warning($"BeginMethod: Failed to receive the ProbeData associated with the executing probe. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, probeMetadataIndex = {probeMetadataIndex}, probeId = {probeId}");
+                Log.Warning("BeginMethod: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId);
                 return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
             }
 
-            // we are not in a continuation, create new state and capture everything
-            var asyncState = SetContext(kickoffInfo, probeId, methodMetadataIndex, probeMetadataIndex, instance);
+            var asyncState = new AsyncMethodDebuggerState(probeId, ref probeData)
+            {
+                KickoffInvocationTarget = kickoffInfo.KickoffParentObject,
+                StartTime = DateTimeOffset.UtcNow,
+                MethodMetadataIndex = methodMetadataIndex,
+                MoveNextInvocationTarget = instance
+            };
 
             if (!asyncState.SnapshotCreator.ProbeHasCondition &&
                 !asyncState.ProbeData.Sampler.Sample())
@@ -139,6 +114,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             asyncState.HasArguments = false;
 
             isReEntryToMoveNext = asyncState; // Denotes that subsequent re-entries of the `MoveNext` will be ignored by `BeginMethod`.
+            asyncState.SnapshotCreator.StartSampling();
             return isReEntryToMoveNext;
         }
 
@@ -157,9 +133,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
+            asyncState.SnapshotCreator.StopSampling();
             var localVariableNames = asyncState.MethodMetadataInfo.LocalVariableNames;
             if (!MethodDebuggerInvoker.TryGetLocalName(index, localVariableNames, out var localName))
             {
+                asyncState.SnapshotCreator.StartSampling();
                 return;
             }
 
@@ -171,6 +149,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             asyncState.HasLocalsOrReturnValue = true;
             asyncState.HasArguments = false;
+            asyncState.SnapshotCreator.StartSampling();
         }
 
         /// <summary>
@@ -191,6 +170,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return DebuggerReturn.GetDefault();
             }
 
+            asyncState.SnapshotCreator.StopSampling();
             var asyncCaptureInfo = new AsyncCaptureInfo(asyncState.MoveNextInvocationTarget, asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: asyncState.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: asyncState.MethodMetadataInfo.AsyncMethodHoistedArguments);
             var capture = new CaptureInfo<Exception>(value: exception, methodState: MethodState.ExitStartAsync, asyncCaptureInfo: asyncCaptureInfo, memberKind: ScopeMemberKind.Exception);
 
@@ -199,6 +179,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 asyncState.IsActive = false;
             }
 
+            asyncState.SnapshotCreator.StartSampling();
             return DebuggerReturn.GetDefault();
         }
 
@@ -223,6 +204,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return new DebuggerReturn<TReturn>(returnValue);
             }
 
+            asyncState.SnapshotCreator.StopSampling();
             var asyncCaptureInfo = new AsyncCaptureInfo(asyncState.MoveNextInvocationTarget, asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: asyncState.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: asyncState.MethodMetadataInfo.AsyncMethodHoistedArguments);
             if (exception != null)
             {
@@ -243,6 +225,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 asyncState.HasLocalsOrReturnValue = true;
             }
 
+            asyncState.SnapshotCreator.StartSampling();
             return new DebuggerReturn<TReturn>(returnValue);
         }
 
@@ -258,6 +241,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
+            asyncState.SnapshotCreator.StopSampling();
             var hasArgumentsOrLocals = asyncState.HasLocalsOrReturnValue ||
                                       asyncState.HasArguments ||
                                       !asyncState.MethodMetadataInfo.Method.IsStatic;

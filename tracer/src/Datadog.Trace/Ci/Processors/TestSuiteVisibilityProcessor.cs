@@ -39,7 +39,7 @@ internal class TestSuiteVisibilityProcessor : ITraceProcessor
             }
             else
             {
-                Log.Warning("Span dropped because Test suite visibility is not supported without Agentless [Span.Type={type}]", span.Type);
+                Log.Warning("Span dropped because Test suite visibility is not supported without Agentless [Span.Type={Type}]", span.Type);
             }
         }
 

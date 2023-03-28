@@ -50,18 +50,18 @@ namespace Datadog.Trace.Activity
                 {
                     if (handler.ShouldListenTo(sName, activitySource.Version) && HandlerBySource.TryAdd(sName, handler))
                     {
-                        Log.Debug("ActivityListenerHandler: {sourceName} will be handled by {handler}.", sName, handler);
+                        Log.Debug("ActivityListenerHandler: {SourceName} will be handled by {Handler}.", sName, handler);
                         return true;
                     }
                 }
                 else if (handler.ShouldListenTo(sName, null) && HandlerBySource.TryAdd(sName, handler))
                 {
-                    Log.Debug("ActivityListenerHandler: {sourceName} will be handled by {handler}.", sName, handler);
+                    Log.Debug("ActivityListenerHandler: {SourceName} will be handled by {Handler}.", sName, handler);
                     return true;
                 }
             }
 
-            Log.Warning("ActivityListenerHandler: There's no handler to process the events from \"{sourceName}\".", sName);
+            Log.Warning("ActivityListenerHandler: There's no handler to process the events from \"{SourceName}\".", sName);
             return false;
         }
 
@@ -75,7 +75,7 @@ namespace Datadog.Trace.Activity
             }
             else
             {
-                Log.Debug("ActivityListenerHandler: There's no handler to process the ActivityStarted event. [Source={sourceName}]", sName);
+                Log.Debug("ActivityListenerHandler: There's no handler to process the ActivityStarted event. [Source={SourceName}]", sName);
             }
         }
 
@@ -89,7 +89,7 @@ namespace Datadog.Trace.Activity
             }
             else
             {
-                Log.Warning("ActivityListenerHandler: There's no handler to process the ActivityStopped event.  [Source={sourceName}]", sName);
+                Log.Warning("ActivityListenerHandler: There's no handler to process the ActivityStopped event.  [Source={SourceName}]", sName);
             }
         }
     }

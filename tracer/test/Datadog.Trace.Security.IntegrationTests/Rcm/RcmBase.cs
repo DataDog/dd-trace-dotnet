@@ -52,22 +52,16 @@ public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
         SetHttpPort(Fixture.HttpPort);
     }
 
-    internal static void CheckAckState(GetRcmRequest request, string product, uint expectedState, string expectedError, string message)
+    internal static void CheckAckState(GetRcmRequest request, string product, int expectedStateLength, uint expectedState, string expectedError, string message)
     {
-        var state = request?.Client?.State?.ConfigStates?.SingleOrDefault(x => x.Product == product);
+        var states = request?.Client?.State?.ConfigStates?.Where(x => x.Product == product).ToList();
 
-        state.Should().NotBeNull();
-        state.ApplyState.Should().Be(expectedState, message);
-        state.ApplyError.Should().Be(expectedError, message);
-    }
+        states.Count.Should().Be(expectedStateLength, message);
 
-    internal static void CheckCapabilities(GetRcmRequest request, uint expectedState, string message)
-    {
-#if !NETCOREAPP
-        var capabilities = new BigInteger(request?.Client?.Capabilities);
-#else
-        var capabilities = new BigInteger(request?.Client?.Capabilities, true, true);
-#endif
-        capabilities.Should().Be(expectedState, message);
+        foreach (var state in states)
+        {
+            state.ApplyState.Should().Be(expectedState, message);
+            state.ApplyError.Should().Be(expectedError, message);
+        }
     }
 }

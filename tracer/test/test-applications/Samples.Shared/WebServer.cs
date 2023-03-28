@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Samples
 {
-    public class WebServer : IDisposable
+    internal class WebServer : IDisposable
     {
         private readonly HttpListener _listener;
 

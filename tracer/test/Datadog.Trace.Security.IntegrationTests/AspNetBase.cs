@@ -34,6 +34,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         private static readonly Regex AppSecWafDuration = new(@"_dd.appsec.waf.duration: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecWafDurationWithBindings = new(@"_dd.appsec.waf.duration_ext: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecWafVersion = new(@"\s*_dd.appsec.waf.version: \d.\d.\d(\S*)?,", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex AppSecWafRulesVersion = new(@"\s*_dd.appsec.event_rules.version: \d.\d.\d(\S*)?,", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecEventRulesLoaded = new(@"\s*_dd.appsec.event_rules.loaded: \d+\.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecErrorCount = new(@"\s*_dd.appsec.event_rules.error_count: 0.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private readonly string _testName;
@@ -49,7 +50,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             _httpClient = new HttpClient();
             _shutdownPath = shutdownPath;
 
-            // adding these header so we can later assert it was collect properly
+            // adding these header so we can later assert it was collected properly
             _httpClient.DefaultRequestHeaders.Add(XffHeader, MainIp);
             _httpClient.DefaultRequestHeaders.Add("user-agent", "Mistake Not...");
             _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings { ContractResolver = new OrderedContractResolver() };
@@ -70,7 +71,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             await VerifySpans(spans, settings, testInit, methodNameOverride);
         }
 
-        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null)
+        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null)
         {
             settings.ModifySerialization(
                 serializationSettings =>
@@ -94,6 +95,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             if (!testInit)
             {
                 settings.AddRegexScrubber(AppSecWafVersion, string.Empty);
+                settings.AddRegexScrubber(AppSecWafRulesVersion, string.Empty);
                 settings.AddRegexScrubber(AppSecErrorCount, string.Empty);
                 settings.AddRegexScrubber(AppSecEventRulesLoaded, string.Empty);
             }
@@ -108,7 +110,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             // Ensures that we get nice file nesting in Solution Explorer
             await Verifier.Verify(spans, settings)
                           .UseMethodName(methodNameOverride ?? "_")
-                          .UseTypeName(GetTestName());
+                          .UseTypeName(testName ?? GetTestName());
         }
 
         protected void SetClientIp(string ip)
@@ -249,7 +251,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var spans = new List<MockSpan>();
             foreach (var url in urls)
             {
-                spans.AddRange(await SendRequestsAsync(agent, url, null, 1, 1, string.Empty, null));
+                spans.AddRange(await SendRequestsAsync(agent, url, null, 1, 1, string.Empty));
             }
 
             return spans.ToImmutableList();

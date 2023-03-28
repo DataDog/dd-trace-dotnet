@@ -35,7 +35,7 @@ internal readonly partial struct SecurityCoordinator
         {
             if (result.ShouldBlock)
             {
-                throw new BlockException(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings);
+                throw new BlockException(result);
             }
 
             Report(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings, result.ShouldBlock);
@@ -63,7 +63,7 @@ internal readonly partial struct SecurityCoordinator
                 else
                 {
 #endif
-                    Log.Warning("Header {key} couldn't be added as argument to the waf", currentKey);
+                    Log.Warning("Header {Key} couldn't be added as argument to the waf", currentKey);
                 }
             }
         }

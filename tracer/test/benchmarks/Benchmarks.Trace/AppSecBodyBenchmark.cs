@@ -8,6 +8,7 @@ using Datadog.Trace;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Configuration;
 using SecurityCoordinator = Datadog.Trace.AppSec.Coordinator.SecurityCoordinator;
@@ -25,8 +26,8 @@ namespace Benchmarks.Trace
     [BenchmarkAgent2]
     public class AppSecBodyBenchmark
     {
-        private static readonly Security security;
-        private readonly ComplexModel complexModel = new()
+        private static readonly Security _security;
+        private readonly ComplexModel _complexModel = new()
         {
             Age = 12,
             Gender = "Female",
@@ -36,24 +37,30 @@ namespace Benchmarks.Trace
             Address2 = new Address { Number = 15, City = new City { Name = "Madrid", Country = new Country { Name = "Spain", Continent = new Continent { Name = "Europe", Planet = new Planet { Name = "Earth" } } } }, IsHouse = true, NameStreet = "lorem ipsum dolor sit amet" },
             Dogs = new List<Dog> { new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" } } }, new Dog { Name = "toto", Dogs = new List<Dog> { new Dog { Name = "tata" }, new Dog { Name = "tata" } } }, new Dog { Name = "tata", Dogs = new List<Dog> { new Dog { Name = "titi" }, new Dog { Name = "titi" }, new Dog { Name = "tutu" } } } }
         };
-#if NETFRAMEWORK
-        private static HttpContext httpContext;
-#else
-        private static HttpContext httpContext;
-#endif
+
+        private readonly Props10String _props10 = ConstructionUtils.ConstructProps10String();
+        private readonly Props100String _props100 = ConstructionUtils.ConstructProps100String();
+        private readonly Props1000String _props1000 = ConstructionUtils.ConstructProps1000String();
+
+        private readonly Props10Rec _props10x3 = ConstructionUtils.ConstructProps10Rec(3);
+        private readonly Props10Rec _props10x6 = ConstructionUtils.ConstructProps10Rec(6);
+
+
+
+        private static HttpContext _httpContext;
 
         static AppSecBodyBenchmark()
         {
             var dir = Directory.GetCurrentDirectory();
             Environment.SetEnvironmentVariable("DD_APPSEC_ENABLED", "true");
-            security = Security.Instance;
+            _security = Security.Instance;
 #if NETFRAMEWORK
             var ms = new MemoryStream();
             using var sw = new StreamWriter(ms);
 
-            httpContext = new HttpContext(new HttpRequest(string.Empty, "http://random.com/benchmarks", string.Empty), new HttpResponse(sw));
+            _httpContext = new HttpContext(new HttpRequest(string.Empty, "http://random.com/benchmarks", string.Empty), new HttpResponse(sw));
 #else
-            httpContext = new DefaultHttpContext();
+            _httpContext = new DefaultHttpContext();
 #endif
         }
 
@@ -64,27 +71,50 @@ namespace Benchmarks.Trace
         {
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
 #if !NETFRAMEWORK
-            security.CheckBody(httpContext, span, body);
-            var context = httpContext.Features.Get<IContext>();
+            _security.CheckBody(_httpContext, span, body);
+            var context = _httpContext.Features.Get<IContext>();
             context?.Dispose();
-            httpContext.Features.Set<IContext>(null);
+            _httpContext.Features.Set<IContext>(null);
 #else
-            var securityTransport = new SecurityCoordinator(security, httpContext, span);
+            var securityTransport = new SecurityCoordinator(_security, _httpContext, span);
             var result = securityTransport.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, ObjectExtractor.Extract(body) } });
-            var context = httpContext.Items["waf"] as IContext;
+            var context = _httpContext.Items["waf"] as IContext;
             context?.Dispose();
-            httpContext.Items["waf"] = null;
+            _httpContext.Items["waf"] = null;
 #endif
         }
 
         [Benchmark]
-        public void AllCycleMoreComplexBody() => ExecuteCycle(complexModel);
+        public void AllCycleMoreComplexBody() => ExecuteCycle(_complexModel);
 
         [Benchmark]
         public void ObjectExtractorSimpleBody() => ObjectExtractor.Extract(new { });
 
         [Benchmark]
-        public void ObjectExtractorMoreComplexBody() => ObjectExtractor.Extract(complexModel);
+        public void ObjectExtractorMoreComplexBody() => ObjectExtractor.Extract(_complexModel);
+
+        // NOTE: these next eight benchmarks are useful to help understand how the size of an
+        // object (graph) affects the ObjectExtractor, but are fail slow, so not worth running
+        // in the CI
+
+        public void ObjectExtractorProps10() => ObjectExtractor.Extract(_props10);
+
+        public void ObjectExtractorProps100() => ObjectExtractor.Extract(_props100);
+
+        public void ObjectExtractorProps1000() => ObjectExtractor.Extract(_props1000);
+
+        public void ObjectExtractorProps10x3() => ObjectExtractor.Extract(_props10x3);
+
+        public void ObjectExtractorProps10x6() => ObjectExtractor.Extract(_props10x6);
+
+        public void ObjectExtractorProps10x1000Concurrent() =>
+            Parallel.For(0, 999, _ => ObjectExtractor.Extract(_props10));
+
+        public void ObjectExtractorProps100x1000Concurrent() =>
+            Parallel.For(0, 999, _ => ObjectExtractor.Extract(_props100));
+
+        public void ObjectExtractorProps1000x1000Concurrent() =>
+            Parallel.For(0, 999, _ => ObjectExtractor.Extract(_props1000));
     }
 
     public class ComplexModel

@@ -13,7 +13,7 @@ internal class TaintedObject : ITaintedObject
 {
     private readonly WeakReference _weak;
 
-    public TaintedObject(object value, Range[]? ranges)
+    public TaintedObject(object value, Range[] ranges)
     {
         _weak = new WeakReference(value);
         PositiveHashCode = IastUtils.IdentityHashCode(value) & DefaultTaintedMap.PositiveMask;
@@ -26,7 +26,7 @@ internal class TaintedObject : ITaintedObject
 
     public int PositiveHashCode { get; }
 
-    public Range[]? Ranges { get; }
+    public Range[] Ranges { get; }
 
     public ITaintedObject? Next { get; set; }
 }

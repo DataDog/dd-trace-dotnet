@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.Globalization;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
@@ -33,6 +34,9 @@ namespace Datadog.Trace
         {
             var settings = tracer?.Settings;
 
+            // TODO: Environment, ServiceVersion, GitCommitSha, and GitRepositoryUrl are stored on the TraceContext
+            // even though they likely won't change for the lifetime of the process. We should consider moving them
+            // elsewhere to reduce the memory usage.
             if (settings is not null)
             {
                 // these could be set from DD_ENV/DD_VERSION or from DD_TAGS
@@ -146,7 +150,7 @@ namespace Datadog.Trace
                 else if (ShouldTriggerPartialFlush())
                 {
                     Log.Debug<ulong, ulong, int>(
-                        "Closing span {spanId} triggered a partial flush of trace {traceId} with {spanCount} pending spans",
+                        "Closing span {SpanId} triggered a partial flush of trace {TraceId} with {SpanCount} pending spans",
                         span.SpanId,
                         span.TraceId,
                         _spans.Count);

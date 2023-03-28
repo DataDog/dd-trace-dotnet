@@ -64,6 +64,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
         {
             EnableIast(enableIast);
+            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
             DisableObfuscationQueryString();
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
 
@@ -80,7 +81,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
         [SkippableTheory]
-        [InlineData(AddressesConstants.RequestQuery, "/Iast/SqlQuery?query=SELECT%20Surname%20from%20Persons%20where%20name%20=%20%27Vicent%27", null)]
+        [InlineData(AddressesConstants.RequestQuery, "/Iast/SqlQuery?username=Vicent", null)]
         public async Task TestIastSqlInjectionRequest(string test, string url, string body)
         {
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);

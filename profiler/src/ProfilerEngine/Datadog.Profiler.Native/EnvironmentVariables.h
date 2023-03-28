@@ -11,7 +11,8 @@ public:
     inline static const shared::WSTRING ProfilingEnabled            = WStr("DD_PROFILING_ENABLED");
     inline static const shared::WSTRING DebugLogEnabled             = WStr("DD_TRACE_DEBUG");
     inline static const shared::WSTRING LogPath                     = WStr("DD_PROFILING_LOG_PATH");
-    inline static const shared::WSTRING LogDirectory                = WStr("DD_PROFILING_LOG_DIR");
+    inline static const shared::WSTRING LogDirectory                = WStr("DD_TRACE_LOG_DIRECTORY");
+    inline static const shared::WSTRING DeprecatedLogDirectory      = WStr("DD_PROFILING_LOG_DIR");
     inline static const shared::WSTRING OperationalMetricsEnabled   = WStr("DD_INTERNAL_OPERATIONAL_METRICS_ENABLED");
     inline static const shared::WSTRING Version                     = WStr("DD_VERSION");
     inline static const shared::WSTRING ServiceName                 = WStr("DD_SERVICE");
@@ -51,4 +52,6 @@ public:
     inline static const shared::WSTRING Agentless                   = WStr("DD_PROFILING_AGENTLESS");
     inline static const shared::WSTRING CoreMinimumOverride         = WStr("DD_PROFILING_MIN_CORES_THRESHOLD");
     inline static const shared::WSTRING UseBacktrace2               = WStr("DD_INTERNAL_USE_BACKTRACE2");
+    inline static const shared::WSTRING AllocationRecorderEnabled   = WStr("DD_INTERNAL_PROFILING_ALLOCATION_RECORDER_ENABLED");
+    inline static const shared::WSTRING DebugInfoEnabled            = WStr("DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED");
 };

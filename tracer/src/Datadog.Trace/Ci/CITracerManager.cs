@@ -24,8 +24,8 @@ namespace Datadog.Trace.Ci
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CITracerManager>();
 
-        public CITracerManager(ImmutableTracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, RuntimeMetricsWriter runtimeMetricsWriter, DirectLogSubmissionManager logSubmissionManager, ITelemetryController telemetry, IDiscoveryService discoveryService, DataStreamsManager dataStreamsManager, string defaultServiceName)
-            : base(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetricsWriter, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, GetProcessors(settings.Exporter.PartialFlushEnabled, agentWriter is CIVisibilityProtocolWriter))
+        public CITracerManager(ImmutableTracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, RuntimeMetricsWriter runtimeMetricsWriter, DirectLogSubmissionManager logSubmissionManager, ITelemetryController telemetry, IDiscoveryService discoveryService, DataStreamsManager dataStreamsManager, string defaultServiceName, IGitMetadataTagsProvider gitMetadataTagsProvider)
+            : base(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetricsWriter, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, GetProcessors(settings.Exporter.PartialFlushEnabled, agentWriter is CIVisibilityProtocolWriter))
         {
         }
 
@@ -70,7 +70,7 @@ namespace Datadog.Trace.Ci
                 }
                 catch (Exception e)
                 {
-                    Log.Error(e, e.Message);
+                    Log.Error(e, "Error executing trace processor {TraceProcessorType}", processor?.GetType());
                 }
             }
 

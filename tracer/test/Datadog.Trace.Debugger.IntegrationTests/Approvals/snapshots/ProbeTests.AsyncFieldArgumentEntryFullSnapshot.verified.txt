@@ -25,10 +25,6 @@
               }
             },
             "staticFields": {
-              "Dsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"ref _field > ref intArg and ref _field > ref local\"\r\n}"
-              },
               "Json": {
                 "type": "String",
                 "value": "{\r\n\"or\": [\r\n{\r\n    \"gt\": [\r\n      {\"ref\": \"_field\"},\r\n      {\"ref\": \"intArg\"}\r\n    ]\r\n},\r\n{\r\n \"gt\": [\r\n      {\"ref\": \"_field\"},\r\n      2\r\n    ]\r\n}\r\n]\r\n}"
@@ -63,10 +59,6 @@
               }
             },
             "staticFields": {
-              "Dsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"ref _field > ref intArg and ref _field > ref local\"\r\n}"
-              },
               "Json": {
                 "type": "String",
                 "value": "{\r\n\"or\": [\r\n{\r\n    \"gt\": [\r\n      {\"ref\": \"_field\"},\r\n      {\"ref\": \"intArg\"}\r\n    ]\r\n},\r\n{\r\n \"gt\": [\r\n      {\"ref\": \"_field\"},\r\n      2\r\n    ]\r\n}\r\n]\r\n}"

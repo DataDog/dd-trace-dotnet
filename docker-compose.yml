@@ -907,3 +907,105 @@ services:
     - DD_TRACE_AGENT_URL=http://test-agent:8126
     depends_on:
     - test-agent
+
+  StartDependencies.OSXARM64:
+    image: andrewlock/wait-for-dependencies
+    depends_on:
+      - servicestackredis_osx_arm64
+      - stackexchangeredis_osx_arm64
+      - stackexchangeredis_osx_arm64-replica
+      - stackexchangeredis_osx_arm64-single
+      - elasticsearch7_osx_arm64
+      - sqledge_osx_arm64
+      - mongo_osx_arm64
+      - postgres_osx_arm64
+      - mysql_osx_arm64
+      - rabbitmq_osx_arm64
+      - aws_sqs_osx_arm64
+    environment:
+      - TIMEOUT_LENGTH=120
+    command: servicestackredis_osx_arm64:6379 stackexchangeredis_osx_arm64:6379 stackexchangeredis_osx_arm64-replica:6379 stackexchangeredis_osx_arm64-single:6379 elasticsearch7_osx_arm64:9200 sqledge_osx_arm64:1433 mongo_osx_arm64:27017 postgres_osx_arm64:5432 mysql_osx_arm64:3306 rabbitmq_osx_arm64:5672 aws_sqs_osx_arm64:9324
+
+  # OSX ARM64 dependencies
+
+  aws_sqs_osx_arm64:
+    image: softwaremill/elasticmq
+    ports:
+      - "9324:9324"
+
+  elasticsearch7_osx_arm64:
+    image: elasticsearch:7.10.1
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
+  mongo_osx_arm64:
+    image: mongo:4.0.9
+    ports:
+      - "27017:27017"
+    command: mongod
+
+  mysql_osx_arm64:
+    image: mysql/mysql-server:8.0
+    environment:
+      - MYSQL_DATABASE=world
+      - MYSQL_ROOT_PASSWORD=mysqldb
+      - MYSQL_USER=mysqldb
+      - MYSQL_PASSWORD=mysqldb
+    ports:
+      - "3306:3306"
+
+  postgres_osx_arm64:
+    image: postgres:10.5-alpine
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5432:5432"
+
+  rabbitmq_osx_arm64:
+    image: rabbitmq:3-management
+    command: rabbitmq-server
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  servicestackredis_osx_arm64:
+    image: redis:4-alpine
+    command: redis-server --bind 0.0.0.0
+    ports:
+      - "6379:6379"
+
+  stackexchangeredis_osx_arm64:
+    image: redis:4-alpine
+    hostname: stackexchangeredis_osx_arm64
+    command: redis-server --bind 0.0.0.0
+    ports:
+      - "6392:6379"
+
+  stackexchangeredis_osx_arm64-replica:
+    image: redis:4-alpine
+    hostname: stackexchangeredis_osx_arm64-replica
+    command: redis-server --bind 0.0.0.0 --slaveof stackexchangeredis_osx_arm64 6379
+    ports:
+      - "6390:6379"
+
+  stackexchangeredis_osx_arm64-single:
+    image: redis:4-alpine
+    hostname: stackexchangeredis_osx_arm64-single
+    command: redis-server --bind 0.0.0.0
+    ports:
+      - "6391:6379"
+
+  sqledge_osx_arm64:
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Strong!Passw0rd
+

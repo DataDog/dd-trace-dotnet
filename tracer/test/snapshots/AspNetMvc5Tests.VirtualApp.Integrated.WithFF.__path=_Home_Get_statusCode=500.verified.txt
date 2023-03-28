@@ -21,12 +21,14 @@ at System.Web.Mvc.ActionDescriptor.ExtractParameterFromDictionary(ParameterInfo 
       http.request.headers.host: localhost:00000,
       http.route: {controller}/{action}/{id},
       http.status_code: 500,
-      http.url: http://localhost/my-app/Home/Get,
+      http.url: http://localhost:00000/my-app/Home/Get,
       http.useragent: testhelper,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -62,11 +64,13 @@ at System.Web.Mvc.ActionDescriptor.ExtractParameterFromDictionary(ParameterInfo 
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,
-      http.url: http://localhost/my-app/Home/Get,
+      http.url: http://localhost:00000/my-app/Home/Get,
       http.useragent: testhelper,
       language: dotnet,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   }
 ]

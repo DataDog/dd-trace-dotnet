@@ -50,7 +50,7 @@ partial class Build : NukeBuild
                     bool isChanged;
                     var forceExplorationTestsWithVariableName = $"force_exploration_tests_with_{variableName}";
 
-                    if (Environment.GetEnvironmentVariable("Build.Reason") == "Schedule" && bool.Parse(Environment.GetEnvironmentVariable("isMainBranch") ?? "false"))
+                    if (Environment.GetEnvironmentVariable("BUILD_REASON") == "Schedule" && bool.Parse(Environment.GetEnvironmentVariable("isMainBranch") ?? "false"))
                     {
                         Logger.Info("Running scheduled build on master, forcing all tests to run regardless of whether there has been a change.");
                         isChanged = true;
@@ -160,6 +160,7 @@ partial class Build : NukeBuild
                 {
                     // new {framework = TargetFramework.NETCOREAPP3_1, runtimeInstall = v3Install, runtimeUninstall = v3Uninstall },
                     new {framework = TargetFramework.NET6_0, runtimeInstall = v4Install, runtimeUninstall = v4Uninstall },
+                    new {framework = TargetFramework.NET7_0, runtimeInstall = v4Install, runtimeUninstall = v4Uninstall },
                 };
 
                 var matrix = new Dictionary<string, object>();

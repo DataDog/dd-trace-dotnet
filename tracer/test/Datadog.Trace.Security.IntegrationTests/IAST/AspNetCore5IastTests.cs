@@ -168,7 +168,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         public async Task TestIastSqlInjectionRequest()
         {
             var filename = IastEnabled ? "Iast.SqlInjection.AspNetCore5.IastEnabled" : "Iast.SqlInjection.AspNetCore5.IastDisabled";
-            var url = "/Iast/SqlQuery?query=SELECT%20Surname%20from%20Persons%20where%20name%20=%20%27Vicent%27";
+            var url = "/Iast/SqlQuery?username=Vicent";
             IncludeAllHttpSpans = true;
             await TryStartApp();
             var agent = Fixture.Agent;

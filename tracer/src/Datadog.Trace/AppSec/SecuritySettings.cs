@@ -48,7 +48,7 @@ namespace Datadog.Trace.AppSec
                 var wafTimeout = ParseWafTimeout(wafTimeoutString);
                 if (wafTimeout <= 0)
                 {
-                    Log.Warning("Ignoring '{WafTimeoutKey}' of '{wafTimeoutString}' because it was zero or less", ConfigurationKeys.AppSec.WafTimeout, wafTimeoutString);
+                    Log.Warning("Ignoring '{WafTimeoutKey}' of '{WafTimeoutString}' because it was zero or less", ConfigurationKeys.AppSec.WafTimeout, wafTimeoutString);
                     wafTimeout = defaultWafTimeout;
                 }
 

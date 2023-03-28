@@ -11,14 +11,14 @@ namespace Datadog.Trace
     public static class Tags
     {
         /// <summary>
-        /// The environment of the instrumented service. It's value is usually constant for the lifetime of a process,
+        /// The environment of the instrumented service. Its value is usually constant for the lifetime of a process,
         /// but can technically change for each trace if the user sets it manually.
         /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.Environment"/>.
         /// </summary>
         public const string Env = "env";
 
         /// <summary>
-        /// The version of the instrumented service. It's value is usually constant for the lifetime of a process,
+        /// The version of the instrumented service. Its value is usually constant for the lifetime of a process,
         /// but can technically change for each trace if the user sets it manually.
         /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.ServiceVersion"/>.
         /// </summary>
@@ -136,6 +136,20 @@ namespace Datadog.Trace
         /// This tag is added during MessagePack serialization. It's value is always "dotnet".
         /// </summary>
         public const string Language = "language";
+
+        /// <summary>
+        /// The git commit hash of the instrumented service. Its value is usually constant for the lifetime of a process,
+        /// but can technically change for each trace if the user sets it manually.
+        /// This tag is added during MessagePack serialization using the value from <see cref="Datadog.Trace.Agent.MessagePack.TraceChunkModel.GitCommitSha"/>.
+        /// </summary>
+        internal const string GitCommitSha = "_dd.git.commit.sha";
+
+        /// <summary>
+        /// The git repository URL of the instrumented service. Its value is usually constant for the lifetime of a process,
+        /// but can technically change for each trace if the user sets it manually.
+        /// This tag is added during MessagePack serialization using the value from <see cref="Datadog.Trace.Agent.MessagePack.TraceChunkModel.GitRepositoryUrl"/>.
+        /// </summary>
+        internal const string GitRepositoryUrl = "_dd.git.repository_url";
 
         /// <summary>
         /// The end point requested
@@ -528,6 +542,11 @@ namespace Datadog.Trace
         internal const string ProcessEnvironmentVariables = "cmd.environment_variables";
 
         internal const string TagPropagationError = "_dd.propagation_error";
+
+        /// <summary>
+        /// Marks a span as injected when DBM data was propagated
+        /// </summary>
+        internal const string DbmDataPropagated = "_dd.dbm_trace_injected";
 
         internal static class AppSec
         {

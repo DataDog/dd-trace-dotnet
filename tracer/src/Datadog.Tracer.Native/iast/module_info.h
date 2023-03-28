@@ -2,6 +2,7 @@
 #include "../../../../shared/src/native-src/pal.h"
 #include "iast_util.h"
 #include "app_domain_info.h"
+
 using namespace shared;
 
 namespace iast
@@ -62,6 +63,7 @@ namespace iast
         IMetaDataEmit2* _metadataEmit = nullptr;
         IMetaDataAssemblyImport* _assemblyImport = nullptr;
         IMetaDataAssemblyEmit* _assemblyEmit = nullptr;
+
         bool _isExcluded = false;
 
 

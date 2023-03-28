@@ -7,7 +7,7 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.Instrumentation.Registry;
+using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Snapshots;
 
 namespace Datadog.Trace.Debugger.Instrumentation
@@ -21,10 +21,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
     {
         private readonly string _probeId;
         private readonly Scope _scope;
-        private readonly DateTimeOffset? _startTime;
 
         /// <summary>
-        /// Used to perform a fast lookup to grab the proper <see cref="Registry.MethodMetadataInfo"/>.
+        /// Used to perform a fast lookup to grab the proper <see cref="Collections.MethodMetadataInfo"/>.
         /// This index is hard-coded into the method's instrumented bytecode.
         /// </summary>
         private readonly int _methodMetadataIndex;
@@ -40,20 +39,18 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// </summary>
         /// <param name="probeId">The id of the probe</param>
         /// <param name="scope">Scope instance</param>
-        /// <param name="startTime">The intended start time of the scope, intended for scopes created in the OnMethodEnd handler</param>
-        /// <param name="methodMetadataIndex">The unique index of the method's <see cref="Registry.MethodMetadataInfo"/></param>
-        /// <param name="probeMetadataIndex">The unique index of the probe <see cref="ProbeData"/></param>
+        /// <param name="methodMetadataIndex">The unique index of the method's <see cref="Collections.MethodMetadataInfo"/></param>
+        /// <param name="probeData">The <see cref="ProbeData"/> associated with the executing instrumentation</param>
         /// <param name="invocationTarget">The current invocation target ('this' object)</param>
-        internal MethodDebuggerState(string probeId, Scope scope, DateTimeOffset? startTime, int methodMetadataIndex, int probeMetadataIndex, object invocationTarget)
+        internal MethodDebuggerState(string probeId, Scope scope, int methodMetadataIndex, ref ProbeData probeData, object invocationTarget)
         {
             _probeId = probeId;
             _scope = scope;
-            _startTime = startTime;
             _methodMetadataIndex = methodMetadataIndex;
             HasLocalsOrReturnValue = false;
             InvocationTarget = invocationTarget;
-            ProbeData = ProbeMetadataCollection.Instance.Get(probeMetadataIndex);
-            SnapshotCreator = DebuggerSnapshotCreator.BuildSnapshotCreator(ProbeData.Processor);
+            SnapshotCreator = DebuggerSnapshotCreator.BuildSnapshotCreator(probeData.Processor);
+            ProbeData = probeData;
             MethodPhase = EvaluateAt.Entry;
         }
 
@@ -72,11 +69,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// Gets the LiveDebugger BeginMethod scope
         /// </summary>
         internal Scope Scope => _scope;
-
-        /// <summary>
-        /// Gets the LiveDebugger state StartTime
-        /// </summary>
-        internal DateTimeOffset? StartTime => _startTime;
 
         /// <summary>
         /// Gets the Id of the probe

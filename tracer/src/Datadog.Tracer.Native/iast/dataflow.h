@@ -106,7 +106,7 @@ namespace iast
 
         AppDomainInfo* GetAppDomain(AppDomainID id);
         ModuleInfo* GetModuleInfo(ModuleID moduleId);
-        ModuleInfo* GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId);
+        ModuleInfo* GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId, bool lookInSharedRepos = false);
 
         mdMethodDef GetFunctionInfo(FunctionID functionId, ModuleInfo** ppModuleInfo);
 

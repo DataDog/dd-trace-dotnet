@@ -29,6 +29,8 @@ internal static class MessagePackStringCache
     [ThreadStatic]
     private static CachedBytes _origin;
 
+    private static CachedBytes _gitCommitSha;
+    private static CachedBytes _gitRepositoryUrl;
     private static CachedBytes _aasSiteNameBytes;
     private static CachedBytes _aasSiteKindBytes;
     private static CachedBytes _aasSiteTypeBytes;
@@ -46,6 +48,8 @@ internal static class MessagePackStringCache
         _env = default;
         _version = default;
         _origin = default;
+        _gitCommitSha = default;
+        _gitRepositoryUrl = default;
         _aasSiteNameBytes = default;
         _aasSiteKindBytes = default;
         _aasSiteTypeBytes = default;
@@ -67,6 +71,16 @@ internal static class MessagePackStringCache
     public static byte[]? GetVersionBytes(string? version)
     {
         return GetBytes(version, ref _version);
+    }
+
+    public static byte[]? GetGitCommitShaBytes(string? gitCommitSha)
+    {
+        return GetBytes(gitCommitSha, ref _gitCommitSha);
+    }
+
+    public static byte[]? GetGitRepositoryUrlBytes(string? gitRepositoryUrl)
+    {
+        return GetBytes(gitRepositoryUrl, ref _gitRepositoryUrl);
     }
 
     public static byte[]? GetOriginBytes(string? origin)

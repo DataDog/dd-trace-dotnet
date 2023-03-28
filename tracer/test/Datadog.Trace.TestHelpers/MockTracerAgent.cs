@@ -352,6 +352,29 @@ namespace Datadog.Trace.TestHelpers
             ProbesStatuses.Clear();
         }
 
+        public async Task<string[]> WaitForStatsdRequests(int statsdRequestsCount, TimeSpan? timeout = null)
+        {
+            using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(5));
+
+            var isFound = false;
+            while (!isFound && !cancellationSource.IsCancellationRequested)
+            {
+                isFound = StatsdRequests.Count >= statsdRequestsCount;
+
+                if (!isFound)
+                {
+                    await Task.Delay(100, cancellationSource.Token);
+                }
+            }
+
+            if (!isFound)
+            {
+                throw new InvalidOperationException($"Stats requested count not found. Expected {statsdRequestsCount}, actual {ProbesStatuses.Count}");
+            }
+
+            return StatsdRequests.ToArray();
+        }
+
         public virtual void Dispose()
         {
             _cancellationTokenSource.Cancel();
@@ -1353,6 +1376,25 @@ namespace Datadog.Trace.TestHelpers
                     catch (Exception) when (_cancellationTokenSource.IsCancellationRequested)
                     {
                         return;
+                    }
+                    catch (SocketException ex)
+                    {
+                        var message = ex.Message.ToLowerInvariant();
+                        if (message.Contains("interrupted"))
+                        {
+                            // Accept call is likely interrupted by a dispose
+                            // Swallow the exception and let the test finish
+                            return;
+                        }
+
+                        if (message.Contains("broken") || message.Contains("forcibly closed") || message.Contains("invalid argument"))
+                        {
+                            // The application was likely shut down
+                            // Swallow the exception and let the test finish
+                            return;
+                        }
+
+                        throw;
                     }
                     catch (Exception ex)
                     {

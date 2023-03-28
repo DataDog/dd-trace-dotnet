@@ -8,7 +8,7 @@
     "Computer01+Profiler": {
       "commandName": "Executable",
       "executablePath": "$(BaseOutputPath)\\$(ConfigBasedRelativeOutputPath)\\profiler\\src\\Demos\\Samples.Computer01\\$(TargetFramework)\\Samples.Computer01.exe",
-      "commandLineArgs": "--scenario 9 --threads 1",
+      "commandLineArgs": "--scenario 10 --threads 20",
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "1",
         "COR_PROFILER": "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}",
@@ -26,7 +26,11 @@
         "DD_PROFILING_CPU_ENABLED": "1",
         "DD_PROFILING_EXCEPTION_ENABLED": "1",
         "DD_PROFILING_ALLOCATION_ENABLED": "1",
+        "DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED": "1",
         "DD_INTERNAL_PROFILING_OUTPUT_DIR": "$(PROGRAMDATA)\\Datadog-APM\\Pprof-files\\DotNet",
+
+        "DD_ENV": "apm-profiling-local",
+        "DD_SERVICE": "dd-dotnet-computer01",
 
         "DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION": "true"
       },

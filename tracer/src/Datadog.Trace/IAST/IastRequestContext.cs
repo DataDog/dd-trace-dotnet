@@ -81,6 +81,11 @@ internal class IastRequestContext
         }
     }
 
+    internal TaintedObjects GetTaintedObjects()
+    {
+        return _taintedObjects;
+    }
+
     internal TaintedObject? GetTainted(object objectToFind)
     {
         return _taintedObjects.Get(objectToFind);

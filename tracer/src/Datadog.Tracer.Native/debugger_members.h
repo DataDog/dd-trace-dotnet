@@ -143,20 +143,28 @@ struct ProbeMetadata
     WSTRING errorMessage;
     std::set<trace::MethodIdentifier> methods;
     ProbeStatus status = ProbeStatus::RECEIVED;
+    std::set<int> probeIndices;
 
     ProbeMetadata() = default;
     ProbeMetadata(const ProbeMetadata& other) = default;
     ProbeMetadata(ProbeMetadata&& other) = default;
 
-    ProbeMetadata(const WSTRING& probeId, std::set<trace::MethodIdentifier>&& methods,
-                  ProbeStatus initialStatus) :
-        probeId(probeId), methods(std::move(methods)), status(initialStatus)
+    ProbeMetadata(const WSTRING& probeId, std::set<trace::MethodIdentifier>&& methods, ProbeStatus initialStatus,
+                  std::set<int>&& probeDataIndices) :
+        probeId(probeId),
+        methods(std::move(methods)),
+        status(initialStatus),
+        probeIndices(std::move(probeDataIndices))
     {
     }
 
-    ProbeMetadata(const WSTRING& probeId, const WSTRING& errorMessage,
-                  std::set<trace::MethodIdentifier>&& methods, ProbeStatus initialStatus) :
-        probeId(probeId), errorMessage(errorMessage), methods(std::move(methods)), status(initialStatus)
+    ProbeMetadata(const WSTRING& probeId, const WSTRING& errorMessage, std::set<trace::MethodIdentifier>&& methods,
+                  ProbeStatus initialStatus, std::set<int>&& probeDataIndices) :
+        probeId(probeId),
+        errorMessage(errorMessage),
+        methods(std::move(methods)),
+        status(initialStatus),
+        probeIndices(std::move(probeDataIndices))
     {
     }
 

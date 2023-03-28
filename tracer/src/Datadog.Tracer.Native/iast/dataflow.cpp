@@ -7,6 +7,8 @@
 #include "aspect_filter_factory.h"
 #include <fstream>
 #include <chrono>
+#include "../../../../shared/src/native-src/com_ptr.h"
+
 using namespace std::chrono;
 
 namespace iast
@@ -68,6 +70,12 @@ static const WSTRING _fixedAssemblyExcludeFilters[] = {
     WStr("MySql*"),
     WStr("Serilog*"),
     WStr("ServiceStack*"),
+    WStr("mscorlib"),
+    WStr("Xunit.*"),
+    WStr("xunit.*"),
+    WStr("FluentAssertions"),
+    WStr("NUnit3.TestAdapter"),
+    WStr("nunit.*"),
     LastEntry, // Can't have an empty array. This must be the last element
 };
 static const WSTRING _fixedMethodIncludeFilters[] = {
@@ -380,10 +388,46 @@ HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMe
                                       IMetaDataAssemblyEmit** ppAssemblyEmit)
 {
     HRESULT hr = S_OK;
-    if (SUCCEEDED(hr)) { hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataImport2, (IUnknown**)ppMetadataImport); }
-    if (SUCCEEDED(hr)) { hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataEmit2, (IUnknown**)ppMetadataEmit); }
-    if (SUCCEEDED(hr)) { hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataAssemblyImport, (IUnknown**)ppAssemblyImport); }
-    if (SUCCEEDED(hr)) { hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataAssemblyEmit, (IUnknown**)ppAssemblyEmit); }
+    if (SUCCEEDED(hr)) 
+    {
+        IUnknown* piUnk = nullptr;
+        hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataImport2, &piUnk); 
+        if (SUCCEEDED(hr))
+        {
+            hr = piUnk->QueryInterface(IID_IMetaDataImport2, (void**) ppMetadataImport);
+        }
+        REL(piUnk);
+    }
+    if (SUCCEEDED(hr)) 
+    {
+        IUnknown* piUnk = nullptr;
+        hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataEmit2, &piUnk);
+        if (SUCCEEDED(hr))
+        {
+            hr = piUnk->QueryInterface(IID_IMetaDataEmit2, (void**) ppMetadataEmit);
+        }
+        REL(piUnk);
+    }
+    if (SUCCEEDED(hr)) 
+    {
+        IUnknown* piUnk = nullptr;
+        hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataAssemblyImport, &piUnk);
+        if (SUCCEEDED(hr))
+        {
+            hr = piUnk->QueryInterface(IID_IMetaDataAssemblyImport, (void**) ppAssemblyImport);
+        }
+        REL(piUnk);
+    }
+    if (SUCCEEDED(hr)) 
+    {
+        IUnknown* piUnk = nullptr;
+        hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataAssemblyEmit, &piUnk);
+        if (SUCCEEDED(hr))
+        {
+            hr = piUnk->QueryInterface(IID_IMetaDataAssemblyEmit, (void**) ppAssemblyEmit);
+        }
+        REL(piUnk);
+    }
     return hr;
 }
 
@@ -439,7 +483,7 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     }
     return nullptr;
 }
-ModuleInfo* Dataflow::GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId)
+ModuleInfo* Dataflow::GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId, bool lookInSharedRepos)
 {
     CSGUARD(_cs);
     for (auto iterator = _modules.begin(); iterator != _modules.end(); iterator++)
@@ -447,7 +491,8 @@ ModuleInfo* Dataflow::GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId)
         if (iterator->second->_name == moduleName)
         {
             auto ppModuleInfo = iterator->second;
-            if (ppModuleInfo->_appDomain.Id == appDomainId)
+
+            if ((ppModuleInfo->_appDomain.Id == appDomainId) || (lookInSharedRepos && ppModuleInfo->_appDomain.IsSharedAssemblyRepository))
             {
                 return ppModuleInfo;
             }

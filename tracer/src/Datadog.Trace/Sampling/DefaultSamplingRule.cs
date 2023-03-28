@@ -46,7 +46,7 @@ namespace Datadog.Trace.Sampling
                 // either we don't have sampling rate from the agent yet (cold start),
                 // or the only rate we received is for "service:,env:", which is not added to _sampleRates
                 defaultRate = _defaultSamplingRate ?? 1;
-                span.SetMetric(Metrics.SamplingAgentDecision, defaultRate); // Keep it to ease investigations
+                SetSamplingAgentDecision(span, defaultRate); // Keep it to ease investigations
                 return defaultRate;
             }
 
@@ -57,15 +57,27 @@ namespace Datadog.Trace.Sampling
 
             if (_sampleRates.TryGetValue(key, out var sampleRate))
             {
-                span.SetMetric(Metrics.SamplingAgentDecision, sampleRate);
+                SetSamplingAgentDecision(span, sampleRate);
                 return sampleRate;
             }
 
-            Log.Debug("Could not establish sample rate for trace {TraceId}. Using default rate instead: {rate}", span.TraceId, _defaultSamplingRate);
+            Log.Debug("Could not establish sample rate for trace {TraceId}. Using default rate instead: {Rate}", span.TraceId, _defaultSamplingRate);
 
             defaultRate = _defaultSamplingRate ?? 1;
-            span.SetMetric(Metrics.SamplingAgentDecision, defaultRate);
+            SetSamplingAgentDecision(span, defaultRate);
             return defaultRate;
+
+            static void SetSamplingAgentDecision(Span span, float sampleRate)
+            {
+                if (span.Tags is CommonTags commonTags)
+                {
+                    commonTags.SamplingAgentDecision = sampleRate;
+                }
+                else
+                {
+                    span.SetMetric(Metrics.SamplingAgentDecision, sampleRate);
+                }
+            }
         }
 
         public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)

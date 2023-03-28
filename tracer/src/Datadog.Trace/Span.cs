@@ -44,10 +44,10 @@ namespace Datadog.Trace
                 var tagsType = Tags.GetType();
 
                 Log.Debug(
-                    "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{tagsType}])",
+                    "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{TagsType}])",
                     new object[] { SpanId, Context.ParentId, TraceId, Tags, tagsType });
             }
-         }
+        }
 
         /// <summary>
         /// Gets or sets operation name
@@ -165,7 +165,7 @@ namespace Datadog.Trace
 
             static void LogMissingTraceContext(string key, string value)
             {
-                Log.Warning("Ignoring ISpan.SetTag({key}, {value}) because the span is not associated to a TraceContext.", key, value);
+                Log.Warning("Ignoring ISpan.SetTag({Key}, {Value}) because the span is not associated to a TraceContext.", key, value);
             }
 
             // since we don't expose a public API for setting trace-level attributes yet,

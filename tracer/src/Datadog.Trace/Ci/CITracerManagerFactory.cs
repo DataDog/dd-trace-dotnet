@@ -43,9 +43,15 @@ namespace Datadog.Trace.Ci
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
             DataStreamsManager dataStreamsManager,
-            string defaultServiceName)
+            string defaultServiceName,
+            IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
-            return new CITracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName);
+            return new CITracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider);
+        }
+
+        protected override IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings)
+        {
+            return new CIGitMetadataTagsProvider();
         }
 
         protected override ITraceSampler GetSampler(ImmutableTracerSettings settings)

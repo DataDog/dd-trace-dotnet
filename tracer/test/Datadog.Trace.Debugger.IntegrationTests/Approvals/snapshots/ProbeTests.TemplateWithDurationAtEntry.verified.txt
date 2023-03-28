@@ -19,10 +19,6 @@
               }
             },
             "staticFields": {
-              "Dsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"Result is {ref @duration}\"\r\n}"
-              },
               "Json": {
                 "type": "String",
                 "value": "{\r\n        \"ref\": \"@duration\"\r\n}"
@@ -51,10 +47,6 @@
               }
             },
             "staticFields": {
-              "Dsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"Result is {ref @duration}\"\r\n}"
-              },
               "Json": {
                 "type": "String",
                 "value": "{\r\n        \"ref\": \"@duration\"\r\n}"

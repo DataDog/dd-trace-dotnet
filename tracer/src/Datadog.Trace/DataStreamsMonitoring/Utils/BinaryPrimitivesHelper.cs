@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Util;
@@ -101,11 +102,21 @@ internal static class BinaryPrimitivesHelper
         return System.Buffers.Binary.BinaryPrimitives.ReverseEndianness(value);
     }
 
+    /// <summary>
+    /// Reverses a primitive value - performs an endianness swap
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int ReverseEndianness(int value)
+    {
+        return System.Buffers.Binary.BinaryPrimitives.ReverseEndianness(value);
+    }
+
 #else
 
     /// <summary>
     /// Reverses a primitive value - performs an endianness swap
     /// </summary>
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong ReverseEndianness(ulong value)
     {
@@ -117,6 +128,14 @@ internal static class BinaryPrimitivesHelper
     /// <summary>
     /// Reverses a primitive value - performs an endianness swap
     /// </summary>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int ReverseEndianness(int value) => (int)ReverseEndianness((uint)value);
+
+    /// <summary>
+    /// Reverses a primitive value - performs an endianness swap
+    /// </summary>
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint ReverseEndianness(uint value)
     {
@@ -156,6 +175,7 @@ internal static class BinaryPrimitivesHelper
     /// <param name="offset">The number of bits to rotate by.
     /// Any value outside the range [0..31] is treated as congruent mod 32.</param>
     /// <returns>The rotated value.</returns>
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint RotateRight(uint value, int offset) => (value >> offset) | (value << (32 - offset));
 
@@ -167,6 +187,7 @@ internal static class BinaryPrimitivesHelper
     /// <param name="offset">The number of bits to rotate by.
     /// Any value outside the range [0..31] is treated as congruent mod 32.</param>
     /// <returns>The rotated value.</returns>
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint RotateLeft(uint value, int offset) => (value << offset) | (value >> (32 - offset));
 #endif

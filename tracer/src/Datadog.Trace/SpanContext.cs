@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Ci;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace
@@ -195,10 +196,9 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets or sets the header value that contains the propagated trace tags,
-        /// formatted as "key1=value1,key2=value2".
+        /// Gets or sets the propagated trace tags collection.
         /// </summary>
-        internal string PropagatedTags { get; set; }
+        internal TraceTagCollection PropagatedTags { get; set; }
 
         /// <summary>
         /// Gets the trace context.
@@ -335,7 +335,7 @@ namespace Datadog.Trace
                 case Keys.PropagatedTags:
                 case HttpHeaderNames.PropagatedTags:
                     // return the value from TraceContext if available
-                    value = TraceContext?.Tags.ToPropagationHeader() ?? PropagatedTags;
+                    value = TraceContext?.Tags.ToPropagationHeader() ?? PropagatedTags?.ToPropagationHeader();
                     return true;
 
                 case Keys.AdditionalW3CTraceState:

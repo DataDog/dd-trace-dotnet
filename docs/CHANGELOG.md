@@ -17,6 +17,218 @@
 
 
 
+
+
+
+## [Release 2.27.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.27.0)
+
+## Summary
+
+Tracer
+- Support for isolated functions in Azure
+- Support for GraphQL 7
+- Performance improvements in the startup time. We had slowly decreased performances since 2.9.0 by adding more features, we're back to an equivalent state now.
+
+## Changes
+
+### Tracer
+* Add a size limit to the serialization temp buffer (#3830)
+* [Tracer] add support for GraphQL 7 (#3842)
+* Optimize startup time (#3856)
+* [Tracer] Protect against null Activity TraceId (#3870)
+* [Tracing] parse propagated tags during header extraction (#3872)
+* Initial support for isolated Azure Functions (v4) (#3900)
+* Capture exceptions in Azure Functions (#3905)
+* Exclude `App_LocalResources.` deps from telemetry (#3906)
+* Performance improvements (#3907)
+* Record SourceContext in direct submission logs (#3910)
+* Add usr.id when propagating (#3912)
+* Add recording of HTTP status code to Azure Functions HTTP triggers (#3914)
+* Capture the querystring in `http.url` for client HTTP spans (#3935)
+
+### CI Visibility
+* [CI Visibility] Update CI Environment Variables spec (#3878)
+* [CI Visibility] - Fixes git parser when using a SSH signature (#3940)
+
+### ASM
+* [ASM] Update rules WAF rules to 1.5.2 (#3896)
+* [ASM] Correct casing for tag values in SDK (#3893)
+* [ASM] Optimize http body parsing (#3853)
+* [ASM] Taint String Substring and ToCharArray methods (#3854)
+* [ASM] Taint string.Remove() and string.Insert() methods in IAST (#3877)
+* [ASM] Taint string.Join, ToUpper and ToLower methods in IAST (#3897)
+* [ASM] Instrumentate String.Trim(), String.TrimStart(), String.TrimEnd() in IAST. (#3911)
+* [ASM] Instrument String.PadLeft() and String.PadRight() methods (#3918)
+* [ASM] Add integration tests for global rules switch (#3886)
+
+### Continuous Profiler
+* [Profiler ] Fixes in FrameStore (#3861)
+* [Profiler] Add support for Portable PDB in the profiler (#3904)
+
+### Debugger
+* [Dynamic Instrumentation] Add metric probe for dynamic instrumentation (#3727)
+* [Dynamic Instrumentation] Deploy dotnet to debugger backend demo applications (#3920)
+
+### Miscellaneous
+* [Test Package Versions Bump] Updating package versions (#3759)
+* Improve OSX dev experience (#3863)
+* [Tracer] Implement all system-tests W3C tracecontext behaviors (#3873)
+* Fix modules locking (#3892)
+* Use a wrapper for synchronized access to collections (#3895)
+* DSM - Span and Pathway linking (#3902)
+* [Test Package Versions Bump] Updating package versions (#3929)
+
+### Build / Test
+* Swap Samples.Telemetry to use .NET Activity (#3819)
+* Refine CodeOwners (#3860)
+* Fix the clone-repo template for hotfixes (#3866)
+* [Test] Fix flakiness in Aerospike integration test - Attempt 1 (#3890)
+* Add processors benchmarks (#3898)
+* Add support for attach jetbrains products in Benchmark tests (#3903)
+* Remove unused reference to Datadog.Trace in HttpMessageHandler.StackOverflowException (#3923)
+* Fix codeowners file around ASM folders. (#3926)
+* Test Azure Functions out of process on .NET 7 (#3927)
+* Fix a few issues with Samples.Shared (#3934)
+* Fix native compilation warning (#3932)
+
+
+[Changes since 2.26.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.26.0...v2.27.0)
+
+## [Release 2.26.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.26.0)
+
+## Summary
+
+Adjustments on some previous tracer features, improve CI test skipping scenarios.
+Profiler side, handle anonymous and inner named methods.
+ASM side, suspicious request blocking is implemented through a consequent waf update.
+
+## Changes
+
+### Tracer
+* Sorted and encoded tags and added new tests (#3851)
+
+### CI Visibility
+* [CI Visibility] Await git upload metadata before child command start only on test skipping scenarios. (#3827)
+* [CI Visibility] - Improve manual api initialisation. (#3843)
+
+### ASM
+* [ASM] Waf block actions configurable via Remote configuration (#3794)
+* [ASM] String concat propagation (#3805)
+* [ASM] Waf update to 1.8.2 (#3822)
+* [ASM] Update IP collection algorithm (#3831)
+* [ASM] Add missing capabilities and other minor corrections (#3855)
+
+### Continuous Profiler
+* [Profiler] Add named/anonymous methods scenario (#3817)
+* [Profiler] Bucketize contention events by duration (#3824)
+* [Profiler] Bump libdatadog version to 2.0.0 (#3839)
+
+### Build / Test
+* Proposal for standardized storage of installable artifacts (#3762)
+* Bump DatadogTestLogger version (#3833)
+* [CI] Fix the flakiness of `TelemetryControllerTests`, but not the source of the issue (#3834)
+* [Tracer] Container init job to run for hotfixes (#3844)
+
+### Miscellaneous
+* Enable rollforward on minor versions in global.json (#3841)
+
+
+[Changes since 2.24.1](https://github.com/DataDog/dd-trace-dotnet/compare/v2.24.1...v2.25.0)
+
+## [Release 2.24.1](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.24.1)
+
+## Summary
+
+Hotfix to fix a potential performance issues on Windows, for .NET Framework apps. 
+
+## Changes
+
+### Tracer
+* Stop extracting SourceLink after 100 tries (#3837)
+
+[Changes since 2.24.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.24.0...v2.24.1)
+
+
+## [Release 2.24.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.24.0)
+
+## Summary
+
+Tracer 
+- Added support for publishing init containers that will be used for library injection in kubernetes. The feature isn't yet available though at it requires changes in the datadog agent as well, that will be released next month.
+
+Profiler
+- Reduce CPU consumption on Linux 
+- Improve performance of exceptions profiling
+
+## Changes
+
+### Tracer
+* [Tracer] Fix `otel.status_code`/`otel.library.name` from .NET Activity API (#3750)
+* [Tracer] add 128-bit `TraceId` struct (#3752)
+* [AAS] Bail out from starting processes if API_KEY isn't present (#3775)
+* [Tracer] Fix `IDatadogLogger` analyzer warnings (#3785)
+* [Tracer] APM and DBM Link Injecting SQL Comment (#3784)
+* [Tracer] Add support for Aerospike 6.0.0 (#3811)
+
+### CI Visibility
+* [CI Visibility] - BenchmarkDotNet framework support (#3774)
+* [CI Visibility] - Extract traits recursively in NUnit (#3777)
+* [CI Visibility] - Small changes to the CI Visibility processors. (#3788)
+* [CI Visibility] - Lazy initialise the ITR instance (#3789)
+* [CI Visibility] - Defer await for git upload task (#3825)
+
+### ASM
+* [ASM] Instrumented tests: basic setup (#3718)
+* [ASM] Set span type to "vulnerability" for iast spans in console apps. (#3747)
+* [ASM] Weak hashing instrumentation for net462 (#3776)
+* [ASM] Add valueparts without source in vulnerability Json (#3810)
+* [ASM] Weak cipher support for .net framework (#3818)
+
+### Continuous Profiler
+* [Profiler] Add allocations recorder (#3753)
+* [Profiler] Reduce memory allocation of the profiler (#3764)
+* [Profiler] Validate exceptions sampling (#3767)
+* [Profiler] Improve .NET exception profiler (#3770)
+* [Profiler] Fix CppCheck version when installing (#3772)
+* [Profiler] Fix flacky tests (#3778)
+* Remove all references to `DD_DOTNET_PROFILER_HOME` (#3782)
+* [Profiler] Improve building thread stat file path (#3786)
+* [Profiler] Improve Linux stackwalker deadlock detection (#3787)
+* [Profiler] Take cores count into account for CPU profiling (#3793)
+* [Profiler/CI] Remove profiler throughput tests from Github Actions (#3795)
+* [Profiler] Add I/O-bound demo application (#3797)
+* [Profiler] Add CI visibility on profiler AzDo jobs (#3799)
+* [Profiler] Change scenario for better chances to get samples (#3801)
+* [Profiler] Fix bug when retrieving number of cores (#3802)
+* [Profiler] bug fixes (#3806)
+* [Profiler] Increase leak size and fix exception (#3815)
+* [Profiler] Add view for EndpointsCount controller (#3823)
+
+### Debugger
+* [Dynamic Instrumentation] Support duration in debugger DSL (#3765)
+* [Dynamic Instrumentation] Addressed a leakage by reusing probe data indices (#3771)
+
+### Miscellaneous
+* Extract `git.commit.sha` and `git.repository_url` from SourceLink (#3652)
+* Change profiler and native loader default log dir (#3790)
+* Small performance improvements (#3809)
+
+### Build / Test
+* Add debugger team as CODEONWERS to missing directories (#3766)
+* Generate container images for Kubernetes Admission Controller library injection (#3769)
+* [Build] Add retries for build and package commands (#3780)
+* Add analyzers for `IDatadogLogger` usages (#3781)
+* [Build/Test] Limit upload_container_images build stage to individual CI (#3783)
+* [Build/Test] Publish official dd-lib-dotnet-init images on tagged commit (#3791)
+* Fix test trigger on scheduled builds (#3792)
+* [Build/Test] Add system tests for the library injection images (#3803)
+* Fix MongoDb integration tests and bump to latest (#3808)
+* Add test and sample project for .NET Activity API (#3597)
+
+
+[Changes since 2.23.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.23.0...v2.24.0)
+
+
 ## [Release 2.23.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.23.0)
 
 ## Summary
@@ -100,7 +312,8 @@ Tracer
 * Make the log output digestable by system tests dashboard (#3739)
 
 
-[Changes since 2.22.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.22.0...v2.23.0)
+[Changes since 2.22.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.22.0...v2.23.0)
+
 
 ## [Release 2.22.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.22.0)
 
@@ -217,7 +430,8 @@ Write here any high level summary you may find relevant or delete the section.
 * RCM requests should normalize 'service' and 'env`, but not other tags (#3669)
 
 
-[Changes since 2.21.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.21.0...v2.22.0)
+[Changes since 2.21.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.21.0...v2.22.0)
+
 
 ## [Release 2.21.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.21.0)
 
@@ -285,7 +499,8 @@ Write here any high level summary you may find relevant or delete the section.
 * UDS is a variant, not a scenario in system tests (#3567)
 * Temporarily ignore error in logs from CI app (#3571)
 
-[Changes since 2.20.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.20.0...v2.21.0)
+[Changes since 2.20.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.20.0...v2.21.0)
+
 
 ## [Release 2.20.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.20.0)
 
@@ -384,7 +599,8 @@ Write here any high level summary you may find relevant or delete the section.
 * Added DI to the README (#3514)
 
 
-[Changes since 2.19.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.19.0...v2.20.0)
+[Changes since 2.19.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.19.0...v2.20.0)
+
 
 ## [Release 2.19.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.19.0)
 
@@ -451,7 +667,8 @@ Tracer
 * [Build] Fix exported symbols issue with CMake builds (#3428)
 
 
-[Changes since 2.18.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.18.0...v2.19.0)
+[Changes since 2.18.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.18.0...v2.19.0)
+
 
 ## [Release 2.18.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.18.0)
 
@@ -520,7 +737,8 @@ Profiler
 * Native loader build (#3357)
 
 
-[Changes since 2.17.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.17.0...v2.18.0)
+[Changes since 2.17.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.17.0...v2.18.0)
+
 
 ## [Release 2.17.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.17.0)
 
@@ -554,7 +772,8 @@ Profiler
 ### Build / Test
 * Fix documentation URL (#3327)
 
-[Changes since 2.16.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.16.0...v2.17.0)
+[Changes since 2.16.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.16.0...v2.17.0)
+
 
 ## [Release 2.16.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.16.0)
 
@@ -640,7 +859,8 @@ Profiler
 * Fix flaky `DataStreamsWriter` test (#3317)
 
 
-[Changes since 2.15.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.15.0...v2.16.0)
+[Changes since 2.15.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.15.0...v2.16.0)
+
 
 ## [Release 2.15.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.15.0)
 
@@ -781,7 +1001,8 @@ Profiler
 * [Snapshots] Diff on base branch (#3250)
 
 
-[Changes since 2.14.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.14.0...v2.15.0)
+[Changes since 2.14.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.14.0...v2.15.0)
+
 
 ## [Release 2.14.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.14.0)
 
@@ -860,7 +1081,8 @@ Profiler
 * Zippy1981/add note to update documentation when you add an instrumentation (#3080)
 
 
-[Changes since 2.13.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.13.0...v2.14.0)
+[Changes since 2.13.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.13.0...v2.14.0)
+
 
 ## [Release 2.13.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.13.0)
 
@@ -920,7 +1142,8 @@ Profiler
 * [CI Visibility] Send Code Coverage Payload to the agentless endpoint (#2983)
 
 
-[Changes since 2.12.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.12.0...v2.13.0)
+[Changes since 2.12.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.12.0...v2.13.0)
+
 
 ## [Release 2.12.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.12.0)
 
@@ -983,7 +1206,8 @@ Profiler
 * Exclude guid-like assembly names from telemetry (#2954)
 
 
-[Changes since 2.11.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.11.0...v2.12.0)
+[Changes since 2.11.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.11.0...v2.12.0)
+
 
 ## [Release 2.11.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.11.0)
 
@@ -1016,7 +1240,8 @@ Profiler
 * [Linux packaging] Make sure the createLogPath script is executable (#2911)
 
 
-[Changes since 2.10.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.10.0...v2.11.0)
+[Changes since 2.10.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.10.0...v2.11.0)
+
 
 ## [Release 2.10.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.10.0)
 
@@ -1119,7 +1344,8 @@ Also here are more minor changes on the Tracer integrations:
 * [Doc] Add a quick comment on docker for integrations (#2869)
 
 
-[Changes since 2.9.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.9.0...v2.10.0)
+[Changes since 2.9.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.9.0...v2.10.0)
+
 
 ## [Release 2.9.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.9.0)
 
@@ -1180,7 +1406,8 @@ This version mainly contains Tracer bug fixes:
 * [Test Package Versions Bump] Updating package versions (#2795)
 
 
-[Changes since 2.8.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.8.0...v2.9.0)
+[Changes since 2.8.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.8.0...v2.9.0)
+
 
 ## [Release 2.8.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.8.0)
 

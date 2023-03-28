@@ -292,7 +292,7 @@ namespace iast
         HRESULT hr = S_FALSE;
         if (_rewriter == nullptr)
         {
-            HRESULT hr = S_OK;
+            hr = S_OK;
             _rewriter = new ILRewriter(this);
             hr = _rewriter->Import();
             if (FAILED(hr))

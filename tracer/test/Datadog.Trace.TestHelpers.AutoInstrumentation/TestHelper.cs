@@ -193,7 +193,7 @@ namespace Datadog.Trace.TestHelpers
             return WaitForProcessResult(helper);
         }
 
-        public ProcessResult WaitForProcessResult(ProcessHelper helper)
+        public ProcessResult WaitForProcessResult(ProcessHelper helper, int expectedExitCode = 0)
         {
             // this is _way_ too long, but we want to be v. safe
             // the goal is just to make sure we kill the test before
@@ -243,7 +243,7 @@ namespace Datadog.Trace.TestHelpers
                 throw new SkipException("Coverlet threw AbandonedMutexException during cleanup");
             }
 
-            ExitCodeException.ThrowIfNonZero(exitCode);
+            ExitCodeException.ThrowIfNonExpected(exitCode, expectedExitCode);
 
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
@@ -373,7 +373,7 @@ namespace Datadog.Trace.TestHelpers
 
         public void EnableIast(bool enable = true)
         {
-            SetEnvironmentVariable(ConfigurationKeys.Iast.Enabled, enable.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.Iast.Enabled, enable.ToString().ToLower());
         }
 
         public void DisableObfuscationQueryString()

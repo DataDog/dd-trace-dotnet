@@ -316,6 +316,12 @@
     <ClInclude Include="SumMetric.h">
       <Filter>Metrics</Filter>
     </ClInclude>
+    <ClInclude Include="AllocationsRecorder.h">
+      <Filter>Allocations</Filter>
+    </ClInclude>
+    <ClInclude Include="IAllocationsRecorder.h">
+      <Filter>Allocations</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -473,6 +479,9 @@
     </ClCompile>
     <ClCompile Include="SumMetric.cpp">
       <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="AllocationsRecorder.cpp">
+      <Filter>Allocations</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

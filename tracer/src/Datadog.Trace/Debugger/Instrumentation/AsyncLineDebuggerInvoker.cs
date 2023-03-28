@@ -8,7 +8,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.Instrumentation.Registry;
+using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
 
@@ -21,7 +21,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class AsyncLineDebuggerInvoker
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LineDebuggerInvoker));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AsyncLineDebuggerInvoker));
 
         private static AsyncLineDebuggerState CreateInvalidatedAsyncLineDebuggerState()
         {
@@ -47,9 +47,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
+                state.SnapshotCreator.StopSampling();
                 var localVariableNames = state.MethodMetadataInfo.LocalVariableNames;
                 if (!MethodDebuggerInvoker.TryGetLocalName(index, localVariableNames, out var localName))
                 {
+                    state.SnapshotCreator.StartSampling();
                     return;
                 }
 
@@ -61,6 +63,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 }
 
                 state.HasLocalsOrReturnValue = true;
+                state.SnapshotCreator.StartSampling();
             }
             catch (Exception e)
             {
@@ -128,7 +131,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 }
 
                 // Assess if we have metadata associated with the given index
-                if (!MethodMetadataCollection.Instance.IsIndexExists(methodMetadataIndex))
+                if (!MethodMetadataCollection.Instance.IndexExists(methodMetadataIndex))
                 {
                     // State machine is null when we run in Optimized code and the original async method was generic,
                     // in which case the state machine is a generic value type.
@@ -137,24 +140,25 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance, stateMachineType);
                     if (kickoffInfo.KickoffParentObject == null && kickoffInfo.KickoffMethod.IsStatic == false)
                     {
-                        Log.Warning($"{nameof(BeginLine)}: hoisted 'this' has not found. {kickoffInfo.KickoffParentType.Name}.{kickoffInfo.KickoffMethod.Name}");
+                        Log.Warning(nameof(BeginLine) + ": hoisted 'this' was not found. {KickoffParentType}.{KickoffMethod}", kickoffInfo.KickoffParentType.Name, kickoffInfo.KickoffMethod.Name);
                     }
 
                     if (!MethodMetadataCollection.Instance.TryCreateAsyncMethodMetadataIfNotExists(instance, methodMetadataIndex, in methodHandle, in typeHandle, kickoffInfo))
                     {
-                        Log.Warning($"([Async]BeginLine: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance.GetType().Name}, methodMetadataId = {methodMetadataIndex}, probeId = {probeId}");
+                        Log.Warning("([Async]BeginLine: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {Type}, instance type name = {Name}, methodMetadataId = {MethodMetadataIndex}, probeId = {ProbeId}", typeof(TTarget), instance.GetType().Name, methodMetadataIndex, probeId);
                         return CreateInvalidatedAsyncLineDebuggerState();
                     }
                 }
 
-                if (!ProbeMetadataCollection.Instance.TryCreateProbeMetadataIfNotExists(probeMetadataIndex, probeId))
+                ref var probeData = ref ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probeId);
+                if (probeData.IsEmpty())
                 {
-                    Log.Warning($"[Async]BeginLine: Failed to receive the ProbeData associated with the executing probe. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, probeMetadataIndex = {probeMetadataIndex}, probeId = {probeId}");
+                    Log.Warning("[Async]BeginLine: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId);
                     return CreateInvalidatedAsyncLineDebuggerState();
                 }
 
                 var kickoffParentObject = AsyncHelper.GetAsyncKickoffThisObject(instance);
-                var state = new AsyncLineDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, probeMetadataIndex, lineNumber, probeFilePath, instance, kickoffParentObject);
+                var state = new AsyncLineDebuggerState(probeId, scope: default, methodMetadataIndex, ref probeData, lineNumber, probeFilePath, instance, kickoffParentObject);
 
                 if (!state.SnapshotCreator.ProbeHasCondition &&
                     !state.ProbeData.Sampler.Sample())
@@ -170,6 +174,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     state.IsActive = false;
                 }
 
+                state.SnapshotCreator.StartSampling();
                 return state;
             }
             catch (Exception e)
@@ -194,6 +199,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
+                state.SnapshotCreator.StopSampling();
                 var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
                                            state.MethodMetadataInfo.AsyncMethodHoistedArguments.Length > 0 ||
                                            state.KickoffInvocationTarget != null;

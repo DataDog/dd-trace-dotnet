@@ -4,28 +4,20 @@
 // </copyright>
 
 #if !NETFRAMEWORK
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Util.Http.QueryStringObfuscation;
 using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.Util.Http
 {
     internal static partial class HttpRequestExtensions
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HttpRequestExtensions));
-
         internal static string GetUrl(this HttpRequest request, QueryStringManager queryStringManager = null)
         {
             var queryString = request.QueryString.Value;
             return HttpRequestUtils.GetUrl(
                 request.Scheme,
                 request.Host.Value,
+                port: null, // The request.Host includes the port
                 request.PathBase.ToUriComponent(),
                 request.Path.ToUriComponent(),
                 queryString,

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\..\packages\libdatadog.1.0.1\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.1.0.1\build\native\libdatadog.props')" />
+  <Import Project="..\..\..\..\packages\libdatadog.2.0.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.2.0.0\build\native\libdatadog.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -125,7 +125,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -158,7 +157,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -187,7 +185,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -222,7 +219,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -234,7 +230,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AdaptiveSampler.h" />
+    <ClInclude Include="AllocationsRecorder.h" />
     <ClInclude Include="CounterMetric.h" />
+    <ClInclude Include="DebugInfoStore.h" />
     <ClInclude Include="EnabledProfilers.h" />
     <ClInclude Include="EnumHelpers.h" />
     <ClInclude Include="COMHelpers.h" />
@@ -242,7 +240,9 @@
     <ClInclude Include="GarbageCollection.h" />
     <ClInclude Include="GCBaseRawSample.h" />
     <ClInclude Include="GarbageCollectionProvider.h" />
+    <ClInclude Include="IAllocationsRecorder.h" />
     <ClInclude Include="IBatchedSamplesProvider.h" />
+    <ClInclude Include="IDebugInfoStore.h" />
     <ClInclude Include="IGarbageCollectionsListener.h" />
     <ClInclude Include="ISampledAllocationsListener.h" />
     <ClInclude Include="LiveObjectInfo.h" />
@@ -332,6 +332,7 @@
   <ItemGroup>
     <ClCompile Include="AdaptiveSampler.cpp" />
     <ClCompile Include="AllocationsProvider.cpp" />
+    <ClCompile Include="AllocationsRecorder.cpp" />
     <ClCompile Include="AppDomainStore.cpp" />
     <ClCompile Include="ApplicationInfo.cpp" />
     <ClCompile Include="ApplicationStore.cpp" />
@@ -344,6 +345,7 @@
     <ClCompile Include="CorProfilerCallbackFactory.cpp" />
     <ClCompile Include="CounterMetric.cpp" />
     <ClCompile Include="CpuTimeProvider.cpp" />
+    <ClCompile Include="DebugInfoStore.cpp" />
     <ClCompile Include="DogstatsdService.cpp" />
     <ClCompile Include="EnabledProfilers.cpp" />
     <ClCompile Include="ExceptionsProvider.cpp" />
@@ -388,12 +390,17 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\shared\src\native-lib\PPDB\PPDB.vcxproj">
+      <Project>{4b18a9ec-94fa-4098-a48d-83ed25e076d7}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.1.0.1\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.1.0.1\build\native\libdatadog.props'))" />
+    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.2.0.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.2.0.0\build\native\libdatadog.props'))" />
   </Target>
 </Project>

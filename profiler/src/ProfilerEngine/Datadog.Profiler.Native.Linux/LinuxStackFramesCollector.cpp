@@ -158,16 +158,13 @@ void LinuxStackFramesCollector::NotifyStackWalkCompleted(std::int32_t resultErro
     _stackWalkInProgressWaiter.notify_one();
 }
 
-// This symbol is defined in the Datadog.Linux.ApiWrapper to handle the special case of __pthread_create
-// For __pthread_create we cannot block the signals while calling the *real* pthread_create and restore it after,
-// because the newly created thread will inherit the signal mask from its parent (which will be "block all signals").
-// So to prevent it, dd_IsInPthreadCreate will indicate if the current callstack is executing __pthread_create.
-// If it's the case, we just bail, otherwise we stackwalk the current thread.
-extern "C" int dd_IsInPthreadCreate() __attribute__((weak));
+// This symbol is defined in the Datadog.Linux.ApiWrapper. It allows us to check if the thread to be profiled
+// contains a frame of a function that might cause a deadlock.
+extern "C" unsigned long long dd_inside_wrapped_functions() __attribute__((weak));
 
 std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
 {
-    if (dd_IsInPthreadCreate != nullptr && dd_IsInPthreadCreate() == 1)
+    if (dd_inside_wrapped_functions != nullptr && dd_inside_wrapped_functions() != 0)
     {
         return E_ABORT;
     }

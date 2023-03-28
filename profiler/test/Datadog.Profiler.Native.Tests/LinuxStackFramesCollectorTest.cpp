@@ -30,10 +30,10 @@ using ::testing::Return;
 
 // This global variable and function are use defined/declared for the test only
 // In production, those symbols will be defined in the Wrapper library
-int dd_IsPthreadCreateCall = 0;
-extern "C" int dd_IsInPthreadCreate()
+unsigned long long inside_wrapped_functions = 0;
+extern "C" unsigned long long dd_inside_wrapped_functions()
 {
-    return dd_IsPthreadCreateCall;
+    return inside_wrapped_functions;
 }
 
 #define ASSERT_DURATION_LE(secs, stmt)                                            \
@@ -153,7 +153,7 @@ public:
 
         _processId = OpSysTools::GetProcId();
         SignalHandlerForTest::_instance = std::make_unique<SignalHandlerForTest>();
-        dd_IsPthreadCreateCall = 0;
+        inside_wrapped_functions = 0;
     }
 
     void TearDown() override
@@ -165,7 +165,7 @@ public:
 
         SignalHandlerForTest::_instance.reset();
         sigaction(SIGUSR1, &_oldAction, nullptr);
-        dd_IsPthreadCreateCall = 0;
+        inside_wrapped_functions = 0;
     }
 
     void StopTest()
@@ -177,9 +177,9 @@ public:
         _stopWorker = true;
     }
 
-    static void SimulateInPthreadCreate()
+    static void SimulateInsideWrappedFunctions()
     {
-        dd_IsPthreadCreateCall = 1;
+        inside_wrapped_functions = 1; // do not profile
     }
 
     pid_t GetWorkerThreadId()
@@ -340,7 +340,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStackWith
 
 TEST_F(LinuxStackFramesCollectorFixture, CheckCollectionAbortIfInPthreadCreateCall)
 {
-    SimulateInPthreadCreate();
+    SimulateInsideWrappedFunctions();
 
     auto* signalManager = ProfilerSignalManager::Get();
 

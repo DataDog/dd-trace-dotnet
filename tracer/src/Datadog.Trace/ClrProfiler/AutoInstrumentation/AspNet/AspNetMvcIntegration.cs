@@ -163,7 +163,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     var rootspanTags = span.Context.TraceContext?.RootSpan.Tags;
 
                     // in case of a transfered request, the child request shouldnt set a new http route.
-                    if (string.IsNullOrEmpty(rootspanTags.GetTag(Tags.HttpRoute)))
+                    if (rootspanTags is AspNetTags rootAspNetTags)
+                    {
+                        if (string.IsNullOrEmpty(rootAspNetTags.HttpRoute))
+                        {
+                            rootAspNetTags.HttpRoute = routeUrl;
+                        }
+                    }
+                    else if (string.IsNullOrEmpty(rootspanTags.GetTag(Tags.HttpRoute)))
                     {
                         span.Context.TraceContext?.RootSpan.Tags.SetTag(Tags.HttpRoute, routeUrl);
                     }

@@ -111,7 +111,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
 
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
-            Log.Debug("Test Coverage: {json}", JsonConvert.SerializeObject(testCoverage));
+            Log.Debug("Test Coverage: {Json}", JsonConvert.SerializeObject(testCoverage));
         }
 
         return testCoverage;

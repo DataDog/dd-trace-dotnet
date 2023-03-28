@@ -17,45 +17,11 @@ namespace Samples.Computer01
     //  - have classes with different sizes (2, 4, 8, 16, 32, 64, 128)
     //  - allocate same count of objects randomly
     //  - allocate different count of objects in different orders
-    public class MeasureAllocations
+    public class MeasureAllocations : ScenarioBase
     {
-        private ManualResetEvent _stopEvent;
-        private List<Task> _activeTasks;
-
-        public MeasureAllocations()
-        {
-        }
-
-        public void Start()
-        {
-            if (_stopEvent != null)
-            {
-                throw new InvalidOperationException("Already running...");
-            }
-
-            _stopEvent = new ManualResetEvent(false);
-            _activeTasks = CreateThreads();
-        }
-
-        public void Run()
+        public override void OnProcess()
         {
             Allocate();
-        }
-
-        public void Stop()
-        {
-            if (_stopEvent == null)
-            {
-                throw new InvalidOperationException("Not running...");
-            }
-
-            _stopEvent.Set();
-
-            Task.WhenAll(_activeTasks).Wait();
-
-            _stopEvent.Dispose();
-            _stopEvent = null;
-            _activeTasks = null;
         }
 
         private void Allocate()
@@ -258,34 +224,6 @@ namespace Samples.Computer01
             }
 
             Console.WriteLine("Allocations end");
-        }
-
-        private List<Task> CreateThreads()
-        {
-            var result = new List<Task>();
-
-            result.Add(
-                Task.Factory.StartNew(
-                    () =>
-                    {
-                        while (!IsEventSet())
-                        {
-                            Allocate();
-                        }
-                    },
-                    TaskCreationOptions.LongRunning));
-
-            return result;
-        }
-
-        private bool IsEventSet()
-        {
-            if (_stopEvent == null)
-            {
-                return false;
-            }
-
-            return _stopEvent.WaitOne(0);
         }
 
         internal class AllocStats

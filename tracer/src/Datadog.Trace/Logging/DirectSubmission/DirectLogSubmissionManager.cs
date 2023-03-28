@@ -6,6 +6,7 @@
 
 using System;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
 
@@ -33,9 +34,10 @@ namespace Datadog.Trace.Logging.DirectSubmission
             ImmutableDirectLogSubmissionSettings settings,
             string serviceName,
             string env,
-            string serviceVersion)
+            string serviceVersion,
+            IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
-            var formatter = new LogFormatter(settings, serviceName, env, serviceVersion);
+            var formatter = new LogFormatter(settings, serviceName, env, serviceVersion, gitMetadataTagsProvider);
             if (previous is not null)
             {
                 // Only the formatter uses settings that are configurable in code.

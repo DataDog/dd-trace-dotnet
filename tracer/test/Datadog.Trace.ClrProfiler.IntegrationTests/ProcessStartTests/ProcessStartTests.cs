@@ -48,7 +48,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(StackRegex, string.Empty);
             settings.AddRegexScrubber(ErrorMsgRegex, string.Empty);
-            var filename = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "ProcessStartTests.SubmitsTracesLinux" : "ProcessStartTests.SubmitsTraces";
+            var filename = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ?
+                "ProcessStartTests.SubmitsTracesLinux" :
+                RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ?
+                    "ProcessStartTests.SubmitsTracesOsx" :
+                    "ProcessStartTests.SubmitsTraces";
 
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(filename)

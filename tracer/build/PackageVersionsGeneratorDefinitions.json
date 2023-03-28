@@ -90,6 +90,20 @@
     }]
   },
   {
+    "IntegrationName": "GraphQL7",
+    "SampleProjectName": "Samples.GraphQL7",
+    "NugetPackageSearchName": "GraphQL",
+    "MinVersion": "7.0.0",
+    "MaxVersionExclusive": "8.0.0",
+    "SpecificVersions": [
+      "7.*.*"
+    ],
+    "VersionConditions": [{
+      "MaxVersionExclusive": "8.0.0",
+      "ExcludeTargetFrameworks": ["net461", "netcoreapp2.1", "netcoreapp3.0"]
+    }]
+  },
+  {
     "IntegrationName": "HotChocolate",
     "SampleProjectName": "Samples.HotChocolate",
     "NugetPackageSearchName": "HotChocolate.AspNetCore",
@@ -362,13 +376,17 @@
     "SampleProjectName": "Samples.Aerospike",
     "NugetPackageSearchName": "Aerospike.Client",
     "MinVersion": "4.0.0",
-    "MaxVersionExclusive": "6.0.0",
+    "MaxVersionExclusive": "7.0.0",
     "SpecificVersions": [
       "4.0.*",
       "4.*.*",
-      "5.*.*"
+      "5.*.*",
+      "6.*.*"
     ],
     "VersionConditions": [{
+      "MinVersion": "6.0.0",
+      "ExcludeTargetFrameworks": ["net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
+    },{
       "MinVersion": "5.0.0",
       "ExcludeTargetFrameworks": ["net461"]
     }]

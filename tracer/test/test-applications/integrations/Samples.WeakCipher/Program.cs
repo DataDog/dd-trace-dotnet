@@ -2,23 +2,19 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 
-namespace Samples.WeakHashing;
+namespace Samples.WeakCipher;
 
 internal static class Program
 {
     private static void Main()
     {
-#pragma warning disable SYSLIB0021 // Type or member is obsolete
-        // Vulnerable section
-        //https://rules.sonarsource.com/csharp/type/Vulnerability/RSPEC-5547
-        testSymmetricAlgorithm(DES.Create());
-        testSymmetricAlgorithm(new DESCryptoServiceProvider());
-        testSymmetricAlgorithm(RC2.Create());
-        testSymmetricAlgorithm(new RC2CryptoServiceProvider());
-        // https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5350
-        testSymmetricAlgorithm(TripleDES.Create());
-        testSymmetricAlgorithm(new TripleDESCryptoServiceProvider());
+        VulnerableSection();
+        NotVulnerableSection();
+    }
 
+    private static void NotVulnerableSection()
+    {
+#pragma warning disable SYSLIB0021 // Type or member is obsolete
         // Not vulnerable section
 #pragma warning disable SYSLIB0022 // Type or member is obsolete
         testSymmetricAlgorithm(Rijndael.Create());
@@ -26,6 +22,23 @@ internal static class Program
 #pragma warning restore SYSLIB0022 // Type or member is obsolete
         testSymmetricAlgorithm(Aes.Create());
         testSymmetricAlgorithm(new AesCryptoServiceProvider());
+#pragma warning restore SYSLIB0021 // Type or member is obsolete
+    }
+
+    private static void VulnerableSection()
+    {
+#pragma warning disable SYSLIB0021 // Type or member is obsolete
+        // Vulnerable section
+        //https://rules.sonarsource.com/csharp/type/Vulnerability/RSPEC-5547
+        testSymmetricAlgorithm(DES.Create());
+        testSymmetricAlgorithm(new DESCryptoServiceProvider());
+        System.Threading.Thread.Sleep(100);
+        testSymmetricAlgorithm(RC2.Create());
+        testSymmetricAlgorithm(new RC2CryptoServiceProvider());
+        System.Threading.Thread.Sleep(100);
+        // https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5350
+        testSymmetricAlgorithm(TripleDES.Create());
+        testSymmetricAlgorithm(new TripleDESCryptoServiceProvider());
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
     }
 

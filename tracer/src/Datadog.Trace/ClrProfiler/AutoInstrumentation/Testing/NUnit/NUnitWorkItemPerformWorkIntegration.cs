@@ -51,7 +51,7 @@ public static class NUnitWorkItemPerformWorkIntegration
                     break;
                 case "TestMethod" when NUnitIntegration.ShouldSkip(item):
                     var testMethod = item.Method.MethodInfo;
-                    Common.Log.Debug("ITR: Test skipped: {class}.{name}", testMethod.DeclaringType?.FullName, testMethod.Name);
+                    Common.Log.Debug("ITR: Test skipped: {Class}.{Name}", testMethod.DeclaringType?.FullName, testMethod.Name);
                     item.RunState = RunState.Ignored;
                     item.Properties.Set(NUnitIntegration.SkipReasonKey, "Skipped by the Intelligent Test Runner");
                     break;

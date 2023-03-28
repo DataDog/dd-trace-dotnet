@@ -40,7 +40,10 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug($"== TaskContinuationGenerator<{typeof(TIntegration).FullName}, {typeof(TTarget).FullName}, {typeof(TReturn).FullName}, {typeof(TResult).FullName}> using Resolver: {Resolver.GetType().FullName}");
+                Log.Debug(
+                    "== {TaskContinuationGenerator} using Resolver: {Resolver}",
+                    $"TaskContinuationGenerator<{typeof(TIntegration).FullName}, {typeof(TTarget).FullName}, {typeof(TReturn).FullName}, {typeof(TResult).FullName}>",
+                    Resolver.GetType().FullName);
             }
         }
 
@@ -118,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 }
                 catch (Exception ex)
                 {
-                    IntegrationOptions<TIntegration, TTarget>.LogException(ex, "Exception occurred when calling the CallTarget integration continuation.");
+                    IntegrationOptions<TIntegration, TTarget>.LogException(ex);
                 }
 
                 // *
@@ -192,7 +195,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 }
                 catch (Exception ex)
                 {
-                    IntegrationOptions<TIntegration, TTarget>.LogException(ex, "Exception occurred when calling the CallTarget integration continuation.");
+                    IntegrationOptions<TIntegration, TTarget>.LogException(ex);
                 }
 
                 // *

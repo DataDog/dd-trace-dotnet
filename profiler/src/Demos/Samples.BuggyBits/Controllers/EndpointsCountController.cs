@@ -16,7 +16,7 @@ namespace BuggyBits.Controllers
         {
             await Task.Delay(TimeSpan.FromSeconds(1));
 
-            return Redirect("/");
+            return View("Index");
         }
     }
 }

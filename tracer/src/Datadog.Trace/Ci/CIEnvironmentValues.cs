@@ -412,7 +412,7 @@ namespace Datadog.Trace.Ci
             }
             else
             {
-                Log.Warning("Git commit in .git folder is different from the one in the environment variables. [{gitCommit} != {envVarCommit}]", gitInfo.Commit, Commit);
+                Log.Warning("Git commit in .git folder is different from the one in the environment variables. [{GitCommit} != {EnvVarCommit}]", gitInfo.Commit, Commit);
             }
 
             // **********
@@ -454,7 +454,7 @@ namespace Datadog.Trace.Ci
                             }
                             else
                             {
-                                Log.Error("DD_GIT_REPOSITORY_URL is set with an empty value, defaulting to '{default}'", defaultValue);
+                                Log.Error("DD_GIT_REPOSITORY_URL is set with an empty value, defaulting to '{Default}'", defaultValue);
                             }
 
                             return false;
@@ -464,11 +464,11 @@ namespace Datadog.Trace.Ci
                         {
                             if (string.IsNullOrEmpty(defaultValue))
                             {
-                                Log.Error("DD_GIT_REPOSITORY_URL is set with an invalid value ('{value}'), and the Git repository could not be automatically extracted", value);
+                                Log.Error("DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), and the Git repository could not be automatically extracted", value);
                             }
                             else
                             {
-                                Log.Error("DD_GIT_REPOSITORY_URL is set with an invalid value ('{value}'), defaulting to '{default}'", value, defaultValue);
+                                Log.Error("DD_GIT_REPOSITORY_URL is set with an invalid value ('{Value}'), defaulting to '{Default}'", value, defaultValue);
                             }
 
                             return false;
@@ -502,7 +502,7 @@ namespace Datadog.Trace.Ci
                             }
                             else
                             {
-                                Log.Error("DD_GIT_COMMIT_SHA must be a full-length git SHA, defaulting to '{default}", defaultValue);
+                                Log.Error("DD_GIT_COMMIT_SHA must be a full-length git SHA, defaulting to '{Default}", defaultValue);
                             }
 
                             return false;
@@ -552,10 +552,10 @@ namespace Datadog.Trace.Ci
             {
                 foreach (var codeOwnersPath in GetCodeOwnersPaths(SourceRoot))
                 {
-                    Log.Debug("Looking for CODEOWNERS file in: {path}", codeOwnersPath);
+                    Log.Debug("Looking for CODEOWNERS file in: {Path}", codeOwnersPath);
                     if (File.Exists(codeOwnersPath))
                     {
-                        Log.Debug("CODEOWNERS file found: {path}", codeOwnersPath);
+                        Log.Debug("CODEOWNERS file found: {Path}", codeOwnersPath);
                         CodeOwners = new CodeOwners(codeOwnersPath);
                         break;
                     }
@@ -887,21 +887,8 @@ namespace Datadog.Trace.Ci
         {
             IsCI = true;
             Provider = "teamcity";
-            Repository = EnvironmentHelpers.GetEnvironmentVariable("BUILD_VCS_URL");
-            WorkspacePath = EnvironmentHelpers.GetEnvironmentVariable("BUILD_VCS_URL");
-            Commit = EnvironmentHelpers.GetEnvironmentVariable("BUILD_VCS_NUMBER");
-            SourceRoot = EnvironmentHelpers.GetEnvironmentVariable("BUILD_CHECKOUTDIR");
-            PipelineId = EnvironmentHelpers.GetEnvironmentVariable("BUILD_ID");
-            PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("BUILD_NUMBER");
-            string serverUrl = EnvironmentHelpers.GetEnvironmentVariable("SERVER_URL");
-            if (PipelineId != null && serverUrl != null)
-            {
-                PipelineUrl = $"{serverUrl}/viewLog.html?buildId={PipelineId}";
-            }
-            else
-            {
-                PipelineUrl = null;
-            }
+            JobName = EnvironmentHelpers.GetEnvironmentVariable("TEAMCITY_BUILDCONF_NAME");
+            JobUrl = EnvironmentHelpers.GetEnvironmentVariable("BUILD_URL");
         }
 
         private void SetupBuildkiteEnvironment()

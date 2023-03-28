@@ -17,7 +17,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 {
     internal class SnapshotSlicer
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerSink));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SnapshotSlicer));
 
         private readonly int _maxDepth;
         private readonly int _maxSnapshotSize;
@@ -47,7 +47,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
             catch (Exception e)
             {
-                Log.Warning($"Failed to fit snapshot with probe id {probeId} due to exception", e);
+                Log.Warning(e, "Failed to fit snapshot with probe id {ProbeId} due to exception", probeId);
                 return snapshot;
             }
         }
@@ -59,7 +59,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             while (maxDepth > 0 && payloadSize >= _maxSnapshotSize)
             {
-                Log.Information($"Trying to slice snapshot with probe id {probeId} by removing {maxDepth} `field` depth property");
+                Log.Information<string, int>("Trying to slice snapshot with probe id {ProbeId} by removing {MaxDepth} `field` depth property", probeId, maxDepth);
 
                 var fieldDepth = 0;
                 var skipFields = false;
@@ -102,10 +102,14 @@ namespace Datadog.Trace.Debugger.Snapshots
                 maxDepth = Math.Min(maxFieldDepth, maxDepth - 1);
             }
 
-            Log.Information(
+#pragma warning disable DDLOG004 // Message templates should be constant - It's constant enough!
+            Log.Information<string, int>(
                 payloadSize >= _maxSnapshotSize
-                    ? $"Failed to fit snapshot with probe id {probeId} size to the {_maxSnapshotSize}"
-                    : $"Succeed to fit snapshot with probe id {probeId} size to the {_maxSnapshotSize}");
+                    ? "Failed to fit snapshot with probe id {ProbeId} size to the {MaxSnapshotSize}"
+                    : "Succeed to fit snapshot with probe id {ProbeId} size to the {MaxSnapshotSize}",
+                probeId,
+                _maxSnapshotSize);
+#pragma warning restore DDLOG004 // Message templates should be constant
 
             return snapshot;
         }

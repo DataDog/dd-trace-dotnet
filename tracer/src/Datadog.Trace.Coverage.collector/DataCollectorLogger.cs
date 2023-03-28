@@ -10,6 +10,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Datadog.Trace.Coverage.Collector
 {
@@ -47,13 +48,13 @@ namespace Datadog.Trace.Coverage.Collector
         public void Error(string? text)
         {
             _logger.LogWarning(_collectionContext, text ?? string.Empty);
-            _datadogLogger.Error(text);
+            _datadogLogger.Error("Logged coverage tool error: {Error}", text);
         }
 
         public void Error(Exception exception)
         {
             _logger.LogWarning(_collectionContext, exception.ToString());
-            _datadogLogger.Error(exception, exception.Message);
+            _datadogLogger.Error(exception, "Logged coverage tool error");
         }
 
         public void Error(Exception exception, string? text)
@@ -69,20 +70,20 @@ namespace Datadog.Trace.Coverage.Collector
             }
 
             _logger.LogWarning(_collectionContext, textToLogger);
-            _datadogLogger.Error(exception, text);
+            _datadogLogger.Error(exception, "Logged coverage tool error: {Error}", text);
         }
 
         public void Warning(string? text)
         {
             _logger.LogWarning(_collectionContext, text ?? string.Empty);
-            _datadogLogger.Warning(text);
+            _datadogLogger.Warning("Logged coverage tool warning: {Warning}", text);
         }
 
         public void Debug(string? text)
         {
             if (_isDebugEnabled)
             {
-                _datadogLogger.Debug(text);
+                _datadogLogger.Debug("Logged coverage tool debug message: {Message}", text);
             }
         }
 

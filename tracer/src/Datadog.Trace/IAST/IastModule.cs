@@ -47,6 +47,19 @@ internal static class IastModule
         return GetScope(algorithm, integrationId, VulnerabilityTypeName.WeakHash, OperationNameWeakHash);
     }
 
+    public static IastRequestContext? GetIastContext()
+    {
+        if (!iastSettings.Enabled)
+        {
+            // integration disabled, don't create a scope, skip this span
+            return null;
+        }
+
+        var currentSpan = (Tracer.Instance.ActiveScope as Scope)?.Span;
+        var traceContext = currentSpan?.Context?.TraceContext;
+        return traceContext?.IastRequestContext;
+    }
+
     private static Scope? GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, bool taintedFromEvidenceRequired = false)
     {
         var tracer = Tracer.Instance;
@@ -123,6 +136,7 @@ internal static class IastModule
         };
 
         var scope = tracer.StartActiveInternal(operationName, tags: tags);
+        scope.Span.Type = SpanTypes.IastVulnerability;
         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
         return scope;
     }
@@ -158,11 +172,12 @@ internal static class IastModule
 
     private static bool InvalidCipherAlgorithm(Type type, string algorithm)
     {
+#if !NETFRAMEWORK
         if (ProviderValid(type.Name))
         {
             return false;
         }
-
+#endif
         foreach (var weakCipherAlgorithm in iastSettings.WeakCipherAlgorithmsArray)
         {
             if (string.Equals(algorithm, weakCipherAlgorithm, StringComparison.OrdinalIgnoreCase))

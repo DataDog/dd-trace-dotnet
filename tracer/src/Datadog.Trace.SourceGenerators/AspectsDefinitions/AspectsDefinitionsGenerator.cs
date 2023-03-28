@@ -186,7 +186,7 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
 
     private static Type Resolve(AttributeData? attribute)
     {
-        Type[] aspects = new Type[] { typeof(AspectClassAttribute), typeof(AspectMethodReplaceAttribute) };
+        Type[] aspects = new Type[] { typeof(AspectClassAttribute), typeof(AspectMethodReplaceAttribute), typeof(AspectMethodInsertBeforeAttribute), typeof(AspectMethodInsertAfterAttribute), typeof(AspectCtorReplaceAttribute) };
         var name = attribute?.AttributeClass?.Name ?? string.Empty;
         var aspect = aspects.First(a => a.Name == name);
         return aspect;

@@ -5,9 +5,12 @@
 
 #nullable enable
 
+using System;
+using System.Diagnostics.CodeAnalysis;
+
 namespace Datadog.Trace.Iast;
 
-internal readonly struct Range
+internal readonly struct Range : IComparable<Range>
 {
     public Range(int start, int length, Source source)
     {
@@ -30,5 +33,20 @@ internal readonly struct Range
     public override int GetHashCode()
     {
         return IastUtils.GetHashCode(Start, Length, Source);
+    }
+
+    public Range Shift(int offset)
+    {
+        if (offset == 0)
+        {
+            return this;
+        }
+
+        return new Range(Start + offset, Length, Source);
+    }
+
+    public int CompareTo([AllowNull] Range other)
+    {
+        return this.Start.CompareTo(other.Start);
     }
 }

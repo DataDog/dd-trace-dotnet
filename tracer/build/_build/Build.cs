@@ -54,7 +54,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "2.24.0";
+    readonly string Version = "2.28.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -249,9 +249,9 @@ partial class Build : NukeBuild
         .DependsOn(CompileDependencyLibs)
         .DependsOn(CompileRegressionDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileSamplesLinux)
+        .DependsOn(CompileSamplesLinuxOrOsx)
         .DependsOn(CompileMultiApiPackageVersionSamples)
-        .DependsOn(CompileLinuxIntegrationTests)
+        .DependsOn(CompileLinuxOrOsxIntegrationTests)
         .DependsOn(BuildRunnerTool)
         .DependsOn(CopyServerlessArtifacts);
 
@@ -261,6 +261,24 @@ partial class Build : NukeBuild
         .DependsOn(BuildLinuxIntegrationTests)
         .DependsOn(RunLinuxIntegrationTests);
 
+    Target BuildOsxIntegrationTests => _ => _
+        .Requires(() => IsOsx)
+        .Description("Builds the osx integration tests")
+        .DependsOn(CompileDependencyLibs)
+        .DependsOn(CompileRegressionDependencyLibs)
+        .DependsOn(CompileManagedTestHelpers)
+        .DependsOn(CompileSamplesLinuxOrOsx)
+        .DependsOn(CompileMultiApiPackageVersionSamples)
+        .DependsOn(CompileLinuxOrOsxIntegrationTests)
+        .DependsOn(BuildRunnerTool)
+        .DependsOn(CopyServerlessArtifacts);
+
+    Target BuildAndRunOsxIntegrationTests => _ => _
+        .Requires(() => IsOsx)
+        .Description("Builds and runs the osx integration tests. Requires docker-compose dependencies")
+        .DependsOn(BuildOsxIntegrationTests)
+        .DependsOn(RunOsxIntegrationTests);
+    
     Target BuildAndRunToolArtifactTests => _ => _
        .Description("Builds and runs the tool artifacts tests")
        .DependsOn(CompileManagedTestHelpers)

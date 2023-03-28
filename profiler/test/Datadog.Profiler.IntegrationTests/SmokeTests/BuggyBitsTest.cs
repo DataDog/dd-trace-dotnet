@@ -9,7 +9,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Profiler.SmokeTests
 {
-    public partial class BuggyBitsTest
+    public class BuggyBitsTest
     {
         private readonly ITestOutputHelper _output;
 

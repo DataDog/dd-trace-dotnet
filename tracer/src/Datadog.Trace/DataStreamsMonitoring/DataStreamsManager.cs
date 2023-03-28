@@ -150,7 +150,7 @@ internal class DataStreamsManager
         }
         catch (Exception ex)
         {
-            Log.Error("Error setting a data streams checkpoint. Disabling data streams monitoring", ex);
+            Log.Error(ex, "Error setting a data streams checkpoint. Disabling data streams monitoring");
             // Set this to false out of an abundance of caution.
             // We will look at being less conservative in the future
             // if we see intermittent errors for some reason.

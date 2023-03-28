@@ -126,7 +126,7 @@ namespace Datadog.Trace.Debugger.Sink
 
             if (newInterval != currentInterval)
             {
-                Log.Debug($"Changing flush interval. Remaining available capacity in upload queue {remainingPercent * 100}%, new flush interval {newInterval}ms");
+                Log.Debug<double, int>("Changing flush interval. Remaining available capacity in upload queue {Remaining}%, new flush interval {NewInterval}ms", remainingPercent * 100, newInterval);
             }
 
             return newInterval;

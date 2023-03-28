@@ -13,7 +13,7 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public class ImmutableIntegrationSettingsCollection
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<IntegrationSettingsCollection>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ImmutableIntegrationSettingsCollection>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImmutableIntegrationSettingsCollection"/> class.

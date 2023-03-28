@@ -27,7 +27,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         /// <param name="testMethod">The test method this test case belongs to.</param>
         /// <param name="testMethodArguments">The arguments for the test method.</param>
         public SkippableTestCase(string skipReason, ITestMethod testMethod, object[] testMethodArguments = null)
-            : base(TestMethodDisplay.Method, TestMethodDisplayOptions.None, testMethod, testMethodArguments)
+            : base(TestMethodDisplay.ClassAndMethod, TestMethodDisplayOptions.None, testMethod, testMethodArguments)
         {
             SkipReason = skipReason;
         }

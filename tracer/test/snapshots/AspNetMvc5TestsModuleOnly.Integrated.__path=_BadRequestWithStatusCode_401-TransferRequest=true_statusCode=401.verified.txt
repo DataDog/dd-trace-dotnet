@@ -12,11 +12,13 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 401,
-      http.url: http://localhost/Error/Index?errorId=Guid_2&ErrorStatusCode=401,
+      http.url: http://localhost:00000/Error/Index?errorId=Guid_2&ErrorStatusCode=401,
       http.useragent: testhelper,
       language: dotnet,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -37,12 +39,14 @@ at Samples.AspNetMvc5.Controllers.HomeController.BadRequestWithStatusCode(Int32 
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 401,
-      http.url: http://localhost/BadRequestWithStatusCode/401?TransferRequest=true,
+      http.url: http://localhost:00000/BadRequestWithStatusCode/401?TransferRequest=true,
       http.useragent: testhelper,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {

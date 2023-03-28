@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DatabaseMonitoring;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -28,14 +29,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
 
             Scope scope = null;
+            string commandText = command.CommandText;
 
             try
             {
                 Span parent = tracer.InternalActiveScope?.Span;
 
                 if (parent is { Type: SpanTypes.Sql } &&
-                    parent.GetTag(Tags.DbType) == dbType &&
-                    parent.ResourceName == command.CommandText)
+                    HasDbType(parent, dbType) &&
+                    (parent.ResourceName == commandText || parent.GetTag(Tags.DbmDataPropagated) != null))
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
@@ -55,13 +57,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
 
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
-                scope.Span.ResourceName = command.CommandText;
+                scope.Span.ResourceName = commandText;
                 scope.Span.Type = SpanTypes.Sql;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
 
                 if (Iast.Iast.Instance.Settings.Enabled)
                 {
-                    IastModule.OnSqlQuery(command.CommandText, integrationId);
+                    IastModule.OnSqlQuery(commandText, integrationId);
+                }
+
+                if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled && (integrationId == IntegrationId.MySql || integrationId == IntegrationId.Npgsql))
+                {
+                    command.CommandText = $"{DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, scope.Span.Context)} {commandText}";
+                    tags.DbmDataPropagated = "true";
                 }
             }
             catch (Exception ex)
@@ -70,6 +78,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
 
             return scope;
+
+            static bool HasDbType(Span span, string dbType)
+            {
+                if (span.Tags is SqlTags sqlTags)
+                {
+                    return sqlTags.DbType == dbType;
+                }
+
+                return span.GetTag(Tags.DbType) == dbType;
+            }
         }
 
         public static bool TryGetIntegrationDetails(

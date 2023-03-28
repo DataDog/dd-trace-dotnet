@@ -33,6 +33,14 @@
     </div>
 
     <div>
+        @Html.ActionLink("GET /iast/WeakHashing", "WeakHashing", "iast", null, null)
+    </div>
+
+    <div>
+        @Html.ActionLink("GET /iast/SqlQuery/{username}", "SqlQuery", "iast", new { username = "Vicent" }, null)
+    </div>
+
+    <div>
         <p>
             @Html.ActionLink("GET /posts/{id}", "Index", "Posts", new { id = "1" }, null)
 

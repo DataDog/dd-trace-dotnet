@@ -86,6 +86,9 @@ message(STATUS "Libdatadog library " ${LIBDATADOG_VERSION})
 find_package(GoogleTest REQUIRED)
 message(STATUS "GoogleTest library")
 
+find_package(PPDB REQUIRED)
+message(STATUS "PPDB library")
+
 add_subdirectory(tracer)
 
 # profiler cannot be built on MacOS (yet)

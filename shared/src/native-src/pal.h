@@ -18,6 +18,8 @@
 #include <crt_externs.h>
 #endif
 
+#include <type_traits>
+
 #include "dd_filesystem.hpp"
 #include "../../../shared/src/native-src/string.h" // NOLINT
 #include "../../../shared/src/native-src/util.h"
@@ -26,14 +28,34 @@
 namespace shared
 {
 
+template <class T, typename = void>
+struct has_deprecated_log_folder : std::false_type
+{
+};
+
+template <typename T>
+struct has_deprecated_log_folder<T, decltype(T::logging_environment::deprecated_log_directory, void())> : std::true_type
+{
+};
+
 template <class TLoggerPolicy>
 inline shared::WSTRING GetDatadogLogFilePath(const std::string& file_name_suffix)
 {
     const auto file_name = TLoggerPolicy::file_name + file_name_suffix + ".log";
 
-    WSTRING directory = GetEnvironmentValue(TLoggerPolicy::logging_environment::log_directory);
+    WSTRING directory;
 
-    if (directory.length() > 0)
+    if constexpr (has_deprecated_log_folder<TLoggerPolicy>::value)
+    {
+        // check for deprecated env var first
+        directory = GetEnvironmentValue(TLoggerPolicy::logging_environment::deprecated_log_directory);
+        if (directory.empty())
+            directory = GetEnvironmentValue(TLoggerPolicy::logging_environment::log_directory);
+    }
+    else
+        directory = GetEnvironmentValue(TLoggerPolicy::logging_environment::log_directory);
+
+    if (!directory.empty())
     {
         return directory +
 #ifdef _WIN32
@@ -123,7 +145,7 @@ inline WSTRING GetCurrentProcessCommandLine()
         name = name + " " + tmp;
     }
     fclose(fp);
-    
+
     return Trim(ToWSTRING(name));
 #endif
 

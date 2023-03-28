@@ -42,7 +42,7 @@ public sealed class TestModule
     internal TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate, TestSessionSpanTags? sessionSpanTags)
     {
         // First we make sure that CI Visibility is initialized.
-        CIVisibility.Initialize();
+        CIVisibility.InitializeFromManualInstrumentation();
 
         var environment = CIEnvironmentValues.Instance;
         var frameworkDescription = FrameworkDescription.Instance;
@@ -164,7 +164,7 @@ public sealed class TestModule
 
         _span = span;
         Current = this;
-        CIVisibility.Log.Debug("### Test Module Created: {name}", name);
+        CIVisibility.Log.Debug("### Test Module Created: {Name}", name);
 
         if (startDate is null)
         {
@@ -299,7 +299,7 @@ public sealed class TestModule
     {
         if (InternalClose(duration))
         {
-            CIVisibility.Log.Debug("### Test Module Flushing after close: {name}", Name);
+            CIVisibility.Log.Debug("### Test Module Flushing after close: {Name}", Name);
             CIVisibility.Flush();
         }
     }
@@ -322,7 +322,7 @@ public sealed class TestModule
     {
         if (InternalClose(duration))
         {
-            CIVisibility.Log.Debug("### Test Module Flushing after close: {name}", Name);
+            CIVisibility.Log.Debug("### Test Module Flushing after close: {Name}", Name);
             return CIVisibility.FlushAsync();
         }
 
@@ -404,7 +404,7 @@ public sealed class TestModule
         span.Finish(duration.Value);
 
         Current = null;
-        CIVisibility.Log.Debug("### Test Module Closed: {name} | {status}", Name, Tags.Status);
+        CIVisibility.Log.Debug("### Test Module Closed: {Name} | {Status}", Name, Tags.Status);
 
         if (_fakeSession is { } fakeSession)
         {

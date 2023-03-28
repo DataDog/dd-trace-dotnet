@@ -10,7 +10,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
     internal class RcmClientTracer
     {
-        public RcmClientTracer(string runtimeId, string tracerVersion, string service, string env, string appVersion, IReadOnlyList<string> tags)
+        public RcmClientTracer(string runtimeId, string tracerVersion, string service, string env, string appVersion, List<string> tags)
         {
             RuntimeId = runtimeId;
             Language = TracerConstants.Language;
@@ -40,6 +40,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
         public string AppVersion { get; }
 
         [JsonProperty("tags")]
-        public IReadOnlyList<string> Tags { get; }
+        public List<string> Tags { get; }
     }
 }

@@ -20,7 +20,7 @@
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers.AutoInstrumentation\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
-    <PackageReference Include="libddwaf" Version="1.7.0" GeneratePathProperty="true" />
+    <PackageReference Include="libddwaf" Version="1.8.2" GeneratePathProperty="true" />
 
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
   </ItemGroup>

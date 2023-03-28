@@ -27,6 +27,7 @@
 #include "Configuration.h"
 #include "ContentionProvider.h"
 #include "CpuTimeProvider.h"
+#include "DebugInfoStore.h"
 #include "EnabledProfilers.h"
 #include "EnvironmentVariables.h"
 #include "ExceptionsProvider.h"
@@ -45,6 +46,7 @@
 #include "StackSamplerLoopManager.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
+#include "AllocationsRecorder.h"
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/pal.h"
 #include "shared/src/native-src/string.h"
@@ -106,7 +108,9 @@ bool CorProfilerCallback::InitializeServices()
 
     _pAppDomainStore = std::make_unique<AppDomainStore>(_pCorProfilerInfo);
 
-    _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo, _pConfiguration.get());
+    _pDebugInfoStore = std::make_unique<DebugInfoStore>(_pCorProfilerInfo, _pConfiguration.get());
+
+    _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo, _pConfiguration.get(), _pDebugInfoStore.get());
 
     // Create service instances
     _pThreadsCpuManager = RegisterService<ThreadsCpuManager>();
@@ -299,6 +303,11 @@ bool CorProfilerCallback::InitializeServices()
         // TODO: register any provider that needs to get notified when GCs start and end
     }
 
+    if (_pConfiguration->IsAllocationRecorderEnabled() && !_pConfiguration->GetProfilesOutputDirectory().empty())
+    {
+        _pAllocationsRecorder = std::make_unique<AllocationsRecorder>(_pCorProfilerInfo, _pFrameStore.get());
+    }
+
     // Avoid iterating twice on all providers in order to inject this value in each constructor
     // and store it in CollectorBase so it can be used in TransformRawSample (where the sample is created)
     Sample::ValuesCount = sampleTypeDefinitions.size();
@@ -328,7 +337,9 @@ bool CorProfilerCallback::InitializeServices()
         _pApplicationStore,
         _pRuntimeInfo.get(),
         _pEnabledProfilers.get(),
-        _metricsRegistry);
+        _metricsRegistry,
+        _pAllocationsRecorder.get()
+        );
 
     _pSamplesCollector = RegisterService<SamplesCollector>(
         _pConfiguration.get(),
@@ -941,6 +952,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         eventMask |= COR_PRF_MONITOR_EXCEPTIONS | COR_PRF_MONITOR_MODULE_LOADS;
     }
 
+    if (_pConfiguration->IsAllocationRecorderEnabled() && !_pConfiguration->GetProfilesOutputDirectory().empty())
+    {
+        //              for GC                              for JIT
+        eventMask |= COR_PRF_MONITOR_OBJECT_ALLOCATED | COR_PRF_ENABLE_OBJECT_ALLOCATED;
+    }
+
     if (_pCorProfilerInfoEvents != nullptr)
     {
         // listen to CLR events via ICorProfilerCallback
@@ -1244,7 +1261,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
     }
 
     Log::Debug("Removing thread ", std::hex, threadId, " from the main managed thread list.");
-    _pManagedThreadList->UnregisterThread(threadId, pThreadInfo);
+    if (_pManagedThreadList->UnregisterThread(threadId, pThreadInfo))
+    {
+        // The docs require that we do not allow to destroy a thread while it is being stack-walked.
+        // TO ensure this, SetThreadDestroyed(..) acquires the StackWalkLock associated with this ThreadInfo.
+        pThreadInfo->SetThreadDestroyed();
+    }
 
     return S_OK;
 }
@@ -1420,6 +1442,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::MovedReferences(ULONG cMovedObjec
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ObjectAllocated(ObjectID objectId, ClassID classId)
 {
+    if (_pAllocationsRecorder != nullptr)
+    {
+        _pAllocationsRecorder->OnObjectAllocated(objectId, classId);
+    }
+
     return S_OK;
 }
 

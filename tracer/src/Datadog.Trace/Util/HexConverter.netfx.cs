@@ -10,7 +10,6 @@
 
 #if !NETCOREAPP3_1_OR_GREATER
 
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -18,6 +17,10 @@ using System.Runtime.CompilerServices;
 // ReSharper disable once CheckNamespace
 namespace System;
 
+/// <summary>
+/// This class is a .NET Framework version of .NET Core's internal HexConverter. It provides lower-level API
+/// for converting between bytes and hex strings. For a higher-level API, use <see cref="Datadog.Trace.Util.HexString"/>.
+/// </summary>
 internal static class HexConverter
 {
     /// <summary>
@@ -115,27 +118,21 @@ internal static class HexConverter
         buffer[startingIndex] = (char)(packedResult >> 8);
     }
 
-    public static void EncodeToUtf16(byte[] bytes, char[] chars, Casing casing = Casing.Upper)
+    public static void EncodeToUtf16(ArraySegment<byte> bytes, char[] chars, Casing casing = Casing.Upper)
     {
-        for (int pos = 0; pos < bytes.Length; pos++)
+        for (int pos = 0; pos < bytes.Count; pos++)
         {
-            ToCharsBuffer(bytes[pos], chars, pos * 2, casing);
+            var b = bytes.Array![bytes.Offset + pos];
+            ToCharsBuffer(b, chars, pos * 2, casing);
         }
     }
 
     [Pure]
-    public static string ToString(byte[] bytes, Casing casing = Casing.Upper)
+    public static string ToString(ArraySegment<byte> bytes, Casing casing = Casing.Upper)
     {
-        char[] result = new char[bytes.Length * 2];
-        int pos = 0;
-
-        foreach (byte b in bytes)
-        {
-            ToCharsBuffer(b, result, pos, casing);
-            pos += 2;
-        }
-
-        return new string(result);
+        char[] chars = new char[bytes.Count * 2];
+        EncodeToUtf16(bytes, chars, casing);
+        return new string(chars);
     }
 
     [Pure]
@@ -168,21 +165,22 @@ internal static class HexConverter
         return (char)value;
     }
 
-    public static bool TryDecodeFromUtf16(string chars, byte[] bytes)
+    public static bool TryDecodeFromUtf16(string chars, ArraySegment<byte> bytes)
     {
         return TryDecodeFromUtf16(chars, bytes, out _);
     }
 
-    public static bool TryDecodeFromUtf16(string chars, byte[] bytes, out int charsProcessed)
+    public static bool TryDecodeFromUtf16(string chars, ArraySegment<byte> bytes, out int charsProcessed)
     {
         Debug.Assert(chars.Length % 2 == 0, "Un-even number of characters provided");
-        Debug.Assert(chars.Length / 2 == bytes.Length, "Target buffer not right-sized for provided characters");
+        Debug.Assert(chars.Length / 2 == bytes.Count, "Target buffer not right-sized for provided characters");
 
         int i = 0;
         int j = 0;
         int byteLo = 0;
         int byteHi = 0;
-        while (j < bytes.Length)
+
+        while (j < bytes.Count)
         {
             byteLo = FromChar(chars[i + 1]);
             byteHi = FromChar(chars[i]);
@@ -194,7 +192,7 @@ internal static class HexConverter
                 break;
             }
 
-            bytes[j++] = (byte)((byteHi << 4) | byteLo);
+            bytes.Array![bytes.Offset + j++] = (byte)((byteHi << 4) | byteLo);
             i += 2;
         }
 

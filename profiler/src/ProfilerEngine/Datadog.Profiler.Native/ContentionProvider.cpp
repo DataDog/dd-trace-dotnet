@@ -45,13 +45,39 @@ ContentionProvider::ContentionProvider(
     _sampledLockContentionsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_sampled_lock_contentions_duration");
 }
 
-void ContentionProvider::OnContention(double contentionDuration)
+std::string ContentionProvider::GetBucket(double contentionDurationNs)
+{
+    if (contentionDurationNs < 10'000'000.0)
+    {
+        return "0-9ms";
+    }
+
+    if (contentionDurationNs < 50'000'000.0)
+    {
+        return "10-49ms";
+    }
+
+    if (contentionDurationNs < 100'000'000.0)
+    {
+        return "50-99ms";
+    }
+
+    if (contentionDurationNs < 500'000'000.0)
+    {
+        return "100-499ms";
+    }
+
+    return "+500ms";
+}
+
+void ContentionProvider::OnContention(double contentionDurationNs)
 {
     _lockContentionsCountMetric->Incr();
-    _lockContentionsDurationMetric->Add(contentionDuration);
-    // TODO: when upscaling will be done, implement per duration groups (100ms, 200ms, 500ms, +)
-    //       to ensure a  better "statistical" distribution
-    if (!_sampler.Sample())
+    _lockContentionsDurationMetric->Add(contentionDurationNs);
+
+    auto bucket = GetBucket(contentionDurationNs);
+
+    if (!_sampler.Sample(bucket))
     {
         return;
     }
@@ -80,8 +106,9 @@ void ContentionProvider::OnContention(double contentionDuration)
     rawSample.AppDomainId = result->GetAppDomainId();
     result->CopyInstructionPointers(rawSample.Stack);
     rawSample.ThreadInfo = threadInfo;
-    rawSample.ContentionDuration = contentionDuration;
+    rawSample.ContentionDuration = contentionDurationNs;
+    rawSample.Bucket = std::move(bucket);
     Add(std::move(rawSample));
     _sampledLockContentionsCountMetric->Incr();
-    _sampledLockContentionsDurationMetric->Add(contentionDuration);
+    _sampledLockContentionsDurationMetric->Add(contentionDurationNs);
 }

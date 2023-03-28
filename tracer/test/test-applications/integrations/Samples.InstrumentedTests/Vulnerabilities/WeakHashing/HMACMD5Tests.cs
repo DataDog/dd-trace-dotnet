@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if !NETFRAMEWORK
-
 using System;
 using System.IO;
 using System.Security.Cryptography;
@@ -76,5 +74,3 @@ public class HMACMD5Tests : InstrumentationTestsBase
     }
 #pragma warning restore SYSLIB0045
 }
-
-#endif

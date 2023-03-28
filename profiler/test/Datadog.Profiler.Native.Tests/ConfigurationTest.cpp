@@ -114,7 +114,7 @@ TEST(ConfigurationTest, CheckDefaultLogDirectoryWhenVariableIsNotSet)
     auto configuration = Configuration{};
     auto expectedValue =
 #ifdef _WINDOWS
-        WStr("C:\\ProgramData\\Datadog-APM\\logs\\DotNet");
+        WStr("C:\\ProgramData\\Datadog .NET Tracer\\logs");
 #else
         WStr("/var/log/datadog/dotnet");
 #endif
@@ -643,4 +643,24 @@ TEST(ConfigurationTest, CheckBacktrace2IsEnabledIfEnvVarSetToTrue)
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::UseBacktrace2, WStr("1"));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.UseBacktrace2(), true);
+}
+
+TEST(ConfigurationTest, CheckDebugInfoIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsDebugInfoEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckDebugInfoIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DebugInfoEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsDebugInfoEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckDebugInfoIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DebugInfoEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsDebugInfoEnabled(), false);
 }

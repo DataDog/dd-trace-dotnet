@@ -40,7 +40,6 @@ ENV DD_PROFILING_ENABLED=1 \
     DD_TRACE_DEBUG=1 \
     DD_APPSEC_ENABLED=1 \
     DD_TRACE_LOG_DIRECTORY="C:\logs" \
-    DD_PROFILING_LOG_DIR="C:\logs" \
     ASPNETCORE_URLS=http://localhost:5000
 
 # Set a random env var we should ignore

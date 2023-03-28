@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -12,7 +12,7 @@
       http.request.headers.host: localhost:00000,
       http.route: {controller}/{action}/{id},
       http.status_code: 200,
-      http.url: http://localhost/Iast/SqlQuery?query=SELECT%20Surname%20from%20Persons%20where%20name%20=%20%27Vicent%27,
+      http.url: http://localhost:00000/Iast/SqlQuery?username=Vicent,
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
@@ -25,11 +25,16 @@
       "type": "SQL_INJECTION",
       
       "evidence": {
-        "value": "SELECT Surname from Persons where name = 'Vicent'",
         "valueParts": [
           {
-            "value": "SELECT Surname from Persons where name = 'Vicent'",
+            "value": "SELECT Surname from Persons where name = '"
+          },
+          {
+            "value": "Vicent",
             "source": 0
+          },
+          {
+            "value": "'"
           }
         ]
       }
@@ -38,8 +43,8 @@
   "sources": [
     {
       "origin": "http.request.parameter.value",
-      "name": "query",
-      "value": "SELECT Surname from Persons where name = 'Vicent'"
+      "name": "username",
+      "value": "Vicent"
     }
   ]
 },
@@ -69,7 +74,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/Iast/SqlQuery?query=SELECT%20Surname%20from%20Persons%20where%20name%20=%20%27Vicent%27,
+      http.url: http://localhost:00000/Iast/SqlQuery?username=Vicent,
       http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server

@@ -122,7 +122,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var product = new AsmDataProduct();
             await agent.SetupRcmAndWait(
                 Output,
-                new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, acknowledgeId), ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, acknowledgeId2) },
+                new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp }, new Data { Expiration = null, Value = "123.1.1.1" } } } } }, acknowledgeId), ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, acknowledgeId2) },
                 product.Name,
                 appliedServiceNames: new[] { acknowledgeId, acknowledgeId2 });
 
@@ -155,7 +155,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             : base(fixture, outputHelper, enableSecurity, testName: testName)
         {
             this.EnableDebugMode();
-            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
+            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
         }
 
         [SkippableTheory]
