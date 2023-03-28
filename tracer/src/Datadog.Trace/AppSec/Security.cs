@@ -545,17 +545,17 @@ namespace Datadog.Trace.AppSec
                     var wafTimeoutValue = Convert.ToUInt64(value);
                     if (wafTimeoutValue <= 0)
                     {
-                        Log.Warning("Ignoring '{WafTimeoutKey}' of '{WafTimeoutString}' because it was zero or less", wafTimeoutKey, wafTimeoutValue.ToString());
+                        Log.Warning("Ignoring '{WafTimeoutKey}' of '{WafTimeoutString}' because it was zero or less", wafTimeoutKey, wafTimeoutValue);
                     }
                     else
                     {
                         _settings.WafTimeoutMicroSeconds = wafTimeoutValue;
-                        Log.Debug("The {WafTimeoutMicroSecondsKey} has been set to '{NewWafTimeoutValue}' according to the attribute '{WafTimeoutKey}'", nameof(_settings.WafTimeoutMicroSeconds), wafTimeoutValue.ToString(), wafTimeoutKey);
+                        Log.Debug("The {WafTimeoutMicroSecondsKey} has been set to '{NewWafTimeoutValue}' according to the attribute '{WafTimeoutKey}'", nameof(_settings.WafTimeoutMicroSeconds), wafTimeoutValue, wafTimeoutKey);
                     }
                 }
                 catch (Exception e)
                 {
-                    Log.Warning("The WafTimeoutMicroSecondsKey failed to be set according to the attribute '{WafTimeoutKey}': {Error}: {TimeoutValue}", wafTimeoutKey, e.Message, value.ToString());
+                    Log.Warning("The WafTimeoutMicroSecondsKey failed to be set according to the attribute '{WafTimeoutKey}': {Error}: {TimeoutValue}", wafTimeoutKey, e.Message, value);
                 }
             }
         }
