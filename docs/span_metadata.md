@@ -281,8 +281,11 @@ kafka.group | No
 kafka.offset | No
 kafka.partition | No
 kafka.tombstone | No
-message.queue_time_ms | No
 span.kind | Yes
+### Metrics
+Name | Required |
+---------|----------------|
+message.queue_time_ms | No
 
 ## MongoDb
 ### Span properties
