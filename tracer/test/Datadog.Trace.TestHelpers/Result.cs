@@ -16,6 +16,7 @@ namespace Datadog.Trace.TestHelpers
         private bool _propertiesInvoked;
         private bool _additionalTagsInvoked;
         private bool _tagsInvoked;
+        private bool _metricsInvoked;
         private Action<SpanAdditionalTagsAssertion> _additionalTagAssertions;
 
         private Result(MockSpan span, ISet<string> excludeTags)
@@ -49,7 +50,7 @@ namespace Datadog.Trace.TestHelpers
 
         public Result WithIntegrationName(string name) => this;
 
-        public Result Properties(Action<SpanPropertyAssertion> propertyAssertions)
+        public Result Properties(Action<SpanPropertyAssertion<string>> propertyAssertions)
         {
             if (_propertiesInvoked)
             {
@@ -62,7 +63,7 @@ namespace Datadog.Trace.TestHelpers
             return this;
         }
 
-        public Result Tags(Action<SpanTagAssertion> tagAssertions)
+        public Result Tags(Action<SpanTagAssertion<string>> tagAssertions)
         {
             if (_tagsInvoked)
             {
@@ -71,7 +72,7 @@ namespace Datadog.Trace.TestHelpers
 
             _tagsInvoked = true;
             var tags = new Dictionary<string, string>(this.Span.Tags);
-            var t = new SpanTagAssertion(this, tags);
+            var t = new SpanTagAssertion<string>(this, tags);
             tagAssertions(t);
 
             if (_additionalTagAssertions is not null)
@@ -80,10 +81,28 @@ namespace Datadog.Trace.TestHelpers
                 _additionalTagAssertions(at);
             }
 
-            SpanTagAssertion.DefaultTagAssertions(t);
-            SpanTagAssertion.AssertNoRemainingTags(t);
+            SpanTagAssertion<string>.DefaultTagAssertions(t);
+            SpanTagAssertion<string>.AssertNoRemainingTags(t);
             return this;
         }
+
+        public Result Metrics(Action<SpanTagAssertion<double>> metricAssertions)
+        {
+            if (_metricsInvoked)
+            {
+                throw new InvalidOperationException("Result.Metrics() may only be invoked once per integration");
+            }
+
+            _metricsInvoked = true;
+            var metrics = new Dictionary<string, double>(this.Span.Metrics);
+            var t = new SpanTagAssertion<double>(this, metrics);
+            metricAssertions(t);
+
+            SpanTagAssertion<double>.DefaultMetricAssertions(t);
+            SpanTagAssertion<double>.AssertNoRemainingTags(t);
+            return this;
+        }
+
 
         public Result AdditionalTags(Action<SpanAdditionalTagsAssertion> tagAssertions)
         {
