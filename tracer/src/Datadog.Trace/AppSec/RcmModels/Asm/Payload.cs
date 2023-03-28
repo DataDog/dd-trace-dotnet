@@ -19,6 +19,6 @@ internal class Payload
     [JsonProperty("exclusions")]
     public JArray? Exclusions { get; set; }
 
-    [JsonProperty("data")]
-    public Data? Data { get; set; }
+    [JsonProperty("custom_attributes")]
+    public CustomAttributes? CustomAttributes { get; set; }
 }

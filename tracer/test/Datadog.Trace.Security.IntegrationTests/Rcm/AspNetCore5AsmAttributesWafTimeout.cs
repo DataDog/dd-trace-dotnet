@@ -23,7 +23,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     public class TestWafTimeoutValueChanged : AspNetCore5AsmAttributesWafTimeout
     {
         public TestWafTimeoutValueChanged(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, nameof(TestWafTimeoutValueChanged), "global", 1)
+            : base(fixture, outputHelper, nameof(TestWafTimeoutValueChanged), 1)
         {
         }
 
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     public class TestWafLargeValueChanged : AspNetCore5AsmAttributesWafTimeout
     {
         public TestWafLargeValueChanged(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, nameof(TestWafLargeValueChanged), "global", 2000000000)
+            : base(fixture, outputHelper, nameof(TestWafLargeValueChanged), 2000000000)
         {
         }
 
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     public class TestWafInvalidNegativeValueChanged : AspNetCore5AsmAttributesWafTimeout
     {
         public TestWafInvalidNegativeValueChanged(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, nameof(TestWafInvalidNegativeValueChanged), "global", -1801)
+            : base(fixture, outputHelper, nameof(TestWafInvalidNegativeValueChanged), -1801)
         {
         }
 
@@ -71,7 +71,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     public class TestWafInvalidZeroValueChanged : AspNetCore5AsmAttributesWafTimeout
     {
         public TestWafInvalidZeroValueChanged(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, nameof(TestWafInvalidZeroValueChanged), "global", 0)
+            : base(fixture, outputHelper, nameof(TestWafInvalidZeroValueChanged), 0)
         {
         }
 
@@ -88,14 +88,12 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     {
         private const string AsmProduct = "ASM";
 
-        private readonly string _id;
         private readonly int _timeout;
         private readonly string _testName;
 
-        public AspNetCore5AsmAttributesWafTimeout(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string testName, string id, int timeout)
+        public AspNetCore5AsmAttributesWafTimeout(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string testName, int timeout)
             : base(fixture, outputHelper, enableSecurity: true, testName: testName)
         {
-            _id = id;
             _timeout = timeout;
             _testName = testName;
 
@@ -122,7 +120,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var spans1 = await SendRequestsAsync(agent, type);
             var acknowledgedId = _testName + Guid.NewGuid();
 
-            var rcmWafData = CreateWafTimeoutRcm(_timeout, _id);
+            var rcmWafData = CreateWafTimeoutRcm(_timeout);
             await agent.SetupRcmAndWait(Output, new[] { ((object)rcmWafData, acknowledgedId) }, AsmProduct, appliedServiceNames: new[] { acknowledgedId });
 
             var spans2 = await SendRequestsAsync(agent, type);
@@ -132,9 +130,9 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             await VerifySpans(spans.ToImmutableList(), settings);
         }
 
-        private Payload CreateWafTimeoutRcm(int timeoutValue, string id)
+        private Payload CreateWafTimeoutRcm(int timeoutValue)
         {
-            return new Payload { Data = new Data { Id = id, Type = "custom_attributes", Attributes = new Attributes { Values = new Dictionary<string, object> { { "waf_timeout", timeoutValue }, } } } };
+            return new Payload { CustomAttributes = new CustomAttributes { Attributes = new Dictionary<string, object> { { "waf_timeout", timeoutValue } } } };
         }
     }
 }

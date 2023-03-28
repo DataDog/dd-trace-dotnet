@@ -467,9 +467,12 @@ namespace Datadog.Trace.AppSec
                     }
                 }
 
-                if (asmConfig.TypedFile.Data != null)
+                if (asmConfig.TypedFile.CustomAttributes != null && asmConfig.TypedFile.CustomAttributes.Attributes != null)
                 {
-                    _remoteConfigurationStatus.DataObject = asmConfig.TypedFile.Data;
+                    foreach (var key in asmConfig.TypedFile.CustomAttributes.Attributes.Keys)
+                    {
+                        _remoteConfigurationStatus.CustomAttributes[key] = asmConfig.TypedFile.CustomAttributes.Attributes[key];
+                    }
                 }
             }
 
@@ -486,11 +489,8 @@ namespace Datadog.Trace.AppSec
                     overrides.Count,
                     exclusions.Count);
 
-                // Handle attributes
-                if (_remoteConfigurationStatus.DataObject is not null)
-                {
-                    HandleRcmAttributes(_remoteConfigurationStatus.DataObject.Attributes);
-                }
+                // Handle custom attributes
+                HandleSetRcmAttributes(_remoteConfigurationStatus.CustomAttributes);
             }
 
             foreach (var asmConfig in asmConfigs)
@@ -506,18 +506,11 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void HandleRcmAttributes(Attributes attributes)
+        private void HandleSetRcmAttributes(IReadOnlyDictionary<string, object> attributes)
         {
-            if (attributes.Values is null)
-            {
-                Log.Error("Failed to Handle Rcm Attributes: the Values dictionary is null");
-                return;
-            }
-
             // Handle the waf_timeout custom_attributes
             const string wafTimeoutKey = "waf_timeout";
-            var hasWafTimeout = attributes.Values.TryGetValue("waf_timeout", out var wafTimeout);
-            if (hasWafTimeout)
+            if (attributes.TryGetValue("waf_timeout", out var wafTimeout))
             {
                 try
                 {
