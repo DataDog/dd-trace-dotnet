@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -48,7 +49,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             from queryStringEnabled in new[] { true, false }
             from queryStringSizeAndExpectation in new[] { new KeyValuePair<int?, string>(null, "?key1=value1&<redacted>"), new KeyValuePair<int?, string>(200, "?key1=value1&<redacted>"), new KeyValuePair<int?, string>(2, "?k") }
             from metadataSchemaVersion in new[] { "v0", "v1" }
-            select new object[] { instrumentationOptions, socketHandlerEnabled, queryStringEnabled, queryStringSizeAndExpectation.Key,  queryStringSizeAndExpectation.Value, metadataSchemaVersion };
+            from traceId128Enabled in new[] { true, false }
+            select new object[]
+                   {
+                       instrumentationOptions,
+                       socketHandlerEnabled,
+                       queryStringEnabled,
+                       queryStringSizeAndExpectation.Key,
+                       queryStringSizeAndExpectation.Value,
+                       metadataSchemaVersion,
+                       traceId128Enabled
+                   };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsHttpMessageHandler(metadataSchemaVersion);
 
@@ -57,11 +68,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
         [MemberData(nameof(IntegrationConfigWithObfuscation))]
-        public void HttpClient_SubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler, bool queryStringCaptureEnabled, int? queryStringSize, string expectedQueryString, string metadataSchemaVersion)
+        public void HttpClient_SubmitsTraces(
+            InstrumentationOptions instrumentation,
+            bool socketsHandlerEnabled,
+            bool queryStringCaptureEnabled,
+            int? queryStringSize,
+            string expectedQueryString,
+            string metadataSchemaVersion,
+            bool traceId128Enabled)
         {
             SetInstrumentationVerification();
-            ConfigureInstrumentation(instrumentation, enableSocketsHandler);
+            ConfigureInstrumentation(instrumentation, socketsHandlerEnabled);
             SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING", queryStringCaptureEnabled ? "true" : "false");
+            SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED", traceId128Enabled ? "true" : "false");
 
             if (queryStringSize.HasValue)
             {
@@ -113,9 +132,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var firstSpan = spans.First();
                 var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
                 var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+                var propagatedTags = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.PropagatedTags);
 
                 Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
                 Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
+
+                // assert that "_dd.p.tid" was added to both the span tags (vertical propagation)
+                // and the "x-datadog-tags" header (horizontal propagation).
+                // note this assumes Datadog propagate headers are enabled (which is the default).
+                var traceTags = TagPropagation.ParseHeader(propagatedTags);
+                var traceIdUpperTagFromHeader = traceTags.GetTag(Tags.Propagated.TraceIdUpper);
+                var traceIdUpperTagFromSpan = firstSpan.GetTag(Tags.Propagated.TraceIdUpper);
+                Assert.NotNull(traceIdUpperTagFromHeader);
+                Assert.NotNull(traceIdUpperTagFromSpan);
+                Assert.Equal(traceIdUpperTagFromHeader, traceIdUpperTagFromSpan);
 
                 using var scope = new AssertionScope();
                 telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);

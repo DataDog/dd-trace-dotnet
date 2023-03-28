@@ -7,9 +7,7 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
-using System.Linq;
 using System.Net;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -111,18 +109,35 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 
+    [Collection("IisTests")]
+    public class AspNetMvc5Tests128BitTraceIds : AspNetMvc5Tests
+    {
+        public AspNetMvc5Tests128BitTraceIds(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, classicMode: false, enableRouteTemplateResourceNames: true, enable128BitTraceIds: true)
+        {
+        }
+    }
+
     [UsesVerify]
     public abstract class AspNetMvc5Tests : TracingIntegrationTest, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
 
-        protected AspNetMvc5Tests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableRouteTemplateResourceNames, bool enableRouteTemplateExpansion = false, bool virtualApp = false)
+        protected AspNetMvc5Tests(
+            IisFixture iisFixture,
+            ITestOutputHelper output,
+            bool classicMode,
+            bool enableRouteTemplateResourceNames,
+            bool enableRouteTemplateExpansion = false,
+            bool virtualApp = false,
+            bool enable128BitTraceIds = false)
             : base("AspNetMvc5", @"test\test-applications\aspnet", output)
         {
             SetServiceVersion("1.0.0");
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, enableRouteTemplateResourceNames.ToString());
             SetEnvironmentVariable(ConfigurationKeys.ExpandRouteTemplatesEnabled, enableRouteTemplateExpansion.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, enable128BitTraceIds ? "true" : "false");
 
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
