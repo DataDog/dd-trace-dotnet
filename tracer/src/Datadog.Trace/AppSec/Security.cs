@@ -9,14 +9,12 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.AppSec.RcmModels;
-using Datadog.Trace.AppSec.RcmModels.Asm;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
@@ -394,6 +392,7 @@ namespace Datadog.Trace.AppSec
         private void AsmProductConfigRemoved(object sender, ProductConfigChangedEventArgs e)
         {
             var asmConfigs = e.GetDeserializedConfigurations<RcmModels.Asm.Payload>();
+            List<string> customAttributesToRemove = null;
 
             foreach (var asmConfig in asmConfigs)
             {
@@ -405,6 +404,12 @@ namespace Datadog.Trace.AppSec
                 if (_remoteConfigurationStatus.ExclusionsByFile.ContainsKey(asmConfig.Name))
                 {
                     _remoteConfigurationStatus.ExclusionsByFile.Remove(asmConfig.Name);
+                }
+
+                if (_remoteConfigurationStatus.CustomAttributes.ContainsKey(asmConfig.Name))
+                {
+                    customAttributesToRemove = _remoteConfigurationStatus.CustomAttributes[asmConfig.Name].Keys.ToList();
+                    _remoteConfigurationStatus.CustomAttributes.Remove(asmConfig.Name);
                 }
             }
 
@@ -420,6 +425,11 @@ namespace Datadog.Trace.AppSec
                     result,
                     overrides.Count,
                     exclusions.Count);
+
+                if (customAttributesToRemove is not null)
+                {
+                    HandleRemoveRcmAttributes(customAttributesToRemove);
+                }
             }
 
             foreach (var asmConfig in asmConfigs)
@@ -469,10 +479,13 @@ namespace Datadog.Trace.AppSec
 
                 if (asmConfig.TypedFile.CustomAttributes != null && asmConfig.TypedFile.CustomAttributes.Attributes != null)
                 {
+                    Dictionary<string, object> attributes = new();
                     foreach (var key in asmConfig.TypedFile.CustomAttributes.Attributes.Keys)
                     {
-                        _remoteConfigurationStatus.CustomAttributes[key] = asmConfig.TypedFile.CustomAttributes.Attributes[key];
+                        attributes.Add(key, asmConfig.TypedFile.CustomAttributes.Attributes[key]);
                     }
+
+                    _remoteConfigurationStatus.CustomAttributes[asmConfig.Name] = attributes;
                 }
             }
 
@@ -490,7 +503,7 @@ namespace Datadog.Trace.AppSec
                     exclusions.Count);
 
                 // Handle custom attributes
-                HandleSetRcmAttributes(_remoteConfigurationStatus.CustomAttributes);
+                HandleSetRcmAttributes();
             }
 
             foreach (var asmConfig in asmConfigs)
@@ -506,15 +519,30 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void HandleSetRcmAttributes(IReadOnlyDictionary<string, object> attributes)
+        private void HandleSetRcmAttributes()
         {
-            // Handle the waf_timeout custom_attributes
+            // Define attributes constants
             const string wafTimeoutKey = "waf_timeout";
-            if (attributes.TryGetValue("waf_timeout", out var wafTimeout))
+
+            // Set attributes
+            foreach (var configName in _remoteConfigurationStatus.CustomAttributes.Keys)
+            {
+                foreach (var attribute in _remoteConfigurationStatus.CustomAttributes[configName].Keys)
+                {
+                    switch (attribute)
+                    {
+                        case wafTimeoutKey:
+                            SetWafTimeout(_remoteConfigurationStatus.CustomAttributes[configName][attribute]);
+                            break;
+                    }
+                }
+            }
+
+            void SetWafTimeout(object value)
             {
                 try
                 {
-                    var wafTimeoutValue = Convert.ToUInt64(wafTimeout);
+                    var wafTimeoutValue = Convert.ToUInt64(value);
                     if (wafTimeoutValue <= 0)
                     {
                         Log.Warning("Ignoring '{WafTimeoutKey}' of '{WafTimeoutString}' because it was zero or less", wafTimeoutKey, wafTimeoutValue.ToString());
@@ -527,8 +555,32 @@ namespace Datadog.Trace.AppSec
                 }
                 catch (Exception e)
                 {
-                    Log.Warning("The WafTimeoutMicroSecondsKey failed to be set according to the attribute '{WafTimeoutKey}': {Error}: {TimeoutValue}", wafTimeoutKey, e.Message, wafTimeout.ToString());
+                    Log.Warning("The WafTimeoutMicroSecondsKey failed to be set according to the attribute '{WafTimeoutKey}': {Error}: {TimeoutValue}", wafTimeoutKey, e.Message, value.ToString());
                 }
+            }
+        }
+
+        private void HandleRemoveRcmAttributes(IEnumerable<string> attributes)
+        {
+            if (attributes is null)
+            {
+                return;
+            }
+
+            foreach (var attribute in attributes)
+            {
+                switch (attribute)
+                {
+                    case "waf_timeout":
+                        RemoveWafTimeout();
+                        break;
+                }
+            }
+
+            void RemoveWafTimeout()
+            {
+                // Reset the waf timeout to default value
+                _settings.WafTimeoutMicroSeconds = 100_000;
             }
         }
 
