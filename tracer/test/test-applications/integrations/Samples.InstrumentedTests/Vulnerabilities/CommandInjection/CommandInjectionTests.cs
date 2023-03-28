@@ -17,7 +17,6 @@ public class CommandInjectionTests : InstrumentationTestsBase
     private string untaintedProcessName = "nonexisting2.exe";
     private string taintedArgument = "taintedArgument";
     private string untaintedArgument = "untaintedArgument";
-    private string commandInjectionType = "COMMAND_INJECTION";
 
     public CommandInjectionTests()
     {
@@ -76,7 +75,7 @@ public class CommandInjectionTests : InstrumentationTestsBase
         AssertVulnerable(commandInjectionType, "nonexisting2.exe :+-taintedArgument-+:");
     }
 
-        [Trait("Category", "LinuxUnsupported")]
+    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable5()
     {

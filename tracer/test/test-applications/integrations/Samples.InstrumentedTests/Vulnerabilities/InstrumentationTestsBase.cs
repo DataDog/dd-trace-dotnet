@@ -59,6 +59,7 @@ public class InstrumentationTestsBase
     
     protected static string WeakHashVulnerabilityType = "WEAK_HASH";
 
+    protected string commandInjectionType = "COMMAND_INJECTION";
     public InstrumentationTestsBase()
     {
         AssertInstrumented();
