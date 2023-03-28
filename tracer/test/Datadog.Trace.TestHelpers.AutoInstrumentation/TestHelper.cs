@@ -668,22 +668,18 @@ namespace Datadog.Trace.TestHelpers
 
             var payload = $$"""
                 {
-                "series": [
-                {
-                    "metric": "dd_trace_dotnet.ci.tests.retries",
-                    "type": 1,
-                    "points": [
-                    {
-                        "timestamp": {{((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds()}},
-                        "value": 1
-                    }
-                    ],
-                    "tags": [
-                        {{tags}}
-                    ]
+                    "series": [{
+                        "metric": "dd_trace_dotnet.ci.tests.retries",
+                        "type": 1,
+                        "points": [{
+                            "timestamp": {{((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds()}},
+                            "value": 1
+                            }],
+                        "tags": [
+                            {{tags}}
+                        ]
+                    }]
                 }
-                ]
-            });
             """;
 
             var content = new StringContent(payload, Encoding.UTF8, "application/json");
