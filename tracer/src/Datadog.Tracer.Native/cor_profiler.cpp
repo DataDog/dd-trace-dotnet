@@ -73,12 +73,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     const auto process_command_line = shared::GetCurrentProcessCommandLine();
     Logger::Info("Process CommandLine: ", process_command_line);
 
-    if (process_name == WStr("dd-trace") || process_name == WStr("dd-trace.exe"))
-    {
-        Logger::Info("Profiler disabled - monitoring the dd-trace tool is not supported.");
-        return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
-    }
-
     // CI visibility checks
     if (!process_command_line.empty())
     {
@@ -134,14 +128,32 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
     }
 
-    const auto& exclude_process_names = shared::GetEnvironmentValues(environment::exclude_process_names);
-
-    // attach profiler only if this process's name is NOT on the list
-    if (!exclude_process_names.empty() && shared::Contains(exclude_process_names, process_name))
+    // if we were on the explicit include list, don't check the block list
+    if (include_process_names.empty())
     {
-        Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", process_name, " found in ",
-                     environment::exclude_process_names, ".");
-        return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+        const auto& exclude_process_names = shared::GetEnvironmentValues(environment::exclude_process_names);
+        if (!exclude_process_names.empty())
+        {
+            // attach profiler only if this process's name is NOT on the provided list
+            if (shared::Contains(exclude_process_names, process_name))
+            {
+                Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", process_name, " found in ",
+                             environment::exclude_process_names, ".");
+                return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+            }
+        }
+        else
+        {
+            // attach profiler only if this process's name is NOT on the default block list
+            for (auto&& exclude_assembly : default_exclude_assemblies)
+            {
+                if (process_name == exclude_assembly)
+                {
+                    Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", process_name," found in default exclude list");
+                    return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+                }
+            }
+        }
     }
 
     Logger::Info("Environment variables:");

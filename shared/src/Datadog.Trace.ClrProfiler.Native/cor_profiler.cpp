@@ -3,6 +3,7 @@
 #include "dynamic_dispatcher.h"
 #include "util.h"
 #include "../../../shared/src/native-src/pal.h"
+#include "EnvironmentVariables.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_function_control.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_info.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_helper.h"
@@ -119,10 +120,45 @@ namespace datadog::shared::nativeloader
         const auto process_name = ::shared::GetCurrentProcessName();
         Log::Debug("ProcessName: ", process_name);
 
-        if (process_name == WStr("dd-trace") || process_name == WStr("dd-trace.exe"))
+        Log::Debug("CorProfiler::Initialize");
+
+        const auto& include_process_names = GetEnvironmentValues(EnvironmentVariables::IncludeProcessNames);
+
+        // if there is a process inclusion list, attach profiler only if this
+        // process's name is on the list
+        if (!include_process_names.empty() && !Contains(include_process_names, process_name))
         {
-            Log::Info("Profiler disabled - monitoring the dd-trace tool is not supported.");
+            Log::Info("CorProfiler::Initialize Profiler disabled: ", process_name, " not found in ",
+                         EnvironmentVariables::IncludeProcessNames, ".");
             return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+        }
+
+        // if we were on the explicit include list, don't check the block list
+        if (include_process_names.empty())
+        {
+            const auto& exclude_process_names = GetEnvironmentValues(EnvironmentVariables::ExcludeProcessNames);
+            if (!exclude_process_names.empty())
+            {
+                // attach profiler only if this process's name is NOT on the provided list
+                if (Contains(exclude_process_names, process_name))
+                {
+                    Log::Info("CorProfiler::Initialize Profiler disabled: ", process_name, " found in ",
+                                 EnvironmentVariables::ExcludeProcessNames, ".");
+                    return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+                }
+            }
+            else
+            {
+                // attach profiler only if this process's name is NOT on the default block list
+                for (auto&& exclude_assembly : default_exclude_assemblies)
+                {
+                    if (process_name == exclude_assembly)
+                    {
+                        Log::Info("CorProfiler::Initialize Profiler disabled: ", process_name," found in default exclude list");
+                        return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+                    }
+                }
+            }
         }
 
         //

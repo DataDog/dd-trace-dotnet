@@ -59,6 +59,13 @@ const shared::WSTRING include_assemblies[]{
     WStr("System.Diagnostics.Process"),
 };
 
+// Note that this list should be kept in sync with the values in shared/src/Datadog.Trace.ClrProfiler.Native/util.h
+const shared::WSTRING default_exclude_assemblies[]{
+    WStr("dd-trace"),
+    WStr("dd-trace.exe"),
+    WStr("aspnet_state.exe"),
+};
+
 const shared::WSTRING skip_traceattribute_assembly_prefixes[]{
     WStr("System."), WStr("Microsoft."), WStr("Datadog.")};
 
