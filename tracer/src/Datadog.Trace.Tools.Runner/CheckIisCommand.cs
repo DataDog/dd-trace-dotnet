@@ -26,22 +26,6 @@ namespace Datadog.Trace.Tools.Runner
             return ExecuteAsync(settings, null, null);
         }
 
-        public override ValidationResult Validate(CommandContext context, CheckIisSettings settings)
-        {
-            var result = base.Validate(context, settings);
-
-            if (result.Successful)
-            {
-                // Perform additional validation
-                if (settings.SiteName?.Count(c => c == '/') > 1)
-                {
-                    return ValidationResult.Error($"IIS site names can't have multiple / in their name: {settings.SiteName}");
-                }
-            }
-
-            return result;
-        }
-
         internal static async Task<int> ExecuteAsync(CheckIisSettings settings, string applicationHostConfigurationPath, int? pid, IRegistryService registryService = null)
         {
             static IEnumerable<string> GetAllApplicationNames(ServerManager sm)
@@ -63,7 +47,7 @@ namespace Datadog.Trace.Tools.Runner
                 return 1;
             }
 
-            var values = settings.SiteName.Split('/');
+            var values = settings.SiteName.Split('/', 2);
 
             var siteName = values[0];
             var applicationName = values.Length > 1 ? $"/{values[1]}" : "/";
