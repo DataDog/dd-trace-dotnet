@@ -609,6 +609,14 @@ namespace Datadog.Trace.Propagators
             };
 
             var traceTags = TagPropagation.ParseHeader(traceState.PropagatedTags);
+            if (traceParent.Sampled && traceState.SamplingPriority <= 0)
+            {
+                traceTags.SetTag(Tags.Propagated.DecisionMaker, "-0");
+            }
+            else if (!traceParent.Sampled && traceState.SamplingPriority > 0)
+            {
+                traceTags.RemoveTag(Tags.Propagated.DecisionMaker);
+            }
 
             spanContext = new SpanContext(
                 traceId: traceParent.TraceId,

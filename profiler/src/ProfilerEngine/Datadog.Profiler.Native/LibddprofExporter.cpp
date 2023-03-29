@@ -403,14 +403,24 @@ void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
 
 void LibddprofExporter::SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint)
 {
-    const auto profileInfoScope = GetInfo(runtimeId);
+    std::lock_guard lock(_perAppInfoLock);
 
-    if (profileInfoScope.profileInfo.profile == nullptr)
+    // since the runtime id lifetime does not extend this method call, we can't use it as a key
+    // (i.e. the string_view would point to a long gone temporary string)
+    auto it = _perAppInfo.find(runtimeId);
+    if (it == _perAppInfo.end())
     {
-        profileInfoScope.profileInfo.profile = CreateProfile();
+        return;
     }
 
-    auto* profile = profileInfoScope.profileInfo.profile;
+    auto& profileInfoScope = it->second;
+
+    if (profileInfoScope.profile == nullptr)
+    {
+        profileInfoScope.profile = CreateProfile();
+    }
+
+    auto* profile = profileInfoScope.profile;
 
     auto endpointName = FfiHelper::StringToCharSlice(endpoint);
 
@@ -445,6 +455,12 @@ bool LibddprofExporter::Export()
         {
             keys.push_back(key);
         }
+    }
+
+    // The only reason found during tests was when no sample were collected but the tracer set endpoints.
+    if (keys.empty())
+    {
+        Log::Debug("No sample has been collected. No profile will be sent.");
     }
 
     for (auto& runtimeId : keys)

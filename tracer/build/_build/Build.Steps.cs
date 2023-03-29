@@ -704,7 +704,7 @@ partial class Build
             CompressZip(MonitoringHomeDirectory, WindowsTracerHomeZip, fileMode: FileMode.Create);
         });
 
-    Target ZipMonitoringHomeLinux => _ => _
+    Target PrepareMonitoringHomeLinux => _ => _
         .Unlisted()
         .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
         .OnlyWhenStatic(() => IsLinux)
@@ -761,7 +761,21 @@ partial class Build
             // Copy createLogPath.sh script and set the permissions
             CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, assetsDirectory);
             chmod.Invoke($"+x {assetsDirectory / FileNames.CreateLogPathScript}");
+        });
 
+    Target ZipMonitoringHomeLinux => _ => _
+        .Unlisted()
+        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
+        .DependsOn(PrepareMonitoringHomeLinux)
+        .OnlyWhenStatic(() => IsLinux)
+        .Requires(() => Version)
+        .Executes(() =>
+        {
+            var fpm = Fpm.Value;
+            var gzip = GZip.Value;
+
+            var (arch, ext) = GetUnixArchitectureAndExtension();
+            var assetsDirectory = TemporaryDirectory / arch;
             var workingDirectory = ArtifactsDirectory / $"linux-{UnixArchitectureIdentifier}";
             EnsureCleanDirectory(workingDirectory);
 
