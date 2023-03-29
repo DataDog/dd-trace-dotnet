@@ -20,6 +20,15 @@ const ::shared::WSTRING cfg_filepath_env = WStr("DD_NATIVELOADER_CONFIGFILE");
 const ::shared::WSTRING cfg_instrumentation_verification_env = WStr("DD_WRITE_INSTRUMENTATION_TO_DISK");
 const ::shared::WSTRING cfg_copying_originals_modules_env = WStr("DD_COPY_ORIGINALS_MODULES_TO_DISK");
 const ::shared::WSTRING cfg_log_directory_env = WStr("DD_TRACE_LOG_DIRECTORY");
+
+// Note that this list should be kept in sync with the values in tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h
+const shared::WSTRING default_exclude_assemblies[]{
+    WStr("dd-trace"),
+    WStr("dd-trace.exe"),
+    WStr("aspnet_state.exe"),
+    WStr("sqlservr.exe"),
+};
+
 inline static const ::shared::WSTRING datadog_logs_folder_path = WStr(R"(Datadog .NET Tracer\logs)");
 
 static fs::path GetCurrentModuleFolderPath()
