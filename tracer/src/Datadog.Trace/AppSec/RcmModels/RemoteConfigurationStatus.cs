@@ -24,5 +24,7 @@ internal class RemoteConfigurationStatus
 
     internal Dictionary<string, Dictionary<string, object>> CustomAttributes { get; } = new();
 
+    internal Dictionary<string, Dictionary<string, object>> OldAttributes { get; } = new();
+
     internal string RemoteRulesJson { get; set; }
 }

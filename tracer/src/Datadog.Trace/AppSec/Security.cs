@@ -392,7 +392,7 @@ namespace Datadog.Trace.AppSec
         private void AsmProductConfigRemoved(object sender, ProductConfigChangedEventArgs e)
         {
             var asmConfigs = e.GetDeserializedConfigurations<RcmModels.Asm.Payload>();
-            List<string> customAttributesToRemove = null;
+            Dictionary<string, List<string>> customAttributesToRemove = new();
 
             foreach (var asmConfig in asmConfigs)
             {
@@ -408,7 +408,7 @@ namespace Datadog.Trace.AppSec
 
                 if (_remoteConfigurationStatus.CustomAttributes.ContainsKey(asmConfig.Name))
                 {
-                    customAttributesToRemove = _remoteConfigurationStatus.CustomAttributes[asmConfig.Name].Keys.ToList();
+                    customAttributesToRemove[asmConfig.Name] = _remoteConfigurationStatus.CustomAttributes[asmConfig.Name].Keys.ToList();
                     _remoteConfigurationStatus.CustomAttributes.Remove(asmConfig.Name);
                 }
             }
@@ -426,10 +426,7 @@ namespace Datadog.Trace.AppSec
                     overrides.Count,
                     exclusions.Count);
 
-                if (customAttributesToRemove is not null)
-                {
-                    HandleRemoveRcmAttributes(customAttributesToRemove);
-                }
+                HandleRemoveRcmAttributes(customAttributesToRemove);
             }
 
             foreach (var asmConfig in asmConfigs)
@@ -532,14 +529,16 @@ namespace Datadog.Trace.AppSec
                     switch (attribute)
                     {
                         case wafTimeoutKey:
-                            SetWafTimeout(_remoteConfigurationStatus.CustomAttributes[configName][attribute]);
+                            var oldValue = SetWafTimeout(_remoteConfigurationStatus.CustomAttributes[configName][attribute]);
+                            _remoteConfigurationStatus.OldAttributes[configName][attribute] = oldValue;
                             break;
                     }
                 }
             }
 
-            void SetWafTimeout(object value)
+            object SetWafTimeout(object value)
             {
+                object oldValue = null;
                 try
                 {
                     var wafTimeoutValue = Convert.ToUInt64(value);
@@ -549,6 +548,7 @@ namespace Datadog.Trace.AppSec
                     }
                     else
                     {
+                        oldValue = _settings.WafTimeoutMicroSeconds;
                         _settings.WafTimeoutMicroSeconds = wafTimeoutValue;
                         Log.Debug("The {WafTimeoutMicroSecondsKey} has been set to '{NewWafTimeoutValue}' according to the attribute '{WafTimeoutKey}'", nameof(_settings.WafTimeoutMicroSeconds), wafTimeoutValue, wafTimeoutKey);
                     }
@@ -557,30 +557,38 @@ namespace Datadog.Trace.AppSec
                 {
                     Log.Warning("The WafTimeoutMicroSecondsKey failed to be set according to the attribute '{WafTimeoutKey}': {Error}: {TimeoutValue}", wafTimeoutKey, e.Message, value);
                 }
+
+                return oldValue;
             }
         }
 
-        private void HandleRemoveRcmAttributes(IEnumerable<string> attributes)
+        private void HandleRemoveRcmAttributes(IReadOnlyDictionary<string, List<string>> attributesConfig)
         {
-            if (attributes is null)
+            if (attributesConfig is null)
             {
                 return;
             }
 
-            foreach (var attribute in attributes)
+            foreach (var configName in attributesConfig.Keys)
             {
-                switch (attribute)
+                foreach (var attribute in attributesConfig[configName])
                 {
-                    case "waf_timeout":
-                        RemoveWafTimeout();
-                        break;
+                    switch (attribute)
+                    {
+                        case "waf_timeout":
+                            RemoveWafTimeout(configName, "waf_timeout");
+                            break;
+                    }
                 }
             }
 
-            void RemoveWafTimeout()
+            void RemoveWafTimeout(string configName, string attribute)
             {
                 // Reset the waf timeout to default value
-                _settings.WafTimeoutMicroSeconds = 100_000;
+                var oldValue = (ulong)_remoteConfigurationStatus.OldAttributes[configName][attribute];
+                _settings.WafTimeoutMicroSeconds = oldValue;
+
+                Log.Debug("The WafTimeoutMicroSecondsKey has been reset to its previous value: {OldValue}", oldValue);
             }
         }
 
