@@ -72,12 +72,57 @@ namespace Datadog.Trace.TestHelpers
                 if (Process is null)
                 {
                     var initialAgentPort = TcpPortProvider.GetOpenPort();
-                    HttpPort = TcpPortProvider.GetOpenPort();
 
                     Agent = MockTracerAgent.Create(_currentOutput, initialAgentPort);
                     Agent.SpanFilters.Add(IsNotServerLifeCheck);
-                    WriteToOutput($"Starting aspnetcore sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
-                    Process = helper.StartSample(Agent, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort, enableSecurity: enableSecurity, externalRulesFile: externalRulesFile);
+                    WriteToOutput($"Starting aspnetcore sample, agentPort: {Agent.Port}");
+                    Process = helper.StartSample(Agent, arguments: null, packageVersion: string.Empty, aspNetCorePort: 0, enableSecurity: enableSecurity, externalRulesFile: externalRulesFile);
+
+                    var mutex = new ManualResetEventSlim();
+
+                    int? port = null;
+
+                    Process.OutputDataReceived += (_, args) =>
+                    {
+                        if (args.Data != null)
+                        {
+                            if (args.Data.Contains("Now listening on:"))
+                            {
+                                var splitIndex = args.Data.LastIndexOf(':');
+                                port = int.Parse(args.Data.Substring(splitIndex + 1));
+                            }
+                            else if (args.Data.Contains("Unable to start Kestrel"))
+                            {
+                                mutex.Set();
+                            }
+                            else if (args.Data.Contains("Webserver started") || args.Data.Contains("Application started"))
+                            {
+                                mutex.Set();
+                            }
+
+                            WriteToOutput($"[webserver][stdout] {args.Data}");
+                        }
+                    };
+
+                    Process.ErrorDataReceived += (_, args) =>
+                    {
+                        if (args.Data != null)
+                        {
+                            WriteToOutput($"[webserver][stderr] {args.Data}");
+                        }
+                    };
+
+                    Process.BeginOutputReadLine();
+                    Process.BeginErrorReadLine();
+
+                    mutex.Wait(TimeSpan.FromSeconds(15));
+
+                    if (port == null)
+                    {
+                        throw new Exception("Unable to determine port application is listening on");
+                    }
+
+                    WriteToOutput($"Started aspnetcore sample, listening on {HttpPort}");
                 }
             }
 
@@ -125,40 +170,12 @@ namespace Datadog.Trace.TestHelpers
 
         private async Task EnsureServerStarted(bool sendHealthCheck)
         {
-            var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
-
-            Process.OutputDataReceived += (sender, args) =>
-            {
-                if (args.Data != null)
-                {
-                    if (args.Data.Contains("Webserver started") || args.Data.Contains("Application started"))
-                    {
-                        wh.Set();
-                    }
-
-                    WriteToOutput($"[webserver][stdout] {args.Data}");
-                }
-            };
-            Process.BeginOutputReadLine();
-
-            Process.ErrorDataReceived += (sender, args) =>
-            {
-                if (args.Data != null)
-                {
-                    WriteToOutput($"[webserver][stderr] {args.Data}");
-                }
-            };
-
-            Process.BeginErrorReadLine();
-
-            wh.WaitOne(5000);
-
             var maxMillisecondsToWait = 30_000;
             var intervalMilliseconds = 500;
             var intervals = maxMillisecondsToWait / intervalMilliseconds;
             var serverReady = false;
 
-            if (sendHealthCheck == true)
+            if (sendHealthCheck)
             {
                 // wait for server to be ready to receive requests
                 while (intervals-- > 0)
