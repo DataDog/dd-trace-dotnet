@@ -285,6 +285,7 @@ span.kind | Yes
 ### Metrics
 Name | Required |
 ---------|----------------|
+_dd.measured | Yes
 message.queue_time_ms | No
 
 ## MongoDb
