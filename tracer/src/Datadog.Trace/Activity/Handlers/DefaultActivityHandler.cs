@@ -86,8 +86,8 @@ namespace Datadog.Trace.Activity.Handlers
                     }
                     else
                     {
-                        // we don't have a TraceId and/or SpanId - default to the .Id
-                        if (ActivityMappingById.TryGetValue(w3cActivity.Id, out ActivityMapping mapping))
+                        // we don't have a TraceId and/or SpanId - default to the .ParentId
+                        if (ActivityMappingById.TryGetValue(w3cActivity.ParentId, out ActivityMapping mapping))
                         {
                             parent = mapping.Scope.Span.Context;
                         }
