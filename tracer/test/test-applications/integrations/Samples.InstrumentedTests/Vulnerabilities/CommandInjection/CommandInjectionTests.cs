@@ -105,7 +105,7 @@ public class CommandInjectionTests : InstrumentationTestsBase
 
     [Trait("Category", "LinuxUnsupported")]
     [Fact]
-    public void GivenAProcess_WhenStartTaintedProcess_ThenIsNotVulnerable2()
+    public void GivenAProcess_WhenStartUntaintedProcess_ThenIsNotVulnerable4()
     {
         TestProcessCall(() => Process.Start(untaintedProcessName, "user", new SecureString(), "domain"));
         AssertNotVulnerable();
