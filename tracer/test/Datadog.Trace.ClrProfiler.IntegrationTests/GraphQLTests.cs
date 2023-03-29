@@ -428,7 +428,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     if (res.MessageType == WebSocketMessageType.Close)
                     {
                         Output.WriteLine($"[websocket][debug] Close websocket on message close: {res.CloseStatus}: {res.CloseStatusDescription}");
-                        await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
+                        await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
                         break;
                     }
 
