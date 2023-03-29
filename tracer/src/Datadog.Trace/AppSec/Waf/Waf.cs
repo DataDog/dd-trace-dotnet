@@ -8,8 +8,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.AppSec.RcmModels.Asm;
-using Datadog.Trace.AppSec.RcmModels.AsmData;
+using Datadog.Trace.AppSec.Rcm;
+using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
@@ -25,7 +25,6 @@ namespace Datadog.Trace.AppSec.Waf
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Waf));
 
         private readonly WafLibraryInvoker _wafLibraryInvoker;
-        private readonly WafConfigurator _wafConfigurator;
         private readonly Concurrency.ReaderWriterLock _wafLocker = new();
         private IntPtr _wafHandle;
 
@@ -33,7 +32,6 @@ namespace Datadog.Trace.AppSec.Waf
         {
             _wafLibraryInvoker = wafLibraryInvoker;
             _wafHandle = wafHandle;
-            _wafConfigurator = new WafConfigurator(_wafLibraryInvoker);
         }
 
         internal bool Disposed { get; private set; }
@@ -116,6 +114,12 @@ namespace Datadog.Trace.AppSec.Waf
             return new UpdateResult(ruleSetInfo, false);
         }
 
+        public UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus)
+        {
+            var dic = configurationStatus.BuildDictionaryForWafAccordingToIncomingUpdate();
+            return Update(dic);
+        }
+
         /// <summary>
         /// Requires a non disposed waf handle
         /// </summary>
@@ -174,44 +178,6 @@ namespace Datadog.Trace.AppSec.Waf
             return updated;
         }
 
-        // Requires a non disposed waf handle
-        public bool UpdateRulesData(List<RuleData> rulesData)
-        {
-            if (Disposed)
-            {
-                Log.Warning("Waf instance has been disposed when trying to update rules data");
-                return false;
-            }
-
-            var argsToDispose = new List<Obj>();
-            var mergedRuleData = MergeRuleData(rulesData);
-            var rulesDataEncoded = mergedRuleData.Encode(_wafLibraryInvoker, argsToDispose);
-            var updated = UpdateWafAndDisposeItems(rulesDataEncoded, argsToDispose);
-            Log.Information("{Number} rules have been updated and waf has been updated: {Updated}", mergedRuleData.Count, updated);
-            return updated.Success;
-        }
-
-        /// <summary>
-        /// Requires a non disposed waf handle
-        /// </summary>
-        /// <param name="ruleStatus">whether rules have been toggled</param>
-        /// <param name="exclusions">exclusions</param>
-        /// <returns>whether or not rules were toggled</returns>
-        public bool UpdateRulesStatus(List<RuleOverride> ruleStatus, List<JToken> exclusions)
-        {
-            if (Disposed)
-            {
-                Log.Warning("Waf instance has been disposed when trying to toggle rules");
-                return false;
-            }
-
-            var argsToDispose = new List<Obj>();
-            var ruleStatusEncoded = EncoderExtensions.Encode(ruleStatus, exclusions, _wafLibraryInvoker, argsToDispose);
-            var updated = UpdateWafAndDisposeItems(ruleStatusEncoded, argsToDispose);
-            Log.Information("{Number} rule override have been updated and waf has been updated: {Updated}", ruleStatus.Count, updated);
-            return updated.Success;
-        }
-
         // Doesn't require a non disposed waf handle, but as the WAF instance needs to be valid for the lifetime of the context, if waf is disposed, don't run (unpredictable)
         public DDWAF_RET_CODE Run(IntPtr contextHandle, IntPtr rawArgs, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds) => _wafLibraryInvoker.Run(contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
 
@@ -222,13 +188,13 @@ namespace Datadog.Trace.AppSec.Waf
                 throw new ArgumentNullException(nameof(res));
             }
 
-            var finalRuleDatas = new List<RuleData>();
+            var finalRuleData = new List<RuleData>();
             var groups = res.GroupBy(r => r.Id + r.Type);
             foreach (var ruleDatas in groups)
             {
-                var datasByValue = ruleDatas.SelectMany(d => d.Data!).GroupBy(d => d.Value);
+                var dataByValue = ruleDatas.SelectMany(d => d.Data!).GroupBy(d => d.Value);
                 var mergedDatas = new List<Data>();
-                foreach (var data in datasByValue)
+                foreach (var data in dataByValue)
                 {
                     var longestLastingIp = data.OrderByDescending(d => d.Expiration ?? long.MaxValue).First();
                     mergedDatas.Add(longestLastingIp);
@@ -238,11 +204,11 @@ namespace Datadog.Trace.AppSec.Waf
                 if (ruleData != null && !string.IsNullOrEmpty(ruleData.Type) && !string.IsNullOrEmpty(ruleData.Id))
                 {
                     ruleData.Data = mergedDatas.ToArray();
-                    finalRuleDatas.Add(ruleData);
+                    finalRuleData.Add(ruleData);
                 }
             }
 
-            return finalRuleDatas;
+            return finalRuleData;
         }
 
         public void Dispose()

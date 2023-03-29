@@ -6,9 +6,8 @@
 #nullable enable
 
 using System.Collections.Generic;
-using Datadog.Trace.AppSec.RcmModels;
 
-namespace Datadog.Trace.AppSec;
+namespace Datadog.Trace.AppSec.Rcm;
 
 internal static class AsmRemoteConfigurationProducts
 {
@@ -20,5 +19,11 @@ internal static class AsmRemoteConfigurationProducts
 
     public static AsmProduct AsmProduct { get; } = new();
 
-    public static Dictionary<string, AsmRemoteConfigurationProduct> GetAll() => new() { { AsmProduct.Name, AsmProduct }, { AsmDdProduct.Name, AsmDdProduct }, { AsmDataProduct.Name, AsmDataProduct }, { AsmFeaturesProduct.Name, AsmFeaturesProduct } };
+    public static Dictionary<string, AsmRemoteConfigurationProduct> GetAll() => new()
+    {
+        { AsmFeaturesProduct.Name, AsmFeaturesProduct },
+        { AsmProduct.Name, AsmProduct },
+        { AsmDdProduct.Name, AsmDdProduct },
+        { AsmDataProduct.Name, AsmDataProduct }
+    };
 }

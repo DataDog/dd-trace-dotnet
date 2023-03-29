@@ -107,12 +107,16 @@ namespace Datadog.Trace.Debugger
             try
             {
                 Log.Information("Live Debugger initialization started");
-                _remoteConfigurationManager.RegisterProduct(Product);
+                _remoteConfigurationManager.SubscribeToChanges(
+                    (updates, removals) =>
+                    {
+                        AcceptAddedConfiguration(updates.Values.SelectMany(u => u).Select(i => new NamedRawFile(i.Path, i.Contents)));
+                        AcceptRemovedConfiguration(removals.Values.SelectMany(u => u));
+                        // todo
+                        return null;
+                    }, LiveDebuggerProduct.ProductName);
 
                 DebuggerSnapshotSerializer.SetConfig(_settings);
-
-                Product.ConfigChanged += (sender, args) => AcceptAddedConfiguration(args);
-                Product.ConfigRemoved += (sender, args) => AcceptRemovedConfiguration(args);
                 AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
 
                 await StartAsync().ConfigureAwait(false);
@@ -323,14 +327,14 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private void AcceptAddedConfiguration(ProductConfigChangedEventArgs args)
+        private void AcceptAddedConfiguration(IEnumerable<NamedRawFile> configContents)
         {
             var logs = new List<LogProbe>();
             var metrics = new List<MetricProbe>();
             var spans = new List<SpanProbe>();
             ServiceConfiguration serviceConfig = null;
 
-            foreach (var configContent in args.ConfigContents)
+            foreach (var configContent in configContents)
             {
                 try
                 {
@@ -369,17 +373,17 @@ namespace Datadog.Trace.Debugger
             _configurationUpdater.AcceptAdded(probeConfiguration);
         }
 
-        private void AcceptRemovedConfiguration(ProductConfigChangedEventArgs args)
+        private void AcceptRemovedConfiguration(IEnumerable<RemoteConfigurationPath> paths)
         {
-            var removedIds = args.ConfigContents
-                   .Select(TrimProbeTypeFromPath)
-                   .ToArray();
+            var removedIds = paths
+                            .Select(TrimProbeTypeFromPath)
+                            .ToArray();
 
             _configurationUpdater.AcceptRemoved(removedIds);
 
-            string TrimProbeTypeFromPath(NamedRawFile file)
+            string TrimProbeTypeFromPath(RemoteConfigurationPath path)
             {
-                return file.Path.Id.Split('_').Last();
+                return path.Id.Split('_').Last();
             }
         }
 

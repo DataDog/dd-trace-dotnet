@@ -5,8 +5,6 @@
 
 #nullable enable
 
-using Datadog.Trace.AppSec;
-
 namespace Datadog.Trace.AppSec;
 
 internal class AsmFeatures

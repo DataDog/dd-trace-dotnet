@@ -142,7 +142,7 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.PartialflushEnabled, value: settings.Exporter.PartialFlushEnabled),
                 new(ConfigTelemetryData.PartialflushMinspans, value: settings.Exporter.PartialFlushMinSpans),
                 new(ConfigTelemetryData.TracerInstanceCount, value: _tracerInstanceCount),
-                new(ConfigTelemetryData.SecurityEnabled, value: _securitySettings?.Enabled),
+                new(ConfigTelemetryData.SecurityEnabled, value: _securitySettings?.Enabled1),
                 new(ConfigTelemetryData.IastEnabled, value: _iastSettings?.Enabled),
                 new(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted),
                 new(ConfigTelemetryData.TraceMethods, value: settings.TraceMethods),

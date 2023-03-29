@@ -33,7 +33,7 @@ internal struct ApplyDetails
         return applyDetails;
     }
 
-    public static ApplyDetails FromError(string fileName, string error) => new(fileName) { ApplyState = ApplyStates.ERROR, Error = error };
+    public static ApplyDetails FromError(string fileName, string? error) => new(fileName) { ApplyState = ApplyStates.ERROR, Error = error };
 
     public override string ToString()
     {

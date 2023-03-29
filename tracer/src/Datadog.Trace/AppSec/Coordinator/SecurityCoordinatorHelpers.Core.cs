@@ -17,7 +17,7 @@ internal static class SecurityCoordinatorHelpers
 {
     internal static void CheckAndBlock(this Security security, HttpContext context, Span span)
     {
-        if (security.Settings.Enabled)
+        if (security.Enabled)
         {
             var transport = new SecurityCoordinator.HttpTransport(context);
             if (!transport.IsBlocked)
@@ -31,7 +31,7 @@ internal static class SecurityCoordinatorHelpers
 
     internal static void CheckPathParams(this Security security, HttpContext context, Span span, IDictionary<string, object> pathParams)
     {
-        if (security.Settings.Enabled)
+        if (security.Enabled)
         {
             var transport = new SecurityCoordinator.HttpTransport(context);
             if (!transport.IsBlocked)
@@ -46,7 +46,7 @@ internal static class SecurityCoordinatorHelpers
 
     internal static void CheckUser(this Security security, HttpContext context, Span span, string userId)
     {
-        if (security.Settings.Enabled)
+        if (security.Enabled)
         {
             var transport = new SecurityCoordinator.HttpTransport(context);
             if (!transport.IsBlocked)
@@ -61,7 +61,7 @@ internal static class SecurityCoordinatorHelpers
 
     internal static void CheckPathParamsFromAction(this Security security, HttpContext context, Span span, IList<ParameterDescriptor>? actionPathParams, RouteValueDictionary routeValues)
     {
-        if (security.Settings.Enabled && actionPathParams != null)
+        if (security.Enabled && actionPathParams != null)
         {
             var transport = new SecurityCoordinator.HttpTransport(context);
             if (!transport.IsBlocked)

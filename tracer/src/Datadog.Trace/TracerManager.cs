@@ -508,7 +508,7 @@ namespace Datadog.Trace
         {
             var security = Security.Instance;
             writer.WritePropertyName("appsec_enabled");
-            writer.WriteValue(security.Settings.Enabled);
+            writer.WriteValue(security.Settings.Enabled1);
 
             writer.WritePropertyName("appsec_trace_rate_limit");
             writer.WriteValue(security.Settings.TraceRateLimit);

@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, in CallTargetState state)
         {
             var security = Security.Instance;
-            if (security.Settings.Enabled)
+            if (security.Enabled)
             {
                 if (instance.TryDuckCast<DefaultModelBindingContext>(out var defaultModelBindingContext))
                 {

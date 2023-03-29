@@ -179,16 +179,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
         }
 
-        public void RegisterProduct(Product product)
-        {
-            // _products.TryAdd(product.Name, product);
-        }
-
-        public void UnregisterProduct(string productName)
-        {
-            // _products.TryRemove(productName, out _);
-        }
-
         public void OnShutdown()
         {
             _discoveryService.RemoveSubscription(SetRcmEnabled);
