@@ -77,7 +77,7 @@ internal class BlockingMiddleware
         var security = Security.Instance;
         var endedResponse = false;
 
-        if (security.Settings.Enabled)
+        if (security.Enabled)
         {
             if (Tracer.Instance?.ActiveScope?.Span is Span span)
             {
@@ -118,7 +118,7 @@ internal class BlockingMiddleware
             {
                 var action = security.GetBlockingAction(blockException!.Result.Actions[0], context.Request.Headers.GetCommaSeparatedValues("Accept"));
                 await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
-                if (security.Settings.Enabled)
+                if (security.Enabled)
                 {
                     if (Tracer.Instance?.ActiveScope?.Span is Span span)
                     {

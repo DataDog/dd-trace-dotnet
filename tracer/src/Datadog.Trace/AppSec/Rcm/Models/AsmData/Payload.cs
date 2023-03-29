@@ -5,7 +5,7 @@
 #nullable enable
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.AppSec.RcmModels.AsmData;
+namespace Datadog.Trace.AppSec.Rcm.Models.AsmData;
 
 internal class Payload
 {

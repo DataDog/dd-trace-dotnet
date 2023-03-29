@@ -5,11 +5,10 @@
 
 #nullable enable
 using System.Collections.Generic;
-using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
-namespace Datadog.Trace.AppSec.RcmModels.AsmDd;
+namespace Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 
 internal class RuleSet
 {

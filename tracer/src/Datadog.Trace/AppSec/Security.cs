@@ -3,14 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
-using Datadog.Trace.AppSec.RcmModels;
-using Datadog.Trace.AppSec.RcmModels.AsmData;
-using Datadog.Trace.AppSec.RcmModels.AsmDd;
+using Datadog.Trace.AppSec.Rcm;
+using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
@@ -19,6 +18,7 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
+using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
 namespace Datadog.Trace.AppSec
 {
@@ -29,65 +29,64 @@ namespace Datadog.Trace.AppSec
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Security>();
 
-        private static Security _instance;
+        private static Security? _instance;
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
         private readonly SecuritySettings _settings;
-        private readonly Dictionary<string, AsmRemoteConfigurationProduct> _products;
+        private readonly Dictionary<string, AsmRemoteConfigurationProduct> _products = AsmRemoteConfigurationProducts.GetAll();
         private readonly ConfigurationStatus _configurationStatus;
-        private readonly RemoteConfigurationManager _remoteConfigurationManager;
-        private Subscription _rcmSubscription;
-        private LibraryInitializationResult _libraryInitializationResult;
-        private IWaf _waf;
-        private WafLibraryInvoker _wafLibraryInvoker;
-        private AppSecRateLimiter _rateLimiter;
-        private bool _enabled;
-        private InitResult _wafInitResult;
-
-        static Security()
-        {
-        }
+        private readonly RemoteConfigurationManager? _remoteConfigurationManager;
+        private Subscription? _rcmSubscription;
+        private LibraryInitializationResult? _libraryInitializationResult;
+        private IWaf? _waf;
+        private WafLibraryInvoker? _wafLibraryInvoker;
+        private AppSecRateLimiter? _rateLimiter;
+        private InitResult? _wafInitResult;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
         /// </summary>
-        public Security(SecuritySettings settings = null, IWaf waf = null, IDictionary<string, RcmModels.Asm.Action> actions = null)
-            : this(settings, waf) => _configurationStatus.Actions = actions;
-
-        private Security(SecuritySettings settings = null, IWaf waf = null)
+        public Security(SecuritySettings? settings = null, IWaf? waf = null, IDictionary<string, Action>? actions = null)
+            : this(settings, waf)
         {
+            if (actions != null)
+            {
+                _configurationStatus.Actions = actions;
+            }
+        }
+
+        private Security(SecuritySettings? settings = null, IWaf? waf = null)
+        {
+            _remoteConfigurationManager = RemoteConfigurationManager.Instance;
             try
             {
-                Log.Information("anna: initialize security");
-                _products = AsmRemoteConfigurationProducts.GetAll();
-                _remoteConfigurationManager = RemoteConfigurationManager.Instance;
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
                 _configurationStatus = new ConfigurationStatus(_settings.Rules);
+                Log.Information("anna: initialize security");
                 _waf = waf;
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
-                Log.Information("anna: here {CanBeEnabled}", _settings.CanBeEnabled);
+                Log.Information("anna: here {CanBeEnabled}", _settings.CanBeToggled);
 
-                if (_settings.CanBeEnabled)
+                if (_settings.Enabled1 && _waf == null)
                 {
-                    if (_settings.Enabled && _waf == null)
-                    {
-                        InitWafAndInstrumentations();
-                    }
-
-                    SubscribeToChanges(AsmRemoteConfigurationProducts.AsmFeaturesProduct.Name, AsmRemoteConfigurationProducts.AsmDdProduct.Name);
-                    // AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged += FeaturesProductConfigChanged;
-                    // AsmRemoteConfigurationProducts.AsmDdProduct.ConfigChanged += AsmDDProductConfigChanged;
+                    InitWafAndInstrumentations();
                 }
                 else
                 {
                     Log.Information("AppSec remote enabling not allowed (DD_APPSEC_ENABLED=false).");
                 }
 
+                if (_settings.CanBeToggled)
+                {
+                    SubscribeToChanges(AsmRemoteConfigurationProducts.AsmFeaturesProduct.Name, AsmRemoteConfigurationProducts.AsmDdProduct.Name);
+                }
+
                 SetRemoteConfigCapabilites();
             }
             catch (Exception ex)
             {
-                _settings = new(source: null) { Enabled = false };
+                _settings ??= new(source: null);
+                _configurationStatus ??= new ConfigurationStatus(string.Empty);
                 Log.Error(ex, "DDAS-0001-01: AppSec could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
             }
         }
@@ -97,7 +96,7 @@ namespace Datadog.Trace.AppSec
         /// </summary>
         public static Security Instance
         {
-            get => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock, () => new Security(null, null));
+            get => LazyInitializer.EnsureInitialized(ref _instance!, ref _globalInstanceInitialized, ref _globalInstanceLock, () => new Security(null, null));
 
             set
             {
@@ -109,11 +108,13 @@ namespace Datadog.Trace.AppSec
             }
         }
 
+        internal bool Enabled { get; private set; }
+
         internal bool WafExportsErrorHappened => _libraryInitializationResult?.ExportErrorHappened ?? false;
 
-        internal string WafRuleFileVersion { get; private set; }
+        internal string? WafRuleFileVersion { get; private set; }
 
-        internal InitResult WafInitResult => _wafInitResult;
+        internal InitResult? WafInitResult => _wafInitResult;
 
         /// <summary>
         /// Gets <see cref="SecuritySettings"/> instance
@@ -122,7 +123,7 @@ namespace Datadog.Trace.AppSec
 
         internal SecuritySettings Settings => _settings;
 
-        internal string DdlibWafVersion => _waf?.Version;
+        internal string? DdlibWafVersion => _waf?.Version;
 
         internal void SubscribeToChanges(params string[] productNames)
         {
@@ -131,41 +132,7 @@ namespace Datadog.Trace.AppSec
                 if (_rcmSubscription is null)
                 {
                     _rcmSubscription = remoteConfigurationManager.SubscribeToChanges(
-                        (configsByProduct, removedConfigs) =>
-                        {
-                            foreach (var product in _products)
-                            {
-                                if (!configsByProduct.TryGetValue(product.Key, out var config))
-                                {
-                                    continue;
-                                }
-
-                                var removedConfigsForThisProduct = removedConfigs?[product.Key];
-                                product.Value.UpdateRemoteConfigurationStatus(config, removedConfigsForThisProduct, _configurationStatus);
-                            }
-
-                            var dic = _configurationStatus.ToDictionary();
-                            var result = _waf?.Update(dic);
-                            _configurationStatus.Reset();
-                            var applyDetails = new List<ApplyDetails>();
-                            var allRemoteConfigurations = configsByProduct.SelectMany(c => c.Value);
-                            if (result.Success)
-                            {
-                                foreach (var config in allRemoteConfigurations)
-                                {
-                                    applyDetails.Add(ApplyDetails.FromOk(config.Path.Path));
-                                }
-                            }
-                            else
-                            {
-                                foreach (var config in allRemoteConfigurations)
-                                {
-                                    applyDetails.Add(ApplyDetails.FromError(config.Path.Path, result.ErrorMessage));
-                                }
-                            }
-
-                            return applyDetails;
-                        },
+                        UpdateFromRcm,
                         productNames);
                 }
                 else
@@ -184,11 +151,71 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal BlockingAction GetBlockingAction(string id, string[] requestAcceptHeaders)
+        internal List<ApplyDetails> UpdateFromRcm(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
+        {
+            foreach (var product in _products)
+            {
+                configsByProduct.TryGetValue(product.Key, out var config);
+
+                var removedConfigsForThisProduct = removedConfigs?[product.Key];
+                product.Value.UpdateRemoteConfigurationStatus(config, removedConfigsForThisProduct, _configurationStatus);
+            }
+
+            if (_configurationStatus.IncomingUpdateState.SecurityStateChange)
+            {
+                if (Enabled && _configurationStatus.EnableAsm == false)
+                {
+                    DisposeWafAndInstrumentations(true);
+                }
+                else if (!Enabled && _configurationStatus.EnableAsm == true)
+                {
+                    InitWafAndInstrumentations(true);
+                    // no point in updating the waf with potentially new rules as it's initialized here with new rules
+                    _configurationStatus.IncomingUpdateState.WafKeysToUpdate.Remove(ConfigurationStatus.WafRulesKey);
+                }
+            }
+
+            var acknowledge = false;
+            UpdateResult? result = null;
+            if (Enabled && _configurationStatus.IncomingUpdateState.WafKeysToUpdate.Any())
+            {
+                result = _waf?.UpdateWafFromConfigurationStatus(_configurationStatus);
+                if (result?.Success ?? false)
+                {
+                    _configurationStatus.ResetUpdateMarkers();
+                    acknowledge = true;
+                }
+            }
+            else
+            {
+                // acknowledge because it's been applied in memory and will be reapplied when enabled since we dont reset configurationStatus
+                acknowledge = true;
+            }
+
+            var applyDetails = new List<ApplyDetails>();
+            var allRemoteConfigurations = configsByProduct.SelectMany(c => c.Value);
+            if (acknowledge)
+            {
+                foreach (var config in allRemoteConfigurations)
+                {
+                    applyDetails.Add(ApplyDetails.FromOk(config.Path.Path));
+                }
+            }
+            else
+            {
+                foreach (var config in allRemoteConfigurations)
+                {
+                    applyDetails.Add(ApplyDetails.FromError(config.Path.Path, result?.ErrorMessage));
+                }
+            }
+
+            return applyDetails;
+        }
+
+        internal BlockingAction GetBlockingAction(string id, string[]? requestAcceptHeaders)
         {
             var blockingAction = new BlockingAction();
-            RcmModels.Asm.Action action = null;
-            _configurationStatus.Actions?.TryGetValue(id, out action);
+            _configurationStatus.Actions.TryGetValue(id, out var action);
 
             void SetAutomaticResponseContent()
             {
@@ -342,7 +369,7 @@ namespace Datadog.Trace.AppSec
                 rcm =>
                 {
                     var noLocalRules = _settings.Rules == null;
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeEnabled);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeToggled);
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, noLocalRules);
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, noLocalRules);
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusion, noLocalRules);
@@ -352,133 +379,6 @@ namespace Datadog.Trace.AppSec
                 });
         }
 
-        private void FeaturesProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
-        {
-            var features = e.GetDeserializedConfigurations<AsmFeatures>().FirstOrDefault();
-            if (features.TypedFile != null)
-            {
-                _settings.Enabled = features.TypedFile.Asm.Enabled;
-                if (_settings.Enabled)
-                {
-                    InitWafAndInstrumentations(true);
-                }
-                else
-                {
-                    DisposeWafAndInstrumentations(true);
-                }
-            }
-
-            e.Acknowledge(features.Name);
-        }
-
-        private void AsmDataProductConfigRemoved(object sender, ProductConfigChangedEventArgs e)
-        {
-            var asmDataConfigs = e.GetDeserializedConfigurations<RcmModels.AsmData.Payload>();
-            foreach (var asmDataConfig in asmDataConfigs)
-            {
-                if (_configurationStatus.RulesDataByFile.ContainsKey(asmDataConfig.Name))
-                {
-                    _configurationStatus.RulesDataByFile.Remove(asmDataConfig.Name);
-                }
-            }
-
-            var updated = true;
-            if (_enabled)
-            {
-                var ruleData = _configurationStatus.RulesDataByFile.SelectMany(x => x.Value).ToList();
-                updated = UpdateWafWithRulesData(ruleData);
-            }
-
-            foreach (var asmDataConfig in asmDataConfigs)
-            {
-                if (!updated)
-                {
-                    e.Error(asmDataConfig.Name, "Waf could not remove the rules data");
-                }
-                else
-                {
-                    e.Acknowledge(asmDataConfig.Name);
-                }
-            }
-        }
-
-        private void AsmDataProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
-        {
-            var asmDataConfigs = e.GetDeserializedConfigurations<RcmModels.AsmData.Payload>();
-            foreach (var asmDataConfig in asmDataConfigs)
-            {
-                if (asmDataConfig.TypedFile?.RulesData?.Length > 0)
-                {
-                    _configurationStatus.RulesDataByFile[asmDataConfig.Name] = asmDataConfig.TypedFile.RulesData;
-                }
-            }
-
-            var updated = true;
-            if (_enabled)
-            {
-                var ruleData = _configurationStatus.RulesDataByFile.SelectMany(x => x.Value).ToList();
-                updated = UpdateWafWithRulesData(ruleData);
-            }
-
-            foreach (var asmDataConfig in asmDataConfigs)
-            {
-                if (!updated)
-                {
-                    e.Error(asmDataConfig.Name, "Waf could not update the rules data");
-                }
-                else
-                {
-                    e.Acknowledge(asmDataConfig.Name);
-                }
-            }
-        }
-
-        private void AsmProductConfigRemoved(object sender, ProductConfigChangedEventArgs e)
-        {
-            var asmConfigs = e.GetDeserializedConfigurations<RcmModels.Asm.Payload>();
-
-            foreach (var asmConfig in asmConfigs)
-            {
-                if (_configurationStatus.RulesOverridesByFile.ContainsKey(asmConfig.Name))
-                {
-                    _configurationStatus.RulesOverridesByFile.Remove(asmConfig.Name);
-                }
-
-                if (_configurationStatus.ExclusionsByFile.ContainsKey(asmConfig.Name))
-                {
-                    _configurationStatus.ExclusionsByFile.Remove(asmConfig.Name);
-                }
-            }
-
-            var result = true;
-            if (_enabled)
-            {
-                var overrides = _configurationStatus.RulesOverridesByFile.SelectMany(x => x.Value).ToList();
-                var exclusions = _configurationStatus.ExclusionsByFile.SelectMany(x => x.Value).ToList();
-
-                result = _waf.UpdateRulesStatus(overrides, exclusions);
-                Log.Debug<bool, int, int>(
-                    "_waf.Update was updated for removal: {Success}, ({RulesOverridesCount} rule status entries), ({ExclusionsCount} exclusion filters)",
-                    result,
-                    overrides.Count,
-                    exclusions.Count);
-            }
-
-            foreach (var asmConfig in asmConfigs)
-            {
-                if (result)
-                {
-                    e.Acknowledge(asmConfig.Name);
-                }
-                else
-                {
-                    e.Error(asmConfig.Name, "waf couldn't be remove with rule asm product");
-                }
-            }
-        }
-
-        private bool UpdateWafWithRulesData(List<RuleData> ruleData) => _waf?.UpdateRulesData(ruleData) ?? false;
-
         private void InitWafAndInstrumentations(bool fromRemoteConfig = false)
         {
             // initialization of WafLibraryInvoker
@@ -487,7 +387,7 @@ namespace Datadog.Trace.AppSec
                 _libraryInitializationResult = WafLibraryInvoker.Initialize();
                 if (!_libraryInitializationResult.Success)
                 {
-                    _settings.Enabled = false;
+                    Enabled = false;
                     // logs happened during the process of initializing
                     return;
                 }
@@ -495,17 +395,20 @@ namespace Datadog.Trace.AppSec
                 _wafLibraryInvoker = _libraryInitializationResult.WafLibraryInvoker;
             }
 
-            _wafInitResult = Waf.Waf.Create(_wafLibraryInvoker!, _settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _configurationStatus?.RulesByFile?.Values?.FirstOrDefault()?.All);
+            _wafInitResult = Waf.Waf.Create(_wafLibraryInvoker!, _settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _configurationStatus.RulesByFile.Values.FirstOrDefault()?.All);
             if (_wafInitResult.Success)
             {
+                // we don't reapply configurations to the waf here because it's all done in the subscription function, as new data might have been received at the same time as the enable command, we don't want to update twice (here and in the subscription)
                 WafRuleFileVersion = _wafInitResult.RuleFileVersion;
                 var oldWaf = _waf;
                 _waf = _wafInitResult.Waf;
                 oldWaf?.Dispose();
                 Log.Debug("Disposed old waf and affected new waf");
-                var ruleData = _configurationStatus.RulesDataByFile.SelectMany(x => x.Value).ToList();
-                UpdateWafWithRulesData(ruleData);
-                AddInstrumentationsAndProducts(fromRemoteConfig);
+                SubscribeToChanges(AsmRemoteConfigurationProducts.AsmDataProduct.Name, AsmRemoteConfigurationProducts.AsmProduct.Name);
+                AddAppsecSpecificInstrumentations();
+                _rateLimiter ??= new(_settings.TraceRateLimit);
+                Enabled = true;
+                Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled1, fromRemoteConfig);
                 if (_wafInitResult.EmbeddedRules != null)
                 {
                     _configurationStatus.FallbackEmbeddedRuleSet ??= RuleSet.From(_wafInitResult.EmbeddedRules);
@@ -514,7 +417,7 @@ namespace Datadog.Trace.AppSec
             else
             {
                 _wafInitResult.Waf?.Dispose();
-                _settings.Enabled = false;
+                Enabled = false;
             }
         }
 
@@ -525,40 +428,17 @@ namespace Datadog.Trace.AppSec
             _waf = null;
         }
 
-        private void AddInstrumentationsAndProducts(bool fromRemoteConfig)
-        {
-            if (!_enabled)
-            {
-                SubscribeToChanges(AsmRemoteConfigurationProducts.AsmDataProduct.Name, AsmRemoteConfigurationProducts.AsmProduct.Name);
-                // AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged += AsmDataProductConfigChanged;
-                // AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged += AsmProductConfigChanged;
-                AsmRemoteConfigurationProducts.AsmDataProduct.ConfigRemoved += AsmDataProductConfigRemoved;
-                AsmRemoteConfigurationProducts.AsmProduct.ConfigRemoved += AsmProductConfigRemoved;
-                AddAppsecSpecificInstrumentations();
-
-                _rateLimiter ??= new AppSecRateLimiter(_settings.TraceRateLimit);
-
-                _enabled = true;
-
-                Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
-            }
-        }
-
         private void RemoveInstrumentationsAndProducts(bool fromRemoteConfig)
         {
-            if (_enabled)
+            if (Enabled)
             {
-                _rcmSubscription.UnsubscribeProducts(AsmRemoteConfigurationProducts.AsmDataProduct.Name, AsmRemoteConfigurationProducts.AsmProduct.Name);
-                // AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
-                // AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged -= AsmProductConfigChanged;
-                AsmRemoteConfigurationProducts.AsmDataProduct.ConfigRemoved -= AsmDataProductConfigRemoved;
-                AsmRemoteConfigurationProducts.AsmProduct.ConfigRemoved -= AsmProductConfigRemoved;
+                _rcmSubscription?.UnsubscribeProducts(AsmRemoteConfigurationProducts.AsmDataProduct.Name, AsmRemoteConfigurationProducts.AsmProduct.Name);
 
                 RemoveAppsecSpecificInstrumentations();
 
-                _enabled = false;
+                Enabled = false;
 
-                Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
+                Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled1, fromRemoteConfig);
             }
         }
 
@@ -570,23 +450,21 @@ namespace Datadog.Trace.AppSec
                 // It does _not_ mean "stop setting UserKeep (do nothing)". It should only be used for testing.
                 span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoReject, SamplingMechanism.Asm);
             }
-            else if (_rateLimiter.Allowed(span))
+            else if (_rateLimiter?.Allowed(span) ?? false)
             {
                 span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             }
         }
 
-        internal IContext CreateAdditiveContext() => _waf?.CreateContext();
+        internal IContext? CreateAdditiveContext() => _waf?.CreateContext();
 
         private void RunShutdown()
         {
-            // AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
-            // AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged -= AsmProductConfigChanged;
-            AsmRemoteConfigurationProducts.AsmDataProduct.ConfigRemoved -= AsmDataProductConfigRemoved;
-            AsmRemoteConfigurationProducts.AsmProduct.ConfigRemoved -= AsmProductConfigRemoved;
-            // AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged -= FeaturesProductConfigChanged;
-            // AsmRemoteConfigurationProducts.AsmDdProduct.ConfigChanged -= AsmDDProductConfigChanged;
-            _remoteConfigurationManager.UnsubscribeToChanges(_rcmSubscription);
+            if (_rcmSubscription != null)
+            {
+                _remoteConfigurationManager?.UnsubscribeToChanges(_rcmSubscription);
+            }
+
             Dispose();
         }
     }

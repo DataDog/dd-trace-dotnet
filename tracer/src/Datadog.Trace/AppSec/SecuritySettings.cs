@@ -16,16 +16,14 @@ namespace Datadog.Trace.AppSec
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecuritySettings>();
 
-        private bool _enabled = false;
-
         public SecuritySettings(IConfigurationSource source)
         {
             BlockedHtmlTemplate = source?.GetString(ConfigurationKeys.AppSec.HtmlBlockedTemplate) ?? SecurityConstants.BlockedHtmlTemplate;
             BlockedJsonTemplate = source?.GetString(ConfigurationKeys.AppSec.JsonBlockedTemplate) ?? SecurityConstants.BlockedJsonTemplate;
             // both should default to false
             var enabledEnvVar = source?.GetBool(ConfigurationKeys.AppSec.Enabled);
-            _enabled = enabledEnvVar ?? false;
-            CanBeEnabled = enabledEnvVar == null || enabledEnvVar.Value;
+            Enabled1 = enabledEnvVar ?? false;
+            CanBeToggled = enabledEnvVar == null;
 
             Rules = source?.GetString(ConfigurationKeys.AppSec.Rules);
             CustomIpHeader = source?.GetString(ConfigurationKeys.AppSec.CustomIpHeader);
@@ -62,14 +60,9 @@ namespace Datadog.Trace.AppSec
             ObfuscationParameterValueRegex = string.IsNullOrWhiteSpace(obfuscationParameterValueRegex) ? SecurityConstants.ObfuscationParameterValueRegexDefault : obfuscationParameterValueRegex;
         }
 
-        public bool Enabled
-        {
-            get { return _enabled && CanBeEnabled; }
+        public bool Enabled1 { get; }
 
-            set { _enabled = value; }
-        }
-
-        public bool CanBeEnabled { get; }
+        public bool CanBeToggled { get; }
 
         public string CustomIpHeader { get; }
 

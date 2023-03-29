@@ -5,8 +5,8 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.AppSec.RcmModels.Asm;
-using Datadog.Trace.AppSec.RcmModels.AsmData;
+using Datadog.Trace.AppSec.Rcm;
+using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -21,10 +21,8 @@ namespace Datadog.Trace.AppSec.Waf
 
         internal DDWAF_RET_CODE Run(IntPtr contextHandle, IntPtr rawArgs, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds);
 
-        bool UpdateRulesData(List<RuleData> rulesData);
-
-        bool UpdateRulesStatus(List<RuleOverride> res, List<JToken> exclusions);
-
         UpdateResult Update(IDictionary<string, object> arguments);
+
+        UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus);
     }
 }
