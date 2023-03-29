@@ -119,11 +119,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
     const auto& include_process_names = shared::GetEnvironmentValues(environment::include_process_names);
 
-    // if there is a process inclusion list, attach profiler only if this
+    // if there is a process inclusion list, attach clrprofiler only if this
     // process's name is on the list
     if (!include_process_names.empty() && !shared::Contains(include_process_names, process_name))
     {
-        Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", process_name, " not found in ",
+        Logger::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", process_name, " not found in ",
                      environment::include_process_names, ".");
         return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
     }
@@ -134,22 +134,22 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         const auto& exclude_process_names = shared::GetEnvironmentValues(environment::exclude_process_names);
         if (!exclude_process_names.empty())
         {
-            // attach profiler only if this process's name is NOT on the provided list
+            // attach clrprofiler only if this process's name is NOT on the provided list
             if (shared::Contains(exclude_process_names, process_name))
             {
-                Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", process_name, " found in ",
+                Logger::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", process_name, " found in ",
                              environment::exclude_process_names, ".");
                 return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
             }
         }
         else
         {
-            // attach profiler only if this process's name is NOT on the default block list
+            // attach clrprofiler only if this process's name is NOT on the default block list
             for (auto&& exclude_assembly : default_exclude_assemblies)
             {
                 if (process_name == exclude_assembly)
                 {
-                    Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", process_name," found in default exclude list");
+                    Logger::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", process_name," found in default exclude list");
                     return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
                 }
             }

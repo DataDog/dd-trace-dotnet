@@ -124,11 +124,11 @@ namespace datadog::shared::nativeloader
 
         const auto& include_process_names = GetEnvironmentValues(EnvironmentVariables::IncludeProcessNames);
 
-        // if there is a process inclusion list, attach profiler only if this
+        // if there is a process inclusion list, attach clrprofiler only if this
         // process's name is on the list
         if (!include_process_names.empty() && !Contains(include_process_names, process_name))
         {
-            Log::Info("CorProfiler::Initialize Profiler disabled: ", process_name, " not found in ",
+            Log::Info("CorProfiler::Initialize ClrProfiler disabled: ", process_name, " not found in ",
                          EnvironmentVariables::IncludeProcessNames, ".");
             return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
         }
@@ -139,22 +139,22 @@ namespace datadog::shared::nativeloader
             const auto& exclude_process_names = GetEnvironmentValues(EnvironmentVariables::ExcludeProcessNames);
             if (!exclude_process_names.empty())
             {
-                // attach profiler only if this process's name is NOT on the provided list
+                // attach clrprofiler only if this process's name is NOT on the provided list
                 if (Contains(exclude_process_names, process_name))
                 {
-                    Log::Info("CorProfiler::Initialize Profiler disabled: ", process_name, " found in ",
+                    Log::Info("CorProfiler::Initialize ClrProfiler disabled: ", process_name, " found in ",
                                  EnvironmentVariables::ExcludeProcessNames, ".");
                     return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
                 }
             }
             else
             {
-                // attach profiler only if this process's name is NOT on the default block list
+                // attach clrprofiler only if this process's name is NOT on the default block list
                 for (auto&& exclude_assembly : default_exclude_assemblies)
                 {
                     if (process_name == exclude_assembly)
                     {
-                        Log::Info("CorProfiler::Initialize Profiler disabled: ", process_name," found in default exclude list");
+                        Log::Info("CorProfiler::Initialize ClrProfiler disabled: ", process_name," found in default exclude list");
                         return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
                     }
                 }
