@@ -122,6 +122,7 @@ namespace Datadog.Trace.TestHelpers
                         throw new Exception("Unable to determine port application is listening on");
                     }
 
+                    HttpPort = port.Value;
                     WriteToOutput($"Started aspnetcore sample, listening on {HttpPort}");
                 }
             }
