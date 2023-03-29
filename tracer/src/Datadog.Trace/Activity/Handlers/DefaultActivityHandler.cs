@@ -81,7 +81,7 @@ namespace Datadog.Trace.Activity.Handlers
                             _ = HexString.TryParseUInt64(w3cActivity.TraceId.Substring(16), out var newActivityTraceId);
                             _ = HexString.TryParseUInt64(w3cActivity.ParentSpanId, out var newActivitySpanId);
 #endif
-                            parent = Tracer.Instance.CreateSpanContext(SpanContext.None, traceId: newActivityTraceId, spanId: newActivitySpanId);
+                            parent = Tracer.Instance.CreateSpanContext(SpanContext.None, traceId: newActivityTraceId, spanId: newActivitySpanId, rawTraceId: w3cActivity.TraceId, rawSpanId: w3cActivity.ParentSpanId);
                         }
                     }
                     else
