@@ -8,13 +8,19 @@ using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.WeakCipher;
 
-#if !NETFRAMEWORK
-
 #pragma warning disable SYSLIB0021 // Type or member is obsolete
 #pragma warning disable SYSLIB0022 // Type or member is obsolete
 #pragma warning disable SYSLIB0045 // Type or member is obsolete
 public class WeakCipherTests : InstrumentationTestsBase
 {
+
+    [Fact]
+    public void GivenADes_WhenCreating_ThenLocationIsCorrect()
+    {
+        DES.Create();
+        AssertLocation(nameof(WeakCipherTests));
+    }
+
     [Fact]
     public void GivenADes_WhenCreating_VulnerabilityIsLogged()
     {
@@ -85,4 +91,3 @@ public class WeakCipherTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 }
-#endif
