@@ -115,6 +115,9 @@
       "13.*.*"
     ],
     "VersionConditions": [{
+      "MinVersion": "13.0.0",
+      "ExcludeTargetFrameworks": [ "net5.0", "netcoreapp3.1" ]
+    },{
       "MaxVersionExclusive": "14.0.0",
       "ExcludeTargetFrameworks": [ "net461", "netcoreapp2.1", "netcoreapp3.0" ]
     }]
