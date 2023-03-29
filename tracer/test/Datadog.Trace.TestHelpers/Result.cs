@@ -50,7 +50,7 @@ namespace Datadog.Trace.TestHelpers
 
         public Result WithIntegrationName(string name) => this;
 
-        public Result Properties(Action<SpanPropertyAssertion<string>> propertyAssertions)
+        public Result Properties(Action<SpanPropertyAssertion> propertyAssertions)
         {
             if (_propertiesInvoked)
             {
@@ -102,7 +102,6 @@ namespace Datadog.Trace.TestHelpers
             SpanTagAssertion<double>.AssertNoRemainingTags(t);
             return this;
         }
-
 
         public Result AdditionalTags(Action<SpanAdditionalTagsAssertion> tagAssertions)
         {
