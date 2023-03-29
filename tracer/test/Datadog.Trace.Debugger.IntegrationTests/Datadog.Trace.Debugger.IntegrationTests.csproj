@@ -9,7 +9,6 @@
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers.AutoInstrumentation\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
-    <ProjectReference Include="..\Datadog.Trace.Tests\Datadog.Trace.Tests.csproj" />
     <ProjectReference Include="..\test-applications\debugger\dependency-libs\Samples.Probes.TestRuns\Samples.Probes.TestRuns.csproj" />
 
     <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="2.0.226801" />
