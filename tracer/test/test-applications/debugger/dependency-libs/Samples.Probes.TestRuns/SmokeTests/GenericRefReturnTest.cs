@@ -10,7 +10,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
             CallMe();
         }
 
-        [MethodProbeTestData]
+        [LogOnMethodProbeTestData]
         internal void CallMe()
         {
             ref var whatever = ref Enqueue<Address>();
@@ -24,7 +24,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
             }
         }
 
-        [MethodProbeTestData(expectedNumberOfSnapshots: 0)]
+        [LogOnMethodProbeTestData(expectedNumberOfSnapshots: 0)]
         internal static ref T Enqueue<T>()
         {
             return ref new GenericRefReturnTest.DefaultValueContainer<T>().Value;

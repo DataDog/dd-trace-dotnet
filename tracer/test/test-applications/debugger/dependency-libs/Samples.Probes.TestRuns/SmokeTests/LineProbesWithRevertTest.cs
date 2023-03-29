@@ -3,30 +3,30 @@ using System.Runtime.CompilerServices;
 namespace Samples.Probes.TestRuns.SmokeTests;
 
 // Phase 1
-[LineProbeTestData(lineNumber: 41, phase: 1)]
-[LineProbeTestData(lineNumber: 55, phase: 1)]
-[LineProbeTestData(lineNumber: 56, phase: 1)]
+[LogOnLineProbeTestData(lineNumber: 41, phase: 1)]
+[LogOnLineProbeTestData(lineNumber: 55, phase: 1)]
+[LogOnLineProbeTestData(lineNumber: 56, phase: 1)]
 
 // Phase 2
-[LineProbeTestData(lineNumber: 41, phase: 2)]
-[LineProbeTestData(lineNumber: 55, phase: 2)]
-[LineProbeTestData(lineNumber: 56, phase: 2)]
-[LineProbeTestData(lineNumber: 57, phase: 2)]
-[LineProbeTestData(lineNumber: 58, phase: 2)]
+[LogOnLineProbeTestData(lineNumber: 41, phase: 2)]
+[LogOnLineProbeTestData(lineNumber: 55, phase: 2)]
+[LogOnLineProbeTestData(lineNumber: 56, phase: 2)]
+[LogOnLineProbeTestData(lineNumber: 57, phase: 2)]
+[LogOnLineProbeTestData(lineNumber: 58, phase: 2)]
 
 // Phase 3
-[LineProbeTestData(lineNumber: 46, phase: 3, expectedNumberOfSnapshots: 3)]
-[LineProbeTestData(lineNumber: 59, phase: 3)]
+[LogOnLineProbeTestData(lineNumber: 46, phase: 3, expectedNumberOfSnapshots: 3)]
+[LogOnLineProbeTestData(lineNumber: 59, phase: 3)]
 
 // Phase 4
-[LineProbeTestData(lineNumber: 55, phase: 4)]
+[LogOnLineProbeTestData(lineNumber: 55, phase: 4)]
 
 // Phase 5
-[LineProbeTestData(lineNumber: 46, phase: 5, expectedNumberOfSnapshots: 3)]
+[LogOnLineProbeTestData(lineNumber: 46, phase: 5, expectedNumberOfSnapshots: 3)]
 
 // Phase 6
 // Probe in unreachable branch should not emit any snapshot
-[LineProbeTestData(lineNumber: 52, phase: 6, expectedNumberOfSnapshots: 0)]
+[LogOnLineProbeTestData(lineNumber: 52, phase: 6, expectedNumberOfSnapshots: 0)]
 public class LineProbesWithRevertTest : IRun
 {
     public void Run()
@@ -35,7 +35,7 @@ public class LineProbesWithRevertTest : IRun
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    [MethodProbeTestData("System.Void", new[] { "System.String" }, phase: 1)]
+    [LogOnMethodProbeTestData("System.Void", new[] { "System.String" }, phase: 1)]
     public void MethodToInstrument(string callerName)
     {
         int a = callerName.Length;

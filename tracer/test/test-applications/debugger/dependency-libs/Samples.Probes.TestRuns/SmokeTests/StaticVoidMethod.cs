@@ -13,7 +13,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData("System.Void", new string[0])]
+        [LogOnMethodProbeTestData("System.Void", new string[0])]
         public static void Method()
         {
             Number = 7;

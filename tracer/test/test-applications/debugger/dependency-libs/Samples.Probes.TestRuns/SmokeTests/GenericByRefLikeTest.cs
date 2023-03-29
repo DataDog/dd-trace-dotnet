@@ -4,18 +4,18 @@ using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LineProbeTestData(23)]
-    [LineProbeTestData(24)]
-    [LineProbeTestData(25)]
-    [LineProbeTestData(26)]
-    [LineProbeTestData(27)]
-    [LineProbeTestData(29)]
-    [LineProbeTestData(30)]
-    [LineProbeTestData(31)]
-    [LineProbeTestData(32)]
-    [LineProbeTestData(34)]
-    [LineProbeTestData(35)]
-    [LineProbeTestData(50, expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */)]
+    [LogOnLineProbeTestData(23)]
+    [LogOnLineProbeTestData(24)]
+    [LogOnLineProbeTestData(25)]
+    [LogOnLineProbeTestData(26)]
+    [LogOnLineProbeTestData(27)]
+    [LogOnLineProbeTestData(29)]
+    [LogOnLineProbeTestData(30)]
+    [LogOnLineProbeTestData(31)]
+    [LogOnLineProbeTestData(32)]
+    [LogOnLineProbeTestData(34)]
+    [LogOnLineProbeTestData(35)]
+    [LogOnLineProbeTestData(50, expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */)]
     public class GenericByRefLikeTest : IRun
     {
         public void Run()
@@ -44,25 +44,25 @@ namespace Samples.Probes.TestRuns.SmokeTests
                 _whoAmI = whoAmI;
             }
 
-            [MethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */)]
+            [LogOnMethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */)]
             public ref GenericByRefLike<T> CallMe(string @in, GenericByRefLike<T> byRefLike, ref GenericByRefLike<T> refByRefLike)
             {
                 return ref refByRefLike;
             }
 
-            [MethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */)]
+            [LogOnMethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */)]
             public GenericByRefLike<T> CallMe2(string @in, GenericByRefLike<T> byRefLike, ref GenericByRefLike<T> refByRefLike)
             {
                 return byRefLike;
             }
 
-            [MethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */)]
+            [LogOnMethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */)]
             public string CallMe3(string @in, GenericByRefLike<T> byRefLike, ref GenericByRefLike<T> refByRefLike)
             {
                 return @in + "Hello World";
             }
 
-            [MethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */)]
+            [LogOnMethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */)]
             public string CallMe4<K>(string @in, GenericByRefLike<K> byRefLike, ref GenericByRefLike<K> refByRefLike)
             {
                 return @in + "Hello World";

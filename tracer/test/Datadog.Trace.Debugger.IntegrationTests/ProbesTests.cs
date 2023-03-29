@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations.Models;
@@ -306,12 +307,14 @@ public class ProbesTests : TestHelper
 
                 await sample.RunCodeSample();
 
-                if (DebuggerTestHelper.ContainsMetricProbe(probeData))
+                var metricProbes = probeData.Where(DebuggerTestHelper.IsMetricProbe).ToArray();
+
+                if (metricProbes.Any())
                 {
-                    var requests = await agent.WaitForStatsdRequests(probeData.Count(DebuggerTestHelper.IsMetricProbe));
+                    var requests = await agent.WaitForStatsdRequests(metricProbes.Length);
                     requests.Should().OnlyContain(s => s.Contains($"service:{EnvironmentHelper.SampleName}"));
 
-                    foreach (var probeAttributeBase in probeData)
+                    foreach (var probeAttributeBase in metricProbes)
                     {
                         var metricName = (probeAttributeBase as MetricOnMethodProbeTestDataAttribute)?.MetricName ?? (probeAttributeBase as MetricOnLineProbeTestDataAttribute)?.MetricName;
                         var req = requests.SingleOrDefault(r => r.Contains(metricName));
@@ -319,9 +322,12 @@ public class ProbesTests : TestHelper
                         req.Should().Contain($"service:{EnvironmentHelper.SampleName}");
                     }
                 }
-                else
+
+                var logProbes = probeData.Where(DebuggerTestHelper.IsLogProbe).ToArray();
+
+                if (logProbes.Any())
                 {
-                    var expectedNumberOfSnapshots = DebuggerTestHelper.CalculateExpectedNumberOfSnapshots(probeData);
+                    var expectedNumberOfSnapshots = DebuggerTestHelper.CalculateExpectedNumberOfSnapshots(logProbes);
                     string[] snapshots;
                     if (expectedNumberOfSnapshots == 0)
                     {
@@ -336,12 +342,48 @@ public class ProbesTests : TestHelper
                     }
                 }
 
+                var spanProbes = probeData.Where(DebuggerTestHelper.IsSpanProbe).ToArray();
+
+                if (spanProbes.Any())
+                {
+                    const string spanProbeOperationName = "dd.dynamic.span";
+
+                    var settings = VerifyHelper.GetSpanVerifierSettings();
+                    settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
+                    settings.AddSimpleScrubber("out.host: localhost", "out.host: debugger");
+                    settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: debugger");
+                    var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
+                    settings.UseFileName($"{nameof(ProbeTests)}.{testName}.Spans");
+
+                    var spans = agent.WaitForSpans(spanProbes.Length, operationName: spanProbeOperationName);
+                    Assert.Equal(spanProbes.Length, spans.Count);
+                    foreach (var span in spans)
+                    {
+                        var result = Result.FromSpan(span)
+                                           .Properties(
+                                                s => s
+                                                   .Matches(_ => (nameof(span.Name), span.Name), spanProbeOperationName))
+                                           .Tags(
+                                                s => s
+                                                    .Matches("component", "trace")
+                                                    .MatchesOneOf("debugger.probeid", snapshotProbes.Select(p => p.Id).ToArray()));
+                        Assert.True(result.Success, result.ToString());
+                    }
+
+                    await VerifyHelper.VerifySpans(spans, settings).DisableRequireUniquePrefix();
+                }
+
                 // The Datadog-Agent is continuously receiving probe statuses.
                 // We may have outdated probe statuses that were sent before the instrumentation took place.
                 // To ensure consistency, we are clearing the probe statuses and requesting a fresh batch.
                 // This will ensure that the next set of probe statuses received will be up-to-date and accurate.
                 agent.ClearProbeStatuses();
-                var statuses = await agent.WaitForProbesStatuses(probeData.Length);
+
+                // If there are log probes that expect 0 snapshots it means it's a test that checks failure installation.
+                // For a reference, look at: ByRefLikeTest.
+                var expectFailedStatuses = logProbes.Length > 0 && logProbes.Any(logProbe => logProbe.ExpectedNumberOfSnapshots == 0);
+
+                var statuses = await agent.WaitForProbesStatuses(probeData.Length, expectFailedStatuses: expectFailedStatuses);
 
                 Assert.Equal(probeData.Length, statuses?.Length);
                 await ApproveStatuses(statuses, testDescription, isMultiPhase, phaseNumber);

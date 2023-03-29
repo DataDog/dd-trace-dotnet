@@ -2,7 +2,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
 {
     public class EmptyCtorTest : IRun
     {
-        [MethodProbeTestData(expectedNumberOfSnapshots: 0)]
+        [LogOnMethodProbeTestData(expectedNumberOfSnapshots: 0)]
         public EmptyCtorTest()
         {
         }

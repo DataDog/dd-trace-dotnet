@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LineProbeTestData(26)]
+    [LogOnLineProbeTestData(26)]
     public class MethodThrowExceptionTest : IRun
     {
         public int Number { get; set; }
@@ -15,7 +15,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData("System.String", new []{ "System.Int32" })]
+        [LogOnMethodProbeTestData("System.String", new []{ "System.Int32" })]
         public string Method(int toSet)
         {
             Number += 7;

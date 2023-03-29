@@ -43,7 +43,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData]
+        [LogOnMethodProbeTestData]
         public void Method()
         {
         }

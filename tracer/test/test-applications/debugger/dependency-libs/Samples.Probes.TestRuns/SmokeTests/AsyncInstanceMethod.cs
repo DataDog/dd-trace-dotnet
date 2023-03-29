@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LineProbeTestData(lineNumber: 21)]
+    [LogOnLineProbeTestData(lineNumber: 21)]
     public class AsyncInstanceMethod : IAsyncRun
     {
         private const string ClassName = "AsyncInstanceMethod";
@@ -15,7 +15,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData]
+        [LogOnMethodProbeTestData]
         public async Task<string> Method(string input)
         {
             var output = input + ".";

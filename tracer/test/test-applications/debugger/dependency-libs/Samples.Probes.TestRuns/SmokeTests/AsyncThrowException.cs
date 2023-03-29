@@ -12,7 +12,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData]
+        [LogOnMethodProbeTestData]
         private async Task<int> Method(string caller)
         {
             await Task.Delay(20);

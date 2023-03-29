@@ -324,7 +324,7 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="statusCount">The expected number of probe statuses when more than one status is expected (e.g. multiple line probes in method).</param>
         /// <param name="timeout">The timeout</param>
         /// <returns>The list of probe statuses.</returns>
-        public async Task<string[]> WaitForProbesStatuses(int statusCount, TimeSpan? timeout = null)
+        public async Task<string[]> WaitForProbesStatuses(int statusCount, TimeSpan? timeout = null, bool expectFailedStatuses = false)
         {
             using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(5));
 
@@ -332,6 +332,17 @@ namespace Datadog.Trace.TestHelpers
             while (!isFound && !cancellationSource.IsCancellationRequested)
             {
                 isFound = ProbesStatuses.Count == statusCount;
+
+                // If we expect failed probe status, then we try to reach the batch that contains it.
+                // Due to complex race conditions, this requirement is not easily achieved thus what we do is
+                // basically let this function to spin until a batch with "Error installing probe" arrives / timeout.
+                if (isFound &&
+                    expectFailedStatuses &&
+                    !ProbesStatuses.Any(probeStatus => probeStatus.Contains("Error installing probe")))
+                {
+                    ClearProbeStatuses();
+                    isFound = false;
+                }
 
                 if (!isFound)
                 {

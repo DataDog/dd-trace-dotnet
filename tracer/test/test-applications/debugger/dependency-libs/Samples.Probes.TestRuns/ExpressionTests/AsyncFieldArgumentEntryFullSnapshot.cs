@@ -33,7 +33,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData(
+        [LogOnMethodProbeTestData(
             conditionJson: Json,
             captureSnapshot: true,
             evaluateAt: Const.Entry)]

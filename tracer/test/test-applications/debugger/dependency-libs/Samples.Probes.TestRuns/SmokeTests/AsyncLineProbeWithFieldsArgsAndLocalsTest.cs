@@ -6,15 +6,15 @@ using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LineProbeTestData(23)]
-    [LineProbeTestData(25)]
-    [LineProbeTestData(26)]
-    [LineProbeTestData(27)]
-    [LineProbeTestData(28)]
-    [LineProbeTestData(29)]
-    [LineProbeTestData(45)]
-    [LineProbeTestData(46)]
-    [LineProbeTestData(47)]
+    [LogOnLineProbeTestData(23)]
+    [LogOnLineProbeTestData(25)]
+    [LogOnLineProbeTestData(26)]
+    [LogOnLineProbeTestData(27)]
+    [LogOnLineProbeTestData(28)]
+    [LogOnLineProbeTestData(29)]
+    [LogOnLineProbeTestData(45)]
+    [LogOnLineProbeTestData(46)]
+    [LogOnLineProbeTestData(47)]
     public class AsyncLineProbeWithFieldsArgsAndLocalsTest : IAsyncRun
     {
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -39,7 +39,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
             }
 
             [MethodImpl(MethodImplOptions.NoInlining)]
-            [MethodProbeTestData]
+            [LogOnMethodProbeTestData]
             public async Task<string> Method(Generic someGenericObject, string input, Person goodPerson)
             {
                 var output = goodPerson.ToString() + someGenericObject.ToString() + goodPerson.Name;

@@ -34,7 +34,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData(useFullTypeName: false, unlisted: true)]
+        [LogOnMethodProbeTestData(useFullTypeName: false, unlisted: true)]
         public void Method(string callerName)
         {
             int a = callerName.Length;

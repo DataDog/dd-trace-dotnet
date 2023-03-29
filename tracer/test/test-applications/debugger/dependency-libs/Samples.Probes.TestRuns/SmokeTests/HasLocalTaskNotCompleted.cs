@@ -25,7 +25,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         // https://datadoghq.atlassian.net/browse/DEBUG-722
-        [MethodProbeTestData("System.String", new[] { "System.Threading.Tasks.Task`1<System.String>" }, true)]
+        [LogOnMethodProbeTestData("System.String", new[] { "System.Threading.Tasks.Task`1<System.String>" }, true)]
         public string Method(Task<string> task)
         {
             return task.Status.ToString();

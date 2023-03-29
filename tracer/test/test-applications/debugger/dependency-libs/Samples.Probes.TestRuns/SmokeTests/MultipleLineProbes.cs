@@ -2,11 +2,11 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.SmokeTests;
 
-[LineProbeTestData(lineNumber: 21)]
-[LineProbeTestData(lineNumber: 22)]
-[LineProbeTestData(lineNumber: 23)]
-[LineProbeTestData(lineNumber: 24)]
-[LineProbeTestData(lineNumber: 25)]
+[LogOnLineProbeTestData(lineNumber: 21)]
+[LogOnLineProbeTestData(lineNumber: 22)]
+[LogOnLineProbeTestData(lineNumber: 23)]
+[LogOnLineProbeTestData(lineNumber: 24)]
+[LogOnLineProbeTestData(lineNumber: 25)]
 public class MultipleLineProbes : IRun
 {
     public void Run()
@@ -15,7 +15,7 @@ public class MultipleLineProbes : IRun
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    [MethodProbeTestData("System.Void", new[] { "System.String" })]
+    [LogOnMethodProbeTestData("System.Void", new[] { "System.String" })]
     public void MethodToInstrument(string callerName)
     {
         int a = callerName.Length;

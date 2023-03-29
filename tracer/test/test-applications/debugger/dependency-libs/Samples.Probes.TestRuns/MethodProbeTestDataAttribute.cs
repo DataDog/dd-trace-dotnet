@@ -3,7 +3,7 @@ using System;
 namespace Samples.Probes.TestRuns
 {
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor)]
-    public class MethodProbeTestDataAttribute : ProbeAttributeBase
+    public abstract class MethodProbeTestDataAttribute : ProbeAttributeBase
     {
         public MethodProbeTestDataAttribute(
             string returnTypeName = null,

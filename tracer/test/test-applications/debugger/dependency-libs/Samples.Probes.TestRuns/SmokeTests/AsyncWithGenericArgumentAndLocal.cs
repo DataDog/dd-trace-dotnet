@@ -42,7 +42,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
             private static State[][] _stateArray;
 
             [MethodImpl(MethodImplOptions.NoInlining)]
-            [MethodProbeTestData(expectedNumberOfSnapshots: 0 /*in optimize code this will create a nested struct inside generic parent*/)]
+            [LogOnMethodProbeTestData(expectedNumberOfSnapshots: 0 /*in optimize code this will create a nested struct inside generic parent*/)]
             public async Task<string> Method(NestedAsyncGenericClass<T> generic, string input)
             {
                 var list = new List<T> { new T() };

@@ -16,7 +16,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData(
+        [LogOnMethodProbeTestData(
             templateJson: Json,
             templateStr: "Result is: ",
             captureSnapshot: true,

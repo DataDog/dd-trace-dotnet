@@ -4,7 +4,7 @@ using Samples.Probes.TestRuns.Shared;
 namespace Samples.Probes.TestRuns;
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-public class LineProbeTestDataAttribute : ProbeAttributeBase
+public abstract class LineProbeTestDataAttribute : ProbeAttributeBase
 {
     public LineProbeTestDataAttribute(int lineNumber,
                                       int columnNumber = 0,
