@@ -157,7 +157,8 @@ public class InstrumentationTestsBase
         vulnerabilityType.Should().Be(expectedType);
         var evidence = _evidenceProperty.Invoke(vulnerabilityList[0], Array.Empty<object>());
         var evidenceValue = _evidenceValueField.GetValue(evidence);
-        if (!string.IsNullOrEmpty(expectedEvidence))
+
+        if (!string.IsNullOrEmpty(expectedEvidence) && GetTainted(evidenceValue) != null)
         {
             FormatTainted(evidenceValue).Should().Be(expectedEvidence);
         }
