@@ -1,13 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">12.18.0</ApiVersion>
+    <!-- Only run older version of HotChocolate for net5.0 and netcoreapp3.1 (support dropped in version 13.*.*) -->
+    <ApiVersion Condition="'$(ApiVersion)' == '' And ('$(TargetFramework)' == 'net5.0' Or '$(TargetFramework)' == 'netcoreapp3.1')">12.18.0</ApiVersion>
+
+    <ApiVersion Condition="'$(ApiVersion)' == ''">13.0.5</ApiVersion>
 
     <!-- Required to build multiple projects with the same Configuration|Platform, which is needed for the CI library/version matrix -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
-
+  
   <ItemGroup>
     <PackageReference Include="HotChocolate.AspNetCore" Version="$(ApiVersion)" />
     <PackageReference Include="Microsoft.AspNetCore" Version="2.0.0" />
