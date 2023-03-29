@@ -136,27 +136,21 @@ namespace datadog::shared::nativeloader
         // if we were on the explicit include list, don't check the block list
         if (include_process_names.empty())
         {
+            // attach clrprofiler only if this process's name is NOT on the blocklists
             const auto& exclude_process_names = GetEnvironmentValues(EnvironmentVariables::ExcludeProcessNames);
-            if (!exclude_process_names.empty())
+            if (!exclude_process_names.empty() && Contains(exclude_process_names, process_name))
             {
-                // attach clrprofiler only if this process's name is NOT on the provided list
-                if (Contains(exclude_process_names, process_name))
-                {
-                    Log::Info("CorProfiler::Initialize ClrProfiler disabled: ", process_name, " found in ",
-                                 EnvironmentVariables::ExcludeProcessNames, ".");
-                    return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
-                }
+                Log::Info("CorProfiler::Initialize ClrProfiler disabled: ", process_name, " found in ",
+                             EnvironmentVariables::ExcludeProcessNames, ".");
+                return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
             }
-            else
+
+            for (auto&& exclude_assembly : default_exclude_assemblies)
             {
-                // attach clrprofiler only if this process's name is NOT on the default block list
-                for (auto&& exclude_assembly : default_exclude_assemblies)
+                if (process_name == exclude_assembly)
                 {
-                    if (process_name == exclude_assembly)
-                    {
-                        Log::Info("CorProfiler::Initialize ClrProfiler disabled: ", process_name," found in default exclude list");
-                        return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
-                    }
+                    Log::Info("CorProfiler::Initialize ClrProfiler disabled: ", process_name," found in default exclude list");
+                    return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
                 }
             }
         }

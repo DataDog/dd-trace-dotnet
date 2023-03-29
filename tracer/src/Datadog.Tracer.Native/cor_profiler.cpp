@@ -131,27 +131,21 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     // if we were on the explicit include list, don't check the block list
     if (include_process_names.empty())
     {
+        // attach clrprofiler only if this process's name is NOT on the blocklists
         const auto& exclude_process_names = shared::GetEnvironmentValues(environment::exclude_process_names);
-        if (!exclude_process_names.empty())
+        if (!exclude_process_names.empty() && shared::Contains(exclude_process_names, process_name))
         {
-            // attach clrprofiler only if this process's name is NOT on the provided list
-            if (shared::Contains(exclude_process_names, process_name))
-            {
-                Logger::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", process_name, " found in ",
-                             environment::exclude_process_names, ".");
-                return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
-            }
+            Logger::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", process_name, " found in ",
+                         environment::exclude_process_names, ".");
+            return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
         }
-        else
+
+        for (auto&& exclude_assembly : default_exclude_assemblies)
         {
-            // attach clrprofiler only if this process's name is NOT on the default block list
-            for (auto&& exclude_assembly : default_exclude_assemblies)
+            if (process_name == exclude_assembly)
             {
-                if (process_name == exclude_assembly)
-                {
-                    Logger::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", process_name," found in default exclude list");
-                    return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
-                }
+                Logger::Info("DATADOG TRACER DIAGNOSTICS - ClrProfiler disabled: ", process_name," found in default exclude list");
+                return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
             }
         }
     }
