@@ -61,8 +61,8 @@ public class InstrumentationTestsBase
     private static FieldInfo _evidenceValueField = _evidenceType.GetField("_value", BindingFlags.NonPublic | BindingFlags.Instance);
     
     protected static string WeakHashVulnerabilityType = "WEAK_HASH";
+    protected static string commandInjectionType = "COMMAND_INJECTION";
 
-    protected string commandInjectionType = "COMMAND_INJECTION";
     public InstrumentationTestsBase()
     {
         AssertInstrumented();
