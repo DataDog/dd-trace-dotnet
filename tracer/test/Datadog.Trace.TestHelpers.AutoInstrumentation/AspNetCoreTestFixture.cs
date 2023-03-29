@@ -91,11 +91,13 @@ namespace Datadog.Trace.TestHelpers
                                 var splitIndex = args.Data.LastIndexOf(':');
                                 port = int.Parse(args.Data.Substring(splitIndex + 1));
                             }
-                            else if (args.Data.Contains("Unable to start Kestrel"))
+
+                            if (args.Data.Contains("Unable to start Kestrel"))
                             {
                                 mutex.Set();
                             }
-                            else if (args.Data.Contains("Webserver started") || args.Data.Contains("Application started"))
+
+                            if (args.Data.Contains("Webserver started") || args.Data.Contains("Application started"))
                             {
                                 mutex.Set();
                             }
@@ -115,10 +117,14 @@ namespace Datadog.Trace.TestHelpers
                     Process.BeginOutputReadLine();
                     Process.BeginErrorReadLine();
 
-                    mutex.Wait(TimeSpan.FromSeconds(15));
+                    if (!mutex.Wait(TimeSpan.FromSeconds(15)))
+                    {
+                        WriteToOutput("Timeout while waiting for the proces to start");
+                    }
 
                     if (port == null)
                     {
+                        WriteToOutput("Unable to determine port application is listening on");
                         throw new Exception("Unable to determine port application is listening on");
                     }
 
