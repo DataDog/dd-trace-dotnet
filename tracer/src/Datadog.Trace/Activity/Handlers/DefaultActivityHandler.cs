@@ -86,13 +86,11 @@ namespace Datadog.Trace.Activity.Handlers
                     }
                     else
                     {
-                        // we don't have a TraceId and/or SpanId - default to the .ParentId
+                        // we have a ParentSpanId/ParentId, but no TraceId/SpanId, so default to use the ParentId for lookup
                         if (ActivityMappingById.TryGetValue(w3cActivity.ParentId, out ActivityMapping mapping))
                         {
                             parent = mapping.Scope.Span.Context;
                         }
-
-                        // TODO we have a parent ID/parent Span Id but didn't find it in the mapping
                     }
                 }
 
