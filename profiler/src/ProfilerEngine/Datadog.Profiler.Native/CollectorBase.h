@@ -216,11 +216,11 @@ private:
         // Deal with fake stack frames like for garbage collections since the Stack will be empty
         for (auto const& instructionPointer : rawSample.Stack)
         {
-            auto [isResolved, moduleName, frame] = _pFrameStore->GetFrame(instructionPointer);
+            auto [isResolved, frame] = _pFrameStore->GetFrame(instructionPointer);
 
             if (isResolved)
             {
-                sample->AddFrame(moduleName, frame);
+                sample->AddFrame(frame);
             }
         }
     }

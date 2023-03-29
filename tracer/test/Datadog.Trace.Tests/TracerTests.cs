@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -14,6 +15,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tests.PlatformHelpers;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -667,6 +669,35 @@ namespace Datadog.Trace.Tests
 
             Assert.ThrowsAny<ArgumentException>(() =>
                 testSpan.SetUser(userDetails));
+        }
+
+        [Fact]
+        public void SetUser_PropagateId_ShouldSetUsrId()
+        {
+            var scopeManager = new AsyncLocalScopeManager();
+
+            var settings = new TracerSettings
+            {
+                StartupDiagnosticLogEnabled = false
+            };
+            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+
+            var rootTestScope = (Scope)tracer.StartActive("test.trace");
+
+            var id = Guid.NewGuid().ToString();
+
+            var userDetails = new UserDetails()
+            {
+                Id = id,
+                PropagateId = true,
+            };
+            tracer.ActiveScope?.Span.SetUser(userDetails);
+
+            var base64UserId = Convert.ToBase64String(Encoding.UTF8.GetBytes(userDetails.Id));
+
+            var traceContext = rootTestScope.Span.Context.TraceContext;
+            Assert.Equal(id, traceContext.Tags.GetTag(Tags.User.Id));
+            Assert.Equal(base64UserId, traceContext.Tags.GetTag(TagPropagation.PropagatedTagPrefix + Tags.User.Id));
         }
 
         private class SpanStub : ISpan

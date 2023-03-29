@@ -33,7 +33,7 @@ at Samples.AspNetMvc5.Handlers.PassThroughQuerySuccessMessageHandler.<SendAsync>
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,
-      http.url: http://localhost/my-app/api2/statuscode/201?ps=false&ts=false,
+      http.url: http://localhost:00000/my-app/api2/statuscode/201?ps=false&ts=false,
       http.useragent: testhelper,
       language: dotnet,
       runtime-id: Guid_1,

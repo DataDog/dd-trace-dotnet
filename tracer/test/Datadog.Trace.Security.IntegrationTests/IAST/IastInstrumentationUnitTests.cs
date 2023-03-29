@@ -25,9 +25,89 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    public void TestJoinMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "Join", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestToUpperMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "ToUpper", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestToUpperInvariantMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "ToUpperInvariant", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestToLowerArrayMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "ToLower", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestToLowerInvariantMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "ToLowerInvariant", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestInsertMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "Insert", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestRemoveMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "Remove", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     public void TestToCharArrayMethodsAspectCover()
     {
         TestMethodOverloads("System.String", "ToCharArray", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestTrimStartMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "TrimStart", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestTrimEndMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "TrimEnd", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestTrimMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "Trim", null, null);
     }
 
     [SkippableFact]
@@ -111,7 +191,7 @@ public class IastInstrumentationUnitTests : TestHelper
     private void TestMethodOverloads(string typeToCheck, string methodToCheck, List<string> overloadsToExclude, List<Type> typesToExclude)
     {
         var overloadsToExcludeNormalized = overloadsToExclude?.Select(NormalizeName).ToList();
-        var aspects = Datadog.Trace.ClrProfiler.AspectDefinitions.Aspects.ToList();
+        var aspects = ClrProfiler.AspectDefinitions.Aspects.ToList();
         var type = Type.GetType(typeToCheck);
         type.Should().NotBeNull();
         var typeMethods = type?.GetMethods().Where(x => x.Name == methodToCheck);

@@ -7,6 +7,8 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -22,7 +24,7 @@ internal static class StringModuleImpl
         return value == null ? null : taintedObjects.Get(value);
     }
 
-    public static object? PropagateTaint(object input, object result)
+    public static object? PropagateTaint(object input, object result, int offset = 0)
     {
         try
         {
@@ -45,11 +47,133 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            taintedObjects.Taint(result, taintedSelf.Ranges);
+            if (offset != 0)
+            {
+                var newRanges = new Range[taintedSelf.Ranges.Length];
+                Ranges.CopyShift(taintedSelf.Ranges, newRanges, 0, offset);
+                taintedObjects.Taint(result, newRanges);
+            }
+            else
+            {
+                taintedObjects.Taint(result, taintedSelf.Ranges);
+            }
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.TaintIfInputIsTainted exception");
+            Log.Error(err, "StringModuleImpl.PropagateTaint exception");
+        }
+
+        return result;
+    }
+
+    /// <summary> Taints a string.Insert operation </summary>
+    /// <param name="target"> original string </param>
+    /// <param name="index"> start index </param>
+    /// <param name="value"> value to insert </param>
+    /// <param name="result"> Result </param>
+    /// <returns> result </returns>
+    public static string OnStringInsert(string target, int index, string value, string result)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(result))
+            {
+                return result;
+            }
+
+            // if we have the same target and result, that means that we have called insert() with an empty insert string
+            if (result == target)
+            {
+#if NETFRAMEWORK
+                // In .net462 (not in netcore or netstandard), the method creates in this case a new string with the same value but a different reference, so we need to taint it
+                PropagateTaint(target, result);
+#endif
+                return result;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return result;
+            }
+
+            var taintedObjects = iastContext.GetTaintedObjects();
+            var taintedTarget = GetTainted(taintedObjects, target);
+            var taintedValue = GetTainted(taintedObjects, value);
+            if (taintedValue == null && taintedTarget == null)
+            {
+                return result;
+            }
+
+            var newRanges1 = taintedTarget != null ? Ranges.ForRemove(index, target.Length, taintedTarget.Ranges) : null;
+            var newRanges2 = taintedValue?.Ranges;
+            var newRanges3 = taintedTarget != null ? Ranges.ForRemove(0, index, taintedTarget.Ranges) : null;
+
+            var rangesTotal = (newRanges1?.Length ?? 0) + (newRanges2?.Length ?? 0) + (newRanges3?.Length ?? 0);
+            var rangesResult = new Range[rangesTotal];
+
+            if (newRanges1 != null)
+            {
+                Ranges.CopyShift(newRanges1, rangesResult, 0, 0);
+            }
+
+            if (newRanges2 != null)
+            {
+                Ranges.CopyShift(newRanges2, rangesResult, (newRanges1?.Length ?? 0), index);
+            }
+
+            if (newRanges3 != null)
+            {
+                Ranges.CopyShift(newRanges3, rangesResult, (newRanges1?.Length ?? 0) + (newRanges2?.Length ?? 0), index + value.Length);
+            }
+
+            taintedObjects.Taint(result, rangesResult);
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringInsert exception {Exception}", err.Message);
+        }
+
+        return result;
+    }
+
+    /// <summary> Taints a string.Remove operation </summary>
+    /// <param name="self"> original string </param>
+    /// <param name="result"> Result </param>
+    /// <param name="beginIndex"> start index </param>
+    /// <param name="endIndex"> end index </param>
+    /// <returns> result </returns>
+    public static string OnStringRemove(string self, string result, int beginIndex, int endIndex)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(self) || string.IsNullOrEmpty(result))
+            {
+                return result;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return result;
+            }
+
+            var taintedObjects = iastContext.GetTaintedObjects();
+            var taintedSelf = GetTainted(taintedObjects, self);
+            if (taintedSelf == null)
+            {
+                return result;
+            }
+
+            var newRanges = Ranges.ForRemove(beginIndex, endIndex, taintedSelf.Ranges);
+            if (newRanges != null && newRanges.Length > 0)
+            {
+                taintedObjects.Taint(result, newRanges);
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringRemove exception {Exception}", err.Message);
         }
 
         return result;
@@ -134,6 +258,229 @@ internal static class StringModuleImpl
         {
             taintedObjects.Taint(result, newRanges);
         }
+    }
+
+    public static string OnStringJoin(string result, IEnumerable<object> values, int startIndex = 0, int count = -1)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(result))
+            {
+                return result;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return result;
+            }
+
+            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
+
+            var newRanges = new List<Range>();
+            int pos = 0;
+            int i = 0;
+            foreach (var element in values)
+            {
+                if (i >= startIndex && (count < 0 || i < startIndex + count))
+                {
+                    pos = GetPositionAndUpdateRangesInStringJoin(taintedObjects, newRanges, pos, null, 1, element?.ToString() ?? string.Empty, false);
+                }
+
+                i++;
+            }
+
+            if (newRanges.Count > 0)
+            {
+                taintedObjects.Taint(result, newRanges.ToArray());
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringJoinChar exception");
+        }
+
+        return result;
+    }
+
+    public static string OnStringJoin(string result, string delimiter, IEnumerable<object> values, int startIndex = 0, int count = -1)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(result))
+            {
+                return result;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return result;
+            }
+
+            TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
+
+            var newRanges = new List<Range>();
+            int pos = 0;
+
+            // Delimiter info
+            var delimiterRanges = GetTainted(taintedObjects, delimiter)?.Ranges;
+            var delimiterHasRanges = delimiterRanges?.Length > 0;
+            var delimiterLength = delimiter?.Length ?? 0;
+            var valuesCount = values.Count();
+
+            int i = 0;
+            foreach (var element in values)
+            {
+                if (i >= startIndex && (count < 0 || i < startIndex + count))
+                {
+                    pos = GetPositionAndUpdateRangesInStringJoin(taintedObjects, newRanges, pos, delimiterRanges, delimiterLength, element?.ToString() ?? string.Empty, delimiterHasRanges && i < valuesCount - 1);
+                }
+
+                i++;
+            }
+
+            if (newRanges.Count > 0)
+            {
+                taintedObjects.Taint(result, newRanges.ToArray());
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringJoin exception");
+        }
+
+        return result;
+    }
+
+    // Iterates over the element and delimiter ranges (if necessary) to update them and calculate the
+    // new pos value
+    private static int GetPositionAndUpdateRangesInStringJoin(TaintedObjects taintedObjects, List<Range> newRanges, int pos, Range[]? delimiterRanges, int delimiterLength, string element, bool addDelimiterRanges)
+    {
+        if (!string.IsNullOrEmpty(element))
+        {
+            var elementTainted = GetTainted(taintedObjects, element);
+            if (elementTainted != null)
+            {
+                var elementRanges = elementTainted.Ranges;
+                if (elementRanges.Length > 0)
+                {
+                    for (int i = 0; i < elementRanges.Length; i++)
+                    {
+                        newRanges.Add(elementRanges[i].Shift(pos));
+                    }
+                }
+            }
+        }
+
+        pos += element.Length;
+        if (addDelimiterRanges && delimiterRanges != null)
+        {
+            for (int i = 0; i < delimiterRanges.Length; i++)
+            {
+                newRanges.Add(delimiterRanges[i].Shift(pos));
+            }
+        }
+
+        pos += delimiterLength;
+        return pos;
+    }
+
+    /// <summary> OnStringTrim with single trimchar </summary>
+    /// <param name="self"> Param 1 </param>
+    /// <param name="result"> Result </param>
+    /// <param name="trimChar"> the trim char, null for char.IsWhiteSpace(self[indexLeft]) </param>
+    /// <param name="left"> Apply left trim </param>
+    /// <param name="right"> Apply right trim </param>
+    public static string? OnStringTrim(string self, string result, char? trimChar, bool left, bool right)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(result) || ReferenceEquals(self, result))
+            {
+                return result;
+            }
+
+            if (left && !right)
+            {
+                return OnStringSubSequence(self, self.Length - result.Length, result);
+            }
+            else if (!left && right)
+            {
+                return OnStringSubSequence(self, 0, result);
+            }
+            else
+            {
+                int indexLeft = 0;
+
+                while (indexLeft < self.Length && trimChar is null ? char.IsWhiteSpace(self[indexLeft]) : self[indexLeft] == trimChar)
+                {
+                    indexLeft++;
+                }
+
+                return OnStringSubSequence(self, indexLeft, result);
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringTrim(string,string,char,bool,bool) exception");
+        }
+
+        return result;
+    }
+
+    /// <summary> OnStringTrim with a char array </summary>
+    /// <param name="self"> Param 1 </param>
+    /// <param name="result"> Result </param>
+    /// <param name="trimChars"> the trim chars </param>
+    /// <param name="left"> Apply left trim </param>
+    /// <param name="right"> Apply right trim </param>
+    public static string OnStringTrimArray(string self, string result, char[] trimChars, bool left, bool right)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(result))
+            {
+                return result;
+            }
+
+            if (left && !right)
+            {
+                return OnStringSubSequence(self, self.Length - result.Length, result);
+            }
+            else if (!left && right)
+            {
+                return OnStringSubSequence(self, 0, result);
+            }
+            else
+            {
+                int indexLeft = 0;
+                bool found;
+                do
+                {
+                    found = false;
+
+                    for (int i = 0; i < trimChars.Length; i++)
+                    {
+                        if (self[indexLeft] == trimChars[i])
+                        {
+                            found = true;
+                            indexLeft++;
+                            break;
+                        }
+                    }
+                }
+                while (found && indexLeft < self.Length);
+
+                return OnStringSubSequence(self, indexLeft, result);
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl. OnStringTrimArray(string,string,char[],bool,bool) exception");
+        }
+
+        return result;
     }
 
     /// <summary> Mostly used overload </summary>

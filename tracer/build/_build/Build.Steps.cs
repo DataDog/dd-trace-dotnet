@@ -668,7 +668,7 @@ partial class Build
             CompressZip(MonitoringHomeDirectory, WindowsTracerHomeZip, fileMode: FileMode.Create);
         });
 
-    Target ZipMonitoringHomeLinux => _ => _
+    Target PrepareMonitoringHomeLinux => _ => _
         .Unlisted()
         .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
         .OnlyWhenStatic(() => IsLinux)
@@ -725,7 +725,21 @@ partial class Build
             // Copy createLogPath.sh script and set the permissions
             CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, assetsDirectory);
             chmod.Invoke($"+x {assetsDirectory / FileNames.CreateLogPathScript}");
+        });
 
+    Target ZipMonitoringHomeLinux => _ => _
+        .Unlisted()
+        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
+        .DependsOn(PrepareMonitoringHomeLinux)
+        .OnlyWhenStatic(() => IsLinux)
+        .Requires(() => Version)
+        .Executes(() =>
+        {
+            var fpm = Fpm.Value;
+            var gzip = GZip.Value;
+
+            var (arch, ext) = GetUnixArchitectureAndExtension();
+            var assetsDirectory = TemporaryDirectory / arch;
             var workingDirectory = ArtifactsDirectory / $"linux-{UnixArchitectureIdentifier}";
             EnsureCleanDirectory(workingDirectory);
 
@@ -1425,6 +1439,7 @@ partial class Build
                         "Samples.Security.AspNetCore5" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.Security.AspNetCoreBare" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.GraphQL4" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
+                        "Samples.GraphQL7" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
                         "Samples.HotChocolate" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
                         "Samples.AWS.Lambda" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET7_0,
                         var name when projectsToSkip.Contains(name) => false,

@@ -402,21 +402,20 @@ namespace Datadog.Trace.Ci
                     {
                         string pgpLine = line.Substring(GpgSigPrefix.Length) + Environment.NewLine;
                         PgpSignature = pgpLine;
-                        while (!pgpLine.Contains("END PGP SIGNATURE"))
+                        while (!pgpLine.Contains("END PGP SIGNATURE") && !pgpLine.Contains("END SSH SIGNATURE") && i + 1 < lines.Length)
                         {
                             i++;
                             pgpLine = lines[i];
                             PgpSignature += pgpLine + Environment.NewLine;
                         }
 
-                        i++;
                         continue;
                     }
 
-                    msgLines.Add(line);
+                    msgLines.Add(line.Trim());
                 }
 
-                Message += string.Join(Environment.NewLine, msgLines);
+                Message = string.Join(Environment.NewLine, msgLines);
             }
 
             public static bool TryGetFromObjectFile(string filePath, out GitCommitObject commitObject)

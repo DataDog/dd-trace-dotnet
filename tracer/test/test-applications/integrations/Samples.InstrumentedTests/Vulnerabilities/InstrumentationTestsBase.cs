@@ -4,13 +4,12 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using FluentAssertions;
-using Moq;
-using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
@@ -29,15 +28,22 @@ public class InstrumentationTestsBase
     private static readonly Type _spanContextType = Type.GetType("Datadog.Trace.SpanContext, Datadog.Trace");
     private static readonly Type _traceContextType = Type.GetType("Datadog.Trace.TraceContext, Datadog.Trace");
     private static readonly Type _sourceType = Type.GetType("Datadog.Trace.Iast.Source, Datadog.Trace");
+    private static readonly Type _vulnerabilityType = Type.GetType("Datadog.Trace.Iast.Vulnerability, Datadog.Trace");
     private static readonly Type _rangeType = Type.GetType("Datadog.Trace.Iast.Range, Datadog.Trace");
+    private static readonly Type _vulnerabilityBatchType = Type.GetType("Datadog.Trace.Iast.VulnerabilityBatch, Datadog.Trace");
+    private static readonly Type _evidenceType = Type.GetType("Datadog.Trace.Iast.Evidence, Datadog.Trace");
     private static MethodInfo _spanProperty = _scopeType.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _contextProperty = _spanType.GetProperty("Context", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _setSpanTypeProperty = _spanType.GetProperty("Type", BindingFlags.NonPublic | BindingFlags.Instance)?.SetMethod;
     private static MethodInfo _traceContextProperty = _spanContextType.GetProperty("TraceContext", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _iastRequestContextProperty = _traceContextType.GetProperty("IastRequestContext", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _operationNameProperty = _spanType.GetProperty("OperationName", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _rangesProperty = _taintedObjectType.GetProperty("Ranges", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _StartProperty = _rangeType.GetProperty("Start", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
-    private static MethodInfo _LengthProperty = _rangeType.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _lengthProperty = _rangeType.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _vulnerabilitiesProperty = _vulnerabilityBatchType.GetProperty("Vulnerabilities", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _vulnerabilityTypeProperty = _vulnerabilityType.GetProperty("Type", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _evidenceProperty = _vulnerabilityType.GetProperty("Evidence", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _getTaintedObjectsMethod = _taintedObjectsType.GetMethod("Get", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _taintInputStringMethod = _taintedObjectsType.GetMethod("TaintInputString", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _enableIastInRequestMethod = _traceContextType.GetMethod("EnableIastInRequest", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -45,15 +51,19 @@ public class InstrumentationTestsBase
     private static MethodInfo _spanGetTagMethod = _spanType.GetMethod("GetTag", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _taintedObjectsField = _iastRequestContextType.GetField("_taintedObjects", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _spansField = _traceContextType.GetField("_spans", BindingFlags.NonPublic | BindingFlags.Instance);
+    private static FieldInfo _vulnerabilityBatchField = _iastRequestContextType.GetField("_vulnerabilityBatch", BindingFlags.NonPublic | BindingFlags.Instance);
+    private static FieldInfo _evidenceValueField = _evidenceType.GetField("_value", BindingFlags.NonPublic | BindingFlags.Instance);
+    
+    protected static string WeakHashVulnerabilityType = "WEAK_HASH";
 
     public InstrumentationTestsBase()
     {
         AssertInstrumented();
-        SampleHelpers.CreateScope("instrumentationTests");
         var scope = SampleHelpers.GetActiveScope();
         scope.Should().NotBeNull();
         var span = _spanProperty.Invoke(scope, Array.Empty<object>());
         span.Should().NotBeNull();
+        _setSpanTypeProperty.Invoke(span, new object[] { "web" });
         var context = _contextProperty.Invoke(span, Array.Empty<object>());
         context.Should().NotBeNull();
         _traceContext = _traceContextProperty.Invoke(context, Array.Empty<object>());
@@ -65,7 +75,7 @@ public class InstrumentationTestsBase
 
     protected string AddTaintedString(string tainted)
     {
-        return (string) AddTainted(tainted);
+        return (string)AddTainted(tainted);
     }
 
     protected object AddTainted(object tainted)
@@ -104,41 +114,47 @@ public class InstrumentationTestsBase
 
     protected void AssertVulnerable(int vulnerabilities = 1)
     {
-        var spans = GetGeneratedSpans(_traceContext);
-        GetIastSpansCount(spans).Should().Be(vulnerabilities);
+        var vulnerabilityList = GetGeneratedVulnerabilities();
+        vulnerabilityList.Count.Should().Be(vulnerabilities);
+    }
+
+    protected void AssertVulnerable(string expectedType, string expectedEvidence = "", bool evidenceTainted = false)
+    {
+        var vulnerabilityList = GetGeneratedVulnerabilities();
+        vulnerabilityList.Count.Should().Be(1);
+        var vulnerabilityType = _vulnerabilityTypeProperty.Invoke(vulnerabilityList[0], Array.Empty<object>());
+        vulnerabilityType.Should().Be(expectedType);
+        var evidence = _evidenceProperty.Invoke(vulnerabilityList[0], Array.Empty<object>());
+        var evidenceValue = _evidenceValueField.GetValue(evidence);
+        if (!string.IsNullOrEmpty(expectedEvidence))
+        {
+            if (evidenceTainted)
+            {
+                FormatTainted(evidenceValue).Should().Be(expectedEvidence);
+            }
+            else
+            {
+                evidenceValue.Should().Be(expectedEvidence);
+            }
+        }
     }
 
     protected void AssertNotVulnerable()
     {
         AssertVulnerable(0);
     }
-    private static string GetErrorMessage(Assembly[] assemblies)
-    {
-        var assemblyListString = "DD Assemblies:" + Environment.NewLine + string.Join(Environment.NewLine, assemblies.Where(x => x.GetName().Name.IndexOf("datadog", StringComparison.OrdinalIgnoreCase) >= 0).Select(x => x.GetName().Name));
 
-        return "Test is not instrumented." + Environment.NewLine +
-            EnvironmentVariableMessage("CORECLR_ENABLE_PROFILING") +
-            EnvironmentVariableMessage("CORECLR_PROFILER_PATH") + EnvironmentVariableMessage("CORECLR_PROFILER_PATH_64") + EnvironmentVariableMessage("CORECLR_PROFILER_PATH_32") +
-            EnvironmentVariableMessage("COR_ENABLE_PROFILING") + EnvironmentVariableMessage("COR_PROFILER_PATH_32") +
-            EnvironmentVariableMessage("COR_PROFILER_PATH") +
-            EnvironmentVariableMessage("COR_PROFILER_PATH_64") + EnvironmentVariableMessage("DD_DOTNET_TRACER_HOME") + Environment.NewLine +
-            assemblyListString + Environment.NewLine;
-    }
-
-    private static string EnvironmentVariableMessage(string variable)
+    private List<object> GetGeneratedVulnerabilities()
     {
-        var value = Environment.GetEnvironmentVariable(variable);
-        return variable + ": " + (string.IsNullOrEmpty(value) ? "Empty" : value) + Environment.NewLine;
-    }
+        var vulnerabilityBatchField = _vulnerabilityBatchField.GetValue(_iastRequestContext);
 
-    private int GetIastSpansCount(List<object> spans)
-    {
-        return spans.Where(x => GetTag(x, "_dd.iast.enabled") != null).Count();
-    }
+        if (vulnerabilityBatchField == null)
+        {
+            return new List<object>();
+        }
 
-    private object GetTag(object span, string tag)
-    {
-        return _spanGetTagMethod.Invoke(span, new object[] { tag });
+        var vulnerabilities = _vulnerabilitiesProperty.Invoke(vulnerabilityBatchField, Array.Empty<object>());
+        return ((vulnerabilities as IEnumerable).Cast<object>()).ToList();
     }
 
     private List<object> GetGeneratedSpans(object context)
@@ -159,6 +175,14 @@ public class InstrumentationTestsBase
     {
         AssertTainted(instrumented);
         FormatTainted(instrumented).Should().Be(expected);
+        var notInstrumentedCompiled = notInstrumented.Compile();
+        var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
+        instrumented.Should().Be(notInstrumentedResult.ToString());
+    }
+
+    protected void AssertUntaintedWithOriginalCallCheck(string expected, string instrumented, Expression<Func<Object>> notInstrumented)
+    {
+        instrumented.Should().Be(expected);
         var notInstrumentedCompiled = notInstrumented.Compile();
         var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
         instrumented.Should().Be(notInstrumentedResult.ToString());
@@ -196,7 +220,7 @@ public class InstrumentationTestsBase
         foreach (var range in rangesList)
         {
             var start = (int)_StartProperty.Invoke(range, Array.Empty<object>());
-            result = result.Insert(start + (int)_LengthProperty.Invoke(range, Array.Empty<object>()), "-+:");
+            result = result.Insert(start + (int)_lengthProperty.Invoke(range, Array.Empty<object>()), "-+:");
             result = result.Insert(start, ":+-");
         }
 

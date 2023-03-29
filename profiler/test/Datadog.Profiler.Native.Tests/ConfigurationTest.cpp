@@ -644,3 +644,23 @@ TEST(ConfigurationTest, CheckBacktrace2IsEnabledIfEnvVarSetToTrue)
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.UseBacktrace2(), true);
 }
+
+TEST(ConfigurationTest, CheckDebugInfoIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsDebugInfoEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckDebugInfoIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DebugInfoEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsDebugInfoEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckDebugInfoIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DebugInfoEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsDebugInfoEnabled(), false);
+}

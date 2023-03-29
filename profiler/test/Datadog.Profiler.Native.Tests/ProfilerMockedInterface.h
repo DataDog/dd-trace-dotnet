@@ -59,6 +59,7 @@ public:
     MOCK_METHOD(bool, IsHeapProfilingEnabled, (), (const override));
     MOCK_METHOD(bool, UseBacktrace2, (), (const override));
     MOCK_METHOD(bool, IsAllocationRecorderEnabled, (), (const override));
+    MOCK_METHOD(bool, IsDebugInfoEnabled, (), (const override));
 };
 
 class MockExporter : public IExporter

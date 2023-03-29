@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             if (scope is not null)
             {
                 KafkaHelper.TryInjectHeaders<TTopicPartition, TMessage>(
-                    scope.Span.Context,
+                    scope.Span,
                     Tracer.Instance.TracerManager.DataStreamsManager,
                     partition?.Topic,
                     message);

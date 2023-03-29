@@ -27,36 +27,32 @@
     <DOTNET-TRACER-REPO-ROOT-PATH>..\..\..\</DOTNET-TRACER-REPO-ROOT-PATH>
     <SHARED-LIB-PATH>$(DOTNET-TRACER-REPO-ROOT-PATH)shared/src/native-lib/</SHARED-LIB-PATH>
     <LIB_INCLUDES>$(SHARED-LIB-PATH)coreclr\src\pal\prebuilt\inc</LIB_INCLUDES>
-    <SHARED-LIB-PLATFORM Condition="'$(Platform)'=='x64'">x64</SHARED-LIB-PLATFORM>
-    <SHARED-LIB-PLATFORM Condition="'$(Platform)'=='Win32' OR '$(Platform)'=='x86'">x86</SHARED-LIB-PLATFORM>
-    <SHARED-LIB-INCLUDES>$(SHARED-LIB-PATH)fmt_$(SHARED-LIB-PLATFORM)-windows-static\include;$(SHARED-LIB-PATH)spdlog\include</SHARED-LIB-INCLUDES>
-    <SHARED-LIB-BINARIES Condition="'$(Configuration)'=='Release'">$(SHARED-LIB-PATH)fmt_$(SHARED-LIB-PLATFORM)-windows-static\lib\fmt.lib</SHARED-LIB-BINARIES>
-    <SHARED-LIB-BINARIES Condition="'$(Configuration)'=='Debug'">$(SHARED-LIB-PATH)fmt_$(SHARED-LIB-PLATFORM)-windows-static\debug\lib\fmtd.lib</SHARED-LIB-BINARIES>
+    <SHARED-LIB-INCLUDES>$(SHARED-LIB-PATH)fmt\include;$(SHARED-LIB-PATH)spdlog\include</SHARED-LIB-INCLUDES>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -122,7 +118,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Debug\x86\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Debug\x86\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -142,7 +138,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Release\x86\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Release\x86\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -158,7 +154,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Debug\x64\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Debug\x64\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -178,7 +174,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Release\x64\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Release\x64\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -204,12 +200,12 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.4\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets" Condition="Exists('..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.4\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets')" />
+    <Import Project="..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.7\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets" Condition="Exists('..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.7\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.4\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.4\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.7\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.7\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets'))" />
   </Target>
 </Project>

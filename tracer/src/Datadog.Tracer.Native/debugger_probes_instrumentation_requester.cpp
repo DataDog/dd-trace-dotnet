@@ -320,11 +320,11 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(
             return;
         }
 
-        std::scoped_lock<std::mutex> moduleLock(m_corProfiler->module_ids_lock_);
+        auto modules = m_corProfiler->module_ids.Get();
 
         auto promise = std::make_shared<std::promise<std::vector<MethodIdentifier>>>();
         std::future<std::vector<MethodIdentifier>> future = promise->get_future();
-        m_debugger_rejit_preprocessor->EnqueuePreprocessRejitRequests(m_corProfiler->module_ids_, methodProbeDefinitions, promise);
+        m_debugger_rejit_preprocessor->EnqueuePreprocessRejitRequests(modules.Ref(), methodProbeDefinitions, promise);
 
         const auto& methodProbeRequests = future.get();
 
@@ -384,11 +384,11 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(
             return;
         }
 
-        std::scoped_lock<std::mutex> moduleLock(m_corProfiler->module_ids_lock_);
+        auto modules = m_corProfiler->module_ids.Get();
 
         std::promise<std::vector<MethodIdentifier>> promise;
         std::future<std::vector<MethodIdentifier>> future = promise.get_future();
-        m_debugger_rejit_preprocessor->EnqueuePreprocessLineProbes(m_corProfiler->module_ids_, lineProbeDefinitions, &promise);
+        m_debugger_rejit_preprocessor->EnqueuePreprocessLineProbes(modules.Ref(), lineProbeDefinitions, &promise);
 
         const auto& lineProbeRequests = future.get();
 

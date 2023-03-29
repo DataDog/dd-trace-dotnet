@@ -28,7 +28,7 @@ namespace Datadog.Trace.Tests.Agent
             for (int i = 0; i < traceCount; i++)
             {
                 var spans = CreateTraceChunk(spanCount);
-                buffer.TryWrite(spans, ref _temporaryBuffer).Should().BeTrue();
+                buffer.TryWrite(spans, ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
             }
 
             buffer.Lock();
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Tests.Agent
             var spans = CreateTraceChunk(1);
             var result = buffer.TryWrite(spans, ref _temporaryBuffer);
 
-            result.Should().BeFalse();
+            result.Should().Be(SpanBuffer.WriteStatus.Full);
             buffer.TraceCount.Should().Be(0);
             buffer.IsFull.Should().BeTrue();
 
@@ -78,11 +78,11 @@ namespace Datadog.Trace.Tests.Agent
             var buffer = new SpanBuffer(10 * 1024 * 1024, SpanFormatterResolver.Instance);
             var spans = CreateTraceChunk(1);
 
-            buffer.TryWrite(spans, ref _temporaryBuffer).Should().BeTrue();
+            buffer.TryWrite(spans, ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
             buffer.Lock();
-            buffer.TryWrite(spans, ref _temporaryBuffer).Should().BeFalse();
+            buffer.TryWrite(spans, ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Full);
             buffer.Clear();
-            buffer.TryWrite(spans, ref _temporaryBuffer).Should().BeTrue();
+            buffer.TryWrite(spans, ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
         }
 
         [Fact]
@@ -91,7 +91,7 @@ namespace Datadog.Trace.Tests.Agent
             var buffer = new SpanBuffer(10 * 1024 * 1024, SpanFormatterResolver.Instance);
             var spans = CreateTraceChunk(3);
 
-            buffer.TryWrite(spans, ref _temporaryBuffer).Should().BeTrue();
+            buffer.TryWrite(spans, ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
             buffer.TraceCount.Should().Be(1);
             buffer.SpanCount.Should().Be(3);
 
@@ -109,6 +109,21 @@ namespace Datadog.Trace.Tests.Agent
         public void InvalidSize()
         {
             Assert.Throws<ArgumentException>(() => new SpanBuffer(4, SpanFormatterResolver.Instance));
+        }
+
+        [Fact]
+        public void TemporaryBufferSizeLimit()
+        {
+            var buffer = new SpanBuffer(256, SpanFormatterResolver.Instance);
+            var temporaryBuffer = new byte[256];
+            var spans = CreateTraceChunk(10);
+
+            buffer.TryWrite(spans, ref temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Overflow);
+            buffer.IsFull.Should().BeFalse();
+            buffer.SpanCount.Should().Be(0);
+            buffer.TraceCount.Should().Be(0);
+
+            temporaryBuffer.Length.Should().BeLessThanOrEqualTo(512, because: "the size of the temporary buffer shouldn't exceed twice the limit");
         }
 
         private static ArraySegment<Span> CreateTraceChunk(int spanCount, ulong startingId = 1)

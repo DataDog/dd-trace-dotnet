@@ -90,6 +90,20 @@
     }]
   },
   {
+    "IntegrationName": "GraphQL7",
+    "SampleProjectName": "Samples.GraphQL7",
+    "NugetPackageSearchName": "GraphQL",
+    "MinVersion": "7.0.0",
+    "MaxVersionExclusive": "8.0.0",
+    "SpecificVersions": [
+      "7.*.*"
+    ],
+    "VersionConditions": [{
+      "MaxVersionExclusive": "8.0.0",
+      "ExcludeTargetFrameworks": ["net461", "netcoreapp2.1", "netcoreapp3.0"]
+    }]
+  },
+  {
     "IntegrationName": "HotChocolate",
     "SampleProjectName": "Samples.HotChocolate",
     "NugetPackageSearchName": "HotChocolate.AspNetCore",

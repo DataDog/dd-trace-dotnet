@@ -1,16 +1,13 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
     internal class GreaterThanFieldAsync : IAsyncRun
     {
         private int _field;
-        private const string Dsl = @"{
-  ""dsl"": ""ref field > 6""
-}";
-
         private const string Json = @"{
     ""gt"": [
       {""ref"": ""_field""},
@@ -26,10 +23,9 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData(
-            conditionDsl: Dsl,
             conditionJson: Json,
             captureSnapshot: true,
-            evaluateAt: 1)]
+            evaluateAt: Const.Exit)]
         public async Task<string> Method(int intArg)
         {
             await Task.Delay(20);
