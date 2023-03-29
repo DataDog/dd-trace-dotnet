@@ -530,7 +530,18 @@ namespace Datadog.Trace.AppSec
                     {
                         case wafTimeoutKey:
                             var oldValue = SetWafTimeout(_remoteConfigurationStatus.CustomAttributes[configName][attribute]);
-                            _remoteConfigurationStatus.OldAttributes[configName][attribute] = oldValue;
+
+                            if (!_remoteConfigurationStatus.OldAttributes.ContainsKey(configName))
+                            {
+                                _remoteConfigurationStatus.OldAttributes[configName] = new();
+                            }
+
+                            // Only set the old value if it's hasn't been registered before
+                            if (!_remoteConfigurationStatus.OldAttributes[configName].ContainsKey(attribute))
+                            {
+                                _remoteConfigurationStatus.OldAttributes[configName][attribute] = oldValue;
+                            }
+
                             break;
                     }
                 }

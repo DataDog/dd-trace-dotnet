@@ -84,6 +84,22 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         }
     }
 
+    public class TestWafTimeoutValueRemoved : AspNetCore5AsmAttributesWafTimeout
+    {
+        public TestWafTimeoutValueRemoved(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, nameof(TestWafTimeoutValueRemoved), 1)
+        {
+        }
+
+        [SkippableTheory]
+        [InlineData("/params-endpoint/appscan_fingerprint", 200)]
+        [Trait("RunOnWindows", "True")]
+        public async Task RunTask(string type, int statusCode)
+        {
+            await RunTestRemove(type, statusCode);
+        }
+    }
+
     public class AspNetCore5AsmAttributesWafTimeout : RcmBase
     {
         private const string AsmProduct = "ASM";
@@ -127,6 +143,43 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var spans = new List<MockSpan>();
             spans.AddRange(spans1);
             spans.AddRange(spans2);
+            await VerifySpans(spans.ToImmutableList(), settings);
+        }
+
+        public async Task RunTestRemove(string type, int statusCode)
+        {
+            EnableDebugMode();
+
+            await TryStartApp();
+            var agent = Fixture.Agent;
+
+            var settings = VerifyHelper.GetSpanVerifierSettings(type, statusCode);
+#if NET7_0_OR_GREATER
+            // for .NET 7+, the endpoint names changed from
+            // aspnet_core.endpoint: /params-endpoint/{s} HTTP: GET,
+            // to
+            // aspnet_core.endpoint: HTTP: GET /params-endpoint/{s},
+            // So normalize to the .NET 6 pattern for simplicity
+            settings.AddSimpleScrubber("HTTP: GET /params-endpoint/{s}", "/params-endpoint/{s} HTTP: GET");
+#endif
+
+            var spans1 = await SendRequestsAsync(agent, type);
+            var acknowledgedId = _testName + "ackIdFirst";
+
+            var rcmWafData = CreateWafTimeoutRcm(_timeout);
+            await agent.SetupRcmAndWait(Output, new[] { ((object)rcmWafData, acknowledgedId) }, AsmProduct, appliedServiceNames: new[] { acknowledgedId });
+
+            var spans2 = await SendRequestsAsync(agent, type);
+
+            var acknowledgedId2 = _testName + "-ackIdSecond";
+            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload(), acknowledgedId2) }, AsmProduct, appliedServiceNames: new[] { acknowledgedId2 });
+
+            var spans3 = await SendRequestsAsync(agent, type);
+
+            var spans = new List<MockSpan>();
+            spans.AddRange(spans1);
+            spans.AddRange(spans2);
+            spans.AddRange(spans3);
             await VerifySpans(spans.ToImmutableList(), settings);
         }
 
