@@ -323,7 +323,7 @@ public class StringBuilderAppendTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderAppendObject_ResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+::+-tainted-+:",
-            new StringBuilder(taintedValue).(new ClassForStringTest(taintedValue)).ToString(),
+            new StringBuilder(taintedValue).Append(new ClassForStringTest(taintedValue)).ToString(),
             () => new StringBuilder(taintedValue).Append(new ClassForStringTest(taintedValue)).ToString());
     }
 

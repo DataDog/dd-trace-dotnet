@@ -41,6 +41,7 @@ public class InstrumentationTestsBase
     private static MethodInfo _operationNameProperty = _spanType.GetProperty("OperationName", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _rangesProperty = _taintedObjectType.GetProperty("Ranges", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _StartProperty = _rangeType.GetProperty("Start", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _LengthProperty = _rangeType.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _lengthProperty = _rangeType.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _vulnerabilitiesProperty = _vulnerabilityBatchType.GetProperty("Vulnerabilities", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _vulnerabilityTypeProperty = _vulnerabilityType.GetProperty("Type", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
