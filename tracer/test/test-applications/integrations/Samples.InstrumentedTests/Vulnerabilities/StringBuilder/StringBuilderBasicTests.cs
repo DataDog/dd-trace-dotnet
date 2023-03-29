@@ -309,4 +309,36 @@ public class StringBuilderBasicTests : InstrumentationTestsBase
         var mystring = stringBuilder.ToString();
         ValidateRanges(mystring);
     }
+
+    [Fact]
+    public void GivenAStringBuilder_WhenUsingNotCoveredMethod_RangesAreOk4()
+    {
+        var stringBuilder = new StringBuilder().Append("aw" + taintedValue);
+        MethodInfo replaceMethod = typeof(StringBuilder).GetMethod("Replace", new Type[] { typeof(string), typeof(string) });
+        replaceMethod.Invoke(stringBuilder, new object[] { "wtainted" , string.Empty});
+        var mystring = stringBuilder.ToString();
+        ValidateRanges(mystring);
+    }
+
+    [Fact]
+    public void GivenAStringBuilder_WhenUsingNotCoveredMethod_RangesAreOk5()
+    {
+        var stringBuilder = new StringBuilder().Append("aw" + taintedValue + taintedValue);
+        MethodInfo replaceMethod = typeof(StringBuilder).GetMethod("Replace", new Type[] { typeof(string), typeof(string) });
+        replaceMethod.Invoke(stringBuilder, new object[] { "wtainted", string.Empty });
+        var mystring = stringBuilder.ToString();
+        ValidateRanges(mystring);
+        FormatTainted(mystring).Should().Be("at:+-ainted-+:");
+    }
+
+    [Fact]
+    public void GivenAStringBuilder_WhenUsingNotCoveredMethod_RangesAreOk6()
+    {
+        var stringBuilder = new StringBuilder().Append(taintedValue + "aw" + taintedValue);
+        MethodInfo replaceMethod = typeof(StringBuilder).GetMethod("Replace", new Type[] { typeof(string), typeof(string) });
+        replaceMethod.Invoke(stringBuilder, new object[] { "wtainted", string.Empty });
+        var mystring = stringBuilder.ToString();
+        ValidateRanges(mystring);
+        FormatTainted(mystring).Should().Be(":+-tainted-+:a");
+    }
 }

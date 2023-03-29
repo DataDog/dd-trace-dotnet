@@ -112,28 +112,52 @@ internal static class PropagationModuleImpl
         }
 
         var incorrectRanges = false;
-        List<Range> newRanges = new();
+        List<Range>? newRanges = null;
 
-        foreach (var range in ranges)
+        for (int i = 0; i < ranges.Length; i++)
         {
+            var range = ranges[i];
             if (range.Start >= result.Length)
             {
-                incorrectRanges = true;
+                if (!incorrectRanges)
+                {
+                    newRanges = FillValidRangesArray(ranges, i - 1);
+                    incorrectRanges = true;
+                }
             }
             else if (range.Start + range.Length > result.Length)
             {
-                incorrectRanges = true;
-                newRanges.Add(new Range(range.Start, result.Length - range.Start, range.Source));
+                if (!incorrectRanges)
+                {
+                    newRanges = FillValidRangesArray(ranges, i - 1);
+                    incorrectRanges = true;
+                }
+
+                newRanges?.Add(new Range(range.Start, result.Length - range.Start, range.Source));
             }
             else
             {
-                newRanges.Add(range);
+                if (incorrectRanges)
+                {
+                    newRanges?.Add(range);
+                }
             }
         }
 
         if (incorrectRanges)
         {
-            tainted!.Ranges = newRanges.ToArray();
+            tainted!.Ranges = newRanges!.ToArray();
         }
+    }
+
+    private static List<Range> FillValidRangesArray(Range[] ranges, int index)
+    {
+        List<Range>? newRanges = new(ranges.Length);
+        for (int previous = 0; previous <= index; previous++)
+        {
+            newRanges.Add(ranges[previous]);
+        }
+
+        return newRanges;
     }
 }
