@@ -83,19 +83,19 @@ internal record ConfigurationStatus
     {
         var dictionary = new Dictionary<string, object>();
 
-        if (IncomingUpdateState.WafKeysToUpdate.Contains(WafExclusionsKey))
+        if (IncomingUpdateState.WafKeysToApply.Contains(WafExclusionsKey))
         {
             var exclusions = ExclusionsByFile.SelectMany(x => x.Value).ToList();
             dictionary.Add(WafExclusionsKey, new JArray(exclusions));
         }
 
-        if (IncomingUpdateState.WafKeysToUpdate.Contains(WafRulesOverridesKey))
+        if (IncomingUpdateState.WafKeysToApply.Contains(WafRulesOverridesKey))
         {
             var overrides = RulesOverridesByFile.SelectMany(x => x.Value).ToList();
             dictionary.Add(WafRulesOverridesKey, overrides.Select(r => r.ToKeyValuePair()).ToArray());
         }
 
-        if (IncomingUpdateState.WafKeysToUpdate.Contains(WafRulesDataKey))
+        if (IncomingUpdateState.WafKeysToApply.Contains(WafRulesDataKey))
         {
             var rulesData = MergeRuleData(RulesDataByFile.SelectMany(x => x.Value));
             dictionary.Add(WafRulesDataKey, rulesData.Select(r => r.ToKeyValuePair()).ToArray());
@@ -114,7 +114,7 @@ internal record ConfigurationStatus
 
             FallbackEmbeddedRuleSet?.AddToDictionaryAtRoot(dictionary);
         }
-        else if (IncomingUpdateState.WafKeysToUpdate.Contains(WafRulesKey))
+        else if (IncomingUpdateState.WafKeysToApply.Contains(WafRulesKey))
         {
             var rulesetFromRcm = RulesByFile.Values.FirstOrDefault();
             rulesetFromRcm?.AddToDictionaryAtRoot(dictionary);
@@ -125,22 +125,18 @@ internal record ConfigurationStatus
 
     public void ResetUpdateMarkers() => IncomingUpdateState.Reset();
 
-    internal struct IncomingUpdateStatus
+    internal record IncomingUpdateStatus
     {
-        public IncomingUpdateStatus()
-        {
-        }
+        internal HashSet<string> WafKeysToApply { get; } = new();
 
-        internal HashSet<string> WafKeysToUpdate { get; } = new();
+        internal bool FallbackToEmbeddedRulesetAtNextUpdate { get; private set; }
 
-        internal bool FallbackToEmbeddedRulesetAtNextUpdate { get; private set; } = false;
-
-        internal bool SecurityStateChange { get; private set; } = false;
+        internal bool SecurityStateChange { get; private set; }
 
         public void Reset()
         {
             FallbackToEmbeddedRulesetAtNextUpdate = false;
-            WafKeysToUpdate.Clear();
+            WafKeysToApply.Clear();
             SecurityStateChange = false;
         }
 

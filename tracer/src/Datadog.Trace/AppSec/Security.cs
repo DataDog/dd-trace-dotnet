@@ -35,7 +35,7 @@ namespace Datadog.Trace.AppSec
         private readonly SecuritySettings _settings;
         private readonly Dictionary<string, AsmRemoteConfigurationProduct> _products = AsmRemoteConfigurationProducts.GetAll();
         private readonly ConfigurationStatus _configurationStatus;
-        private readonly RemoteConfigurationManager? _remoteConfigurationManager;
+        private RemoteConfigurationManager? _remoteConfigurationManager;
         private Subscription? _rcmSubscription;
         private LibraryInitializationResult? _libraryInitializationResult;
         private IWaf? _waf;
@@ -129,6 +129,7 @@ namespace Datadog.Trace.AppSec
         {
             void RcmSubscription(RemoteConfigurationManager remoteConfigurationManager)
             {
+                _remoteConfigurationManager ??= remoteConfigurationManager;
                 if (_rcmSubscription is null)
                 {
                     _rcmSubscription = remoteConfigurationManager.SubscribeToChanges(
@@ -171,13 +172,17 @@ namespace Datadog.Trace.AppSec
                 {
                     InitWafAndInstrumentations(true);
                     // no point in updating the waf with potentially new rules as it's initialized here with new rules
-                    _configurationStatus.IncomingUpdateState.WafKeysToUpdate.Remove(ConfigurationStatus.WafRulesKey);
+                    _configurationStatus.IncomingUpdateState.WafKeysToApply.Remove(ConfigurationStatus.WafRulesKey);
+                    // reapply others
+                    _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsKey);
+                    _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
+                    _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
                 }
             }
 
             var acknowledge = false;
             UpdateResult? result = null;
-            if (Enabled && _configurationStatus.IncomingUpdateState.WafKeysToUpdate.Any())
+            if (Enabled && _configurationStatus.IncomingUpdateState.WafKeysToApply.Any())
             {
                 result = _waf?.UpdateWafFromConfigurationStatus(_configurationStatus);
                 if (result?.Success ?? false)
