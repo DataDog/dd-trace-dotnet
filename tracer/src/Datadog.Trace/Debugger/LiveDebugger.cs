@@ -114,7 +114,8 @@ namespace Datadog.Trace.Debugger
                         AcceptRemovedConfiguration(removals.Values.SelectMany(u => u));
                         // todo
                         return null;
-                    }, LiveDebuggerProduct.ProductName);
+                    },
+                    LiveDebuggerProduct.ProductName);
 
                 DebuggerSnapshotSerializer.SetConfig(_settings);
                 AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
@@ -362,13 +363,7 @@ namespace Datadog.Trace.Debugger
                 }
             }
 
-            var probeConfiguration = new ProbeConfiguration()
-            {
-                ServiceConfiguration = serviceConfig,
-                MetricProbes = metrics.ToArray(),
-                LogProbes = logs.ToArray(),
-                SpanProbes = spans.ToArray()
-            };
+            var probeConfiguration = new ProbeConfiguration() { ServiceConfiguration = serviceConfig, MetricProbes = metrics.ToArray(), LogProbes = logs.ToArray(), SpanProbes = spans.ToArray() };
 
             _configurationUpdater.AcceptAdded(probeConfiguration);
         }

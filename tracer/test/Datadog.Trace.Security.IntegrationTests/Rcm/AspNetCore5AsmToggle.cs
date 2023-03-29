@@ -51,6 +51,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             : base(fixture, outputHelper, enableSecurity: enableSecurity, testName: testName)
         {
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
+            SetEnvironmentVariable(ConfigurationKeys.AppSec.Enabled, null);
         }
 
         [SkippableFact]

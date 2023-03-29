@@ -26,7 +26,7 @@ internal class AsmDataProduct : AsmRemoteConfigurationProduct
 
             if (removedData)
             {
-                configurationStatus.IncomingUpdateState.WafKeysToUpdate.Add(ConfigurationStatus.WafRulesDataKey);
+                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
             }
         }
 
@@ -40,7 +40,7 @@ internal class AsmDataProduct : AsmRemoteConfigurationProduct
                 if (rulesData != null)
                 {
                     configurationStatus.RulesDataByFile[rawFile.Path.Path] = rulesData;
-                    configurationStatus.IncomingUpdateState.WafKeysToUpdate.Add(ConfigurationStatus.WafRulesDataKey);
+                    configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
                 }
             }
         }

@@ -15,16 +15,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Product>();
 
         #pragma warning disable CS0067
-        public event EventHandler<ProductConfigChangedEventArgs> ConfigChanged;
-
-        public event EventHandler<ProductConfigChangedEventArgs> ConfigRemoved;
-
         public abstract string Name { get; }
-
-        public void RemoveConfigs(List<RemoteConfigurationCache> removedConfigs)
-        {
-            var e = new ProductConfigChangedEventArgs(removedConfigs.Select(cache => new NamedRawFile(cache.Path, Array.Empty<byte>())));
-            ConfigRemoved?.Invoke(this, e);
-        }
     }
 }

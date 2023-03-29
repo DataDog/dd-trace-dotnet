@@ -30,12 +30,12 @@ internal class AsmProduct : AsmRemoteConfigurationProduct
 
             if (removedRulesOveride)
             {
-                configurationStatus.IncomingUpdateState.WafKeysToUpdate.Add(ConfigurationStatus.WafRulesOverridesKey);
+                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
             }
 
             if (removedExclusions)
             {
-                configurationStatus.IncomingUpdateState.WafKeysToUpdate.Add(ConfigurationStatus.WafExclusionsKey);
+                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsKey);
             }
         }
 
@@ -52,13 +52,13 @@ internal class AsmProduct : AsmRemoteConfigurationProduct
                 if (asmConfig.TypedFile.RuleOverrides != null)
                 {
                     configurationStatus.RulesOverridesByFile[asmConfig.Name] = asmConfig.TypedFile.RuleOverrides;
-                    configurationStatus.IncomingUpdateState.WafKeysToUpdate.Add(ConfigurationStatus.WafRulesOverridesKey);
+                    configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
                 }
 
                 if (asmConfig.TypedFile.Exclusions != null)
                 {
                     configurationStatus.ExclusionsByFile[asmConfig.Name] = asmConfig.TypedFile.Exclusions;
-                    configurationStatus.IncomingUpdateState.WafKeysToUpdate.Add(ConfigurationStatus.WafExclusionsKey);
+                    configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsKey);
                 }
 
                 if (asmConfig.TypedFile.Actions != null)

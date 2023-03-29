@@ -44,7 +44,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var ruleSet = RuleSet.From(result!);
             ruleSet.Should().NotBeNull();
             var configurationStatus = new ConfigurationStatus(string.Empty) { RulesByFile = { ["test"] = ruleSet! } };
-            configurationStatus.IncomingUpdateState.WafKeysToUpdate.Add(ConfigurationStatus.WafRulesKey);
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
             var res = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
             res.Success.Should().BeTrue();
             res.LoadedRules.Should().Be(1);
@@ -72,7 +72,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var ruleOverride = new RuleOverride { Enabled = false, Id = attackParts1[2] };
             ruleOverrides.Add(ruleOverride);
             var configurationStatus = new ConfigurationStatus(string.Empty) { RulesOverridesByFile = { ["test"] = ruleOverrides!.ToArray() } };
-            configurationStatus.IncomingUpdateState.WafKeysToUpdate.Add(ConfigurationStatus.WafRulesOverridesKey);
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
             var result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
             result.Success.Should().BeTrue();
             Execute(waf, attackParts1, false);
@@ -124,7 +124,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 var ruleOverride = new RuleOverride { OnMatch = new[] { "block" }, Id = attackParts1[2] };
                 ruleOverrides.Add(ruleOverride);
                 var configurationStatus = new ConfigurationStatus(string.Empty) { RulesOverridesByFile = { ["test"] = ruleOverrides!.ToArray() } };
-                configurationStatus.IncomingUpdateState.WafKeysToUpdate.Add(ConfigurationStatus.WafRulesOverridesKey);
+                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
                 var result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
                 result.Success.Should().BeTrue();
                 Execute(waf, attackParts1, true, "block");

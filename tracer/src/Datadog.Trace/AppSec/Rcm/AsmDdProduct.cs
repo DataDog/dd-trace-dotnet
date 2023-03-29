@@ -27,7 +27,7 @@ internal class AsmDdProduct : AsmRemoteConfigurationProduct
             {
                 var ruleSet = RuleSet.From(result.TypedFile);
                 configurationStatus.RulesByFile[result.TypedFile.Path] = ruleSet;
-                configurationStatus.IncomingUpdateState.WafKeysToUpdate.Add(ConfigurationStatus.WafRulesKey);
+                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
             }
         }
 
@@ -45,7 +45,7 @@ internal class AsmDdProduct : AsmRemoteConfigurationProduct
             }
             else if (oneRemoved)
             {
-                configurationStatus.IncomingUpdateState.WafKeysToUpdate.Add(ConfigurationStatus.WafRulesKey);
+                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
             }
         }
     }

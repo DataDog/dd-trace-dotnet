@@ -36,7 +36,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var rulesData = js.Deserialize<List<RuleData>>(jsonTextReader);
             initResult.Waf.Should().NotBeNull();
             var configurationStatus = new ConfigurationStatus(string.Empty) { RulesDataByFile = { ["test"] = rulesData!.ToArray() } };
-            configurationStatus.IncomingUpdateState.WafKeysToUpdate.Add(ConfigurationStatus.WafRulesDataKey);
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
             var res = initResult.Waf!.UpdateWafFromConfigurationStatus(configurationStatus);
             res.Success.Should().BeTrue();
             using var context = initResult.Waf.CreateContext();
@@ -83,7 +83,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var rulesData = js.Deserialize<List<RuleData>>(jsonTextReader);
             var rulesData2 = js.Deserialize<List<RuleData>>(jsonTextReader2);
             var configurationStatus = new ConfigurationStatus(string.Empty) { RulesDataByFile = { ["test"] = rulesData!.Concat(rulesData2!).ToArray() } };
-            configurationStatus.IncomingUpdateState.WafKeysToUpdate.Add(ConfigurationStatus.WafRulesDataKey);
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
             var res = initResult.Waf!.UpdateWafFromConfigurationStatus(configurationStatus);
             using var context = waf!.CreateContext();
             var result = context!.Run(
