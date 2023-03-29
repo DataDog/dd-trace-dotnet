@@ -26,6 +26,7 @@ const shared::WSTRING default_exclude_assemblies[]{
     WStr("dd-trace"),
     WStr("dd-trace.exe"),
     WStr("aspnet_state.exe"),
+    WStr("sqlservr.exe"),
 };
 
 inline static const ::shared::WSTRING datadog_logs_folder_path = WStr(R"(Datadog .NET Tracer\logs)");
