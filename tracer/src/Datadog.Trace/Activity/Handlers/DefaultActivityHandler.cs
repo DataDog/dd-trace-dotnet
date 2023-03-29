@@ -13,6 +13,7 @@ using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Activity.Handlers
@@ -73,8 +74,13 @@ namespace Datadog.Trace.Activity.Handlers
                         else
                         {
                             // create a new parent span context for the ActivityContext
-                            var newActivityTraceId = Convert.ToUInt64(w3cActivity.TraceId.Substring(16), 16);
-                            var newActivitySpanId = Convert.ToUInt64(w3cActivity.ParentSpanId, 16);
+#if NETCOREAPP
+                            _ = HexString.TryParseUInt64(w3cActivity.TraceId.AsSpan(16), out var newActivityTraceId);
+                            _ = HexString.TryParseUInt64(w3cActivity.ParentSpanId, out var newActivitySpanId);
+#else
+                            _ = HexString.TryParseUInt64(w3cActivity.TraceId.Substring(16), out var newActivityTraceId);
+                            _ = HexString.TryParseUInt64(w3cActivity.ParentSpanId, out var newActivitySpanId);
+#endif
                             parent = Tracer.Instance.CreateSpanContext(SpanContext.None, traceId: newActivityTraceId, spanId: newActivitySpanId);
                         }
                     }
