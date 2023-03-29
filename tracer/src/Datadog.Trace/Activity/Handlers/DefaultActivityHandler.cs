@@ -171,13 +171,13 @@ namespace Datadog.Trace.Activity.Handlers
                     }
 
                     string key;
-                    if (activity is not IW3CActivity w3cActivity)
+                    if (activity is IW3CActivity w3cActivity)
                     {
-                        key = activity.Id;
+                        key = w3cActivity.TraceId + w3cActivity.SpanId;
                     }
                     else
                     {
-                        key = w3cActivity.TraceId + w3cActivity.SpanId;
+                        key = activity.Id;
                     }
 
                     if (ActivityMappingById.TryRemove(key, out ActivityMapping someValue) && someValue.Scope?.Span is not null)
