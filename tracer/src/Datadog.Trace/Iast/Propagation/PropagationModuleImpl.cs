@@ -51,7 +51,7 @@ internal static class PropagationModuleImpl
         }
         catch (Exception err)
         {
-            Log.Error(err, "StringModuleImpl.PropagateTaint exception");
+            Log.Error(err, "PropagationModuleImpl.PropagateTaint exception");
         }
 
         return result;
