@@ -14,6 +14,7 @@ using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Debugger.Instrumentation
 {
@@ -25,7 +26,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
     public static class SpanDebuggerInvoker
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanDebuggerInvoker));
-        internal static readonly IntegrationId IntegrationId = IntegrationId.SpanProbe;
 
         /// <summary>
         /// [Non Async] Begin Method Invoker
@@ -38,10 +38,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
         public static SpanDebuggerState BeginSpan(string probeId, string resourceName, string operationName)
         {
             resourceName ??= "unknown-resource";
-            operationName ??= "unknown-operation";
+            operationName ??= "dd.dynamic.span";
 
-            var scope = TraceAnnotationsIntegration.CreateScope(resourceName, operationName, IntegrationId);
-            scope.Span.Tags.SetTag("debugger.probeid", probeId);
+            var tags = new CommonTags();
+            tags.SetTag("debugger.probeid", probeId);
+            var scope = Tracer.Instance.StartActiveInternal(operationName, tags: tags);
+            scope.Span.ResourceName = resourceName;
             return new SpanDebuggerState(scope);
         }
 

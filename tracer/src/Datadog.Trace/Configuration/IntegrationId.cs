@@ -56,7 +56,6 @@ namespace Datadog.Trace.Configuration
         Process,
         HashAlgorithm,
         SymmetricAlgorithm,
-        OpenTelemetry,
-        SpanProbe
+        OpenTelemetry
     }
 }
