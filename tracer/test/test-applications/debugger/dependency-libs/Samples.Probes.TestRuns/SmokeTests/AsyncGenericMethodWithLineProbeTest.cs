@@ -6,7 +6,7 @@ using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LogOnLineProbeTestData(39, expectedNumberOfSnapshots:0 /* in optimize code this will create a generic struct state machine */)]
+    [LogLineProbeTestData(39, expectedNumberOfSnapshots:0 /* in optimize code this will create a generic struct state machine */)]
     public class AsyncGenericMethodWithLineProbeTest : IAsyncRun
     {
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -31,7 +31,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
             }
 
             [MethodImpl(MethodImplOptions.NoInlining)]
-            [LogOnMethodProbeTestData(expectedNumberOfSnapshots: 0 /* in optimize code this will create a generic struct state machine*/)]
+            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0 /* in optimize code this will create a generic struct state machine*/)]
             public async Task<string> Method<K>(K generic, string input) where K : IGeneric
             {
                 var output = generic.Message + input + ".";

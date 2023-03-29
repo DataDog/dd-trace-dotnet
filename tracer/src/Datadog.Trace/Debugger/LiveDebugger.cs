@@ -201,13 +201,17 @@ namespace Datadog.Trace.Debugger
 
                             break;
                         case ProbeLocationType.Method:
-                            var nativeDefinition = new NativeMethodProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
-                            methodProbes.Add(nativeDefinition);
-                            break;
-                        case ProbeLocationType.MethodSpan:
-                            var spanProbe = probe as SpanProbe;
-                            var spanDefinition = new NativeSpanProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
-                            spanProbes.Add(spanDefinition);
+                            if (probe is SpanProbe)
+                            {
+                                var spanDefinition = new NativeSpanProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
+                                spanProbes.Add(spanDefinition);
+                            }
+                            else
+                            {
+                                var nativeDefinition = new NativeMethodProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
+                                methodProbes.Add(nativeDefinition);
+                            }
+
                             break;
                         case ProbeLocationType.Unrecognized:
                             break;
@@ -273,11 +277,6 @@ namespace Datadog.Trace.Debugger
 
         private ProbeLocationType GetProbeLocationType(ProbeDefinition probe)
         {
-            if (probe is SpanProbe)
-            {
-                return ProbeLocationType.MethodSpan;
-            }
-
             if (!string.IsNullOrEmpty(probe.Where.MethodName))
             {
                 return ProbeLocationType.Method;

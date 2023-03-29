@@ -3,9 +3,9 @@ using System;
 namespace Samples.Probes.TestRuns
 {
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor)]
-    public class MetricOnMethodProbeTestDataAttribute : MethodProbeTestDataAttribute
+    public class MetricMethodProbeTestDataAttribute : MethodProbeTestDataAttribute
     {
-        public MetricOnMethodProbeTestDataAttribute
+        public MetricMethodProbeTestDataAttribute
             (
             string returnTypeName = null,
             string[] parametersTypeName = null,

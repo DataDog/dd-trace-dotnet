@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LogOnLineProbeTestData(lineNumber: 23)]
+    [LogLineProbeTestData(lineNumber: 23)]
     public class StaticType : IRun
     {
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -17,7 +17,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
             public static string StaticProperty { get; } = "Static Property";
 
             [MethodImpl(MethodImplOptions.NoInlining)]
-            [LogOnMethodProbeTestData("System.String", new[] { "System.String" })]
+            [LogMethodProbeTestData("System.String", new[] { "System.String" })]
             public static string Method(string lastName)
             {
                 return lastName;

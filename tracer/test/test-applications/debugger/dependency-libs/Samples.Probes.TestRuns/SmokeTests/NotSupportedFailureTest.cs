@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LogOnLineProbeTestData(23)]
-    [LogOnLineProbeTestData(24)]
-    [LogOnLineProbeTestData(25)]
-    [LogOnLineProbeTestData(26)]
-    [LogOnLineProbeTestData(27)]
-    [LogOnLineProbeTestData(35, expectedNumberOfSnapshots: 0)]
-    [LogOnLineProbeTestData(44, expectedNumberOfSnapshots: 0)]
-    [LogOnLineProbeTestData(50)]
-    [LogOnLineProbeTestData(57, expectedNumberOfSnapshots: 0)]
-    [LogOnLineProbeTestData(63)]
+    [LogLineProbeTestData(23)]
+    [LogLineProbeTestData(24)]
+    [LogLineProbeTestData(25)]
+    [LogLineProbeTestData(26)]
+    [LogLineProbeTestData(27)]
+    [LogLineProbeTestData(35, expectedNumberOfSnapshots: 0)]
+    [LogLineProbeTestData(44, expectedNumberOfSnapshots: 0)]
+    [LogLineProbeTestData(50)]
+    [LogLineProbeTestData(57, expectedNumberOfSnapshots: 0)]
+    [LogLineProbeTestData(63)]
     public class NotSupportedFailureTest : IRun
     {
         public void Run()
@@ -29,7 +29,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
 
         public ref struct ByRefLikeType
         {
-            [LogOnMethodProbeTestData(expectedNumberOfSnapshots: 0)]
+            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0)]
             public string IAmNotSupported()
             {
                 return nameof(IAmNotSupported);
@@ -38,26 +38,26 @@ namespace Samples.Probes.TestRuns.SmokeTests
 
         public struct NormalStruct
         {
-            [LogOnMethodProbeTestData(expectedNumberOfSnapshots: 0)]
+            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0)]
             public ByRefLikeType RetByRefLikeNotSupported(string str)
             {
                 return default;
             }
 
-            [LogOnMethodProbeTestData]
+            [LogMethodProbeTestData]
             public string IAmFine(string str)
             {
                 return default;
             }
         }
 
-        [LogOnMethodProbeTestData(expectedNumberOfSnapshots: 0)]
+        [LogMethodProbeTestData(expectedNumberOfSnapshots: 0)]
         public ByRefLikeType RetByRefLikeNotSupported(string str)
         {
             return default;
         }
 
-        [LogOnMethodProbeTestData]
+        [LogMethodProbeTestData]
         public NormalStruct IAmFine(string str)
         {
             return default;

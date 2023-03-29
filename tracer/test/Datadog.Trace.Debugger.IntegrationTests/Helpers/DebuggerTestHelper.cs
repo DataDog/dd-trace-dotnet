@@ -83,7 +83,7 @@ internal static class DebuggerTestHelper
 
     internal static bool IsMetricProbe(ProbeAttributeBase probeAttr)
     {
-        return probeAttr is MetricOnMethodProbeTestDataAttribute or MetricOnLineProbeTestDataAttribute;
+        return probeAttr is MetricMethodProbeTestDataAttribute or MetricLineProbeTestDataAttribute;
     }
 
     internal static bool IsSpanProbe(ProbeAttributeBase probeAttr)
@@ -93,7 +93,7 @@ internal static class DebuggerTestHelper
 
     internal static bool IsLogProbe(ProbeAttributeBase probeAttr)
     {
-        return probeAttr is LogOnMethodProbeTestDataAttribute or LogOnLineProbeTestDataAttribute;
+        return probeAttr is LogMethodProbeTestDataAttribute or LogLineProbeTestDataAttribute;
     }
 
     internal static (ProbeAttributeBase ProbeTestData, ProbeDefinition Probe)[] GetAllProbes(Type type, string targetFramework, bool unlisted, DeterministicGuidGenerator guidGenerator)
@@ -260,7 +260,7 @@ internal static class DebuggerTestHelper
         return snapshot;
     }
 
-    private static MetricProbe WithMetric(this MetricProbe probe, MetricOnMethodProbeTestDataAttribute probeTestData)
+    private static MetricProbe WithMetric(this MetricProbe probe, MetricMethodProbeTestDataAttribute probeTestData)
     {
         probe.Value = new SnapshotSegment(null, probeTestData.MetricJson, string.Empty);
         probe.Kind = ParseEnum<MetricKind>(probeTestData.MetricKind);
@@ -270,7 +270,7 @@ internal static class DebuggerTestHelper
 
     private static ProbeDefinition CreateMetricMethodProbe(MethodBase method, DeterministicGuidGenerator guidGenerator)
     {
-        var probeTestData = GetProbeTestData(method, out var typeName) as MetricOnMethodProbeTestDataAttribute;
+        var probeTestData = GetProbeTestData(method, out var typeName) as MetricMethodProbeTestDataAttribute;
 
         if (probeTestData == null || string.IsNullOrEmpty(probeTestData.MetricKind))
         {

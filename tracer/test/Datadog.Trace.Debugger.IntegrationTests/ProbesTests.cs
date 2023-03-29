@@ -316,7 +316,7 @@ public class ProbesTests : TestHelper
 
                     foreach (var probeAttributeBase in metricProbes)
                     {
-                        var metricName = (probeAttributeBase as MetricOnMethodProbeTestDataAttribute)?.MetricName ?? (probeAttributeBase as MetricOnLineProbeTestDataAttribute)?.MetricName;
+                        var metricName = (probeAttributeBase as MetricMethodProbeTestDataAttribute)?.MetricName ?? (probeAttributeBase as MetricLineProbeTestDataAttribute)?.MetricName;
                         var req = requests.SingleOrDefault(r => r.Contains(metricName));
                         Assert.NotNull(req);
                         req.Should().Contain($"service:{EnvironmentHelper.SampleName}");

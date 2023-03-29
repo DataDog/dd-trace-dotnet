@@ -12,7 +12,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [LogOnMethodProbeTestData(expectedNumberOfSnapshots:3)]
+        [LogMethodProbeTestData(expectedNumberOfSnapshots:3)]
         public async Task<int> Recursive(int i)
         {
             if (i == 2)

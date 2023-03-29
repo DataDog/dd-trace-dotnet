@@ -6,10 +6,10 @@ using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LogOnLineProbeTestData(lineNumber: 35)]
-    [LogOnLineProbeTestData(lineNumber: 36)]
-    [LogOnLineProbeTestData(lineNumber: 37)]
-    [LogOnLineProbeTestData(lineNumber: 42)]
+    [LogLineProbeTestData(lineNumber: 35)]
+    [LogLineProbeTestData(lineNumber: 36)]
+    [LogLineProbeTestData(lineNumber: 37)]
+    [LogLineProbeTestData(lineNumber: 42)]
     public class AsyncSpanOnMethodWithArgsTest : IAsyncRun
     {
         private const string ClassName = "AsyncSpanOnMethodWithArgsTest";

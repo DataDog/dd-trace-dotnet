@@ -14,7 +14,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [LogOnMethodProbeTestData("System.String", new[] { "System.String" })]
+        [LogMethodProbeTestData("System.String", new[] { "System.String" })]
         public string Method(string lastName)
         {
             return lastName;

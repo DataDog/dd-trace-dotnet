@@ -3,9 +3,9 @@ using System;
 namespace Samples.Probes.TestRuns
 {
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor)]
-    public class LogOnMethodProbeTestDataAttribute : MethodProbeTestDataAttribute
+    public class LogMethodProbeTestDataAttribute : MethodProbeTestDataAttribute
     {
-        public LogOnMethodProbeTestDataAttribute(
+        public LogMethodProbeTestDataAttribute(
     string returnTypeName = null,
     string[] parametersTypeName = null,
     bool skip = false,

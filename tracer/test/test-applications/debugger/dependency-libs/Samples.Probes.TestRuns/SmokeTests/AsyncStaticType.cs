@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LogOnLineProbeTestData(lineNumber: 28)]
+    [LogLineProbeTestData(lineNumber: 28)]
     public class AsyncStaticType : IAsyncRun
     {
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -18,7 +18,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
             public static string StaticProperty { get; } = "Static Property";
 
             [MethodImpl(MethodImplOptions.NoInlining)]
-            [LogOnMethodProbeTestData("System.String", new[] { "System.String" })]
+            [LogMethodProbeTestData("System.String", new[] { "System.String" })]
             public static async Task<string> Method(string lastName)
             {
                 await Task.Yield();

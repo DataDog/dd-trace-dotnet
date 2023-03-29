@@ -4,9 +4,9 @@ using Samples.Probes.TestRuns.Shared;
 namespace Samples.Probes.TestRuns;
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-public class MetricOnLineProbeTestDataAttribute : LineProbeTestDataAttribute
+public class MetricLineProbeTestDataAttribute : LineProbeTestDataAttribute
 {
-    public MetricOnLineProbeTestDataAttribute(int lineNumber,
+    public MetricLineProbeTestDataAttribute(int lineNumber,
                                       int columnNumber = 0,
                                       bool skip = false,
                                       int phase = 1,

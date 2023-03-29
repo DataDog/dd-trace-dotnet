@@ -6,7 +6,7 @@ using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LogOnLineProbeTestData(lineNumber: 32)]
+    [LogLineProbeTestData(lineNumber: 32)]
     public class SpanOnMethodWithArgsTest : IRun
     {
         private const string ClassName = "SpanOnMethodWithArgsTest";

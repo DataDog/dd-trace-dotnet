@@ -9,7 +9,6 @@ namespace Datadog.Trace.Debugger
     {
         Line,
         Method,
-        MethodSpan,
         Unrecognized
     }
 }

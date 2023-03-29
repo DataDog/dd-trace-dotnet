@@ -2,7 +2,7 @@ using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.SmokeTests;
 
-[LogOnLineProbeTestData(lineNumber: 13, unlisted: true)]
+[LogLineProbeTestData(lineNumber: 13, unlisted: true)]
 public class Emit100LineProbeSnapshotsTest : IRun
 {
     public void Run()

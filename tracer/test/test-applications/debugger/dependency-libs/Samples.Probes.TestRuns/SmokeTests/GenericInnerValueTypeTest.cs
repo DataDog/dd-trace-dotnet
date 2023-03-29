@@ -4,7 +4,7 @@ using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LogOnLineProbeTestData(35, expectedNumberOfSnapshots: 0 /* Generic value type is not supported at the moment */)]
+    [LogLineProbeTestData(35, expectedNumberOfSnapshots: 0 /* Generic value type is not supported at the moment */)]
     public class GenericInnerValueTypeTest : IRun
     {
         public void Run()

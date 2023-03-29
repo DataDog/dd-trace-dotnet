@@ -14,7 +14,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [LogOnMethodProbeTestData]
+        [LogMethodProbeTestData]
         public static async Task<string> Method(string input)
         {
             var output = $"{ClassName}.{input}.";
