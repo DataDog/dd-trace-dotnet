@@ -160,7 +160,7 @@ public class StringBuilderAppendTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenATaintedString_WhenCallingStringBuilderAppendStringBuilderIndexes_ResultIsTainted7()
+    public void GivenATaintedString_WhenCallingStringBuilderAppendStringIndexes_ResultIsTainted7()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+::+-tainted-+:",
             new StringBuilder(taintedValue).Append(taintedValue, 0, taintedValue.Length).ToString(),
@@ -168,7 +168,7 @@ public class StringBuilderAppendTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenATaintedString_WhenCallingStringBuilderAppendStringBuilderIndexes_ResultIsTainted8()
+    public void GivenATaintedString_WhenCallingStringBuilderAppendStringIndexes_ResultIsTainted8()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+::+-ain-+:",
             new StringBuilder(taintedValue).Append(taintedValue, 1, 3).ToString(),
@@ -182,31 +182,31 @@ public class StringBuilderAppendTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenATaintedString_WhenCallingStringBuilderAppendStringBuilderIndexes_ResultIsTainted9()
+    public void GivenATaintedString_WhenCallingStringBuilderAppendStringBuilder_ResultIsTainted9()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue).Append(taintedValue, 1, 377).ToString());
     }
 
     [Fact]
-    public void GivenATaintedString_WhenCallingStringBuilderAppendStringBuilderIndexes_ResultIsTainted10()
+    public void GivenATaintedString_WhenCallingStringBuilderAppendStringIndexes_ResultIsTainted10()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue).Append(taintedValue, 1, -377).ToString());
     }
 
     [Fact]
-    public void GivenATaintedString_WhenCallingStringBuilderAppendStringBuilderIndexes_ResultIsTainted11()
+    public void GivenATaintedString_WhenCallingStringBuilderAppendStringIndexes_ResultIsTainted11()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue).Append(taintedValue, 100, 3).ToString());
     }
 
     [Fact]
-    public void GivenATaintedString_WhenCallingStringBuilderAppendStringBuilderIndexes_ResultIsTainted12()
+    public void GivenATaintedString_WhenCallingStringBuilderAppendStringIndexes_ResultIsTainted12()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => new StringBuilder(taintedValue).Append(taintedValue, -100, 3).ToString());
     }
 
     [Fact]
-    public void GivenATaintedString_WhenCallingStringBuilderAppendStringBuilderIndexes_ResultIsTainted13()
+    public void GivenATaintedString_WhenCallingStringBuilderAppendStringIndexes_ResultIsTainted13()
     {
         Assert.Throws<ArgumentNullException>(() => new StringBuilder(taintedValue).Append((string)null, 1, 3).ToString());
     }
@@ -323,7 +323,7 @@ public class StringBuilderAppendTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderAppendObject_ResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+::+-tainted-+:",
-            new StringBuilder(taintedValue).Append(new ClassForStringTest(taintedValue)).ToString(),
+            new StringBuilder(taintedValue).(new ClassForStringTest(taintedValue)).ToString(),
             () => new StringBuilder(taintedValue).Append(new ClassForStringTest(taintedValue)).ToString());
     }
 

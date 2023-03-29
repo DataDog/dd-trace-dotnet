@@ -130,16 +130,21 @@ public partial class StringBuilderAspects
     public static StringBuilder Append(StringBuilder target, StringBuilder? value, int startIndex, int count)
     {
         var initialLength = target.Length;
+        // netcore2.1 defines this overload, but not netstandard, so we have to call ToString()
+#if NETSTANDARD
         return StringBuilderModuleImpl.OnStringBuilderAppend(target.Append(value?.ToString(), startIndex, count), initialLength, value, value?.Length ?? 0, startIndex, count);
+#else
+        return StringBuilderModuleImpl.OnStringBuilderAppend(target.Append(value, startIndex, count), initialLength, value, value?.Length ?? 0, startIndex, count);
+#endif
     }
 #endif
 
-    /// <summary>  StringBuilder.Append aspect </summary>
-    /// <param name="target"> StringBuilder instance </param>
-    /// <param name="value"> string parameter </param>
-    /// <param name="startIndex"> startIndex parameter </param>
-    /// <param name="charCount"> charCount parameter </param>
-    /// <returns> instance.Append() </returns>
+        /// <summary>  StringBuilder.Append aspect </summary>
+        /// <param name="target"> StringBuilder instance </param>
+        /// <param name="value"> string parameter </param>
+        /// <param name="startIndex"> startIndex parameter </param>
+        /// <param name="charCount"> charCount parameter </param>
+        /// <returns> instance.Append() </returns>
     [AspectMethodReplace("System.Text.StringBuilder::Append(System.Char[],System.Int32,System.Int32)")]
     public static StringBuilder Append(StringBuilder target, char[]? value, int startIndex, int charCount)
     {
