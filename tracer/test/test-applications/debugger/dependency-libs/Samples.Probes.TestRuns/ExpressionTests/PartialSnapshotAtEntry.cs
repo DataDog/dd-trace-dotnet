@@ -1,13 +1,10 @@
 using System.Runtime.CompilerServices;
+using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
     internal class PartialSnapshotAtEntry : IRun
     {
-        private const string Dsl = @"{
-  ""dsl"": ""ref intArg > 2""
-}";
-
         private const string Json = @"{
     ""gt"": [
       {""ref"": ""intArg""},
@@ -23,10 +20,9 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData(
-            conditionDsl: Dsl,
             conditionJson: Json,
             captureSnapshot: false,
-            evaluateAt: 0,
+            evaluateAt: Const.Entry,
             returnTypeName: "System.String",
             parametersTypeName: new[] { "System.Int32" })]
         public string Method(int intArg)

@@ -26,36 +26,32 @@
     <CORECLR_PATH>..\..\..\shared\src\native-lib\coreclr</CORECLR_PATH>
     <ProjectName>Datadog.Tracer.Native</ProjectName>
     <LIB_PATH>..\..\..\shared\src\native-lib\</LIB_PATH>
-    <LIB_PLATFORM Condition="'$(Platform)'=='x64'">x64</LIB_PLATFORM>
-    <LIB_PLATFORM Condition="'$(Platform)'=='Win32' OR '$(Platform)'=='x86'">x86</LIB_PLATFORM>
-    <LIB_INCLUDES>$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(LIB_PATH)fmt_$(LIB_PLATFORM)-windows-static\include;$(LIB_PATH)spdlog\include</LIB_INCLUDES>
-    <LIB_BINARIES Condition="'$(Configuration)'=='Release'">$(LIB_PATH)fmt_$(LIB_PLATFORM)-windows-static\lib\fmt.lib</LIB_BINARIES>
-    <LIB_BINARIES Condition="'$(Configuration)'=='Debug'">$(LIB_PATH)fmt_$(LIB_PLATFORM)-windows-static\debug\lib\fmtd.lib</LIB_BINARIES>
+    <LIB_INCLUDES>$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(LIB_PATH)fmt\include;$(LIB_PATH)spdlog\include</LIB_INCLUDES>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -100,11 +96,11 @@
     </ClCompile>
     <Lib>
       <AdditionalLibraryDirectories>$(LIB_INCLUDES);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(LIB_BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Link>
       <AdditionalLibraryDirectories>$(LIB_INCLUDES);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(LIB_BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -123,11 +119,11 @@
     <Lib>
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalLibraryDirectories>$(LIB_INCLUDES);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(LIB_BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Link>
       <AdditionalLibraryDirectories>$(LIB_INCLUDES);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(LIB_BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -149,11 +145,11 @@
     </ClCompile>
     <Lib>
       <AdditionalLibraryDirectories>$(LIB_INCLUDES);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(LIB_BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Link>
       <AdditionalLibraryDirectories>$(LIB_INCLUDES);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(LIB_BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -175,11 +171,11 @@
     </ClCompile>
     <Lib>
       <AdditionalLibraryDirectories>$(LIB_INCLUDES);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(LIB_BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Link>
       <AdditionalLibraryDirectories>$(LIB_INCLUDES);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(LIB_BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -235,6 +231,7 @@
     <ClInclude Include="rejit_preprocessor.h" />
     <ClInclude Include="rejit_work_offloader.h" />
     <ClInclude Include="stats.h" />
+    <ClInclude Include="Synchronized.hpp" />
     <ClInclude Include="tracer_tokens.h" />
     <ClInclude Include="version.h" />
   </ItemGroup>
@@ -278,6 +275,10 @@
     <ClCompile Include="rejit_preprocessor.cpp" />
     <ClCompile Include="rejit_work_offloader.cpp" />
     <ClCompile Include="tracer_tokens.cpp" />
+  </ItemGroup>
+  <ItemGroup Label="fmt">
+    <ClCompile Include="..\..\..\shared\src\native-lib\fmt\src\format.cc" />
+    <ClCompile Include="..\..\..\shared\src\native-lib\fmt\src\posix.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

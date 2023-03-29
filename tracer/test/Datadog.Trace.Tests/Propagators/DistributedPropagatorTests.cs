@@ -21,7 +21,7 @@ public class DistributedPropagatorTests
     private const string Origin = "origin";
     private const string RawTraceId = "1a";
     private const string RawSpanId = "2b";
-    private const string PropagatedTags = "_dd.p.key1=value1,_dd.p.key2=value2";
+    private const string PropagatedTagsString = "_dd.p.key1=value1,_dd.p.key2=value2";
     private const string AdditionalW3CTraceState = "key3=value3,key4=value4";
 
     private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
@@ -36,9 +36,20 @@ public class DistributedPropagatorTests
         new("__DistributedKey-Origin", Origin),
         new("__DistributedKey-RawTraceId", RawTraceId),
         new("__DistributedKey-RawSpanId", RawSpanId),
-        new("__DistributedKey-PropagatedTags", PropagatedTags),
+        new("__DistributedKey-PropagatedTags", PropagatedTagsString),
         new("__DistributedKey-AdditionalW3CTraceState", AdditionalW3CTraceState),
     };
+
+    private static readonly TraceTagCollection PropagatedTagsCollection = new(
+        TagPropagation.OutgoingTagPropagationHeaderMaxLength,
+        new List<KeyValuePair<string, string>>
+        {
+            new("_dd.p.key1", "value1"),
+            new("_dd.p.key2", "value2"),
+        },
+        PropagatedTagsString);
+
+    private static readonly TraceTagCollection EmptyPropagatedTags = new(TagPropagation.OutgoingTagPropagationHeaderMaxLength);
 
     static DistributedPropagatorTests()
     {
@@ -77,7 +88,7 @@ public class DistributedPropagatorTests
                        RawSpanId = RawSpanId,
                        Origin = Origin,
                        SamplingPriority = SamplingPriority,
-                       PropagatedTags = PropagatedTags,
+                       PropagatedTags = PropagatedTagsCollection,
                        AdditionalW3CTraceState = AdditionalW3CTraceState,
                    });
     }
@@ -106,7 +117,11 @@ public class DistributedPropagatorTests
         // extract SpanContext
         var result = Propagator.Extract(headers.Object);
 
-        result.Should().BeEquivalentTo(new SpanContextMock { TraceId = TraceId });
+        result.Should().BeEquivalentTo(new SpanContextMock
+                                       {
+                                           TraceId = TraceId,
+                                           PropagatedTags = EmptyPropagatedTags,
+                                       });
     }
 
     [Fact]
@@ -183,7 +198,7 @@ public class DistributedPropagatorTests
                        RawTraceId = RawTraceId,
                        RawSpanId = RawSpanId,
                        SamplingPriority = SamplingPriority,
-                       PropagatedTags = PropagatedTags,
+                       PropagatedTags = PropagatedTagsCollection,
                        AdditionalW3CTraceState = AdditionalW3CTraceState
                    });
     }
@@ -220,7 +235,7 @@ public class DistributedPropagatorTests
                        RawSpanId = RawSpanId,
                        Origin = Origin,
                        SamplingPriority = expectedSamplingPriority,
-                       PropagatedTags = PropagatedTags,
+                       PropagatedTags = PropagatedTagsCollection,
                        AdditionalW3CTraceState = AdditionalW3CTraceState,
                    });
     }

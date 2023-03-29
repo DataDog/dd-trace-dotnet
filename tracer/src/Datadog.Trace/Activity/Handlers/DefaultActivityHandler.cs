@@ -106,7 +106,7 @@ namespace Datadog.Trace.Activity.Handlers
                     return;
                 }
 
-                ActivityMappingById.GetOrAdd(activity.Id, _ => new(activity.Instance, CreateScopeFromActivity(activity, parent, traceId, spanId, rawTraceId, rawSpanId)));
+                ActivityMappingById.GetOrAdd(activity.Id, _ => new(activity.Instance!, CreateScopeFromActivity(activity, parent, traceId, spanId, rawTraceId, rawSpanId)));
             }
             catch (Exception ex)
             {

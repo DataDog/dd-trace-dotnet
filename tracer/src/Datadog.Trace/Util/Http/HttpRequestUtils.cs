@@ -13,16 +13,26 @@ namespace Datadog.Trace.Util.Http
     {
         private const string NoHostSpecified = "UNKNOWN_HOST";
 
-        internal static string GetUrl(string scheme, string host, string pathBase, string path, string queryString, QueryStringManager queryStringManager = null)
+        internal static string GetUrl(Uri uri, QueryStringManager queryStringManager = null)
+            => GetUrl(
+                uri.Scheme,
+                uri.Host,
+                uri.IsDefaultPort ? null : uri.Port,
+                string.Empty,
+                uri.AbsolutePath,
+                uri.Query,
+                queryStringManager);
+
+        internal static string GetUrl(string scheme, string host, int? port, string pathBase, string path, string queryString, QueryStringManager queryStringManager = null)
         {
             if (queryStringManager != null)
             {
                 queryString = queryString.Substring(0, Math.Min(queryString.Length, 200));
                 queryString = queryStringManager.Obfuscate(queryString);
-                return $"{scheme}://{(string.IsNullOrEmpty(host) ? NoHostSpecified : host)}{pathBase}{path}{queryString}";
+                return $"{scheme}://{(string.IsNullOrEmpty(host) ? NoHostSpecified : host)}{(port.HasValue ? $":{port}" : string.Empty)}{pathBase}{path}{queryString}";
             }
 
-            return $"{scheme}://{(string.IsNullOrEmpty(host) ? NoHostSpecified : host)}{pathBase}{path}";
+            return $"{scheme}://{(string.IsNullOrEmpty(host) ? NoHostSpecified : host)}{(port.HasValue ? $":{port}" : string.Empty)}{pathBase}{path}";
         }
     }
 }

@@ -11,7 +11,7 @@
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.status_code: 400,
-      http.url: http://localhost/ping,
+      http.url: http://localhost:00000/ping,
       http.useragent: testhelper,
       language: dotnet,
       runtime-id: Guid_1,

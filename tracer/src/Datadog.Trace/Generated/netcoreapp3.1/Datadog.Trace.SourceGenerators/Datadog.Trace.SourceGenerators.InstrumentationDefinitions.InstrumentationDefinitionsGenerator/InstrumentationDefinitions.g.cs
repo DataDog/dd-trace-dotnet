@@ -63,7 +63,9 @@ namespace Datadog.Trace.ClrProfiler
                new ("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "SendMessageBatchAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SQS.Model.SendMessageBatchResponse>", "Amazon.SQS.Model.SendMessageBatchRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageBatchAsyncIntegration"),
 
                 // AzureFunctions
+               new ("Microsoft.Azure.Functions.Worker.Core", "Microsoft.Azure.Functions.Worker.Pipeline.FunctionExecutionMiddleware", "Invoke",  new[] { "System.Threading.Tasks.Task", "Microsoft.Azure.Functions.Worker.FunctionContext" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.FunctionExecutionMiddlewareInvokeIntegration"),
                new ("Microsoft.Azure.WebJobs.Host", "Microsoft.Azure.WebJobs.Host.Executors.FunctionExecutor", "TryExecuteAsync",  new[] { "System.Threading.Tasks.Task`1[Microsoft.Azure.WebJobs.Host.Executors.IDelayedException]", "Microsoft.Azure.WebJobs.Host.Executors.IFunctionInstance", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.AzureFunctionsExecutorTryExecuteAsyncIntegration"),
+               new ("Microsoft.Azure.WebJobs.Script.Grpc", "Microsoft.Azure.WebJobs.Script.Grpc.GrpcMessageConversionExtensions", "ToRpcHttp",  new[] { "System.Threading.Tasks.Task`1[Microsoft.Azure.WebJobs.Script.Grpc.Messages.TypedData]", "Microsoft.AspNetCore.Http.HttpRequest", "Microsoft.Extensions.Logging.ILogger", "Microsoft.Azure.WebJobs.Script.Grpc.GrpcCapabilities" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.GrpcMessageConversionExtensionsToRpcHttpIntegration"),
                new ("Microsoft.Azure.WebJobs.Script.WebHost", "Microsoft.Azure.WebJobs.Script.WebHost.Middleware.FunctionInvocationMiddleware", "Invoke",  new[] { "System.Threading.Tasks.Task", "Microsoft.AspNetCore.Http.HttpContext" }, 3, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.FunctionInvocationMiddlewareInvokeIntegration"),
 
                 // CosmosDb
@@ -120,13 +122,13 @@ namespace Datadog.Trace.ClrProfiler
 
                 // GraphQL
                new ("GraphQL", "GraphQL.Execution.ExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 2, 3, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncIntegration"),
-               new ("GraphQL", "GraphQL.Execution.ExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 5, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncV5Integration"),
+               new ("GraphQL", "GraphQL.Execution.ExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 5, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncIntegrationV5AndV7"),
                new ("GraphQL", "GraphQL.Execution.SubscriptionExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 2, 3, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncIntegration"),
-               new ("GraphQL", "GraphQL.Execution.SubscriptionExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 5, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncV5Integration"),
+               new ("GraphQL", "GraphQL.Execution.SubscriptionExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 5, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncIntegrationV5AndV7"),
                new ("GraphQL", "GraphQL.Validation.DocumentValidator", "Validate",  new[] { "GraphQL.Validation.IValidationResult", "System.String", "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]", "_", "GraphQL.Inputs" }, 2, 3, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ValidateIntegration"),
-               new ("GraphQL", "GraphQL.Validation.DocumentValidator", "ValidateAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "GraphQL.Language.AST.VariableDefinitions", "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]", "_", "GraphQL.Inputs" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ValidateAsync4Integration"),
                new ("GraphQL", "GraphQL.Validation.DocumentValidator", "ValidateAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "System.String", "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]", "_", "GraphQL.Inputs" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ValidateAsyncIntegration"),
-               new ("GraphQL", "GraphQL.Validation.DocumentValidator", "ValidateAsyncCoreAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "GraphQL.Validation.ValidationContext", "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]" }, 5, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ValidateAsyncV5Integration"),
+               new ("GraphQL", "GraphQL.Validation.DocumentValidator", "ValidateAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "GraphQL.Language.AST.VariableDefinitions", "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]", "_", "GraphQL.Inputs" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ValidateAsyncIntegrationV4"),
+               new ("GraphQL", "GraphQL.Validation.DocumentValidator", "ValidateAsyncCoreAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "GraphQL.Validation.ValidationContext", "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]" }, 5, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ValidateAsyncIntegrationV5AndV7"),
                new ("GraphQL.SystemReactive", "GraphQL.Execution.SubscriptionExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncIntegration"),
 
                 // Grpc
@@ -589,7 +591,9 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageBatchIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageBatchAsyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsSqs,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.AzureFunctionsExecutorTryExecuteAsyncIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.FunctionExecutionMiddlewareInvokeIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.AzureFunctionsExecutorTryExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.GrpcMessageConversionExtensionsToRpcHttpIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.FunctionInvocationMiddlewareInvokeIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AzureFunctions,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ContainerQueryIteratorsIntegrations"
@@ -642,13 +646,13 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.Transport_RequestAsync_Integration"
                     => Datadog.Trace.Configuration.IntegrationId.ElasticsearchNet,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncV5Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncIntegrationV5AndV7"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncV5Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncIntegrationV5AndV7"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ValidateIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ValidateAsync4Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ValidateAsyncIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ValidateAsyncV5Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ValidateAsyncIntegrationV4"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ValidateAsyncIntegrationV5AndV7"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.GraphQL,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspNetCoreServer.ServerCallHandlerBaseHandleCallAsyncIntegration"

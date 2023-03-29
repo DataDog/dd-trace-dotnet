@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
@@ -153,23 +154,10 @@ namespace Datadog.Trace.Propagators
                 }
 
                 // propagated tags ("t.<key>:<value>")
-                if (context.TraceContext?.Tags?.ToArray() is { Length: > 0 } tags)
+                if (context.TraceContext?.Tags is { Count: > 0 } tags)
                 {
-                    foreach (var tag in tags)
-                    {
-                        if (tag.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
-                        {
-#if NETCOREAPP
-                            var key = tag.Key.AsSpan(start: 6);
-#else
-                            var key = tag.Key.Substring(startIndex: 6);
-#endif
-
-                            var tagKey = ReplaceCharacters(key, LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagKeyReplacements);
-                            var tagValue = ReplaceCharacters(tag.Value, LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagValueReplacements);
-                            sb.Append(PropagatedTagPrefix).Append(tagKey).Append(TraceStateDatadogKeyValueSeparator).Append(tagValue).Append(TraceStateDatadogPairsSeparator);
-                        }
-                    }
+                    var traceTagAppender = new TraceTagAppender(sb);
+                    tags.Enumerate(ref traceTagAppender);
                 }
 
                 if (sb.Length == 3)
@@ -620,6 +608,16 @@ namespace Datadog.Trace.Propagators
                 false => SamplingPriorityValues.AutoReject,
             };
 
+            var traceTags = TagPropagation.ParseHeader(traceState.PropagatedTags);
+            if (traceParent.Sampled && traceState.SamplingPriority <= 0)
+            {
+                traceTags.SetTag(Tags.Propagated.DecisionMaker, "-0");
+            }
+            else if (!traceParent.Sampled && traceState.SamplingPriority > 0)
+            {
+                traceTags.RemoveTag(Tags.Propagated.DecisionMaker);
+            }
+
             spanContext = new SpanContext(
                 traceId: traceParent.TraceId,
                 spanId: traceParent.ParentId,
@@ -629,7 +627,7 @@ namespace Datadog.Trace.Propagators
                 rawTraceId: traceParent.RawTraceId,
                 rawSpanId: traceParent.RawParentId);
 
-            spanContext.PropagatedTags = traceState.PropagatedTags;
+            spanContext.PropagatedTags = traceTags;
             spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
             return true;
         }
@@ -817,6 +815,34 @@ namespace Datadog.Trace.Propagators
             }
 
             return StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        internal readonly struct TraceTagAppender : TraceTagCollection.ITagEnumerator
+        {
+            private readonly StringBuilder _sb;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal TraceTagAppender(StringBuilder sb)
+            {
+                _sb = sb;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Next(KeyValuePair<string, string> tag)
+            {
+                if (tag.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
+                {
+#if NETCOREAPP
+                    var key = tag.Key.AsSpan(start: 6);
+#else
+                    var key = tag.Key.Substring(startIndex: 6);
+#endif
+
+                    var tagKey = ReplaceCharacters(key, LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagKeyReplacements);
+                    var tagValue = ReplaceCharacters(tag.Value, LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagValueReplacements);
+                    _sb.Append(PropagatedTagPrefix).Append(tagKey).Append(TraceStateDatadogKeyValueSeparator).Append(tagValue).Append(TraceStateDatadogPairsSeparator);
+                }
+            }
         }
     }
 }

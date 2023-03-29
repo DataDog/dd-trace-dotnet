@@ -38,15 +38,14 @@ namespace Datadog.Trace
 
             var setTag = TaggingUtils.GetSpanSetter(span, out var spanClass);
 
+            // usr.id should always be set, even when PropagateId is true
+            setTag(Tags.User.Id, userDetails.Id);
+
             if (userDetails.PropagateId)
             {
                 var base64UserId = Convert.ToBase64String(Encoding.UTF8.GetBytes(userDetails.Id));
                 const string propagatedUserIdTag = TagPropagation.PropagatedTagPrefix + Tags.User.Id;
                 setTag(propagatedUserIdTag, base64UserId);
-            }
-            else
-            {
-                setTag(Tags.User.Id, userDetails.Id);
             }
 
             if (userDetails.Email is not null)

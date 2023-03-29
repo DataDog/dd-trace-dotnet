@@ -1,14 +1,11 @@
 using System;
 using System.Runtime.CompilerServices;
+using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
     internal class PartialSnapshotWithLocalAtExit : IRun
     {
-        private const string Dsl = @"{
-  ""dsl"": ""Result is {ref i}""
-}";
-
         private const string Json = @"{
         ""ref"": ""i""
 }";
@@ -21,11 +18,10 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData(
-            templateDsl: Dsl,
             templateJson: Json,
             templateStr: "Result is: ",
             captureSnapshot: false,
-            evaluateAt: 1,
+            evaluateAt: Const.Exit,
             returnTypeName: "System.Int32",
             parametersTypeName: new[] { "System.Int32" })]
         public int Method(int seed)

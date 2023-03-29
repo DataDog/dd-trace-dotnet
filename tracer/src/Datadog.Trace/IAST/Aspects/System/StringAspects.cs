@@ -14,12 +14,144 @@ using static Datadog.Trace.Iast.Propagation.StringModuleImpl;
 namespace Datadog.Trace.Iast.Aspects.System;
 
 /// <summary> String class aspects </summary>
-[AspectClass("mscorlib,netstandard,System.Private.CoreLib", AspectFilter.StringOptimization)]
+[AspectClass("mscorlib,netstandard,System.Private.CoreLib,System.Runtime", AspectFilter.StringOptimization)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public partial class StringAspects
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StringAspects));
+
+    /// <summary>
+    /// String.Trim aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <returns> String.Trim() </returns>
+    [AspectMethodReplace("System.String::Trim()", AspectFilter.StringLiteral_0)]
+    public static string Trim(string target)
+    {
+        return StringModuleImpl.OnStringTrim(target, target.Trim(), null, true, true);
+    }
+
+    /// <summary>
+    /// String.Trim aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="trimChars"> chars to trim </param>
+    /// <returns> String.Trim() </returns>
+    [AspectMethodReplace("System.String::Trim(System.Char[])", AspectFilter.StringLiteral_0)]
+    public static string Trim(string target, char[] trimChars)
+    {
+        if (trimChars != null && trimChars.Length > 0)
+        {
+            return StringModuleImpl.OnStringTrimArray(target, target.Trim(trimChars), trimChars, true, true);
+        }
+        else
+        {
+            return StringModuleImpl.OnStringTrim(target, target.Trim(trimChars), null, true, true);
+        }
+    }
+
+#if !NETFRAMEWORK
+    /// <summary>
+    /// String.Trim aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="trimChar"> char to trim </param>
+    /// <returns> String.Trim() </returns>
+    [AspectMethodReplace("System.String::Trim(System.Char)", AspectFilter.StringLiteral_0)]
+    public static string Trim(string target, char trimChar)
+    {
+        return StringModuleImpl.OnStringTrim(target, target.Trim(trimChar), trimChar, true, true);
+    }
+#endif
+
+    /// <summary>
+    /// String.TrimStart aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="trimChars"> chars to trim </param>
+    /// <returns> String.TrimStart() </returns>
+    [AspectMethodReplace("System.String::TrimStart(System.Char[])", AspectFilter.StringLiteral_0)]
+    public static string TrimStart(string target, char[] trimChars)
+    {
+        if (trimChars != null && trimChars.Length > 0)
+        {
+            return StringModuleImpl.OnStringTrimArray(target, target.TrimStart(trimChars), trimChars, true, false);
+        }
+        else
+        {
+            return StringModuleImpl.OnStringTrim(target, target.TrimStart(trimChars), null, true, false);
+        }
+    }
+
+#if !NETFRAMEWORK
+    /// <summary>
+    /// String.TrimStart aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="trimChar"> char to trim </param>
+    /// <returns> String.TrimStart() </returns>
+    [AspectMethodReplace("System.String::TrimStart(System.Char)", AspectFilter.StringLiteral_0)]
+    public static string TrimStart(string target, char trimChar)
+    {
+        return StringModuleImpl.OnStringTrim(target, target.TrimStart(trimChar), trimChar, true, false);
+    }
+
+    /// <summary>
+    /// String.TrimStart aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <returns> String.TrimStart() </returns>
+    [AspectMethodReplace("System.String::TrimStart()", AspectFilter.StringLiteral_0)]
+    public static string TrimStart(string target)
+    {
+        return StringModuleImpl.OnStringTrim(target, target.TrimStart(), null, true, false);
+    }
+#endif
+
+    /// <summary>
+    /// String.TrimEnd aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="trimChars"> chars to trim </param>
+    /// <returns> String.TrimEnd() </returns>
+    [AspectMethodReplace("System.String::TrimEnd(System.Char[])", AspectFilter.StringLiteral_0)]
+    public static string TrimEnd(string target, char[] trimChars)
+    {
+        if (trimChars != null && trimChars.Length > 0)
+        {
+            return StringModuleImpl.OnStringTrimArray(target, target.TrimEnd(trimChars), trimChars, false, true);
+        }
+        else
+        {
+            return StringModuleImpl.OnStringTrim(target, target.TrimEnd(trimChars), null, false, true);
+        }
+    }
+
+#if !NETFRAMEWORK
+    /// <summary>
+    /// String.TrimEnd aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="trimChar"> char to trim </param>
+    /// <returns> String.TrimEnd() </returns>
+    [AspectMethodReplace("System.String::TrimEnd(System.Char)", AspectFilter.StringLiteral_0)]
+    public static string TrimEnd(string target, char trimChar)
+    {
+        return StringModuleImpl.OnStringTrim(target, target.TrimEnd(trimChar), trimChar, false, true);
+    }
+
+    /// <summary>
+    /// String.TrimEnd aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <returns> String.TrimEnd() </returns>
+    [AspectMethodReplace("System.String::TrimEnd()", AspectFilter.StringLiteral_0)]
+    public static string TrimEnd(string target)
+    {
+        return StringModuleImpl.OnStringTrim(target, target.TrimEnd(), null, false, true);
+    }
+#endif
 
     /// <summary>
     /// String.Concat aspect
@@ -271,5 +403,340 @@ public partial class StringAspects
     public static char[] ToCharArray(string target, int startIndex, int length)
     {
         return StringModuleImpl.OnStringSubSequence(target, startIndex, target.ToCharArray(startIndex, length));
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <param name="startIndex"> start index </param>
+    /// <param name="count"> number of elemnts to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.String,System.String[],System.Int32,System.Int32)")]
+    public static string Join(string separator, string[] values, int startIndex, int count)
+    {
+        return OnStringJoin(string.Join(separator, values, startIndex, count), separator, values, startIndex, count);
+    }
+
+#if NETSTANDARD || NETCOREAPP
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.Char,System.String[])")]
+    public static string Join(char separator, string[] values)
+    {
+        return OnStringJoin(string.Join(separator.ToString(), values), values);
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.Char,System.Object[])")]
+    public static string Join(char separator, object[] values)
+    {
+        return OnStringJoin(string.Join(separator.ToString(), values), values);
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <param name="startIndex"> start index </param>
+    /// <param name="count"> number of elemnts to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.Char,System.String[],System.Int32,System.Int32)")]
+    public static string Join(char separator, string[] values, int startIndex, int count)
+    {
+        return OnStringJoin(string.Join(separator.ToString(), values, startIndex, count), values, startIndex, count);
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)")]
+    public static string Join(char separator, IEnumerable values)
+    {
+        return Join(separator.ToString(), values);
+    }
+#endif
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.String,System.Object[])")]
+    public static string Join(string separator, object[] values)
+    {
+        return OnStringJoin(string.Join(separator, values), separator, values);
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.String,System.String[])")]
+    public static string Join(string separator, string[] values)
+    {
+        return OnStringJoin(string.Join(separator, values), separator, values);
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<System.String>)")]
+    public static string Join(string separator, IEnumerable values)
+    {
+        if (values is null)
+        {
+            return OnStringJoin(string.Join(separator, values), separator, null);
+        }
+
+        var valuesConverted = values as IEnumerable<string>;
+        if (valuesConverted != null)
+        {
+            return OnStringJoin(string.Join(separator, valuesConverted), separator, valuesConverted);
+        }
+        else
+        {
+            // This should never happen
+            Log.Warning("Could not taint the string.join call in System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<System.String>)");
+            return string.Join(separator, values);
+        }
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<!!0>)")]
+    public static string Join2(string separator, IEnumerable values)
+    {
+        if (values is null)
+        {
+            return OnStringJoin(string.Join(separator, values), separator, null);
+        }
+
+        var valuesConverted = values as IEnumerable<object>;
+        if (valuesConverted != null)
+        {
+            return OnStringJoin(string.Join(separator, valuesConverted), separator, valuesConverted);
+        }
+
+        // We have a IEnumerable of structs or basic types. This is a corner case.
+
+        try
+        {
+            valuesConverted = values.Cast<object>();
+        }
+        catch
+        {
+            // This sould never happen, but just in case, we return the join...
+            Log.Warning("Could not taint the string.join call in System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<!!0>)");
+            return string.Join(separator, values);
+        }
+
+        return OnStringJoin(string.Join(separator, valuesConverted), separator, valuesConverted);
+    }
+
+    /// <summary>
+    /// String.ToUpper aspect
+    /// </summary>
+    /// <param name="target"> the target string </param>
+    /// <returns> ToUpper result </returns>
+    [AspectMethodReplace("System.String::ToUpper()", AspectFilter.StringLiteral_0)]
+    public static string ToUpper(string target)
+    {
+        var result = target.ToUpper();
+        StringModuleImpl.PropagateTaint(target, result);
+        return result;
+    }
+
+    /// <summary>
+    /// String.ToUpper aspect
+    /// </summary>
+    /// <param name="target"> the target string </param>
+    /// <param name="culture"> the CultureInfo parameter </param>
+    /// <returns> ToUpper result </returns>
+    [AspectMethodReplace("System.String::ToUpper(System.Globalization.CultureInfo)", AspectFilter.StringLiteral_0)]
+    public static string ToUpper(string target, global::System.Globalization.CultureInfo culture)
+    {
+        var result = target.ToUpper(culture);
+        StringModuleImpl.PropagateTaint(target, result);
+        return result;
+    }
+
+    /// <summary>
+    /// String.ToUpperInvariant aspect
+    /// </summary>
+    /// <param name="target"> the target string </param>
+    /// <returns> ToUpperInvariant result </returns>
+    [AspectMethodReplace("System.String::ToUpperInvariant()", AspectFilter.StringLiteral_0)]
+    public static string ToUpperInvariant(string target)
+    {
+        var result = target.ToUpperInvariant();
+        StringModuleImpl.PropagateTaint(target, result);
+        return result;
+    }
+
+    /// <summary>
+    /// String.ToLower aspect
+    /// </summary>
+    /// <param name="target"> the target string </param>
+    /// <returns> ToLower result </returns>
+    [AspectMethodReplace("System.String::ToLower()", AspectFilter.StringLiteral_0)]
+    public static string ToLower(string target)
+    {
+        var result = target.ToLower();
+        StringModuleImpl.PropagateTaint(target, result);
+        return result;
+    }
+
+    /// <summary>
+    /// String.ToLower aspect
+    /// </summary>
+    /// <param name="target"> the target string </param>
+    /// <param name="culture"> the CultureInfo parameter </param>
+    /// <returns> ToLower result </returns>
+    [AspectMethodReplace("System.String::ToLower(System.Globalization.CultureInfo)", AspectFilter.StringLiteral_0)]
+    public static string ToLower(string target, global::System.Globalization.CultureInfo culture)
+    {
+        var result = target.ToLower(culture);
+        StringModuleImpl.PropagateTaint(target, result);
+        return result;
+    }
+
+    /// <summary>
+    /// String.ToLowerInvariant aspect
+    /// </summary>
+    /// <param name="target"> the target string </param>
+    /// <returns> ToLowerInvariant result </returns>
+    [AspectMethodReplace("System.String::ToLowerInvariant()", AspectFilter.StringLiteral_0)]
+    public static string ToLowerInvariant(string target)
+    {
+        var result = target.ToLowerInvariant();
+        StringModuleImpl.PropagateTaint(target, result);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Remove aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="startIndex"> startIndex parameter </param>
+    /// <returns> String.Remove() </returns>
+    [AspectMethodReplace("System.String::Remove(System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string Remove(string target, int startIndex)
+    {
+        string result = target.Remove(startIndex);
+        OnStringRemove(target, result, startIndex, target.Length);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Remove aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="startIndex"> startIndex parameter </param>
+    /// <param name="count"> count parameter </param>
+    /// <returns> String.Remove() </returns>
+    [AspectMethodReplace("System.String::Remove(System.Int32,System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string Remove(string target, int startIndex, int count)
+    {
+        string result = target.Remove(startIndex, count);
+        OnStringRemove(target, result, startIndex, startIndex + count);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Insert aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="startIndex"> startIndex parameter </param>
+    /// <param name="value"> value to insert </param>
+    /// <returns> String.Insert() </returns>
+    [AspectMethodReplace("System.String::Insert(System.Int32,System.String)", AspectFilter.StringOptimization)]
+    public static string Insert(string target, int startIndex, string value)
+    {
+        var result = target.Insert(startIndex, value);
+        OnStringInsert(target, startIndex, value, result);
+        return result;
+    }
+
+    /// <summary>
+    /// String.PadLeft aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="totalWidth"> totalWidth parameter </param>
+    /// <returns> String.PadLeft() </returns>
+    [AspectMethodReplace("System.String::PadLeft(System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string PadLeft(string target, int totalWidth)
+    {
+        var result = target.PadLeft(totalWidth);
+        PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
+        return result;
+    }
+
+    /// <summary>
+    /// String.PadLeft aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="totalWidth"> totalWidth parameter </param>
+    /// <param name="paddingChar"> paddingChar parameter </param>
+    /// <returns> String.PadLeft() </returns>
+    [AspectMethodReplace("System.String::PadLeft(System.Int32,System.Char)", AspectFilter.StringLiteral_0)]
+    public static string PadLeft(string target, int totalWidth, char paddingChar)
+    {
+        var result = target.PadLeft(totalWidth, paddingChar);
+        PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
+        return result;
+    }
+
+    /// <summary>
+    /// String.PadRight aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="totalWidth"> totalWidth parameter </param>
+    /// <returns> String.PadRight() </returns>
+    [AspectMethodReplace("System.String::PadRight(System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string PadRight(string target, int totalWidth)
+    {
+        var result = target.PadRight(totalWidth);
+        PropagateTaint(target, result);
+        return result;
+    }
+
+    /// <summary>
+    /// String.PadRight aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="totalWidth"> totalWidth parameter </param>
+    /// <param name="paddingChar"> paddingChar parameter </param>
+    /// <returns> String.PadRight() </returns>
+    [AspectMethodReplace("System.String::PadRight(System.Int32,System.Char)", AspectFilter.StringLiteral_0)]
+    public static string PadRight(string target, int totalWidth, char paddingChar)
+    {
+        var result = target.PadRight(totalWidth, paddingChar);
+        PropagateTaint(target, result);
+        return result;
     }
 }

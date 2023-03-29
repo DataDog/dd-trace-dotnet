@@ -88,14 +88,14 @@ internal partial class ProbeExpressionParser<T>
 
     private void HandleDurationBinaryOperation(ref Expression left, ref Expression right)
     {
-        if (left is ParameterExpression { Name: Duration } && IsIntegralNumericType(right.Type))
+        if (left is ParameterExpression { Name: Duration })
         {
-            right = CallTimeSpanConstructor(right);
+            right = ConvertToDouble(right);
         }
 
-        if (right is ParameterExpression { Name: Duration } && IsIntegralNumericType(right.Type))
+        if (right is ParameterExpression { Name: Duration })
         {
-            left = CallTimeSpanConstructor(left);
+            left = ConvertToDouble(left);
         }
     }
 }

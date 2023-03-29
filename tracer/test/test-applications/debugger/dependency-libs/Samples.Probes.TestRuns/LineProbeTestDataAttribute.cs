@@ -1,4 +1,5 @@
 using System;
+using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns;
 
@@ -11,15 +12,16 @@ public class LineProbeTestDataAttribute : ProbeAttributeBase
                                       int phase = 1,
                                       bool unlisted = false,
                                       int expectedNumberOfSnapshots = 1,
-                                      string conditionDsl = null,
                                       string conditionJson = null,
-                                      string templateDsl = null,
                                       string templateJson = null,
                                       string templateStr = null,
-                                      string probeId = null,
+                                      string metricJson = null,
+                                      string metricKind = null,
+                                      string metricName = null,
+									  string probeId = null,
                                       bool captureSnapshot = true,
                                       params string[] skipOnFramework)
-        : base(skip, phase, unlisted, expectedNumberOfSnapshots, skipOnFramework, conditionDsl: conditionDsl, evaluateAt: 1, conditionJson: conditionJson, templateDsl: templateDsl, templateJson: templateJson, probeId: probeId, templateStr: templateStr, captureSnapshot: captureSnapshot)
+        : base(skip, phase, unlisted, expectedNumberOfSnapshots, skipOnFramework, evaluateAt: Const.Exit, conditionJson: conditionJson, templateJson: templateJson, templateStr: templateStr, captureSnapshot: captureSnapshot, metricJson: metricJson, metricKind: metricKind, metricName: metricName, probeId: probeId)
     {
         LineNumber = lineNumber;
         ColumnNumber = columnNumber;

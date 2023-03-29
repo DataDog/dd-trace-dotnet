@@ -7,13 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Dapper" Version="2.0.30" />
 
     <!-- this referenced project only targets netstandard2.0 -->
     <ProjectReference Include="..\..\dependency-libs\Samples.DatabaseHelper.netstandard\Samples.DatabaseHelper.netstandard.csproj" />
   </ItemGroup>
+
+  <Import Project="..\..\..\Samples.Shared\Samples.Shared.projitems" Label="Shared" />
 </Project>

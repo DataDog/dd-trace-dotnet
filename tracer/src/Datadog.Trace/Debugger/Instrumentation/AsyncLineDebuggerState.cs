@@ -21,7 +21,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
     {
         private readonly string _probeId;
         private readonly Scope _scope;
-        private readonly DateTimeOffset? _startTime;
         private readonly string _probeFilePath;
         private readonly int _lineNumber;
 
@@ -44,18 +43,16 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// </summary>
         /// <param name="probeId">The id of the probe</param>
         /// <param name="scope">Scope instance</param>
-        /// <param name="startTime">The timestamp captured when the relevant line of code was hit</param>
         /// <param name="methodMetadataIndex">The unique index of the method's <see cref="Collections.MethodMetadataInfo"/></param>
         /// <param name="probeData">The <see cref="ProbeData"/> associated with the executing instrumentation</param>
         /// <param name="lineNumber">The line number where the probe is located on</param>
         /// <param name="probeFilePath">The path to the file of the probe</param>
         /// <param name="invocationTarget">The instance object (or null for static methods)</param>
         /// <param name="kickoffInvocationTarget">The instance object (or null for static methods) of the kickoff method</param>
-        internal AsyncLineDebuggerState(string probeId, Scope scope, DateTimeOffset? startTime, int methodMetadataIndex, ref ProbeData probeData, int lineNumber, string probeFilePath, object invocationTarget, object kickoffInvocationTarget)
+        internal AsyncLineDebuggerState(string probeId, Scope scope, int methodMetadataIndex, ref ProbeData probeData, int lineNumber, string probeFilePath, object invocationTarget, object kickoffInvocationTarget)
         {
             _probeId = probeId;
             _scope = scope;
-            _startTime = startTime;
             _methodMetadataIndex = methodMetadataIndex;
             _lineNumber = lineNumber;
             _probeFilePath = probeFilePath;
@@ -79,11 +76,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// Gets the LiveDebugger BeginMethod scope
         /// </summary>
         internal Scope Scope => _scope;
-
-        /// <summary>
-        /// Gets the LiveDebugger state StartTime
-        /// </summary>
-        internal DateTimeOffset? StartTime => _startTime;
 
         /// <summary>
         /// Gets the Id of the probe

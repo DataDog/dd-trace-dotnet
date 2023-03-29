@@ -7,13 +7,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Tagging
 {
     internal class TraceTagCollection
     {
-        private readonly object _listLock = new();
         private readonly int _outgoingHeaderMaxLength;
 
         private List<KeyValuePair<string, string>>? _tags;
@@ -35,6 +36,8 @@ namespace Datadog.Trace.Tagging
         /// Gets the number of elements contained in the <see cref="TraceTagCollection"/>.
         /// </summary>
         public int Count => _tags?.Count ?? 0;
+
+        public IReadOnlyList<KeyValuePair<string, string>> Tags => ToArray();
 
         /// <summary>
         /// Adds a new tag to the collection.
@@ -84,51 +87,50 @@ namespace Datadog.Trace.Tagging
                 return RemoveTag(name);
             }
 
-            var isPropagated = name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase);
-
-            lock (_listLock)
+            var tags = _tags;
+            if (tags == null)
             {
-                if (_tags?.Count > 0)
+                var newTags = new List<KeyValuePair<string, string>>(2);
+                tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
+            }
+
+            lock (tags)
+            {
+                // we have some tags already, try to find this one
+                for (var i = 0; i < tags.Count; i++)
                 {
-                    // we have some tags already, try to find this one
-                    for (int i = 0; i < _tags.Count; i++)
+                    if (string.Equals(tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (string.Equals(_tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
+                        // found the tag
+                        if (replaceIfExists)
                         {
-                            // found the tag
-                            if (replaceIfExists)
+                            if (!string.Equals(tags[i].Value, value, StringComparison.Ordinal))
                             {
-                                if (!string.Equals(_tags[i].Value, value, StringComparison.Ordinal))
+                                // tag already exists with different value, replace it
+                                tags[i] = new(name, value);
+
+                                // clear the cached header
+                                if (name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase))
                                 {
-                                    // tag already exists with different value, replace it
-                                    _tags[i] = new(name, value);
-
-                                    // clear the cached header
-                                    if (isPropagated)
-                                    {
-                                        _cachedPropagationHeader = null;
-                                    }
-
-                                    return true;
+                                    _cachedPropagationHeader = null;
                                 }
-                            }
 
-                            // tag exists but replaceIfExists is false, don't modify anything
-                            return false;
+                                return true;
+                            }
                         }
+
+                        // tag exists but replaceIfExists is false, don't modify anything
+                        return false;
                     }
                 }
 
                 // tag not found
 
-                // delay creating the List<T> as long as possible
-                _tags ??= new List<KeyValuePair<string, string>>(1);
-
                 // add new tag
-                _tags.Add(new(name, value));
+                tags.Add(new(name, value));
 
                 // clear the cached header if we added a propagated tag
-                if (isPropagated)
+                if (name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase))
                 {
                     _cachedPropagationHeader = null;
                 }
@@ -144,26 +146,28 @@ namespace Datadog.Trace.Tagging
                 ThrowHelper.ThrowArgumentNullException(nameof(name));
             }
 
-            var isPropagated = name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase);
-
-            if (_tags?.Count > 0)
+            var tags = _tags;
+            if (tags == null || tags.Count == 0)
             {
-                lock (_listLock)
+                // tag not found
+                return false;
+            }
+
+            lock (tags)
+            {
+                for (var i = 0; i < tags.Count; i++)
                 {
-                    for (int i = 0; i < _tags.Count; i++)
+                    if (string.Equals(tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (string.Equals(_tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
+                        tags.RemoveAt(i);
+
+                        // clear the cached header
+                        if (name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase))
                         {
-                            _tags.RemoveAt(i);
-
-                            // clear the cached header
-                            if (isPropagated)
-                            {
-                                _cachedPropagationHeader = null;
-                            }
-
-                            return true;
+                            _cachedPropagationHeader = null;
                         }
+
+                        return true;
                     }
                 }
             }
@@ -179,16 +183,19 @@ namespace Datadog.Trace.Tagging
                 ThrowHelper.ThrowArgumentNullException(nameof(name));
             }
 
-            if (_tags?.Count > 0)
+            var tags = _tags;
+            if (tags == null || tags.Count == 0)
             {
-                lock (_listLock)
+                return null;
+            }
+
+            lock (tags)
+            {
+                for (var i = 0; i < tags.Count; i++)
                 {
-                    for (int i = 0; i < _tags.Count; i++)
+                    if (string.Equals(tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (string.Equals(_tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return _tags[i].Value;
-                        }
+                        return tags[i].Value;
                     }
                 }
             }
@@ -200,10 +207,8 @@ namespace Datadog.Trace.Tagging
         {
             if (tags?.Count > 0)
             {
-                foreach (var tag in tags.ToArray())
-                {
-                    SetTag(tag.Key, tag.Value);
-                }
+                var traceTagsSetter = new TraceTagSetter(this);
+                tags.Enumerate(ref traceTagsSetter);
             }
         }
 
@@ -220,14 +225,60 @@ namespace Datadog.Trace.Tagging
 
         public KeyValuePair<string, string>[] ToArray()
         {
-            if (_tags == null || _tags.Count == 0)
+            var tags = _tags;
+
+            if (tags == null || tags.Count == 0)
             {
                 return Array.Empty<KeyValuePair<string, string>>();
             }
 
-            lock (_listLock)
+            lock (tags)
             {
-                return _tags.ToArray();
+                return tags.ToArray();
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Enumerate<TTagEnumerator>(ref TTagEnumerator tagEnumerator)
+            where TTagEnumerator : struct, ITagEnumerator
+        {
+            var tags = _tags;
+            if (tags is null || tags.Count == 0)
+            {
+                return;
+            }
+
+            lock (tags)
+            {
+                for (var i = 0; i < tags.Count; i++)
+                {
+                    tagEnumerator.Next(tags[i]);
+                }
+            }
+        }
+
+#pragma warning disable SA1201
+        public interface ITagEnumerator
+#pragma warning restore SA1201
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            void Next(KeyValuePair<string, string> item);
+        }
+
+        internal readonly struct TraceTagSetter : ITagEnumerator
+        {
+            private readonly TraceTagCollection _traceTagCollection;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal TraceTagSetter(TraceTagCollection traceTagCollection)
+            {
+                _traceTagCollection = traceTagCollection;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Next(KeyValuePair<string, string> tag)
+            {
+                _traceTagCollection.SetTag(tag.Key, tag.Value);
             }
         }
     }

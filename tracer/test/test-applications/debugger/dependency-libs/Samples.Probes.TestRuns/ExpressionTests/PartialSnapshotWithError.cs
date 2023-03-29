@@ -1,13 +1,10 @@
 using System.Runtime.CompilerServices;
+using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
     internal class PartialSnapshotWithError : IRun
     {
-        private const string Dsl = @"{
-  ""dsl"": ""ref undefined > 2""
-}";
-
         private const string Json = @"{
     ""gt"": [
       {""ref"": ""undefined""},
@@ -23,10 +20,9 @@ namespace Samples.Probes.TestRuns.ExpressionTests
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [MethodProbeTestData(
-            conditionDsl: Dsl,
             conditionJson: Json,
             captureSnapshot: false,
-            evaluateAt: 1,
+            evaluateAt: Const.Exit,
             returnTypeName: "System.String",
             parametersTypeName: new[] { "System.Int32" })]
         public string Method(int intArg)

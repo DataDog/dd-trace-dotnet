@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using Xunit;
 using Xunit.Sdk;
 
-namespace Datadog.Profiler.SmokeTests
+namespace Datadog.Profiler.IntegrationTests.Helpers
 {
     [XunitTestCaseDiscoverer("Datadog.Profiler.SmokeTests.TestAppFrameworkDiscover", "Datadog.Profiler.IntegrationTests")]
     internal class TestAppFact : FactAttribute

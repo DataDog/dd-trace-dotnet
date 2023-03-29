@@ -8,7 +8,7 @@
       "snapshot": {
         "captures": {
           "lines": {
-            "30": {
+            "26": {
               "arguments": {
                 "arg": {
                   "type": "Double",
@@ -26,10 +26,6 @@
                 }
               },
               "staticFields": {
-                "Dsl": {
-                  "type": "String",
-                  "value": "{\r\n  \"dsl\": \"local > arg\"\r\n}"
-                },
                 "Json": {
                   "type": "String",
                   "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"local\"},\r\n      {\"ref\": \"arg\"}\r\n    ]\r\n}"
@@ -46,7 +42,7 @@
           "location": {
             "file": "LineConditionFullSnapshot.cs",
             "lines": [
-              30
+              26
             ]
           }
         },
