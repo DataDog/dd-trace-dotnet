@@ -23,6 +23,7 @@ namespace Datadog.Trace.TestHelpers
 
         private readonly HttpClient _httpClient;
         private ITestOutputHelper _currentOutput;
+        private object _outputLock = new();
 
         public AspNetCoreTestFixture()
         {
@@ -46,7 +47,7 @@ namespace Datadog.Trace.TestHelpers
 
         public void SetOutput(ITestOutputHelper output)
         {
-            lock (this)
+            lock (_outputLock)
             {
                 _currentOutput = output;
             }
@@ -247,7 +248,7 @@ namespace Datadog.Trace.TestHelpers
 
         private void WriteToOutput(string line)
         {
-            lock (this)
+            lock (_outputLock)
             {
                 _currentOutput?.WriteLine(line);
             }
