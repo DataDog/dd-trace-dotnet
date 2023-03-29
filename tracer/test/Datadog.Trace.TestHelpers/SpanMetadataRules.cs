@@ -231,12 +231,14 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .MatchesOneOf(Name, "kafka.consume", "kafka.produce")
                 .Matches(Type, "queue"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured")
+                .IsOptional("message.queue_time_ms"))
             .Tags(s => s
                 .IsOptional("kafka.group")
                 .IsOptional("kafka.offset")
                 .IsOptional("kafka.partition")
                 .IsOptional("kafka.tombstone")
-                .IsOptional("message.queue_time_ms")
                 .Matches("component", "kafka")
                 .IsPresent("span.kind"));
 
