@@ -13,40 +13,33 @@ using Nuke.Common.Tools.NuGet;
 internal static partial class DotNetSettingsExtensions
 {
     public static DotNetBuildSettings SetTargetPlatformAnyCPU(this DotNetBuildSettings settings)
-        => settings.SetTargetPlatform(MSBuildTargetPlatform.MSIL);
+        => settings.SetTargetPlatform(TargetPlatform.MSIL);
 
     public static DotNetTestSettings SetTargetPlatformAnyCPU(this DotNetTestSettings settings)
-        => settings.SetTargetPlatform(MSBuildTargetPlatform.MSIL);
+        => settings.SetTargetPlatform(TargetPlatform.MSIL);
 
     public static DotNetPublishSettings SetTargetPlatformAnyCPU(this DotNetPublishSettings settings)
-        => settings.SetTargetPlatform(MSBuildTargetPlatform.MSIL);
+        => settings.SetTargetPlatform(TargetPlatform.MSIL);
 
     public static T SetTargetPlatformAnyCPU<T>(this T settings)
         where T: MSBuildSettings
-        => settings.SetTargetPlatform(MSBuildTargetPlatform.MSIL);
+        => settings.SetTargetPlatform(TargetPlatform.MSIL);
 
-    public static DotNetBuildSettings SetTargetPlatform(this DotNetBuildSettings settings, MSBuildTargetPlatform platform)
-    {
-        return platform is null
-            ? settings
-            : settings.SetProperty("Platform", GetTargetPlatform(platform));
-    }
-    public static DotNetTestSettings SetTargetPlatform(this DotNetTestSettings settings, MSBuildTargetPlatform platform)
-    {
-        return platform is null
-            ? settings
-            : settings.SetProperty("Platform", GetTargetPlatform(platform));
-    }
+    public static DotNetBuildSettings SetTargetPlatform(this DotNetBuildSettings settings, TargetPlatform platform) 
+        => settings.SetProperty("Platform", GetTargetPlatform(platform));
 
-    public static DotNetPublishSettings SetTargetPlatform(this DotNetPublishSettings settings, MSBuildTargetPlatform platform)
-    {
-        return platform is null
-            ? settings
-            : settings.SetProperty("Platform", GetTargetPlatform(platform));
-    }
+    public static DotNetTestSettings SetTargetPlatform(this DotNetTestSettings settings, TargetPlatform platform)
+        => settings.SetProperty("Platform", GetTargetPlatform(platform));
 
-    private static string GetTargetPlatform(MSBuildTargetPlatform platform) =>
-        platform == MSBuildTargetPlatform.MSIL ? "AnyCPU" : platform.ToString();
+    public static DotNetPublishSettings SetTargetPlatform(this DotNetPublishSettings settings, TargetPlatform platform)
+        => settings.SetProperty("Platform", GetTargetPlatform(platform));
+
+    public static T SetTargetPlatform<T>(this T toolSettings, TargetPlatform targetPlatform)
+        where T : MSBuildSettings
+        => toolSettings.SetTargetPlatform((MSBuildTargetPlatform)targetPlatform.ToString());
+
+    private static string GetTargetPlatform(TargetPlatform platform) =>
+        platform == TargetPlatform.MSIL ? "AnyCPU" : platform.ToString();
 
     public static T SetNoWarnDotNetCore3<T>(this T settings)
         where T: ToolSettings
@@ -142,7 +135,7 @@ internal static partial class DotNetSettingsExtensions
     /// <summary>
     /// Conditionally set the dotnet.exe location, using the 32-bit dll when targeting x86
     /// </summary>
-    public static T SetDotnetPath<T>(this T settings, MSBuildTargetPlatform platform)
+    public static T SetDotnetPath<T>(this T settings, TargetPlatform platform)
         where T : ToolSettings
     {
         var dotnetPath = GetDotNetPath(platform);
@@ -152,7 +145,7 @@ internal static partial class DotNetSettingsExtensions
     /// <summary>
     /// Get the path to `dotnet` depending on the platform
     /// </summary>
-    public static string GetDotNetPath(MSBuildTargetPlatform platform)
+    public static string GetDotNetPath(TargetPlatform platform)
     {
         if (!MSBuildTargetPlatform.x86.Equals(platform))
             return DotNetTasks.DotNetPath;
@@ -167,7 +160,7 @@ internal static partial class DotNetSettingsExtensions
         return dotnetPath;
     }
 
-    public static T SetTestTargetPlatform<T>(this T settings, MSBuildTargetPlatform platform)
+    public static T SetTestTargetPlatform<T>(this T settings, TargetPlatform platform)
         where T : ToolSettings
     {
         // To avoid annoying differences in the test code, convert the MSBuildTargetPlatform string values to

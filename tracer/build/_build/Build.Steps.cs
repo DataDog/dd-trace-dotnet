@@ -96,50 +96,24 @@ partial class Build
     [LazyPathExecutable(name: "otool")] readonly Lazy<Tool> OTool;
     [LazyPathExecutable(name: "lipo")] readonly Lazy<Tool> Lipo;
 
-    IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatformForTracer
+    TargetPlatform[] ArchitecturesForPlatformForTracer
+        => (TargetPlatform, PlatformRequirement) switch
     {
-        get
+        (_, PlatformRequirement.Single) => new[] { TargetPlatform },
+        (TargetPlatform.x64, PlatformRequirement.ForceWindowsArm64) => new[] { TargetPlatform.x64, TargetPlatform.x86, TargetPlatform.arm64ec },
+        (TargetPlatform.x64, PlatformRequirement.Default) => new[] { TargetPlatform.x64, TargetPlatform.x86 },
+        (TargetPlatform.arm64, _) => new[] { TargetPlatform.x64, TargetPlatform.x86, TargetPlatform.arm64ec },
+        (TargetPlatform.x86, _) => new[] { TargetPlatform.x86 },
+        _ => new[] { TargetPlatform },
+    };
+
+    TargetPlatform[] ArchitecturesForPlatformForProfiler
+        => TargetPlatform switch
         {
-            if (TargetPlatform == MSBuildTargetPlatform.x64)
-            {
-                if (ForceARM64BuildInWindows)
-                {
-                    return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, ARM64ECTargetPlatform };
-                }
-                else
-                {
-                    return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 };
-                }
-            }
-            else if (TargetPlatform == ARM64TargetPlatform)
-            {
-                return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, ARM64ECTargetPlatform };
-            }
-            else if (TargetPlatform == MSBuildTargetPlatform.x86)
-            {
-                return new[] { MSBuildTargetPlatform.x86 };
-            }
-
-            return new[] { TargetPlatform };
-        }
-    }
-
-    IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatformForProfiler
-    {
-        get
-        {
-            if (TargetPlatform == MSBuildTargetPlatform.x64)
-            {
-                return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 };
-            }
-            else if (TargetPlatform == MSBuildTargetPlatform.x86)
-            {
-                return new[] { MSBuildTargetPlatform.x86 };
-            }
-
-            return new[] { TargetPlatform };
-        }
-    }
+            TargetPlatform.x64 => new[] { TargetPlatform.x64, TargetPlatform.x86 },
+            TargetPlatform.x86 => new[] { TargetPlatform.x86 },
+            _ => new[] { TargetPlatform },
+        };
 
     bool IsArm64 => RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
     string UnixArchitectureIdentifier => IsArm64 ? "arm64" : TargetPlatform.ToString();
@@ -1678,7 +1652,7 @@ partial class Build
                 true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions){dockerFilter}{armFilter}",
             };
 
-            var targetPlatform = IsArm64 ? (MSBuildTargetPlatform) "arm64" : TargetPlatform;
+            var targetPlatform = IsArm64 ? TargetPlatform.arm64 : TargetPlatform;
 
             try
             {

@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Nuke.Common;
 using Nuke.Common.CI;
 using Nuke.Common.IO;
@@ -31,7 +32,15 @@ partial class Build : NukeBuild
     readonly Configuration BuildConfiguration = Configuration.Release;
 
     [Parameter("Platform to build - x86, x64, ARM64. Defaults to the current platform.")]
-    readonly MSBuildTargetPlatform TargetPlatform = GetDefaultTargetPlatform();
+    readonly TargetPlatform TargetPlatform = (RuntimeInformation.ProcessArchitecture, RuntimeInformation.OSArchitecture) switch
+    {
+        (Architecture.Arm64, _) => TargetPlatform.arm64,
+        (_, Architecture.X86) => TargetPlatform.x86,
+        _ => TargetPlatform.x64,
+    };
+
+    [Parameter("Whether to build dependent platforms, e.g. x86 or ARM64EC on an x64 machine.")]
+    readonly PlatformRequirement PlatformRequirement = PlatformRequirement.Default;
 
     [Parameter("The TargetFramework to execute when running or building a sample app, or linux integration tests")]
     readonly TargetFramework Framework;
@@ -92,7 +101,8 @@ partial class Build : NukeBuild
                        .Executes(() =>
                         {
                             Logger.Info($"Configuration: {BuildConfiguration}");
-                            Logger.Info($"Platform: {TargetPlatform}");
+                            Logger.Info($"TargetPlatform: {TargetPlatform}");
+                            Logger.Info($"PlatformRequirement: {PlatformRequirement}");
                             Logger.Info($"Framework: {Framework}");
                             Logger.Info($"TestAllPackageVersions: {TestAllPackageVersions}");
                             Logger.Info($"MonitoringHomeDirectory: {MonitoringHomeDirectory}");

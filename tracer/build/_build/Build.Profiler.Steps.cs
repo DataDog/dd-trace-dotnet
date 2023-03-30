@@ -42,10 +42,7 @@ partial class Build
                 .SetPackagesDirectory(nugetPackageRestoreDirectory));
 
             // If we're building for x64, build for x86 too
-            var platforms =
-                Equals(TargetPlatform, MSBuildTargetPlatform.x64)
-                    ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
-                    : new[] { MSBuildTargetPlatform.x86 };
+            var platforms = ArchitecturesForPlatformForProfiler;
 
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
             // Build native profiler assets
@@ -89,7 +86,7 @@ partial class Build
         .After(CompileProfilerNativeSrcAndTestLinux)
         .Executes(() =>
         {
-            RunProfilerUnitTests(Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.None);
+            RunProfilerUnitTests(Configuration.Release, TargetPlatform.x64, SanitizerKind.None);
         });
 
     Target CompileProfilerNativeTestsWindows => _ => _
@@ -99,10 +96,7 @@ partial class Build
         .Executes(() =>
         {
             // If we're building for x64, build for x86 too
-            var platforms =
-                Equals(TargetPlatform, MSBuildTargetPlatform.x64)
-                    ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
-                    : new[] { MSBuildTargetPlatform.x86 };
+            var platforms = ArchitecturesForPlatformForProfiler;
 
             var testProjects = ProfilerDirectory.GlobFiles("test/**/*.vcxproj");
             NuGetTasks.NuGetRestore(s => s
@@ -453,7 +447,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            RunProfilerUnitTests(Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.Asan);
+            RunProfilerUnitTests(Configuration.Release, TargetPlatform.x64, SanitizerKind.Asan);
         });
 
     Target CompileProfilerWithAsanWindows => _ => _
@@ -495,7 +489,7 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            foreach (var platform in new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 })
+            foreach (var platform in ArchitecturesForPlatformForProfiler)
             {
                 RunProfilerUnitTests(Configuration.Release, platform);
             }
@@ -512,10 +506,7 @@ partial class Build
         .Triggers(CheckTestResultForProfilerWithSanitizer)
         .Executes(() =>
         {
-            var platforms =
-                IsWin
-                ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
-                : new[] { MSBuildTargetPlatform.x64 };
+            var platforms = ArchitecturesForPlatformForProfiler;
 
             var sampleApp = ProfilerSamplesSolution.GetProject("Samples.Computer01");
 
@@ -596,7 +587,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            RunProfilerUnitTests(Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.Ubsan);
+            RunProfilerUnitTests(Configuration.Release, TargetPlatform.x64, SanitizerKind.Ubsan);
         });
 
     Target RunSampleWithProfilerUbsan => _ => _
@@ -609,7 +600,7 @@ partial class Build
         .Triggers(CheckTestResultForProfilerWithSanitizer)
         .Executes(() =>
         {
-            RunSampleWithSanitizer(MSBuildTargetPlatform.x64, SanitizerKind.Ubsan);
+            RunSampleWithSanitizer(TargetPlatform.x64, SanitizerKind.Ubsan);
         });
 
     enum SanitizerKind
@@ -619,7 +610,7 @@ partial class Build
         Ubsan
     };
 
-    void RunSampleWithSanitizer(MSBuildTargetPlatform platform, SanitizerKind sanitizer)
+    void RunSampleWithSanitizer(TargetPlatform platform, SanitizerKind sanitizer)
     {
         var envVars = new Dictionary<string, string>()
             {
@@ -671,7 +662,7 @@ partial class Build
 
         DotNet($"{sampleAppDll} --scenario 1 --timeout 120", platform, environmentVariables: envVars);
 
-        static IReadOnlyCollection<Output> DotNet(string arguments, MSBuildTargetPlatform platform, string workingDirectory = null, IReadOnlyDictionary<string, string> environmentVariables = null, int? timeout = null, bool? logOutput = null, bool? logInvocation = null, bool? logTimestamp = null, string logFile = null, Func<string, string> outputFilter = null)
+        static IReadOnlyCollection<Output> DotNet(string arguments, TargetPlatform platform, string workingDirectory = null, IReadOnlyDictionary<string, string> environmentVariables = null, int? timeout = null, bool? logOutput = null, bool? logInvocation = null, bool? logTimestamp = null, string logFile = null, Func<string, string> outputFilter = null)
         {
             var dotnetPath = DotNetSettingsExtensions.GetDotNetPath(platform);
 
@@ -682,7 +673,7 @@ partial class Build
         }
     }
 
-    void RunProfilerUnitTests(Configuration configuration, MSBuildTargetPlatform platform, SanitizerKind sanitizer = SanitizerKind.None)
+    void RunProfilerUnitTests(Configuration configuration, TargetPlatform platform, SanitizerKind sanitizer = SanitizerKind.None)
     {
         var intermediateDirPath =
             IsWin
