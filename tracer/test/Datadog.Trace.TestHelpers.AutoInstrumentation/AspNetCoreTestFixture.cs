@@ -45,7 +45,7 @@ namespace Datadog.Trace.TestHelpers
 
         public int HttpPort { get; private set; }
 
-        public string ShutdownPath { get; set; } = "/home/shutdown";
+        public string ShutdownPath { get; set; } = "/shutdown";
 
         public void SetOutput(ITestOutputHelper output)
         {
