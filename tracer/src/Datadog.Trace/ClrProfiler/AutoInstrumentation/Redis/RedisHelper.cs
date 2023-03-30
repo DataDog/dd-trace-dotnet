@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RedisHelper));
 
-        internal static Scope CreateScope(Tracer tracer, IntegrationId integrationId, string integrationName, string host, string port, string rawCommand)
+        internal static Scope CreateScope(Tracer tracer, IntegrationId integrationId, string integrationName, string host, string port, string rawCommand, long? databaseIndex)
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(integrationId))
             {
@@ -61,6 +61,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 tags.RawCommand = rawCommand;
                 tags.Host = host;
                 tags.Port = port;
+                if (databaseIndex.HasValue)
+                {
+                    tags.DatabaseIndex = databaseIndex.Value;
+                }
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
