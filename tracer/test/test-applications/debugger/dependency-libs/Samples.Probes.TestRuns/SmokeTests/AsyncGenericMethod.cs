@@ -14,7 +14,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData (expectedNumberOfSnapshots:0 /* in optimize code this will create a generic struct state machine*/)]
+        [LogMethodProbeTestData (expectedNumberOfSnapshots:0 /* in optimize code this will create a generic struct state machine*/)]
         public async Task<string> Method<T>(T obj, string input)
         {
             var output = obj + input + ".";

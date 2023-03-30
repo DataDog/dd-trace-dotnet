@@ -15,7 +15,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData]
+        [LogMethodProbeTestData]
         public async Task<int> Async1(int chain)
         {
             chain++;
@@ -29,7 +29,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData]
+        [LogMethodProbeTestData]
         public async Task<int> Async2(int chain)
         {
             await Task.Delay(20);

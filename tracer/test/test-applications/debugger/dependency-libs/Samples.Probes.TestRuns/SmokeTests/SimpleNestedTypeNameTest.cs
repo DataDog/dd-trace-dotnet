@@ -13,7 +13,7 @@ public class SimpleNestedTypeNameTest : IRun
     class NestedType
     {
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData("System.Void", new[] { "System.String" }, useFullTypeName: false)]
+        [LogMethodProbeTestData("System.Void", new[] { "System.String" }, useFullTypeName: false)]
         public void MethodToInstrument(string callerName)
         {
             var arr = new[] { callerName, nameof(MethodToInstrument), nameof(SimpleTypeNameTest) };

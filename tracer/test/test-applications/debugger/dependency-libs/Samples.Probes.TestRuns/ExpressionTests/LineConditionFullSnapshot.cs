@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
-    [LineProbeTestData(26, conditionJson: Json, captureSnapshot: true)]
+    [LogLineProbeTestData(26, conditionJson: Json, captureSnapshot: true)]
     internal class LineConditionFullSnapshot : IRun
     {
         private const string Json = @"{

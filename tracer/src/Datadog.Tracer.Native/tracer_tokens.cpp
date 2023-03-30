@@ -21,6 +21,7 @@ static const shared::WSTRING managed_profiler_calltarget_returntype_generics = W
 static const shared::WSTRING managed_profiler_calltarget_beginmethod_name = WStr("BeginMethod");
 static const shared::WSTRING managed_profiler_calltarget_endmethod_name = WStr("EndMethod");
 static const shared::WSTRING managed_profiler_calltarget_logexception_name = WStr("LogException");
+static const shared::WSTRING managed_profiler_trace_attribute_type = WStr("Datadog.Trace.Annotations.TraceAttribute");
 
 /**
  * PRIVATE
@@ -718,4 +719,10 @@ mdTypeRef TracerTokens::GetBubbleUpExceptionTypeRef() const
 {
     return bubbleUpExceptionTypeRef;
 }
+
+const shared::WSTRING& TracerTokens::GetTraceAttributeType()
+{
+    return managed_profiler_trace_attribute_type;
+}
+
 } // namespace trace

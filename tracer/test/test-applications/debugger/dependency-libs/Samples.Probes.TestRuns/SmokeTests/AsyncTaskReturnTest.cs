@@ -14,7 +14,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData]
+        [LogMethodProbeTestData]
         private async Task<RoomStatus> Method(string caller)
         {
             await Task.Yield();
