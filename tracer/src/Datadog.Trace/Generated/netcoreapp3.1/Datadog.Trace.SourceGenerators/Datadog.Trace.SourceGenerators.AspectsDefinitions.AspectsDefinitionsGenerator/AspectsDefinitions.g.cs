@@ -11,6 +11,20 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] Aspects = new string[] {
+"[AspectClass(\"mscorlib,netstandard,System.Runtime\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.System.Text.StringBuilderAspects",
+"  [AspectCtorReplace(\"System.Text.StringBuilder::.ctor(System.String)\",\"\",[0],[False],[StringLiteral_1],Propagation,[])] Init(System.String)",
+"  [AspectCtorReplace(\"System.Text.StringBuilder::.ctor(System.String,System.Int32)\",\"\",[0],[False],[StringLiteral_1],Propagation,[])] Init(System.String,System.Int32)",
+"  [AspectCtorReplace(\"System.Text.StringBuilder::.ctor(System.String,System.Int32,System.Int32,System.Int32)\",\"\",[0],[False],[StringLiteral_1],Propagation,[])] Init(System.String,System.Int32,System.Int32,System.Int32)",
+"  [AspectMethodReplace(\"System.Object::ToString()\",\"System.Text.StringBuilder\",[0],[False],[None],Propagation,[])] ToString(System.Text.StringBuilder)",
+"  [AspectMethodReplace(\"System.Text.StringBuilder::ToString(System.Int32,System.Int32)\",\"\",[0],[False],[None],Propagation,[])] ToString(System.Text.StringBuilder,System.Int32,System.Int32)",
+"  [AspectMethodReplace(\"System.Text.StringBuilder::Append(System.String)\",\"\",[0],[False],[StringLiteral_1],Propagation,[])] Append(System.Text.StringBuilder,System.String)",
+"  [AspectMethodReplace(\"System.Text.StringBuilder::Append(System.Text.StringBuilder)\",\"\",[0],[False],[None],Propagation,[])] Append(System.Text.StringBuilder,System.Text.StringBuilder)",
+"  [AspectMethodReplace(\"System.Text.StringBuilder::Append(System.String,System.Int32,System.Int32)\",\"\",[0],[False],[StringLiteral_1],Propagation,[])] Append(System.Text.StringBuilder,System.String,System.Int32,System.Int32)",
+"  [AspectMethodReplace(\"System.Text.StringBuilder::Append(System.Text.StringBuilder,System.Int32,System.Int32)\",\"\",[0],[False],[StringLiteral_1],Propagation,[])] Append(System.Text.StringBuilder,System.Text.StringBuilder,System.Int32,System.Int32)",
+"  [AspectMethodReplace(\"System.Text.StringBuilder::Append(System.Char[],System.Int32,System.Int32)\",\"\",[0],[False],[None],Propagation,[])] Append(System.Text.StringBuilder,System.Char[],System.Int32,System.Int32)",
+"  [AspectMethodReplace(\"System.Text.StringBuilder::Append(System.Object)\",\"\",[0],[False],[None],Propagation,[])] Append(System.Text.StringBuilder,System.Object)",
+"  [AspectMethodReplace(\"System.Text.StringBuilder::Append(System.Char[])\",\"\",[0],[False],[None],Propagation,[])] Append(System.Text.StringBuilder,System.Char[])",
+"  [AspectMethodReplace(\"System.Text.StringBuilder::AppendLine(System.String)\",\"\",[0],[False],[StringLiteral_1],Propagation,[])] AppendLine(System.Text.StringBuilder,System.String)",
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib,System.Runtime\",[StringOptimization],Propagation,[])] Datadog.Trace.Iast.Aspects.System.StringAspects",
 "  [AspectMethodReplace(\"System.String::Trim()\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Trim(System.String)",
 "  [AspectMethodReplace(\"System.String::Trim(System.Char[])\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Trim(System.String,System.Char[])",

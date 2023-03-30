@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
 using FluentAssertions;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
@@ -40,12 +41,14 @@ public class InstrumentationTestsBase
     private static MethodInfo _operationNameProperty = _spanType.GetProperty("OperationName", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _rangesProperty = _taintedObjectType.GetProperty("Ranges", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _StartProperty = _rangeType.GetProperty("Start", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _LengthProperty = _rangeType.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _lengthProperty = _rangeType.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _vulnerabilitiesProperty = _vulnerabilityBatchType.GetProperty("Vulnerabilities", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _vulnerabilityTypeProperty = _vulnerabilityType.GetProperty("Type", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _evidenceProperty = _vulnerabilityType.GetProperty("Evidence", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _getTaintedObjectsMethod = _taintedObjectsType.GetMethod("Get", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _taintInputStringMethod = _taintedObjectsType.GetMethod("TaintInputString", BindingFlags.Instance | BindingFlags.Public);
+    private static MethodInfo _taintMethod = _taintedObjectsType.GetMethod("Taint", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _enableIastInRequestMethod = _traceContextType.GetMethod("EnableIastInRequest", BindingFlags.Instance | BindingFlags.NonPublic);
     private static MethodInfo _getArrayMethod = _arrayBuilderOfSpanType.GetMethod("GetArray");
     private static MethodInfo _spanGetTagMethod = _spanType.GetMethod("GetTag", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -80,8 +83,11 @@ public class InstrumentationTestsBase
 
     protected object AddTainted(object tainted)
     {
-        var source = Activator.CreateInstance(_sourceType, new object[] { (byte)0, (string)null, (string)tainted });
-        _taintInputStringMethod.Invoke(_taintedObjects, new object[] { tainted, source });
+        var source = Activator.CreateInstance(_sourceType, new object[] { (byte)0, (string)null, tainted.ToString() });
+        var defaultRange = Activator.CreateInstance(_rangeType, new object[] { 0, tainted.ToString().Length, source });
+        var rangeArray = Array.CreateInstance(_rangeType, 1);
+        rangeArray.SetValue(defaultRange, 0);
+        _taintMethod.Invoke(_taintedObjects, new object[] { tainted, rangeArray });
         return tainted;
     }
 
@@ -171,21 +177,29 @@ public class InstrumentationTestsBase
         return spans;
     }
 
-    protected void AssertTaintedFormatWithOriginalCallCheck(string expected, string instrumented, Expression<Func<Object>> notInstrumented)
+    protected void AssertNotTaintedWithOriginalCallCheck(string instrumented, Expression<Func<Object>> notInstrumented)
     {
-        AssertTainted(instrumented);
-        FormatTainted(instrumented).Should().Be(expected);
+        AssertNotTainted(instrumented);
         var notInstrumentedCompiled = notInstrumented.Compile();
         var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
         instrumented.Should().Be(notInstrumentedResult.ToString());
     }
 
-    protected void AssertUntaintedWithOriginalCallCheck(string expected, string instrumented, Expression<Func<Object>> notInstrumented)
+    protected void AssertTaintedFormatWithOriginalCallCheck(object expected, object instrumented, Expression<Func<Object>> notInstrumented)
     {
-        instrumented.Should().Be(expected);
+        AssertTainted(instrumented);
+        FormatTainted(instrumented).Should().Be(expected.ToString());
         var notInstrumentedCompiled = notInstrumented.Compile();
         var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
-        instrumented.Should().Be(notInstrumentedResult.ToString());
+        instrumented.ToString().Should().Be(notInstrumentedResult.ToString());
+    }
+
+    protected void AssertUntaintedWithOriginalCallCheck(object expected, object instrumented, Expression<Func<Object>> notInstrumented)
+    {
+        instrumented.ToString().Should().Be(expected.ToString());
+        var notInstrumentedCompiled = notInstrumented.Compile();
+        var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
+        instrumented.ToString().Should().Be(notInstrumentedResult.ToString());
     }
 
     private static object ExecuteFunc(Func<Object> function)
@@ -227,4 +241,18 @@ public class InstrumentationTestsBase
         return result;
     }
 
+    protected void ValidateRanges(object value)
+    {
+        AssertTainted(value);
+        string result = value.ToString();
+        var tainted = GetTainted(value);
+        var ranges = _rangesProperty.Invoke(tainted, Array.Empty<object>()) as Array;
+
+        foreach (var range in ranges)
+        {
+            var start = (int)_StartProperty.Invoke(range, Array.Empty<object>());
+            var length = (int)_LengthProperty.Invoke(range, Array.Empty<object>());
+            (start + length).Should().BeLessThanOrEqualTo(result.Length);
+        }
+    }
 }
