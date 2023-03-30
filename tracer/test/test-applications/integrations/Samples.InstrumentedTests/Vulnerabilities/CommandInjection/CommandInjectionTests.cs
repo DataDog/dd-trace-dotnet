@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Security;
+using System.Security.Cryptography;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
@@ -62,6 +63,12 @@ public class CommandInjectionTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 
+    [Fact]
+    public void GivenAProcess_WhenStartUntaintedProcess_ThenIsNotVulnerable9()
+    {
+        Assert.Throws<InvalidOperationException>(() => Process.Start(new ProcessStartInfo(null) { UseShellExecute = false }));
+    }
+
     // Start(string fileName, string arguments, string userName, SecureString password, string domain)
 
 #pragma warning disable CA1416 // this overload is only supported on Windows
@@ -98,6 +105,28 @@ public class CommandInjectionTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 
+    [Trait("Category", "LinuxUnsupported")]
+    [Fact]
+    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable27()
+    {
+        TestProcessCall(() => Process.Start(taintedProcessName, null, taintedArgument, new SecureString(), "domain"));
+        AssertVulnerable(commandInjectionType, ":+-nonexisting1.exe-+:");
+    }
+
+    [Trait("Category", "LinuxUnsupported")]
+    [Fact]
+    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable28()
+    {
+        TestProcessCall(() => Process.Start(taintedProcessName, null, null, new SecureString(), "domain"));
+        AssertVulnerable(commandInjectionType, ":+-nonexisting1.exe-+:");
+    }
+
+    [Trait("Category", "LinuxUnsupported")]
+    [Fact]
+    public void GivenAProcess_WhenStartTaintedProcess_ThenIsNotVulnerable8()
+    {
+        Assert.Throws<ArgumentNullException>(() => Process.Start(taintedProcessName, (List<string>)null));
+    }
 #endif
 
     // Process? Start(string fileName, string userName, SecureString password, string domain)
@@ -116,6 +145,13 @@ public class CommandInjectionTests : InstrumentationTestsBase
     {
         TestProcessCall(() => Process.Start(untaintedProcessName, "user", new SecureString(), "domain"));
         AssertNotVulnerable();
+    }
+
+    [Trait("Category", "LinuxUnsupported")]
+    [Fact]
+    public void GivenAProcess_WhenStartUntaintedProcess_ThenIsNotVulnerable26()
+    {
+        Assert.Throws<InvalidOperationException>(() => Process.Start((string) null, "user", new SecureString(), "domain"));
     }
 
 #pragma warning restore CA1416 // this overload is only supported on Windows
@@ -214,6 +250,12 @@ public class CommandInjectionTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 
+    [Fact]
+    public void GivenAProcess_WhenStartNotTaintedProcess_ThenIsNotVulnerable25()
+    {
+        Assert.Throws<InvalidOperationException>(() => Process.Start((string)null));
+    }
+
     // Process Start(string fileName, string arguments)
 
     [Fact]
@@ -244,8 +286,28 @@ public class CommandInjectionTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 
+    [Fact]
+    public void GivenAProcess_WhenStartNotTaintedProcess_ThenIsNotVulnerable21()
+    {
+        TestProcessCall(() => Process.Start(taintedProcessName, (string)null));
+        AssertVulnerable(commandInjectionType, ":+-nonexisting1.exe-+:");
+    }
+
+    [Fact]
+    public void GivenAProcess_WhenStartNotTaintedProcess_ThenIsNotVulnerable22()
+    {
+        Assert.Throws<InvalidOperationException>(() => Process.Start((string)null, (string)null));
+    }
+
+
+    [Fact]
+    public void GivenAProcess_WhenStartNotTaintedProcess_ThenIsNotVulnerable23()
+    {
+        Assert.Throws<InvalidOperationException>(() => Process.Start(null, taintedArgument));
+    }
+
 #if NET5_0_OR_GREATER
-    // Process Start(string fileName, string arguments)
+    // Process Start(string fileName, new List<string> arguments)
 
     [Fact]
     public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable17()
@@ -274,6 +336,13 @@ public class CommandInjectionTests : InstrumentationTestsBase
         TestProcessCall(() => Process.Start(untaintedProcessName, new List<string>() { untaintedArgument, untaintedArgument }));
         AssertNotVulnerable();
     }
+
+        [Fact]
+    public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable20()
+    {
+        Assert.Throws<ArgumentNullException>(() => Process.Start(taintedProcessName, (List<string>)null));
+    }
+
 #endif
     private void TestProcessCall(Func<object> expression)
     {

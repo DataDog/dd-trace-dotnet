@@ -54,7 +54,6 @@ public class InstrumentationTestsBase
     private static MethodInfo _taintMethod = _taintedObjectsType.GetMethod("Taint", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _enableIastInRequestMethod = _traceContextType.GetMethod("EnableIastInRequest", BindingFlags.Instance | BindingFlags.NonPublic);
     private static MethodInfo _getArrayMethod = _arrayBuilderOfSpanType.GetMethod("GetArray");
-    private static MethodInfo _spanGetTagMethod = _spanType.GetMethod("GetTag", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _taintedObjectsField = _iastRequestContextType.GetField("_taintedObjects", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _spansField = _traceContextType.GetField("_spans", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _vulnerabilityBatchField = _iastRequestContextType.GetField("_vulnerabilityBatch", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -128,7 +127,7 @@ public class InstrumentationTestsBase
         vulnerabilityList.Count.Should().Be(vulnerabilities);
     }
 
-    protected void AssertVulnerable(string expectedType, string expectedEvidence = "", bool evidenceTainted = false)
+    protected void AssertVulnerable(string expectedType, string expectedEvidence = "", bool evidenceTainted = true)
     {
         var vulnerabilityList = GetGeneratedVulnerabilities();
         vulnerabilityList.Count.Should().Be(1);
@@ -146,21 +145,6 @@ public class InstrumentationTestsBase
             {
                 evidenceValue.Should().Be(expectedEvidence);
             }
-        }
-    }
-
-    protected void AssertVulnerable(string expectedType, string expectedEvidence = "")
-    {
-        var vulnerabilityList = GetGeneratedVulnerabilities();
-        vulnerabilityList.Count.Should().Be(1);
-        var vulnerabilityType = _vulnerabilityTypeProperty.Invoke(vulnerabilityList[0], Array.Empty<object>());
-        vulnerabilityType.Should().Be(expectedType);
-        var evidence = _evidenceProperty.Invoke(vulnerabilityList[0], Array.Empty<object>());
-        var evidenceValue = _evidenceValueField.GetValue(evidence);
-
-        if (!string.IsNullOrEmpty(expectedEvidence) && GetTainted(evidenceValue) != null)
-        {
-            FormatTainted(evidenceValue).Should().Be(expectedEvidence);
         }
     }
 
