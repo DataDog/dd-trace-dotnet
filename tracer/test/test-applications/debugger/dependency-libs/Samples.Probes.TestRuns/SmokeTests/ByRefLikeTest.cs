@@ -22,19 +22,19 @@ namespace Samples.Probes.TestRuns.SmokeTests
                 _whoAmI = whoAmI;
             }
 
-            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */)]
+            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */, expectProbeStatusFailure: true)]
             public ref ByRefLike CallMe(string @in, ByRefLike byRefLike, ref ByRefLike refByRefLike)
             {
                 return ref refByRefLike;
             }
 
-            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */)]
+            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */, expectProbeStatusFailure: true)]
             public ByRefLike CallMe2(string @in, ByRefLike byRefLike, ref ByRefLike refByRefLike)
             {
                 return byRefLike;
             }
 
-            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */)]
+            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */, expectProbeStatusFailure: true)]
             public string CallMe3(string @in, ByRefLike byRefLike, ref ByRefLike refByRefLike)
             {
                 return @in + "Hello World";

@@ -17,8 +17,9 @@ public abstract class LineProbeTestDataAttribute : ProbeAttributeBase
                                       string templateStr = null,
 									  string probeId = null,
                                       bool captureSnapshot = true,
-                                      params string[] skipOnFramework)
-        : base(skip, phase, unlisted, expectedNumberOfSnapshots, skipOnFramework, evaluateAt: Const.Exit, conditionJson: conditionJson, templateJson: templateJson, templateStr: templateStr, captureSnapshot: captureSnapshot, probeId: probeId)
+                                      bool expectProbeStatusFailure = false,
+                                      params string[] skipOnFrameworks)
+        : base(skip : skip, phase : phase, unlisted : unlisted, expectedNumberOfSnapshots : expectedNumberOfSnapshots, skipOnFrameworks : skipOnFrameworks, evaluateAt: Const.Exit, conditionJson: conditionJson, templateJson: templateJson, templateStr: templateStr, captureSnapshot: captureSnapshot, probeId: probeId, expectProbeStatusFailure: expectProbeStatusFailure)
     {
         LineNumber = lineNumber;
         ColumnNumber = columnNumber;

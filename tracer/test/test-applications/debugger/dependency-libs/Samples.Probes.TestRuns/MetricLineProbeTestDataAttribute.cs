@@ -20,8 +20,9 @@ public class MetricLineProbeTestDataAttribute : LineProbeTestDataAttribute
                                       string metricJson = null,
                                       string metricKind = null,
                                       string metricName = null,
-                                      params string[] skipOnFramework)
-        : base(lineNumber, columnNumber, skip, phase, unlisted, expectedNumberOfSnapshots, conditionJson: conditionJson, templateJson: templateJson, templateStr: templateStr, probeId: probeId, captureSnapshot: captureSnapshot, skipOnFramework: skipOnFramework)
+                                      bool expectProbeStatusFailure = false,
+                                      params string[] skipOnFrameworks)
+        : base(lineNumber : lineNumber, columnNumber : columnNumber, skip : skip, phase : phase, unlisted : unlisted, expectedNumberOfSnapshots : expectedNumberOfSnapshots, conditionJson: conditionJson, templateJson: templateJson, templateStr: templateStr, probeId: probeId, captureSnapshot: captureSnapshot, expectProbeStatusFailure: expectProbeStatusFailure, skipOnFrameworks: skipOnFrameworks)
     {
         MetricJson = metricJson;
         MetricName = metricName;

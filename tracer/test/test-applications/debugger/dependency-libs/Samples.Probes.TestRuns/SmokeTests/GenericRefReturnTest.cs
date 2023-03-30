@@ -24,7 +24,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
             }
         }
 
-        [LogMethodProbeTestData(expectedNumberOfSnapshots: 0)]
+        [LogMethodProbeTestData(expectedNumberOfSnapshots: 0, expectProbeStatusFailure: true)]
         internal static ref T Enqueue<T>()
         {
             return ref new GenericRefReturnTest.DefaultValueContainer<T>().Value;

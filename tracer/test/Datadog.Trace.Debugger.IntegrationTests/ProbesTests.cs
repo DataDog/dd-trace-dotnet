@@ -381,7 +381,7 @@ public class ProbesTests : TestHelper
 
                 // If there are log probes that expect 0 snapshots it means it's a test that checks failure installation.
                 // For a reference, look at: ByRefLikeTest.
-                var expectFailedStatuses = logProbes.Length > 0 && logProbes.Any(logProbe => logProbe.ExpectedNumberOfSnapshots == 0);
+                var expectFailedStatuses = probeData.Any(probeData => probeData.ExpectProbeStatusFailure);
 
                 var statuses = await agent.WaitForProbesStatuses(probeData.Length, expectFailedStatuses: expectFailedStatuses);
 

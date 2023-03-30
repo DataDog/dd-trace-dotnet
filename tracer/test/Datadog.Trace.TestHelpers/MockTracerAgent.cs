@@ -323,6 +323,7 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         /// <param name="statusCount">The expected number of probe statuses when more than one status is expected (e.g. multiple line probes in method).</param>
         /// <param name="timeout">The timeout</param>
+        /// <param name="expectFailedStatuses">determines if we expect to see probe status failure</param>
         /// <returns>The list of probe statuses.</returns>
         public async Task<string[]> WaitForProbesStatuses(int statusCount, TimeSpan? timeout = null, bool expectFailedStatuses = false)
         {

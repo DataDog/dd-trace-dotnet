@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,10 +12,10 @@ namespace Samples.Probes.TestRuns.SmokeTests
     [LogLineProbeTestData(25)]
     [LogLineProbeTestData(26)]
     [LogLineProbeTestData(27)]
-    [LogLineProbeTestData(35, expectedNumberOfSnapshots: 0)]
-    [LogLineProbeTestData(44, expectedNumberOfSnapshots: 0)]
+    [LogLineProbeTestData(35, expectedNumberOfSnapshots: 0, expectProbeStatusFailure: true)]
+    [LogLineProbeTestData(44, expectedNumberOfSnapshots: 0, expectProbeStatusFailure: true)]
     [LogLineProbeTestData(50)]
-    [LogLineProbeTestData(57, expectedNumberOfSnapshots: 0)]
+    [LogLineProbeTestData(57, expectedNumberOfSnapshots: 0, expectProbeStatusFailure: true)]
     [LogLineProbeTestData(63)]
     public class NotSupportedFailureTest : IRun
     {
@@ -29,7 +30,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
 
         public ref struct ByRefLikeType
         {
-            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0)]
+            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0, expectProbeStatusFailure: true)]
             public string IAmNotSupported()
             {
                 return nameof(IAmNotSupported);
@@ -38,7 +39,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
 
         public struct NormalStruct
         {
-            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0)]
+            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0, expectProbeStatusFailure: true)]
             public ByRefLikeType RetByRefLikeNotSupported(string str)
             {
                 return default;
@@ -51,7 +52,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
             }
         }
 
-        [LogMethodProbeTestData(expectedNumberOfSnapshots: 0)]
+        [LogMethodProbeTestData(expectedNumberOfSnapshots: 0, expectProbeStatusFailure: true)]
         public ByRefLikeType RetByRefLikeNotSupported(string str)
         {
             return default;

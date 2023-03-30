@@ -19,8 +19,9 @@ namespace Samples.Probes.TestRuns
     string probeId = null,
     bool captureSnapshot = true,
     string evaluateAt = null,
-    params string[] skipOnFramework)
-    : base(returnTypeName, parametersTypeName, skip, phase, unlisted, expectedNumberOfSnapshots, useFullTypeName, conditionJson: conditionJson, templateJson: templateJson, templateStr: templateStr, probeId: probeId, evaluateAt: evaluateAt, skipOnFramework: skipOnFramework, captureSnapshot: captureSnapshot)
+    bool expectProbeStatusFailure = false,
+    params string[] skipOnFrameworks)
+    : base(returnTypeName, parametersTypeName, skip, phase, unlisted, expectedNumberOfSnapshots, useFullTypeName, conditionJson: conditionJson, templateJson: templateJson, templateStr: templateStr, probeId: probeId, evaluateAt: evaluateAt, skipOnFrameworks: skipOnFrameworks, captureSnapshot: captureSnapshot, expectProbeStatusFailure: expectProbeStatusFailure)
         {
         }
     }

@@ -23,8 +23,9 @@ namespace Samples.Probes.TestRuns
             string metricJson = null,
             string metricName = null,
             string metricKind = null,
-            params string[] skipOnFramework)
-            : base(returnTypeName, parametersTypeName, skip, phase, unlisted, expectedNumberOfSnapshots, useFullTypeName, conditionJson: conditionJson, templateJson: templateJson, templateStr: templateStr, probeId: probeId, evaluateAt: evaluateAt, captureSnapshot: captureSnapshot, skipOnFramework: skipOnFramework)
+            bool expectProbeStatusFailure = false,
+            params string[] skipOnFrameworks)
+            : base(returnTypeName : returnTypeName, parametersTypeName : parametersTypeName, skip : skip, phase : phase, unlisted : unlisted, expectedNumberOfSnapshots : expectedNumberOfSnapshots, useFullTypeName : useFullTypeName, conditionJson: conditionJson, templateJson: templateJson, templateStr: templateStr, probeId: probeId, evaluateAt: evaluateAt, captureSnapshot: captureSnapshot, expectProbeStatusFailure : expectProbeStatusFailure, skipOnFrameworks: skipOnFrameworks)
         {
 
             MetricJson = metricJson;
