@@ -54,6 +54,7 @@ jobs:
     - name: Upload sarif file
       run: |
         ls 
+        ls /home/runner/work/dd-trace-dotnet/results/
         datadog-ci sarif upload  ${{ github.workspace }}/cpp.sarif --service dd-trace-dotnet
         datadog-ci sarif upload  ${{ github.workspace }}/csharp.sarif --service dd-trace-dotnet
       env:
@@ -103,6 +104,7 @@ jobs:
     - name: Upload sarif file
       run: |
         ls 
+        ls /home/runner/work/dd-trace-dotnet/results/
         datadog-ci sarif upload  ${{ github.workspace }}/cpp.sarif --service dd-trace-dotnet
         datadog-ci sarif upload  ${{ github.workspace }}/csharp.sarif --service dd-trace-dotnet
       env:
