@@ -75,19 +75,12 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var scrubbers = VerifyHelper.SpanScrubbers.Where(s => s.RegexPattern.ToString() != @"http.client_ip: (.)*(?=,)");
             var settings = VerifyHelper.GetSpanVerifierSettings(scrubbers: scrubbers, parameters: new object[] { test, sanitisedUrl });
             var spanBeforeAsmData = await SendRequestsAsync(agent, url);
-            var acknowledgeId = nameof(AspNetCore5AsmDataBlockingRequestIp) + Guid.NewGuid();
-            var acknowledgeId2 = nameof(AspNetCore5AsmDataBlockingRequestIp) + Guid.NewGuid();
 
             var product = new AsmDataProduct();
             await agent.SetupRcmAndWait(
                 Output,
-                new[]
-                {
-                    ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, acknowledgeId),
-                    (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, acknowledgeId2),
-                },
-                product.Name,
-                appliedServiceNames: new[] { acknowledgeId, acknowledgeId2 });
+                new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, nameof(AspNetCore5AsmDataBlockingRequestIp)), (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, nameof(AspNetCore5AsmDataBlockingRequestIp)), },
+                product.Name);
 
             var spanAfterAsmData = await SendRequestsAsync(agent, url);
             var spans = new List<MockSpan>();
@@ -123,19 +116,18 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             await agent.SetupRcmAndWait(
                 Output,
                 new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp }, new Data { Expiration = null, Value = "123.1.1.1" } } } } }, acknowledgeId), ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, acknowledgeId2) },
-                product.Name,
-                appliedServiceNames: new[] { acknowledgeId, acknowledgeId2 });
+                product.Name);
 
             var asmFeatures = new AsmFeaturesProduct();
             var spanAfterAsmData = await SendRequestsAsync(agent, url);
             spanAfterAsmData.First().GetTag(Tags.AppSecEvent).Should().NotBeNull();
 
             var acknowledgeId3 = nameof(AspNetCore5AsmDataSecurityEnabledBlockingRequestIpOneClick) + Guid.NewGuid();
-            await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, acknowledgeId3) }, asmFeatures.Name, appliedServiceNames: new[] { acknowledgeId3 });
+            await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, acknowledgeId3) }, asmFeatures.Name);
             var spanAfterAsmDeactivated = await SendRequestsAsync(agent, url);
 
             var acknowledgeId4 = nameof(AspNetCore5AsmDataSecurityEnabledBlockingRequestIpOneClick) + Guid.NewGuid();
-            await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, acknowledgeId4) }, asmFeatures.Name, appliedServiceNames: new[] { acknowledgeId4 });
+            await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, acknowledgeId4) }, asmFeatures.Name);
 
             var spanAfterAsmDataReactivated = await SendRequestsAsync(agent, url);
 
@@ -176,8 +168,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             await agent.SetupRcmAndWait(
                 Output,
                 new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_users", Type = "data_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = "user3" } } } } }, acknowledgedId) },
-                product.Name,
-                appliedServiceNames: new[] { acknowledgedId });
+                product.Name);
             var spanAfterAsmData = await SendRequestsAsync(agent, url);
             var spans = new List<MockSpan>();
             spans.AddRange(spanBeforeAsmData);

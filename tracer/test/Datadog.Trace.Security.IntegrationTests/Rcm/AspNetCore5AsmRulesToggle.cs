@@ -42,13 +42,13 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var spans0 = await SendRequestsAsync(agent, url);
             var acknowledgedId = nameof(TestRulesToggling) + Guid.NewGuid();
 
-            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = false } } }, acknowledgedId) }, ASMProduct, appliedServiceNames: new[] { acknowledgedId });
+            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = false } } }, acknowledgedId) }, ASMProduct);
             CheckAckState(request1, ASMProduct, 1, ApplyStates.ACKNOWLEDGED, null, "First RCM call");
 
             var spans1 = await SendRequestsAsync(agent, url);
 
             var acknowledgedId2 = nameof(TestRulesToggling) + Guid.NewGuid();
-            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = true } } }, acknowledgedId2) }, ASMProduct, appliedServiceNames: new[] { acknowledgedId2 });
+            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = true } } }, acknowledgedId2) }, ASMProduct);
             CheckAckState(request2, ASMProduct, 1, ApplyStates.ACKNOWLEDGED, null, "Second RCM call");
             var spans2 = await SendRequestsAsync(agent, url);
 
@@ -56,13 +56,13 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var acknowledgedId4 = nameof(TestRulesToggling) + Guid.NewGuid();
             var payload1 = ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = true } } }, acknowledgedId3);
             var payload2 = ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, OnMatch = new[] { "block" } } } }, acknowledgedId4);
-            var request3 = await agent.SetupRcmAndWait(Output, new[] { payload1, payload2 }, ASMProduct, appliedServiceNames: new[] { acknowledgedId3, acknowledgedId4 });
+            var request3 = await agent.SetupRcmAndWait(Output, new[] { payload1, payload2 }, ASMProduct);
             CheckAckState(request3, ASMProduct, 2, ApplyStates.ACKNOWLEDGED, null, "Third RCM call");
             var spans3 = await SendRequestsAsync(agent, url);
 
             var acknowledgedId5 = nameof(TestRulesToggling) + Guid.NewGuid();
             var payload3 = ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = true } } }, acknowledgedId5);
-            var request4 = await agent.SetupRcmAndWait(Output, new[] { payload3 }, ASMProduct, appliedServiceNames: new[] { acknowledgedId5 });
+            var request4 = await agent.SetupRcmAndWait(Output, new[] { payload3 }, ASMProduct);
             CheckAckState(request4, ASMProduct, 1, ApplyStates.ACKNOWLEDGED, null, "Forth RCM call");
             var spans4 = await SendRequestsAsync(agent, url);
 
@@ -87,24 +87,22 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             // var ruleId = "crs-942-290";
 
             var spans0 = await SendRequestsAsync(agent, url, null, 1, 1, string.Empty, userAgent: "acunetix-product");
-            var acknowledgedId = nameof(TestRulesToggling) + Guid.NewGuid();
+            var productId = nameof(TestRulesToggling) + Guid.NewGuid();
 
             var request1 = await agent.SetupRcmAndWait(
                                Output,
-                               new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = null, OnMatch = new[] { "block" }, RulesTarget = JToken.Parse(@"[{'tags': {'confidence': '1'}}]") } } }, acknowledgedId) },
-                               ASMProduct,
-                               appliedServiceNames: new[] { acknowledgedId });
+                               new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = null, OnMatch = new[] { "block" }, RulesTarget = JToken.Parse(@"[{'tags': {'confidence': '1'}}]") } } }, productId: productId) },
+                               ASMProduct);
             CheckAckState(request1, ASMProduct, 1, ApplyStates.ACKNOWLEDGED, null, "First RCM call");
 
             var spans1 = await SendRequestsAsync(agent, url);
 
             // reset
-            acknowledgedId = nameof(TestRulesToggling) + Guid.NewGuid();
+            productId = nameof(TestRulesToggling) + Guid.NewGuid();
             var request2 = await agent.SetupRcmAndWait(
                                Output,
-                               new[] { ((object)new Payload { RuleOverrides = Array.Empty<RuleOverride>() }, acknowledgedId) },
-                               ASMProduct,
-                               appliedServiceNames: new[] { acknowledgedId });
+                               new[] { ((object)new Payload { RuleOverrides = Array.Empty<RuleOverride>() }, acknowledgedId: productId) },
+                               ASMProduct);
             CheckAckState(request2, ASMProduct, 1, ApplyStates.ACKNOWLEDGED, null, "Reset RCM call");
             var spans2 = await SendRequestsAsync(agent, url);
 

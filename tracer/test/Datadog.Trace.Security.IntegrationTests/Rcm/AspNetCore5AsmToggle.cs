@@ -57,7 +57,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         [Trait("RunOnWindows", "True")]
         public async Task TestSecurityToggling()
         {
-            var expectedState = EnableSecurity == false ? ApplyStates.UNACKNOWLEDGED : ApplyStates.ACKNOWLEDGED;
+            // we acknowledge either way, data is changed in memory
+            var expectedState = ApplyStates.ACKNOWLEDGED;
 
             var url = "/Health/?[$slice]=value";
             await TryStartApp();
@@ -65,22 +66,40 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
             var span0nominalState = await SendRequestsAsync(agent, url);
-            var acknowledgedId = nameof(TestSecurityToggling) + Guid.NewGuid();
 
-            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, acknowledgedId) }, "ASM_FEATURES");
+            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, nameof(TestSecurityToggling)) }, "ASM_FEATURES", timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
+
+            if (EnableSecurity == false)
+            {
+                // we dont subscribe to any product if security is set locally to true or false
+                request1.Should().BeNull();
+                return;
+            }
+
+            if (EnableSecurity == true)
+            {
+                // we subscribe to other products but dont apply anything in this scenario
+                request1.Should().NotBeNull();
+                request1.CachedTargetFiles.Should().HaveCount(0);
+                return;
+            }
+
+            request1.Should().NotBeNull();
             request1.CachedTargetFiles.Should().HaveCount(1);
 
             CheckAckState(request1, "ASM_FEATURES", 1, expectedState, null, "First RCM call");
 
             var span1ShouldStillBeDisabled = await SendRequestsAsync(agent, url);
 
-            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, acknowledgedId) }, "ASM_FEATURES");
+            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, nameof(TestSecurityToggling)) }, "ASM_FEATURES");
+            request2.Should().NotBeNull();
             request2.CachedTargetFiles.Should().HaveCount(1);
 
             CheckAckState(request2, "ASM_FEATURES", 1, expectedState, null, "First RCM call");
             var spans2ShouldBeEnabled = await SendRequestsAsync(agent, url);
 
-            var request3 = await agent.SetupRcmAndWait(Output, new List<(string Config, string Id)>(), "ASM_FEATURES");
+            var request3 = await agent.SetupRcmAndWait(Output, new List<(object Config, string Id)>(), "ASM_FEATURES");
+            request3.Should().NotBeNull();
             request3.CachedTargetFiles.Should().BeEmpty();
             var span3ConfigurationRemovedShouldBeDisabled = await SendRequestsAsync(agent, url);
 
@@ -112,9 +131,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
             var spans1 = await SendRequestsAsync(agent, url);
-            var acknowledgedId = nameof(TestRemoteConfigError) + Guid.NewGuid();
-
-            var request = await agent.SetupRcmAndWait(Output, new[] { ((object)"haha, you weren't expect this!", acknowledgedId) }, "ASM_FEATURES", appliedServiceNames: new[] { acknowledgedId });
+            var request = await agent.SetupRcmAndWait(Output, new[] { ((object)"haha, you weren't expect this!", nameof(TestRemoteConfigError)) }, "ASM_FEATURES");
 
             RcmBase.CheckAckState(request, "ASM_FEATURES", 1, ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.AppSec.AsmFeatures'. Path '', line 1, position 32.", "First RCM call");
 
