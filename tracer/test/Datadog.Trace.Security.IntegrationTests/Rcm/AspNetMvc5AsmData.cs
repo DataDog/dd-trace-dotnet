@@ -90,12 +90,12 @@ public abstract class AspNetMvc5AsmData : RcmBaseFramework, IClassFixture<IisFix
         var acknowledgedId2 = nameof(TestBlockedRequestIp) + Guid.NewGuid();
 
         var product = new AsmDataProduct();
-        _iisFixture.Agent.SetupRcm(
+        var response = _iisFixture.Agent.SetupRcm(
             Output,
             new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, acknowledgedId), (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, acknowledgedId2), },
             product.Name);
 
-        await _iisFixture.Agent.WaitRcmRequestAndReturnLast(appliedServiceNames: new[] { acknowledgedId, acknowledgedId2 });
+        await _iisFixture.Agent.WaitRcmRequestAndReturnMatchingRequest(response, appliedServiceNames: new[] { acknowledgedId, acknowledgedId2 });
 
         var spanAfterAsmData = await SendRequestsAsync(_iisFixture.Agent, url);
         var spans = new List<MockSpan>();
@@ -120,12 +120,12 @@ public abstract class AspNetMvc5AsmData : RcmBaseFramework, IClassFixture<IisFix
             var acknowledgedId = nameof(TestBlockedRequestUser) + Guid.NewGuid();
 
             var product = new AsmDataProduct();
-            _iisFixture.Agent.SetupRcm(
+            var response = _iisFixture.Agent.SetupRcm(
                 Output,
                 new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_users", Type = "data_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = "user3" } } } } }, acknowledgedId) },
                 product.Name);
 
-            await _iisFixture.Agent.WaitRcmRequestAndReturnLast(appliedServiceNames: new[] { acknowledgedId });
+            await _iisFixture.Agent.WaitRcmRequestAndReturnMatchingRequest(response, appliedServiceNames: new[] { acknowledgedId });
 
             var spanAfterAsmData = await SendRequestsAsync(_iisFixture.Agent, url);
             var spans = new List<MockSpan>();

@@ -16,21 +16,8 @@ internal class AsmDdProduct : AsmRemoteConfigurationProduct
 {
     public override string Name => "ASM_DD";
 
-    internal override void UpdateRemoteConfigurationStatus(List<RemoteConfiguration>? files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus)
+    internal override List<RemoteConfigurationPath> UpdateRemoteConfigurationStatus(List<RemoteConfiguration>? files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus)
     {
-        if (files?.Count > 0)
-        {
-            var firstFile = files.First();
-            var asmDd = new NamedRawFile(firstFile!.Path, firstFile.Contents);
-            var result = asmDd.Deserialize<JToken>();
-            if (result.TypedFile != null)
-            {
-                var ruleSet = RuleSet.From(result.TypedFile);
-                configurationStatus.RulesByFile[result.TypedFile.Path] = ruleSet;
-                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
-            }
-        }
-
         if (removedConfigsForThisProduct != null)
         {
             var oneRemoved = false;
@@ -48,5 +35,23 @@ internal class AsmDdProduct : AsmRemoteConfigurationProduct
                 configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
             }
         }
+
+        var paths = new List<RemoteConfigurationPath>();
+
+        if (files?.Count > 0)
+        {
+            var firstFile = files.First();
+            paths.Add(firstFile.Path);
+            var asmDd = new NamedRawFile(firstFile!.Path, firstFile.Contents);
+            var result = asmDd.Deserialize<JToken>();
+            if (result.TypedFile != null)
+            {
+                var ruleSet = RuleSet.From(result.TypedFile);
+                configurationStatus.RulesByFile[result.TypedFile.Path] = ruleSet;
+                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
+            }
+        }
+
+        return paths;
     }
 }

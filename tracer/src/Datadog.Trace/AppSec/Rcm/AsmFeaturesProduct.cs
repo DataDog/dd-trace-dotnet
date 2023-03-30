@@ -16,22 +16,8 @@ internal class AsmFeaturesProduct : AsmRemoteConfigurationProduct
 {
     public override string Name => "ASM_FEATURES";
 
-    internal override void UpdateRemoteConfigurationStatus(List<RemoteConfiguration>? files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus)
+    internal override List<RemoteConfigurationPath> UpdateRemoteConfigurationStatus(List<RemoteConfiguration>? files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus)
     {
-        if (files != null)
-        {
-            foreach (var file in files)
-            {
-                var asmFeatures = new NamedRawFile(file.Path, file.Contents).Deserialize<AsmFeatures>();
-                if (asmFeatures.TypedFile != null)
-                {
-                    configurationStatus.AsmFeaturesByFile[file.Path.Path] = asmFeatures.TypedFile.Asm;
-                }
-
-                configurationStatus.IncomingUpdateState.SignalSecurityStateChange();
-            }
-        }
-
         if (removedConfigsForThisProduct != null)
         {
             foreach (var removedConfig in removedConfigsForThisProduct)
@@ -42,6 +28,23 @@ internal class AsmFeaturesProduct : AsmRemoteConfigurationProduct
             configurationStatus.IncomingUpdateState.SignalSecurityStateChange();
         }
 
+        var paths = new List<RemoteConfigurationPath>();
+        if (files != null)
+        {
+            foreach (var file in files)
+            {
+                paths.Add(file.Path);
+                var asmFeatures = new NamedRawFile(file.Path, file.Contents).Deserialize<AsmFeatures>();
+                if (asmFeatures.TypedFile != null)
+                {
+                    configurationStatus.AsmFeaturesByFile[file.Path.Path] = asmFeatures.TypedFile.Asm;
+                }
+
+                configurationStatus.IncomingUpdateState.SignalSecurityStateChange();
+            }
+        }
+
         configurationStatus.EnableAsm = !configurationStatus.AsmFeaturesByFile.IsEmpty() && configurationStatus.AsmFeaturesByFile.All(a => a.Value.Enabled == true);
+        return paths;
     }
 }

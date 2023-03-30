@@ -11,5 +11,5 @@ namespace Datadog.Trace.AppSec.Rcm;
 
 internal abstract class AsmRemoteConfigurationProduct : Product
 {
-    internal abstract void UpdateRemoteConfigurationStatus(List<RemoteConfiguration>? files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus);
+    internal abstract List<RemoteConfigurationPath> UpdateRemoteConfigurationStatus(List<RemoteConfiguration>? files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus);
 }

@@ -38,7 +38,12 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private readonly TimeSpan _pollInterval;
 
         private readonly CancellationTokenSource _cancellationSource;
+
+        /// <summary>
+        /// Key is the path
+        /// </summary>
         private readonly Dictionary<string, RemoteConfigurationCache> _appliedConfigurations = new();
+
         private readonly int _rootVersion;
 
         private BigInteger _capabilities;
@@ -240,7 +245,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             var rcmClient = new RcmClient(_id, _subscriptionsProductKeys.ToList(), _rcmTracer, rcmState, capabilitiesArray);
             EnrichTagsWithGitMetadata(rcmClient.ClientTracer.Tags);
             var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
-
             return rcmRequest;
         }
 
@@ -313,7 +317,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 configByProducts[remoteConfigurationPath.Product].Add(remoteConfiguration);
             }
 
-            Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs = null;
+            Dictionary<string, List<RemoteConfigurationPath>> removedConfigsByProduct = new();
             // handle removed configurations
             foreach (var appliedConfiguration in _appliedConfigurations)
             {
@@ -322,33 +326,35 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     continue;
                 }
 
-                removedConfigs ??= new Dictionary<string, List<RemoteConfigurationPath>>();
-                if (!removedConfigs.ContainsKey(appliedConfiguration.Key))
+                if (!removedConfigsByProduct.ContainsKey(appliedConfiguration.Value.Path.Product))
                 {
-                    removedConfigs[appliedConfiguration.Key] = new List<RemoteConfigurationPath>();
+                    removedConfigsByProduct[appliedConfiguration.Value.Path.Product] = new List<RemoteConfigurationPath>();
                 }
 
-                removedConfigs[appliedConfiguration.Key].Add(appliedConfiguration.Value.Path);
+                removedConfigsByProduct[appliedConfiguration.Value.Path.Product].Add(appliedConfiguration.Value.Path);
             }
 
             // update applied configurations after removal
-            foreach (var removedConfig in (removedConfigs?.Keys) ?? Enumerable.Empty<string>())
+            foreach (var removedConfig in removedConfigsByProduct.Values)
             {
-                _appliedConfigurations.Remove(removedConfig);
+                foreach (var value in removedConfig)
+                {
+                    _appliedConfigurations.Remove(value.Path);
+                }
             }
 
             // call subscriptions
             foreach (var subscription in _subscriptions)
             {
                 var configByProduct = configByProducts.Where(c => subscription.ProductKeys.Contains(c.Key)).ToDictionary(c => c.Key, c => c.Value);
-                if (configByProduct.Count == 0)
+                if (configByProduct.Count == 0 && removedConfigsByProduct?.Count == 0)
                 {
                     continue;
                 }
 
                 try
                 {
-                    var results = subscription.Callback(configByProduct, removedConfigs);
+                    var results = subscription.Callback(configByProduct, removedConfigsByProduct);
                     foreach (var result in results)
                     {
                         switch (result.ApplyState)

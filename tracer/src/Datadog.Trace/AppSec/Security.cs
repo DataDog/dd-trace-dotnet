@@ -18,6 +18,7 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
 namespace Datadog.Trace.AppSec
@@ -154,15 +155,18 @@ namespace Datadog.Trace.AppSec
 
         internal List<ApplyDetails> UpdateFromRcm(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
         {
+            var allProcessedConfigs = new List<RemoteConfigurationPath>();
             foreach (var product in _products)
             {
-                configsByProduct.TryGetValue(product.Key, out var config);
-
-                var removedConfigsForThisProduct = removedConfigs?[product.Key];
-                product.Value.UpdateRemoteConfigurationStatus(config, removedConfigsForThisProduct, _configurationStatus);
+                configsByProduct.TryGetValue(product.Key, out var configurations);
+                List<RemoteConfigurationPath>? configsForThisProductToRemove = null;
+                removedConfigs?.TryGetValue(product.Key, out configsForThisProductToRemove);
+                var processedPaths = product.Value.UpdateRemoteConfigurationStatus(configurations, configsForThisProductToRemove, _configurationStatus);
+                allProcessedConfigs.AddRange(processedPaths);
             }
 
-            if (_configurationStatus.IncomingUpdateState.SecurityStateChange)
+            // normally CanBeToggled should not need a check as asm_features capacity is only sent if AppSec env var is null, but still guards it in case
+            if (_configurationStatus.IncomingUpdateState.SecurityStateChange && _settings.CanBeToggled)
             {
                 if (Enabled && _configurationStatus.EnableAsm == false)
                 {
@@ -198,19 +202,18 @@ namespace Datadog.Trace.AppSec
             }
 
             var applyDetails = new List<ApplyDetails>();
-            var allRemoteConfigurations = configsByProduct.SelectMany(c => c.Value);
             if (acknowledge)
             {
-                foreach (var config in allRemoteConfigurations)
+                foreach (var config in allProcessedConfigs)
                 {
-                    applyDetails.Add(ApplyDetails.FromOk(config.Path.Path));
+                    applyDetails.Add(ApplyDetails.FromOk(config.Path));
                 }
             }
             else
             {
-                foreach (var config in allRemoteConfigurations)
+                foreach (var config in allProcessedConfigs)
                 {
-                    applyDetails.Add(ApplyDetails.FromError(config.Path.Path, result?.ErrorMessage));
+                    applyDetails.Add(ApplyDetails.FromError(config.Path, result?.ErrorMessage));
                 }
             }
 
