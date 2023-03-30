@@ -21,14 +21,10 @@
             "locals": {
               "@return": {
                 "type": "String",
-                "value": "Dsl: {\r\n  \"dsl\": \"ref undefined > 2\"\r\n}, Argument: 1"
+                "value": "Argument: 1"
               }
             },
             "staticFields": {
-              "Dsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"ref undefined > 2\"\r\n}"
-              },
               "Json": {
                 "type": "String",
                 "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"undefined\"},\r\n      2\r\n    ]\r\n}"

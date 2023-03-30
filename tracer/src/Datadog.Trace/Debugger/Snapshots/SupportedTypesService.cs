@@ -12,6 +12,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
+using Datadog.Trace.Debugger.Helpers;
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
@@ -66,27 +67,9 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal static bool IsSafeToCallToString(Type type)
         {
-            return IsSimple(type) ||
+            return TypeExtensions.IsSimple(type) ||
                    AllowedTypesSafeToCallToString.Contains(type) ||
                    IsSupportedCollection(type);
-        }
-
-        private static bool IsSimple(Type type)
-        {
-            if (type == null)
-            {
-                return false;
-            }
-
-            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
-            {
-                return IsSimple(type.GetGenericArguments()[0]);
-            }
-
-            return type.IsPrimitive
-                || type.IsEnum
-                || type.Equals(typeof(string))
-                || type.Equals(typeof(decimal));
         }
 
         internal static bool IsSupportedDictionary(object o)

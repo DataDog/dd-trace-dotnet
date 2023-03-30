@@ -5,7 +5,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Environments;
 using BenchmarkDotNet.Exporters;
@@ -110,6 +112,30 @@ internal class DatadogExporter : IExporter
                         testName += report.BenchmarkCase.Parameters.DisplayInfo;
                     }
 
+                    // The Job Id can contain random values: https://github.com/dotnet/BenchmarkDotNet/blob/ec429af22e3c03aedb4c1b813287ef330aed50a2/src/BenchmarkDotNet/Jobs/JobIdGenerator.cs#L18
+                    // Example:
+                    //      Job-WISXTD(Runtime=.NET Framework 4.7.2, Toolchain=net472, IterationTime=2.0000 s)
+                    // We use the description as part of the configuration facets.
+                    // The configuration facets are used by CI Visibility to create a fingerprint of the test.
+                    // Random values here means a new test fingerprint every time, so there's no way to track the same
+                    // test in multiple executions. So because of that, we need to remove the random part of the description.
+                    // In this case we remove the job name and keep the information between the parethesis.
+                    var description = report.BenchmarkCase.Job?.DisplayInfo;
+                    if (description is not null)
+                    {
+                        var matchCollections = new Regex(@"\(([^\(\)]+)\)").Matches(description);
+                        if (matchCollections.Count > 0)
+                        {
+                            // In the example: Runtime=.NET Framework 4.7.2, Toolchain=net472, IterationTime=2.0000 s
+                            description = string.Join(", ", matchCollections.OfType<Match>().Select(x => x.Groups[1].Value));
+                        }
+                        else if (description?.StartsWith("Job-") == true)
+                        {
+                            // If we cannot extract the description but we know there's a random Id, we prefer to skip the description value.
+                            description = null;
+                        }
+                    }
+
                     var testMethod = testSuiteWithEndDate.Suite.CreateTest(testName, benchmarkStartDate);
                     testMethod.SetTestMethodInfo(descriptor.WorkloadMethod);
                     testMethod.SetBenchmarkMetadata(
@@ -125,7 +151,13 @@ internal class DatadogExporter : IExporter
                             ChronometerFrequencyHertz = hostEnvironmentInfo.ChronometerFrequency.Hertz,
                             ChronometerResolution = hostEnvironmentInfo.ChronometerResolution.Nanoseconds
                         },
-                        new BenchmarkJobInfo { Description = report.BenchmarkCase.Job?.DisplayInfo, Platform = report.BenchmarkCase.Job?.Environment?.Platform.ToString(), RuntimeName = report.BenchmarkCase.Job?.Environment?.Runtime?.Name, RuntimeMoniker = report.BenchmarkCase.Job?.Environment?.Runtime?.MsBuildMoniker });
+                        new BenchmarkJobInfo
+                        {
+                            Description = description,
+                            Platform = report.BenchmarkCase.Job?.Environment?.Platform.ToString(),
+                            RuntimeName = report.BenchmarkCase.Job?.Environment?.Runtime?.Name,
+                            RuntimeMoniker = report.BenchmarkCase.Job?.Environment?.Runtime?.MsBuildMoniker
+                        });
 
                     if (report.BenchmarkCase.HasParameters)
                     {

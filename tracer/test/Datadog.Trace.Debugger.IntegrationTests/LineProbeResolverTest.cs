@@ -16,7 +16,7 @@ namespace Datadog.Trace.Debugger.IntegrationTests;
 public class LineProbeResolverTest
 {
     private readonly LineProbeResolver _lineProbeResolver;
-    private readonly LogProbe _probeDefinition;
+    private readonly ProbeDefinition _probeDefinition;
 
     public LineProbeResolverTest()
     {

@@ -1,4 +1,4 @@
- // <copyright file="LiveDebugger.cs" company="Datadog">
+// <copyright file="LiveDebugger.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,8 +19,10 @@ using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Debugger
 {
@@ -37,6 +39,7 @@ namespace Datadog.Trace.Debugger
         private readonly List<ProbeDefinition> _unboundProbes;
         private readonly IProbeStatusPoller _probeStatusPoller;
         private readonly ConfigurationUpdater _configurationUpdater;
+        private readonly IDogStatsd _dogStats;
         private readonly object _instanceLock = new();
         private bool _isInitialized;
         private bool _isRcmAvailable;
@@ -49,7 +52,8 @@ namespace Datadog.Trace.Debugger
             ILineProbeResolver lineProbeResolver,
             IDebuggerSink debuggerSink,
             IProbeStatusPoller probeStatusPoller,
-            ConfigurationUpdater configurationUpdater)
+            ConfigurationUpdater configurationUpdater,
+            IDogStatsd dogStats)
         {
             _settings = settings;
             _discoveryService = discoveryService;
@@ -58,6 +62,7 @@ namespace Datadog.Trace.Debugger
             _probeStatusPoller = probeStatusPoller;
             _remoteConfigurationManager = remoteConfigurationManager;
             _configurationUpdater = configurationUpdater;
+            _dogStats = dogStats;
             _unboundProbes = new List<ProbeDefinition>();
             Product = new LiveDebuggerProduct();
             ServiceName = serviceName;
@@ -78,11 +83,12 @@ namespace Datadog.Trace.Debugger
             ILineProbeResolver lineProbeResolver,
             IDebuggerSink debuggerSink,
             IProbeStatusPoller probeStatusPoller,
-            ConfigurationUpdater configurationUpdater)
+            ConfigurationUpdater configurationUpdater,
+            IDogStatsd dogStats)
         {
             lock (GlobalLock)
             {
-                return Instance ??= new LiveDebugger(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, probeStatusPoller, configurationUpdater);
+                return Instance ??= new LiveDebugger(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, probeStatusPoller, configurationUpdater, dogStats);
             }
         }
 
@@ -151,6 +157,7 @@ namespace Datadog.Trace.Debugger
                 LifetimeManager.Instance.AddShutdownTask(() => _discoveryService.RemoveSubscription(DiscoveryCallback));
                 LifetimeManager.Instance.AddShutdownTask(_debuggerSink.Dispose);
                 LifetimeManager.Instance.AddShutdownTask(_probeStatusPoller.Dispose);
+                LifetimeManager.Instance.AddShutdownTask(_dogStats.Dispose);
             }
         }
 
@@ -389,9 +396,29 @@ namespace Datadog.Trace.Debugger
             _debuggerSink.AddErrorProbeStatus(probeId, exception, errorMessage);
         }
 
-        internal void SendMetrics()
+        internal void SendMetrics(MetricKind metricKind, string metricName, double value)
         {
-            // IDogStatsd _statsd...
+            if (_dogStats is NoOpStatsd)
+            {
+                Log.Warning($"{nameof(SendMetrics)}: Metrics are not enabled");
+            }
+
+            switch (metricKind)
+            {
+                case MetricKind.COUNT:
+                    _dogStats.Counter(statName: metricName, value: value);
+                    break;
+                case MetricKind.GAUGE:
+                    _dogStats.Gauge(statName: metricName, value: value);
+                    break;
+                case MetricKind.HISTOGRAM:
+                    _dogStats.Histogram(statName: metricName, value: value);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(
+                        nameof(metricKind),
+                        $"{metricKind} is not a valid value");
+            }
         }
 
         private void DiscoveryCallback(AgentConfiguration x)

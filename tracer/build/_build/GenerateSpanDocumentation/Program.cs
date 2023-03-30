@@ -327,14 +327,14 @@ The Integration Name (used for configuring individual integrations) of each span
                                 OperationName = null,
                                 RequiredValue = string.Join("; ", parts.Skip(2).Select(s => $"`{s}`")),
                             },
-                        (ModelState.ParsingTags, "IsOptional") => new Requirement
+                        (ModelState.ParsingTags, "IsOptional") or (ModelState.ParsingMetrics, "IsOptional")  => new Requirement
                             {
                                 Property = $"{parts[1]}",
                                 PropertyType = propertyType,
                                 OperationName = null,
                                 RequiredValue = "No",
                             },
-                        (ModelState.ParsingTags, "IsPresent") => new Requirement
+                        (ModelState.ParsingTags, "IsPresent") or (ModelState.ParsingMetrics, "IsPresent") => new Requirement
                             {
                                 Property = $"{parts[1]}",
                                 PropertyType = propertyType,

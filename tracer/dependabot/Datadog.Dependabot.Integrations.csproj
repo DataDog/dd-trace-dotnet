@@ -28,13 +28,13 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.106.1 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.106.1" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.106.6 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.106.6" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.100.94 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.100.94" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.100.99 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.100.99" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
@@ -163,8 +163,8 @@
 
     <!-- Integration: RabbitMQ.Client -->
     <!-- Assembly: RabbitMQ.Client -->
-    <!-- Latest package https://www.nuget.org/packages/RabbitMQ.Client/6.4.0 -->
-    <PackageReference Include="RabbitMQ.Client" Version="6.4.0" />
+    <!-- Latest package https://www.nuget.org/packages/RabbitMQ.Client/6.5.0 -->
+    <PackageReference Include="RabbitMQ.Client" Version="6.5.0" />
 
     <!-- Integration: Serilog -->
     <!-- Assembly: Serilog -->
@@ -208,8 +208,8 @@
 
     <!-- Integration: System.ServiceModel -->
     <!-- Assembly: System.ServiceModel -->
-    <!-- Latest package https://www.nuget.org/packages/System.ServiceModel.Http/4.10.0 -->
-    <PackageReference Include="System.ServiceModel.Http" Version="4.10.0" />
+    <!-- Latest package https://www.nuget.org/packages/System.ServiceModel.Http/4.10.2 -->
+    <PackageReference Include="System.ServiceModel.Http" Version="4.10.2" />
 
     <!-- Integration: System.Net.Requests -->
     <!-- Assembly: System.Net.Requests -->

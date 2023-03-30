@@ -22,6 +22,138 @@ public partial class StringAspects
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StringAspects));
 
     /// <summary>
+    /// String.Trim aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <returns> String.Trim() </returns>
+    [AspectMethodReplace("System.String::Trim()", AspectFilter.StringLiteral_0)]
+    public static string Trim(string target)
+    {
+        return StringModuleImpl.OnStringTrim(target, target.Trim(), null, true, true);
+    }
+
+    /// <summary>
+    /// String.Trim aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="trimChars"> chars to trim </param>
+    /// <returns> String.Trim() </returns>
+    [AspectMethodReplace("System.String::Trim(System.Char[])", AspectFilter.StringLiteral_0)]
+    public static string Trim(string target, char[] trimChars)
+    {
+        if (trimChars != null && trimChars.Length > 0)
+        {
+            return StringModuleImpl.OnStringTrimArray(target, target.Trim(trimChars), trimChars, true, true);
+        }
+        else
+        {
+            return StringModuleImpl.OnStringTrim(target, target.Trim(trimChars), null, true, true);
+        }
+    }
+
+#if !NETFRAMEWORK
+    /// <summary>
+    /// String.Trim aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="trimChar"> char to trim </param>
+    /// <returns> String.Trim() </returns>
+    [AspectMethodReplace("System.String::Trim(System.Char)", AspectFilter.StringLiteral_0)]
+    public static string Trim(string target, char trimChar)
+    {
+        return StringModuleImpl.OnStringTrim(target, target.Trim(trimChar), trimChar, true, true);
+    }
+#endif
+
+    /// <summary>
+    /// String.TrimStart aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="trimChars"> chars to trim </param>
+    /// <returns> String.TrimStart() </returns>
+    [AspectMethodReplace("System.String::TrimStart(System.Char[])", AspectFilter.StringLiteral_0)]
+    public static string TrimStart(string target, char[] trimChars)
+    {
+        if (trimChars != null && trimChars.Length > 0)
+        {
+            return StringModuleImpl.OnStringTrimArray(target, target.TrimStart(trimChars), trimChars, true, false);
+        }
+        else
+        {
+            return StringModuleImpl.OnStringTrim(target, target.TrimStart(trimChars), null, true, false);
+        }
+    }
+
+#if !NETFRAMEWORK
+    /// <summary>
+    /// String.TrimStart aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="trimChar"> char to trim </param>
+    /// <returns> String.TrimStart() </returns>
+    [AspectMethodReplace("System.String::TrimStart(System.Char)", AspectFilter.StringLiteral_0)]
+    public static string TrimStart(string target, char trimChar)
+    {
+        return StringModuleImpl.OnStringTrim(target, target.TrimStart(trimChar), trimChar, true, false);
+    }
+
+    /// <summary>
+    /// String.TrimStart aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <returns> String.TrimStart() </returns>
+    [AspectMethodReplace("System.String::TrimStart()", AspectFilter.StringLiteral_0)]
+    public static string TrimStart(string target)
+    {
+        return StringModuleImpl.OnStringTrim(target, target.TrimStart(), null, true, false);
+    }
+#endif
+
+    /// <summary>
+    /// String.TrimEnd aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="trimChars"> chars to trim </param>
+    /// <returns> String.TrimEnd() </returns>
+    [AspectMethodReplace("System.String::TrimEnd(System.Char[])", AspectFilter.StringLiteral_0)]
+    public static string TrimEnd(string target, char[] trimChars)
+    {
+        if (trimChars != null && trimChars.Length > 0)
+        {
+            return StringModuleImpl.OnStringTrimArray(target, target.TrimEnd(trimChars), trimChars, false, true);
+        }
+        else
+        {
+            return StringModuleImpl.OnStringTrim(target, target.TrimEnd(trimChars), null, false, true);
+        }
+    }
+
+#if !NETFRAMEWORK
+    /// <summary>
+    /// String.TrimEnd aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <param name="trimChar"> char to trim </param>
+    /// <returns> String.TrimEnd() </returns>
+    [AspectMethodReplace("System.String::TrimEnd(System.Char)", AspectFilter.StringLiteral_0)]
+    public static string TrimEnd(string target, char trimChar)
+    {
+        return StringModuleImpl.OnStringTrim(target, target.TrimEnd(trimChar), trimChar, false, true);
+    }
+
+    /// <summary>
+    /// String.TrimEnd aspect
+    /// </summary>
+    /// <param name="target"> string base instance </param>
+    /// <returns> String.TrimEnd() </returns>
+    [AspectMethodReplace("System.String::TrimEnd()", AspectFilter.StringLiteral_0)]
+    public static string TrimEnd(string target)
+    {
+        return StringModuleImpl.OnStringTrim(target, target.TrimEnd(), null, false, true);
+    }
+#endif
+
+    /// <summary>
     /// String.Concat aspect
     /// </summary>
     /// <param name="param1"> First param </param>
@@ -256,7 +388,7 @@ public partial class StringAspects
     public static char[] ToCharArray(string target)
     {
         var result = target.ToCharArray();
-        StringModuleImpl.PropagateTaint(target, result);
+        PropagationModuleImpl.PropagateTaint(target, result);
         return result;
     }
 
@@ -435,7 +567,7 @@ public partial class StringAspects
     public static string ToUpper(string target)
     {
         var result = target.ToUpper();
-        StringModuleImpl.PropagateTaint(target, result);
+        PropagationModuleImpl.PropagateTaint(target, result);
         return result;
     }
 
@@ -449,7 +581,7 @@ public partial class StringAspects
     public static string ToUpper(string target, global::System.Globalization.CultureInfo culture)
     {
         var result = target.ToUpper(culture);
-        StringModuleImpl.PropagateTaint(target, result);
+        PropagationModuleImpl.PropagateTaint(target, result);
         return result;
     }
 
@@ -462,7 +594,7 @@ public partial class StringAspects
     public static string ToUpperInvariant(string target)
     {
         var result = target.ToUpperInvariant();
-        StringModuleImpl.PropagateTaint(target, result);
+        PropagationModuleImpl.PropagateTaint(target, result);
         return result;
     }
 
@@ -475,7 +607,7 @@ public partial class StringAspects
     public static string ToLower(string target)
     {
         var result = target.ToLower();
-        StringModuleImpl.PropagateTaint(target, result);
+        PropagationModuleImpl.PropagateTaint(target, result);
         return result;
     }
 
@@ -489,7 +621,7 @@ public partial class StringAspects
     public static string ToLower(string target, global::System.Globalization.CultureInfo culture)
     {
         var result = target.ToLower(culture);
-        StringModuleImpl.PropagateTaint(target, result);
+        PropagationModuleImpl.PropagateTaint(target, result);
         return result;
     }
 
@@ -502,7 +634,7 @@ public partial class StringAspects
     public static string ToLowerInvariant(string target)
     {
         var result = target.ToLowerInvariant();
-        StringModuleImpl.PropagateTaint(target, result);
+        PropagationModuleImpl.PropagateTaint(target, result);
         return result;
     }
 
@@ -560,7 +692,7 @@ public partial class StringAspects
     public static string PadLeft(string target, int totalWidth)
     {
         var result = target.PadLeft(totalWidth);
-        PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
+        PropagationModuleImpl.PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
         return result;
     }
 
@@ -575,7 +707,7 @@ public partial class StringAspects
     public static string PadLeft(string target, int totalWidth, char paddingChar)
     {
         var result = target.PadLeft(totalWidth, paddingChar);
-        PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
+        PropagationModuleImpl.PropagateTaint(target, result, (result?.Length - target?.Length) ?? 0);
         return result;
     }
 
@@ -589,7 +721,7 @@ public partial class StringAspects
     public static string PadRight(string target, int totalWidth)
     {
         var result = target.PadRight(totalWidth);
-        PropagateTaint(target, result);
+        PropagationModuleImpl.PropagateTaint(target, result);
         return result;
     }
 
@@ -604,7 +736,7 @@ public partial class StringAspects
     public static string PadRight(string target, int totalWidth, char paddingChar)
     {
         var result = target.PadRight(totalWidth, paddingChar);
-        PropagateTaint(target, result);
+        PropagationModuleImpl.PropagateTaint(target, result);
         return result;
     }
 }

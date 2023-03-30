@@ -19,53 +19,6 @@ internal static class StringModuleImpl
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StringModuleImpl));
 
-    internal static TaintedObject? GetTainted(TaintedObjects taintedObjects, object? value)
-    {
-        return value == null ? null : taintedObjects.Get(value);
-    }
-
-    public static object? PropagateTaint(object input, object result, int offset = 0)
-    {
-        try
-        {
-            if (result is null)
-            {
-                return result;
-            }
-
-            var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
-            {
-                return result;
-            }
-
-            var taintedObjects = iastContext.GetTaintedObjects();
-            var taintedSelf = taintedObjects.Get(input);
-
-            if (taintedSelf == null)
-            {
-                return result;
-            }
-
-            if (offset != 0)
-            {
-                var newRanges = new Range[taintedSelf.Ranges.Length];
-                Ranges.CopyShift(taintedSelf.Ranges, newRanges, 0, offset);
-                taintedObjects.Taint(result, newRanges);
-            }
-            else
-            {
-                taintedObjects.Taint(result, taintedSelf.Ranges);
-            }
-        }
-        catch (Exception err)
-        {
-            Log.Error(err, "StringModuleImpl.PropagateTaint exception");
-        }
-
-        return result;
-    }
-
     /// <summary> Taints a string.Insert operation </summary>
     /// <param name="target"> original string </param>
     /// <param name="index"> start index </param>
@@ -86,7 +39,7 @@ internal static class StringModuleImpl
             {
 #if NETFRAMEWORK
                 // In .net462 (not in netcore or netstandard), the method creates in this case a new string with the same value but a different reference, so we need to taint it
-                PropagateTaint(target, result);
+                PropagationModuleImpl.PropagateTaint(target, result);
 #endif
                 return result;
             }
@@ -98,8 +51,8 @@ internal static class StringModuleImpl
             }
 
             var taintedObjects = iastContext.GetTaintedObjects();
-            var taintedTarget = GetTainted(taintedObjects, target);
-            var taintedValue = GetTainted(taintedObjects, value);
+            var taintedTarget = PropagationModuleImpl.GetTainted(taintedObjects, target);
+            var taintedValue = PropagationModuleImpl.GetTainted(taintedObjects, value);
             if (taintedValue == null && taintedTarget == null)
             {
                 return result;
@@ -159,7 +112,7 @@ internal static class StringModuleImpl
             }
 
             var taintedObjects = iastContext.GetTaintedObjects();
-            var taintedSelf = GetTainted(taintedObjects, self);
+            var taintedSelf = PropagationModuleImpl.GetTainted(taintedObjects, self);
             if (taintedSelf == null)
             {
                 return result;
@@ -193,7 +146,7 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            OnStringSubSequence(self, beginIndex, result, result.Length);
+            PropagationModuleImpl.OnStringSubSequence(self, beginIndex, result, result.Length);
         }
         catch (Exception err)
         {
@@ -217,7 +170,7 @@ internal static class StringModuleImpl
                 return result;
             }
 
-            OnStringSubSequence(self, beginIndex, result, result.Length);
+            PropagationModuleImpl.OnStringSubSequence(self, beginIndex, result, result.Length);
         }
         catch (Exception err)
         {
@@ -225,39 +178,6 @@ internal static class StringModuleImpl
         }
 
         return result;
-    }
-
-    /// <summary> Taints a string.substring operation </summary>
-    /// <param name="self"> original string </param>
-    /// <param name="beginIndex"> start index </param>
-    /// <param name="result"> the substring result </param>
-    /// <param name="resultLength"> Result's length </param>
-    private static void OnStringSubSequence(string self, int beginIndex, object result, int resultLength)
-    {
-        var iastContext = IastModule.GetIastContext();
-        if (iastContext == null)
-        {
-            return;
-        }
-
-        var taintedObjects = iastContext.GetTaintedObjects();
-        var selfTainted = taintedObjects.Get(self);
-        if (selfTainted == null)
-        {
-            return;
-        }
-
-        var rangesSelf = selfTainted.Ranges;
-        if (rangesSelf.Length == 0)
-        {
-            return;
-        }
-
-        var newRanges = Ranges.ForSubstring(beginIndex, resultLength, rangesSelf);
-        if (newRanges != null && newRanges.Length > 0)
-        {
-            taintedObjects.Taint(result, newRanges);
-        }
     }
 
     public static string OnStringJoin(string result, IEnumerable<object> values, int startIndex = 0, int count = -1)
@@ -324,7 +244,7 @@ internal static class StringModuleImpl
             int pos = 0;
 
             // Delimiter info
-            var delimiterRanges = GetTainted(taintedObjects, delimiter)?.Ranges;
+            var delimiterRanges = PropagationModuleImpl.GetTainted(taintedObjects, delimiter)?.Ranges;
             var delimiterHasRanges = delimiterRanges?.Length > 0;
             var delimiterLength = delimiter?.Length ?? 0;
             var valuesCount = values.Count();
@@ -359,7 +279,7 @@ internal static class StringModuleImpl
     {
         if (!string.IsNullOrEmpty(element))
         {
-            var elementTainted = GetTainted(taintedObjects, element);
+            var elementTainted = PropagationModuleImpl.GetTainted(taintedObjects, element);
             if (elementTainted != null)
             {
                 var elementRanges = elementTainted.Ranges;
@@ -386,6 +306,103 @@ internal static class StringModuleImpl
         return pos;
     }
 
+    /// <summary> OnStringTrim with single trimchar </summary>
+    /// <param name="self"> Param 1 </param>
+    /// <param name="result"> Result </param>
+    /// <param name="trimChar"> the trim char, null for char.IsWhiteSpace(self[indexLeft]) </param>
+    /// <param name="left"> Apply left trim </param>
+    /// <param name="right"> Apply right trim </param>
+    public static string? OnStringTrim(string self, string result, char? trimChar, bool left, bool right)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(result) || ReferenceEquals(self, result))
+            {
+                return result;
+            }
+
+            if (left && !right)
+            {
+                return OnStringSubSequence(self, self.Length - result.Length, result);
+            }
+            else if (!left && right)
+            {
+                return OnStringSubSequence(self, 0, result);
+            }
+            else
+            {
+                int indexLeft = 0;
+
+                while (indexLeft < self.Length && trimChar is null ? char.IsWhiteSpace(self[indexLeft]) : self[indexLeft] == trimChar)
+                {
+                    indexLeft++;
+                }
+
+                return OnStringSubSequence(self, indexLeft, result);
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringTrim(string,string,char,bool,bool) exception");
+        }
+
+        return result;
+    }
+
+    /// <summary> OnStringTrim with a char array </summary>
+    /// <param name="self"> Param 1 </param>
+    /// <param name="result"> Result </param>
+    /// <param name="trimChars"> the trim chars </param>
+    /// <param name="left"> Apply left trim </param>
+    /// <param name="right"> Apply right trim </param>
+    public static string OnStringTrimArray(string self, string result, char[] trimChars, bool left, bool right)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(result))
+            {
+                return result;
+            }
+
+            if (left && !right)
+            {
+                return OnStringSubSequence(self, self.Length - result.Length, result);
+            }
+            else if (!left && right)
+            {
+                return OnStringSubSequence(self, 0, result);
+            }
+            else
+            {
+                int indexLeft = 0;
+                bool found;
+                do
+                {
+                    found = false;
+
+                    for (int i = 0; i < trimChars.Length; i++)
+                    {
+                        if (self[indexLeft] == trimChars[i])
+                        {
+                            found = true;
+                            indexLeft++;
+                            break;
+                        }
+                    }
+                }
+                while (found && indexLeft < self.Length);
+
+                return OnStringSubSequence(self, indexLeft, result);
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl. OnStringTrimArray(string,string,char[],bool,bool) exception");
+        }
+
+        return result;
+    }
+
     /// <summary> Mostly used overload </summary>
     /// <param name="left"> Param 1 </param>
     /// <param name="right"> Param 2</param>
@@ -408,8 +425,8 @@ internal static class StringModuleImpl
             }
 
             TaintedObjects taintedObjects = iastContext.GetTaintedObjects();
-            TaintedObject? taintedLeft = filter != AspectFilter.StringLiteral_1 ? GetTainted(taintedObjects, left) : null;
-            TaintedObject? taintedRight = filter != AspectFilter.StringLiteral_0 ? GetTainted(taintedObjects, right) : null;
+            TaintedObject? taintedLeft = filter != AspectFilter.StringLiteral_1 ? PropagationModuleImpl.GetTainted(taintedObjects, left) : null;
+            TaintedObject? taintedRight = filter != AspectFilter.StringLiteral_0 ? PropagationModuleImpl.GetTainted(taintedObjects, right) : null;
             if (taintedLeft == null && taintedRight == null)
             {
                 return result;
@@ -471,7 +488,7 @@ internal static class StringModuleImpl
                     continue;
                 }
 
-                var parameterTainted = GetTainted(taintedObjects, currentParameter);
+                var parameterTainted = PropagationModuleImpl.GetTainted(taintedObjects, currentParameter);
                 if (parameterTainted != null)
                 {
                     if (ranges == null)
@@ -540,7 +557,7 @@ internal static class StringModuleImpl
                     continue;
                 }
 
-                var taintedParameter = GetTainted(taintedObjects, currentParameter);
+                var taintedParameter = PropagationModuleImpl.GetTainted(taintedObjects, currentParameter);
                 if (taintedParameter != null)
                 {
                     if (ranges == null)

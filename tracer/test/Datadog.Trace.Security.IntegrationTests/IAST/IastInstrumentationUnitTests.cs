@@ -17,9 +17,45 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast;
 
 public class IastInstrumentationUnitTests : TestHelper
 {
+    private List<Type> _notInstrumentedTypes = new List<Type>() { typeof(ReadOnlyMemory<char>), typeof(ReadOnlySpan<char>), typeof(char*), typeof(bool), typeof(char), typeof(ushort), typeof(ulong), typeof(uint), typeof(int), typeof(byte), typeof(sbyte), typeof(short), typeof(long), typeof(double), typeof(decimal), typeof(float) };
+
     public IastInstrumentationUnitTests(ITestOutputHelper output)
         : base("InstrumentedTests", output)
     {
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestStringBuilderToStringMethodsAspectCover()
+    {
+        TestMethodOverloads("System.Text.StringBuilder", "ToString", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestStringBuilderAppendLineMethodsAspectCover()
+    {
+        var overloadsToExclude = new List<string>() { "System.Text.StringBuilder AppendLine()", "System.Text.StringBuilder AppendLine(AppendInterpolatedStringHandler ByRef)", "System.Text.StringBuilder AppendLine(System.IFormatProvider, AppendInterpolatedStringHandler ByRef)" };
+        TestMethodOverloads("System.Text.StringBuilder", "AppendLine", overloadsToExclude, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestStringBuilderAppendMethodsAspectCover()
+    {
+        var overloadsToExclude = new List<string>() { "System.Text.StringBuilder Append(AppendInterpolatedStringHandler ByRef)", "System.Text.StringBuilder Append(System.IFormatProvider, AppendInterpolatedStringHandler ByRef)" };
+        TestMethodOverloads("System.Text.StringBuilder", "Append", overloadsToExclude, _notInstrumentedTypes);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestStringBuilderConstructorMethodsAspectCover()
+    {
+        TestMethodOverloads("System.Text.StringBuilder", ".ctor", null, null);
     }
 
     [SkippableFact]
@@ -89,6 +125,30 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    public void TestTrimStartMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "TrimStart", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestTrimEndMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "TrimEnd", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestTrimMethodsAspectCover()
+    {
+        TestMethodOverloads("System.String", "Trim", null, null);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     public void TestSubstringMethodsAspectCover()
     {
         TestMethodOverloads("System.String", "Substring", null, null);
@@ -100,9 +160,7 @@ public class IastInstrumentationUnitTests : TestHelper
     public void TestConcatMethodsAspectCover()
     {
         var overloadsToExclude = new List<string>() { "System.String Concat(System.Object)" };
-        var typesToExclude = new List<Type>() { typeof(ReadOnlySpan<char>) };
-
-        TestMethodOverloads("System.String", "Concat", overloadsToExclude, typesToExclude);
+        TestMethodOverloads("System.String", "Concat", overloadsToExclude, _notInstrumentedTypes);
     }
 
     [SkippableFact]

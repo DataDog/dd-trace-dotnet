@@ -26,7 +26,7 @@ internal class TaintedObject : ITaintedObject
 
     public int PositiveHashCode { get; }
 
-    public Range[] Ranges { get; }
+    public Range[] Ranges { get; set; }
 
     public ITaintedObject? Next { get; set; }
 }

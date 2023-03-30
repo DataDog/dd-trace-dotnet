@@ -658,7 +658,54 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = "000000003ade68b1",
                            SamplingPriority = 1,
                            Origin = null,
-                           PropagatedTags = EmptyPropagatedTags,
+                           PropagatedTags = new(
+                               TagPropagation.OutgoingTagPropagationHeaderMaxLength,
+                               new List<KeyValuePair<string, string>>
+                               {
+                                   new("_dd.p.dm", "-0"),
+                               },
+                               cachedPropagationHeader: null),
+                           Parent = null,
+                           ParentId = null,
+                       });
+        }
+
+        [Fact]
+        public void Extract_MismatchingSampled1_Resets_DecisionMaker()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-01" });
+
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { "dd=s:-1;t.dm:-4" });
+
+            var result = W3CPropagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues("traceparent"), Times.Once());
+            headers.Verify(h => h.GetValues("tracestate"), Times.Once());
+            headers.VerifyNoOtherCalls();
+
+            result.Should()
+                  .NotBeNull()
+                  .And
+                  .BeEquivalentTo(
+                       new SpanContextMock
+                       {
+                           TraceId = 123456789,
+                           SpanId = 987654321,
+                           RawTraceId = "000000000000000000000000075bcd15",
+                           RawSpanId = "000000003ade68b1",
+                           SamplingPriority = 1,
+                           Origin = null,
+                           PropagatedTags = new(
+                               TagPropagation.OutgoingTagPropagationHeaderMaxLength,
+                               new List<KeyValuePair<string, string>>
+                               {
+                                   new("_dd.p.dm", "-0"),
+                               },
+                               cachedPropagationHeader: null),
                            Parent = null,
                            ParentId = null,
                        });
@@ -674,6 +721,41 @@ namespace Datadog.Trace.Tests.Propagators
 
             headers.Setup(h => h.GetValues("tracestate"))
                    .Returns(new[] { "dd=s:1" });
+
+            var result = W3CPropagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues("traceparent"), Times.Once());
+            headers.Verify(h => h.GetValues("tracestate"), Times.Once());
+            headers.VerifyNoOtherCalls();
+
+            result.Should()
+                  .NotBeNull()
+                  .And
+                  .BeEquivalentTo(
+                       new SpanContextMock
+                       {
+                           TraceId = 123456789,
+                           SpanId = 987654321,
+                           RawTraceId = "000000000000000000000000075bcd15",
+                           RawSpanId = "000000003ade68b1",
+                           SamplingPriority = 0,
+                           Origin = null,
+                           PropagatedTags = EmptyPropagatedTags,
+                           Parent = null,
+                           ParentId = null,
+                       });
+        }
+
+        [Fact]
+        public void Extract_MismatchingSampled0_Resets_DecisionMaker()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-00" });
+
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { "dd=s:2;t.dm:-4" });
 
             var result = W3CPropagator.Extract(headers.Object);
 

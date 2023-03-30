@@ -3,13 +3,9 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
-    [LineProbeTestData(27, templateDsl: Dsl, templateJson: Json, templateStr: "Result is: ", captureSnapshot: false)]
+    [LineProbeTestData(23, templateJson: Json, templateStr: "Result is: ", captureSnapshot: false)]
     internal class LineTemplatePartialSnapshot : IRun
     {
-        private const string Dsl = @"{
-  ""dsl"": ""Result is: {ref arg}""
-}";
-
         private const string Json = @"{
         ""ref"": ""arg""
 }";

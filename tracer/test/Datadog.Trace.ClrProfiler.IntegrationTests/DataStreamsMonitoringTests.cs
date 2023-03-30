@@ -79,7 +79,6 @@ public class DataStreamsMonitoringTests : TestHelper
         using var processResult = RunSampleAndWaitForExit(agent);
 
         using var assertionScope = new AssertionScope();
-
         var payload = NormalizeDataStreams(agent.DataStreams);
 
         agent.AssertConfiguration(ConfigTelemetryData.DataStreamsMonitoringEnabled, true);

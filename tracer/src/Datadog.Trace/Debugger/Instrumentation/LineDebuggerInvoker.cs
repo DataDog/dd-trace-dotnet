@@ -46,6 +46,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
+                state.SnapshotCreator.StopSampling();
                 var paramName = state.MethodMetadataInfo.ParameterNames[index];
                 var captureInfo = new CaptureInfo<TArg>(value: arg, methodState: MethodState.LogArg, name: paramName, memberKind: ScopeMemberKind.Argument);
 
@@ -55,6 +56,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 }
 
                 state.HasLocalsOrReturnValue = false;
+                state.SnapshotCreator.StartSampling();
             }
             catch (Exception e)
             {
@@ -79,9 +81,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
+                state.SnapshotCreator.StopSampling();
                 var localVariableNames = state.MethodMetadataInfo.LocalVariableNames;
                 if (!MethodDebuggerInvoker.TryGetLocalName(index, localVariableNames, out var localName))
                 {
+                    state.SnapshotCreator.StartSampling();
                     return;
                 }
 
@@ -93,6 +97,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 }
 
                 state.HasLocalsOrReturnValue = true;
+                state.SnapshotCreator.StartSampling();
             }
             catch (Exception e)
             {
@@ -164,7 +169,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return CreateInvalidatedLineDebuggerState();
                 }
 
-                var state = new LineDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, ref probeData, lineNumber, probeFilePath, instance);
+                var state = new LineDebuggerState(probeId, scope: default, methodMetadataIndex, ref probeData, lineNumber, probeFilePath, instance);
 
                 if (!state.SnapshotCreator.ProbeHasCondition &&
                     !state.ProbeData.Sampler.Sample())
@@ -179,6 +184,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     state.IsActive = false;
                 }
 
+                state.SnapshotCreator.StartSampling();
                 return state;
             }
             catch (Exception e)
@@ -203,6 +209,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
+                state.SnapshotCreator.StopSampling();
                 var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
                                            state.MethodMetadataInfo.ParameterNames.Length > 0 ||
                                            !state.MethodMetadataInfo.Method.IsStatic;

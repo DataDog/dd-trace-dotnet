@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.ServiceProcess;
 using System.Threading.Tasks;
 
@@ -38,6 +39,7 @@ namespace Samples.Computer01
         private LinuxMallocDeadLock _linuxMallockDeadlock;
         private MeasureAllocations _measureAllocations;
         private InnerMethods _innerMethods;
+        private LineNumber _lineNumber;
 
         public void StartService(Scenario scenario, int nbThreads, int parameter)
         {
@@ -58,6 +60,7 @@ namespace Samples.Computer01
                     StartIteratorComputation(nbThreads);
                     StartGenericsAllocation(nbThreads);
                     StartContentionGenerator(nbThreads, parameter);
+                    StartLineNumber();
                     break;
 
                 case Scenario.Computer:
@@ -129,6 +132,10 @@ namespace Samples.Computer01
                     StartInnerMethods();
                     break;
 
+                case Scenario.LineNumber:
+                    StartLineNumber();
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
             }
@@ -149,6 +156,7 @@ namespace Samples.Computer01
                     StopIteratorComputation();
                     StopGenericsAllocation();
                     StopContentionGenerator();
+                    StopLineNumber();
                     break;
 
                 case Scenario.Computer:
@@ -220,6 +228,10 @@ namespace Samples.Computer01
                 case Scenario.InnerMethods:
                     StopInnerMethods();
                     break;
+
+                case Scenario.LineNumber:
+                    StopLineNumber();
+                    break;
             }
         }
 
@@ -246,6 +258,7 @@ namespace Samples.Computer01
                         RunIteratorComputation(nbThreads);
                         RunGenericsAllocation(nbThreads);
                         RunContentionGenerator(nbThreads, parameter);
+                        RunLineNumber();
                         break;
 
                     case Scenario.Computer:
@@ -315,6 +328,10 @@ namespace Samples.Computer01
 
                     case Scenario.InnerMethods:
                         RunInnerMethods();
+                        break;
+
+                    case Scenario.LineNumber:
+                        RunLineNumber();
                         break;
 
                     default:
@@ -458,6 +475,12 @@ namespace Samples.Computer01
             _innerMethods.Start();
         }
 
+        private void StartLineNumber()
+        {
+            _lineNumber = new LineNumber();
+            _lineNumber.Start();
+        }
+
         private void StopComputer()
         {
             using (_computer)
@@ -557,6 +580,11 @@ namespace Samples.Computer01
         private void StopInnerMethods()
         {
             _innerMethods.Stop();
+        }
+
+        private void StopLineNumber()
+        {
+            _lineNumber.Stop();
         }
 
         private void RunComputer()
@@ -681,6 +709,12 @@ namespace Samples.Computer01
         {
             var innerMethods = new InnerMethods();
             innerMethods.Run();
+        }
+
+        private void RunLineNumber()
+        {
+            var lineNumber = new LineNumber();
+            lineNumber.Run();
         }
 
         public class MySpecialClassA
