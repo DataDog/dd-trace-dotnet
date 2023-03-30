@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util.Http.QueryStringObfuscation;
 
@@ -12,15 +13,30 @@ namespace Datadog.Trace.Util.Http
     internal class QueryStringManager
     {
         private readonly bool _reportQueryString;
+        private readonly int _maxSizeBeforeObfuscation;
         private readonly Lazy<ObfuscatorBase> _obfuscatorLazy;
 
-        internal QueryStringManager(bool reportQueryString, double timeout, string pattern = null, IDatadogLogger logger = null)
+        internal QueryStringManager(bool? reportQueryString, double? timeout, int? maxSizeBeforeObfuscation, string pattern = null, IDatadogLogger logger = null)
         {
-            _reportQueryString = reportQueryString;
-            pattern ??= Tracer.Instance.Settings.ObfuscationQueryStringRegex;
-            _obfuscatorLazy = new(() => ObfuscatorFactory.GetObfuscator(timeout, pattern, logger, reportQueryString));
+            _reportQueryString = reportQueryString ?? true;
+            _maxSizeBeforeObfuscation = maxSizeBeforeObfuscation ?? 200;
+            pattern ??= TracerSettings.DefaultObfuscationQueryStringRegex;
+            _obfuscatorLazy = new(() => ObfuscatorFactory.GetObfuscator(timeout ?? 100, pattern, logger, _reportQueryString));
         }
 
-        internal string Obfuscate(string queryString) => !_reportQueryString ? string.Empty : _obfuscatorLazy.Value.Obfuscate(queryString);
+        internal string TruncateAndObfuscate(string queryString)
+        {
+            if (!_reportQueryString)
+            {
+                return string.Empty;
+            }
+
+            if (_maxSizeBeforeObfuscation > 0)
+            {
+                queryString = queryString.Substring(0, Math.Min(queryString.Length, _maxSizeBeforeObfuscation));
+            }
+
+            return _obfuscatorLazy.Value.Obfuscate(queryString);
+        }
     }
 }

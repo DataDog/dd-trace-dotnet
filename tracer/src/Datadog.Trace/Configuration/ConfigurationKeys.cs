@@ -384,6 +384,13 @@ namespace Datadog.Trace.Configuration
         public const string ObfuscationQueryStringRegexTimeout = "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP_TIMEOUT";
 
         /// <summary>
+        /// Configuration key for setting the max size of the querystring to report, before obfuscation
+        /// Default value is 200, 0 means that we don't limit the size.
+        /// </summary>
+        /// <seealso cref="TracerSettings.QueryStringReportingSize"/>
+        public const string QueryStringReportingSize = "DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE";
+
+        /// <summary>
         /// Configuration key for enabling/disabling reporting query string
         /// Default value is true
         /// </summary>

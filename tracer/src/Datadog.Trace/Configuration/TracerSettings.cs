@@ -179,6 +179,8 @@ namespace Datadog.Trace.Configuration
 
             QueryStringReportingEnabled = source?.GetBool(ConfigurationKeys.QueryStringReportingEnabled) ?? true;
 
+            QueryStringReportingSize = source?.GetInt32(ConfigurationKeys.QueryStringReportingSize) ?? 200;
+
             ObfuscationQueryStringRegexTimeout = source?.GetDouble(ConfigurationKeys.ObfuscationQueryStringRegexTimeout) is { } x and > 0 ? x : 200;
 
             IsActivityListenerEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled) ??
@@ -472,6 +474,12 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating whether or not http.url should contain the query string, enabled by default
         /// </summary>
         internal bool QueryStringReportingEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value limiting the size of the querystring to report and obfuscate
+        /// Default value is 200, 0 means that we don't limit the size.
+        /// </summary>
+        internal int QueryStringReportingSize { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating a timeout in milliseconds to the execution of the query string obfuscation regex

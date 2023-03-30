@@ -114,6 +114,7 @@ namespace Datadog.Trace.Configuration
             ObfuscationQueryStringRegex = settings.ObfuscationQueryStringRegex;
             QueryStringReportingEnabled = settings.QueryStringReportingEnabled;
             ObfuscationQueryStringRegexTimeout = settings.ObfuscationQueryStringRegexTimeout;
+            QueryStringReportingSize = settings.QueryStringReportingSize;
 
             IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
             AzureAppServiceMetadata = settings.AzureAppServiceMetadata;
@@ -355,6 +356,12 @@ namespace Datadog.Trace.Configuration
         /// Default value is 200ms
         /// </summary>
         internal double ObfuscationQueryStringRegexTimeout { get; }
+
+        /// <summary>
+        /// Gets a value limiting the size of the querystring to report and obfuscate
+        /// Default value is 200, 0 means that we don't limit the size.
+        /// </summary>
+        internal int QueryStringReportingSize { get; }
 
         internal ImmutableDirectLogSubmissionSettings LogSubmissionSettings { get; }
 
