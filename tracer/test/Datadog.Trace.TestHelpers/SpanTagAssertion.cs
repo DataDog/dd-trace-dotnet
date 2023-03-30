@@ -3,24 +3,25 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Ci.Tags;
 
 namespace Datadog.Trace.TestHelpers
 {
-    public class SpanTagAssertion : SpanAssertion
+    public class SpanTagAssertion<T> : SpanAssertion
     {
         private readonly Result _result;
-        private readonly IDictionary<string, string> _tags;
+        private readonly IDictionary<string, T> _tags;
 
-        internal SpanTagAssertion(Result result, IDictionary<string, string> tags)
+        internal SpanTagAssertion(Result result, IDictionary<string, T> tags)
         {
             _result = result;
             _tags = tags;
         }
 
-        public static void DefaultTagAssertions(SpanTagAssertion s) => s
+        public static void DefaultTagAssertions(SpanTagAssertion<T> s) => s
             .IsPresent("env")
             .IsOptional("runtime-id") // TODO: Make runtime-id required on all spans, per our span attributes push
             .IsOptional("language") // TODO: Make language required on all spans, per our span attributes push
@@ -29,10 +30,17 @@ namespace Datadog.Trace.TestHelpers
             .IsOptional("error.msg")
             .IsOptional("error.type")
             .IsOptional("error.stack")
-            .IsOptional(Tags.GitRepositoryUrl)
-            .IsOptional(Tags.GitCommitSha);
+            .IsOptional("_dd.git.repository_url")
+            .IsOptional("_dd.git.commit.sha");
 
-        public static void AssertNoRemainingTags(SpanTagAssertion s)
+        public static void DefaultMetricAssertions(SpanTagAssertion<T> s) => s
+            .IsOptional("_dd.tracer_kr")
+            .IsOptional("_dd.agent_psr")
+            .IsOptional("process_id")
+            .IsOptional("_sampling_priority_v1")
+            .IsOptional("_dd.top_level");
+
+        public static void AssertNoRemainingTags(SpanTagAssertion<T> s)
         {
             foreach (var tag in s._result.ExcludeTags)
             {
@@ -41,13 +49,13 @@ namespace Datadog.Trace.TestHelpers
 
             if (s._tags.Count > 0)
             {
-                s._result.WithFailure(GenerateNoRemainingTagsFailureString(s._tags));
+                s._result.WithFailure(GenerateNoRemainingTagsFailureString(s._tags.AsEnumerable().ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString())));
             }
         }
 
-        public SpanTagAssertion IsPresent(string tagName)
+        public SpanTagAssertion<T> IsPresent(string tagName)
         {
-            bool keyExists = _tags.TryGetValue(tagName, out string value);
+            bool keyExists = _tags.TryGetValue(tagName, out T value);
             if (keyExists)
             {
                 _tags.Remove(tagName);
@@ -61,9 +69,9 @@ namespace Datadog.Trace.TestHelpers
             return this;
         }
 
-        public SpanTagAssertion IsOptional(string tagName)
+        public SpanTagAssertion<T> IsOptional(string tagName)
         {
-            bool keyExists = _tags.TryGetValue(tagName, out string value);
+            bool keyExists = _tags.TryGetValue(tagName, out T value);
             if (keyExists)
             {
                 _tags.Remove(tagName);
@@ -72,37 +80,37 @@ namespace Datadog.Trace.TestHelpers
             return this;
         }
 
-        public SpanTagAssertion Matches(string tagName, string expectedValue)
+        public SpanTagAssertion<T> Matches(string tagName, T expectedValue)
         {
-            bool keyExists = _tags.TryGetValue(tagName, out string value);
+            bool keyExists = _tags.TryGetValue(tagName, out T value);
             if (keyExists)
             {
                 _tags.Remove(tagName);
             }
 
-            if (value != expectedValue)
+            if (!value.Equals(expectedValue))
             {
-                _result.WithFailure(GenerateMatchesFailureString("tag", tagName, expectedValue, value));
+                _result.WithFailure(GenerateMatchesFailureString("tag", tagName, expectedValue.ToString(), value.ToString()));
             }
 
             return this;
         }
 
-        public SpanTagAssertion MatchesOneOf(string tagName, params string[] expectedValues)
+        public SpanTagAssertion<T> MatchesOneOf(string tagName, params T[] expectedValues)
         {
-            bool keyExists = _tags.TryGetValue(tagName, out string value);
+            bool keyExists = _tags.TryGetValue(tagName, out T value);
             if (keyExists)
             {
                 _tags.Remove(tagName);
             }
 
-            if (expectedValues.Where(s => s == value).SingleOrDefault() is null)
+            if (expectedValues.Where(s => s.Equals(value)).SingleOrDefault() is null)
             {
                 string expectedValueString = "["
                              + string.Join(",", expectedValues.Select(s => $"\"{s}\"").ToArray())
                              + "]";
 
-                _result.WithFailure(GenerateMatchesOneOfFailureString("tag", tagName, expectedValueString, value));
+                _result.WithFailure(GenerateMatchesOneOfFailureString("tag", tagName, expectedValueString, value.ToString()));
             }
 
             return this;
