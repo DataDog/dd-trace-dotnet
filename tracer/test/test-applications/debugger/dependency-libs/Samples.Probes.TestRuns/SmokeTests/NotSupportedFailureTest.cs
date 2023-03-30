@@ -7,16 +7,16 @@ using System.Threading.Tasks;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LogLineProbeTestData(23)]
     [LogLineProbeTestData(24)]
     [LogLineProbeTestData(25)]
     [LogLineProbeTestData(26)]
     [LogLineProbeTestData(27)]
-    [LogLineProbeTestData(35, expectedNumberOfSnapshots: 0, expectProbeStatusFailure: true)]
-    [LogLineProbeTestData(44, expectedNumberOfSnapshots: 0, expectProbeStatusFailure: true)]
-    [LogLineProbeTestData(50)]
-    [LogLineProbeTestData(57, expectedNumberOfSnapshots: 0, expectProbeStatusFailure: true)]
-    [LogLineProbeTestData(63)]
+    [LogLineProbeTestData(28)]
+    [LogLineProbeTestData(36, expectedNumberOfSnapshots: 0, expectProbeStatusFailure: true)]
+    [LogLineProbeTestData(45, expectedNumberOfSnapshots: 0, expectProbeStatusFailure: true)]
+    [LogLineProbeTestData(51)]
+    [LogLineProbeTestData(58, expectedNumberOfSnapshots: 0, expectProbeStatusFailure: true)]
+    [LogLineProbeTestData(64)]
     public class NotSupportedFailureTest : IRun
     {
         public void Run()

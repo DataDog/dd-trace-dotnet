@@ -218,12 +218,13 @@ namespace Datadog.Trace.Debugger
                     }
                 }
 
-                using var disposable = new DisposableEnumerable<NativeMethodProbeDefinition>(methodProbes);
+                using var disposableMethodProbes = new DisposableEnumerable<NativeMethodProbeDefinition>(methodProbes);
+                using var disposableSpanProbes = new DisposableEnumerable<NativeSpanProbeDefinition>(spanProbes);
                 DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), Array.Empty<NativeRemoveProbeRequest>());
 
                 _probeStatusPoller.AddProbes(addedProbes.Select(probe => probe.Id).ToArray());
 
-                foreach (var probe in addedProbes)
+                foreach (var probe in addedProbes.Where(probe => probe is not SpanProbe))
                 {
                     ProbeExpressionsProcessor.Instance.AddProbeProcessor(probe);
                     if (probe is LogProbe logProbe)
