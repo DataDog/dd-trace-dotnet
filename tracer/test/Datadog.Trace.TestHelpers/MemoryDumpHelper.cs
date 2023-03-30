@@ -52,7 +52,7 @@ namespace Datadog.Trace.TestHelpers
                 return (exe, args);
             }
 
-            return (_path, $"-ma -accepteula -e 1 -x {Path.GetTempPath()} {exe} {args}");
+            return (_path, $"-ma -accepteula -e -x {Path.GetTempPath()} {exe} {args}");
         }
 
         public static bool CaptureMemoryDump(Process process, IProgress<string> output)
