@@ -2053,27 +2053,6 @@ bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_i
            managed_profiler_loaded_app_domains.find(app_domain_id) != managed_profiler_loaded_app_domains.end();
 }
 
-Version CorProfiler::GetProfilerAssemblyVersion(AppDomainID app_domain_id)
-{
-    if (managed_profiler_loaded_domain_neutral)
-    {
-        app_domain_id = corlib_app_domain_id;
-    }
-
-    const auto iter = managed_profiler_loaded_app_domains.find(app_domain_id);
-    if (iter != managed_profiler_loaded_app_domains.end())
-    {
-        return iter->second;
-    }
-
-    if (managed_profiler_assembly_reference != nullptr)
-    {
-        return managed_profiler_assembly_reference->version;
-    }
-
-    return Version();
-}
-
 HRESULT CorProfiler::EmitDistributedTracerTargetMethod(const ModuleMetadata& module_metadata, ModuleID module_id)
 {
     // Emit a public DistributedTracer.__GetInstanceForProfiler__() method, that will be used by RewriteForDistributedTracing
