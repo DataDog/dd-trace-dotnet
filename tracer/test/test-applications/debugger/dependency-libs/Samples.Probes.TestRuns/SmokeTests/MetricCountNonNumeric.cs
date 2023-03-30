@@ -14,7 +14,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData(
+        [MetricMethodProbeTestData(
             metricJson: Json,
             metricKind: Const.Count,
             metricName: nameof(MetricCountInt),

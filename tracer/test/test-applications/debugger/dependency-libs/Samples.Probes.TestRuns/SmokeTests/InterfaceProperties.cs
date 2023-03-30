@@ -4,7 +4,7 @@ using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LineProbeTestData(lineNumber: 36)]
+    [LogLineProbeTestData(lineNumber: 36)]
     internal class InterfaceProperties : IRun
     {
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -16,7 +16,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData]
+        [LogMethodProbeTestData]
         public T Method<T>(IGenericInterface<T> parameter1, IInterface parameter2) where T : class
         {
             Console.WriteLine($"{parameter1.Value}");
