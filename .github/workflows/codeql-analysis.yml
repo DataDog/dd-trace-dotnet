@@ -51,6 +51,8 @@ jobs:
 
     - name: Upload sarif file
       run: |
+        ls
+        ls ./results
         datadog-ci sarif upload ./results/cpp.sarif --service dd-trace-dotnet
         datadog-ci sarif upload ./results/csharp.sarif --service dd-trace-dotnet
       env:
@@ -97,6 +99,8 @@ jobs:
 
     - name: Upload sarif file
       run: |
+        ls
+        ls ./results
         datadog-ci sarif upload ./results/cpp.sarif --service dd-trace-dotnet
         datadog-ci sarif upload ./results/csharp.sarif --service dd-trace-dotnet
       env:
