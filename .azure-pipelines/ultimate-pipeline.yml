@@ -262,6 +262,35 @@ stages:
       displayName: Upload working directory after the managed build
       artifact: build-windows-working-directory
 
+- stage: build_windows_tracer_arm64x
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
+  - job: build
+    timeoutInMinutes: 60 #default value
+    pool:
+      name: azure-windows-scale-set # This VMSS has the Arm64 tools installed
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - script: tracer\build.cmd BuildTracerHome BuildNativeLoader -targetPlatform "arm64ec" -PlatformRequirement Single
+      displayName: Build arm64ec tracer home
+      retryCountOnTaskFailure: 1
+
+    - publish: $(monitoringHome)
+      displayName: Upload Windows tracer home directory
+      artifact: windows-tracer-home-arm64ec
+
 - stage: build_windows_profiler
   dependsOn: [merge_commit_id]
   variables:
@@ -4737,6 +4766,7 @@ stages:
     )
   dependsOn:
     - merge_commit_id
+    - build_windows_tracer_arm64x
     - unit_tests_linux
     - unit_tests_macos
     - unit_tests_windows
