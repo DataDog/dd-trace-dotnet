@@ -1,11 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
-
+namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 struct StructForStringTest
 {
     readonly string str;

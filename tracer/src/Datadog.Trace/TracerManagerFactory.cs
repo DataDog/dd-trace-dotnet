@@ -116,6 +116,7 @@ namespace Datadog.Trace
             logSubmissionManager = DirectLogSubmissionManager.Create(
                 logSubmissionManager,
                 settings.LogSubmissionSettings,
+                settings.AzureAppServiceMetadata,
                 defaultServiceName,
                 settings.Environment,
                 settings.ServiceVersion,

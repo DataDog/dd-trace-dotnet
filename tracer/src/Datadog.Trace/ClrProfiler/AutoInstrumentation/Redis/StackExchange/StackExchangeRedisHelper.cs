@@ -50,6 +50,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
             return new HostAndPort(host, port);
         }
 
+        public static long? GetDb(int db) => db < 0 ? null : db;
+
         internal readonly struct HostAndPort
         {
             public readonly string Host;
