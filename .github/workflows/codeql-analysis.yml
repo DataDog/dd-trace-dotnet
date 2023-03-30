@@ -49,12 +49,11 @@ jobs:
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
       with:
-        output: ${{ github.workspace }}
         cleanup-level: 'none'
 
     - name: Upload sarif file
       run: |
-        ls  ${{ github.workspace }}/
+        ls 
         datadog-ci sarif upload  ${{ github.workspace }}/cpp.sarif --service dd-trace-dotnet
         datadog-ci sarif upload  ${{ github.workspace }}/csharp.sarif --service dd-trace-dotnet
       env:
@@ -99,12 +98,11 @@ jobs:
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
       with:
-        output: ${{ github.workspace }}
         cleanup-level: 'none'
 
     - name: Upload sarif file
       run: |
-        ls  ${{ github.workspace }}/
+        ls 
         datadog-ci sarif upload  ${{ github.workspace }}/cpp.sarif --service dd-trace-dotnet
         datadog-ci sarif upload  ${{ github.workspace }}/csharp.sarif --service dd-trace-dotnet
       env:
