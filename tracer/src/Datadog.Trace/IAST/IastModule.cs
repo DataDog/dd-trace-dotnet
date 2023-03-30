@@ -9,9 +9,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Process;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Iast.Settings;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Iast;
 
@@ -21,17 +23,34 @@ internal static class IastModule
     private const string OperationNameWeakCipher = "weak_cipher";
     private const string OperationNameSqlInjection = "sql_injection";
     private const string OperationNameCommandInjection = "command_injection";
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static IastSettings iastSettings = Iast.Instance.Settings;
 
     public static Scope? OnSqlQuery(string query, IntegrationId integrationId)
     {
-        return GetScope(query, integrationId, VulnerabilityTypeName.SqlInjection, OperationNameSqlInjection, true);
+        try
+        {
+            return GetScope(query, integrationId, VulnerabilityTypeName.SqlInjection, OperationNameSqlInjection, true);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for Sql injection.");
+            return null;
+        }
     }
 
     public static Scope? OnCommandInjection(string file, string argumentLine, Collection<string> argumentList, IntegrationId integrationId)
     {
-        var evidence = BuildCommandInjectionEvidence(file, argumentLine, argumentList);
-        return string.IsNullOrEmpty(evidence) ? null : GetScope(evidence, integrationId, VulnerabilityTypeName.CommandInjection, OperationNameCommandInjection, true);
+        try
+        {
+            var evidence = BuildCommandInjectionEvidence(file, argumentLine, argumentList);
+            return string.IsNullOrEmpty(evidence) ? null : GetScope(evidence, integrationId, VulnerabilityTypeName.CommandInjection, OperationNameCommandInjection, true);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for command injection.");
+            return null;
+        }
     }
 
     private static string BuildCommandInjectionEvidence(string file, string argumentLine, Collection<string>? argumentList)
@@ -45,14 +64,14 @@ internal static class IastModule
         {
             var joinList = StringModuleImpl.OnStringJoin(string.Join(" ", argumentList), argumentList);
             var fileWithSpace = file + " ";
-            _ = PropagationModuleImpl.PropagateTaint(file, fileWithSpace) as string;
+            _ = PropagationModuleImpl.PropagateTaint(file, fileWithSpace);
             return StringModuleImpl.OnStringConcat(fileWithSpace, joinList, string.Concat(fileWithSpace, joinList));
         }
 
         if (!string.IsNullOrEmpty(argumentLine))
         {
             var fileWithSpace = file + " ";
-            _ = PropagationModuleImpl.PropagateTaint(file, fileWithSpace) as string;
+            _ = PropagationModuleImpl.PropagateTaint(file, fileWithSpace);
             return StringModuleImpl.OnStringConcat(fileWithSpace, argumentLine, string.Concat(fileWithSpace, argumentLine));
         }
         else

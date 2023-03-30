@@ -35,8 +35,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         {
             if (instance is System.Diagnostics.Process process && process.StartInfo is var startInfo)
             {
-                var scope = ProcessStartCommon.CreateScope(startInfo);
-
                 if (Iast.Iast.Instance.Settings.Enabled)
                 {
 #if NETCOREAPP3_1_OR_GREATER
@@ -46,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 #endif
                 }
 
-                return new CallTargetState(scope: scope);
+                return new CallTargetState(scope: ProcessStartCommon.CreateScope(startInfo));
             }
 
             return CallTargetState.GetDefault();
