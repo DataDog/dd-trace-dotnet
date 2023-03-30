@@ -88,17 +88,13 @@ namespace Datadog.Trace.TestHelpers
             string exec = testCli;
             string appPath = testCli.StartsWith("dotnet") || forceVsTestParam ? $"vstest {sampleAppPath}" : sampleAppPath;
 
-            arguments = $"{appPath} {arguments ?? string.Empty}";
-
-            (exec, arguments) = MemoryDumpHelper.MonitorCrashes(exec, arguments);
-
             Output.WriteLine("Executable: " + exec);
             Output.WriteLine("ApplicationPath: " + appPath);
             var process = ProfilerHelper.StartProcessWithProfiler(
                 exec,
                 EnvironmentHelper,
                 agent,
-                arguments,
+                $"{appPath} {arguments ?? string.Empty}",
                 aspNetCorePort: aspNetCorePort,
                 processToProfile: exec + ";testhost.exe;testhost.x86.exe");
 
