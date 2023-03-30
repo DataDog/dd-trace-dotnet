@@ -372,32 +372,6 @@ namespace Datadog.Trace
             }
         }
 
-        internal TraceTagCollection AddMissingPropagatedTags()
-        {
-            if (TraceId128.Upper == 0)
-            {
-                return TraceContext?.Tags ?? PropagatedTags;
-            }
-
-            TraceTagCollection propagatedTags;
-
-            if (TraceContext == null)
-            {
-                var maxHeaderLength = Tracer.Instance?.Settings?.OutgoingTagPropagationHeaderMaxLength ??
-                                      TagPropagation.OutgoingTagPropagationHeaderMaxLength;
-
-                PropagatedTags ??= new TraceTagCollection(maxHeaderLength);
-                propagatedTags = PropagatedTags;
-            }
-            else
-            {
-                propagatedTags = TraceContext.Tags;
-            }
-
-            propagatedTags.AddMissingPropagatedTags(TraceId128);
-            return propagatedTags;
-        }
-
         private static TraceId GetTraceId(ISpanContext context, TraceId fallback)
         {
             return context switch

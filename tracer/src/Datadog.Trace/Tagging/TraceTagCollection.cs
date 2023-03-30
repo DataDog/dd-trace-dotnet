@@ -20,12 +20,10 @@ namespace Datadog.Trace.Tagging
         private List<KeyValuePair<string, string>>? _tags;
         private string? _cachedPropagationHeader;
 
-        public TraceTagCollection(int outgoingHeaderMaxLength)
-            : this(outgoingHeaderMaxLength, null, null)
-        {
-        }
-
-        public TraceTagCollection(int outgoingHeaderMaxLength, List<KeyValuePair<string, string>>? tags, string? cachedPropagationHeader)
+        public TraceTagCollection(
+            int outgoingHeaderMaxLength,
+            List<KeyValuePair<string, string>>? tags = null,
+            string? cachedPropagationHeader = null)
         {
             _outgoingHeaderMaxLength = outgoingHeaderMaxLength;
             _tags = tags;
@@ -212,16 +210,25 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public void AddMissingPropagatedTags(TraceId traceId)
+        public void FixTraceIdTag(TraceId traceId)
         {
-            if (traceId.Upper == 0)
-            {
-                return;
-            }
+            var tagValue = GetTag(Trace.Tags.Propagated.TraceIdUpper);
 
-            if (GetTag(Trace.Tags.Propagated.TraceIdUpper) == null)
+            if (traceId.Upper > 0)
             {
-                SetTag(Trace.Tags.Propagated.TraceIdUpper, HexString.ToHexString(traceId.Upper));
+                // add missing "_dd.p.tid" tag with the upper 64 bits of the trace id
+                // if tag is already present, make sure it's correct
+                // (parse the hex string and compare ulongs to avoid allocating another string)
+                if (tagValue == null || !HexString.TryParseUInt64(tagValue, out var currentValue) || currentValue != traceId.Upper)
+                {
+                    // wrong tag value, replace it
+                    SetTag(Trace.Tags.Propagated.TraceIdUpper, HexString.ToHexString(traceId.Upper));
+                }
+            }
+            else if (traceId.Upper == 0 && tagValue != null)
+            {
+                // remove tag "_dd.p.tid" if trace id is only 64 bits
+                RemoveTag(Trace.Tags.Propagated.TraceIdUpper);
             }
         }
 

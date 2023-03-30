@@ -18,34 +18,6 @@ namespace Datadog.Trace.Tests.Tagging;
 
 public class TraceId128BitTests
 {
-    [Fact]
-    public void StandaloneSpanContext_128Bit_TraceId()
-    {
-        var context = new SpanContext(
-            traceId: new TraceId(0x1234567890abcdef, 0x1122334455667788),
-            spanId: 1UL,
-            samplingPriority: SamplingPriorityValues.UserKeep,
-            serviceName: null,
-            origin: "rum");
-
-        context.AddMissingPropagatedTags();
-        context.PropagatedTags.GetTag(Tags.Propagated.TraceIdUpper).Should().Be("1234567890abcdef");
-    }
-
-    [Fact]
-    public void StandaloneSpanContext_64Bit_TraceId()
-    {
-        var context = new SpanContext(
-            traceId: new TraceId(0, 0x1122334455667788),
-            spanId: 1UL,
-            samplingPriority: SamplingPriorityValues.UserKeep,
-            serviceName: null,
-            origin: "rum");
-
-        context.AddMissingPropagatedTags();
-        context.PropagatedTags.Should().BeNull();
-    }
-
     [Theory]
     [InlineData(0x1234567890abcdef, 0x1122334455667788, "1234567890abcdef1122334455667788")]
     [InlineData(0, 0x1122334455667788, "00000000000000001122334455667788")]

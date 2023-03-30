@@ -196,4 +196,59 @@ public class TraceTagCollectionTests
         tags.Count.Should().Be(0);
         tags.ToPropagationHeader().Should().Be(string.Empty);
     }
+
+    [Theory]
+    [InlineData(null)]               // no tag (SetTag() handles null values)
+    [InlineData("")]                 // empty tag
+    [InlineData(" ")]                // whitespace
+    [InlineData("aabbccddeeff0011")] // value doesn't match trace id
+    public void FixTraceIdTag_128_Add_Or_Replace(string tagValue)
+    {
+        var traceId = new TraceId(0x1234567890abcdef, 0x1122334455667788);
+
+        var context = new SpanContext(
+            traceId: traceId,
+            spanId: 1UL,
+            samplingPriority: SamplingPriorityValues.UserKeep,
+            serviceName: null,
+            origin: "rum");
+
+        // create empty collection and add the tag (if value is not null)
+        context.PropagatedTags = new TraceTagCollection(TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+        context.PropagatedTags.SetTag(Tags.Propagated.TraceIdUpper, tagValue);
+
+        // call FixTraceIdTag()
+        context.PropagatedTags.FixTraceIdTag(traceId);
+
+        // if upper 64 bits are not zero, the tag should be present and have the correct value
+        context.PropagatedTags.GetTag(Tags.Propagated.TraceIdUpper).Should().Be("1234567890abcdef");
+    }
+
+    [Theory]
+    [InlineData(null)]               // no tag (SetTag() handles null values)
+    [InlineData("")]                 // empty tag
+    [InlineData(" ")]                // whitespace
+    [InlineData("aabbccddeeff0011")] // value doesn't match trace id
+    [InlineData("0000000000000000")] // never add all zeros (even thought they technically match the trace id)
+    public void FixTraceIdTag_64_Remove_Tag(string tagValue)
+    {
+        var traceId = new TraceId(0, 0x1122334455667788);
+
+        var context = new SpanContext(
+            traceId: traceId,
+            spanId: 1UL,
+            samplingPriority: SamplingPriorityValues.UserKeep,
+            serviceName: null,
+            origin: "rum");
+
+        // create empty collection and add the tag (if value is not null)
+        context.PropagatedTags = new TraceTagCollection(TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+        context.PropagatedTags.SetTag(Tags.Propagated.TraceIdUpper, tagValue);
+
+        // call FixTraceIdTag()
+        context.PropagatedTags.FixTraceIdTag(traceId);
+
+        // if upper 64 bits are zero, the tag should not be present in the collection
+        context.PropagatedTags.GetTag(Tags.Propagated.TraceIdUpper).Should().BeNull();
+    }
 }

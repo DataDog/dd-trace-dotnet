@@ -91,7 +91,7 @@ namespace Datadog.Trace.Agent.MessagePack
             if (traceChunk.SpanCount > 0)
             {
                 var spanModel = traceChunk.GetSpanModel(0);
-                traceChunk.Tags?.AddMissingPropagatedTags(spanModel.Span.TraceId128);
+                traceChunk.Tags?.FixTraceIdTag(spanModel.Span.TraceId128);
             }
 
             int originalOffset = offset;
