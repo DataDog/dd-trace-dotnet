@@ -51,7 +51,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             : base(fixture, outputHelper, enableSecurity: enableSecurity, testName: testName)
         {
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
-            SetEnvironmentVariable(ConfigurationKeys.AppSec.Enabled, null);
         }
 
         [SkippableFact]
@@ -65,31 +64,31 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var agent = Fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
-            var spans1 = await SendRequestsAsync(agent, url);
+            var span0nominalState = await SendRequestsAsync(agent, url);
             var acknowledgedId = nameof(TestSecurityToggling) + Guid.NewGuid();
 
-            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, acknowledgedId) }, "ASM_FEATURES", "first", new[] { acknowledgedId });
+            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, acknowledgedId) }, "ASM_FEATURES");
+            request1.CachedTargetFiles.Should().HaveCount(1);
 
-            RcmBase.CheckAckState(request1, "ASM_FEATURES", 1, expectedState, null, "First RCM call");
-            request1.Client.State.BackendClientState.Should().Be("first");
+            CheckAckState(request1, "ASM_FEATURES", 1, expectedState, null, "First RCM call");
 
-            RcmBase.CheckAckState(request1, "ASM_FEATURES", 1, expectedState, null, "First RCM call");
+            var span1ShouldStillBeDisabled = await SendRequestsAsync(agent, url);
 
-            var spans2 = await SendRequestsAsync(agent, url);
-            var acknowledgedId2 = nameof(TestSecurityToggling) + Guid.NewGuid();
+            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, acknowledgedId) }, "ASM_FEATURES");
+            request2.CachedTargetFiles.Should().HaveCount(1);
 
-            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, acknowledgedId2) }, "ASM_FEATURES", "second", new[] { acknowledgedId2 });
+            CheckAckState(request2, "ASM_FEATURES", 1, expectedState, null, "First RCM call");
+            var spans2ShouldBeEnabled = await SendRequestsAsync(agent, url);
 
-            RcmBase.CheckAckState(request2, "ASM_FEATURES", 1, expectedState, null, "Second RCM call");
-
-            var request3 = await agent.WaitRcmRequestAndReturnLast(appliedServiceNames: new[] { acknowledgedId2 });
-            request3.Client.State.BackendClientState.Should().Be("second");
-            var spans3 = await SendRequestsAsync(agent, url);
+            var request3 = await agent.SetupRcmAndWait(Output, new List<(string Config, string Id)>(), "ASM_FEATURES");
+            request3.CachedTargetFiles.Should().BeEmpty();
+            var span3ConfigurationRemovedShouldBeDisabled = await SendRequestsAsync(agent, url);
 
             var spans = new List<MockSpan>();
-            spans.AddRange(spans1);
-            spans.AddRange(spans2);
-            spans.AddRange(spans3);
+            spans.AddRange(span0nominalState);
+            spans.AddRange(span1ShouldStillBeDisabled);
+            spans.AddRange(spans2ShouldBeEnabled);
+            spans.AddRange(span3ConfigurationRemovedShouldBeDisabled);
 
             await VerifySpans(spans.ToImmutableList(), settings);
         }

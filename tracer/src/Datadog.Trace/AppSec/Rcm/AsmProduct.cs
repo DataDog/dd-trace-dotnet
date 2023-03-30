@@ -16,7 +16,7 @@ internal class AsmProduct : AsmRemoteConfigurationProduct
 {
     public override string Name => "ASM";
 
-    internal override void UpdateRemoteConfigurationStatus(List<RemoteConfiguration>? files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus)
+    internal override List<RemoteConfigurationPath> UpdateRemoteConfigurationStatus(List<RemoteConfiguration>? files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus)
     {
         if (removedConfigsForThisProduct != null)
         {
@@ -39,11 +39,13 @@ internal class AsmProduct : AsmRemoteConfigurationProduct
             }
         }
 
+        var paths = new List<RemoteConfigurationPath>();
         if (files != null)
         {
-            var asmConfigs = files.Select(configContent => new NamedRawFile(configContent.Path, configContent.Contents).Deserialize<Payload>());
-            foreach (var asmConfig in asmConfigs)
+            foreach (var file in files)
             {
+                paths.Add(file.Path);
+                var asmConfig = new NamedRawFile(file.Path, file.Contents).Deserialize<Payload>();
                 if (asmConfig.TypedFile == null)
                 {
                     continue;
@@ -78,5 +80,7 @@ internal class AsmProduct : AsmRemoteConfigurationProduct
                 }
             }
         }
+
+        return paths;
     }
 }
