@@ -14,11 +14,11 @@ namespace Datadog.Trace.Tests.Util.Http
     public class QueryStringManagerTests
     {
         [Theory]
-        [InlineData(false, null, null, "")]
+        [InlineData(false, 5000, null, "")]
         [InlineData(true, 2, null, "ab")]
         [InlineData(true, 0, null, "abcde")]
         [InlineData(true, 0, ".*", "<redacted><redacted>")]
-        public void Test(bool? reportQueryString, int? maxSizeBeforeObfuscation, string pattern, string expectedResult)
+        public void Test(bool reportQueryString, int maxSizeBeforeObfuscation, string pattern, string expectedResult)
         {
             const int timeout = 1000;
             const string inputString = "abcde";

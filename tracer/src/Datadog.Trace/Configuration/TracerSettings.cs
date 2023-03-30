@@ -179,7 +179,7 @@ namespace Datadog.Trace.Configuration
 
             QueryStringReportingEnabled = source?.GetBool(ConfigurationKeys.QueryStringReportingEnabled) ?? true;
 
-            QueryStringReportingSize = source?.GetInt32(ConfigurationKeys.QueryStringReportingSize) ?? 200;
+            QueryStringReportingSize = source?.GetInt32(ConfigurationKeys.QueryStringReportingSize) ?? 5000; // 5000 being the tag value length limit
 
             ObfuscationQueryStringRegexTimeout = source?.GetDouble(ConfigurationKeys.ObfuscationQueryStringRegexTimeout) is { } x and > 0 ? x : 200;
 
