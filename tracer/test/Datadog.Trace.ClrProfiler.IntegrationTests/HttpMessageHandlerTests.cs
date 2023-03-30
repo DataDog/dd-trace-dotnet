@@ -41,7 +41,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             from instrumentationOptions in InstrumentationOptionsValues
             from socketHandlerEnabled in new[] { true, false }
             from queryStringEnabled in new[] { true, false }
-            select new object[] { instrumentationOptions, socketHandlerEnabled, queryStringEnabled };
+            from queryStringSize in new[] { 200, 2 }
+            select new object[] { instrumentationOptions, socketHandlerEnabled, queryStringEnabled, queryStringSize };
 
         public override Result ValidateIntegrationSpan(MockSpan span) => span.IsHttpMessageHandler();
 
@@ -50,11 +51,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
         [MemberData(nameof(IntegrationConfig))]
-        public void HttpClient_SubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler, bool queryStringCaptureEnabled)
+        public void HttpClient_SubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler, bool queryStringCaptureEnabled, int queryStringSize)
         {
             SetInstrumentationVerification();
             ConfigureInstrumentation(instrumentation, enableSocketsHandler);
             SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING", queryStringCaptureEnabled ? "true" : "false");
+            SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE", queryStringSize.ToString());
 
             var expectedAsyncCount = CalculateExpectedAsyncSpans(instrumentation);
             var expectedSyncCount = CalculateExpectedSyncSpans(instrumentation);
@@ -86,7 +88,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     {
                         if (queryStringCaptureEnabled)
                         {
-                            url.Should().EndWith("?key1=value1&<redacted>");
+                            if (queryStringSize == 2)
+                            {
+                                url.Should().EndWith("?k");
+                            }
+                            else
+                            {
+                                url.Should().EndWith("?key1=value1&<redacted>");
+                            }
                         }
                         else
                         {
