@@ -19,34 +19,25 @@ namespace Datadog.Trace.TestHelpers
     {
         public const int WaitForAcknowledgmentTimeout = 50000;
 
-        internal static GetRcmResponse SetupRcm(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string Id)> configurations, string productName, string opaqueBackEndSate = null)
+        internal static GetRcmResponse SetupRcm(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string Id)> configurations, string productName)
         {
-            var response = BuildRcmResponse(configurations.Select(c => (JsonConvert.SerializeObject(c.Config), c.Id)), productName, opaqueBackEndSate);
+            var response = BuildRcmResponse(configurations.Select(c => (JsonConvert.SerializeObject(c.Config), c.Id)), productName);
             agent.RcmResponse = JsonConvert.SerializeObject(response);
             output.WriteLine($"{DateTime.UtcNow}: Using RCM response: {response}");
             return response;
         }
 
-        internal static async Task<GetRcmRequest> SetupRcmAndWait(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string Id)> configurations, string productName, string opaqueBackEndSate = null, IEnumerable<string> appliedServiceNames = null)
+        internal static async Task<GetRcmRequest> SetupRcmAndWait(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string Id)> configurations, string productName, int timeoutInMilliseconds = WaitForAcknowledgmentTimeout)
         {
-            var response = BuildRcmResponse(configurations.Select(c => (JsonConvert.SerializeObject(c.Config), c.Id)), productName, opaqueBackEndSate);
+            var response = BuildRcmResponse(configurations.Select(c => (JsonConvert.SerializeObject(c.Config), c.Id)), productName);
             agent.RcmResponse = JsonConvert.SerializeObject(response);
             output.WriteLine($"{DateTime.UtcNow}: Using RCM response: {response}");
-            var res = await agent.WaitRcmRequestAndReturnMatchingRequest(response, appliedServiceNames: appliedServiceNames);
-            return res;
-        }
-
-        internal static async Task<GetRcmRequest> SetupRcmAndWait(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(string Config, string Id)> configurations, string productName, string opaqueBackEndSate = null, IEnumerable<string> appliedServiceNames = null)
-        {
-            var response = BuildRcmResponse(configurations, productName, opaqueBackEndSate);
-            agent.RcmResponse = JsonConvert.SerializeObject(response);
-            output.WriteLine($"{DateTime.UtcNow}: Using RCM response: {response}");
-            var res = await agent.WaitRcmRequestAndReturnMatchingRequest(response, appliedServiceNames: appliedServiceNames);
+            var res = await agent.WaitRcmRequestAndReturnMatchingRequest(response, timeoutInMilliseconds: timeoutInMilliseconds);
             return res;
         }
 
         // doing multiple things here, waiting for the request and return the latest one
-        internal static async Task<GetRcmRequest> WaitRcmRequestAndReturnMatchingRequest(this MockTracerAgent agent, GetRcmResponse response, int timeoutInMilliseconds = WaitForAcknowledgmentTimeout, IEnumerable<string> appliedServiceNames = null)
+        internal static async Task<GetRcmRequest> WaitRcmRequestAndReturnMatchingRequest(this MockTracerAgent agent, GetRcmResponse response, int timeoutInMilliseconds = WaitForAcknowledgmentTimeout)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
 
@@ -79,7 +70,7 @@ namespace Datadog.Trace.TestHelpers
             return request;
         }
 
-        private static GetRcmResponse BuildRcmResponse(IEnumerable<(string Config, string Id)> configurations, string productName, string toremove = null)
+        private static GetRcmResponse BuildRcmResponse(IEnumerable<(string Config, string Id)> configurations, string productName)
         {
             var targetFiles = new List<RcmFile>();
             var targets = new Dictionary<string, Target>();

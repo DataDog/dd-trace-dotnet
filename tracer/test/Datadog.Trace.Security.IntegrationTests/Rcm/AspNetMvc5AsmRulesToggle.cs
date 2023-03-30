@@ -91,12 +91,12 @@ public abstract class AspNetMvc5AsmRulesToggle : RcmBaseFramework, IClassFixture
         var acknowledgedId = nameof(TestGlobalRulesToggling) + Guid.NewGuid();
         var spans1 = await SendRequestsAsync(agent, url, null, 1, 1, null, userAgent: "acunetix-product");
 
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = null, OnMatch = new[] { "block" }, RulesTarget = JToken.Parse(@"[{'tags': {'confidence': '1'}}]") } } }, acknowledgedId) }, asmProduct, appliedServiceNames: new[] { acknowledgedId });
+        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = null, OnMatch = new[] { "block" }, RulesTarget = JToken.Parse(@"[{'tags': {'confidence': '1'}}]") } } }, acknowledgedId) }, asmProduct);
         var spans2 = await SendRequestsAsync(agent, url, null, 1, 1, null, userAgent: "acunetix-product");
 
         // reset
         acknowledgedId = nameof(TestGlobalRulesToggling) + Guid.NewGuid();
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = Array.Empty<RuleOverride>() }, acknowledgedId) }, asmProduct, appliedServiceNames: new[] { acknowledgedId });
+        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = Array.Empty<RuleOverride>() }, acknowledgedId) }, asmProduct);
         var spans3 = await SendRequestsAsync(agent, url, null, 1, 1, null, userAgent: "acunetix-product");
 
         var spans = new List<MockSpan>();
@@ -104,7 +104,7 @@ public abstract class AspNetMvc5AsmRulesToggle : RcmBaseFramework, IClassFixture
         spans.AddRange(spans2);
         spans.AddRange(spans3);
         await VerifySpans(spans.ToImmutableList(), settings);
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Action>() }, acknowledgedId) }, asmProduct, appliedServiceNames: new[] { acknowledgedId });
+        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Action>() }, acknowledgedId) }, asmProduct);
     }
 
     protected override string GetTestName() => _testName;
