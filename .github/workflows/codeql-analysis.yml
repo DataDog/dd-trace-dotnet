@@ -53,10 +53,10 @@ jobs:
 
     - name: Upload sarif file
       run: |
-        ls 
+        pwd
         ls /home/runner/work/dd-trace-dotnet/results/
-        datadog-ci sarif upload  ${{ github.workspace }}/cpp.sarif --service dd-trace-dotnet
-        datadog-ci sarif upload  ${{ github.workspace }}/csharp.sarif --service dd-trace-dotnet
+        datadog-ci sarif upload /home/runner/work/dd-trace-dotnet/results/cpp.sarif --service dd-trace-dotnet
+        datadog-ci sarif upload /home/runner/work/dd-trace-dotnet/results/csharp.sarif --service dd-trace-dotnet
       env:
         DD_API_KEY: '${{ secrets.DD_API_KEY }}'
 
@@ -103,9 +103,9 @@ jobs:
 
     - name: Upload sarif file
       run: |
-        ls 
+        pwd
         ls /home/runner/work/dd-trace-dotnet/results/
-        datadog-ci sarif upload  ${{ github.workspace }}/cpp.sarif --service dd-trace-dotnet
-        datadog-ci sarif upload  ${{ github.workspace }}/csharp.sarif --service dd-trace-dotnet
+        datadog-ci sarif upload /home/runner/work/dd-trace-dotnet/results/cpp.sarif --service dd-trace-dotnet
+        datadog-ci sarif upload /home/runner/work/dd-trace-dotnet/results/csharp.sarif --service dd-trace-dotnet
       env:
         DD_API_KEY: '${{ secrets.DD_API_KEY }}'
