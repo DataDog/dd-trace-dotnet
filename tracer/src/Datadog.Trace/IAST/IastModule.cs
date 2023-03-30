@@ -45,14 +45,14 @@ internal static class IastModule
         {
             var joinList = StringModuleImpl.OnStringJoin(string.Join(" ", argumentList), argumentList);
             var fileWithSpace = file + " ";
-            _ = StringModuleImpl.PropagateTaint(file, fileWithSpace) as string;
+            _ = PropagationModuleImpl.PropagateTaint(file, fileWithSpace) as string;
             return StringModuleImpl.OnStringConcat(fileWithSpace, joinList, string.Concat(fileWithSpace, joinList));
         }
 
         if (!string.IsNullOrEmpty(argumentLine))
         {
             var fileWithSpace = file + " ";
-            _ = StringModuleImpl.PropagateTaint(file, fileWithSpace) as string;
+            _ = PropagationModuleImpl.PropagateTaint(file, fileWithSpace) as string;
             return StringModuleImpl.OnStringConcat(fileWithSpace, argumentLine, string.Concat(fileWithSpace, argumentLine));
         }
         else
