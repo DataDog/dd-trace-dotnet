@@ -12,7 +12,7 @@
               "arguments": {
                 "input": {
                   "type": "String",
-                  "value": "SpanProbeTest.Run"
+                  "value": "SpanOnMethodWithArgsTest.Run"
                 },
                 "person": {
                   "fields": {
@@ -240,7 +240,7 @@
               "staticFields": {
                 "ClassName": {
                   "type": "String",
-                  "value": "SpanProbeTest"
+                  "value": "SpanOnMethodWithArgsTest"
                 }
               }
             }

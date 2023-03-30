@@ -42,6 +42,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             var tags = new CommonTags();
             tags.SetTag("debugger.probeid", probeId);
+            tags.SetTag("component", "trace");
             var scope = Tracer.Instance.StartActiveInternal(operationName, tags: tags);
             scope.Span.ResourceName = resourceName;
             return new SpanDebuggerState(scope);
