@@ -48,13 +48,14 @@ jobs:
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
+      with:
+        output: $(System.DefaultWorkingDirectory)
 
     - name: Upload sarif file
       run: |
-        ls
-        ls ./results
-        datadog-ci sarif upload ./results/cpp.sarif --service dd-trace-dotnet
-        datadog-ci sarif upload ./results/csharp.sarif --service dd-trace-dotnet
+        ls  $(System.DefaultWorkingDirectory)/
+        datadog-ci sarif upload  $(System.DefaultWorkingDirectory)/cpp.sarif --service dd-trace-dotnet
+        datadog-ci sarif upload  $(System.DefaultWorkingDirectory)/csharp.sarif --service dd-trace-dotnet
       env:
         DD_API_KEY: '${{ secrets.DD_API_KEY }}'
 
@@ -96,12 +97,13 @@ jobs:
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
+      with:
+        output: $(System.DefaultWorkingDirectory)
 
     - name: Upload sarif file
       run: |
-        ls
-        ls ./results
-        datadog-ci sarif upload ./results/cpp.sarif --service dd-trace-dotnet
-        datadog-ci sarif upload ./results/csharp.sarif --service dd-trace-dotnet
+        ls  $(System.DefaultWorkingDirectory)/
+        datadog-ci sarif upload  $(System.DefaultWorkingDirectory)/cpp.sarif --service dd-trace-dotnet
+        datadog-ci sarif upload  $(System.DefaultWorkingDirectory)/csharp.sarif --service dd-trace-dotnet
       env:
         DD_API_KEY: '${{ secrets.DD_API_KEY }}'
