@@ -216,41 +216,42 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void ExtractAndInject_PreserveOriginalTraceId()
         {
-            var traceId = "0af7651916cd43dd8448eb211c80319c";
-            var spanId = "00f067aa0ba902b7";
-
+            const string traceId = "0af7651916cd43dd8448eb211c80319c";
+            const string spanId = "00f067aa0ba902b7";
+            const string sampled = "1";
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+
             headers.Setup(h => h.GetValues("x-b3-traceid"))
                    .Returns(new[] { traceId });
             headers.Setup(h => h.GetValues("x-b3-spanid"))
                    .Returns(new[] { spanId });
             headers.Setup(h => h.GetValues("x-b3-sampled"))
-                   .Returns(new[] { "1" });
-            var result = B3Propagator.Extract(headers.Object);
+                   .Returns(new[] { sampled });
 
-            // TODO: 128-bit
-            // 64 bits verify
             var expectedTraceId = new TraceId(0x0af7651916cd43dd, 0x8448eb211c80319c);
-            var expectedSpanId = 0x00f067aa0ba902b7UL;
-            result.TraceId128.Should().Be(expectedTraceId);
+            const ulong expectedSpanId = 0x00f067aa0ba902b7UL;
+
+            var result = B3Propagator.Extract(headers.Object);
+            result.Should().NotBeNull();
+            result!.TraceId128.Should().Be(expectedTraceId);
             result.TraceId.Should().Be(expectedTraceId.Lower);
-            Assert.Equal(expectedSpanId, result.SpanId);
+            result.SpanId.Should().Be(expectedSpanId);
 
             // Check truncation
             var truncatedTraceId64 = expectedTraceId.Lower.ToString("x16");
-            Assert.Equal(truncatedTraceId64, traceId.Substring(16));
+            traceId.Substring(16).Should().Be(truncatedTraceId64);
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>(MockBehavior.Strict);
             headersForInjection.Setup(h => h.Set("x-b3-traceid", traceId));
             headersForInjection.Setup(h => h.Set("x-b3-spanid", spanId));
-            headersForInjection.Setup(h => h.Set("x-b3-sampled", "1"));
+            headersForInjection.Setup(h => h.Set("x-b3-sampled", sampled));
 
             B3Propagator.Inject(result, headersForInjection.Object);
 
             headersForInjection.Verify(h => h.Set("x-b3-traceid", traceId), Times.Once());
             headersForInjection.Verify(h => h.Set("x-b3-spanid", spanId), Times.Once());
-            headersForInjection.Verify(h => h.Set("x-b3-sampled", "1"), Times.Once());
+            headersForInjection.Verify(h => h.Set("x-b3-sampled", sampled), Times.Once());
         }
 
         [Fact]
