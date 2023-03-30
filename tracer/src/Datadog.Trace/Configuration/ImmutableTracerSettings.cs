@@ -359,7 +359,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value limiting the size of the querystring to report and obfuscate
-        /// Default value is 200, 0 means that we don't limit the size.
+        /// Default value is 5000, 0 means that we don't limit the size.
         /// </summary>
         internal int QueryStringReportingSize { get; }
 

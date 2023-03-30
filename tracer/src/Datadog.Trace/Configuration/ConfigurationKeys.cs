@@ -385,7 +385,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Configuration key for setting the max size of the querystring to report, before obfuscation
-        /// Default value is 200, 0 means that we don't limit the size.
+        /// Default value is 5000, 0 means that we don't limit the size.
         /// </summary>
         /// <seealso cref="TracerSettings.QueryStringReportingSize"/>
         public const string QueryStringReportingSize = "DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE";
