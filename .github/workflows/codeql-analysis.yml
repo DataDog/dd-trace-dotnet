@@ -48,17 +48,17 @@ jobs:
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
-      with:
-        cleanup-level: 'none'
+#      with:
+#        cleanup-level: 'none'
 
     - name: Upload sarif file
       run: |
         pwd
-        ls /home/runner/work/dd-trace-dotnet/results/
-        datadog-ci sarif upload /home/runner/work/dd-trace-dotnet/results/cpp.sarif --service dd-trace-dotnet
-        datadog-ci sarif upload /home/runner/work/dd-trace-dotnet/results/csharp.sarif --service dd-trace-dotnet
+        ls ../results/
+        datadog-ci sarif upload ../results/cpp.sarif --service dd-trace-dotnet
+        datadog-ci sarif upload ../results/csharp.sarif --service dd-trace-dotnet
       env:
-        DD_API_KEY: '${{ secrets.DD_API_KEY }}'
+        DD_API_KEY: '${{ secrets.DD_STAGING_API_KEY }}'
 
   tracer:
     name: Analyze Tracer
@@ -98,14 +98,13 @@ jobs:
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
-      with:
-        cleanup-level: 'none'
+#      with:
+#        cleanup-level: 'none'
 
     - name: Upload sarif file
       run: |
-        pwd
-        ls /home/runner/work/dd-trace-dotnet/results/
-        datadog-ci sarif upload /home/runner/work/dd-trace-dotnet/results/cpp.sarif --service dd-trace-dotnet
-        datadog-ci sarif upload /home/runner/work/dd-trace-dotnet/results/csharp.sarif --service dd-trace-dotnet
+        ls ../results/
+        datadog-ci sarif upload ../results/cpp.sarif --service dd-trace-dotnet
+        datadog-ci sarif upload ../results/csharp.sarif --service dd-trace-dotnet
       env:
-        DD_API_KEY: '${{ secrets.DD_API_KEY }}'
+        DD_API_KEY: '${{ secrets.DD_STAGING_API_KEY }}'
