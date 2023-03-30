@@ -66,11 +66,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     IastModule.OnSqlQuery(commandText, integrationId);
                 }
 
-                if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled && (integrationId == IntegrationId.MySql || integrationId == IntegrationId.Npgsql))
+                if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled && (integrationId == IntegrationId.MySql || integrationId == IntegrationId.Npgsql || integrationId == IntegrationId.SqlClient))
                 {
-                    command.CommandText = $"{DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, scope.Span.Context)} {commandText}";
+                    var propagationMode = integrationId != IntegrationId.SqlClient ? tracer.Settings.DbmPropagationMode : DbmPropagationLevel.Service;
+                    command.CommandText = $"{DatabaseMonitoringPropagator.PropagateSpanData(propagationMode, tracer.DefaultServiceName, scope.Span.Context)} {commandText}";
                     tags.DbmDataPropagated = "true";
                 }
+
+                var ok = command.CommandText;
+                Log.Information("COMMAND : {Ok}", ok);
             }
             catch (Exception ex)
             {
