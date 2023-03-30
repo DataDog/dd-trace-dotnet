@@ -18,6 +18,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 {
     internal class LogFormatter
     {
+        private const string KeyValueTagSeparator = ":";
+        private const string TagSeparator = ",";
         private const string SourcePropertyName = "ddsource";
         private const string ServicePropertyName = "service";
         private const string HostPropertyName = "host";
@@ -62,9 +64,9 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                 return string.IsNullOrEmpty(globalTags) ? null : globalTags;
             }
 
-            var aasTags = $"{Tags.AzureAppServicesResourceId}:{aasSettings.ResourceId}";
+            var aasTags = $"{Tags.AzureAppServicesResourceId}{KeyValueTagSeparator}{aasSettings.ResourceId}";
 
-            return string.IsNullOrEmpty(globalTags) ? aasTags : aasTags + "," + globalTags;
+            return string.IsNullOrEmpty(globalTags) ? aasTags : aasTags + TagSeparator + globalTags;
         }
 
         private void EnrichTagsStringWithGitMetadata()
@@ -82,8 +84,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 
             if (gitMetadata != GitMetadata.Empty)
             {
-                var gitMetadataTags = $"{CommonTags.GitCommit}:{gitMetadata.CommitSha},{CommonTags.GitRepository}:{RemoveScheme(gitMetadata.RepositoryUrl)}";
-                _tags = string.IsNullOrEmpty(_tags) ? gitMetadataTags : $"{_tags},{gitMetadataTags}";
+                var gitMetadataTags = $"{CommonTags.GitCommit}{KeyValueTagSeparator}{gitMetadata.CommitSha},{CommonTags.GitRepository}{KeyValueTagSeparator}{RemoveScheme(gitMetadata.RepositoryUrl)}";
+                _tags = string.IsNullOrEmpty(_tags) ? gitMetadataTags : $"{_tags}{TagSeparator}{gitMetadataTags}";
             }
 
             _gitMetadataAdded = true;
