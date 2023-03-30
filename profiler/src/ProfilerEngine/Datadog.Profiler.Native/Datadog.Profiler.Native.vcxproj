@@ -244,9 +244,7 @@
     <ClInclude Include="IBatchedSamplesProvider.h" />
     <ClInclude Include="IDebugInfoStore.h" />
     <ClInclude Include="IExceptionsRecorder.h" />
-    <ClInclude Include="IExceptionsUpscaleProvider.h" />
     <ClInclude Include="IGarbageCollectionsListener.h" />
-    <ClInclude Include="IContentionUpscaleProvider.h" />
     <ClInclude Include="ISampledAllocationsListener.h" />
     <ClInclude Include="IUpscaleProvider.h" />
     <ClInclude Include="LiveObjectInfo.h" />

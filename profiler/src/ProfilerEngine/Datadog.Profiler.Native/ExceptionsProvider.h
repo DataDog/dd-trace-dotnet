@@ -4,9 +4,9 @@
 #pragma once
 
 #include "CollectorBase.h"
-#include "IExceptionsUpscaleProvider.h"
 #include "IFrameStore.h"
 #include "IManagedThreadList.h"
+#include "IUpscaleProvider.h"
 #include "RawExceptionSample.h"
 #include "cor.h"
 #include "corprof.h"
@@ -21,7 +21,7 @@ class IConfiguration;
 
 class ExceptionsProvider :
     public CollectorBase<RawExceptionSample>,
-    public IExceptionsUpscaleProvider
+    public IUpscaleProvider
 {
 public:
     static std::vector<SampleValueType> SampleTypeDefinitions;
@@ -41,7 +41,6 @@ public:
     bool OnModuleLoaded(ModuleID moduleId);
     bool OnExceptionThrown(ObjectID thrownObjectId);
 
-    // Inherited via IExceptionsUpscaleProvider
     UpscalingInfo GetInfo() override;
 
 private:

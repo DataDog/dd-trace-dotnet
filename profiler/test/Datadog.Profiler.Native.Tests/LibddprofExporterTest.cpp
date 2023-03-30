@@ -294,7 +294,7 @@ TEST(LibddprofExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplication
     std::vector<SampleValueType> sampleTypeDefinitions({{"exception", "count"}});
 
     MetricsRegistry metricsRegistry;
-    IAllocationsRecorder* allocRecorder = nullptr;;
+    IAllocationsRecorder* allocRecorder = nullptr;
     auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers, metricsRegistry, allocRecorder);
 
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
