@@ -206,4 +206,20 @@ public class EvidenceTests
         ev.ValueParts[0].Value.Should().Be("sql");
         ev.ValueParts[1].Value.Should().Be("_query");
     }
+
+    [Fact]
+    public void GivenAnEvidenceWithIncorrectRanges_WhenGetValueParts_ValuePartsIsReturned()
+    {
+        var source = new Source(2, "name", "value");
+        source.SetInternalId(0);
+        var source2 = new Source(3, "name2", "value2");
+        source2.SetInternalId(1);
+        var ranges = new Range[] { new Range(0, 3, source), new Range(3, 280, source2) };
+        var ev = new Evidence("sql_query", ranges);
+        ev.ValueParts.Count.Should().Be(2);
+        ev.ValueParts[0].Source.Should().Be(0);
+        ev.ValueParts[1].Source.Should().BeNull();
+        ev.ValueParts[0].Value.Should().Be("sql");
+        ev.ValueParts[1].Value.Should().Be("_query");
+    }
 }

@@ -1602,7 +1602,7 @@ stages:
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:6"
         net7:
           publishTargetFramework: "net7.0"
-          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:7.2023.03.21.20"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:7"
     pool:
       name: azure-linux-scale-set
 
@@ -3796,7 +3796,7 @@ stages:
 
       - task: UsePythonVersion@0
         inputs:
-            versionSpec: '3.9.x'
+            versionSpec: '3.9'
         displayName: Install python 3.9
 
       - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
