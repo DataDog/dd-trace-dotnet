@@ -40,6 +40,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> IntegrationConfig() =>
             from instrumentationOptions in InstrumentationOptionsValues
             from socketHandlerEnabled in new[] { true, false }
+            select new object[] { instrumentationOptions, socketHandlerEnabled };
+
+        public static IEnumerable<object[]> IntegrationConfigWithObfuscation() =>
+            from instrumentationOptions in InstrumentationOptionsValues
+            from socketHandlerEnabled in new[] { true, false }
             from queryStringEnabled in new[] { true, false }
             from queryStringSize in new[] { 200, 2 }
             select new object[] { instrumentationOptions, socketHandlerEnabled, queryStringEnabled, queryStringSize };
@@ -50,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        [MemberData(nameof(IntegrationConfig))]
+        [MemberData(nameof(IntegrationConfigWithObfuscation))]
         public void HttpClient_SubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler, bool queryStringCaptureEnabled, int queryStringSize)
         {
             SetInstrumentationVerification();
@@ -126,11 +131,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
         [MemberData(nameof(IntegrationConfig))]
-        public void TracingDisabled_DoesNotSubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler, bool queryStringCaptureEnabled)
+        public void TracingDisabled_DoesNotSubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
         {
             SetInstrumentationVerification();
             ConfigureInstrumentation(instrumentation, enableSocketsHandler);
-            SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING", queryStringCaptureEnabled ? "true" : "false");
 
             const string expectedOperationName = "http.request";
 
