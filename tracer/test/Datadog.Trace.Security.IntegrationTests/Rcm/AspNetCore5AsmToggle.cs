@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -68,39 +69,36 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var span0nominalState = await SendRequestsAsync(agent, url);
 
             var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, "ASM_FEATURES", nameof(TestSecurityToggling)) }, timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
-
-            if (EnableSecurity == false)
-            {
-                // we dont subscribe to any product if security is set locally to true or false
-                request1.Should().BeNull();
-                return;
-            }
-
-            if (EnableSecurity == true)
-            {
-                // we subscribe to other products but dont apply anything in this scenario
-                request1.Should().NotBeNull();
-                request1.CachedTargetFiles.Should().HaveCount(0);
-                return;
-            }
-
             request1.Should().NotBeNull();
-            request1.CachedTargetFiles.Should().HaveCount(1);
 
-            CheckAckState(request1, "ASM_FEATURES", 1, expectedState, null, "First RCM call");
+            void CheckRequest(GetRcmRequest associatedRcmRequest, int fileNumberIfSecurityCanBeToggled)
+            {
+                if (EnableSecurity != null)
+                {
+                    associatedRcmRequest.CachedTargetFiles.Should().BeEmpty();
+                    associatedRcmRequest.Client.Products.Should().HaveCount(EnableSecurity == false ? 0 : 3);
+                }
+                else
+                {
+                    associatedRcmRequest.CachedTargetFiles.Should().HaveCount(fileNumberIfSecurityCanBeToggled);
+                    if (fileNumberIfSecurityCanBeToggled > 0)
+                    {
+                        CheckAckState(associatedRcmRequest, "ASM_FEATURES", 1, expectedState, null, "First RCM call");
+                    }
+                }
+            }
 
+            CheckRequest(request1, 1);
             var span1ShouldStillBeDisabled = await SendRequestsAsync(agent, url);
 
             var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, "ASM_FEATURES", nameof(TestSecurityToggling)) });
-            request2.Should().NotBeNull();
-            request2.CachedTargetFiles.Should().HaveCount(1);
+            CheckRequest(request2, 1);
 
-            CheckAckState(request2, "ASM_FEATURES", 1, expectedState, null, "First RCM call");
             var spans2ShouldBeEnabled = await SendRequestsAsync(agent, url);
 
             var request3 = await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductId, string Id)>());
-            request3.Should().NotBeNull();
-            request3.CachedTargetFiles.Should().BeEmpty();
+            CheckRequest(request3, 0);
+
             var span3ConfigurationRemovedShouldBeDisabled = await SendRequestsAsync(agent, url);
 
             var spans = new List<MockSpan>();
@@ -116,7 +114,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     public class AspNetCore5AsmToggleConfigError : RcmBase
     {
         public AspNetCore5AsmToggleConfigError(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmToggleConfigError))
+            : base(fixture, outputHelper, enableSecurity: null, testName: nameof(AspNetCore5AsmToggleConfigError))
         {
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
         }
