@@ -374,9 +374,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                         }
                     }
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
-                    // todo
+                    Log.Error(e, "An error happened while polling new changes from remote configuration");
                 }
             }
         }

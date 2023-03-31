@@ -133,7 +133,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var spans1 = await SendRequestsAsync(agent, url);
             var request = await agent.SetupRcmAndWait(Output, new[] { ((object)"haha, you weren't expect this!", "ASM_FEATURES", nameof(TestRemoteConfigError)) });
 
-            RcmBase.CheckAckState(request, "ASM_FEATURES", 1, ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.AppSec.AsmFeatures'. Path '', line 1, position 32.", "First RCM call");
+            CheckAckState(request, "ASM_FEATURES", 1, ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.AppSec.AsmFeatures'. Path '', line 1, position 32.", "First RCM call");
 
             await VerifySpans(spans1.ToImmutableList(), settings);
         }

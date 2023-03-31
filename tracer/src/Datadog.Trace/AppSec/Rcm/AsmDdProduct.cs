@@ -44,9 +44,20 @@ internal class AsmDdProduct : AsmRemoteConfigurationProduct
             paths.Add(firstFile.Path);
             var asmDd = new NamedRawFile(firstFile!.Path, firstFile.Contents);
             var result = asmDd.Deserialize<JToken>();
+
             if (result.TypedFile != null)
             {
-                var ruleSet = RuleSet.From(result.TypedFile);
+                RuleSet ruleSet;
+                if (!result.TypedFile.HasValues)
+                {
+                    var o = JObject.Parse(result.TypedFile!.Value<string>() ?? string.Empty);
+                    ruleSet = RuleSet.From(o);
+                }
+                else
+                {
+                    ruleSet = RuleSet.From(result.TypedFile);
+                }
+
                 configurationStatus.RulesByFile[result.TypedFile.Path] = ruleSet;
                 configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
             }
