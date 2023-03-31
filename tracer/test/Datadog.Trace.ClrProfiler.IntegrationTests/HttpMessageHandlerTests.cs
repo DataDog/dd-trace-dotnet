@@ -129,23 +129,38 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
                 }
 
-                var firstSpan = spans.First();
+                // parse http headers from stdout
                 var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
                 var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
                 var propagatedTags = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.PropagatedTags);
 
+                var firstSpan = spans.First();
                 Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
                 Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
 
-                // assert that "_dd.p.tid" was added to both the span tags (vertical propagation)
-                // and the "x-datadog-tags" header (horizontal propagation).
-                // note this assumes Datadog propagate headers are enabled (which is the default).
                 var traceTags = TagPropagation.ParseHeader(propagatedTags);
                 var traceIdUpperTagFromHeader = traceTags.GetTag(Tags.Propagated.TraceIdUpper);
                 var traceIdUpperTagFromSpan = firstSpan.GetTag(Tags.Propagated.TraceIdUpper);
-                Assert.NotNull(traceIdUpperTagFromHeader);
-                Assert.NotNull(traceIdUpperTagFromSpan);
-                Assert.Equal(traceIdUpperTagFromHeader, traceIdUpperTagFromSpan);
+
+                if (traceId128Enabled)
+                {
+                    // assert that "_dd.p.tid" was added to the "x-datadog-tags" header (horizontal propagation)
+                    // note this assumes Datadog propagation headers are enabled (which is the default).
+                    Assert.NotNull(traceIdUpperTagFromHeader);
+
+                    // not all spans will have this tag, but if it is present,
+                    // it should match the value in the "x-datadog-tags" header
+                    if (traceIdUpperTagFromSpan != null)
+                    {
+                        Assert.Equal(traceIdUpperTagFromHeader, traceIdUpperTagFromSpan);
+                    }
+                }
+                else
+                {
+                    // assert that "_dd.p.tid" was NOT added
+                    Assert.Null(traceIdUpperTagFromHeader);
+                    Assert.Null(traceIdUpperTagFromSpan);
+                }
 
                 using var scope = new AssertionScope();
                 telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
