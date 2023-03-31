@@ -3,28 +3,28 @@ using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    public class MetricCountString : IRun
+    public class MetricWithStringLenExpression : IRun
     {
-        private const string Json = @"{""ref"": ""intArg""}";
+        private const string Json = @"{""len"": {""ref"": ""arg""}}";
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
-            Method("2");
+            Method("answer");
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [MetricMethodProbeTestData(
             metricJson: Json,
             metricKind: Const.Count,
-            metricName: nameof(MetricCountInt),
+            metricName: nameof(MetricWithStringLenExpression),
             captureSnapshot: false,
             evaluateAt: Const.Exit,
             returnTypeName: "System.String",
             parametersTypeName: new[] { "System.String" })]
-        public string Method(string stringArg)
+        public string Method(string arg)
         {
-            return $"Argument: {stringArg}";
+            return $"Argument: {arg}";
         }
     }
 }

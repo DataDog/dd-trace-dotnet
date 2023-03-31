@@ -17,7 +17,6 @@ namespace Samples.Probes.TestRuns.SmokeTests
             metricName: nameof(MetricCountInt),
             captureSnapshot: false,
             evaluateAt: Const.Exit,
-            expectedNumberOfSnapshots: 0,
             returnTypeName: "System.String",
             parametersTypeName: new[] { "System.Int32" })]
         public string Method(int intArg)

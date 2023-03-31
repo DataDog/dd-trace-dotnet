@@ -55,11 +55,19 @@ internal class ProbeExpressionEvaluator
         }
     }
 
+    internal CompiledExpression<double>? CompiledMetric
+    {
+        get
+        {
+            return _compiledMetric.Value;
+        }
+    }
+
     internal DebuggerExpression[] Templates { get; }
 
     internal DebuggerExpression? Condition { get; }
 
-    private DebuggerExpression? Metric { get; }
+    internal DebuggerExpression? Metric { get; }
 
     internal ExpressionEvaluationResult Evaluate(MethodScopeMembers scopeMembers)
     {
