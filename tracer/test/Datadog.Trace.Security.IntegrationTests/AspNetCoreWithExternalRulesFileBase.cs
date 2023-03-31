@@ -59,7 +59,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             EnableSecurity = enableSecurity;
             Fixture = fixture;
-            Fixture.ShutdownPath = "/shutdown";
             Fixture.SetOutput(outputHelper);
             RuleFile = ruleFile;
         }

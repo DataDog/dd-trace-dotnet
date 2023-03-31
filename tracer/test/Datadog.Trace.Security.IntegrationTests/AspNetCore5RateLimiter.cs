@@ -17,7 +17,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         private readonly AspNetCoreTestFixture fixture;
 
         public AspNetCore5RateLimiter(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base("AspNetCore5", outputHelper, "/shutdown")
+            : base("AspNetCore5", outputHelper)
         {
             this.fixture = fixture;
             this.fixture.SetOutput(outputHelper);

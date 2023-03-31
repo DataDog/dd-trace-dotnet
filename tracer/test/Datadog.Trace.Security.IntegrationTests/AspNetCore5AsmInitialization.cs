@@ -49,7 +49,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public abstract class AspNetCore5AsmInitialization : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
         public AspNetCore5AsmInitialization(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableSecurity, string ruleset, string testName)
-            : base("AspNetCore5", outputHelper, "/shutdown", testName: testName)
+            : base("AspNetCore5", outputHelper, testName: testName)
         {
             Fixture = fixture;
             Fixture.SetOutput(outputHelper);

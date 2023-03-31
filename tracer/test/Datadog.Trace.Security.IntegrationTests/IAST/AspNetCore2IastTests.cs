@@ -163,7 +163,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
     public abstract class AspNetCore2IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
         public AspNetCore2IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null)
-            : base("AspNetCore2", outputHelper, "/shutdown", testName: testName)
+            : base("AspNetCore2", outputHelper, testName: testName)
         {
             Fixture = fixture;
             IastEnabled = enableIast;

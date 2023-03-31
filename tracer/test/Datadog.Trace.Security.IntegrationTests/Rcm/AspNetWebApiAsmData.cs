@@ -62,11 +62,12 @@ public abstract class AspNetWebApiAsmData : RcmBaseFramework, IClassFixture<IisF
     private readonly string _testName;
 
     public AspNetWebApiAsmData(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
-        : base("WebApi", output, "/api/home/shutdown", @"test\test-applications\security\aspnet")
+        : base("WebApi", output, @"test\test-applications\security\aspnet")
     {
         SetSecurity(enableSecurity);
 
         _iisFixture = iisFixture;
+        _iisFixture.ShutdownPath = "/api/home/shutdown";
         _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
         _testName = "Security." + nameof(AspNetWebApiAsmData)
                                 + (classicMode ? ".Classic" : ".Integrated")

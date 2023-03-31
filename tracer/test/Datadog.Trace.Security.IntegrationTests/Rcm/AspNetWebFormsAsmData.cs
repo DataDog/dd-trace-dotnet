@@ -64,11 +64,12 @@ public abstract class AspNetWebFormsAsmData : RcmBaseFramework, IClassFixture<Ii
     private readonly string _testName;
 
     public AspNetWebFormsAsmData(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
-        : base("WebForms", output, "/home/shutdown", @"test\test-applications\security\aspnet")
+        : base("WebForms", output, @"test\test-applications\security\aspnet")
     {
         SetSecurity(enableSecurity);
 
         _iisFixture = iisFixture;
+        _iisFixture.ShutdownPath = "/home/shutdown";
         _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
         _testName = "Security." + nameof(AspNetWebFormsAsmData)
                                 + (classicMode ? ".Classic" : ".Integrated")
