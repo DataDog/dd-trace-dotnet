@@ -68,6 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 var operationType = operation.OperationType.ToString();
                 if (span.Tags is GraphQLTags tags)
                 {
+                    tags.OperationName = operation.Name;
                     span.ResourceName = $"{operationType} {tags.OperationName ?? "operation"}";
                     tags.OperationType = operationType;
                 }
@@ -107,6 +108,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 var operationType = operation.OperationType.ToString();
                 if (span.Tags is GraphQLTags tags)
                 {
+                    var nameValue = operation.Name.Value;
+                    while (nameValue != null)
+                    {
+                        if (nameValue.TryDuckCast(typeof(NameStringProxy), out var ns))
+                        {
+                            nameValue = ((NameStringProxy)ns).Value;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+
+                    if (nameValue is not null && nameValue is string str)
+                    {
+                        tags.OperationName = str;
+                    }
+
                     span.ResourceName = $"{operationType} {tags.OperationName ?? "operation"}";
                     tags.OperationType = operationType;
                 }

@@ -189,16 +189,17 @@
     TraceId: Id_4,
     SpanId: Id_12,
     Name: graphql.execute,
-    Resource: Query operation,
+    Resource: Query Book,
     Service: Samples.HotChocolate-graphql,
     Type: graphql,
     ParentId: Id_5,
     Tags: {
       component: HotChocolate,
       env: integration_tests,
+      graphql.operation.name: Book,
       graphql.operation.type: Query,
       graphql.source:
-{
+query Book {
   book {
     title
     author {
@@ -218,13 +219,14 @@
     TraceId: Id_6,
     SpanId: Id_13,
     Name: graphql.execute,
-    Resource: Mutation operation,
+    Resource: Mutation m,
     Service: Samples.HotChocolate-graphql,
     Type: graphql,
     ParentId: Id_7,
     Tags: {
       component: HotChocolate,
       env: integration_tests,
+      graphql.operation.name: m,
       graphql.operation.type: Mutation,
       graphql.source:
 mutation m {
