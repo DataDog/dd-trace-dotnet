@@ -37,8 +37,6 @@ namespace Datadog.Trace.TestHelpers
                 throw new ArgumentNullException(nameof(environmentHelper));
             }
 
-            (executable, arguments) = MemoryDumpHelper.MonitorCrashes(executable, arguments);
-
             // clear all relevant environment variables to start with a clean slate
             EnvironmentHelper.ClearProfilerEnvironmentVariables();
 

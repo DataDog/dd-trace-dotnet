@@ -45,14 +45,46 @@ namespace Datadog.Trace.TestHelpers
             _path = Path.Combine(unpackedDirectory, "procdump.exe");
         }
 
-        public static (string Exe, string Args) MonitorCrashes(string exe, string args)
+        public static void MonitorCrashes(string exe, IProgress<string> output)
         {
-            if (!IsAvailable || !EnvironmentTools.IsWindows())
+#if !NETFRAMEWORK
+            return;
+#else
+            _ = Task.Run(() =>
             {
-                return (exe, args);
-            }
+                var args = $"-ma -accepteula -e -w {Path.GetFileName(exe)}";
 
-            return (_path, $"-ma -accepteula -e -x {Path.GetTempPath()} {exe} {args}");
+                using var dumpToolProcess = Process.Start(new ProcessStartInfo(_path, args)
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                });
+
+                using var helper = new ProcessHelper(dumpToolProcess);
+                dumpToolProcess.WaitForExit();
+                helper.Drain();
+
+                if (helper.Process.ExitCode == -2)
+                {
+                    // No dump was captured but there was no error, the process probably didn't crash
+                    return;
+                }
+
+                output?.Report($"[dump][stdout] {helper.StandardOutput}");
+                output?.Report($"[dump][stderr] {helper.ErrorOutput}");
+
+                if (dumpToolProcess.ExitCode == 0)
+                {
+                    output?.Report($"Memory dump successfully captured using '{_path} {args}'.");
+                }
+                else
+                {
+                    output?.Report($"Failed to capture memory dump using '{_path} {args}'. Exit code was {dumpToolProcess.ExitCode}.");
+                }
+            });
+#endif
         }
 
         public static bool CaptureMemoryDump(Process process, IProgress<string> output)

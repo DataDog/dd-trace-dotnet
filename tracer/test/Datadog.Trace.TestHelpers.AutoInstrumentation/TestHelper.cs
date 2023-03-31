@@ -90,6 +90,9 @@ namespace Datadog.Trace.TestHelpers
 
             Output.WriteLine("Executable: " + exec);
             Output.WriteLine("ApplicationPath: " + appPath);
+
+            MemoryDumpHelper.MonitorCrashes(exec, new Progress<string>(Output.WriteLine));
+
             var process = ProfilerHelper.StartProcessWithProfiler(
                 exec,
                 EnvironmentHelper,
@@ -144,6 +147,8 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"Starting Application: {sampleAppPath}");
             var executable = EnvironmentHelper.IsCoreClr() ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
             var args = EnvironmentHelper.IsCoreClr() ? $"{sampleAppPath} {arguments ?? string.Empty}" : arguments;
+
+            MemoryDumpHelper.MonitorCrashes(executable, new Progress<string>(Output.WriteLine));
 
             var process = ProfilerHelper.StartProcessWithProfiler(
                 executable,
