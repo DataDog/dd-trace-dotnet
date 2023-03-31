@@ -33,12 +33,9 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             var spans1 = await SendRequestsAsync(agent, url);
             var productId = nameof(TestNewRemoteRules);
-            var productId2 = nameof(TestNewRemoteRules) + "2";
             await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductName, string Id)> { (GetRules("2.22.222"), "ASM_DD", productId) });
             var spans2 = await SendRequestsAsync(agent, url);
-
-            var acknowledgedId2 = nameof(TestNewRemoteRules) + 2;
-            await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductName, string Id)> { (GetRules("3.33.333"), "ASM_DD", productId2) });
+            await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductName, string Id)> { (GetRules("3.33.333"), "ASM_DD", productId) });
             var spans3 = await SendRequestsAsync(agent, url);
 
             var spans = new List<MockSpan>();

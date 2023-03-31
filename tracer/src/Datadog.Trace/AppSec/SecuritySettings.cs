@@ -25,7 +25,7 @@ namespace Datadog.Trace.AppSec
             BlockedJsonTemplate = source.GetString(ConfigurationKeys.AppSec.JsonBlockedTemplate) ?? SecurityConstants.BlockedJsonTemplate;
             // both should default to false
             var enabledEnvVar = source.GetBool(ConfigurationKeys.AppSec.Enabled);
-            Enabled1 = enabledEnvVar ?? false;
+            Enabled = enabledEnvVar ?? false;
             CanBeToggled = enabledEnvVar == null;
 
             Rules = source.GetString(ConfigurationKeys.AppSec.Rules);
@@ -63,7 +63,7 @@ namespace Datadog.Trace.AppSec
             ObfuscationParameterValueRegex = string.IsNullOrWhiteSpace(obfuscationParameterValueRegex) ? SecurityConstants.ObfuscationParameterValueRegexDefault : obfuscationParameterValueRegex!;
         }
 
-        public bool Enabled1 { get; }
+        public bool Enabled { get; }
 
         public bool CanBeToggled { get; }
 
