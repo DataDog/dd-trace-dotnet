@@ -54,7 +54,7 @@ internal class IastRequestContext
 
     private void AddQueryStringRaw(string queryString)
     {
-        _taintedObjects.TaintInputString(queryString, new Source(SourceType.GetByte(SourceTypeName.RequestQueryString), null, queryString));
+        _taintedObjects.TaintInputString(queryString, new Source(SourceType.GetByte(SourceTypeName.RequestQuery), null, queryString));
     }
 
     private void AddQueryPath(string path)
