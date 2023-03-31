@@ -396,7 +396,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:true}
     volumes:
       - ./:/project
     cap_add:
@@ -406,6 +406,7 @@ services:
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
+      - runCodeCoverage=${runCodeCoverage:-true}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
@@ -486,7 +487,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage --targetplatform x64
+    command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:true} --targetplatform x64
     volumes:
       - ./:/project
     cap_add:
@@ -496,6 +497,7 @@ services:
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
+      - runCodeCoverage=${runCodeCoverage:-true}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
@@ -534,7 +536,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --filter Category=Lambda --code-coverage
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --filter Category=Lambda --code-coverage ${runCodeCoverage:true}
     volumes:
       - ./:/project
     cap_add:
@@ -544,6 +546,7 @@ services:
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
+      - runCodeCoverage=${runCodeCoverage:-true}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
@@ -586,7 +589,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunExplorationTests --explorationTestUseCase ${explorationTestUseCase:-debugger} --explorationTestName ${explorationTestName:-eshoponweb} --framework ${framework:-netcoreapp3.1} --code-coverage
+    command: dotnet /build/bin/Debug/_build.dll RunExplorationTests --explorationTestUseCase ${explorationTestUseCase:-debugger} --explorationTestName ${explorationTestName:-eshoponweb} --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:true}
     volumes:
       - ./:/project
     cap_add:
@@ -595,6 +598,7 @@ services:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
+      - runCodeCoverage=${runCodeCoverage:-true}
       - explorationTestUseCase=${explorationTestUseCase:-debugger}
       - explorationTestName=${explorationTestName:-eshoponweb}
       - baseImage=${baseImage:-default}

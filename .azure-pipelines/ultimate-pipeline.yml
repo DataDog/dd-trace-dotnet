@@ -107,6 +107,8 @@ variables:
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
   isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'))]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
+  # Run code coverage on main branches only, on scheduled build only
+  runCodeCoverage: $[and(eq(variables['Build.Reason'], 'Schedule'), or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/')))] 
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
   relativeNugetPackageDirectory: packages
@@ -690,7 +692,7 @@ stages:
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
 
-      - script: tracer\build.cmd BuildAndRunManagedUnitTests --code-coverage
+      - script: tracer\build.cmd BuildAndRunManagedUnitTests --code-coverage $(runCodeCoverage)
         displayName: Build and Test
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -755,7 +757,7 @@ stages:
         parameters:
           artifact: build-macos-working-directory
 
-      - script: ./tracer/build.sh BuildAndRunManagedUnitTests --code-coverage
+      - script: ./tracer/build.sh BuildAndRunManagedUnitTests --code-coverage $(runCodeCoverage)
         displayName: Build and Test
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -808,7 +810,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildAndRunManagedUnitTests --code-coverage"
+        command: "BuildAndRunManagedUnitTests --code-coverage $(runCodeCoverage)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: tracer/build_data
@@ -952,7 +954,7 @@ stages:
       displayName: 'Initialize LocalDB'
       workingDirectory: $(Build.Repository.LocalPath)
 
-    - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --code-coverage
+    - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --code-coverage $(runCodeCoverage)
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1013,7 +1015,7 @@ stages:
 
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType $(debugType) --Optimize $(optimize) --code-coverage
+    - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType $(debugType) --Optimize $(optimize) --code-coverage $(runCodeCoverage)
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1071,7 +1073,7 @@ stages:
         includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage
+    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage $(runCodeCoverage)
       displayName: RunWindowsIisTracerIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1129,7 +1131,7 @@ stages:
         includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsSecurityIisIntegrationTests -Framework $(framework) --code-coverage
+    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsSecurityIisIntegrationTests -Framework $(framework) --code-coverage $(runCodeCoverage)
       displayName: RunWindowsIisSecurityIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1195,7 +1197,7 @@ stages:
       workingDirectory: $(Pipeline.Workspace)
       retryCountOnTaskFailure: 5
 
-    - script: tracer\build.cmd BuildAndRunWindowsAzureFunctionsTests -Framework $(framework) --code-coverage
+    - script: tracer\build.cmd BuildAndRunWindowsAzureFunctionsTests -Framework $(framework) --code-coverage $(runCodeCoverage)
       displayName: Run Azure Functions tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1355,7 +1357,7 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-    - script: tracer\build.cmd RunWindowsMsiIntegrationTests -Framework $(framework) --code-coverage
+    - script: tracer\build.cmd RunWindowsMsiIntegrationTests -Framework $(framework) --code-coverage $(runCodeCoverage)
       displayName: RunWindowsIisIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -3601,7 +3603,7 @@ stages:
       continueOnError: true
 
 - stage: coverage
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables['runCodeCoverage'], 'True'))
   dependsOn:
     - integration_tests_windows
     - integration_tests_windows_iis
@@ -4718,7 +4720,11 @@ stages:
       artifact: crank_throughput_report
 
 - stage: trace_pipeline
-  condition: eq(variables['isBenchmarksOnlyBuild'], 'False')
+  condition: |
+    and(
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      in(dependencies.coverage.result, 'Succeeded','SucceededWithIssues','Skipped')
+    )
   dependsOn:
     - merge_commit_id
     - unit_tests_linux
