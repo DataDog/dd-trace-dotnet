@@ -9,6 +9,7 @@
 #include "IManagedThreadList.h"
 #include "IRuntimeIdStore.h"
 #include "IThreadsCpuManager.h"
+#include "IUpscaleProvider.h"
 #include "OsSpecificApi.h"
 #include "Sample.h"
 

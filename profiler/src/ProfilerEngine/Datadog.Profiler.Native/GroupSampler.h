@@ -8,7 +8,6 @@
 
 #include "GenericSampler.h"
 #include "IConfiguration.h"
-#include "IUpscaleProvider.h"
 
 template <class TGroup>
 struct UpscaleGroupInfo

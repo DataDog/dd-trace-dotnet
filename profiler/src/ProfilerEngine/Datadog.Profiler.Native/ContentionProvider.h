@@ -4,14 +4,16 @@
 #pragma once
 
 #include <atomic>
+
 #include "CollectorBase.h"
-#include "IContentionListener.h"
-#include "RawContentionSample.h"
+#include "CounterMetric.h"
 #include "GenericSampler.h"
 #include "GroupSampler.h"
-#include "MetricsRegistry.h"
-#include "CounterMetric.h"
+#include "IContentionListener.h"
+#include "IUpscaleProvider.h"
 #include "MeanMaxMetric.h"
+#include "MetricsRegistry.h"
+#include "RawContentionSample.h"
 
 class IConfiguration;
 class IManagedThreadList;
