@@ -67,7 +67,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             var span0nominalState = await SendRequestsAsync(agent, url);
 
-            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, nameof(TestSecurityToggling)) }, "ASM_FEATURES", timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
+            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, "ASM_FEATURES", nameof(TestSecurityToggling)) }, timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
 
             if (EnableSecurity == false)
             {
@@ -91,14 +91,14 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             var span1ShouldStillBeDisabled = await SendRequestsAsync(agent, url);
 
-            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, nameof(TestSecurityToggling)) }, "ASM_FEATURES");
+            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, "ASM_FEATURES", nameof(TestSecurityToggling)) });
             request2.Should().NotBeNull();
             request2.CachedTargetFiles.Should().HaveCount(1);
 
             CheckAckState(request2, "ASM_FEATURES", 1, expectedState, null, "First RCM call");
             var spans2ShouldBeEnabled = await SendRequestsAsync(agent, url);
 
-            var request3 = await agent.SetupRcmAndWait(Output, new List<(object Config, string Id)>(), "ASM_FEATURES");
+            var request3 = await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductId, string Id)>());
             request3.Should().NotBeNull();
             request3.CachedTargetFiles.Should().BeEmpty();
             var span3ConfigurationRemovedShouldBeDisabled = await SendRequestsAsync(agent, url);
@@ -131,7 +131,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
             var spans1 = await SendRequestsAsync(agent, url);
-            var request = await agent.SetupRcmAndWait(Output, new[] { ((object)"haha, you weren't expect this!", nameof(TestRemoteConfigError)) }, "ASM_FEATURES");
+            var request = await agent.SetupRcmAndWait(Output, new[] { ((object)"haha, you weren't expect this!", "ASM_FEATURES", nameof(TestRemoteConfigError)) });
 
             RcmBase.CheckAckState(request, "ASM_FEATURES", 1, ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.AppSec.AsmFeatures'. Path '', line 1, position 32.", "First RCM call");
 

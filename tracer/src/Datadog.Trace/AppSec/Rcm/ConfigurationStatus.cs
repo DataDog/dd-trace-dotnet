@@ -131,7 +131,7 @@ internal record ConfigurationStatus
 
         internal bool FallbackToEmbeddedRulesetAtNextUpdate { get; private set; }
 
-        internal bool SecurityStateChange { get; private set; }
+        internal bool SecurityStateChange { get; set; }
 
         public void Reset()
         {

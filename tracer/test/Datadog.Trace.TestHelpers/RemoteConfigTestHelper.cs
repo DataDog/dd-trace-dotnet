@@ -19,19 +19,19 @@ namespace Datadog.Trace.TestHelpers
     {
         public const int WaitForAcknowledgmentTimeout = 50000;
 
-        internal static GetRcmResponse SetupRcm(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string Id)> configurations, string productName)
+        internal static GetRcmResponse SetupRcm(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string ProductName, string Id)> configurations)
         {
-            var response = BuildRcmResponse(configurations.Select(c => (JsonConvert.SerializeObject(c.Config), c.Id)), productName);
+            var response = BuildRcmResponse(configurations.Select(c => (JsonConvert.SerializeObject(c.Config), c.ProductName, c.Id)));
             agent.RcmResponse = JsonConvert.SerializeObject(response);
             output.WriteLine($"{DateTime.UtcNow}: Using RCM response: {response}");
             return response;
         }
 
-        internal static async Task<GetRcmRequest> SetupRcmAndWait(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string Id)> configurations, string productName, int timeoutInMilliseconds = WaitForAcknowledgmentTimeout)
+        internal static async Task<GetRcmRequest> SetupRcmAndWait(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string ProductName, string Id)> configurations, int timeoutInMilliseconds = WaitForAcknowledgmentTimeout)
         {
-            var response = BuildRcmResponse(configurations.Select(c => (JsonConvert.SerializeObject(c.Config), c.Id)), productName);
+            var response = BuildRcmResponse(configurations.Select(c => (JsonConvert.SerializeObject(c.Config), c.ProductName, c.Id)));
             agent.RcmResponse = JsonConvert.SerializeObject(response);
-            output.WriteLine($"{DateTime.UtcNow}: Using RCM response: {response}");
+            output.WriteLine($"{DateTime.UtcNow}: Using RCM response: {response} with custom opaque state {response.Targets.Signed.Custom.OpaqueBackendState}");
             var res = await agent.WaitRcmRequestAndReturnMatchingRequest(response, timeoutInMilliseconds: timeoutInMilliseconds);
             return res;
         }
@@ -70,7 +70,7 @@ namespace Datadog.Trace.TestHelpers
             return request;
         }
 
-        private static GetRcmResponse BuildRcmResponse(IEnumerable<(string Config, string Id)> configurations, string productName)
+        private static GetRcmResponse BuildRcmResponse(IEnumerable<(string Config, string ProductName, string Id)> configurations)
         {
             var targetFiles = new List<RcmFile>();
             var targets = new Dictionary<string, Target>();
@@ -78,7 +78,7 @@ namespace Datadog.Trace.TestHelpers
 
             foreach (var configuration in configurations)
             {
-                var path = $"datadog/2/{productName}/{configuration.Id}/config";
+                var path = $"datadog/2/{configuration.ProductName}/{configuration.Id}/config";
 
                 clientConfigs.Add(path);
 

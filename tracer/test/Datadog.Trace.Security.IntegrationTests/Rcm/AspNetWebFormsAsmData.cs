@@ -86,14 +86,13 @@ public abstract class AspNetWebFormsAsmData : RcmBaseFramework, IClassFixture<Ii
         var scrubbers = VerifyHelper.SpanScrubbers.Where(s => s.RegexPattern.ToString() != @"http.client_ip: (.)*(?=,)");
         var settings = VerifyHelper.GetSpanVerifierSettings(scrubbers: scrubbers, parameters: new object[] { test, sanitisedUrl });
         var spanBeforeAsmData = await SendRequestsAsync(_iisFixture.Agent, url);
-        var acknowledgedId = nameof(TestBlockedRequestIp) + Guid.NewGuid();
-        var acknowledgedId2 = nameof(TestBlockedRequestIp) + Guid.NewGuid();
+        var fileId = nameof(TestBlockedRequestIp) + Guid.NewGuid();
+        var fileId2 = nameof(TestBlockedRequestIp) + Guid.NewGuid();
 
         var product = new AsmDataProduct();
         var response = _iisFixture.Agent.SetupRcm(
             Output,
-            new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, acknowledgedId), (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, acknowledgedId2), },
-            product.Name);
+            new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, product.Name, fileId), (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, product.Name, fileId2), });
 
         await _iisFixture.Agent.WaitRcmRequestAndReturnMatchingRequest(response);
         var spanAfterAsmData = await SendRequestsAsync(_iisFixture.Agent, url);
@@ -121,8 +120,7 @@ public abstract class AspNetWebFormsAsmData : RcmBaseFramework, IClassFixture<Ii
             var product = new AsmDataProduct();
             var response = _iisFixture.Agent.SetupRcm(
                 Output,
-                new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_users", Type = "data_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = "user3" } } } } }, acknowledgedId) },
-                product.Name);
+                new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_users", Type = "data_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = "user3" } } } } }, product.Name, acknowledgedId) });
 
             await _iisFixture.Agent.WaitRcmRequestAndReturnMatchingRequest(response);
 

@@ -171,6 +171,7 @@ namespace Datadog.Trace.AppSec
                 if (Enabled && _configurationStatus.EnableAsm == false)
                 {
                     DisposeWafAndInstrumentations(true);
+                    _configurationStatus.IncomingUpdateState.SecurityStateChange = false;
                 }
                 else if (!Enabled && _configurationStatus.EnableAsm == true)
                 {
@@ -181,6 +182,7 @@ namespace Datadog.Trace.AppSec
                     _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsKey);
                     _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
                     _configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
+                    _configurationStatus.IncomingUpdateState.SecurityStateChange = false;
                 }
             }
 

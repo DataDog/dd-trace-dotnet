@@ -43,7 +43,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var settings = VerifyHelper.GetSpanVerifierSettings(type, statusCode);
 
             var spans1 = await SendRequestsAsync(agent, url);
-            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = new[] { new Datadog.Trace.AppSec.Rcm.Models.Asm.Action { Id = "block", Type = type, Parameters = new Parameter { StatusCode = statusCode, Type = "html", Location = "/redirect" } } } }, nameof(TestBlockingAction)) }, AsmProduct);
+            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = new[] { new Datadog.Trace.AppSec.Rcm.Models.Asm.Action { Id = "block", Type = type, Parameters = new Parameter { StatusCode = statusCode, Type = "html", Location = "/redirect" } } } }, AsmProduct, nameof(TestBlockingAction)) });
 
             var spans2 = await SendRequestsAsync(agent, url);
             var spans = new List<MockSpan>();
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             spans.AddRange(spans2);
             await VerifySpans(spans.ToImmutableList(), settings);
             // need to reset if the process is going to be reused
-            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Datadog.Trace.AppSec.Rcm.Models.Asm.Action>() }, nameof(TestBlockingAction)) }, AsmProduct);
+            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Datadog.Trace.AppSec.Rcm.Models.Asm.Action>() }, AsmProduct, nameof(TestBlockingAction)) });
         }
 
         protected override string GetTestName() => Prefix + nameof(AspNetCore5AsmActionsConfiguration);

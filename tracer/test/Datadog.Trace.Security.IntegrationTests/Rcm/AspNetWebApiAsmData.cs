@@ -96,10 +96,9 @@ public abstract class AspNetWebApiAsmData : RcmBaseFramework, IClassFixture<IisF
             new[]
             {
                 (
-                    (object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, id),
-                (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, id2),
-            },
-            product.Name);
+                    (object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, product.Name, id),
+                (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, product.Name, id2),
+            });
 
         await _iisFixture.Agent.WaitRcmRequestAndReturnMatchingRequest(response);
 
@@ -127,8 +126,7 @@ public abstract class AspNetWebApiAsmData : RcmBaseFramework, IClassFixture<IisF
             var product = new AsmDataProduct();
             var response = _iisFixture.Agent.SetupRcm(
                 Output,
-                new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_users", Type = "data_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = "user3" } } } } },  nameof(TestBlockedRequestUser)) },
-                product.Name);
+                new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_users", Type = "data_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = "user3" } } } } }, product.Name, nameof(TestBlockedRequestUser)) });
 
             await _iisFixture.Agent.WaitRcmRequestAndReturnMatchingRequest(response);
 

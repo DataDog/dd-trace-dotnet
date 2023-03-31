@@ -92,8 +92,7 @@ public abstract class AspNetMvc5AsmData : RcmBaseFramework, IClassFixture<IisFix
         var product = new AsmDataProduct();
         var response = _iisFixture.Agent.SetupRcm(
             Output,
-            new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, acknowledgedId), (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, acknowledgedId2), },
-            product.Name);
+            new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, product.Name, acknowledgedId), ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, product.Name, acknowledgedId2) });
 
         var request = await _iisFixture.Agent.WaitRcmRequestAndReturnMatchingRequest(response);
 
@@ -121,8 +120,7 @@ public abstract class AspNetMvc5AsmData : RcmBaseFramework, IClassFixture<IisFix
             var product = new AsmDataProduct();
             var response = _iisFixture.Agent.SetupRcm(
                 Output,
-                new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_users", Type = "data_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = "user3" } } } } },  nameof(TestBlockedRequestUser)) },
-                product.Name);
+                new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_users", Type = "data_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = "user3" } } } } }, product.Name, nameof(TestBlockedRequestUser)) });
 
             await _iisFixture.Agent.WaitRcmRequestAndReturnMatchingRequest(response);
 

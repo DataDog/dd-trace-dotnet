@@ -90,19 +90,19 @@ public abstract class AspNetMvc5AsmBlockingActions : RcmBaseFramework, IClassFix
         var url = $"/health?arg=dummy_rule";
         var agent = _iisFixture.Agent;
         var settings = VerifyHelper.GetSpanVerifierSettings(type, statusCode);
-        var acknowledgedId = nameof(TestBlockingAction) + Guid.NewGuid();
+        var fileId = nameof(TestBlockingAction) + Guid.NewGuid();
         // need to reset if the process is going to be reused
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Action>() }, acknowledgedId) }, asmProduct);
+        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Action>() }, asmProduct, fileId) });
         var spans1 = await SendRequestsAsync(agent, url);
-        acknowledgedId = nameof(TestBlockingAction) + Guid.NewGuid();
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = new[] { new Action { Id = "block", Type = type, Parameters = new Parameter { StatusCode = statusCode, Type = "html", Location = "/redirect" } } } }, acknowledgedId) }, asmProduct);
+        fileId = nameof(TestBlockingAction) + Guid.NewGuid();
+        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = new[] { new Action { Id = "block", Type = type, Parameters = new Parameter { StatusCode = statusCode, Type = "html", Location = "/redirect" } } } }, asmProduct, fileId) });
 
         var spans2 = await SendRequestsAsync(agent, url);
         var spans = new List<MockSpan>();
         spans.AddRange(spans1);
         spans.AddRange(spans2);
         await VerifySpans(spans.ToImmutableList(), settings);
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Action>() }, acknowledgedId) }, asmProduct);
+        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Action>() }, asmProduct, fileId) });
     }
 
     protected override string GetTestName() => _testName;
