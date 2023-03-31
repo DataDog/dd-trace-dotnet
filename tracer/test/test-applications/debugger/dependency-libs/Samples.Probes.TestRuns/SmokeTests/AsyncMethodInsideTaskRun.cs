@@ -12,7 +12,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData]
+        [LogMethodProbeTestData]
         public async Task<string> RunInsideTask()
         {
             return await Task.Run(
@@ -25,7 +25,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData]
+        [LogMethodProbeTestData]
         public async Task<string> Method(string seed)
         {
             string result = seed + " ";

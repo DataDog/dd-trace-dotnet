@@ -2,7 +2,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
 {
     public class EmptyCtorTest : IRun
     {
-        [MethodProbeTestData(expectedNumberOfSnapshots: 0)]
+        [LogMethodProbeTestData(expectedNumberOfSnapshots: 0, expectProbeStatusFailure: true)]
         public EmptyCtorTest()
         {
         }

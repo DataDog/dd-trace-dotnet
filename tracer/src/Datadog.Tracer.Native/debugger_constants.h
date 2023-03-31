@@ -37,6 +37,8 @@ const WSTRING skip_assemblies[]{WStr("mscorlib"),
                                 WStr("Datadog.Trace"),
                                 WStr("MSBuild")};
 
+const WSTRING dynamic_span_operation_name = WStr("dd.dynamic.span");
+
 const WSTRING general_error_message = WStr("Failed to instrument the method.");
 
 inline WSTRING GetGenericErrorMessageWithErrorCode(short errorCode)

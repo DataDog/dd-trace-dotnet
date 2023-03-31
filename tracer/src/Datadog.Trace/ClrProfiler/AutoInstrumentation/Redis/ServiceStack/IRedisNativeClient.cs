@@ -19,5 +19,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
         /// Gets Client Port
         /// </summary>
         public int Port { get; }
+
+        /// <summary>
+        /// Gets the database index
+        /// </summary>
+        public long Db { get; }
     }
 }

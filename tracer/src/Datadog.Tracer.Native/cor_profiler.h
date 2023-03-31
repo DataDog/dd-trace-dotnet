@@ -53,7 +53,7 @@ private:
     bool corlib_module_loaded = false;
     AppDomainID corlib_app_domain_id = 0;
     bool managed_profiler_loaded_domain_neutral = false;
-    std::unordered_set<AppDomainID> managed_profiler_loaded_app_domains;
+    std::unordered_map<AppDomainID, Version> managed_profiler_loaded_app_domains;
     std::unordered_set<AppDomainID> first_jit_compilation_app_domains;
     bool is_desktop_iis = false;
 
@@ -187,6 +187,7 @@ public:
                                 WCHAR* configuration_string_ptr);
     void InstrumentProbes(debugger::DebuggerMethodProbeDefinition* methodProbes, int methodProbesLength,
                    debugger::DebuggerLineProbeDefinition* lineProbes, int lineProbesLength,
+                   debugger::DebuggerMethodSpanProbeDefinition* spanProbes, int spanProbesLength,
                    debugger::DebuggerRemoveProbesDefinition* revertProbes, int revertProbesLength) const;
     int GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses);
 
