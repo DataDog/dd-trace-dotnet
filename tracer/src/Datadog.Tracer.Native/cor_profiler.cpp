@@ -2163,10 +2163,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
 {
     HRESULT hr = S_OK;
 
-    if (IsDebugEnabled())
-    {
-        LogManagedProfilerAssemblyDetails();
-    }
+    LogManagedProfilerAssemblyDetails();
 
     //
     // *** Get DistributedTracer TypeDef
@@ -2281,10 +2278,7 @@ HRESULT CorProfiler::RewriteForTelemetry(const ModuleMetadata& module_metadata, 
 {
     HRESULT hr = S_OK;
 
-    if (IsDebugEnabled())
-    {
-        LogManagedProfilerAssemblyDetails();
-    }
+    LogManagedProfilerAssemblyDetails();
 
     //
     // *** Get Instrumentation TypeDef
