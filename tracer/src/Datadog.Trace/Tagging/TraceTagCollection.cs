@@ -216,12 +216,11 @@ namespace Datadog.Trace.Tagging
 
             if (traceId.Upper > 0)
             {
-                // add missing "_dd.p.tid" tag with the upper 64 bits of the trace id
-                // if tag is already present, make sure it's correct
+                // add missing "_dd.p.tid" tag with the upper 64 bits of the trace id,
+                // or replace existing tag if it has the wrong value
                 // (parse the hex string and compare ulongs to avoid allocating another string)
                 if (tagValue == null || !HexString.TryParseUInt64(tagValue, out var currentValue) || currentValue != traceId.Upper)
                 {
-                    // wrong tag value, replace it
                     SetTag(Trace.Tags.Propagated.TraceIdUpper, HexString.ToHexString(traceId.Upper));
                 }
             }
