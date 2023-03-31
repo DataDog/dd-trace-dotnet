@@ -110,9 +110,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-            var filteredSpans = spans.Where(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase)).ToList();
 
-            filteredSpans.Count().Should().Be(expectedSpanCount);
+            spans.Count().Should().Be(expectedSpanCount);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
@@ -127,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 _ => ".disabled",
             });
 
-            await VerifyHelper.VerifySpans(filteredSpans, settings)
+            await VerifyHelper.VerifySpans(spans, settings)
                 .DisableRequireUniquePrefix()
                 .UseFileName(fileName);
         }

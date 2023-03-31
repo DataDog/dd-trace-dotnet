@@ -72,9 +72,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     command.CommandText = $"{DatabaseMonitoringPropagator.PropagateSpanData(propagationMode, tracer.DefaultServiceName, scope.Span.Context)} {commandText}";
                     tags.DbmDataPropagated = "true";
                 }
-
-                var ok = command.CommandText;
-                Log.Information("COMMAND : {Ok}", ok);
             }
             catch (Exception ex)
             {
