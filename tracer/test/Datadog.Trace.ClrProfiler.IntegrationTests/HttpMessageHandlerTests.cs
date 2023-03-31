@@ -40,8 +40,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> IntegrationConfig() =>
             from instrumentationOptions in InstrumentationOptionsValues
             from socketHandlerEnabled in new[] { true, false }
+            select new object[] { instrumentationOptions, socketHandlerEnabled };
+
+        public static IEnumerable<object[]> IntegrationConfigWithObfuscation() =>
+            from instrumentationOptions in InstrumentationOptionsValues
+            from socketHandlerEnabled in new[] { true, false }
             from queryStringEnabled in new[] { true, false }
-            select new object[] { instrumentationOptions, socketHandlerEnabled, queryStringEnabled };
+            from queryStringSizeAndExpectation in new[] { new KeyValuePair<int?, string>(null, "?key1=value1&<redacted>"), new KeyValuePair<int?, string>(200, "?key1=value1&<redacted>"), new KeyValuePair<int?, string>(2, "?k") }
+            select new object[] { instrumentationOptions, socketHandlerEnabled, queryStringEnabled, queryStringSizeAndExpectation.Key,  queryStringSizeAndExpectation.Value };
 
         public override Result ValidateIntegrationSpan(MockSpan span) => span.IsHttpMessageHandler();
 
@@ -49,12 +55,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        [MemberData(nameof(IntegrationConfig))]
-        public void HttpClient_SubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler, bool queryStringCaptureEnabled)
+        [MemberData(nameof(IntegrationConfigWithObfuscation))]
+        public void HttpClient_SubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler, bool queryStringCaptureEnabled, int? queryStringSize, string expectedQueryString)
         {
             SetInstrumentationVerification();
             ConfigureInstrumentation(instrumentation, enableSocketsHandler);
             SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING", queryStringCaptureEnabled ? "true" : "false");
+
+            if (queryStringSize.HasValue)
+            {
+                SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE", queryStringSize.ToString());
+            }
 
             var expectedAsyncCount = CalculateExpectedAsyncSpans(instrumentation);
             var expectedSyncCount = CalculateExpectedSyncSpans(instrumentation);
@@ -86,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     {
                         if (queryStringCaptureEnabled)
                         {
-                            url.Should().EndWith("?key1=value1&<redacted>");
+                            url.Should().EndWith(expectedQueryString);
                         }
                         else
                         {
@@ -117,11 +128,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
         [MemberData(nameof(IntegrationConfig))]
-        public void TracingDisabled_DoesNotSubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler, bool queryStringCaptureEnabled)
+        public void TracingDisabled_DoesNotSubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
         {
             SetInstrumentationVerification();
             ConfigureInstrumentation(instrumentation, enableSocketsHandler);
-            SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING", queryStringCaptureEnabled ? "true" : "false");
 
             const string expectedOperationName = "http.request";
 

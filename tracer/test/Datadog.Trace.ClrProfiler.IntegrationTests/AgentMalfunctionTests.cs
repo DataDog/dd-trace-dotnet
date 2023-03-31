@@ -23,9 +23,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private static readonly Regex StackRegex = new(@"      error.stack:(\n|\r){1,2}.*(\n|\r){1,2}.*,(\r|\n){1,2}");
         private static readonly Regex ErrorMsgRegex = new(@"      error.msg:.*,(\r|\n){1,2}");
 
+        private readonly ITestOutputHelper _output;
+
         public AgentMalfunctionTests(ITestOutputHelper output)
             : base("ProcessStart", output)
         {
+            _output = output;
             SetServiceVersion("1.0.0");
         }
 
@@ -49,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [InlineData(AgentBehaviour.Return404, TestTransports.Uds)]
         [InlineData(AgentBehaviour.Return500, TestTransports.Uds)]
 #endif
-        public void SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType)
+        public async Task SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType)
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             if (transportType == TestTransports.WindowsNamedPipe && !EnvironmentTools.IsWindows())
@@ -60,10 +63,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             EnvironmentHelper.EnableTransport(transportType);
             using var agent = EnvironmentHelper.GetMockAgent();
             agent.SetBehaviour(behaviour);
-            TestInstrumentation(agent);
+
+            // The server implementation of named pipes is flaky so have 3 attempts
+            var attemptsRemaining = 3;
+            while (true)
+            {
+                try
+                {
+                    attemptsRemaining--;
+                    await TestInstrumentation(agent);
+                    return;
+                }
+                catch (Exception ex) when (transportType == TestTransports.WindowsNamedPipe && attemptsRemaining > 0 && ex is not SkipException)
+                {
+                    await ReportRetry(_output, attemptsRemaining, this.GetType(), ex);
+                }
+            }
         }
 
-        private async void TestInstrumentation(MockTracerAgent agent)
+        private async Task TestInstrumentation(MockTracerAgent agent)
         {
             const int expectedSpanCount = 5;
             const string expectedOperationName = "command_execution";

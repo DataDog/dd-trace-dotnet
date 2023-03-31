@@ -5,6 +5,7 @@
 
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -15,10 +16,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [CollectionDefinition(nameof(RuntimeMetricsTests), DisableParallelization = true)]
     public class RuntimeMetricsTests : TestHelper
     {
+        private readonly ITestOutputHelper _output;
+
         public RuntimeMetricsTests(ITestOutputHelper output)
             : base("RuntimeMetrics", output)
         {
             SetServiceVersion("1.0.0");
+            _output = output;
         }
 
         [SkippableFact]
@@ -63,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void NamedPipesSubmitsMetrics()
+        public async Task NamedPipesSubmitsMetrics()
         {
             if (!EnvironmentTools.IsWindows())
             {
@@ -83,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
                 catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
                 {
-                    Output.WriteLine($"Error executing test. {attemptsRemaining} attempts remaining. {ex}");
+                    await ReportRetry(_output, attemptsRemaining, this.GetType(), ex);
                 }
             }
         }

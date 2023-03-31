@@ -21,10 +21,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public class TransportTests : TestHelper
     {
+        private readonly ITestOutputHelper _output;
+
         // Using Telemetry sample as it's simple
         public TransportTests(ITestOutputHelper output)
             : base("Telemetry", output)
         {
+            _output = output;
         }
 
         public static IEnumerable<object[]> Data =>
@@ -60,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
                 catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
                 {
-                    Output.WriteLine($"Error executing test. {attemptsRemaining} attempts remaining. {ex}");
+                    await ReportRetry(_output, attemptsRemaining, this.GetType(), ex);
                 }
             }
         }
