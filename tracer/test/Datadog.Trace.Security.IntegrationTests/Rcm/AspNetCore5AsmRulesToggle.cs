@@ -52,16 +52,21 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var spans2 = await SendRequestsAsync(agent, url);
 
             var fileId2 = nameof(TestRulesToggling) + Guid.NewGuid();
-            var fileId3 = nameof(TestRulesToggling) + Guid.NewGuid();
-            var payload1 = ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = true } } }, fileId2);
-            var payload2 = ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, OnMatch = new[] { "block" } } } }, fileId3);
-            var request3 = await agent.SetupRcmAndWait(Output, new[] { ((object)payload1, ASMProduct, fileId2), ((object)payload2, ASMProduct, fileId3) });
+            var request3 = await agent.SetupRcmAndWait(
+                               Output,
+                               new[]
+                               {
+                                   ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = true } } },
+                                    ASMProduct, fileId),
+                                   ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, OnMatch = new[] { "block" } } } },
+                                    ASMProduct, fileId2)
+                               });
             CheckAckState(request3, ASMProduct, 2, ApplyStates.ACKNOWLEDGED, null, "Third RCM call");
             var spans3 = await SendRequestsAsync(agent, url);
 
             var fileId4 = nameof(TestRulesToggling) + Guid.NewGuid();
-            var payload3 = ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = true } } }, fileId4: fileId4);
-            var request4 = await agent.SetupRcmAndWait(Output, new[] { ((object)payload3, ASMProduct, acknowledgedId5: fileId4) });
+            var payload3 = ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = true } } }, ASMProduct, fileId);
+            var request4 = await agent.SetupRcmAndWait(Output, new[] { payload3 });
             CheckAckState(request4, ASMProduct, 1, ApplyStates.ACKNOWLEDGED, null, "Forth RCM call");
             var spans4 = await SendRequestsAsync(agent, url);
 

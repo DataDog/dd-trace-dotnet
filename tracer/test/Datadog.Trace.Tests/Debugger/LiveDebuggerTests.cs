@@ -27,10 +27,7 @@ public class LiveDebuggerTests
     [Fact]
     public async Task DebuggerEnabled_ServicesCalled()
     {
-        var settings = DebuggerSettings.FromSource(new NameValueConfigurationSource(new()
-        {
-            { ConfigurationKeys.Debugger.Enabled, "1" },
-        }));
+        var settings = DebuggerSettings.FromSource(new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.Enabled, "1" }, }));
 
         var discoveryService = new DiscoveryServiceMock();
         var managerMock = new RemoteConfigurationManagerMock();
@@ -44,16 +41,13 @@ public class LiveDebuggerTests
 
         probeStatusPoller.Called.Should().BeTrue();
         debuggerSink.Called.Should().BeTrue();
-        managerMock.Products.ContainsKey(LiveDebugger.Instance.Product.Name).Should().BeTrue();
+        managerMock.ProductKeys.Contains(LiveDebugger.Instance.Product.Name).Should().BeTrue();
     }
 
     [Fact]
     public async Task DebuggerDisabled_ServicesNotCalled()
     {
-        var settings = DebuggerSettings.FromSource(new NameValueConfigurationSource(new()
-        {
-            { ConfigurationKeys.Debugger.Enabled, "0" },
-        }));
+        var settings = DebuggerSettings.FromSource(new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.Enabled, "0" }, }));
 
         var discoveryService = new DiscoveryServiceMock();
         var managerMock = new RemoteConfigurationManagerMock();
@@ -68,7 +62,7 @@ public class LiveDebuggerTests
         lineProbeResolver.Called.Should().BeFalse();
         debuggerSink.Called.Should().BeFalse();
         probeStatusPoller.Called.Should().BeFalse();
-        managerMock.Products.ContainsKey(LiveDebugger.Instance.Product.Name).Should().BeFalse();
+        managerMock.ProductKeys.Contains(LiveDebugger.Instance.Product.Name).Should().BeFalse();
     }
 
     private class DiscoveryServiceMock : IDiscoveryService
@@ -78,14 +72,15 @@ public class LiveDebuggerTests
         public void SubscribeToChanges(Action<AgentConfiguration> callback)
         {
             Called = true;
-            callback(new AgentConfiguration(
-                         configurationEndpoint: "configurationEndpoint",
-                         debuggerEndpoint: "debuggerEndpoint",
-                         agentVersion: "agentVersion",
-                         statsEndpoint: "traceStatsEndpoint",
-                         dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
-                         eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
-                         clientDropP0: false));
+            callback(
+                new AgentConfiguration(
+                    configurationEndpoint: "configurationEndpoint",
+                    debuggerEndpoint: "debuggerEndpoint",
+                    agentVersion: "agentVersion",
+                    statsEndpoint: "traceStatsEndpoint",
+                    dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
+                    eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
+                    clientDropP0: false));
         }
 
         public void RemoveSubscription(Action<AgentConfiguration> callback)
@@ -97,9 +92,9 @@ public class LiveDebuggerTests
 
     private class RemoteConfigurationManagerMock : IRemoteConfigurationManager
     {
-        internal bool Called { get; private set; }
+        public List<string> ProductKeys { get; } = new();
 
-        internal Dictionary<string, Product> Products { get; private set; } = new();
+        internal bool Called { get; private set; }
 
         public Task StartPollingAsync()
         {
@@ -107,18 +102,26 @@ public class LiveDebuggerTests
             return Task.CompletedTask;
         }
 
-        public void RegisterProduct(Product product)
-        {
-            Products.Add(product.Name, product);
-        }
-
-        public void UnregisterProduct(string productName)
-        {
-            Products.Remove(productName);
-        }
-
         public void SetCapability(BigInteger index, bool available)
         {
+        }
+
+        public Subscription SubscribeToChanges(Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>, List<ApplyDetails>> callback, params string[] productKeys)
+        {
+            foreach (var productKey in productKeys)
+            {
+                ProductKeys.Add(productKey);
+            }
+
+            return null;
+        }
+
+        public void UnsubscribeToChanges(Subscription subscription)
+        {
+            foreach (var productKey in subscription.ProductKeys)
+            {
+                ProductKeys.Remove(productKey);
+            }
         }
     }
 
