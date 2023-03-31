@@ -8,7 +8,7 @@ namespace Samples.TraceAnnotations.VersionMismatch.BeforeFeature
     {
         public static async Task Main(string[] args)
         {
-            Environment.FailFast("nope");
+            throw new Exception("nope");
 
             // Access Tracer.Instance.ActiveScope so there's an AssemblyRef to Datadog.Trace
             var scope = Tracer.Instance.ActiveScope;
