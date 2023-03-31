@@ -14,19 +14,20 @@ namespace Datadog.Trace.Tests.Util.Http
     public class QueryStringManagerTests
     {
         [Theory]
-        [InlineData(false, 5000, null, "")]
-        [InlineData(true, 2, null, "ab")]
-        [InlineData(true, 0, null, "abcde")]
-        [InlineData(true, 0, ".*", "<redacted><redacted>")]
-        public void Test(bool reportQueryString, int maxSizeBeforeObfuscation, string pattern, string expectedResult)
+        [InlineData("?abcde", false, 5000, null, "")]
+        [InlineData(null, true, 5000, null, "")]
+        [InlineData("", true, 5000, null, "")]
+        [InlineData("?abcde", true, 2, null, "?a")]
+        [InlineData("?abcde", true, 0, null, "?abcde")]
+        [InlineData("?abcde", true, 0, ".*", "<redacted><redacted>")]
+        public void Test(string queryString, bool reportQueryString, int maxSizeBeforeObfuscation, string pattern, string expectedResult)
         {
             const int timeout = 1000;
-            const string inputString = "abcde";
             var logger = new Mock<IDatadogLogger>();
 
             var queryStringManager = new QueryStringManager(reportQueryString, timeout, maxSizeBeforeObfuscation, pattern, logger.Object);
 
-            var result = queryStringManager.TruncateAndObfuscate(inputString);
+            var result = queryStringManager.TruncateAndObfuscate(queryString);
             result.Should().Be(expectedResult);
         }
     }

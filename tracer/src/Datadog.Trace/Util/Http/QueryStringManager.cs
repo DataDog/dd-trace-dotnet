@@ -25,7 +25,7 @@ namespace Datadog.Trace.Util.Http
 
         internal string TruncateAndObfuscate(string queryString)
         {
-            if (!_reportQueryString)
+            if (!_reportQueryString || string.IsNullOrEmpty(queryString))
             {
                 return string.Empty;
             }
