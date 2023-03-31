@@ -61,8 +61,11 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             }
 
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario2);
+            // disable default profilers
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "10000");
 
@@ -108,8 +111,11 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         public void Sampling(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario3);
+            // disable default profilers
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "100");
 
@@ -134,14 +140,33 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         }
 
         [TestAppFact("Samples.ExceptionGenerator")]
-        public void GetExceptionSamples(string appName, string framework, string appAssembly)
+        public void GetExceptionSamplesWithTimestamp(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
+            // disable default profilers
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+            // timestamps are enabled by default
+
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
 
-            CheckExceptionProfiles(runner);
+            CheckExceptionProfiles(runner, true);
+        }
+
+        [TestAppFact("Samples.ExceptionGenerator")]
+        public void GetExceptionSamplesWithoutTimestamp(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
+            // disable default profilers
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TimestampsAsLabelEnabled, "0");
+
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+
+            CheckExceptionProfiles(runner, false);
         }
 
         [TestAppFact("Samples.ExceptionGenerator")]
@@ -152,6 +177,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             // Test that the exception profiler is disabled by default
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -175,6 +201,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
@@ -197,8 +224,11 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioMeasureException);
 
+            // disable default profilers
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
@@ -421,7 +451,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 .Select(s => (s.Type, s.Message, s.Count, s.Stacktrace));
         }
 
-        private void CheckExceptionProfiles(TestApplicationRunner runner)
+        private void CheckExceptionProfiles(TestApplicationRunner runner, bool withTimestamps)
         {
             var stack1 = new StackTrace(
                 new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw1_2"),
@@ -446,14 +476,31 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             var exceptionSamples = ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
 
-            exceptionSamples.Should().HaveCount(6);
+            if (withTimestamps)
+            {
+                // no possible aggregation
+                exceptionSamples.Should().HaveCount(8);
+                exceptionSamples[0].Should().Be(("System.InvalidOperationException", "IOE", 1, stack1));
+                exceptionSamples[1].Should().Be(("System.InvalidOperationException", "IOE", 1, stack1));
+                exceptionSamples[2].Should().Be(("System.NotSupportedException", "NSE", 1, stack1));
+                exceptionSamples[3].Should().Be(("System.NotSupportedException", "NSE", 1, stack1));
+                exceptionSamples[4].Should().Be(("System.NotImplementedException", "NIE", 1, stack1));
+                exceptionSamples[5].Should().Be(("System.NotImplementedException", "NIE", 1, stack2));
+                exceptionSamples[6].Should().Be(("System.Exception", "E1", 1, stack1));
+                exceptionSamples[7].Should().Be(("System.Exception", "E2", 1, stack1));
+            }
+            else
+            {
+                // IOE and NSE exceptions will be aggregated
+                exceptionSamples.Should().HaveCount(6);
+                exceptionSamples[0].Should().Be(("System.InvalidOperationException", "IOE", 2, stack1));
+                exceptionSamples[1].Should().Be(("System.NotSupportedException", "NSE", 2, stack1));
+                exceptionSamples[2].Should().Be(("System.NotImplementedException", "NIE", 1, stack1));
+                exceptionSamples[3].Should().Be(("System.NotImplementedException", "NIE", 1, stack2));
+                exceptionSamples[4].Should().Be(("System.Exception", "E1", 1, stack1));
+                exceptionSamples[5].Should().Be(("System.Exception", "E2", 1, stack1));
+            }
 
-            exceptionSamples[0].Should().Be(("System.InvalidOperationException", "IOE", 2, stack1));
-            exceptionSamples[1].Should().Be(("System.NotSupportedException", "NSE", 2, stack1));
-            exceptionSamples[2].Should().Be(("System.NotImplementedException", "NIE", 1, stack1));
-            exceptionSamples[3].Should().Be(("System.NotImplementedException", "NIE", 1, stack2));
-            exceptionSamples[4].Should().Be(("System.Exception", "E1", 1, stack1));
-            exceptionSamples[5].Should().Be(("System.Exception", "E2", 1, stack1));
         }
     }
 }
