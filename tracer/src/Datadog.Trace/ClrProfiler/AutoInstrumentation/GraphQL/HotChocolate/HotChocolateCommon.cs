@@ -85,6 +85,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             }
         }
 
+        private static string GetNameStringValue(object nameValue)
+        {
+            // Get the string value of the NameString
+            // The NameString value can be either another NameString or a string
+            while (nameValue != null)
+            {
+                if (nameValue.TryDuckCast(typeof(NameStringProxy), out var ns))
+                {
+                    nameValue = ((NameStringProxy)ns).Value;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return nameValue is not null && nameValue is string str ? str : null;
+        }
+
         internal static void UpdateScopeFromExecuteAsync<T>(Tracer tracer, in T context)
             where T : IOperationContext
         {
@@ -108,24 +127,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 var operationType = operation.OperationType.ToString();
                 if (span.Tags is GraphQLTags tags)
                 {
-                    var nameValue = operation.Name.Value;
-                    while (nameValue != null)
-                    {
-                        if (nameValue.TryDuckCast(typeof(NameStringProxy), out var ns))
-                        {
-                            nameValue = ((NameStringProxy)ns).Value;
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-
-                    if (nameValue is not null && nameValue is string str)
-                    {
-                        tags.OperationName = str;
-                    }
-
+                    tags.OperationName = GetNameStringValue(operation.Name.Value);
                     span.ResourceName = $"{operationType} {tags.OperationName ?? "operation"}";
                     tags.OperationType = operationType;
                 }
