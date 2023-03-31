@@ -83,7 +83,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             var tags = GetTags(settings, tracerSettings);
             lock (LockObject)
             {
-                Log.Information("anna: set remoteconfig manager instance prop");
+                Log.Information("anna: set remoteconfig manager instance prop poll interval {PollInterval}", settings.PollInterval);
                 Instance ??= new RemoteConfigurationManager(
                     discoveryService,
                     remoteConfigurationApi,
