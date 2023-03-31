@@ -52,7 +52,7 @@ namespace Datadog.Trace.TestHelpers
 #else
             _ = Task.Run(() =>
             {
-                var args = $"-ma -accepteula -e -w {Path.GetFileName(exe)}";
+                var args = $"-ma -accepteula -e -w {Path.GetFileName(exe)} -o {Path.GetTempPath()}";
 
                 using var dumpToolProcess = Process.Start(new ProcessStartInfo(_path, args)
                 {
@@ -60,7 +60,7 @@ namespace Datadog.Trace.TestHelpers
                     CreateNoWindow = true,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
-                });
+                })!;
 
                 using var helper = new ProcessHelper(dumpToolProcess);
                 dumpToolProcess.WaitForExit();
@@ -74,15 +74,6 @@ namespace Datadog.Trace.TestHelpers
 
                 output?.Report($"[dump][stdout] {helper.StandardOutput}");
                 output?.Report($"[dump][stderr] {helper.ErrorOutput}");
-
-                if (dumpToolProcess.ExitCode == 0)
-                {
-                    output?.Report($"Memory dump successfully captured using '{_path} {args}'.");
-                }
-                else
-                {
-                    output?.Report($"Failed to capture memory dump using '{_path} {args}'. Exit code was {dumpToolProcess.ExitCode}.");
-                }
             });
 #endif
         }
