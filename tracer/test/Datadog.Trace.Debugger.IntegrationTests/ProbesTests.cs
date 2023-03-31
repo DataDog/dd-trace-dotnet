@@ -679,10 +679,10 @@ public class ProbesTests : TestHelper
                                      SpanProbe span => DefinitionPaths.SpanProbe,
                                      _ => throw new ArgumentOutOfRangeException(snapshotProbe.GetType().FullName, "Add a new probe kind"),
                                  };
-                                 return (snapshotProbe, $"{path}{snapshotProbe.Id}");
+                                 return (snapshotProbe, LiveDebuggerProduct.ProductName,  $"{path}{snapshotProbe.Id}");
                              })
-            .Select(dummy => ((object Config, string Id))dummy);
+            .Select(dummy => ((object Config, string ProductName, string Id))dummy);
 
-        agent.SetupRcm(Output, configurations, LiveDebuggerProduct.ProductName);
+        agent.SetupRcm(Output, configurations);
     }
 }
