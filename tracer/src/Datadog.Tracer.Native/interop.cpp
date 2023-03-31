@@ -74,10 +74,12 @@ EXTERN_C VOID STDAPICALLTYPE InstrumentProbes(
     int methodProbesLength, 
     debugger::DebuggerLineProbeDefinition* lineProbes, 
     int lineProbesLength,
+    debugger::DebuggerMethodSpanProbeDefinition* spanProbes,
+    int spanProbesLength,
     debugger::DebuggerRemoveProbesDefinition* revertProbes,
     int revertProbesLength)
 {
-    return trace::profiler->InstrumentProbes(methodProbes, methodProbesLength, lineProbes, lineProbesLength, revertProbes, revertProbesLength);
+    return trace::profiler->InstrumentProbes(methodProbes, methodProbesLength, lineProbes, lineProbesLength, spanProbes, spanProbesLength, revertProbes, revertProbesLength);
 }
 
 EXTERN_C int STDAPICALLTYPE GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses)

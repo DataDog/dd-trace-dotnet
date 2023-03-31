@@ -4,7 +4,7 @@ namespace Samples.Probes.TestRuns;
 
 public class ProbeAttributeBase : Attribute
 {
-    public ProbeAttributeBase(bool skip, int phase, bool unlisted, int expectedNumberOfSnapshots, string[] skipOnFrameworks, bool captureSnapshot = true, string evaluateAt = null, string conditionJson = null, string templateJson = null, string templateStr = null, string metricJson = null, string metricName = null, string metricKind = null, string probeId = null)
+    public ProbeAttributeBase(bool skip, int phase, bool unlisted, int expectedNumberOfSnapshots, string[] skipOnFrameworks, bool captureSnapshot = true, string evaluateAt = null, string conditionJson = null, string templateJson = null, string templateStr = null, string probeId = null, bool expectProbeStatusFailure = false)
     {
         Skip = skip;
         Phase = phase;
@@ -16,10 +16,8 @@ public class ProbeAttributeBase : Attribute
         ConditionJson = conditionJson;
         TemplateJson = templateJson;
         TemplateStr = templateStr;
-        MetricJson = metricJson;
-        MetricName = metricName;
-        MetricKind = metricKind;
 		ProbeId = probeId;
+        ExpectProbeStatusFailure = expectProbeStatusFailure;
     }
 
     public bool Skip { get; }
@@ -33,7 +31,5 @@ public class ProbeAttributeBase : Attribute
 	public string ProbeId { get; set; }
     public string TemplateJson { get; set; }
     public string TemplateStr { get; set; }
-    public string MetricJson { get; set; }
-    public string MetricName { get; set; }
-    public string MetricKind { get; set; }
+    public bool ExpectProbeStatusFailure { get; set; }
 }

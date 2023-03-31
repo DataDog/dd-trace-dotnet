@@ -3,7 +3,7 @@ using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LineProbeTestData(lineNumber: 22)]
+    [LogLineProbeTestData(lineNumber: 22)]
     public class GenericMethodWithArguments : IRun
     {
         public string Prop { get; } = nameof(GenericMethodWithArguments);
@@ -16,7 +16,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData("System.String", new[] { "!!0" })]
+        [LogMethodProbeTestData("System.String", new[] { "!!0" })]
         public string Method<T>(T genericParam)
         {
             return genericParam.ToString();

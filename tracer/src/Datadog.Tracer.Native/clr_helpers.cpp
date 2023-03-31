@@ -1,3 +1,4 @@
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
 #include "clr_helpers.h"
 
 #include <cstring>
@@ -10,6 +11,8 @@
 #include <stack>
 
 #include "../../../shared/src/native-src/pal.h"
+
+#include <codecvt>
 
 namespace trace
 {
@@ -1010,13 +1013,34 @@ HRESULT FunctionLocalSignature::TryParse(PCCOR_SIGNATURE pbBase, unsigned len, s
     return S_OK;
 }
 
+shared::WSTRING GetStringValueFromBlob(PCCOR_SIGNATURE& signature)
+{
+    // If it's null
+    if (*signature == UINT8_MAX)
+    {
+        signature += 1;
+        return shared::WSTRING();
+    }
+
+    // Read size and advance
+    ULONG size{CorSigUncompressData(signature)};
+    shared::WSTRING wstr;
+    wstr.reserve(size);
+
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    std::wstring temp =
+        converter.from_bytes(reinterpret_cast<const char*>(signature), reinterpret_cast<const char*>(signature) + size);
+    wstr.assign(temp.begin(), temp.end());
+    signature += size;
+    return wstr;
+}
+
 HRESULT HasAsyncStateMachineAttribute(const ComPtr<IMetaDataImport2>& metadataImport, const mdMethodDef methodDefToken, bool& hasAsyncAttribute)
 {
     const void* ppData = nullptr;
     ULONG pcbData = 0;
     auto hr = metadataImport->GetCustomAttributeByName(
         methodDefToken, WStr("System.Runtime.CompilerServices.AsyncStateMachineAttribute"), &ppData, &pcbData);
-
     IfFailRet(hr);
     hasAsyncAttribute = pcbData > 0;
     return hr;

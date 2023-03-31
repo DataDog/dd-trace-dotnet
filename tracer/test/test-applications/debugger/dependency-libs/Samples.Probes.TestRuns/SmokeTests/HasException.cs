@@ -13,7 +13,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData("System.Int32", new[] { "System.String" }, true)]
+        [LogMethodProbeTestData("System.Int32", new[] { "System.String" }, true)]
         public int Method(string name)
         {
             return int.Parse(name);

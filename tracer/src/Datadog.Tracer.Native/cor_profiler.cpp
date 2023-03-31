@@ -440,7 +440,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         {
             Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version, " matched profiler version v",
                          expected_version);
-            managed_profiler_loaded_app_domains.insert(assembly_info.app_domain_id);
+            managed_profiler_loaded_app_domains.insert({assembly_info.app_domain_id, assembly_metadata.version});
 
             if (runtime_information_.is_desktop() && corlib_module_loaded)
             {
@@ -1861,12 +1861,13 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
 
 void CorProfiler::InstrumentProbes(debugger::DebuggerMethodProbeDefinition* methodProbes, int methodProbesLength,
                                    debugger::DebuggerLineProbeDefinition* lineProbes, int lineProbesLength,
+                                   debugger::DebuggerMethodSpanProbeDefinition* spanProbes, int spanProbesLength,
                                    debugger::DebuggerRemoveProbesDefinition* removeProbes, int revertProbesLength) const
 {
     if (debugger_instrumentation_requester != nullptr)
     {
         debugger_instrumentation_requester->InstrumentProbes(methodProbes, methodProbesLength, lineProbes,
-                                                             lineProbesLength, removeProbes, revertProbesLength);
+                                                             lineProbesLength, spanProbes, spanProbesLength, removeProbes, revertProbesLength);
     }
 }
 

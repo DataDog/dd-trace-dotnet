@@ -3,9 +3,9 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LineProbeTestData(16)]
-    [LineProbeTestData(17)]
-    [LineProbeTestData(25)]
+    [LogLineProbeTestData(16)]
+    [LogLineProbeTestData(17)]
+    [LogLineProbeTestData(25)]
     public class HasLocalsAndReturnValue : IRun
     {
         public int Number { get; set; } = 7;
@@ -18,7 +18,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData("System.String", new[] { "System.Int32" })]
+        [LogMethodProbeTestData("System.String", new[] { "System.Int32" })]
         public string Method(int num)
         {
             var timeSpan = TimeSpan.FromSeconds(num);

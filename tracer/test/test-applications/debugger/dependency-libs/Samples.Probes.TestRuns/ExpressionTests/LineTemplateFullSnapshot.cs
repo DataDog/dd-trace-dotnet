@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
-    [LineProbeTestData(23, templateJson: Json, templateStr: "Result is: ", captureSnapshot: true)]
+    [LogLineProbeTestData(23, templateJson: Json, templateStr: "Result is: ", captureSnapshot: true)]
     internal class LineTemplateFullSnapshot : IRun
     {
         private const string Json = @"{

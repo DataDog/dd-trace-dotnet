@@ -16,7 +16,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         public class Test2<Generic2> : HasVarAndMvar.Test<Generic>
         {
             [MethodImpl(MethodImplOptions.NoInlining)]
-            [MethodProbeTestData("System.String", new[] { "!!0", "!0", "Samples.Probes.TestRuns.Shared.Generic" })]
+            [LogMethodProbeTestData("System.String", new[] { "!!0", "!0", "Samples.Probes.TestRuns.Shared.Generic" })]
             public string Method<K>(K k, Generic2 gen2, Generic gen)
             {
                 var kToString = k.ToString();
