@@ -85,7 +85,7 @@ namespace Datadog.Trace.AppSec
                     subscriptionsKeys.Add(AsmRemoteConfigurationProducts.AsmFeaturesProduct.Name);
                 }
 
-                if (_noLocalRules)
+                if ((_settings.Enabled || _settings.CanBeToggled) && _noLocalRules)
                 {
                     subscriptionsKeys.Add(AsmRemoteConfigurationProducts.AsmDdProduct.Name);
                 }
@@ -167,7 +167,6 @@ namespace Datadog.Trace.AppSec
         {
             string? rcmUpdateError = null;
             UpdateResult? updateResult = null;
-            var allProcessedConfigs = new List<RemoteConfigurationPath>();
 
             try
             {
@@ -176,8 +175,7 @@ namespace Datadog.Trace.AppSec
                     configsByProduct.TryGetValue(product.Key, out var configurations);
                     List<RemoteConfigurationPath>? configsForThisProductToRemove = null;
                     removedConfigs?.TryGetValue(product.Key, out configsForThisProductToRemove);
-                    var processedPaths = product.Value.UpdateRemoteConfigurationStatus(configurations, configsForThisProductToRemove, _configurationStatus);
-                    allProcessedConfigs.AddRange(processedPaths);
+                    product.Value.UpdateRemoteConfigurationStatus(configurations, configsForThisProductToRemove, _configurationStatus);
                 }
 
                 // normally CanBeToggled should not need a check as asm_features capacity is only sent if AppSec env var is null, but still guards it in case
@@ -226,16 +224,16 @@ namespace Datadog.Trace.AppSec
             var finalError = rcmUpdateError ?? updateResult?.ErrorMessage;
             if (string.IsNullOrEmpty(finalError))
             {
-                foreach (var config in allProcessedConfigs)
+                foreach (var config in configsByProduct.Values.SelectMany(v => v))
                 {
-                    applyDetails.Add(ApplyDetails.FromOk(config.Path));
+                    applyDetails.Add(ApplyDetails.FromOk(config.Path.Path));
                 }
             }
             else
             {
-                foreach (var config in allProcessedConfigs)
+                foreach (var config in configsByProduct.Values.SelectMany(v => v))
                 {
-                    applyDetails.Add(ApplyDetails.FromError(config.Path, finalError));
+                    applyDetails.Add(ApplyDetails.FromError(config.Path.Path, finalError));
                 }
             }
 

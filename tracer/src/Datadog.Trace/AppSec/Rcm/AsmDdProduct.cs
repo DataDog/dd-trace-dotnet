@@ -16,7 +16,7 @@ internal class AsmDdProduct : AsmRemoteConfigurationProduct
 {
     public override string Name => "ASM_DD";
 
-    internal override List<RemoteConfigurationPath> UpdateRemoteConfigurationStatus(List<RemoteConfiguration>? files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus)
+    internal override void UpdateRemoteConfigurationStatus(List<RemoteConfiguration>? files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus)
     {
         if (removedConfigsForThisProduct != null)
         {
@@ -36,12 +36,9 @@ internal class AsmDdProduct : AsmRemoteConfigurationProduct
             }
         }
 
-        var paths = new List<RemoteConfigurationPath>();
-
         if (files?.Count > 0)
         {
             var firstFile = files.First();
-            paths.Add(firstFile.Path);
             var asmDd = new NamedRawFile(firstFile!.Path, firstFile.Contents);
             var result = asmDd.Deserialize<JToken>();
 
@@ -62,7 +59,5 @@ internal class AsmDdProduct : AsmRemoteConfigurationProduct
                 configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
             }
         }
-
-        return paths;
     }
 }
