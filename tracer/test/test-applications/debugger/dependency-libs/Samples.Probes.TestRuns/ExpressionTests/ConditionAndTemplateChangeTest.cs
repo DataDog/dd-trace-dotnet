@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
     // Phase 1
-    [LineProbeTestData(70, 
+    [LogLineProbeTestData(70, 
                        templateJson: Phase1_TemplateJson, 
                        templateStr: "Result is: ", 
                        conditionJson: Condition_EvaluatesToTrue_Json, 
@@ -13,7 +13,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
                        probeId: "99998286d046-9740-a3e4-95cf-ff46699c73c4")]
 
     // Phase 2
-    [LineProbeTestData(70,
+    [LogLineProbeTestData(70,
                        templateJson: TemplateJson,
                        templateStr: "This is a new Template, the local is: ",
                        conditionJson: Condition_EvaluatesToFalse_Json,
@@ -23,7 +23,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
                        expectedNumberOfSnapshots: 0 /* the condition turns out false */)]
 
     // Phase 3
-    [LineProbeTestData(70,
+    [LogLineProbeTestData(70,
                        templateJson: TemplateJson,
                        templateStr: "This is a new Template, the local is: ",
                        conditionJson: Condition_EvaluatesToTrue_Json,
@@ -63,7 +63,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData(phase: 1)]
+        [LogMethodProbeTestData(phase: 1)]
         string Method(double arg)
         {
             var local = arg + GetInt(arg);
@@ -71,7 +71,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
             return $"Result is: {arg} + {local}";
         }
 
-        [MethodProbeTestData(phase: 2)]
+        [LogMethodProbeTestData(phase: 2)]
         int GetInt(double d)
         {
             return (int)(d + 1);

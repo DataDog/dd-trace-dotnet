@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LineProbeTestData(18)]
+    [LogLineProbeTestData(18)]
     public class StaticMethodWithArguments : IRun
     {
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -12,7 +12,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData("System.String", new[] { "System.String" })]
+        [LogMethodProbeTestData("System.String", new[] { "System.String" })]
         public static string Method(string lastName)
         {
             return lastName;

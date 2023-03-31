@@ -5,7 +5,7 @@ using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LineProbeTestData(lineNumber: 34)]
+    [LogLineProbeTestData(lineNumber: 34)]
     public class AsyncInterfaceProperties : IAsyncRun
     {
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -16,7 +16,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData]
+        [LogMethodProbeTestData]
         public async Task<string> Method(IInterface parameter)
         {
             Console.WriteLine($"{parameter.ShowMe}, {parameter.DoNotShowMe}");

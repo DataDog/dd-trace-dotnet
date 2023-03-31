@@ -12,11 +12,13 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.NetworkInformation;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -24,14 +26,12 @@ using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
-#if NETFRAMEWORK
-using Datadog.Trace.ExtensionMethods; // needed for Dictionary<K,V>.GetValueOrDefault()
-#endif
-
 namespace Datadog.Trace.TestHelpers
 {
     public abstract class TestHelper : IDisposable
     {
+        private HttpClient _client = new();
+
         protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
             : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides), output)
         {
@@ -58,6 +58,8 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"TargetFramework: {EnvironmentHelper.GetTargetFramework()}");
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
             Output.WriteLine($"Native Loader DLL: {EnvironmentHelper.GetNativeLoaderPath()}");
+
+            _client.DefaultRequestHeaders.Add("DD-API-KEY", Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY"));
         }
 
         public bool SecurityEnabled { get; private set; }
@@ -642,6 +644,58 @@ namespace Datadog.Trace.TestHelpers
             // other tags
             Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
+        }
+
+        protected async Task ReportRetry(ITestOutputHelper outputHelper, int attemptsRemaining, Type testType, Exception ex = null)
+        {
+            var type = outputHelper.GetType();
+            var testMember = type.GetField("test", BindingFlags.Instance | BindingFlags.NonPublic);
+            var test = (ITest)testMember?.GetValue(outputHelper);
+            var testFullName = type.FullName + test?.TestCase.DisplayName;
+
+            outputHelper.WriteLine($"Error executing test: {testFullName}. {attemptsRemaining} attempts remaining. {ex}");
+
+            // In addition to logging, send a metric that will help us get more information through tags
+            var srcBranch = Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH");
+
+            var tags = $$"""
+                "os.platform:{{SanitizeTagValue(FrameworkDescription.Instance.OSPlatform)}}",
+                "os.architecture:{{SanitizeTagValue(EnvironmentTools.GetPlatform())}}",
+                "target.framework:{{SanitizeTagValue(EnvironmentHelper.GetTargetFramework())}}",
+                "test.name:{{SanitizeTagValue(testFullName)}}",
+                "git.branch:{{SanitizeTagValue(srcBranch)}}"
+            """;
+
+            var payload = $$"""
+                {
+                    "series": [{
+                        "metric": "dd_trace_dotnet.ci.tests.retries",
+                        "type": 1,
+                        "points": [{
+                            "timestamp": {{((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds()}},
+                            "value": 1
+                            }],
+                        "tags": [
+                            {{tags}}
+                        ]
+                    }]
+                }
+            """;
+
+            var content = new StringContent(payload, Encoding.UTF8, "application/json");
+            var response = await _client.PostAsync("https://api.datadoghq.com/api/v2/series", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.StatusCode != HttpStatusCode.Accepted)
+            {
+                outputHelper.WriteLine($"Failed to submit metric to monitor retry. Response was: Code: {response.StatusCode}. Response: {responseContent}. Payload sent was: \"{payload}\"");
+            }
+        }
+
+        private string SanitizeTagValue(string tag)
+        {
+            tag.TryConvertToNormalizedTagName(true, out var normalizedTag);
+            return normalizedTag;
         }
 
         private bool IsServerSpan(MockSpan span) =>

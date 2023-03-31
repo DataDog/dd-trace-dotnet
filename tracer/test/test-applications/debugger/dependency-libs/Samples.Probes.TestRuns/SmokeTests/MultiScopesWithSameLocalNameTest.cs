@@ -11,8 +11,8 @@ namespace Samples.Probes.TestRuns.SmokeTests;
 /// at this location but we accidently capture the `i` and `localInFor` that are in the scope of the second for loop (as they override the `i` and `localInFor` of the first loop, because of the same naming)
 /// thus they will see the value '0' in the snapshots instead of having their real value.
 /// </summary>
-[LineProbeTestData(lineNumber: 25, expectedNumberOfSnapshots: 2)]
-[LineProbeTestData(lineNumber: 32, expectedNumberOfSnapshots: 2)]
+[LogLineProbeTestData(lineNumber: 25, expectedNumberOfSnapshots: 2)]
+[LogLineProbeTestData(lineNumber: 32, expectedNumberOfSnapshots: 2)]
 public class MultiScopesWithSameLocalNameTest : IRun
 {
     [MethodImpl(MethodImplOptions.NoInlining)]
