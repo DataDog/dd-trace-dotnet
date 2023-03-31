@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreMvc31TraceId128Bit : AspNetCoreMvc31TraceId128BitTests
     {
         public AspNetCoreMvc31TraceId128Bit(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableQueryStringReporting: false)
+            : base(fixture, output, generate128BitTraceIds: true)
         {
         }
     }
@@ -28,20 +28,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreMvc31TraceId64Bit : AspNetCoreMvc31TraceId128BitTests
     {
         public AspNetCoreMvc31TraceId64Bit(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output)
+            : base(fixture, output, generate128BitTraceIds: false)
         {
         }
     }
 
     public abstract class AspNetCoreMvc31TraceId128BitTests : AspNetCoreMvcTestBase
     {
-        private readonly bool? _generate128BitTraceIds;
+        private readonly bool _generate128BitTraceIds;
         private readonly string _testName;
 
         protected AspNetCoreMvc31TraceId128BitTests(
             AspNetCoreTestFixture fixture,
             ITestOutputHelper output,
-            bool? generate128BitTraceIds = null)
+            bool generate128BitTraceIds)
             : base(
                 "AspNetCoreMvc31",
                 fixture,
@@ -51,10 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             _generate128BitTraceIds = generate128BitTraceIds;
             _testName = GetTestName(nameof(AspNetCoreMvc31TraceId128BitTests));
 
-            if (generate128BitTraceIds != null)
-            {
-                SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, generate128BitTraceIds ? "true" : "false");
-            }
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, generate128BitTraceIds ? "true" : "false");
         }
 
         [SkippableTheory]
@@ -80,14 +77,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         protected override string GetTestName(string testName)
         {
-            var suffix = _generate128BitTraceIds switch
-                         {
-                             null => string.Empty,
-                             true => "128Bit",
-                             false => "64Bit",
-                         };
-
-            return $"{testName}{suffix}";
+            return _generate128BitTraceIds switch
+                   {
+                       true => $"{testName}.128bit",
+                       false => $"{testName}.64bit",
+                   };
         }
     }
 }

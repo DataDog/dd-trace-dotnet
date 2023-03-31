@@ -151,7 +151,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                       + (virtualApp ? ".VirtualApp" : string.Empty)
                       + (classicMode ? ".Classic" : ".Integrated")
                       + (enableRouteTemplateExpansion     ? ".WithExpansion" :
-                         enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF");
+                         enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF")
+                      + (enable128BitTraceIds ? ".128bit" : string.Empty);
         }
 
         public static TheoryData<string, int> Data => new()
