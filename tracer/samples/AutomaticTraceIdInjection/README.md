@@ -3,6 +3,12 @@ Follow the official documentation steps to set up [C# log collection](https://do
 
 If there is a logging layout that you would like to see documented here, please feel free to reach out with an issue or contribution!
 
+# Samples
+You can run the samples by using `RunSampleWithAutomaticInstrumentation.sh`. 
+Follow the instructions in the script, to decide what features you want to use and to properly setup automatic instrumentation. 
+Change the values that you are asked to change to make things work on your platform
+The samples rely on `Datadog.Trace.Bundle` but you could obviously do the same with `Datadog.Trace` and by setting up the tracer for automatic instrumentation.
+
 ## Supported Logging Frameworks
 ### Log4Net
 Layouts configured in the sample:
