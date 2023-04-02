@@ -78,9 +78,9 @@ namespace Datadog.Trace.TestHelpers
 
         public IImmutableList<NameValueCollection> TraceRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
-        public List<string> Snapshots { get; private set; } = new();
+        public IImmutableList<string> Snapshots { get; private set; } = ImmutableList<string>.Empty;
 
-        public List<string> ProbesStatuses { get; private set; } = new();
+        public IImmutableList<string> ProbesStatuses { get; private set; } = ImmutableList<string>.Empty;
 
         public ConcurrentQueue<string> StatsdRequests { get; } = new();
 
@@ -315,7 +315,7 @@ namespace Datadog.Trace.TestHelpers
 
         public void ClearSnapshots()
         {
-            Snapshots.Clear();
+            Snapshots = Snapshots.Clear();
         }
 
         /// <summary>
@@ -361,7 +361,7 @@ namespace Datadog.Trace.TestHelpers
 
         public void ClearProbeStatuses()
         {
-            ProbesStatuses.Clear();
+            ProbesStatuses = ProbesStatuses.Clear();
         }
 
         public async Task<string[]> WaitForStatsdRequests(int statsdRequestsCount, TimeSpan? timeout = null)
@@ -868,8 +868,8 @@ namespace Datadog.Trace.TestHelpers
 
             // We override the previous Probes Statuses as the debugger-agent is always emitting complete set of probes statuses, so we can
             // solely rely on that.
-            ProbesStatuses = probeStatuses.Values.ToList();
-            Snapshots.AddRange(snapshots);
+            ProbesStatuses = new ImmutableArray<string>().AddRange(probeStatuses.Values);
+            Snapshots = Snapshots.AddRange(snapshots);
         }
 
         public readonly struct EvpProxyPayload
