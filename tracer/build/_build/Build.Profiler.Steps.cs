@@ -164,7 +164,7 @@ partial class Build
         .After(CompileProfilerNativeSrc)
         .Executes(() =>
         {
-            foreach (var architecture in ArchitecturesForPlatform)
+            foreach (var architecture in ArchitecturesForPlatformForProfiler)
             {
                 var sourceDir = ProfilerOutputDirectory / "DDProf-Deploy" / $"win-{architecture}";
                 var source = sourceDir / "Datadog.Profiler.Native.dll";

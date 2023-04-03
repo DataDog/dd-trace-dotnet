@@ -5,6 +5,7 @@
 
 #include "dd_profiler_constants.h"
 #include "environment_variables.h"
+#include "environment_variables_util.h"
 #include "logger.h"
 #include "macros.h"
 #include <set>
@@ -1438,37 +1439,36 @@ HRESULT GenericTypeProps::TryParse()
 
 void LogManagedProfilerAssemblyDetails()
 {
-    Logger::Info("pcbPublicKey: ", managed_profiler_assembly_property.pcbPublicKey);
-    Logger::Info("ppbPublicKey: ", shared::HexStr(managed_profiler_assembly_property.ppbPublicKey,
-                                                  managed_profiler_assembly_property.pcbPublicKey));
-    Logger::Info("pcbPublicKey: ");
-    const auto ppbPublicKey = (BYTE*) managed_profiler_assembly_property.ppbPublicKey;
-    for (ULONG i = 0; i < managed_profiler_assembly_property.pcbPublicKey; i++)
+    if (!IsDebugEnabled())
     {
-        Logger::Info(" -> ", (int) ppbPublicKey[i]);
+        return;
     }
-    Logger::Info("szName: ", managed_profiler_assembly_property.szName);
 
-    Logger::Info("Metadata.cbLocale: ", managed_profiler_assembly_property.pMetaData.cbLocale);
-    Logger::Info("Metadata.szLocale: ", managed_profiler_assembly_property.pMetaData.szLocale);
+    Logger::Debug("pcbPublicKey: ", managed_profiler_assembly_property.pcbPublicKey);
+    Logger::Debug("ppbPublicKey: ", shared::HexStr(managed_profiler_assembly_property.ppbPublicKey,
+                                                  managed_profiler_assembly_property.pcbPublicKey));
+    Logger::Debug("szName: ", managed_profiler_assembly_property.szName);
+
+    Logger::Debug("Metadata.cbLocale: ", managed_profiler_assembly_property.pMetaData.cbLocale);
+    Logger::Debug("Metadata.szLocale: ", managed_profiler_assembly_property.pMetaData.szLocale);
 
     if (managed_profiler_assembly_property.pMetaData.rOS != nullptr)
     {
-        Logger::Info("Metadata.rOS.dwOSMajorVersion: ",
+        Logger::Debug("Metadata.rOS.dwOSMajorVersion: ",
                      managed_profiler_assembly_property.pMetaData.rOS->dwOSMajorVersion);
-        Logger::Info("Metadata.rOS.dwOSMinorVersion: ",
+        Logger::Debug("Metadata.rOS.dwOSMinorVersion: ",
                      managed_profiler_assembly_property.pMetaData.rOS->dwOSMinorVersion);
-        Logger::Info("Metadata.rOS.dwOSPlatformId: ",
+        Logger::Debug("Metadata.rOS.dwOSPlatformId: ",
                      managed_profiler_assembly_property.pMetaData.rOS->dwOSPlatformId);
     }
 
-    Logger::Info("Metadata.usBuildNumber: ", managed_profiler_assembly_property.pMetaData.usBuildNumber);
-    Logger::Info("Metadata.usMajorVersion: ", managed_profiler_assembly_property.pMetaData.usMajorVersion);
-    Logger::Info("Metadata.usMinorVersion: ", managed_profiler_assembly_property.pMetaData.usMinorVersion);
-    Logger::Info("Metadata.usRevisionNumber: ", managed_profiler_assembly_property.pMetaData.usRevisionNumber);
+    Logger::Debug("Metadata.usBuildNumber: ", managed_profiler_assembly_property.pMetaData.usBuildNumber);
+    Logger::Debug("Metadata.usMajorVersion: ", managed_profiler_assembly_property.pMetaData.usMajorVersion);
+    Logger::Debug("Metadata.usMinorVersion: ", managed_profiler_assembly_property.pMetaData.usMinorVersion);
+    Logger::Debug("Metadata.usRevisionNumber: ", managed_profiler_assembly_property.pMetaData.usRevisionNumber);
 
-    Logger::Info("pulHashAlgId: ", managed_profiler_assembly_property.pulHashAlgId);
-    Logger::Info("sizeof(pulHashAlgId): ", sizeof(managed_profiler_assembly_property.pulHashAlgId));
-    Logger::Info("assemblyFlags: ", managed_profiler_assembly_property.assemblyFlags);
+    Logger::Debug("pulHashAlgId: ", managed_profiler_assembly_property.pulHashAlgId);
+    Logger::Debug("sizeof(pulHashAlgId): ", sizeof(managed_profiler_assembly_property.pulHashAlgId));
+    Logger::Debug("assemblyFlags: ", managed_profiler_assembly_property.assemblyFlags);
 }
 } // namespace trace
