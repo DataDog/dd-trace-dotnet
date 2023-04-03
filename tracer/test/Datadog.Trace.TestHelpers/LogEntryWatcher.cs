@@ -4,12 +4,12 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.TestHelpers;
@@ -17,12 +17,18 @@ namespace Datadog.Trace.TestHelpers;
 public class LogEntryWatcher : IDisposable
 {
     private readonly FileSystemWatcher _fileWatcher;
-    private StreamReader _reader;
+
+    // When the log file gets too big, the logger will roll over and create a new file, but we may still be reading from the old file
+    // We must finish reading from the old one before switching to the new one, hence the queue
+    private readonly ConcurrentQueue<StreamReader> _readers;
+
+    private StreamReader _activeReader;
 
     public LogEntryWatcher(string logFilePattern, string logDirectory = null)
     {
         var logPath = logDirectory ?? DatadogLoggingFactory.GetLogDirectory();
         _fileWatcher = new FileSystemWatcher { Path = logPath, Filter = logFilePattern, EnableRaisingEvents = true };
+        _readers = new();
 
         var dir = new DirectoryInfo(logPath);
         var lastFile = dir
@@ -32,8 +38,10 @@ public class LogEntryWatcher : IDisposable
 
         if (lastFile != null && lastFile.LastWriteTime.Date == DateTime.Today)
         {
-            SetStream(lastFile.FullName);
-            _reader.ReadToEnd();
+            var reader = OpenStream(lastFile.FullName);
+            reader.ReadToEnd();
+
+            _readers.Enqueue(reader);
         }
 
         _fileWatcher.Created += NewLogFileCreated;
@@ -42,7 +50,13 @@ public class LogEntryWatcher : IDisposable
     public void Dispose()
     {
         _fileWatcher?.Dispose();
-        _reader?.Dispose();
+
+        while (_readers.TryDequeue(out var reader))
+        {
+            reader.Dispose();
+        }
+
+        Interlocked.Exchange(ref _activeReader, null)?.Dispose();
     }
 
     public Task WaitForLogEntry(string logEntry, TimeSpan? timeout = null) => WaitForLogEntries(new[] { logEntry }, timeout);
@@ -54,13 +68,17 @@ public class LogEntryWatcher : IDisposable
         var i = 0;
         while (logEntries.Length > i && !cancellationSource.IsCancellationRequested)
         {
-            if (_reader == null)
+            if (_activeReader == null)
             {
-                await Task.Delay(100);
-                continue;
+                if (!_readers.TryDequeue(out _activeReader))
+                {
+                    await Task.Delay(100);
+                    continue;
+                }
             }
 
-            var line = await _reader.ReadLineAsync();
+            var line = await _activeReader.ReadLineAsync();
+
             if (line != null)
             {
                 if (line.Contains(logEntries[i]))
@@ -70,38 +88,36 @@ public class LogEntryWatcher : IDisposable
             }
             else
             {
+                // Ensure we're still reading from the latest file, otherwise switch to the new reader
+                if (_readers.TryDequeue(out var reader))
+                {
+                    Interlocked.Exchange(ref _activeReader, reader)?.Dispose();
+                    continue;
+                }
+
                 await Task.Delay(100);
             }
         }
 
         if (i != logEntries.Length)
         {
-            throw new InvalidOperationException(_reader == null ? $"Log file was not found for path: {_fileWatcher.Path} with file pattern {_fileWatcher.Filter}" : $"Log entry was not found {logEntries[i]} in {_fileWatcher.Path} with filter {_fileWatcher.Filter}. Cancellation token reached: {cancellationSource.IsCancellationRequested}");
+            throw new InvalidOperationException(_readers.IsEmpty ? $"Log file was not found for path: {_fileWatcher.Path} with file pattern {_fileWatcher.Filter}" : $"Log entry was not found {logEntries[i]} in {_fileWatcher.Path} with filter {_fileWatcher.Filter}. Cancellation token reached: {cancellationSource.IsCancellationRequested}");
         }
     }
 
-    private void SetStream(string filePath)
+    private StreamReader OpenStream(string filePath)
     {
-        var reader = _reader;
+        var fileStream = new FileStream(
+            filePath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.ReadWrite | FileShare.Delete);
 
-        try
-        {
-            var fileStream = new FileStream(
-                filePath,
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.ReadWrite | FileShare.Delete);
-
-            _reader = new StreamReader(fileStream, Encoding.UTF8);
-        }
-        finally
-        {
-            reader?.Dispose();
-        }
+        return new StreamReader(fileStream, Encoding.UTF8);
     }
 
     private void NewLogFileCreated(object sender, FileSystemEventArgs e)
     {
-        SetStream(e.FullPath);
+        _readers.Enqueue(OpenStream(e.FullPath));
     }
 }
