@@ -51,6 +51,8 @@ namespace Datadog.Trace.TestHelpers
                 SetCorFlags(executable, agent.Output, !EnvironmentTools.IsTestTarget64BitProcess());
             }
 
+            MemoryDumpHelper.MonitorCrashes(executable);
+
             var startInfo = new ProcessStartInfo(executable, $"{arguments ?? string.Empty}");
 
             environmentHelper.SetEnvironmentVariables(

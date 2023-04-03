@@ -91,8 +91,6 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine("Executable: " + exec);
             Output.WriteLine("ApplicationPath: " + appPath);
 
-            MemoryDumpHelper.MonitorCrashes(exec, new Progress<string>(Output.WriteLine));
-
             var process = ProfilerHelper.StartProcessWithProfiler(
                 exec,
                 EnvironmentHelper,
@@ -148,8 +146,6 @@ namespace Datadog.Trace.TestHelpers
             var executable = EnvironmentHelper.IsCoreClr() ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
             var args = EnvironmentHelper.IsCoreClr() ? $"{sampleAppPath} {arguments ?? string.Empty}" : arguments;
 
-            MemoryDumpHelper.MonitorCrashes(executable, new Progress<string>(Output.WriteLine));
-
             var process = ProfilerHelper.StartProcessWithProfiler(
                 executable,
                 EnvironmentHelper,
@@ -198,7 +194,7 @@ namespace Datadog.Trace.TestHelpers
 
             if (!ranToCompletion && !process.HasExited)
             {
-                var tookMemoryDump = MemoryDumpHelper.CaptureMemoryDump(process, new Progress<string>(Output.WriteLine));
+                var tookMemoryDump = MemoryDumpHelper.CaptureMemoryDump(process);
                 process.Kill();
                 throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump}. Killing process.");
             }
