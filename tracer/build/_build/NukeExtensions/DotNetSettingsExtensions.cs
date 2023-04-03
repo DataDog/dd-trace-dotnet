@@ -110,31 +110,14 @@ internal static partial class DotNetSettingsExtensions
             .SetResultsDirectory(resultsDirectory);
     }
 
-    /// <summary>
-    /// GitLab installs MSBuild in a non-standard place that causes issues for Nuke trying to resolve it
-    /// </summary>
     public static MSBuildSettings SetMSBuildPath(this MSBuildSettings settings)
     {
-        var vsRoot = Environment.GetEnvironmentVariable("VSTUDIO_ROOT");
-
-        // Workaround until Nuke supports VS 2022
-        string toolPath;
-        try
-        {
-            toolPath = string.IsNullOrEmpty(vsRoot)
-                           ? MSBuildToolPathResolver.Resolve()
-                           : Path.Combine(vsRoot, "MSBuild", "Current", "Bin", "MSBuild.exe");
-        }
-        catch
-        {
-
-            var editions = new[] { "Enterprise", "Professional", "Community", "BuildTools", "Preview" };
-            toolPath = editions
-                      .Select(edition => Path.Combine(
-                                  EnvironmentInfo.SpecialFolder(SpecialFolders.ProgramFiles)!,
-                                  $@"Microsoft Visual Studio\2022\{edition}\MSBuild\Current\Bin\msbuild.exe"))
-                      .First(File.Exists);
-        }
+        var editions = new[] { "Enterprise", "Professional", "Community", "BuildTools", "Preview" };
+        var toolPath = editions
+                          .Select(edition => Path.Combine(
+                                      EnvironmentInfo.SpecialFolder(SpecialFolders.ProgramFiles)!,
+                                      $@"Microsoft Visual Studio\2022\{edition}\MSBuild\Current\Bin\msbuild.exe"))
+                          .First(File.Exists);
 
         return settings.SetProcessToolPath(toolPath);
     }
