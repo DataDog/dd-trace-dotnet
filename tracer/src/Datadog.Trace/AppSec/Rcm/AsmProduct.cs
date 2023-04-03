@@ -6,7 +6,6 @@
 #nullable enable
 
 using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.RemoteConfigurationManagement;
 
@@ -16,67 +15,64 @@ internal class AsmProduct : AsmRemoteConfigurationProduct
 {
     public override string Name => "ASM";
 
-    internal override void UpdateRemoteConfigurationStatus(List<RemoteConfiguration>? files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus)
+    protected override void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
     {
-        if (removedConfigsForThisProduct != null)
+        foreach (var file in files)
         {
-            var removedRulesOveride = false;
-            var removedExclusions = false;
-            foreach (var configurationPath in removedConfigsForThisProduct)
+            var asmConfig = new NamedRawFile(file.Path, file.Contents).Deserialize<Payload>();
+            if (asmConfig.TypedFile == null)
             {
-                removedRulesOveride |= configurationStatus.RulesOverridesByFile.Remove(configurationPath.Path);
-                removedExclusions |= configurationStatus.ExclusionsByFile.Remove(configurationPath.Path);
+                continue;
             }
 
-            if (removedRulesOveride)
+            if (asmConfig.TypedFile.RuleOverrides != null)
             {
+                configurationStatus.RulesOverridesByFile[asmConfig.Name] = asmConfig.TypedFile.RuleOverrides;
                 configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
             }
 
-            if (removedExclusions)
+            if (asmConfig.TypedFile.Exclusions != null)
             {
+                configurationStatus.ExclusionsByFile[asmConfig.Name] = asmConfig.TypedFile.Exclusions;
                 configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsKey);
             }
-        }
 
-        if (files != null)
-        {
-            foreach (var file in files)
+            if (asmConfig.TypedFile.Actions != null)
             {
-                var asmConfig = new NamedRawFile(file.Path, file.Contents).Deserialize<Payload>();
-                if (asmConfig.TypedFile == null)
+                foreach (var action in asmConfig.TypedFile.Actions)
                 {
-                    continue;
-                }
-
-                if (asmConfig.TypedFile.RuleOverrides != null)
-                {
-                    configurationStatus.RulesOverridesByFile[asmConfig.Name] = asmConfig.TypedFile.RuleOverrides;
-                    configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
-                }
-
-                if (asmConfig.TypedFile.Exclusions != null)
-                {
-                    configurationStatus.ExclusionsByFile[asmConfig.Name] = asmConfig.TypedFile.Exclusions;
-                    configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsKey);
-                }
-
-                if (asmConfig.TypedFile.Actions != null)
-                {
-                    foreach (var action in asmConfig.TypedFile.Actions)
+                    if (action.Id is not null)
                     {
-                        if (action.Id is not null)
-                        {
-                            configurationStatus.Actions[action.Id] = action;
-                        }
+                        configurationStatus.Actions[action.Id] = action;
                     }
+                }
 
-                    if (asmConfig.TypedFile.Actions.Length == 0)
-                    {
-                        configurationStatus.Actions.Clear();
-                    }
+                if (asmConfig.TypedFile.Actions.Length == 0)
+                {
+                    configurationStatus.Actions.Clear();
                 }
             }
+        }
+    }
+
+    protected override void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
+    {
+        var removedRulesOveride = false;
+        var removedExclusions = false;
+        foreach (var configurationPath in removedConfigsForThisProduct)
+        {
+            removedRulesOveride |= configurationStatus.RulesOverridesByFile.Remove(configurationPath.Path);
+            removedExclusions |= configurationStatus.ExclusionsByFile.Remove(configurationPath.Path);
+        }
+
+        if (removedRulesOveride)
+        {
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
+        }
+
+        if (removedExclusions)
+        {
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsKey);
         }
     }
 }

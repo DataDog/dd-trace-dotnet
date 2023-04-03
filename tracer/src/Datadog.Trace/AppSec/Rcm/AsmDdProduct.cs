@@ -16,48 +16,45 @@ internal class AsmDdProduct : AsmRemoteConfigurationProduct
 {
     public override string Name => "ASM_DD";
 
-    internal override void UpdateRemoteConfigurationStatus(List<RemoteConfiguration>? files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus)
+    protected override void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
     {
-        if (removedConfigsForThisProduct != null)
+        var firstFile = files.First();
+        var asmDd = new NamedRawFile(firstFile!.Path, firstFile.Contents);
+        var result = asmDd.Deserialize<JToken>();
+
+        if (result.TypedFile != null)
         {
-            var oneRemoved = false;
-            foreach (var removedConfig in removedConfigsForThisProduct)
+            RuleSet ruleSet;
+            if (!result.TypedFile.HasValues)
             {
-                oneRemoved |= configurationStatus.RulesByFile.Remove(removedConfig.Path);
+                var o = JObject.Parse(result.TypedFile!.Value<string>() ?? string.Empty);
+                ruleSet = RuleSet.From(o);
+            }
+            else
+            {
+                ruleSet = RuleSet.From(result.TypedFile);
             }
 
-            if (configurationStatus.RulesByFile.Count == 0)
-            {
-                configurationStatus.IncomingUpdateState.FallbackToEmbeddedRuleset();
-            }
-            else if (oneRemoved)
-            {
-                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
-            }
+            configurationStatus.RulesByFile[result.TypedFile.Path] = ruleSet;
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
+        }
+    }
+
+    protected override void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
+    {
+        var oneRemoved = false;
+        foreach (var removedConfig in removedConfigsForThisProduct)
+        {
+            oneRemoved |= configurationStatus.RulesByFile.Remove(removedConfig.Path);
         }
 
-        if (files?.Count > 0)
+        if (configurationStatus.RulesByFile.Count == 0)
         {
-            var firstFile = files.First();
-            var asmDd = new NamedRawFile(firstFile!.Path, firstFile.Contents);
-            var result = asmDd.Deserialize<JToken>();
-
-            if (result.TypedFile != null)
-            {
-                RuleSet ruleSet;
-                if (!result.TypedFile.HasValues)
-                {
-                    var o = JObject.Parse(result.TypedFile!.Value<string>() ?? string.Empty);
-                    ruleSet = RuleSet.From(o);
-                }
-                else
-                {
-                    ruleSet = RuleSet.From(result.TypedFile);
-                }
-
-                configurationStatus.RulesByFile[result.TypedFile.Path] = ruleSet;
-                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
-            }
+            configurationStatus.IncomingUpdateState.FallbackToEmbeddedRuleset();
+        }
+        else if (oneRemoved)
+        {
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
         }
     }
 }

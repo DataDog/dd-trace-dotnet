@@ -14,35 +14,32 @@ internal class AsmDataProduct : AsmRemoteConfigurationProduct
 {
     public override string Name => "ASM_DATA";
 
-    internal override void UpdateRemoteConfigurationStatus(List<RemoteConfiguration>? files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus)
+    protected override void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
     {
-        if (removedConfigsForThisProduct != null)
+        foreach (var file in files)
         {
-            var removedData = false;
-            foreach (var configurationPath in removedConfigsForThisProduct)
+            var rawFile = new NamedRawFile(file.Path, file.Contents);
+            var asmDataConfig = rawFile.Deserialize<Payload>();
+            var rulesData = asmDataConfig.TypedFile!.RulesData;
+            if (rulesData != null)
             {
-                removedData |= configurationStatus.RulesDataByFile.Remove(configurationPath.Path);
-            }
-
-            if (removedData)
-            {
+                configurationStatus.RulesDataByFile[rawFile.Path.Path] = rulesData;
                 configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
             }
         }
+    }
 
-        if (files != null)
+    protected override void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
+    {
+        var removedData = false;
+        foreach (var configurationPath in removedConfigsForThisProduct)
         {
-            foreach (var file in files)
-            {
-                var rawFile = new NamedRawFile(file.Path, file.Contents);
-                var asmDataConfig = rawFile.Deserialize<Payload>();
-                var rulesData = asmDataConfig.TypedFile!.RulesData;
-                if (rulesData != null)
-                {
-                    configurationStatus.RulesDataByFile[rawFile.Path.Path] = rulesData;
-                    configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
-                }
-            }
+            removedData |= configurationStatus.RulesDataByFile.Remove(configurationPath.Path);
+        }
+
+        if (removedData)
+        {
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
         }
     }
 }
