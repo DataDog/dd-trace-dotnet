@@ -112,8 +112,7 @@ namespace Datadog.Trace.Debugger
                     {
                         AcceptAddedConfiguration(updates.Values.SelectMany(u => u).Select(i => new NamedRawFile(i.Path, i.Contents)));
                         AcceptRemovedConfiguration(removals.Values.SelectMany(u => u));
-                        // todo
-                        return null;
+                        return new List<ApplyDetails>(0);
                     },
                     LiveDebuggerProduct.ProductName);
 

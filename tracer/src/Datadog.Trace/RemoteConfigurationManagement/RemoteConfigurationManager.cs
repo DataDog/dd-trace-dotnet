@@ -355,22 +355,25 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 try
                 {
                     var results = subscription.Callback(configByProduct, removedConfigsByProduct);
-                    foreach (var result in results)
+                    if (results != null)
                     {
-                        switch (result.ApplyState)
+                        foreach (var result in results)
                         {
-                            case ApplyStates.UNACKNOWLEDGED:
-                                // Do nothing
-                                break;
-                            case ApplyStates.ACKNOWLEDGED:
-                                _appliedConfigurations[result.Filename].Applied();
-                                break;
-                            case ApplyStates.ERROR:
-                                _appliedConfigurations[result.Filename].ErrorOccured(result.Error);
-                                break;
-                            default:
-                                Log.Warning("Unexpected ApplyState: {ApplyState}", result.ApplyState);
-                                break;
+                            switch (result.ApplyState)
+                            {
+                                case ApplyStates.UNACKNOWLEDGED:
+                                    // Do nothing
+                                    break;
+                                case ApplyStates.ACKNOWLEDGED:
+                                    _appliedConfigurations[result.Filename].Applied();
+                                    break;
+                                case ApplyStates.ERROR:
+                                    _appliedConfigurations[result.Filename].ErrorOccured(result.Error);
+                                    break;
+                                default:
+                                    Log.Warning("Unexpected ApplyState: {ApplyState}", result.ApplyState);
+                                    break;
+                            }
                         }
                     }
                 }
