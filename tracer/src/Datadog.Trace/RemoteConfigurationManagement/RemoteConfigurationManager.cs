@@ -304,10 +304,15 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     continue;
                 }
 
+                if (!targetFiles.TryGetValue(remoteConfigurationPath.Path, out var targetFile))
+                {
+                    ThrowHelper.ThrowException($"Missing config {remoteConfigurationPath.Path} in target files");
+                }
+
                 var remoteConfigurationCache = new RemoteConfigurationCache(remoteConfigurationPath, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom.V);
                 _appliedConfigurations[remoteConfigurationCache.Path.Path] = remoteConfigurationCache;
 
-                var remoteConfiguration = new RemoteConfiguration(remoteConfigurationPath, targetFiles[remoteConfigurationPath.Path].Raw, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom.V);
+                var remoteConfiguration = new RemoteConfiguration(remoteConfigurationPath, targetFile.Raw, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom.V);
                 if (!configByProducts.ContainsKey(remoteConfigurationPath.Product))
                 {
                     configByProducts[remoteConfigurationPath.Product] = new List<RemoteConfiguration>();
