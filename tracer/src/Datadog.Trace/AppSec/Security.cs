@@ -519,8 +519,17 @@ namespace Datadog.Trace.AppSec
                 _waf = _wafInitResult.Waf;
                 oldWaf?.Dispose();
                 Log.Debug("Disposed old waf and affected new waf");
+
+                // if we not in an RC scenario - we may have some rule data hard coded into the WAF rules file
+                // - the system test use this technique
+                // in this case, on start up, we don't want to overwrite the rule data
+                // but if we've already received data from remote config then we do want to overwrite on startup
                 var ruleData = _remoteConfigurationStatus.RulesDataByFile.SelectMany(x => x.Value).ToList();
-                UpdateWafWithRulesData(ruleData);
+                if (fromRemoteConfig || ruleData.Count > 0)
+                {
+                    UpdateWafWithRulesData(ruleData);
+                }
+
                 AddInstrumentationsAndProducts(fromRemoteConfig);
             }
             else
