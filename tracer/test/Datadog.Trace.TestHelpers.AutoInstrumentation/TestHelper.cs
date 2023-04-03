@@ -87,10 +87,8 @@ namespace Datadog.Trace.TestHelpers
             string testCli = EnvironmentHelper.GetDotNetTest();
             string exec = testCli;
             string appPath = testCli.StartsWith("dotnet") || forceVsTestParam ? $"vstest {sampleAppPath}" : sampleAppPath;
-
             Output.WriteLine("Executable: " + exec);
             Output.WriteLine("ApplicationPath: " + appPath);
-
             var process = ProfilerHelper.StartProcessWithProfiler(
                 exec,
                 EnvironmentHelper,
