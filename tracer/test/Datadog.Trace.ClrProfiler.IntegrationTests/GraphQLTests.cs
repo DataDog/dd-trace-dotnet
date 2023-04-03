@@ -80,18 +80,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTracesWebsockets(string packageVersion)
         {
-            try
+            // Remove the websockets tests on version 4
+            // Because websockets have some issues on that specific version
+            // Run tests on GraphQL 5 by default
+            if (!string.IsNullOrEmpty(packageVersion)
+             && new Version(packageVersion).Major == 4)
             {
-                // Remove the websockets tests on version 4
-                // Because websockets have some issues on that specific version
-                var ver = new Version(packageVersion);
-                if (ver.Major == 4)
-                {
-                    return;
-                }
+                return;
             }
-            catch
-            { }
 
             await RunSubmitsTraces("SubmitsTracesWebsockets", packageVersion, true);
         }
