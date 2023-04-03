@@ -154,7 +154,7 @@ internal static partial class DotNetSettingsExtensions
     /// </summary>
     public static string GetDotNetPath(MSBuildTargetPlatform platform)
     {
-        if (platform == MSBuildTargetPlatform.x64 || platform == null)
+        if (!MSBuildTargetPlatform.x86.Equals(platform))
             return DotNetTasks.DotNetPath;
 
         var dotnetPath = EnvironmentInfo.GetVariable<string>("DOTNET_EXE_32")
