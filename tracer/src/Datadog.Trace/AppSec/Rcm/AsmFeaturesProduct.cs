@@ -18,30 +18,31 @@ internal class AsmFeaturesProduct : AsmRemoteConfigurationProduct
 
     internal override void UpdateRemoteConfigurationStatus(List<RemoteConfiguration>? files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus)
     {
-        if (removedConfigsForThisProduct != null)
+        base.UpdateRemoteConfigurationStatus(files, removedConfigsForThisProduct, configurationStatus);
+        configurationStatus.EnableAsm = !configurationStatus.AsmFeaturesByFile.IsEmpty() && configurationStatus.AsmFeaturesByFile.All(a => a.Value.Enabled == true);
+    }
+
+    protected override void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
+    {
+        foreach (var file in files)
         {
-            foreach (var removedConfig in removedConfigsForThisProduct)
+            var asmFeatures = new NamedRawFile(file.Path, file.Contents).Deserialize<AsmFeatures>();
+            if (asmFeatures.TypedFile != null)
             {
-                configurationStatus.AsmFeaturesByFile.Remove(removedConfig.Path);
+                configurationStatus.AsmFeaturesByFile[file.Path.Path] = asmFeatures.TypedFile.Asm;
             }
 
             configurationStatus.IncomingUpdateState.SignalSecurityStateChange();
         }
+    }
 
-        if (files != null)
+    protected override void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
+    {
+        foreach (var removedConfig in removedConfigsForThisProduct)
         {
-            foreach (var file in files)
-            {
-                var asmFeatures = new NamedRawFile(file.Path, file.Contents).Deserialize<AsmFeatures>();
-                if (asmFeatures.TypedFile != null)
-                {
-                    configurationStatus.AsmFeaturesByFile[file.Path.Path] = asmFeatures.TypedFile.Asm;
-                }
-
-                configurationStatus.IncomingUpdateState.SignalSecurityStateChange();
-            }
+            configurationStatus.AsmFeaturesByFile.Remove(removedConfig.Path);
         }
 
-        configurationStatus.EnableAsm = !configurationStatus.AsmFeaturesByFile.IsEmpty() && configurationStatus.AsmFeaturesByFile.All(a => a.Value.Enabled == true);
+        configurationStatus.IncomingUpdateState.SignalSecurityStateChange();
     }
 }
