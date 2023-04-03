@@ -397,7 +397,6 @@ partial class Build
             EnsureExistingDirectory(ProfilerBuildDataDirectory);
 
             var (arch, ext) = GetUnixArchitectureAndExtension();
-            var outputFile = ProfilerBuildDataDirectory / $"linux-profiler-clang-tidy-{arch}.txt";
 
             CMake.Value(
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DRUN_ANALYSIS=1 -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
@@ -406,7 +405,7 @@ partial class Build
             CMake.Value(
                 arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target all-profiler");
 
-            RunClangTidy.Value($"-j {Environment.ProcessorCount} -checks=\"{ClangTidyChecks}\" -p {NativeBuildDirectory}", logFile: outputFile, logOutput: false);
+            RunClangTidy.Value($"-j {Environment.ProcessorCount} -checks=\"{ClangTidyChecks}\" -p {NativeBuildDirectory}", logOutput: false);
         });
 
     Target RunCppCheckProfilerLinux => _ => _
@@ -673,11 +672,10 @@ partial class Build
 
         DotNet($"{sampleAppDll} --scenario 1 --timeout 120", platform, environmentVariables: envVars);
 
-        static IReadOnlyCollection<Output> DotNet(string arguments, MSBuildTargetPlatform platform, string workingDirectory = null, IReadOnlyDictionary<string, string> environmentVariables = null, int? timeout = null, bool? logOutput = null, bool? logInvocation = null, bool? logTimestamp = null, string logFile = null, Func<string, string> outputFilter = null)
+        static IReadOnlyCollection<Output> DotNet(string arguments, MSBuildTargetPlatform platform, IReadOnlyDictionary<string, string> environmentVariables)
         {
             var dotnetPath = DotNetSettingsExtensions.GetDotNetPath(platform);
-
-            using var process = ProcessTasks.StartProcess(dotnetPath, arguments, workingDirectory, environmentVariables, timeout, logOutput, logInvocation, logTimestamp, logFile, DotNetTasks.DotNetLogger, outputFilter);
+            using var process = ProcessTasks.StartProcess(toolPath: dotnetPath, arguments: arguments, environmentVariables: environmentVariables, customLogger: DotNetTasks.DotNetLogger);
             process.AssertZeroExitCode();
             return process.Output;
 

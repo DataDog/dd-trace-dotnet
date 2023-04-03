@@ -123,8 +123,7 @@ partial class Build
                     $" -CertificatePassword {certPassword}" +
                     $" -Timestamper {timestampServer} -NonInteractive",
                     logOutput: false,
-                    logInvocation: false,
-                    logTimestamp: false); // don't print to std out/err
+                    logInvocation: false); // don't print to std out/err
             }
             catch (Exception)
             {
