@@ -1,4 +1,4 @@
-﻿// <copyright file="DataStreamsMonitoringTransportTests.cs" company="Datadog">
+// <copyright file="DataStreamsMonitoringTransportTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -47,33 +47,7 @@ public class DataStreamsMonitoringTransportTests
     [Trait("RunOnWindows", "True")]
     public async Task TransportsWorkCorrectly(Enum transport)
     {
-        var transportType = (TracesTransportType)transport;
-        if (transportType != TracesTransportType.WindowsNamedPipe)
-        {
-            await RunTest(transportType);
-            return;
-        }
-
-        // The server implementation of named pipes is flaky so have 3 attempts
-        var attemptsRemaining = 3;
-        while (true)
-        {
-            try
-            {
-                attemptsRemaining--;
-                await RunTest(transportType);
-                return;
-            }
-            catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
-            {
-                _output.WriteLine($"Error executing test. {attemptsRemaining} attempts remaining. {ex}");
-            }
-        }
-    }
-
-    private async Task RunTest(TracesTransportType tracesTransportType)
-    {
-        using var agent = Create(tracesTransportType);
+        using var agent = Create((TracesTransportType)transport);
 
         var bucketDurationMs = 100; // 100 ms
         var tracerSettings = new TracerSettings { Exporter = GetExporterSettings(agent) };
@@ -95,7 +69,9 @@ public class DataStreamsMonitoringTransportTests
 
         await writer.DisposeAsync();
 
-        var payload = agent.DataStreams.Should().ContainSingle().Subject;
+        var result = agent.WaitForDataStreams(1);
+
+        var payload = result.Should().ContainSingle().Subject;
         payload.Env.Should().Be("env");
         payload.Service.Should().Be("service");
         var headers = agent.DataStreamsRequestHeaders.Should().ContainSingle().Subject;
