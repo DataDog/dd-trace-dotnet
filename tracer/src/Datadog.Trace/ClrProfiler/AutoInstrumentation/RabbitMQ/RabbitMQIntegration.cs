@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         internal static void SetDataStreamsCheckpointOnProduce(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object> headers)
         {
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-            if (dataStreamsManager == null || !dataStreamsManager.IsEnabled)
+            if (dataStreamsManager == null || !dataStreamsManager.IsEnabled || headers == null)
             {
                 return;
             }
@@ -95,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         internal static void SetDataStreamsCheckpointOnConsume(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object> headers)
         {
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-            if (dataStreamsManager == null || !dataStreamsManager.IsEnabled)
+            if (dataStreamsManager == null || !dataStreamsManager.IsEnabled || headers == null)
             {
                 return;
             }

@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -24,6 +25,8 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 internal class DataStreamsManager
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsManager>();
+    [ThreadStatic]
+    private static CheckpointInfo? _previousCheckpoint;
     private readonly NodeHashBase _nodeHashBase;
     private bool _isEnabled;
     private IDataStreamsWriter? _writer = null;
@@ -37,6 +40,13 @@ internal class DataStreamsManager
         _nodeHashBase = HashHelper.CalculateNodeHashBase(defaultServiceName, env, primaryTag: null);
         _isEnabled = writer is not null;
         _writer = writer;
+    }
+
+    private enum CheckpointKind
+    {
+        Unknown,
+        Produce,
+        Consume
     }
 
     public bool IsEnabled => Volatile.Read(ref _isEnabled);
@@ -115,11 +125,20 @@ internal class DataStreamsManager
 
         try
         {
+            // we should probably pass this is as an argument...
+            var checkpointKind = GetCheckpointKind(edgeTags);
+            var previousContext = parentPathway;
+
+            if (previousContext == null && _previousCheckpoint != null && _previousCheckpoint.Kind != checkpointKind)
+            {
+                previousContext = _previousCheckpoint.Context;
+            }
+
             var edgeStartNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
-            var pathwayStartNs = parentPathway?.PathwayStart ?? edgeStartNs;
+            var pathwayStartNs = previousContext?.PathwayStart ?? edgeStartNs;
 
             var nodeHash = HashHelper.CalculateNodeHash(_nodeHashBase, edgeTags);
-            var parentHash = parentPathway?.Hash ?? default;
+            var parentHash = previousContext?.Hash ?? default;
             var pathwayHash = HashHelper.CalculatePathwayHash(nodeHash, parentHash);
 
             var writer = Volatile.Read(ref _writer);
@@ -130,7 +149,7 @@ internal class DataStreamsManager
                     parentHash: parentHash,
                     timestampNs: edgeStartNs,
                     pathwayLatencyNs: edgeStartNs - pathwayStartNs,
-                    edgeLatencyNs: edgeStartNs - (parentPathway?.EdgeStart ?? edgeStartNs)));
+                    edgeLatencyNs: edgeStartNs - (previousContext?.EdgeStart ?? edgeStartNs)));
 
             var pathway = new PathwayContext(
                 hash: pathwayHash,
@@ -146,6 +165,12 @@ internal class DataStreamsManager
                     pathway.EdgeStart);
             }
 
+            // overwrite the previous checkpoint, so it can be used in the future if needed
+            if (_previousCheckpoint == null || (_previousCheckpoint.Kind != checkpointKind))
+            {
+                _previousCheckpoint = new CheckpointInfo(pathway, checkpointKind);
+            }
+
             return pathway;
         }
         catch (Exception ex)
@@ -157,5 +182,41 @@ internal class DataStreamsManager
             Volatile.Write(ref _isEnabled, false);
             return null;
         }
+    }
+
+    private CheckpointKind GetCheckpointKind(string[] edgeTags)
+    {
+        foreach (var tag in edgeTags)
+        {
+            if (tag[0] > 'd')
+            {
+                break;
+            }
+
+            if (tag == "direction:out")
+            {
+                return CheckpointKind.Produce;
+            }
+
+            if (tag == "direction:in")
+            {
+                return CheckpointKind.Consume;
+            }
+        }
+
+        return CheckpointKind.Unknown;
+    }
+
+    private class CheckpointInfo
+    {
+        public CheckpointInfo(PathwayContext context, CheckpointKind kind)
+        {
+            Context = context;
+            Kind = kind;
+        }
+
+        public PathwayContext Context { get; }
+
+        public CheckpointKind Kind { get; }
     }
 }

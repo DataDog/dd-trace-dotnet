@@ -246,8 +246,8 @@ namespace Datadog.Trace.TestHelpers
         }
 
         public IImmutableList<MockDataStreamsPayload> WaitForDataStreams(
-            int count,
-            int timeoutInMilliseconds = 20000)
+            int timeoutInMilliseconds,
+            Func<IImmutableList<MockDataStreamsPayload>, bool> waitFunc)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
 
@@ -257,7 +257,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 stats = DataStreams;
 
-                if (stats.Count >= count)
+                if (waitFunc(stats))
                 {
                     break;
                 }
@@ -266,6 +266,27 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return stats;
+        }
+
+        public IImmutableList<MockDataStreamsPayload> WaitForDataStreamsPoints(
+            int statsCount,
+            int timeoutInMilliseconds = 2000)
+        {
+            return WaitForDataStreams(
+                timeoutInMilliseconds,
+                (stats) =>
+                {
+                    return stats.Sum(s => s.Stats.Sum(bucket => bucket.Stats.Length)) == statsCount;
+                });
+        }
+
+        public IImmutableList<MockDataStreamsPayload> WaitForDataStreams(
+            int payloadCount,
+            int timeoutInMilliseconds = 20000)
+        {
+            return WaitForDataStreams(
+                timeoutInMilliseconds,
+                (stats) => stats.Count == payloadCount);
         }
 
         /// <summary>

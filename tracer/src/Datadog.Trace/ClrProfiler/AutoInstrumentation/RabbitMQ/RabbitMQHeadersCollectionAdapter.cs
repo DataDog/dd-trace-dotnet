@@ -12,30 +12,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
     internal readonly struct RabbitMQHeadersCollectionAdapter : IBinaryHeadersCollection
     {
-        private static readonly byte[] EmptyValue = Array.Empty<byte>();
-        private readonly IDictionary<string, object>? _headers;
+        private readonly IDictionary<string, object> _headers;
 
-        public RabbitMQHeadersCollectionAdapter(IDictionary<string, object>? headers)
+        public RabbitMQHeadersCollectionAdapter(IDictionary<string, object> headers)
         {
             _headers = headers;
         }
 
         public byte[] TryGetLastBytes(string name)
         {
-            if (_headers != null && _headers.TryGetValue(name, out var value) && value is byte[] bytes)
+            if (_headers.TryGetValue(name, out var value) && value is byte[] bytes)
             {
                 return bytes;
             }
 
-            return EmptyValue;
+            return Array.Empty<byte>();
         }
 
         public void Add(string name, byte[] value)
         {
-            if (_headers != null)
-            {
-                _headers[name] = value;
-            }
+            _headers[name] = value;
         }
     }
 }

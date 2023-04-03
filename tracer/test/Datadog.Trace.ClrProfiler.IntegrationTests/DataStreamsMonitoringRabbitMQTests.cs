@@ -2,7 +2,6 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-#nullable enable
 
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -31,20 +30,22 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
         EnableDebugMode();
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.RabbitMQ), MemberType = typeof(PackageVersions))]
     [Trait("Category", "EndToEnd")]
-    public async Task HandleProduceAndConsume()
+    public async Task HandleProduceAndConsume(string packageVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
 
         using var assertionScope = new AssertionScope();
         using var agent = EnvironmentHelper.GetMockAgent();
-        using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}"))
+        using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
         {
-            var payloads = agent.WaitForDataStreams(1);
+            var payloads = agent.WaitForDataStreamsPoints(4);
             payloads.Should().NotBeEmpty();
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.UseParameters(packageVersion);
             settings.ModifySerialization(
                 _ =>
                 {
@@ -56,22 +57,24 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
                         (_, v) =>  v?.Length == 0 ? v : new byte[] { 0xFF });
                 });
             await Verifier.Verify(PayloadsToPoints(payloads), settings)
+                          .UseFileName($"{nameof(DataStreamsMonitoringRabbitMQTests)}.{nameof(HandleProduceAndConsume)}")
                           .DisableRequireUniquePrefix();
         }
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.RabbitMQ), MemberType = typeof(PackageVersions))]
     [Trait("Category", "EndToEnd")]
-    public void ValidateSpanTags()
+    public void ValidateSpanTags(string packageVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
 
         using var assertionScope = new AssertionScope();
         using var agent = EnvironmentHelper.GetMockAgent();
-        using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}"))
+        using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
         {
             var spans = agent.WaitForSpans(8);
-            spans.Should().HaveCount(8);
+            spans.Should().HaveCount(9);
             var taggedSpans = spans.Where(s => s.Tags.ContainsKey("pathway.hash"));
             taggedSpans.Should().HaveCount(4);
         }
