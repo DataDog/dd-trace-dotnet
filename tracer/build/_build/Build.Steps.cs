@@ -2215,7 +2215,7 @@ partial class Build
     {
         if (Directory.Exists(TempDirectory))
         {
-            foreach (var dump in GlobFiles(TempDirectory, "coredump*"))
+            foreach (var dump in GlobFiles(TempDirectory, "coredump*", "*.dmp"))
             {
                 MoveFileToDirectory(dump, root / "dumps", FileExistsPolicy.Overwrite);
             }
