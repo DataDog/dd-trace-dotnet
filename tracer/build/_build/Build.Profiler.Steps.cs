@@ -16,6 +16,7 @@ using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using Nuke.Common.Utilities;
 using System.Collections;
+using Logger = Serilog.Log;
 
 partial class Build
 {
@@ -307,7 +308,7 @@ partial class Build
 
             foreach (var platform in new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 })
             {
-                Logger.Info($"======= Run CppCheck for platform {platform}");
+                Logger.Information($"======= Run CppCheck for platform {platform}");
                 RunCppCheck("Datadog.Profiler.Native", platform);
                 RunCppCheck("Datadog.Profiler.Native.Windows", platform);
             }
@@ -337,7 +338,7 @@ partial class Build
 
             foreach (var result in cppcheckResults)
             {
-                Logger.Info($"Check result file {result}");
+                Logger.Information($"Check result file {result}");
                 var doc = XDocument.Load(result);
                 var messages = doc.Descendants("errors").First();
 
@@ -372,7 +373,7 @@ partial class Build
 
             foreach (var result in clangTidyResults)
             {
-                Logger.Info($"Check result file {result}");
+                Logger.Information($"Check result file {result}");
                 using var sr = new StreamReader(result); ;
 
                 string line;
@@ -539,7 +540,7 @@ partial class Build
             {
                 var baseOutputDir = ProfilerBuildDataDirectory / platform.ToString();
                 var pprofsOutputDir = baseOutputDir / "pprofs";
-                Logger.Info($"Check if pprofs file(s) was/were generated at {pprofsOutputDir}");
+                Logger.Information($"Check if pprofs file(s) was/were generated at {pprofsOutputDir}");
 
                 var pprofFiles = pprofsOutputDir.GlobFiles(
                     $"*.pprof"
@@ -552,7 +553,7 @@ partial class Build
                 }
 
                 var logsOutputDir = baseOutputDir / "logs";
-                Logger.Info($"Look for profiler log file(s) in {logsOutputDir}");
+                Logger.Information($"Look for profiler log file(s) in {logsOutputDir}");
 
                 var logFiles = logsOutputDir.GlobFiles(
                     $"DD-DotNet-Profiler-Native-*.log"

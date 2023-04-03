@@ -22,6 +22,7 @@ using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
+using Logger = Serilog.Log;
 
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
@@ -672,10 +673,10 @@ partial class Build
                 EnsureExistingDirectory(outputDir);
                 var outputFile = outputDir / Path.GetFileNameWithoutExtension(file);
 
-                Logger.Info($"Extracting debug symbol for {file} to {outputFile}.debug");
+                Logger.Information($"Extracting debug symbol for {file} to {outputFile}.debug");
                 ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {outputFile}.debug");
 
-                Logger.Info($"Stripping out unneeded information from {file}");
+                Logger.Information($"Stripping out unneeded information from {file}");
                 StripBinary.Value(arguments: $"--strip-unneeded {file}");
             }
         });
@@ -1751,7 +1752,7 @@ partial class Build
              catch
              {
                  // This step is expected to fail if the tool is not already installed
-                 Logger.Info("Could not uninstall the dd-trace tool. It's probably not installed.");
+                 Logger.Information("Could not uninstall the dd-trace tool. It's probably not installed.");
              }
 
              DotNetToolInstall(s => s
@@ -1870,7 +1871,7 @@ partial class Build
         var logDirectory = BuildDataDirectory / "logs";
         if (!logDirectory.Exists())
         {
-            Logger.Info($"Skipping log parsing, directory '{logDirectory}' not found");
+            Logger.Information($"Skipping log parsing, directory '{logDirectory}' not found");
             if (allFilesMustExist)
             {
                 ExitCode = 1;
@@ -1914,11 +1915,11 @@ partial class Build
          && nativeProfilerErrors.Count == 0
          && nativeLoaderErrors.Count == 0)
         {
-            Logger.Info("No problems found in managed or native logs");
+            Logger.Information("No problems found in managed or native logs");
             return;
         }
 
-        Logger.Warn("Found the following problems in log files:");
+        Logger.Warning("Found the following problems in log files:");
         var allErrors = managedErrors
                        .Concat(nativeTracerErrors)
                        .Concat(nativeProfilerErrors)
@@ -1930,7 +1931,7 @@ partial class Build
             var errors = erroredFile.Where(x => !ContainsCanary(x)).ToList();
             if(errors.Any())
             {
-                Logger.Info();
+                Logger.Information("");
                 Logger.Error($"Found errors in log file '{erroredFile.Key}':");
                 foreach (var error in errors)
                 {
@@ -1941,7 +1942,7 @@ partial class Build
             var canaries = erroredFile.Where(ContainsCanary).ToList();
             if(canaries.Any())
             {
-                Logger.Info();
+                Logger.Information("");
                 Logger.Error($"Found usage of canary environment variable in log file '{erroredFile.Key}':");
                 foreach (var canary in canaries)
                 {
@@ -2013,14 +2014,14 @@ partial class Build
                     }
                     catch (Exception ex)
                     {
-                        Logger.Info($"Error parsing line: '{line}. {ex}");
+                        Logger.Information($"Error parsing line: '{line}. {ex}");
                     }
                 }
                 else
                 {
                     if (currentLine is null)
                     {
-                        Logger.Warn("Incomplete log line: " + line);
+                        Logger.Warning("Incomplete log line: " + line);
                     }
                     else
                     {
@@ -2081,14 +2082,14 @@ partial class Build
                     }
                     catch (Exception ex)
                     {
-                        Logger.Info($"Error parsing line: '{line}. {ex}");
+                        Logger.Information($"Error parsing line: '{line}. {ex}");
                     }
                 }
                 else
                 {
                     if (currentLine is null)
                     {
-                        Logger.Warn("Incomplete log line: " + line);
+                        Logger.Warning("Incomplete log line: " + line);
                     }
                     else
                     {
@@ -2133,7 +2134,7 @@ partial class Build
         var packageDirectory = NugetPackageDirectory;
         if (string.IsNullOrEmpty(NugetPackageDirectory))
         {
-            Logger.Info("NugetPackageDirectory not set, querying for global-package location");
+            Logger.Information("NugetPackageDirectory not set, querying for global-package location");
             var packageLocation = "global-packages";
             var output = DotNet($"nuget locals {packageLocation} --list");
 
@@ -2146,14 +2147,14 @@ partial class Build
 
             if (string.IsNullOrEmpty(location))
             {
-                Logger.Info("Couldn't determine global-package location, skipping chmod +x on grpc.tools");
+                Logger.Information("Couldn't determine global-package location, skipping chmod +x on grpc.tools");
                 return;
             }
 
             packageDirectory = (AbsolutePath)(location);
         }
 
-        Logger.Info($"Using '{packageDirectory}' for NuGet package location");
+        Logger.Information($"Using '{packageDirectory}' for NuGet package location");
 
         // GRPC runs a tool for codegen, which apparently isn't automatically marked as executable
         var grpcTools = GlobFiles(packageDirectory / "grpc.tools", "**/tools/linux_*/*");
@@ -2251,7 +2252,7 @@ partial class Build
         {
             foreach (var drive in DriveInfo.GetDrives().Where(d => d.IsReady))
             {
-                Logger.Info($"Drive space available on '{drive.Name}': {PrettyPrint(drive.AvailableFreeSpace)} / {PrettyPrint(drive.TotalSize)}");
+                Logger.Information($"Drive space available on '{drive.Name}': {PrettyPrint(drive.AvailableFreeSpace)} / {PrettyPrint(drive.TotalSize)}");
             }
         }
         base.OnTargetRunning(target);
