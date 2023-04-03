@@ -83,7 +83,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             var tags = GetTags(settings, tracerSettings);
             lock (LockObject)
             {
-                Log.Information("anna: set remoteconfig manager instance prop poll interval {PollInterval}", settings.PollInterval);
                 Instance ??= new RemoteConfigurationManager(
                     discoveryService,
                     remoteConfigurationApi,
@@ -354,7 +353,16 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
                 try
                 {
-                    var results = subscription.Callback(configByProduct, removedConfigsByProduct);
+                    List<ApplyDetails>? results = null;
+                    try
+                    {
+                        results = subscription.Callback(configByProduct, removedConfigsByProduct);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(e, "Failed to apply remote configurations for product {Product}", string.Join(", ", subscription.ProductKeys));
+                    }
+
                     if (results != null)
                     {
                         foreach (var result in results)

@@ -65,10 +65,8 @@ namespace Datadog.Trace.AppSec
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
                 _noLocalRules = _settings.Rules == null;
                 _configurationStatus = new ConfigurationStatus(_settings.Rules);
-                Log.Information("anna: initialize security");
                 _waf = waf;
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
-                Log.Information("anna: here {CanBeEnabled}", _settings.CanBeToggled);
 
                 if (_settings.Enabled && _waf == null)
                 {
@@ -217,7 +215,7 @@ namespace Datadog.Trace.AppSec
             catch (Exception e)
             {
                 rcmUpdateError = e.Message;
-                Log.Error(e, "An error happened on the rcm subscription callback in class Security");
+                Log.Warning(e, "An error happened on the rcm subscription callback in class Security");
             }
 
             var applyDetails = new List<ApplyDetails>();
