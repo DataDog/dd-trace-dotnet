@@ -19,6 +19,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
             metricKind: Const.Histogram,
             metricName: nameof(MetricHistogramInt),
             captureSnapshot: false,
+            expectedNumberOfSnapshots: 0,
             evaluateAt: Const.Exit,
             returnTypeName: "System.String",
             parametersTypeName: new[] { "System.Int32" })]

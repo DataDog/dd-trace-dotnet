@@ -311,15 +311,28 @@ public class ProbesTests : TestHelper
 
                 if (metricProbes.Any())
                 {
-                    var requests = await agent.WaitForStatsdRequests(metricProbes.Length);
-                    requests.Should().OnlyContain(s => s.Contains($"service:{EnvironmentHelper.SampleName}"));
+                    var expectedNumberOfSnapshots = DebuggerTestHelper.CalculateExpectedNumberOfSnapshots(metricProbes);
 
-                    foreach (var probeAttributeBase in metricProbes)
+                    if (expectedNumberOfSnapshots > 0)
                     {
-                        var metricName = (probeAttributeBase as MetricMethodProbeTestDataAttribute)?.MetricName ?? (probeAttributeBase as MetricLineProbeTestDataAttribute)?.MetricName;
-                        var req = requests.SingleOrDefault(r => r.Contains(metricName));
-                        Assert.NotNull(req);
-                        req.Should().Contain($"service:{EnvironmentHelper.SampleName}");
+                        // meaning there is an error so we don't receive metrics but evaluation error
+                        var snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
+                        Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
+                        await ApproveSnapshots(snapshots, testDescription, isMultiPhase, phaseNumber);
+                        agent.ClearSnapshots();
+                    }
+                    else
+                    {
+                        var requests = await agent.WaitForStatsdRequests(metricProbes.Length);
+                        requests.Should().OnlyContain(s => s.Contains($"service:{EnvironmentHelper.SampleName}"));
+
+                        foreach (var probeAttributeBase in metricProbes)
+                        {
+                            var metricName = (probeAttributeBase as MetricMethodProbeTestDataAttribute)?.MetricName ?? (probeAttributeBase as MetricLineProbeTestDataAttribute)?.MetricName;
+                            var req = requests.SingleOrDefault(r => r.Contains(metricName));
+                            Assert.NotNull(req);
+                            req.Should().Contain($"service:{EnvironmentHelper.SampleName}");
+                        }
                     }
                 }
 

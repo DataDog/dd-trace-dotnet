@@ -5,7 +5,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
 {
     public class MetricWithStringLenExpression : IRun
     {
-        private const string Json = @"{""len"": {""ref"": ""arg""}}";
+        private const string Json = @"{""len"": {""ref"": ""stringArg""}}";
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
@@ -19,12 +19,13 @@ namespace Samples.Probes.TestRuns.SmokeTests
             metricKind: Const.Count,
             metricName: nameof(MetricWithStringLenExpression),
             captureSnapshot: false,
+            expectedNumberOfSnapshots: 0,
             evaluateAt: Const.Exit,
             returnTypeName: "System.String",
             parametersTypeName: new[] { "System.String" })]
-        public string Method(string arg)
+        public string Method(string stringArg)
         {
-            return $"Argument: {arg}";
+            return $"Argument: {stringArg}";
         }
     }
 }

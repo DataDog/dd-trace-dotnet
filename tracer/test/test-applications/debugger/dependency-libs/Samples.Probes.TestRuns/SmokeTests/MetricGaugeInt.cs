@@ -18,6 +18,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
             metricJson: Json,
             metricKind: Const.Gauge,
             metricName: nameof(MetricGaugeInt),
+            expectedNumberOfSnapshots: 0,
             captureSnapshot: false,
             evaluateAt: Const.Exit,
             returnTypeName: "System.String",
