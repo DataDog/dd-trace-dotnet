@@ -396,7 +396,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:true}
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:-true}
     volumes:
       - ./:/project
     cap_add:
@@ -487,7 +487,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:true} --targetplatform x64
+    command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:-true} --targetplatform x64
     volumes:
       - ./:/project
     cap_add:
@@ -536,7 +536,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --filter Category=Lambda --code-coverage ${runCodeCoverage:true}
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --filter Category=Lambda --code-coverage ${runCodeCoverage:-true}
     volumes:
       - ./:/project
     cap_add:
@@ -589,7 +589,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunExplorationTests --explorationTestUseCase ${explorationTestUseCase:-debugger} --explorationTestName ${explorationTestName:-eshoponweb} --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:true}
+    command: dotnet /build/bin/Debug/_build.dll RunExplorationTests --explorationTestUseCase ${explorationTestUseCase:-debugger} --explorationTestName ${explorationTestName:-eshoponweb} --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:-true}
     volumes:
       - ./:/project
     cap_add:

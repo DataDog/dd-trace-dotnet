@@ -1449,8 +1449,9 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
+          runCodeCoverage=$(runCodeCoverage)
           DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=false IntegrationTests
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=false IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1522,7 +1523,7 @@ stages:
         path: $(monitoringHome)
 
     - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
+        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg runCodeCoverage=$(runCodeCoverage) IntegrationTests
         docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies
       env:
         baseImage: $(baseImage)
@@ -1537,9 +1538,10 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
+          runCodeCoverage=$(runCodeCoverage)
           framework=$(publishTargetFramework)
           DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=true IntegrationTests
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=true IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1639,11 +1641,13 @@ stages:
           build \
           --build-arg baseImage=$(baseImage) \
           --build-arg framework=$(publishTargetFramework) \
+          --build-arg runCodeCoverage=$(runCodeCoverage) \
           IntegrationTests.Serverless
 
         docker-compose -p ddtrace_$(Build.BuildNumber) \
           -f $(System.DefaultWorkingDirectory)/docker-compose.yml \
           -f docker-compose.serverless.yml \
+          --build-arg runCodeCoverage=$(runCodeCoverage) \
           --build-arg framework=$(publishTargetFramework) \
           pull --include-deps StartDependencies.Serverless
 
@@ -1667,8 +1671,9 @@ stages:
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
           lambdaBaseImage=$(lambdaBaseImage)
+          runCodeCoverage=$(runCodeCoverage)
           DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests.Serverless
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) IntegrationTests.Serverless
         additionalDockerComposeFiles: |
           docker-compose.serverless.yml
         projectName: ddtrace_$(Build.BuildNumber)
@@ -1816,8 +1821,9 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
+          runCodeCoverage=$(runCodeCoverage)
           DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests.Debugger
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) IntegrationTests.Debugger
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2179,8 +2185,9 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
+              runCodeCoverage=$(runCodeCoverage)
               DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
+            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2248,7 +2255,7 @@ stages:
             path: $(monitoringHome)
 
         - script: |
-            docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64
+            docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg runCodeCoverage=$(runCodeCoverage) IntegrationTests.ARM64
             docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies.ARM64
           env:
             baseImage: $(baseImage)
@@ -2264,8 +2271,9 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
+              runCodeCoverage=$(runCodeCoverage)
               DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
+            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2361,8 +2369,9 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
+              runCodeCoverage=$(runCodeCoverage)
               DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests.ARM64.Debugger
+            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) IntegrationTests.ARM64.Debugger
             projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2517,7 +2526,7 @@ stages:
       inputs:
         containerregistrytype: Container Registry
         additionalDockerComposeFiles: docker-compose.ci.azdo.yml
-        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg explorationTestUseCase=$(explorationTestUseCase) --build-arg explorationTestName=$(explorationTestName) --build-arg framework=$(publishTargetFramework) ExplorationTests
+        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg explorationTestUseCase=$(explorationTestUseCase) --build-arg explorationTestName=$(explorationTestName) --build-arg framework=$(publishTargetFramework) --build-arg runCodeCoverage=$(runCodeCoverage) ExplorationTests
 
     - task: DockerCompose@0
       displayName: docker-compose run ExplorationTests
@@ -2530,9 +2539,10 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
+          runCodeCoverage=$(runCodeCoverage)
           explorationTestUseCase=$(explorationTestUseCase)
           explorationTestName=$(explorationTestName)
-        dockerComposeCommand: run --rm -e DD_AGENT_HOST=dd_agent -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) ExplorationTests
+        dockerComposeCommand: run --rm -e DD_AGENT_HOST=dd_agent -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage)ExplorationTests
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
