@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Datadog.Trace.Coverage.collector": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:59209;http://localhost:59210"
+    }
+  }
+}

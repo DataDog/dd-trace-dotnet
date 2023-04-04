@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Datadog.InstrumentedAssemblyVerification": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:59211;http://localhost:59212"
+    }
+  }
+}

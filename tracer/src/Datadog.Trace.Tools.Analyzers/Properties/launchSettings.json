@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Datadog.Trace.Tools.Analyzers": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "http://localhost:59204"
+    }
+  }
+}
