@@ -2542,7 +2542,7 @@ stages:
           runCodeCoverage=$(runCodeCoverage)
           explorationTestUseCase=$(explorationTestUseCase)
           explorationTestName=$(explorationTestName)
-        dockerComposeCommand: run --rm -e DD_AGENT_HOST=dd_agent -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage)ExplorationTests
+        dockerComposeCommand: run --rm -e DD_AGENT_HOST=dd_agent -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) ExplorationTests
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
