@@ -8,18 +8,9 @@
 #pragma warning disable SA1649 // File name should match first type name
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Net;
-using System.Net.WebSockets;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Newtonsoft.Json.Linq;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -164,10 +155,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 expectedGraphQlExecuteSpanCount++;
                 expectedAspNetcoreRequestSpanCount++;
 
-                GraphQLTests.SubmitRequest(
+                GraphQLCommon.SubmitRequest(
                     Output,
                     aspNetCorePort,
-                    new GraphQLTests.RequestInfo { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
+                    new GraphQLCommon.RequestInfo { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
             }
 
             async Task SubmitGraphqlWebsocketRequest(
@@ -178,10 +169,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 expectedGraphQlExecuteSpanCount++;
                 expectedAspNetcoreRequestSpanCount++;
 
-                await GraphQLTests.SubmitWebsocketRequest(
+                await GraphQLCommon.SubmitWebsocketRequest(
                     Output,
                     aspNetCorePort,
-                    new GraphQLTests.RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
+                    new GraphQLCommon.RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
             }
         }
     }
