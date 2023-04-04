@@ -26,10 +26,10 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class HotChocolate13Tests : HotChocolateTests
+    public class HotChocolateTests : HotChocolateTestsBase
     {
-        public HotChocolate13Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base("HotChocolate", fixture, output, nameof(HotChocolate13Tests))
+        public HotChocolateTests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base("HotChocolate", fixture, output, nameof(HotChocolateTests))
         {
         }
 
@@ -51,13 +51,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [UsesVerify]
-    public abstract class HotChocolateTests : TracingIntegrationTest, IClassFixture<AspNetCoreTestFixture>
+    public abstract class HotChocolateTestsBase : TracingIntegrationTest, IClassFixture<AspNetCoreTestFixture>
     {
         private const string ServiceVersion = "1.0.0";
 
         private readonly string _testName;
 
-        protected HotChocolateTests(string sampleAppName, AspNetCoreTestFixture fixture, ITestOutputHelper output, string testName)
+        protected HotChocolateTestsBase(string sampleAppName, AspNetCoreTestFixture fixture, ITestOutputHelper output, string testName)
             : base(sampleAppName, output)
         {
             SetServiceVersion(ServiceVersion);
