@@ -41,6 +41,15 @@ typedef struct _DebuggerLineProbeDefinition
     
 } DebuggerLineProbeDefinition;
 
+typedef struct _DebuggerMethodSpanProbeDefinition
+{
+    WCHAR* probeId;
+    WCHAR* targetType;
+    WCHAR* targetMethod;
+    WCHAR** targetParameterTypes;
+    USHORT targetParameterTypesLength;
+} DebuggerMethodSpanProbeDefinition;
+
 typedef struct _DebuggerRemoveProbesDefinition
 {
     WCHAR* probeId;
@@ -124,6 +133,28 @@ struct LineProbeDefinition : public ProbeDefinition
 };
 
 typedef std::vector<std::shared_ptr<LineProbeDefinition>> LineProbeDefinitions;
+
+struct SpanProbeOnMethodDefinition : public MethodProbeDefinition
+{
+    SpanProbeOnMethodDefinition(shared::WSTRING probeId, trace::MethodReference&& targetMethod,
+                                bool is_exact_signature_match) :
+        MethodProbeDefinition(std::move(probeId), std::move(targetMethod), is_exact_signature_match)
+    {
+    }
+
+    SpanProbeOnMethodDefinition(const SpanProbeOnMethodDefinition& other) :
+        MethodProbeDefinition(other)
+    {
+    }
+
+    inline bool operator==(const SpanProbeOnMethodDefinition& other) const
+    {
+        return probeId == other.probeId && target_method == other.target_method &&
+               is_exact_signature_match == other.is_exact_signature_match;
+    }
+};
+
+typedef std::vector<std::shared_ptr<SpanProbeOnMethodDefinition>> SpanProbeOnMethodDefinitions;
 
 enum class ProbeStatus
 {

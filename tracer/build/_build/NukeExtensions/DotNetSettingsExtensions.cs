@@ -91,7 +91,7 @@ internal static partial class DotNetSettingsExtensions
         return settings.SetProperty("BuildProjectReferences", false);
     }
 
-    public static DotNetTestSettings EnableCrashDumps(this DotNetTestSettings settings, MiniDumpType dumpType = MiniDumpType.MiniDumpWithPrivateReadWriteMemory)
+    public static DotNetTestSettings EnableCrashDumps(this DotNetTestSettings settings, MiniDumpType dumpType = MiniDumpType.MiniDumpWithFullMemory)
     {
         if (bool.Parse(Environment.GetEnvironmentVariable("enable_crash_dumps") ?? "false"))
         {
@@ -154,7 +154,7 @@ internal static partial class DotNetSettingsExtensions
     /// </summary>
     public static string GetDotNetPath(MSBuildTargetPlatform platform)
     {
-        if (platform == MSBuildTargetPlatform.x64 || platform == null)
+        if (!MSBuildTargetPlatform.x86.Equals(platform))
             return DotNetTasks.DotNetPath;
 
         var dotnetPath = EnvironmentInfo.GetVariable<string>("DOTNET_EXE_32")
@@ -172,12 +172,13 @@ internal static partial class DotNetSettingsExtensions
     {
         // To avoid annoying differences in the test code, convert the MSBuildTargetPlatform string values to
         // the same values returned by Environment.Platform(), and skip unsupported values (e.g. MSIL, arm)
-        var target = platform.ToString() switch
+        var strPlatform = platform.ToString().ToLowerInvariant();
+        var target = strPlatform switch
         {
             "x86" => "X86",
             "x64" => "X64",
             "arm64" => "ARM64",
-            _ => throw new InvalidOperationException("Should only use x64 and x86 for Test target platform"),
+            _ => throw new InvalidOperationException($"Should only use x64, x86 or ARM64 for Test target platform. (Invalid : {strPlatform})"),
         };
 
         return settings.SetProcessEnvironmentVariable("TargetPlatform", target);

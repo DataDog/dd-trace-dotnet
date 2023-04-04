@@ -11,6 +11,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -44,11 +45,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var numberOfRuns = 2;
 #endif
 
-                var expectedSpansPerRun = 12;
-                var spans = agent.WaitForSpans(numberOfRuns * expectedSpansPerRun)
+                using var assertionScope = new AssertionScope();
+                var expectedSpansPerRun = 13;
+                var expectedSpans = numberOfRuns * expectedSpansPerRun;
+                var spans = agent.WaitForSpans(expectedSpans)
                                  .OrderBy(s => s.Start)
                                  .ToList();
-                spans.Count.Should().Be(numberOfRuns * expectedSpansPerRun);
+                spans.Count.Should().Be(expectedSpans);
                 ValidateIntegrationSpans(spans, expectedServiceName: "Samples.ServiceStack.Redis-redis");
 
                 var host = Environment.GetEnvironmentVariable("SERVICESTACK_REDIS_HOST") ?? "localhost:6379";

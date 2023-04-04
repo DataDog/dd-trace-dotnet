@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -12,7 +12,7 @@
       http.request.headers.host: localhost:00000,
       http.route: {controller}/{action}/{id},
       http.status_code: 200,
-      http.url: http://localhost/Iast/SqlQuery?username=Vicent,
+      http.url: http://localhost:00000/Iast/SqlQuery?username=Vicent,
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
@@ -42,7 +42,7 @@
   ],
   "sources": [
     {
-      "origin": "http.request.parameter.value",
+      "origin": "http.request.parameter",
       "name": "username",
       "value": "Vicent"
     }
@@ -74,7 +74,7 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: http://localhost/Iast/SqlQuery?username=Vicent,
+      http.url: http://localhost:00000/Iast/SqlQuery?username=Vicent,
       http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server

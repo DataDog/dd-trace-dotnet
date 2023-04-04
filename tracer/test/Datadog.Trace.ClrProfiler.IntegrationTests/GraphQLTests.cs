@@ -79,7 +79,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTracesWebsockets(string packageVersion)
-            => await RunSubmitsTraces("SubmitsTracesWebsockets", packageVersion, true);
+        {
+            // Remove the websockets tests on version 4
+            // Because websockets have some issues on that specific version
+            // Run tests on GraphQL 5 by default
+            if (!string.IsNullOrEmpty(packageVersion)
+             && new Version(packageVersion).Major == 4)
+            {
+                return;
+            }
+
+            await RunSubmitsTraces("SubmitsTracesWebsockets", packageVersion, true);
+        }
     }
 #endif
 
@@ -390,6 +401,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var terminateSegment = new ArraySegment<byte>(terminateBuffer);
                 await webSocket.SendAsync(terminateSegment, WebSocketMessageType.Text, true, CancellationToken.None);
                 Output.WriteLine("[websocket] connection_terminate sent");
+                await WaitForMessage();
             }
             catch (Exception ex)
             {
@@ -410,6 +422,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             async Task WaitForMessage()
             {
                 Output.WriteLine("[websocket][debug] Start waiting for a message!");
+                Output.WriteLine("[websocket][debug] Websocket state: " + webSocket.State);
                 var ms = new MemoryStream();
                 while (webSocket.State == WebSocketState.Open)
                 {
@@ -421,6 +434,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         ms.Write(messageBuffer.Array, messageBuffer.Offset, res.Count);
                     }
                     while (!res.EndOfMessage);
+
+                    Output.WriteLine("[websocket][debug] Message type: " + res.MessageType);
+                    if (res.MessageType == WebSocketMessageType.Close)
+                    {
+                        Output.WriteLine($"[websocket][debug] Close websocket on message close: {res.CloseStatus}: {res.CloseStatusDescription}");
+                        await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
+                        break;
+                    }
 
                     // Message received from the websocket
                     var msgString = Encoding.UTF8.GetString(ms.ToArray());
@@ -439,12 +460,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     if (typeData is "complete" or "error" or "connection_ack")
                     {
                         Output.WriteLine("[websocket][debug] Complete or Error or Connection_ack Message");
-                        break;
-                    }
-
-                    if (res.MessageType == WebSocketMessageType.Close)
-                    {
-                        Output.WriteLine("[websocket][debug] Close websocket");
                         break;
                     }
                 }

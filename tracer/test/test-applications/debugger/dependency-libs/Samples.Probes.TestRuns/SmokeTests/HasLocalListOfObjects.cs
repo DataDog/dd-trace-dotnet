@@ -13,7 +13,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData("System.String", new[] { "System.String", "System.Int32" }, skipOnFramework: "net6.0")]
+        [LogMethodProbeTestData("System.String", new[] { "System.String", "System.Int32" }, skipOnFrameworks: "net6.0")]
         public string Method(string name, int age)
         {
             var p2 = new Person("Simon", 30, new Address { HomeType = BuildingType.Hotel, Number = 3, Street = "Elsewhere" }, System.Guid.NewGuid(), null);

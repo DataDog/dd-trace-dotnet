@@ -47,6 +47,7 @@ namespace ServiceStack.Redis
 {
     internal class RedisNativeClient
     {
+        public long Db { get; } = 2;
         public string Host { get; } = "Host";
         public int Port { get; } = 80;
 

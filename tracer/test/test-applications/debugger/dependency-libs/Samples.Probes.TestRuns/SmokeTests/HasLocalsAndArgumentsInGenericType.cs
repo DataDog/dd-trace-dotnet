@@ -26,7 +26,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         public class Test<T> where T : new()
         {
             [MethodImpl(MethodImplOptions.NoInlining)]
-            [MethodProbeTestData("System.String", new[] { "!0", "System.Int32" })]
+            [LogMethodProbeTestData("System.String", new[] { "!0", "System.Int32" })]
             public string Method(T genericVar, int age)
             {
                 var genericVarToString = genericVar.ToString() + "Simon";

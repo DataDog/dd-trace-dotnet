@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\shared\src\native-lib\spdlog\src\spdlog.cpp" />
+    <ClCompile Include="iast_util_test.cpp" />
+    <ClCompile Include="integration_test.cpp" />
+    <ClCompile Include="clr_helper_test.cpp" />
+    <ClCompile Include="metadata_builder_test.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="version_struct_test.cpp" />
+    <ClCompile Include="..\..\..\shared\src\native-lib\fmt\src\posix.cc">
+      <Filter>fmt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\shared\src\native-lib\fmt\src\format.cc">
+      <Filter>fmt</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="test_helpers.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="fmt">
+      <UniqueIdentifier>{5e525bdd-03d6-4b6e-b263-4e32e87de18a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

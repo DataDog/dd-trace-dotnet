@@ -281,8 +281,12 @@ kafka.group | No
 kafka.offset | No
 kafka.partition | No
 kafka.tombstone | No
-message.queue_time_ms | No
 span.kind | Yes
+### Metrics
+Name | Required |
+---------|----------------|
+_dd.measured | Yes
+message.queue_time_ms | No
 
 ## MongoDb
 ### Span properties
@@ -442,6 +446,10 @@ out.host | Yes
 out.port | Yes
 redis.raw_command | Yes
 span.kind | `client`
+### Metrics
+Name | Required |
+---------|----------------|
+db.redis.database_index | Yes
 
 ## StackExchangeRedis
 ### Span properties
@@ -457,6 +465,10 @@ out.host | Yes
 out.port | Yes
 redis.raw_command | Yes
 span.kind | `client`
+### Metrics
+Name | Required |
+---------|----------------|
+db.redis.database_index | No
 
 ## Sqlite
 ### Span properties

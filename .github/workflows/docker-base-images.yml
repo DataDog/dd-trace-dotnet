@@ -6,10 +6,16 @@ on:
     inputs:
       azdo_build_id:
         description: 'The specific AzDo build from which the release artifacts will be downloaded.'
-        required: true
+        required: false
       is_snapshot:
         description: 'True when we are building main branch, false when we are building a release'
-        required: true
+        required: false
+      targetBranch:
+        description: Parameter comming from only draft release. The branch that generates the trigger. 
+        required: false
+      commitSha:
+        description: Parameter comming from only draft release. Commit that trigger the build.
+        required: false
 jobs:
   build-and-publish-base-image:
     runs-on: ubuntu-latest
@@ -31,9 +37,13 @@ jobs:
 
     - name: "Download build assets from Azure Pipelines"
       id: assets
-      run: ./tracer/build.sh DownloadAzurePipelineFromBuild 
+      run: |
+        # If AzureDevopsBuildId is empty we download release artifact, else we download the artifacts from azure build id
+        [ -z "$AzureDevopsBuildId" ] && ./tracer/build.sh DownloadReleaseArtifacts || ./tracer/build.sh DownloadAzurePipelineFromBuild     
       env:
         AzureDevopsBuildId: "${{ github.event.inputs.azdo_build_id }}"
+        TargetBranch: "${{ github.event.inputs.targetBranch }}"
+        CommitSha: "${{ github.event.inputs.commitSha }}"
 
     - name: Copy tooling files to artifacts path
       shell: bash
@@ -52,7 +62,7 @@ jobs:
       id: docker-base-image-tags
       shell: bash
       run: |
-        if [ "$is_snapshot" = "true" ]; then
+        if [ "$is_snapshot" = "True" ]; then
           echo "tag-names=ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest_snapshot" >> $GITHUB_OUTPUT
         else
           echo "tag-names=ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest" >> $GITHUB_OUTPUT

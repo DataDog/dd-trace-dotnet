@@ -13,7 +13,7 @@ public class NonSupportedInstrumentationTest : IRun
     struct GenericStructIsNotSupported<T>
     {
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData(expectedNumberOfSnapshots: 0)] // Should fail on instrumentation as we don't support the instrumentation of methods that reside inside an inner generic struct.
+        [LogMethodProbeTestData(expectedNumberOfSnapshots: 0, expectProbeStatusFailure: true)] // Should fail on instrumentation as we don't support the instrumentation of methods that reside inside an inner generic struct.
         public void MethodToInstrument(string callerName)
         {
             var arr = new[] { callerName, nameof(MethodToInstrument), nameof(SimpleTypeNameTest) };

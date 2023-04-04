@@ -58,6 +58,11 @@ namespace Datadog.Trace
         internal const string ProcessId = "process_id";
 
         /// <summary>
+        /// The database index redis is connected to
+        /// </summary>
+        internal const string RedisDatabaseIndex = "db.redis.database_index";
+
+        /// <summary>
         /// Whether the libraries application security features are enabled.
         /// </summary>
         public const string AppSecEnabled = "_dd.appsec.enabled";

@@ -45,9 +45,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="typeHandle">The handle of the type</param>
         /// <param name="methodMetadataIndex">The index used to lookup for the <see cref="MethodMetadataInfo"/> associated with the executing method</param>
         /// <param name="isReEntryToMoveNext">If it the first entry to the state machine MoveNext method</param>
-        /// <returns>Live debugger state</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static AsyncMethodDebuggerState BeginMethod<TTarget>(string probeId, int probeMetadataIndex, TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex, ref AsyncMethodDebuggerState isReEntryToMoveNext)
+        public static void BeginMethod<TTarget>(string probeId, int probeMetadataIndex, TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex, ref AsyncDebuggerState isReEntryToMoveNext)
         {
             // State machine is null in case is a nested struct inside a generic parent.
             // This can happen if we operate in optimized code and the original async method was inside a generic class
@@ -55,13 +54,14 @@ namespace Datadog.Trace.Debugger.Instrumentation
             // See more here: https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L70
             if (instance == null)
             {
-                return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
+                isReEntryToMoveNext.LogState = AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
+                return;
             }
 
-            if (isReEntryToMoveNext != null)
+            if (isReEntryToMoveNext.LogState != null)
             {
                 // we are in a continuation, return the current state
-                return isReEntryToMoveNext;
+                return;
             }
 
             var stateMachineType = instance.GetType();
@@ -74,14 +74,16 @@ namespace Datadog.Trace.Debugger.Instrumentation
             if (!MethodMetadataCollection.Instance.TryCreateAsyncMethodMetadataIfNotExists(instance, methodMetadataIndex, in methodHandle, in typeHandle, kickoffInfo))
             {
                 Log.Warning("BeginMethod: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {Type}, instance type name = {Name}, methodMetadataId = {MethodMetadataIndex}, probeId = {ProbeId}", typeof(TTarget), instance.GetType().Name, methodMetadataIndex, probeId);
-                return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
+                isReEntryToMoveNext.LogState = AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
+                return;
             }
 
             ref var probeData = ref ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probeId);
             if (probeData.IsEmpty())
             {
                 Log.Warning("BeginMethod: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId);
-                return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
+                isReEntryToMoveNext.LogState = AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
+                return;
             }
 
             var asyncState = new AsyncMethodDebuggerState(probeId, ref probeData)
@@ -95,7 +97,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
             if (!asyncState.SnapshotCreator.ProbeHasCondition &&
                 !asyncState.ProbeData.Sampler.Sample())
             {
-                return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
+                isReEntryToMoveNext.LogState = AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
+                return;
             }
 
             var hasArgumentsOrLocals = asyncState.HasLocalsOrReturnValue ||
@@ -105,17 +108,17 @@ namespace Datadog.Trace.Debugger.Instrumentation
             var asyncCaptureInfo = new AsyncCaptureInfo(asyncState.MoveNextInvocationTarget, asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: asyncState.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: asyncState.MethodMetadataInfo.AsyncMethodHoistedArguments);
             var capture = new CaptureInfo<object>(value: asyncState.KickoffInvocationTarget, type: asyncState.MethodMetadataInfo.KickoffInvocationTargetType, methodState: MethodState.EntryAsync, hasLocalOrArgument: hasArgumentsOrLocals, asyncCaptureInfo: asyncCaptureInfo, memberKind: ScopeMemberKind.This, localsCount: asyncState.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: asyncState.MethodMetadataInfo.ParameterNames.Length);
 
-            if (!asyncState.ProbeData.Processor.Process(ref capture, asyncState.SnapshotCreator))
-            {
-                asyncState.IsActive = false;
-            }
-
             asyncState.HasLocalsOrReturnValue = false;
             asyncState.HasArguments = false;
 
-            isReEntryToMoveNext = asyncState; // Denotes that subsequent re-entries of the `MoveNext` will be ignored by `BeginMethod`.
+            isReEntryToMoveNext.LogState = asyncState; // Denotes that subsequent re-entries of the `MoveNext` will be ignored by `BeginMethod`.
+
+            if (!asyncState.ProbeData.Processor.Process(ref capture, asyncState.SnapshotCreator))
+            {
+                isReEntryToMoveNext.LogState.IsActive = false;
+            }
+
             asyncState.SnapshotCreator.StartSampling();
-            return isReEntryToMoveNext;
         }
 
         /// <summary>
@@ -124,14 +127,16 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <typeparam name="TLocal">Type of local.</typeparam>
         /// <param name="local">The local to be logged.</param>
         /// <param name="index">index of given argument.</param>
-        /// <param name="asyncState">Debugger asyncState</param>
+        /// <param name="state">Debugger state</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LogLocal<TLocal>(ref TLocal local, int index, ref AsyncMethodDebuggerState asyncState)
+        public static void LogLocal<TLocal>(ref TLocal local, int index, ref AsyncDebuggerState state)
         {
-            if (!asyncState.IsActive)
+            if (!state.LogState.IsActive)
             {
                 return;
             }
+
+            var asyncState = state.LogState;
 
             asyncState.SnapshotCreator.StopSampling();
             var localVariableNames = asyncState.MethodMetadataInfo.LocalVariableNames;
@@ -144,7 +149,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             var captureInfo = new CaptureInfo<TLocal>(value: local, methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
             if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator))
             {
-                asyncState.IsActive = false;
+                state.LogState.IsActive = false;
             }
 
             asyncState.HasLocalsOrReturnValue = true;
@@ -161,14 +166,16 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <typeparam name="TTarget">Target object of the method. Note that it could be typeof(object) and not a concrete type</typeparam>
         /// <param name="instance">Instance value</param>
         /// <param name="exception">Exception value</param>
-        /// <param name="asyncState">Debugger asyncState</param>
+        /// <param name="state">Debugger state</param>
         /// <returns>LiveDebugger return structure</returns>
-        public static DebuggerReturn EndMethod_StartMarker<TTarget>(TTarget instance, Exception exception, ref AsyncMethodDebuggerState asyncState)
+        public static DebuggerReturn EndMethod_StartMarker<TTarget>(TTarget instance, Exception exception, ref AsyncDebuggerState state)
         {
-            if (!asyncState.IsActive)
+            if (!state.LogState.IsActive)
             {
                 return DebuggerReturn.GetDefault();
             }
+
+            var asyncState = state.LogState;
 
             asyncState.SnapshotCreator.StopSampling();
             var asyncCaptureInfo = new AsyncCaptureInfo(asyncState.MoveNextInvocationTarget, asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: asyncState.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: asyncState.MethodMetadataInfo.AsyncMethodHoistedArguments);
@@ -176,7 +183,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             if (!asyncState.ProbeData.Processor.Process(ref capture, asyncState.SnapshotCreator))
             {
-                asyncState.IsActive = false;
+                state.LogState.IsActive = false;
             }
 
             asyncState.SnapshotCreator.StartSampling();
@@ -194,15 +201,17 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="instance">Instance value</param>
         /// <param name="returnValue">Return value</param>
         /// <param name="exception">Exception value</param>
-        /// <param name="asyncState">Debugger asyncState</param>
+        /// <param name="state">Debugger asyncState</param>
         /// <returns>LiveDebugger return structure</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DebuggerReturn<TReturn> EndMethod_StartMarker<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref AsyncMethodDebuggerState asyncState)
+        public static DebuggerReturn<TReturn> EndMethod_StartMarker<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref AsyncDebuggerState state)
         {
-            if (!asyncState.IsActive)
+            if (!state.LogState.IsActive)
             {
                 return new DebuggerReturn<TReturn>(returnValue);
             }
+
+            var asyncState = state.LogState;
 
             asyncState.SnapshotCreator.StopSampling();
             var asyncCaptureInfo = new AsyncCaptureInfo(asyncState.MoveNextInvocationTarget, asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: asyncState.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: asyncState.MethodMetadataInfo.AsyncMethodHoistedArguments);
@@ -211,7 +220,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 var captureInfo = new CaptureInfo<Exception>(value: exception, methodState: MethodState.ExitStartAsync, memberKind: ScopeMemberKind.Exception, asyncCaptureInfo: asyncCaptureInfo);
                 if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator))
                 {
-                    asyncState.IsActive = false;
+                    state.LogState.IsActive = false;
                 }
             }
             else if (returnValue != null)
@@ -219,7 +228,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 var captureInfo = new CaptureInfo<TReturn>(value: returnValue, name: "@return", methodState: MethodState.ExitStartAsync, memberKind: ScopeMemberKind.Return, asyncCaptureInfo: asyncCaptureInfo);
                 if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator))
                 {
-                    asyncState.IsActive = false;
+                    state.LogState.IsActive = false;
                 }
 
                 asyncState.HasLocalsOrReturnValue = true;
@@ -232,14 +241,16 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// End Method with Void return value invoker
         /// </summary>
-        /// <param name="asyncState">Debugger asyncState</param>
+        /// <param name="state">Debugger state</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void EndMethod_EndMarker(ref AsyncMethodDebuggerState asyncState)
+        public static void EndMethod_EndMarker(ref AsyncDebuggerState state)
         {
-            if (!asyncState.IsActive)
+            if (!state.LogState.IsActive)
             {
                 return;
             }
+
+            var asyncState = state.LogState;
 
             asyncState.SnapshotCreator.StopSampling();
             var hasArgumentsOrLocals = asyncState.HasLocalsOrReturnValue ||
@@ -250,7 +261,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             var captureInfo = new CaptureInfo<object>(value: asyncCaptureInfo.KickoffInvocationTarget, type: asyncCaptureInfo.KickoffInvocationTargetType, methodState: MethodState.ExitEndAsync, memberKind: ScopeMemberKind.This, asyncCaptureInfo: asyncCaptureInfo, hasLocalOrArgument: hasArgumentsOrLocals);
             if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator))
             {
-                asyncState.IsActive = false;
+                state.LogState.IsActive = false;
             }
         }
 
@@ -258,20 +269,20 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// Log exception
         /// </summary>
         /// <param name="exception">Exception instance</param>
-        /// <param name="asyncState">Debugger asyncState</param>
+        /// <param name="state">Debugger state</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LogException(Exception exception, ref AsyncMethodDebuggerState asyncState)
+        public static void LogException(Exception exception, ref AsyncDebuggerState state)
         {
             try
             {
-                if (!asyncState.IsActive)
+                if (state.LogState?.IsActive == false)
                 {
                     // Already encountered `LogException`
                     return;
                 }
 
                 Log.Warning(exception, "Error caused by our instrumentation");
-                asyncState.IsActive = false;
+                state.LogState = AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
             }
             catch
             {

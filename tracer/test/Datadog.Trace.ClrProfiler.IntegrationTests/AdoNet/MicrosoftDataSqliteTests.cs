@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if !NETCOREAPP2_1
+
 using System;
 using System.Linq;
 using Datadog.Trace.Configuration;
@@ -77,3 +79,5 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         }
     }
 }
+
+#endif
