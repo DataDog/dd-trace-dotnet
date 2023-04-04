@@ -7,6 +7,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.RemoteConfigurationManagement;
 

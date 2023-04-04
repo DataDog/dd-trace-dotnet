@@ -164,7 +164,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             while (!_cancellationSource.IsCancellationRequested)
             {
                 var isRcmEnabled = Volatile.Read(ref _isRcmEnabled);
-                var anySubscriber = _subscriptions.Any();
+                var anySubscriber = _subscriptions.Count > 0;
 
                 if (isRcmEnabled && anySubscriber)
                 {
@@ -241,7 +241,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             Array.Reverse(capabilitiesArray);
 #endif
             var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, _lastPollError != null, _lastPollError, _backendClientState);
-            var rcmClient = new RcmClient(_id, _subscriptionsProductKeys.ToList(), _rcmTracer, rcmState, capabilitiesArray);
+            var rcmClient = new RcmClient(_id, _subscriptionsProductKeys, _rcmTracer, rcmState, capabilitiesArray);
             EnrichTagsWithGitMetadata(rcmClient.ClientTracer.Tags);
             var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
             return rcmRequest;
