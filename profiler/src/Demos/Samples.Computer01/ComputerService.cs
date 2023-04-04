@@ -40,6 +40,7 @@ namespace Samples.Computer01
         private MeasureAllocations _measureAllocations;
         private InnerMethods _innerMethods;
         private LineNumber _lineNumber;
+        private NullThreadNameBugCheck _nullThreadNameBugCheck;
 
         public void StartService(Scenario scenario, int nbThreads, int parameter)
         {
@@ -134,6 +135,10 @@ namespace Samples.Computer01
 
                 case Scenario.LineNumber:
                     StartLineNumber();
+                    break;
+
+                case Scenario.NullThreadNameBug:
+                    StartNullThreadNameBugCheck();
                     break;
 
                 default:
@@ -231,6 +236,10 @@ namespace Samples.Computer01
 
                 case Scenario.LineNumber:
                     StopLineNumber();
+                    break;
+
+                case Scenario.NullThreadNameBug:
+                    StopNullThreadNameBugCheck();
                     break;
             }
         }
@@ -332,6 +341,10 @@ namespace Samples.Computer01
 
                     case Scenario.LineNumber:
                         RunLineNumber();
+                        break;
+
+                    case Scenario.NullThreadNameBug:
+                        RunNullThreadNameBugCheck();
                         break;
 
                     default:
@@ -481,6 +494,12 @@ namespace Samples.Computer01
             _lineNumber.Start();
         }
 
+        private void StartNullThreadNameBugCheck()
+        {
+            _nullThreadNameBugCheck = new NullThreadNameBugCheck();
+            _nullThreadNameBugCheck.Start();
+        }
+
         private void StopComputer()
         {
             using (_computer)
@@ -585,6 +604,11 @@ namespace Samples.Computer01
         private void StopLineNumber()
         {
             _lineNumber.Stop();
+        }
+
+        private void StopNullThreadNameBugCheck()
+        {
+            _nullThreadNameBugCheck.Stop();
         }
 
         private void RunComputer()
@@ -715,6 +739,12 @@ namespace Samples.Computer01
         {
             var lineNumber = new LineNumber();
             lineNumber.Run();
+        }
+
+        private void RunNullThreadNameBugCheck()
+        {
+            var nullThreadNameBugCheck = new NullThreadNameBugCheck();
+            nullThreadNameBugCheck.Run();
         }
 
         public class MySpecialClassA
