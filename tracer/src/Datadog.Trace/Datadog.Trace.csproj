@@ -65,10 +65,6 @@
     <EmbeddedResource Include="AppSec\Waf\rule-set.json" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="AppSec\Rcm\Models" />
-  </ItemGroup>
-
   <!-- Below this point is reserved for vendor items -->
   <!--Newtonsoft.Json-->
   <!-- Modifications: Original condition was only for net45, but we include net461 here so that net45 and net461 generate the same Newtonsoft.Json -->
