@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             return scope;
         }
 
-        internal static void UpdateScopeFromExecuteAsync(Tracer tracer, in string operationType, in string operationName)
+        internal static void UpdateScopeFromExecuteAsync(Tracer tracer, string operationType, string operationName)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -149,5 +149,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
             return res;
         }
+
+        internal static string GetOperation(OperationTypeProxy operation)
+            => operation switch
+            {
+                OperationTypeProxy.Query => nameof(OperationTypeProxy.Query),
+                OperationTypeProxy.Mutation=> nameof(OperationTypeProxy.Mutation),
+                OperationTypeProxy.Subscription=> nameof(OperationTypeProxy.Subscription),
+                _ => operation.ToString(),
+            };
     }
 }

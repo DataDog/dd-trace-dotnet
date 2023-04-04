@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             where TOperationContext : IOperationContext
         {
             var operation = operationContext.Operation;
-            var operationType = operation.OperationType.ToString();
+            var operationType = HotChocolateCommon.GetOperation(operation.OperationType);
             var operationName = GetNameStringValue(operation.Name.Value);
 
             HotChocolateCommon.UpdateScopeFromExecuteAsync(Tracer.Instance, operationType, operationName);
