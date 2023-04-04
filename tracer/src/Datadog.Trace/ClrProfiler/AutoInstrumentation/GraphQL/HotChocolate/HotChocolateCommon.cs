@@ -45,8 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             return scope;
         }
 
-        internal static void UpdateScopeFromExecuteAsyncV13<TOperationContext>(Tracer tracer, in TOperationContext context)
-        where TOperationContext : IOperationContextV13
+        internal static void UpdateScopeFromExecuteAsync(Tracer tracer, in string operationType, in string operationName)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -64,70 +63,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
             try
             {
-                var operation = context.Operation;
-                var operationType = operation.OperationType.ToString();
                 if (span.Tags is GraphQLTags tags)
                 {
-                    tags.OperationName = operation.Name;
+                    tags.OperationName = operationName;
                     span.ResourceName = $"{operationType} {tags.OperationName ?? "operation"}";
                     tags.OperationType = operationType;
                 }
                 else
                 {
-                    var operationName = span.GetTag(Trace.Tags.GraphQLOperationName);
-                    span.ResourceName = $"{operationType} {operationName ?? "operation"}";
-                    span.SetTag(Trace.Tags.GraphQLOperationType, operationType);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error updating HotChocolate scope.");
-            }
-        }
-
-        private static string GetNameStringValue(object nameValue)
-        {
-            // Get the string value of the NameString
-            // The NameString value can be either another NameString or a string
-            if (nameValue != null && nameValue.TryDuckCast(typeof(NameStringProxy), out var ns))
-            {
-                nameValue = ((NameStringProxy)ns).Value;
-            }
-
-            return nameValue is not null && nameValue is string str ? str : null;
-        }
-
-        internal static void UpdateScopeFromExecuteAsync<T>(Tracer tracer, in T context)
-            where T : IOperationContext
-        {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
-            {
-                // integration disabled, don't create a scope, skip this trace
-                return;
-            }
-
-            var scope = tracer.InternalActiveScope;
-            var span = scope?.Span;
-            if (span == null || span.OperationName != ExecuteOperationName)
-            {
-                // not in a Hotchocolate execution span
-                return;
-            }
-
-            try
-            {
-                var operation = context.Operation;
-                var operationType = operation.OperationType.ToString();
-                if (span.Tags is GraphQLTags tags)
-                {
-                    tags.OperationName = GetNameStringValue(operation.Name.Value);
-                    span.ResourceName = $"{operationType} {tags.OperationName ?? "operation"}";
-                    tags.OperationType = operationType;
-                }
-                else
-                {
-                    var operationName = span.GetTag(Trace.Tags.GraphQLOperationName);
-                    span.ResourceName = $"{operationType} {operationName ?? "operation"}";
+                    var operationNameTag = span.GetTag(Trace.Tags.GraphQLOperationName);
+                    span.ResourceName = $"{operationType} {operationNameTag ?? "operation"}";
                     span.SetTag(Trace.Tags.GraphQLOperationType, operationType);
                 }
             }
