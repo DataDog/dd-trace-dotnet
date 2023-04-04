@@ -89,16 +89,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         {
             // Get the string value of the NameString
             // The NameString value can be either another NameString or a string
-            while (nameValue != null)
+            if (nameValue != null && nameValue.TryDuckCast(typeof(NameStringProxy), out var ns))
             {
-                if (nameValue.TryDuckCast(typeof(NameStringProxy), out var ns))
-                {
-                    nameValue = ((NameStringProxy)ns).Value;
-                }
-                else
-                {
-                    break;
-                }
+                nameValue = ((NameStringProxy)ns).Value;
             }
 
             return nameValue is not null && nameValue is string str ? str : null;
