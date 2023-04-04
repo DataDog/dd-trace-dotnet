@@ -45,7 +45,7 @@
   ],
   "sources": [
     {
-      "origin": "http.request.parameter.value",
+      "origin": "http.request.parameter",
       "name": "username",
       "value": "Vicent"
     }
