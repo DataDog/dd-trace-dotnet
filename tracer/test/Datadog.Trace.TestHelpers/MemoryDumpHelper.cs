@@ -66,18 +66,33 @@ namespace Datadog.Trace.TestHelpers
                     RedirectStandardError = true,
                 })!;
 
-                using var helper = new ProcessHelper(dumpToolProcess);
-                dumpToolProcess.WaitForExit();
-                helper.Drain();
+                dumpToolProcess.ErrorDataReceived += (_, e) =>
+                {
+                    _output?.Report($"[dump][stderr] {e.Data}");
+                };
 
-                if (helper.Process.ExitCode == -2)
+                dumpToolProcess.OutputDataReceived += (_, e) =>
+                {
+                    _output?.Report($"[dump][stdout] {e.Data}");
+                };
+
+                dumpToolProcess.BeginErrorReadLine();
+                dumpToolProcess.BeginOutputReadLine();
+
+                _output.Report($"[dump] Procdump with pid {dumpToolProcess.Id} monitors process {Path.GetFileName(exe)}");
+
+                dumpToolProcess.WaitForExit();
+
+                _output.Report($"[dump] Procdump with pid {dumpToolProcess.Id} has exited");
+
+                if (dumpToolProcess.ExitCode == -2)
                 {
                     // No dump was captured but there was no error, the process probably didn't crash
                     return;
                 }
 
-                _output?.Report($"[dump][stdout] {helper.StandardOutput}");
-                _output?.Report($"[dump][stderr] {helper.ErrorOutput}");
+                // _output?.Report($"[dump][stdout] {helper.StandardOutput}");
+                // _output?.Report($"[dump][stderr] {helper.ErrorOutput}");
             });
 #endif
         }
