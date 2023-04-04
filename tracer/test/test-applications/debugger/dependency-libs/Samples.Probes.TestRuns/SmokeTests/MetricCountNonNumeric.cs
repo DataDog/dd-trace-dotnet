@@ -17,7 +17,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         [MetricMethodProbeTestData(
             metricJson: Json,
             metricKind: Const.Count,
-            metricName: nameof(MetricCountInt),
+            metricName: nameof(MetricCountNonNumeric),
             captureSnapshot: false,
             expectedNumberOfSnapshots: 1, // error message
             evaluateAt: Const.Exit,

@@ -68,7 +68,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         internal ProbeInfo ProbeInfo { get; }
 
-        private bool IsMetricCountWithoutExpression => ProbeInfo.ProbeType == ProbeType.Metric && (_metric?.Dsl == null) && ProbeInfo.MetricKind == MetricKind.COUNT;
+        private bool IsMetricCountWithoutExpression => ProbeInfo.ProbeType == ProbeType.Metric && (_metric?.Json == null) && ProbeInfo.MetricKind == MetricKind.COUNT;
 
         [DebuggerStepThrough]
         private bool HasCondition() => _condition.HasValue;
