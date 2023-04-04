@@ -63,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 nameValue = ((NameStringProxy)ns).Value;
             }
 
-            return nameValue is not null && nameValue is string str ? str : null;
+            return nameValue as string;
         }
     }
 }
