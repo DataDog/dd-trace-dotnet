@@ -868,7 +868,7 @@ namespace Datadog.Trace.TestHelpers
 
             // We override the previous Probes Statuses as the debugger-agent is always emitting complete set of probes statuses, so we can
             // solely rely on that.
-            ProbesStatuses = new ImmutableArray<string>().AddRange(probeStatuses.Values);
+            ProbesStatuses = probeStatuses.Values.ToImmutableArray();
             Snapshots = Snapshots.AddRange(snapshots);
         }
 
