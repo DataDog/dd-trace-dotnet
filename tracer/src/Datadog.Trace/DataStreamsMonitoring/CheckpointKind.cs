@@ -8,7 +8,7 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 /// <summary>
 /// Data streams checkpoint type
 /// </summary>
-public enum CheckpointKind
+internal enum CheckpointKind
 {
     /// <summary>
     /// Checkpoint for produce operation
