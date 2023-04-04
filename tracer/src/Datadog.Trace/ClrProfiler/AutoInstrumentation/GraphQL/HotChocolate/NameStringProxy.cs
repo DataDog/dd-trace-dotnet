@@ -16,7 +16,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         ///// <summary>
         ///// Get the value of the NameString
         ///// </summary>
-        [Duck(Name = "Value")]
         public object Value;
     }
 }

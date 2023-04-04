@@ -17,10 +17,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         ///// <summary>
         ///// Gets the operation type (Query, Mutation, Subscription)
         ///// </summary>
-        [Duck(Name = "Type")]
         public OperationTypeProxy OperationType;
 
-        [Duck(Name = "Name")]
         public string Name;
     }
 }

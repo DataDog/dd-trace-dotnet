@@ -19,7 +19,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         [Duck(Name = "Type")]
         public OperationTypeProxy OperationType;
 
-        [Duck(Name = "Name")]
         public NameStringProxy Name;
     }
 }
