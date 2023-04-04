@@ -24,14 +24,17 @@ internal static class SourceType
     internal static string GetString(SourceTypeName value)
         => value switch
         {
-            SourceTypeName.RequestBody => "http.request.body",
-            SourceTypeName.RequestPath => "http.request.path",
+            SourceTypeName.RequestParameterValue => "http.request.parameter",
             SourceTypeName.RequestParameterName => "http.request.parameter.name",
-            SourceTypeName.RequestParameterValue => "http.request.parameter.value",
-            SourceTypeName.RoutedParameterValue => "http.request.path.parameter",
             SourceTypeName.RequestHeader => "http.request.header",
             SourceTypeName.RequestHeaderName => "http.request.header.name",
-            SourceTypeName.RequestQueryString => "http.request.querystring",
+            SourceTypeName.RequestPath => "http.request.path",
+            SourceTypeName.RequestBody => "http.request.body",
+            SourceTypeName.RequestQuery => "http.request.query",
+            SourceTypeName.RoutedParameterValue => "http.request.path.parameter",
+            SourceTypeName.MatrixParameter => "http.request.matrix.parameter",
+            SourceTypeName.CookieName => "http.cookie.name",
+            SourceTypeName.CookieValue => "http.cookie.value",
             _ => string.Empty
         };
 }
