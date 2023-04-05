@@ -41,7 +41,8 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
         using var agent = EnvironmentHelper.GetMockAgent();
         using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
         {
-            agent.WaitForSpans(8);
+            var spans = agent.WaitForSpans(8);
+            spans.Should().HaveCount(8);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.UseParameters(packageVersion);
