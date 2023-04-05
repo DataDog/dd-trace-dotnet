@@ -34,6 +34,7 @@ using Logger = Serilog.Log;
 partial class Build
 {
     [Solution("Datadog.Trace.sln")] readonly Solution Solution;
+    [Solution("Datadog.Trace.Build.g.sln")] readonly Solution BuildSolution;
     AbsolutePath TracerDirectory => RootDirectory / "tracer";
     AbsolutePath SharedDirectory => RootDirectory / "shared";
     AbsolutePath ProfilerDirectory => RootDirectory / "profiler";
@@ -215,7 +216,7 @@ partial class Build
             if (IsWin)
             {
                 NuGetTasks.NuGetRestore(s => s
-                    .SetTargetPath(Solution)
+                    .SetTargetPath(BuildSolution)
                     .SetVerbosity(NuGetVerbosity.Normal)
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackagesDirectory(NugetPackageDirectory)));
@@ -223,7 +224,7 @@ partial class Build
             else
             {
                 DotNetRestore(s => s
-                    .SetProjectFile(Solution)
+                    .SetProjectFile(BuildSolution)
                     .SetVerbosity(DotNetVerbosity.Normal)
                     .SetProperty("configuration", BuildConfiguration.ToString())
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
@@ -556,7 +557,7 @@ partial class Build
 
             // Publish Datadog.Trace.MSBuild which includes Datadog.Trace and Datadog.Trace.AspNet
             DotNetPublish(s => s
-                .SetProject(Solution.GetProject(Projects.DatadogTraceMsBuild))
+                .SetProject(BuildSolution.GetProject(Projects.DatadogTraceMsBuild))
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatformAnyCPU()
                 .EnableNoBuild()

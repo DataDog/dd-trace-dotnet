@@ -30,6 +30,7 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using Target = Nuke.Common.Target;
 using Logger = Serilog.Log;
+using Nuke.Common.ProjectModel;
 
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
@@ -102,6 +103,49 @@ partial class Build
                 .SetTargetPlatform(TargetPlatform)
                 .SetProjectFile(Solution.GetProject(SampleName)));
         });
+
+    Target RegenerateBuildSln
+        => _ => _
+               .Description("Regenerates the 'build' and 'samples' solution")
+               .Executes(() =>
+                {
+                    // Create a copy of the "full solution"
+                    var sln = ProjectModelTasks.CreateSolution(
+                        fileName: RootDirectory / "Datadog.Trace.Build.g.sln",
+                        solutions: new[] { Solution },
+                        folderNameProvider: x => x?.Name,
+                        randomizeProjectIds: false);
+
+                    // Remove the test-application projects
+                    sln.AllProjects
+                                .Where(IsTestApplication)
+                                .ForEach(x =>
+                             {
+                                 Logger.Info($"Removing project '{x.Name}'");
+                                 sln.RemoveProject(x);
+                             });
+                    
+                    // Remove the _build project 
+                    sln.RemoveProject(Solution.GetProject("_build"));
+
+                    sln.Save();
+
+                    bool IsTestApplication(Project x)
+                    {
+                        var solutionFolder = x.SolutionFolder;
+                        while (solutionFolder is not null)
+                        {
+                            if (solutionFolder.Name == "test-applications")
+                            {
+                                return true;
+                            }
+
+                            solutionFolder = solutionFolder.SolutionFolder;
+                        }
+
+                        return false;
+                    }
+                });
 
     Target RunIisSample => _ => _
         .Description("Runs an IIS sample app, enabling profiling.")
