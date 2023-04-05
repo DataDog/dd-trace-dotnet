@@ -78,9 +78,9 @@ namespace Datadog.Trace.TestHelpers
 
         public IImmutableList<NameValueCollection> TraceRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
-        public List<string> Snapshots { get; private set; } = new();
+        public IImmutableList<string> Snapshots { get; private set; } = ImmutableList<string>.Empty;
 
-        public List<string> ProbesStatuses { get; private set; } = new();
+        public IImmutableList<string> ProbesStatuses { get; private set; } = ImmutableList<string>.Empty;
 
         public ConcurrentQueue<string> StatsdRequests { get; } = new();
 
@@ -315,7 +315,7 @@ namespace Datadog.Trace.TestHelpers
 
         public void ClearSnapshots()
         {
-            Snapshots.Clear();
+            Snapshots = Snapshots.Clear();
         }
 
         /// <summary>
@@ -323,9 +323,9 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         /// <param name="statusCount">The expected number of probe statuses when more than one status is expected (e.g. multiple line probes in method).</param>
         /// <param name="timeout">The timeout</param>
-        /// <param name="expectFailedStatuses">determines if we expect to see probe status failure</param>
+        /// <param name="expectedFailedStatuses">determines if we expect to see probe status failure</param>
         /// <returns>The list of probe statuses.</returns>
-        public async Task<string[]> WaitForProbesStatuses(int statusCount, TimeSpan? timeout = null, bool expectFailedStatuses = false)
+        public async Task<string[]> WaitForProbesStatuses(int statusCount, TimeSpan? timeout = null, int expectedFailedStatuses = 0)
         {
             using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(5));
 
@@ -334,12 +334,11 @@ namespace Datadog.Trace.TestHelpers
             {
                 isFound = ProbesStatuses.Count == statusCount;
 
-                // If we expect failed probe status, then we try to reach the batch that contains it.
+                // If we expect failed probe statuses, then we try to reach the batch that contains it.
                 // Due to complex race conditions, this requirement is not easily achieved thus what we do is
-                // basically let this function to spin until a batch with "Error installing probe" arrives / timeout.
+                // basically let this function spin until a batch with "Error installing probe" arrives, or we timeout and fail.
                 if (isFound &&
-                    expectFailedStatuses &&
-                    !ProbesStatuses.Any(probeStatus => probeStatus.Contains("Error installing probe")))
+                    expectedFailedStatuses != ProbesStatuses.Count(probeStatus => probeStatus.Contains("Error installing probe")))
                 {
                     ClearProbeStatuses();
                     isFound = false;
@@ -353,7 +352,8 @@ namespace Datadog.Trace.TestHelpers
 
             if (!isFound)
             {
-                throw new InvalidOperationException($"Probes Status count not found. Expected {statusCount}, actual {ProbesStatuses.Count}");
+                throw new InvalidOperationException($"Probes Status count not found. Expected {statusCount}, actual {ProbesStatuses.Count}. " +
+                                                    $"Expected failed statuses count is {expectedFailedStatuses}, actual failures:  {ProbesStatuses.Count(probeStatus => probeStatus.Contains("Error installing probe"))} failed");
             }
 
             return ProbesStatuses.ToArray();
@@ -361,7 +361,7 @@ namespace Datadog.Trace.TestHelpers
 
         public void ClearProbeStatuses()
         {
-            ProbesStatuses.Clear();
+            ProbesStatuses = ProbesStatuses.Clear();
         }
 
         public async Task<string[]> WaitForStatsdRequests(int statsdRequestsCount, TimeSpan? timeout = null)
@@ -868,8 +868,8 @@ namespace Datadog.Trace.TestHelpers
 
             // We override the previous Probes Statuses as the debugger-agent is always emitting complete set of probes statuses, so we can
             // solely rely on that.
-            ProbesStatuses = probeStatuses.Values.ToList();
-            Snapshots.AddRange(snapshots);
+            ProbesStatuses = probeStatuses.Values.ToImmutableArray();
+            Snapshots = Snapshots.AddRange(snapshots);
         }
 
         public readonly struct EvpProxyPayload
