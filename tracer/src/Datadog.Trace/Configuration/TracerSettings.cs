@@ -122,7 +122,7 @@ namespace Datadog.Trace.Configuration
                                             ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                                             ?.ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
-            ServiceNameMappings = new ServiceNames(serviceNameMappings);
+            ServiceNameMappings = new ServiceNames(serviceNameMappings, MetadataSchemaVersion);
 
             TracerMetricsEnabled = source.GetBool(ConfigurationKeys.TracerMetricsEnabled) ??
                                    // default value

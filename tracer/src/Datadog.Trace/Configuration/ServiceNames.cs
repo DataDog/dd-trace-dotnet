@@ -13,9 +13,13 @@ namespace Datadog.Trace.Configuration
     {
         private readonly object _lock = new object();
         private Dictionary<string, string> _mappings = null;
+        private bool _unifyServiceNames;
 
-        public ServiceNames(IDictionary<string, string> mappings)
+        public ServiceNames(IDictionary<string, string> mappings, string metadataSchemaVersion)
         {
+            _unifyServiceNames = string.Equals(metadataSchemaVersion, "v1", StringComparison.OrdinalIgnoreCase)
+                                    ? true
+                                    : false;
             if (mappings?.Count > 0)
             {
                 _mappings = new Dictionary<string, string>(mappings);
@@ -27,6 +31,10 @@ namespace Datadog.Trace.Configuration
             if (_mappings is not null && _mappings.TryGetValue(key, out var name))
             {
                 return name;
+            }
+            else if (_unifyServiceNames)
+            {
+                return applicationName;
             }
             else
             {
