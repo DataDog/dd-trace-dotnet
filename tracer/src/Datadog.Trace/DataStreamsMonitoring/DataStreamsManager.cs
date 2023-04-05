@@ -31,7 +31,7 @@ internal class DataStreamsManager
     private IDataStreamsWriter? _writer;
 
     public DataStreamsManager(
-        string env,
+        string? env,
         string defaultServiceName,
         IDataStreamsWriter? writer)
     {
