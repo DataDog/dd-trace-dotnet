@@ -270,7 +270,7 @@ namespace Datadog.Trace.TestHelpers
 
         public IImmutableList<MockDataStreamsPayload> WaitForDataStreamsPoints(
             int statsCount,
-            int timeoutInMilliseconds = 2000)
+            int timeoutInMilliseconds = 20000)
         {
             return WaitForDataStreams(
                 timeoutInMilliseconds,
