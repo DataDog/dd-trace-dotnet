@@ -86,6 +86,7 @@ namespace Datadog.Trace.Configuration
             HttpClientExcludedUrlSubstrings = settings.HttpClientExcludedUrlSubstrings;
             HttpServerErrorStatusCodes = settings.HttpServerErrorStatusCodes;
             HttpClientErrorStatusCodes = settings.HttpClientErrorStatusCodes;
+            MetadataSchemaVersion = settings.MetadataSchemaVersion;
             ServiceNameMappings = settings.ServiceNameMappings;
             TraceBufferSize = settings.TraceBufferSize;
             TraceBatchInterval = settings.TraceBatchInterval;
@@ -433,6 +434,11 @@ namespace Datadog.Trace.Configuration
         /// Gets the AAS settings. Guaranteed not <c>null</c> when <see cref="IsRunningInAzureAppService"/> is not <c>null</c>
         /// </summary>
         internal ImmutableAzureAppServiceSettings? AzureAppServiceMetadata { get; }
+
+        /// <summary>
+        /// Gets the metadata schema version
+        /// </summary>
+        internal string MetadataSchemaVersion { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

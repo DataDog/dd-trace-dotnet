@@ -116,6 +116,7 @@ namespace Datadog.Trace.Configuration
             var headerTagsNormalizationFixEnabled = source.GetBool(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled) ?? true;
             // Filter out tags with empty keys or empty values, and trim whitespaces
             HeaderTags = InitializeHeaderTags(inputHeaderTags, headerTagsNormalizationFixEnabled);
+            MetadataSchemaVersion = source.GetString(ConfigurationKeys.MetadataSchemaVersion) ?? "v0";
 
             var serviceNameMappings = source.GetDictionary(ConfigurationKeys.ServiceNameMappings)
                                             ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
@@ -608,6 +609,11 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets the AAS settings
         /// </summary>
         internal ImmutableAzureAppServiceSettings? AzureAppServiceMetadata { get; set; }
+
+        /// <summary>
+        /// Gets or sets the metadata schema version
+        /// </summary>
+        internal string MetadataSchemaVersion { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
