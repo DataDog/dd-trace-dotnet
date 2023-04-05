@@ -11,6 +11,12 @@ ThreadCpuInfo::ThreadCpuInfo(DWORD threadOSId) :
 
 void ThreadCpuInfo::SetName(const WCHAR* pName)
 {
+    if (pName == nullptr)
+    {
+        _pName = nullptr;
+        return;
+    }
+
     auto newName = std::make_unique<shared::WSTRING>(pName);
     _pName.swap(newName);
 }
