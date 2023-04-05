@@ -26,8 +26,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         internal Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, List<ApplyDetails>> Callback { get; set; }
 
-        internal List<RemoteConfiguration>? NextConfigs { get; set; }
-
         public void UnsubscribeProducts(params string[] names)
         {
             foreach (var name in names)
