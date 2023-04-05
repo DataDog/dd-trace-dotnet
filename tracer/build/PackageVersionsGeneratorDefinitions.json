@@ -149,7 +149,7 @@
     ]
   },
   {
-    "IntegrationName": "RabbitMQ",
+    "IntegrationName": " DataStreamsRabbitMQ",
     "SampleProjectName": "Samples.DataStreams.RabbitMQ",
     "NugetPackageSearchName": "RabbitMQ.Client",
     "MinVersion": "3.6.9",
