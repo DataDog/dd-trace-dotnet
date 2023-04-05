@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using Datadog.Trace.Util;
 
@@ -18,7 +20,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="integrationName">The integration name.</param>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        public IntegrationSettings(string integrationName, IConfigurationSource source)
+        public IntegrationSettings(string integrationName, IConfigurationSource? source)
         {
             if (integrationName is null)
             {
