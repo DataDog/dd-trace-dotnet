@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -11,7 +13,6 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Vendors.Serilog;
 
@@ -52,7 +53,7 @@ namespace Datadog.Trace.Configuration
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        public TracerSettings(IConfigurationSource source)
+        public TracerSettings(IConfigurationSource? source)
         {
             var commaSeparator = new[] { ',' };
 
@@ -274,10 +275,9 @@ namespace Datadog.Trace.Configuration
                                     (IsRunningInAzureAppService ? ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions :
                                      Serverless.Metadata is { IsRunningInLambda: true } m ? m.DefaultHttpClientExclusions : null);
 
-            if (urlSubstringSkips != null)
-            {
-                HttpClientExcludedUrlSubstrings = TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator);
-            }
+            HttpClientExcludedUrlSubstrings = urlSubstringSkips != null
+                                                  ? TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator)
+                                                  : Array.Empty<string>();
 
             var dbmPropagationMode = source?.GetString(ConfigurationKeys.DbmPropagationMode);
             DbmPropagationMode = dbmPropagationMode == null ? DbmPropagationLevel.Disabled : ValidateDbmPropagationInput(dbmPropagationMode);
@@ -287,31 +287,31 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets the default environment name applied to all spans.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.Environment"/>
-        public string Environment { get; set; }
+        public string? Environment { get; set; }
 
         /// <summary>
         /// Gets or sets the service name applied to top-level spans and used to build derived service names.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ServiceName"/>
-        public string ServiceName { get; set; }
+        public string? ServiceName { get; set; }
 
         /// <summary>
         /// Gets or sets the version tag applied to all spans.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ServiceVersion"/>
-        public string ServiceVersion { get; set; }
+        public string? ServiceVersion { get; set; }
 
         /// <summary>
         /// Gets or sets the application's git repository url.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GitRepositoryUrl"/>
-        internal string GitRepositoryUrl { get; set; }
+        internal string? GitRepositoryUrl { get; set; }
 
         /// <summary>
         /// Gets or sets the application's git commit hash.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GitCommitSha"/>
-        internal string GitCommitSha { get; set; }
+        internal string? GitCommitSha { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether we should tag every telemetry event with git metadata.
@@ -372,13 +372,13 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating custom sampling rules.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
-        public string CustomSamplingRules { get; set; }
+        public string? CustomSamplingRules { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating span sampling rules.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.SpanSamplingRules"/>
-        internal string SpanSamplingRules { get; set; }
+        internal string? SpanSamplingRules { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating a global rate for sampling.
@@ -405,7 +405,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
         /// </summary>
-        internal string IpHeader { get; set; }
+        internal string? IpHeader { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the ip header should not be collected. The default is false.
@@ -606,7 +606,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets the AAS settings
         /// </summary>
-        internal ImmutableAzureAppServiceSettings AzureAppServiceMetadata { get; set; }
+        internal ImmutableAzureAppServiceSettings? AzureAppServiceMetadata { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
@@ -700,14 +700,14 @@ namespace Datadog.Trace.Configuration
             return headerTags;
         }
 
-        internal static string[] TrimSplitString(string textValues, char[] separators)
+        internal static string[] TrimSplitString(string? textValues, char[] separators)
         {
             if (string.IsNullOrWhiteSpace(textValues))
             {
                 return Array.Empty<string>();
             }
 
-            var values = textValues.Split(separators);
+            var values = textValues!.Split(separators);
             var list = new List<string>(values.Length);
 
             foreach (var value in values)
