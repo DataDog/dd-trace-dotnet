@@ -9,7 +9,7 @@
         "duration": "ScrubbedValue",
         "errors": [
           {
-            "expression": "Convert(stringArg, IConvertible).ToDouble(value(System.Globalization.NumberFormatInfo)))",
+            "expression": "Convert(stringArg).ToDouble(value(System.Globalization.NumberFormatInfo)))",
             "message": "ScrubbedValue"
           }
         ],

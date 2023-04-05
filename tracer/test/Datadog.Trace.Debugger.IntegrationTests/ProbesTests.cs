@@ -307,84 +307,11 @@ public class ProbesTests : TestHelper
 
                 await sample.RunCodeSample();
 
-                var metricProbes = probeData.Where(DebuggerTestHelper.IsMetricProbe).ToArray();
+                await VerifyMetricProbeResults(testDescription, probeData, agent, isMultiPhase, phaseNumber);
 
-                if (metricProbes.Any())
-                {
-                    var expectedNumberOfSnapshots = DebuggerTestHelper.CalculateExpectedNumberOfSnapshots(metricProbes);
+                await VerifyLogProbeResults(testDescription, probeData, agent, isMultiPhase, phaseNumber);
 
-                    if (expectedNumberOfSnapshots > 0)
-                    {
-                        // meaning there is an error so we don't receive metrics but evaluation error
-                        var snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
-                        Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
-                        await ApproveSnapshots(snapshots, testDescription, isMultiPhase, phaseNumber);
-                        agent.ClearSnapshots();
-                    }
-                    else
-                    {
-                        var requests = await agent.WaitForStatsdRequests(metricProbes.Length);
-                        requests.Should().OnlyContain(s => s.Contains($"service:{EnvironmentHelper.SampleName}"));
-
-                        foreach (var probeAttributeBase in metricProbes)
-                        {
-                            var metricName = (probeAttributeBase as MetricMethodProbeTestDataAttribute)?.MetricName ?? (probeAttributeBase as MetricLineProbeTestDataAttribute)?.MetricName;
-                            var req = requests.SingleOrDefault(r => r.Contains(metricName));
-                            Assert.NotNull(req);
-                            req.Should().Contain($"service:{EnvironmentHelper.SampleName}");
-                        }
-                    }
-                }
-
-                var logProbes = probeData.Where(DebuggerTestHelper.IsLogProbe).ToArray();
-
-                if (logProbes.Any())
-                {
-                    var expectedNumberOfSnapshots = DebuggerTestHelper.CalculateExpectedNumberOfSnapshots(logProbes);
-                    string[] snapshots;
-                    if (expectedNumberOfSnapshots == 0)
-                    {
-                        Assert.True(await agent.WaitForNoSnapshots(), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
-                    }
-                    else
-                    {
-                        snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
-                        Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
-                        await ApproveSnapshots(snapshots, testDescription, isMultiPhase, phaseNumber);
-                        agent.ClearSnapshots();
-                    }
-                }
-
-                var spanProbes = probeData.Where(DebuggerTestHelper.IsSpanProbe).ToArray();
-
-                if (spanProbes.Any())
-                {
-                    const string spanProbeOperationName = "dd.dynamic.span";
-
-                    var settings = VerifyHelper.GetSpanVerifierSettings();
-                    settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
-                    settings.AddSimpleScrubber("out.host: localhost", "out.host: debugger");
-                    settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: debugger");
-                    var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
-                    settings.UseFileName($"{nameof(ProbeTests)}.{testName}.Spans");
-
-                    var spans = agent.WaitForSpans(spanProbes.Length, operationName: spanProbeOperationName);
-                    Assert.Equal(spanProbes.Length, spans.Count);
-                    foreach (var span in spans)
-                    {
-                        var result = Result.FromSpan(span)
-                                           .Properties(
-                                                s => s
-                                                   .Matches(_ => (nameof(span.Name), span.Name), spanProbeOperationName))
-                                           .Tags(
-                                                s => s
-                                                    .Matches("component", "trace")
-                                                    .MatchesOneOf("debugger.probeid", snapshotProbes.Select(p => p.Id).ToArray()));
-                        Assert.True(result.Success, result.ToString());
-                    }
-
-                    await VerifyHelper.VerifySpans(spans, settings).DisableRequireUniquePrefix();
-                }
+                await VerifySpanProbeResults(snapshotProbes, testDescription, probeData, agent, isMultiPhase, phaseNumber);
 
                 // The Datadog-Agent is continuously receiving probe statuses.
                 // We may have outdated probe statuses that were sent before the instrumentation took place.
@@ -406,6 +333,99 @@ public class ProbesTests : TestHelper
         finally
         {
             await sample.StopSample();
+        }
+    }
+
+    private async Task VerifySpanProbeResults(ProbeDefinition[] snapshotProbes, ProbeTestDescription testDescription, ProbeAttributeBase[] probeData, MockTracerAgent agent, bool isMultiPhase, int phaseNumber)
+    {
+        var spanProbes = probeData.Where(DebuggerTestHelper.IsSpanProbe).ToArray();
+
+        if (spanProbes.Any())
+        {
+            const string spanProbeOperationName = "dd.dynamic.span";
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
+            settings.AddSimpleScrubber("out.host: localhost", "out.host: debugger");
+            settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: debugger");
+            var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
+            settings.UseFileName($"{nameof(ProbeTests)}.{testName}.Spans");
+
+            var spans = agent.WaitForSpans(spanProbes.Length, operationName: spanProbeOperationName);
+            Assert.Equal(spanProbes.Length, spans.Count);
+            foreach (var span in spans)
+            {
+                var result = Result.FromSpan(span)
+                                   .Properties(
+                                        s => s
+                                           .Matches(_ => (nameof(span.Name), span.Name), spanProbeOperationName))
+                                   .Tags(
+                                        s => s
+                                            .Matches("component", "trace")
+                                            .MatchesOneOf("debugger.probeid", Enumerable.Select<ProbeDefinition, string>(snapshotProbes, p => p.Id).ToArray()));
+                Assert.True(result.Success, result.ToString());
+            }
+
+            await VerifyHelper.VerifySpans(spans, settings).DisableRequireUniquePrefix();
+        }
+    }
+
+    private async Task VerifyLogProbeResults(ProbeTestDescription testDescription, ProbeAttributeBase[] probeData, MockTracerAgent agent, bool isMultiPhase, int phaseNumber)
+    {
+        var logProbes = probeData.Where(DebuggerTestHelper.IsLogProbe).ToArray();
+
+        if (!logProbes.Any())
+        {
+            return;
+        }
+
+        var expectedNumberOfSnapshots = DebuggerTestHelper.CalculateExpectedNumberOfSnapshots(logProbes);
+        string[] snapshots;
+        if (expectedNumberOfSnapshots == 0)
+        {
+            Assert.True(await agent.WaitForNoSnapshots(), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
+        }
+        else
+        {
+            snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
+            Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
+            await ApproveSnapshots(snapshots, testDescription, isMultiPhase, phaseNumber);
+            agent.ClearSnapshots();
+        }
+    }
+
+    private async Task VerifyMetricProbeResults(ProbeTestDescription testDescription, ProbeAttributeBase[] probeData, MockTracerAgent agent, bool isMultiPhase, int phaseNumber)
+    {
+        var metricProbes = probeData.Where(DebuggerTestHelper.IsMetricProbe).ToArray();
+
+        if (!metricProbes.Any())
+        {
+            return;
+        }
+
+        var expectedNumberOfSnapshots = DebuggerTestHelper.CalculateExpectedNumberOfSnapshots(metricProbes);
+
+        if (expectedNumberOfSnapshots > 0)
+        {
+            // meaning there is an error so we don't receive metrics but an evaluation error (as a snapshot)
+            var snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
+            Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
+            await ApproveSnapshots(snapshots, testDescription, isMultiPhase, phaseNumber);
+            agent.ClearSnapshots();
+        }
+        else
+        {
+            var requests = await agent.WaitForStatsdRequests(metricProbes.Length);
+            requests.Should().OnlyContain(s => s.Contains($"service:{EnvironmentHelper.SampleName}"));
+
+            foreach (var probeAttributeBase in metricProbes)
+            {
+                var metricName = (probeAttributeBase as MetricMethodProbeTestDataAttribute)?.MetricName ?? (probeAttributeBase as MetricLineProbeTestDataAttribute)?.MetricName;
+                Assert.NotNull(metricName);
+                var req = requests.SingleOrDefault(r => r.Contains(metricName));
+                Assert.NotNull(req);
+                req.Should().Contain($"service:{EnvironmentHelper.SampleName}");
+            }
         }
     }
 
@@ -566,6 +586,16 @@ public class ProbesTests : TestHelper
                                 {
                                     // remove snapshot message (not probe status)
                                     item.Value.Replace("ScrubbedValue");
+                                }
+
+                                break;
+
+                            case "expression":
+                                if (value.StartsWith("Convert("))
+                                {
+                                    var stringToRemove = ", IConvertible";
+                                    var newValue = value.Replace(stringToRemove, string.Empty);
+                                    item.Value.Replace(newValue);
                                 }
 
                                 break;

@@ -261,7 +261,7 @@ internal class ProbeExpressionEvaluator
 
     private void HandleException<T>(ref ExpressionEvaluationResult result, CompiledExpression<T> compiledExpression, Exception e)
     {
-        Log.Error(e, "Expression was: {Expression}", compiledExpression.RawExpression);
+        Log.Error(e, "Failed to parse probe expression: {Expression}", compiledExpression.RawExpression);
         result.Errors ??= new List<EvaluationError>();
         if (compiledExpression.Errors != null)
         {
