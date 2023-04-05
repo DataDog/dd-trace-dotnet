@@ -1,6 +1,5 @@
 using System;
 using System.Text;
-using Datadog.Trace;
 using RabbitMQ.Client;
 
 namespace Samples.DataStreams.RabbitMQ
@@ -15,20 +14,17 @@ namespace Samples.DataStreams.RabbitMQ
         
         public static void Main(string[] args)
         {
-            using (Tracer.Instance.StartActive("rabbitmq-sample"))
-            {
-                var factory = new ConnectionFactory() { HostName = Host };
-                using var connection = factory.CreateConnection();
-                using var model = connection.CreateModel();
-            
-                // produce/consume operation (direct exchange)
-                PublishMessageToQueue(model, Queue, Message);
-                var msg = GetMessage(model, Queue);
+            var factory = new ConnectionFactory() { HostName = Host };
+            using var connection = factory.CreateConnection();
+            using var model = connection.CreateModel();
+        
+            // produce/consume operation (direct exchange)
+            PublishMessageToQueue(model, Queue, Message);
+            var msg = GetMessage(model, Queue);
 
-                // continuing the chain
-                var queueName = PublishMessageToExchange(model, Exchange, RoutingKey, msg);
-                GetMessage(model, queueName);              
-            }
+            // continuing the chain
+            var queueName = PublishMessageToExchange(model, Exchange, RoutingKey, msg);
+            GetMessage(model, queueName);
         }
 
         private static void PublishMessageToQueue(IModel model, string queue, string message)

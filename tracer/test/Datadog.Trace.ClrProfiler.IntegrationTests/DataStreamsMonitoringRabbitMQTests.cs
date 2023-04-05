@@ -74,7 +74,7 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
         using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
         {
             var spans = agent.WaitForSpans(8);
-            spans.Should().HaveCount(9);
+            spans.Should().HaveCount(8);
             var taggedSpans = spans.Where(s => s.Tags.ContainsKey("pathway.hash"));
             taggedSpans.Should().HaveCount(4);
         }
