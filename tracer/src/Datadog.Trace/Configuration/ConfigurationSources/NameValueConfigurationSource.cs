@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections.Specialized;
 
 namespace Datadog.Trace.Configuration
@@ -26,7 +28,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        public override string GetString(string key)
+        public override string? GetString(string key)
         {
             return _nameValueCollection[key];
         }

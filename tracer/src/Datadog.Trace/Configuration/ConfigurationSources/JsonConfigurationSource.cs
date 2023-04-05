@@ -3,11 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -20,8 +23,7 @@ namespace Datadog.Trace.Configuration
     public class JsonConfigurationSource : IConfigurationSource
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(JsonConfigurationSource));
-
-        private readonly JObject _configuration;
+        private readonly JObject? _configuration;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JsonConfigurationSource"/>
@@ -30,7 +32,9 @@ namespace Datadog.Trace.Configuration
         /// <param name="json">A JSON string that contains configuration values.</param>
         public JsonConfigurationSource(string json)
         {
-            _configuration = (JObject)JsonConvert.DeserializeObject(json);
+            if (json is null) { ThrowHelper.ThrowArgumentNullException(nameof(json)); }
+
+            _configuration = (JObject?)JsonConvert.DeserializeObject(json);
         }
 
         /// <summary>
@@ -52,7 +56,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="key">The key that identifies the setting.</param>
         /// <returns>The value of the setting, or null if not found.</returns>
-        string IConfigurationSource.GetString(string key)
+        string? IConfigurationSource.GetString(string key)
         {
             return GetValue<string>(key);
         }
@@ -100,9 +104,9 @@ namespace Datadog.Trace.Configuration
         /// <typeparam name="T">The type to convert the setting value into.</typeparam>
         /// <param name="key">The key that identifies the setting.</param>
         /// <returns>The value of the setting, or the default value of T if not found.</returns>
-        public T GetValue<T>(string key)
+        public T? GetValue<T>(string key)
         {
-            JToken token = _configuration.SelectToken(key, errorWhenNoMatch: false);
+            JToken? token = _configuration?.SelectToken(key, errorWhenNoMatch: false);
 
             return token == null
                        ? default
@@ -124,7 +128,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="key">The key that identifies the setting.</param>
         /// <returns><see cref="IDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
         /// <exception cref="JsonReaderException">Thrown if the configuration value is not a valid JSON string.</exception>
-        public IDictionary<string, string> GetDictionary(string key)
+        public IDictionary<string, string>? GetDictionary(string key)
         {
             return GetDictionaryInternal(key, allowOptionalMappings: false);
         }
@@ -145,14 +149,14 @@ namespace Datadog.Trace.Configuration
         /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping. This only applies to string values, not JSON objects</param>
         /// <returns><see cref="IDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
         /// <exception cref="JsonReaderException">Thrown if the configuration value is not a valid JSON string.</exception>
-        public IDictionary<string, string> GetDictionary(string key, bool allowOptionalMappings)
+        public IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings)
         {
             return GetDictionaryInternal(key, allowOptionalMappings);
         }
 
-        private IDictionary<string, string> GetDictionaryInternal(string key, bool allowOptionalMappings)
+        private IDictionary<string, string>? GetDictionaryInternal(string key, bool allowOptionalMappings)
         {
-            var token = _configuration.SelectToken(key, errorWhenNoMatch: false);
+            var token = _configuration?.SelectToken(key, errorWhenNoMatch: false);
             if (token == null)
             {
                 return null;
