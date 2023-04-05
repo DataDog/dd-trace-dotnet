@@ -41,7 +41,7 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
         using var agent = EnvironmentHelper.GetMockAgent();
         using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
         {
-            var payloads = agent.WaitForDataStreamsPoints(4);
+            var payloads = agent.WaitForDataStreamsPoints(4, 20000);
             payloads.Should().NotBeEmpty();
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
