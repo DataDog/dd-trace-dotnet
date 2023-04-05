@@ -1,4 +1,4 @@
-// <copyright file="PreparedOperationStruct.cs" company="Datadog">
+// <copyright file="NameStringProxy.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,17 +8,14 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
     /// <summary>
-    /// HotChocolate.Execution.Processing.IPreparedOperation interface for ducktyping
+    /// HotChocolate.NameString interface for ducktyping
     /// </summary>
     [DuckCopy]
-    internal struct PreparedOperationStruct
+    internal struct NameStringProxy
     {
         ///// <summary>
-        ///// Gets the operation type (Query, Mutation, Subscription)
+        ///// Get the value of the NameString
         ///// </summary>
-        [Duck(Name = "Type")]
-        public OperationTypeProxy OperationType;
-
-        public NameStringProxy Name;
+        public object Value;
     }
 }
