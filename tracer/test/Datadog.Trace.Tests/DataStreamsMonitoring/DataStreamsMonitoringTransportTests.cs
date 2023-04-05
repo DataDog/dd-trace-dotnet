@@ -39,6 +39,8 @@ public class DataStreamsMonitoringTransportTests
 #if !NETCOREAPP3_1_OR_GREATER
             .Where(x => x != TracesTransportType.UnixDomainSocket)
 #endif
+             // Run named pipes tests only on Windows
+            .Where(x => EnvironmentTools.IsWindows() || x != TracesTransportType.WindowsNamedPipe)
             .Select(x => new object[] { x });
 
     [SkippableTheory]
