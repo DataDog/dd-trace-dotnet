@@ -106,6 +106,8 @@ namespace System.Diagnostics.CodeAnalysis
         /// <summary>Gets a value indicating whether the method will not return if the associated Boolean parameter is passed the specified value.</summary>
         public bool ParameterValue { get; }
     }
+#endif
+#if !NET5_0_OR_GREATER
 
     /// <summary>Specifies that the method or property will ensure that the listed field and property members have not-null values.</summary>
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property, Inherited = false, AllowMultiple = true)]
@@ -126,8 +128,6 @@ namespace System.Diagnostics.CodeAnalysis
         /// <summary>Gets field or property member names.</summary>
         public string[] Members { get; }
     }
-#endif
-#if !NET5_0_OR_GREATER
 
     /// <summary>Specifies that the method or property will ensure that the listed field and property members have not-null values when returning with the specified return value condition.</summary>
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property, Inherited = false, AllowMultiple = true)]
