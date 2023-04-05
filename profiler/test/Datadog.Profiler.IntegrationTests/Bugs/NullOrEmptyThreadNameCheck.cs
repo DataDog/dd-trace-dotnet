@@ -1,4 +1,6 @@
+using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -20,13 +22,44 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioNullOrEmptyThreadName);
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
             runner.Run(agent);
 
-            // we should not see any crash
-            Assert.True(true);
+            // we should not see any crash + get callstacks for threads with no name
+            bool threadWithNameFound = false;
+            foreach (var profile in SamplesHelper.GetProfiles(runner.Environment.PprofDir))
+            {
+                foreach (var sample in profile.Sample)
+                {
+                    var labels = sample.Labels(profile).ToArray();
+                    var threadName = labels.FirstOrDefault((l) =>
+                    {
+                        return (l.Name == "thread name");
+                    }).Value;
+
+                    if (threadName.Contains("Managed thread (name unknown) ["))
+                    {
+                        var stackTrace = sample.StackTrace(profile);
+                        if (stackTrace.FramesCount == 0)
+                        {
+                            Assert.Fail("No call stack for thread without name");
+                            return;
+                        }
+                    }
+                    else if (threadName.Contains(".NET Long Running Task ["))
+                    {
+                        // expected task that is waiting for nameless threads to join
+                    }
+                    else
+                    {
+                        threadWithNameFound = true;
+                    }
+                }
+            }
+
+            Assert.False(threadWithNameFound);
         }
     }
 }
