@@ -80,7 +80,13 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var product = new AsmDataProduct();
             await agent.SetupRcmAndWait(
                 Output,
-                new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, product.Name, nameof(AspNetCore5AsmDataBlockingRequestIp)), (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, product.Name, nameof(AspNetCore5AsmDataBlockingRequestIp) + "2"), });
+                new[]
+                {
+                    ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } },
+                     product.Name, nameof(AspNetCore5AsmDataBlockingRequestIp)),
+                    (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } },
+                     product.Name, nameof(AspNetCore5AsmDataBlockingRequestIp) + "2"),
+                });
 
             var spanAfterAsmData = await SendRequestsAsync(agent, url);
             var spans = new List<MockSpan>();
@@ -109,10 +115,10 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var scrubbers = VerifyHelper.SpanScrubbers.Where(s => s.RegexPattern.ToString() != @"http.client_ip: (.)*(?=,)");
             var settings = VerifyHelper.GetSpanVerifierSettings(scrubbers: scrubbers, parameters: new object[] { test, sanitisedUrl });
             var spanBeforeAsmData = await SendRequestsAsync(agent, url);
-            var asmFfileId = nameof(AspNetCore5AsmDataSecurityEnabledBlockingRequestIpOneClick) + Guid.NewGuid();
+            var asmFeaturesFileId = nameof(AspNetCore5AsmDataSecurityEnabledBlockingRequestIpOneClick);
 
             var asmFeatures = new AsmFeaturesProduct();
-            var request = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, asmFeatures.Name, asmFfileId) });
+            var request = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, asmFeatures.Name, asmFeaturesFileId) });
             request.Should().NotBeNull();
             request.CachedTargetFiles.Should().HaveCount(1);
             var spanAfterAsmActivated = await SendRequestsAsync(agent, url);
@@ -120,16 +126,14 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var fileId = nameof(AspNetCore5AsmDataSecurityEnabledBlockingRequestIpOneClick) + Guid.NewGuid();
             var fileId2 = nameof(AspNetCore5AsmDataSecurityEnabledBlockingRequestIpOneClick) + Guid.NewGuid();
 
-            var product = new AsmDataProduct();
+            var asmDataProduct = new AsmDataProduct();
             request = await agent.SetupRcmAndWait(
                           Output,
                           new[]
                           {
-                              ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, asmFeatures.Name, asmFfileId), (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp }, new Data { Expiration = null, Value = "123.1.1.1" } } } } },
-                                                                                                                                    product.Name,
-                                                                                                                                    fileId),
-                              ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } },
-                               product.Name,
+                              ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, asmFeatures.Name, asmFeaturesFileId),
+                              (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp }, new Data { Expiration = null, Value = "123.1.1.1" } } } } }, asmDataProduct.Name, fileId),
+                              ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, asmDataProduct.Name,
                                fileId2)
                           });
             request.Should().NotBeNull();
@@ -144,11 +148,11 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
                           new[]
                           {
                               ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, asmFeatures.Name,
-                               asmFfileId),
+                                asmFeaturesFileId),
                               (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp }, new Data { Expiration = null, Value = "123.1.1.1" } } } } },
-                               product.Name, fileId),
+                               asmDataProduct.Name, fileId),
                               ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } },
-                               product.Name, fileId2)
+                               asmDataProduct.Name, fileId2)
                           });
             request.Should().NotBeNull();
             request.CachedTargetFiles.Should().HaveCount(3);
@@ -158,10 +162,10 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
                           Output,
                           new[]
                           {
-                              ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, asmFeatures.Name, asmFfileId), (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp }, new Data { Expiration = null, Value = "123.1.1.1" } } } } },
-                                                                                                                                    product.Name, fileId),
+                              ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, asmFeatures.Name, asmFeaturesFileId), (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp }, new Data { Expiration = null, Value = "123.1.1.1" } } } } },
+                                                                                                                                              asmDataProduct.Name, fileId),
                               ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } },
-                               product.Name, fileId2)
+                               asmDataProduct.Name, fileId2)
                           });
             request.Should().NotBeNull();
             request.CachedTargetFiles.Should().HaveCount(3);
