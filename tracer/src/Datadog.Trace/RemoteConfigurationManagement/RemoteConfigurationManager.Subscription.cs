@@ -13,8 +13,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal partial class RemoteConfigurationManager
     {
-        private readonly List<Subscription> _subscriptions = new();
-        private List<string> _subscriptionsProductKeys = new();
+        private readonly List<ISubscription> _subscriptions = new();
+        private HashSet<string> _subscriptionsProductKeys = new();
 
         /// <summary>
         /// Subscribe to changes in rcm
@@ -22,24 +22,19 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         /// <param name="callback">callback func that returns the applied status. The callback takes first the changed configs and second, the removed configs, always by product name as a key</param>
         /// <param name="productKeys">productKeys (names)</param>
         /// <returns>the subscription</returns>
-        public Subscription SubscribeToChanges(Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, List<ApplyDetails>> callback, params string[] productKeys)
+        public ISubscription SubscribeToChanges(Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, List<ApplyDetails>> callback, params string[] productKeys)
         {
-            var subscription = new Subscription(callback, RefreshProductKeys, productKeys);
+            var subscription = new Subscription(this, callback, productKeys);
             _subscriptions.Add(subscription);
-            RefreshProductKeys();
+            _subscriptionsProductKeys.UnionWith(productKeys);
             return subscription;
         }
 
-        public void UnsubscribeToChanges(Subscription subscription)
+        public void Unsubscribe(ISubscription subscription)
         {
             _subscriptions.Remove(subscription);
-            RefreshProductKeys();
-        }
-
-        private void RefreshProductKeys()
-        {
-            // subscriptions shouldn't change so often
-            _subscriptionsProductKeys = _subscriptions.SelectMany(s => s.ProductKeys).Distinct().ToList();
+            // we cant just remove the keys here as we want to allow more than one subscriptions to the same key
+            _subscriptionsProductKeys = new HashSet<string>(_subscriptions.SelectMany(s => s.ProductKeys));
         }
     }
 }

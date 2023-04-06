@@ -25,8 +25,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         /// <param name="callback">callback func that returns the applied status. The callback takes first the changed configs and second, the removed configs, always by product name as a key</param>
         /// <param name="productKeys">productKeys (names)</param>
         /// <returns>the subscription</returns>
-        Subscription SubscribeToChanges(Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>, List<ApplyDetails>> callback, params string[] productKeys);
+        ISubscription SubscribeToChanges(Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>, List<ApplyDetails>> callback, params string[] productKeys);
 
-        void UnsubscribeToChanges(Subscription subscription);
+        void Unsubscribe(ISubscription subscription);
     }
 }

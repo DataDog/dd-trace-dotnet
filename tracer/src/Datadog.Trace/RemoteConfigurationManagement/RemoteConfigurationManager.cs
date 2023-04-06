@@ -361,11 +361,11 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     List<ApplyDetails>? results = null;
                     try
                     {
-                        results = subscription.Callback(configByProduct, removedConfigsByProduct);
+                        results = subscription.Invoke(configByProduct, removedConfigsByProduct);
                     }
                     catch (Exception e)
                     {
-                        Log.Error(e, "Failed to apply remote configurations for product {Product}", string.Join(", ", subscription.ProductKeys));
+                        Log.Error(e, "Failed to apply remote configurations for products {ProductKeys}", string.Join(", ", subscription.ProductKeys));
                     }
 
                     if (results != null)

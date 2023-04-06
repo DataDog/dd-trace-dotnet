@@ -106,7 +106,7 @@ public class LiveDebuggerTests
         {
         }
 
-        public Subscription SubscribeToChanges(Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>, List<ApplyDetails>> callback, params string[] productKeys)
+        public ISubscription SubscribeToChanges(Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>, List<ApplyDetails>> callback, params string[] productKeys)
         {
             foreach (var productKey in productKeys)
             {
@@ -116,7 +116,7 @@ public class LiveDebuggerTests
             return null;
         }
 
-        public void UnsubscribeToChanges(Subscription subscription)
+        public void Unsubscribe(ISubscription subscription)
         {
             foreach (var productKey in subscription.ProductKeys)
             {

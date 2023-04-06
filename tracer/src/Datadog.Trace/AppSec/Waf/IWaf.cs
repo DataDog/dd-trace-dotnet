@@ -21,8 +21,6 @@ namespace Datadog.Trace.AppSec.Waf
 
         internal DDWAF_RET_CODE Run(IntPtr contextHandle, IntPtr rawArgs, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds);
 
-        UpdateResult Update(IDictionary<string, object> arguments);
-
         UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus);
     }
 }

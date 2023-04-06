@@ -18,7 +18,6 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
 namespace Datadog.Trace.AppSec
@@ -38,7 +37,7 @@ namespace Datadog.Trace.AppSec
         private readonly ConfigurationStatus _configurationStatus;
         private readonly bool _noLocalRules;
         private RemoteConfigurationManager? _remoteConfigurationManager;
-        private Subscription? _rcmSubscription;
+        private ISubscription? _rcmSubscription;
         private LibraryInitializationResult? _libraryInitializationResult;
         private IWaf? _waf;
         private WafLibraryInvoker? _wafLibraryInvoker;
@@ -139,20 +138,20 @@ namespace Datadog.Trace.AppSec
             void RcmSubscription(RemoteConfigurationManager remoteConfigurationManager)
             {
                 _remoteConfigurationManager ??= remoteConfigurationManager;
-                if (_rcmSubscription is null)
+                IEnumerable<string> allProductNames = productNames;
+                if (_rcmSubscription is not null)
                 {
-                    _rcmSubscription = remoteConfigurationManager.SubscribeToChanges(
-                        UpdateFromRcm,
-                        productNames);
+                    allProductNames = _rcmSubscription.ProductKeys.Union(productNames);
                 }
-                else
-                {
-                    _rcmSubscription.SubscribeProducts(productNames);
-                }
+
+                _rcmSubscription = remoteConfigurationManager.SubscribeToChanges(
+                    UpdateFromRcm,
+                    allProductNames.ToArray());
             }
 
             if (_remoteConfigurationManager is null)
             {
+                // todo: at some point refactor security like livedebugger so that it takes an instance of RemoteConfigurationManager to start with
                 RemoteConfigurationManager.CallbackWithInitializedInstance(RcmSubscription);
             }
             else
@@ -457,12 +456,9 @@ namespace Datadog.Trace.AppSec
         {
             if (Enabled)
             {
-                _rcmSubscription?.UnsubscribeProducts(AsmRemoteConfigurationProducts.AsmDataProduct.Name, AsmRemoteConfigurationProducts.AsmProduct.Name);
-
+                _rcmSubscription = _rcmSubscription?.RemoveProductKeys(AsmRemoteConfigurationProducts.AsmDataProduct.Name, AsmRemoteConfigurationProducts.AsmProduct.Name);
                 RemoveAppsecSpecificInstrumentations();
-
                 Enabled = false;
-
                 Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
             }
         }
@@ -485,11 +481,7 @@ namespace Datadog.Trace.AppSec
 
         private void RunShutdown()
         {
-            if (_rcmSubscription != null)
-            {
-                _remoteConfigurationManager?.UnsubscribeToChanges(_rcmSubscription);
-            }
-
+            _rcmSubscription?.Dispose();
             Dispose();
         }
     }
