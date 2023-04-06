@@ -22,19 +22,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public class ServiceStackRedisTests : TracingIntegrationTest
     {
+        private const string ServiceName = "Samples.ServiceStack.Redis";
+
         public ServiceStackRedisTests(ITestOutputHelper output)
             : base("ServiceStack.Redis", output)
         {
             SetServiceVersion("1.0.0");
         }
 
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.ServiceStackRedis
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
         public override Result ValidateIntegrationSpan(MockSpan span) => span.IsServiceStackRedis();
 
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.ServiceStackRedis), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitsTraces(string packageVersion)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-redis" : ServiceName;
+
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
@@ -52,14 +63,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                  .OrderBy(s => s.Start)
                                  .ToList();
                 spans.Count.Should().Be(expectedSpans);
-                ValidateIntegrationSpans(spans, expectedServiceName: "Samples.ServiceStack.Redis-redis");
+                ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var host = Environment.GetEnvironmentVariable("SERVICESTACK_REDIS_HOST") ?? "localhost:6379";
                 var port = host.Substring(host.IndexOf(':') + 1);
                 host = host.Substring(0, host.IndexOf(':'));
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                settings.UseFileName($"{nameof(ServiceStackRedisTests)}.RunServiceStack");
+                settings.UseFileName($"{nameof(ServiceStackRedisTests)}.RunServiceStack" + $".Schema{metadataSchemaVersion.ToUpper()}");
                 settings.DisableRequireUniquePrefix();
                 settings.AddSimpleScrubber($" {TestPrefix}ServiceStack.Redis.", " ServiceStack.Redis.");
                 settings.AddSimpleScrubber($"out.host: {host}", "out.host: servicestackredis");
