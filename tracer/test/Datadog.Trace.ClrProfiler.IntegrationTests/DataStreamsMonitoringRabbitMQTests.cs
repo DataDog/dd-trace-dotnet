@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -23,11 +24,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 [Trait("RequiresDockerDependency", "true")]
 public class DataStreamsMonitoringRabbitMQTests : TestHelper
 {
+    private ITestOutputHelper _output;
+
     public DataStreamsMonitoringRabbitMQTests(ITestOutputHelper output)
         : base("DataStreams.RabbitMQ", output)
     {
         SetServiceVersion("1.0.0");
         EnableDebugMode();
+
+        _output = output;
     }
 
     [SkippableTheory]
@@ -39,10 +44,15 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
 
         using var assertionScope = new AssertionScope();
         using var agent = EnvironmentHelper.GetMockAgent();
+        agent.RequestReceived += (sender, args) =>
+        {
+            _output.WriteLine("Got URL: " + args.Value.Request.RawUrl);
+        };
+
         using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
         {
-            var spans = agent.WaitForSpans(8);
-            spans.Should().HaveCount(8);
+            var points = agent.WaitForDataStreamsPoints(4);
+            points.Should().HaveCount(8);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.UseParameters(packageVersion);

@@ -688,7 +688,6 @@ namespace Datadog.Trace.TestHelpers
 
         private void HandlePotentialDataStreams(MockHttpParser.MockHttpRequest request)
         {
-            Output.WriteLine($"HandlePotentialDataStreams");
             if (ShouldDeserializeTraces && request.ContentLength >= 1)
             {
                 try
@@ -711,14 +710,11 @@ namespace Datadog.Trace.TestHelpers
                         headerCollection.Add(header.Name, header.Value);
                     }
 
-                    Output.WriteLine($"Adding payload");
                     lock (this)
                     {
                         DataStreams = DataStreams.Add(dataStreamsPayload);
                         DataStreamsRequestHeaders = DataStreamsRequestHeaders.Add(headerCollection);
                     }
-
-                    Output.WriteLine($"Payload added");
                 }
                 catch (Exception ex)
                 {
