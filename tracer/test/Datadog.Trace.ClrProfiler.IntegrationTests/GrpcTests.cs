@@ -30,16 +30,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
         }
 
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.GrpcLegacy
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.GrpcLegacy), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitTraces(string packageVersion)
+        public async Task SubmitTraces(string packageVersion, string metadataSchemaVersion)
         {
             GuardAlpine();
             GuardArm64(packageVersion);
             // Legacy doesn't use HttpClient at all
-            await RunSubmitTraces(packageVersion, HttpClientIntegrationType.Disabled);
+            await RunSubmitTraces(packageVersion, HttpClientIntegrationType.Disabled, metadataSchemaVersion);
         }
 
         [SkippableFact]
@@ -79,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitTraces(string packageVersion, HttpClientIntegrationType httpClientType)
+        public async Task SubmitTraces(string packageVersion, HttpClientIntegrationType httpClientType, string metadataSchemaVersion)
         {
             GuardAlpine();
             GuardArm64(packageVersion);
@@ -90,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 throw new SkipException($"Can't run http tests on .NET 5+ with package version <{MinimumSupportedNet5Version}");
             }
 #endif
-            await RunSubmitTraces(packageVersion, httpClientType);
+            await RunSubmitTraces(packageVersion, httpClientType, metadataSchemaVersion);
         }
 
         [SkippableFact]
@@ -121,6 +126,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
     public class GrpcHttpsTests : GrpcTestsBase
     {
+        private const string ServiceName = "Samples.GrpcDotNet";
+
         public GrpcHttpsTests(ITestOutputHelper output)
             : base("GrpcDotNet", output, usesAspNetCore: true)
         {
@@ -131,13 +138,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitTraces(string packageVersion, HttpClientIntegrationType httpClientType)
+        public async Task SubmitTraces(string packageVersion, HttpClientIntegrationType httpClientType, string metadataSchemaVersion)
         {
             GuardAlpine();
             GuardLinux();
             GuardArm64(packageVersion);
 
-            await RunSubmitTraces(packageVersion, httpClientType);
+            await RunSubmitTraces(packageVersion, httpClientType, metadataSchemaVersion);
         }
 
         [SkippableFact]
@@ -212,24 +219,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> GetData()
             => from packageVersionArray in PackageVersions.Grpc
                from httpClientType in Enum.GetValues(typeof(HttpClientIntegrationType)).Cast<HttpClientIntegrationType>()
-               select new[] { packageVersionArray[0], httpClientType };
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], httpClientType, metadataSchemaVersion };
 
         public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.Name switch
+            span.IsGrpc(excludeTags: new HashSet<string>
             {
-                "grpc.request" => span.IsGrpc(excludeTags: new HashSet<string>
-                    {
-                        "clientmeta",
-                        "grpc.request.metadata.client-value1",
-                        "servermeta",
-                        "grpc.response.metadata.server-value1"
-                    }),
-                _ => Result.DefaultSuccess
-            };
+                "clientmeta",
+                "grpc.request.metadata.client-value1",
+                "servermeta",
+                "grpc.response.metadata.server-value1"
+            });
 
         protected async Task RunSubmitTraces(
             string packageVersion,
-            HttpClientIntegrationType httpClientIntegrationType)
+            HttpClientIntegrationType httpClientIntegrationType,
+            string metadataSchemaVersion)
         {
             const int requestCount = 2 // Unary  (sync + async)
                                     + 1 // 1 server streaming
@@ -272,6 +277,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             var totalExpectedSpans = (requestCount * spansPerRequest);
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var serviceName = $"Samples.{EnvironmentHelper.SampleName}";
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{serviceName}-grpc-client" : serviceName;
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
@@ -321,16 +331,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         FixVerySlowClientSpans(spans);
                     }
 
-                    foreach (var span in spans)
-                    {
-                        // TODO: Refactor to use ValidateIntegrationSpans, but this sample produces both server and client spans so the immediate implementation is not suitable for this test
-                        var result = ValidateIntegrationSpan(span);
-                        Assert.True(result.Success, result.ToString());
-                    }
+                    var grpcClientSpans = spans.Where(IsGrpcClientSpan);
+                    var grpcServerSpans = spans.Where(IsGrpcServerSpan);
+
+                    ValidateIntegrationSpans(grpcServerSpans, expectedServiceName: serviceName, isExternalSpan: false);
+                    ValidateIntegrationSpans(grpcClientSpans, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                     await VerifyHelper.VerifySpans(spans, settings)
                                     .UseTypeName(EnvironmentHelper.SampleName)
-                                    .UseTextForParameters($"httpclient={httpInstrumentationEnabled}")
+                                    .UseTextForParameters($"httpclient={httpInstrumentationEnabled}.Schema{metadataSchemaVersion.ToUpper()}")
                                     .DisableRequireUniquePrefix();
 
                     static void FixVerySlowServerSpans(IImmutableList<MockSpan> spans, HttpClientIntegrationType httpClientIntegrationType)
@@ -408,6 +417,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     throw new SkipException("Hit race condition in GRPC deadline exceeded");
                 }
+            }
+
+            bool IsGrpcClientSpan(MockSpan span)
+            {
+                return string.Equals(span.GetTag("component"), "grpc", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(span.GetTag("span.kind"), "client", StringComparison.OrdinalIgnoreCase);
+            }
+
+            bool IsGrpcServerSpan(MockSpan span)
+            {
+                return string.Equals(span.GetTag("component"), "grpc", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(span.GetTag("span.kind"), "server", StringComparison.OrdinalIgnoreCase);
             }
         }
 

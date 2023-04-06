@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -24,7 +24,7 @@
     SpanId: Id_3,
     Name: grpc.request,
     Resource: /greet.tester.Greeter/StreamingBothWays,
-    Service: Samples.GrpcDotNet-grpc-client,
+    Service: Samples.GrpcDotNet,
     Type: grpc,
     ParentId: Id_2,
     Tags: {
@@ -39,12 +39,8 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
-      runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
     }
   },
   {
@@ -128,7 +124,7 @@
     SpanId: Id_8,
     Name: grpc.request,
     Resource: /greet.tester.Greeter/StreamingFromClient,
-    Service: Samples.GrpcDotNet-grpc-client,
+    Service: Samples.GrpcDotNet,
     Type: grpc,
     ParentId: Id_7,
     Tags: {
@@ -143,12 +139,8 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
-      runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
     }
   },
   {
@@ -232,7 +224,7 @@
     SpanId: Id_13,
     Name: grpc.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
-    Service: Samples.GrpcDotNet-grpc-client,
+    Service: Samples.GrpcDotNet,
     Type: grpc,
     ParentId: Id_12,
     Error: 1,
@@ -249,12 +241,8 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 1,
-      runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
     }
   },
   {
@@ -340,7 +328,7 @@
     SpanId: Id_18,
     Name: grpc.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
-    Service: Samples.GrpcDotNet-grpc-client,
+    Service: Samples.GrpcDotNet,
     Type: grpc,
     ParentId: Id_17,
     Error: 1,
@@ -357,12 +345,8 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 15,
-      runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
     }
   },
   {
@@ -448,7 +432,7 @@
     SpanId: Id_23,
     Name: grpc.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
-    Service: Samples.GrpcDotNet-grpc-client,
+    Service: Samples.GrpcDotNet,
     Type: grpc,
     ParentId: Id_22,
     Error: 1,
@@ -465,12 +449,8 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 5,
-      runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
     }
   },
   {
@@ -556,7 +536,7 @@
     SpanId: Id_28,
     Name: grpc.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
-    Service: Samples.GrpcDotNet-grpc-client,
+    Service: Samples.GrpcDotNet,
     Type: grpc,
     ParentId: Id_27,
     Error: 1,
@@ -573,12 +553,8 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 2,
-      runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
     }
   },
   {
@@ -668,7 +644,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     SpanId: Id_33,
     Name: grpc.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
-    Service: Samples.GrpcDotNet-grpc-client,
+    Service: Samples.GrpcDotNet,
     Type: grpc,
     ParentId: Id_32,
     Error: 1,
@@ -685,12 +661,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 1,
-      runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
     }
   },
   {
@@ -776,7 +748,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     SpanId: Id_38,
     Name: grpc.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
-    Service: Samples.GrpcDotNet-grpc-client,
+    Service: Samples.GrpcDotNet,
     Type: grpc,
     ParentId: Id_37,
     Error: 1,
@@ -793,12 +765,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 15,
-      runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
     }
   },
   {
@@ -884,7 +852,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     SpanId: Id_43,
     Name: grpc.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
-    Service: Samples.GrpcDotNet-grpc-client,
+    Service: Samples.GrpcDotNet,
     Type: grpc,
     ParentId: Id_42,
     Error: 1,
@@ -901,12 +869,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 5,
-      runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
     }
   },
   {
@@ -992,7 +956,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     SpanId: Id_48,
     Name: grpc.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
-    Service: Samples.GrpcDotNet-grpc-client,
+    Service: Samples.GrpcDotNet,
     Type: grpc,
     ParentId: Id_47,
     Error: 1,
@@ -1009,12 +973,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 2,
-      runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
     }
   },
   {
@@ -1104,7 +1064,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     SpanId: Id_53,
     Name: grpc.request,
     Resource: /greet.tester.Greeter/StreamingFromServer,
-    Service: Samples.GrpcDotNet-grpc-client,
+    Service: Samples.GrpcDotNet,
     Type: grpc,
     ParentId: Id_52,
     Tags: {
@@ -1119,12 +1079,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
-      runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
     }
   },
   {
@@ -1208,7 +1164,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     SpanId: Id_58,
     Name: grpc.request,
     Resource: /greet.tester.Greeter/Unary,
-    Service: Samples.GrpcDotNet-grpc-client,
+    Service: Samples.GrpcDotNet,
     Type: grpc,
     ParentId: Id_57,
     Tags: {
@@ -1223,12 +1179,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
-      runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
     }
   },
   {
@@ -1312,7 +1264,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     SpanId: Id_63,
     Name: grpc.request,
     Resource: /greet.tester.Greeter/Unary,
-    Service: Samples.GrpcDotNet-grpc-client,
+    Service: Samples.GrpcDotNet,
     Type: grpc,
     ParentId: Id_62,
     Tags: {
@@ -1327,12 +1279,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
-      runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
     }
   },
   {
@@ -1416,7 +1364,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     SpanId: Id_68,
     Name: grpc.request,
     Resource: /greet.tester.Greeter/VerySlow,
-    Service: Samples.GrpcDotNet-grpc-client,
+    Service: Samples.GrpcDotNet,
     Type: grpc,
     ParentId: Id_67,
     Error: 1,
@@ -1432,11 +1380,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.method.service: Greeter,
       grpc.request.metadata.client-value1: some-client-value,
       grpc.status.code: 4,
-      runtime-id: Guid_1,
       span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
     }
   },
   {
@@ -1522,7 +1466,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     SpanId: Id_73,
     Name: grpc.request,
     Resource: /greet.tester.Greeter/VerySlow,
-    Service: Samples.GrpcDotNet-grpc-client,
+    Service: Samples.GrpcDotNet,
     Type: grpc,
     ParentId: Id_72,
     Error: 1,
@@ -1538,11 +1482,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.method.service: Greeter,
       grpc.request.metadata.client-value1: some-client-value,
       grpc.status.code: 4,
-      runtime-id: Guid_1,
       span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
     }
   },
   {
