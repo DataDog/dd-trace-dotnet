@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -19,20 +21,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public class AerospikeTests : TracingIntegrationTest
     {
+        private const string ServiceName = "Samples.Aerospike";
+
         public AerospikeTests(ITestOutputHelper output)
             : base("Aerospike", output)
         {
             SetServiceVersion("1.0.0");
         }
 
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.Aerospike
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
         public override Result ValidateIntegrationSpan(MockSpan span) => span.IsAerospike();
 
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.Aerospike), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public async Task SubmitTraces(string packageVersion)
+        public async Task SubmitTraces(string packageVersion, string metadataSchemaVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-aerospike" : ServiceName;
+
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
@@ -42,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 using var s = new AssertionScope();
                 spans.Count.Should().Be(expectedSpanCount);
-                ValidateIntegrationSpans(spans, expectedServiceName: "Samples.Aerospike-aerospike");
+                ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
 
@@ -55,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .DisableRequireUniquePrefix()
-                                  .UseFileName(nameof(AerospikeTests));
+                                  .UseFileName(nameof(AerospikeTests) + $".Schema{metadataSchemaVersion.ToUpper()}");
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.Aerospike);
             }
