@@ -12,6 +12,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
     [Trait("RequiresDockerDependency", "true")]
     public class DapperTests : TracingIntegrationTest
     {
+        private const string ServiceName = "Samples.Dapper";
+
         public DapperTests(ITestOutputHelper output)
             : base("Dapper", output)
         {
@@ -23,37 +25,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces()
-        {
-            const int expectedSpanCount = 17;
-            const string dbType = "postgres";
-            const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.Dapper-" + dbType;
-
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent))
-            {
-                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                Assert.Equal(expectedSpanCount, spans.Count);
-                ValidateIntegrationSpans(spans, expectedServiceName: expectedServiceName);
-            }
-        }
+        public void SubmitsTracesV0() => RunTest("v0");
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesWithNetStandard()
+        public void SubmitsTracesV1() => RunTest("v1");
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        public void SubmitsTracesWithNetStandardV0() => RunTest("v0");
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        public void SubmitsTracesWithNetStandardV1() => RunTest("v1");
+
+        private void RunTest(string metadataSchemaVersion)
         {
             const int expectedSpanCount = 17;
             const string dbType = "postgres";
             const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.Dapper-" + dbType;
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-{dbType}" : ServiceName;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
                 Assert.Equal(expectedSpanCount, spans.Count);
-                ValidateIntegrationSpans(spans, expectedServiceName: expectedServiceName);
+                ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
             }
         }
     }
