@@ -157,8 +157,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             var ranToCompletion = process.WaitForExit((int)_maxTestRunDuration.TotalMilliseconds) && processHelper.Drain((int)_maxTestRunDuration.TotalMilliseconds / 2);
 
-            var endTime = process.ExitTime;
-            TotalTestDurationInMilliseconds = (endTime - startTime).TotalMilliseconds;
             var standardOutput = processHelper.StandardOutput;
             var errorOutput = processHelper.ErrorOutput;
             ProcessOutput = standardOutput;
@@ -186,6 +184,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                     throw new TimeoutException($"The test {_appName} is running for too long or was lost");
                 }
             }
+
+            var endTime = process.ExitTime;
+            TotalTestDurationInMilliseconds = (endTime - startTime).TotalMilliseconds;
 
             if (standardOutput.Contains("[Error]"))
             {
