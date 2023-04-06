@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class MsmqTests : TracingIntegrationTest
     {
-        private const string ExpectedServiceName = "Samples.Msmq-msmq";
+        private const string ServiceName = "Samples.Msmq";
 
         public MsmqTests(ITestOutputHelper output)
             : base("Msmq", output)
@@ -29,7 +29,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [SkippableFact]
-        public void SubmitTraces()
+        public void SubmitTracesV0() => RunTest("v0");
+
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [SkippableFact]
+        public void SubmitTracesV1() => RunTest("v1");
+
+        private void RunTest(string metadataSchemaVersion)
         {
             const int expectedTransactionalTraces = 13;
             const int expectedNonTransactionalTracesTraces = 12;
@@ -46,14 +53,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var transactionalTraces = 0;
             var nonTransactionalTraces = 0;
 
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-msmq" : ServiceName;
+
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var processResult = RunSampleAndWaitForExit(agent, arguments: $"5 5");
 
             var spans = agent.WaitForSpans(totalTransactions);
             Assert.True(spans.Count >= totalTransactions, $"Expecting at least {totalTransactions} spans, only received {spans.Count}");
-            var msmqSpans = spans.Where(span => string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
-            ValidateIntegrationSpans(msmqSpans, expectedServiceName: ExpectedServiceName);
+            var msmqSpans = spans.Where(span => string.Equals(span.GetTag("component"), "msmq", StringComparison.OrdinalIgnoreCase));
+            ValidateIntegrationSpans(msmqSpans, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             foreach (var span in msmqSpans)
             {
