@@ -677,6 +677,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "12.16.2" },
                 new object[] { "12.17.0" },
                 new object[] { "12.18.0" },
+                new object[] { "13.0.5" },
 #endif
 #if NET7_0
                 new object[] { "11.0.9" },
@@ -702,6 +703,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "12.16.2" },
                 new object[] { "12.17.0" },
                 new object[] { "12.18.0" },
+                new object[] { "13.0.5" },
 #endif
 #endif
             };
@@ -782,6 +784,100 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.4.0" },
                 new object[] { "6.5.0" },
 #endif
+#if NETCOREAPP2_1
+                new object[] { "3.6.9" },
+                new object[] { "4.0.2" },
+                new object[] { "4.1.3" },
+                new object[] { "5.0.1" },
+                new object[] { "5.1.2" },
+                new object[] { "5.2.0" },
+                new object[] { "6.0.0" },
+                new object[] { "6.1.0" },
+                new object[] { "6.2.4" },
+                new object[] { "6.3.1" },
+                new object[] { "6.4.0" },
+                new object[] { "6.5.0" },
+#endif
+#if NETCOREAPP3_0
+                new object[] { "3.6.9" },
+                new object[] { "4.0.2" },
+                new object[] { "4.1.3" },
+                new object[] { "5.0.1" },
+                new object[] { "5.1.2" },
+                new object[] { "5.2.0" },
+                new object[] { "6.0.0" },
+                new object[] { "6.1.0" },
+                new object[] { "6.2.4" },
+                new object[] { "6.3.1" },
+                new object[] { "6.4.0" },
+                new object[] { "6.5.0" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "3.6.9" },
+                new object[] { "4.0.2" },
+                new object[] { "4.1.3" },
+                new object[] { "5.0.1" },
+                new object[] { "5.1.2" },
+                new object[] { "5.2.0" },
+                new object[] { "6.0.0" },
+                new object[] { "6.1.0" },
+                new object[] { "6.2.4" },
+                new object[] { "6.3.1" },
+                new object[] { "6.4.0" },
+                new object[] { "6.5.0" },
+#endif
+#if NET5_0
+                new object[] { "3.6.9" },
+                new object[] { "4.0.2" },
+                new object[] { "4.1.3" },
+                new object[] { "5.0.1" },
+                new object[] { "5.1.2" },
+                new object[] { "5.2.0" },
+                new object[] { "6.0.0" },
+                new object[] { "6.1.0" },
+                new object[] { "6.2.4" },
+                new object[] { "6.3.1" },
+                new object[] { "6.4.0" },
+                new object[] { "6.5.0" },
+#endif
+#if NET6_0
+                new object[] { "3.6.9" },
+                new object[] { "4.0.2" },
+                new object[] { "4.1.3" },
+                new object[] { "5.0.1" },
+                new object[] { "5.1.2" },
+                new object[] { "5.2.0" },
+                new object[] { "6.0.0" },
+                new object[] { "6.1.0" },
+                new object[] { "6.2.4" },
+                new object[] { "6.3.1" },
+                new object[] { "6.4.0" },
+                new object[] { "6.5.0" },
+#endif
+#if NET7_0
+                new object[] { "3.6.9" },
+                new object[] { "4.0.2" },
+                new object[] { "4.1.3" },
+                new object[] { "5.0.1" },
+                new object[] { "5.1.2" },
+                new object[] { "5.2.0" },
+                new object[] { "6.0.0" },
+                new object[] { "6.1.0" },
+                new object[] { "6.2.4" },
+                new object[] { "6.3.1" },
+                new object[] { "6.4.0" },
+                new object[] { "6.5.0" },
+#endif
+#endif
+            };
+      
+        public static IEnumerable<object[]>  DataStreamsRabbitMQ =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
 #if NETCOREAPP2_1
                 new object[] { "3.6.9" },
                 new object[] { "4.0.2" },

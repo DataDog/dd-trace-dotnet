@@ -46,6 +46,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> RabbitMQ => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.RabbitMQ : PackageVersionsLatestSpecific.RabbitMQ;
 
+        public static IEnumerable<object[]>  DataStreamsRabbitMQ => IsAllMinorPackageVersions ? PackageVersionsLatestMinors. DataStreamsRabbitMQ : PackageVersionsLatestSpecific. DataStreamsRabbitMQ;
+
         public static IEnumerable<object[]> SystemDataSqlClient => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.SystemDataSqlClient : PackageVersionsLatestSpecific.SystemDataSqlClient;
 
         public static IEnumerable<object[]> MicrosoftDataSqlClient => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MicrosoftDataSqlClient : PackageVersionsLatestSpecific.MicrosoftDataSqlClient;
