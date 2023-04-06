@@ -6,6 +6,7 @@
 #if !NETCOREAPP2_1
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -16,20 +17,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     public class MicrosoftDataSqliteTests : TracingIntegrationTest
     {
+        private const string ServiceName = "Samples.Microsoft.Data.Sqlite";
+
         public MicrosoftDataSqliteTests(ITestOutputHelper output)
             : base("Microsoft.Data.Sqlite", output)
         {
             SetServiceVersion("1.0.0");
         }
 
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.MicrosoftDataSqlite
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
         public override Result ValidateIntegrationSpan(MockSpan span) => span.IsSqlite();
 
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.MicrosoftDataSqlite), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTraces(string packageVersion)
+        public void SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
 #if NETCOREAPP3_0
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine")) // set in dockerfile
@@ -43,7 +51,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const int expectedSpanCount = 91;
             const string dbType = "sqlite";
             const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.Microsoft.Data.Sqlite-" + dbType;
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-{dbType}" : ServiceName;
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
@@ -51,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
 
             Assert.Equal(expectedSpanCount, spans.Count);
-            ValidateIntegrationSpans(spans, expectedServiceName: expectedServiceName);
+            ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             telemetry.AssertIntegrationEnabled(IntegrationId.Sqlite);
         }
