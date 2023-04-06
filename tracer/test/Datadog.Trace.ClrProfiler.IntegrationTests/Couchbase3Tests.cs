@@ -21,28 +21,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [Trait("RequiresDockerDependency", "true")]
     public class Couchbase3Tests : TracingIntegrationTest
     {
+        private const string ServiceName = "Samples.Couchbase3";
+
         public Couchbase3Tests(ITestOutputHelper output)
             : base("Couchbase3", output)
         {
             SetServiceVersion("1.0.0");
         }
 
-        public static System.Collections.Generic.IEnumerable<object[]> GetCouchbase()
-        {
-            foreach (var item in PackageVersions.Couchbase3)
-            {
-                yield return item.ToArray();
-            }
-        }
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.Couchbase3
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
 
         public override Result ValidateIntegrationSpan(MockSpan span) => span.IsCouchbase();
 
         [SkippableTheory]
-        [MemberData(nameof(GetCouchbase))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public async Task SubmitTraces(string packageVersion)
+        public async Task SubmitTraces(string packageVersion, string metadataSchemaVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-couchbase" : ServiceName;
+
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
@@ -51,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                  .Where(s => s.Type == "db")
                                  .ToList();
 
-                ValidateIntegrationSpans(spans, expectedServiceName: "Samples.Couchbase3-couchbase");
+                ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 using var scope = new AssertionScope();
 
@@ -63,7 +66,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // theres' a fair amount less in 3.0.7 - fewer spans, different terminology etc
 
                 await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName(nameof(Couchbase3Tests) + GetVersionSuffix(packageVersion));
+                                  .UseFileName(nameof(Couchbase3Tests) + GetVersionSuffix(packageVersion) + $".Schema{metadataSchemaVersion.ToUpper()}")
+                                  .DisableRequireUniquePrefix(); // testing multiple package versions may converge on one snapshot
 
                 var expected = new List<string>
                 {
