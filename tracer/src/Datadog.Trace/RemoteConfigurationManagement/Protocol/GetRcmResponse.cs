@@ -4,7 +4,6 @@
 // </copyright>
 
 using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.RemoteConfigurationManagement.Json;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
