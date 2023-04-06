@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
@@ -22,6 +23,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public class StackExchangeRedisTests : TracingIntegrationTest
     {
+        private const string ServiceName = "Samples.StackExchange.Redis";
+
         public StackExchangeRedisTests(ITestOutputHelper output)
             : base("StackExchange.Redis", output)
         {
@@ -42,13 +45,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // ReSharper restore InconsistentNaming
         }
 
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.StackExchangeRedis
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
         public override Result ValidateIntegrationSpan(MockSpan span) => span.IsStackExchangeRedis();
 
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.StackExchangeRedis), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitsTraces(string packageVersion)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-redis" : ServiceName;
+
             using var a = new AssertionScope();
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
@@ -64,14 +76,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 };
 
                 var spans = agent.WaitForSpans(expectedCount);
-                ValidateIntegrationSpans(spans, expectedServiceName: "Samples.StackExchange.Redis-redis");
+                ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var host = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";
                 var port = host.Substring(host.IndexOf(':') + 1);
                 host = host.Substring(0, host.IndexOf(':'));
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                settings.UseFileName($"{nameof(StackExchangeRedisTests)}.{calculatedVersion}");
+                settings.UseFileName($"{nameof(StackExchangeRedisTests)}.{calculatedVersion}" + $".Schema{metadataSchemaVersion.ToUpper()}");
                 settings.DisableRequireUniquePrefix();
                 settings.AddSimpleScrubber($" {TestPrefix}StackExchange.Redis.", " StackExchange.Redis.");
                 if (EnvironmentTools.IsOsx())

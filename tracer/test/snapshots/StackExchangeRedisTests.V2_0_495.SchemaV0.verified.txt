@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -8,15 +8,16 @@
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: APPEND ssetkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -33,15 +34,16 @@
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: APPEND StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -58,15 +60,16 @@
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: BITCOUNT ssetkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -83,15 +86,16 @@
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: BITCOUNT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -108,15 +112,16 @@
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: BITOP,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -133,15 +138,16 @@
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: BITOP,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -158,15 +164,16 @@
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: BITPOS ssetkey1,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -183,15 +190,16 @@
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: BITPOS StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -209,7 +217,6 @@
     Error: 1,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       error.msg: ERR unknown command `DDCUSTOM`, with args beginning with: `COMMAND`, ,
       error.stack:
@@ -220,9 +227,11 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       out.port: 6379,
       redis.raw_command: DDCUSTOM,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -240,7 +249,6 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Error: 1,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       error.msg: ERR unknown command `DDCUSTOM`, with args beginning with: `COMMAND`, ,
       error.stack:
@@ -251,9 +259,11 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       out.port: 6379,
       redis.raw_command: DDCUSTOM,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -271,7 +281,6 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Error: 1,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       error.msg: ERR unknown command `DDCUSTOM`, with args beginning with: `COMMAND`, ,
       error.stack:
@@ -282,9 +291,11 @@ StackExchange.Redis.RedisServerException: ERR unknown command `DDCUSTOM`, with a
       out.port: 6379,
       redis.raw_command: DDCUSTOM,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -302,7 +313,6 @@ StackExchange.Redis.RedisServerException: ERR unknown command `DDCUSTOM`, with a
     Error: 1,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       error.msg: ERR no such key,
       error.stack:
@@ -313,9 +323,11 @@ StackExchange.Redis.RedisServerException: ERR no such key
       out.port: 6379,
       redis.raw_command: DEBUG StackExchange.Redis.Batch.DebugObjectAsync,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -333,7 +345,6 @@ StackExchange.Redis.RedisServerException: ERR no such key
     Error: 1,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       error.msg: ERR no such key,
       error.stack:
@@ -344,9 +355,11 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       out.port: 6379,
       redis.raw_command: DEBUG StackExchange.Redis.Database.DebugObject,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -363,15 +376,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: DEL key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -388,15 +402,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: DEL StackExchange.Redis.Database.Lock,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -413,15 +428,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: DUMP key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -438,15 +454,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: DUMP StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -463,15 +480,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: ECHO,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -488,15 +506,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: EXEC,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -513,15 +532,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: EXEC,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -538,15 +558,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: EXISTS key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -563,15 +584,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: EXISTS StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -588,15 +610,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: EXPIRE StackExchange.Redis.Database.Lock,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -613,15 +636,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: FLUSHDB,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -638,15 +662,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GEOADD StackExchange.Redis.Batch.GeoAddAsync,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -663,15 +688,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GEOADD StackExchange.Redis.Database.Geo,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -688,15 +714,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GEODIST StackExchange.Redis.Batch.GeoDistanceAsync,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -713,15 +740,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GEODIST StackExchange.Redis.Database.Geo,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -738,15 +766,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GEOHASH StackExchange.Redis.Batch.GeoHashAsync,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -763,15 +792,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GEOHASH StackExchange.Redis.Database.Geo,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -788,15 +818,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GEOPOS StackExchange.Redis.Batch.GeoPositionAsync,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -813,15 +844,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GEOPOS StackExchange.Redis.Database.Geo,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -838,15 +870,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GEORADIUSBYMEMBER StackExchange.Redis.Batch.GeoRadiusAsync,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -863,15 +896,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GEORADIUSBYMEMBER StackExchange.Redis.Database.Geo,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -888,15 +922,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GET key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -914,7 +949,6 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Error: 1,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       error.msg: WRONGTYPE Operation against a key holding the wrong kind of value,
       error.stack:
@@ -925,9 +959,11 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       out.port: 6379,
       redis.raw_command: GET listkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -944,15 +980,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GET StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -969,15 +1006,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GET StackExchange.Redis.Database.Lock,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -994,15 +1032,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GET StackExchange.Redis.INCR,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1019,15 +1058,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GETBIT key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1044,15 +1084,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GETBIT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1069,15 +1110,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GETRANGE key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1094,15 +1136,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GETRANGE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1119,15 +1162,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GETSET key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1144,15 +1188,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: GETSET StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1169,15 +1214,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HDEL StackExchange.Redis.Batch.HashDeleteAsync,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1194,15 +1240,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HDEL StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1219,15 +1266,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HEXISTS StackExchange.Redis.Batch.HashExistsAsync,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1244,15 +1292,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HEXISTS StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1269,15 +1318,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HGET StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1294,15 +1344,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HGETALL StackExchange.Redis.Batch.HashGetAllAsync,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1319,15 +1370,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HGETALL StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1344,15 +1396,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HINCRBY StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1369,15 +1422,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HINCRBYFLOAT StackExchange.Redis.Batch.HashDecrementAsync,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1394,15 +1448,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HINCRBYFLOAT StackExchange.Redis.Batch.HashIncrementAsync,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1419,15 +1474,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HINCRBYFLOAT StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1444,15 +1500,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HKEYS StackExchange.Redis.Batch.HashKeysAsync,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1469,15 +1526,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HKEYS StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1494,15 +1552,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HLEN StackExchange.Redis.Batch.HashLengthAsync,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1519,15 +1578,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HLEN StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1544,15 +1604,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HMSET StackExchange.Redis.Batch.HashSetAsync,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1569,15 +1630,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HMSET StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1594,15 +1656,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HVALS StackExchange.Redis.Batch.HashValuesAsync,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1619,15 +1682,16 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HVALS StackExchange.Redis.Database.Hash,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1645,7 +1709,6 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Error: 1,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       error.msg: ERR value is not an integer or out of range,
       error.stack:
@@ -1656,9 +1719,11 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
       out.port: 6379,
       redis.raw_command: INCR key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1675,15 +1740,16 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: INCR StackExchange.Redis.INCR,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1700,15 +1766,16 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: INCRBYFLOAT key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1725,15 +1792,16 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: INCRBYFLOAT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1751,7 +1819,6 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
     Error: 1,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       error.msg: ERR value is not a valid float,
       error.stack:
@@ -1762,9 +1829,11 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       out.port: 6379,
       redis.raw_command: INCRBYFLOAT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1781,15 +1850,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: INCRBYFLOAT StackExchange.Redis.INCR,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1806,15 +1876,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LINDEX listkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1831,15 +1902,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LINDEX StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1856,15 +1928,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LINSERT listkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1881,15 +1954,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LINSERT listkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1906,15 +1980,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LINSERT StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1931,15 +2006,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LINSERT StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1956,15 +2032,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LLEN listkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -1981,15 +2058,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LLEN StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2006,15 +2084,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LPOP listkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2031,15 +2110,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LPOP StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2056,15 +2136,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LPUSH listkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2081,15 +2162,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LPUSH StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2106,15 +2188,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LRANGE listkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2131,15 +2214,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LRANGE StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2156,15 +2240,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LREM listkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2181,15 +2266,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LREM StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2206,15 +2292,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LSET listkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2231,15 +2318,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LSET StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2256,15 +2344,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LTRIM listkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2281,15 +2370,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: LTRIM StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2307,7 +2397,6 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Error: 1,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       error.msg: Unexpected response to MIGRATE: SimpleString: NOKEY,
       error.stack:
@@ -2318,9 +2407,11 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       out.port: 6379,
       redis.raw_command: MIGRATE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2338,7 +2429,6 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Error: 1,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       error.msg: ERR source and destination objects are the same,
       error.stack:
@@ -2349,9 +2439,11 @@ StackExchange.Redis.RedisServerException: ERR source and destination objects are
       out.port: 6379,
       redis.raw_command: MOVE key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2369,7 +2461,6 @@ StackExchange.Redis.RedisServerException: ERR source and destination objects are
     Error: 1,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       error.msg: ERR source and destination objects are the same,
       error.stack:
@@ -2380,9 +2471,11 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       out.port: 6379,
       redis.raw_command: MOVE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2399,15 +2492,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: PERSIST key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2424,15 +2518,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: PERSIST StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2449,15 +2544,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: PEXPIRE key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2474,15 +2570,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: PEXPIRE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2499,15 +2596,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: PFADD StackExchange.Redis.Batch.HyperLogLogAddAsync,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2524,15 +2622,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: PFADD StackExchange.Redis.Database.HyperLogLog,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2549,15 +2648,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: PFCOUNT StackExchange.Redis.Batch.HyperLogLogLengthAsync,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2574,15 +2674,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: PFCOUNT StackExchange.Redis.Database.HyperLogLog,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2599,15 +2700,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: PFMERGE StackExchange.Redis.Batch.HyperLogLogMergeAsync,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2624,15 +2726,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: PFMERGE StackExchange.Redis.Database.HyperLogLog2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2654,7 +2757,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       out.port: 6379,
       redis.raw_command: PING,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -2675,10 +2779,11 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       component: StackExchangeRedis,
       env: integration_tests,
       out.host: stackexchangeredis,
-      out.port: 6379,
+      out.port: 6390,
       redis.raw_command: PING,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -2702,7 +2807,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       out.port: 6379,
       redis.raw_command: PING,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -2726,7 +2832,8 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       out.port: 6379,
       redis.raw_command: PING,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -2740,18 +2847,18 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_215,
     SpanId: Id_216,
     Name: redis.command,
-    Resource: PTTL,
+    Resource: PING,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: PTTL key,
+      redis.raw_command: PING,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -2770,15 +2877,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: PTTL StackExchange.Redis.Database.Key,
+      redis.raw_command: PTTL key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2790,20 +2898,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_219,
     SpanId: Id_220,
     Name: redis.command,
-    Resource: PTTL+GET,
+    Resource: PTTL,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: PTTL+GET StackExchange.Redis.Database.Key,
+      redis.raw_command: PTTL StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2815,7 +2924,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_221,
     SpanId: Id_222,
     Name: redis.command,
-    Resource: PUBLISH,
+    Resource: PTTL+GET,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
@@ -2823,11 +2932,13 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: PUBLISH channel,
+      redis.raw_command: PTTL+GET StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2847,9 +2958,10 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: PUBLISH value,
+      redis.raw_command: PUBLISH channel,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -2863,18 +2975,18 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_225,
     SpanId: Id_226,
     Name: redis.command,
-    Resource: RANDOMKEY,
+    Resource: PUBLISH,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: RANDOMKEY,
+      redis.raw_command: PUBLISH value,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -2893,15 +3005,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: RANDOMKEY,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2913,26 +3026,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_229,
     SpanId: Id_230,
     Name: redis.command,
-    Resource: RENAME,
+    Resource: RANDOMKEY,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
-    Error: 1,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
-      error.msg: ERR no such key,
-      error.stack:
-StackExchange.Redis.RedisServerException: ERR no such key
-,
-      error.type: StackExchange.Redis.RedisServerException,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: RENAME key1,
+      redis.raw_command: RANDOMKEY,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2950,20 +3058,21 @@ StackExchange.Redis.RedisServerException: ERR no such key
     Error: 1,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       error.msg: ERR no such key,
       error.stack:
 StackExchange.Redis.RedisServerException: ERR no such key
-at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
+,
       error.type: StackExchange.Redis.RedisServerException,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: RENAME StackExchange.Redis.Database.Key,
+      redis.raw_command: RENAME key1,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -2975,26 +3084,27 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_233,
     SpanId: Id_234,
     Name: redis.command,
-    Resource: RESTORE,
+    Resource: RENAME,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Error: 1,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
-      error.msg: ERR DUMP payload version or checksum are wrong,
+      error.msg: ERR no such key,
       error.stack:
-StackExchange.Redis.RedisServerException: ERR DUMP payload version or checksum are wrong
-,
+StackExchange.Redis.RedisServerException: ERR no such key
+at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
       error.type: StackExchange.Redis.RedisServerException,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: RESTORE key,
+      redis.raw_command: RENAME StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3012,20 +3122,21 @@ StackExchange.Redis.RedisServerException: ERR DUMP payload version or checksum a
     Error: 1,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       error.msg: ERR DUMP payload version or checksum are wrong,
       error.stack:
 StackExchange.Redis.RedisServerException: ERR DUMP payload version or checksum are wrong
-at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
+,
       error.type: StackExchange.Redis.RedisServerException,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: RESTORE StackExchange.Redis.Database.Key,
+      redis.raw_command: RESTORE key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3037,20 +3148,27 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_237,
     SpanId: Id_238,
     Name: redis.command,
-    Resource: RPOP,
+    Resource: RESTORE,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
+    Error: 1,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
+      error.msg: ERR DUMP payload version or checksum are wrong,
+      error.stack:
+StackExchange.Redis.RedisServerException: ERR DUMP payload version or checksum are wrong
+at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
+      error.type: StackExchange.Redis.RedisServerException,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: RPOP listkey,
+      redis.raw_command: RESTORE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3067,15 +3185,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: RPOP StackExchange.Redis.Database.List,
+      redis.raw_command: RPOP listkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3087,20 +3206,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_241,
     SpanId: Id_242,
     Name: redis.command,
-    Resource: RPOPLPUSH,
+    Resource: RPOP,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: RPOPLPUSH listkey,
+      redis.raw_command: RPOP StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3117,15 +3237,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: RPOPLPUSH StackExchange.Redis.Database.List,
+      redis.raw_command: RPOPLPUSH listkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3137,20 +3258,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_245,
     SpanId: Id_246,
     Name: redis.command,
-    Resource: RPUSH,
+    Resource: RPOPLPUSH,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: RPUSH listkey,
+      redis.raw_command: RPOPLPUSH StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3167,15 +3289,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: RPUSH StackExchange.Redis.Database.List,
+      redis.raw_command: RPUSH listkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3187,20 +3310,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_249,
     SpanId: Id_250,
     Name: redis.command,
-    Resource: SADD,
+    Resource: RPUSH,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SADD setkey,
+      redis.raw_command: RPUSH StackExchange.Redis.Database.List,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3217,15 +3341,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SADD StackExchange.Redis.Database.Set,
+      redis.raw_command: SADD setkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3237,20 +3362,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_253,
     SpanId: Id_254,
     Name: redis.command,
-    Resource: SCARD,
+    Resource: SADD,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SCARD setkey,
+      redis.raw_command: SADD StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3267,15 +3393,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SCARD StackExchange.Redis.Database.Set,
+      redis.raw_command: SCARD setkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3287,20 +3414,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_257,
     SpanId: Id_258,
     Name: redis.command,
-    Resource: SET,
+    Resource: SCARD,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SET key,
+      redis.raw_command: SCARD StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3317,15 +3445,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SET listkey,
+      redis.raw_command: SET key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3342,15 +3471,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SET StackExchange.Redis.Database.Key,
+      redis.raw_command: SET listkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3367,15 +3497,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SET StackExchange.Redis.Database.Lock,
+      redis.raw_command: SET StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3392,15 +3523,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SET StackExchange.Redis.INCR,
+      redis.raw_command: SET StackExchange.Redis.Database.Lock,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3412,20 +3544,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_267,
     SpanId: Id_268,
     Name: redis.command,
-    Resource: SETBIT,
+    Resource: SET,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SETBIT key,
+      redis.raw_command: SET StackExchange.Redis.INCR,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3442,15 +3575,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SETBIT StackExchange.Redis.Database.Key,
+      redis.raw_command: SETBIT key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3462,20 +3596,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_271,
     SpanId: Id_272,
     Name: redis.command,
-    Resource: SETRANGE,
+    Resource: SETBIT,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SETRANGE key,
+      redis.raw_command: SETBIT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3492,15 +3627,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SETRANGE StackExchange.Redis.Database.Key,
+      redis.raw_command: SETRANGE key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3512,20 +3648,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_275,
     SpanId: Id_276,
     Name: redis.command,
-    Resource: SISMEMBER,
+    Resource: SETRANGE,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SISMEMBER setkey,
+      redis.raw_command: SETRANGE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3542,15 +3679,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SISMEMBER StackExchange.Redis.Database.Set,
+      redis.raw_command: SISMEMBER setkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3562,20 +3700,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_279,
     SpanId: Id_280,
     Name: redis.command,
-    Resource: SLOWLOG,
+    Resource: SISMEMBER,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SLOWLOG,
+      redis.raw_command: SISMEMBER StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3587,20 +3726,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_281,
     SpanId: Id_282,
     Name: redis.command,
-    Resource: SMEMBERS,
+    Resource: SLOWLOG,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SMEMBERS setkey,
+      redis.raw_command: SLOWLOG,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3617,15 +3757,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SMEMBERS StackExchange.Redis.Database.Set,
+      redis.raw_command: SMEMBERS setkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3637,20 +3778,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_285,
     SpanId: Id_286,
     Name: redis.command,
-    Resource: SMOVE,
+    Resource: SMEMBERS,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SMOVE setkey1,
+      redis.raw_command: SMEMBERS StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3667,15 +3809,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SMOVE StackExchange.Redis.Database.Set,
+      redis.raw_command: SMOVE setkey1,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3687,20 +3830,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_289,
     SpanId: Id_290,
     Name: redis.command,
-    Resource: SORT,
+    Resource: SMOVE,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SORT setkey,
+      redis.raw_command: SMOVE StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3717,15 +3861,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: SORT setkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3742,15 +3887,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SORT StackExchange.Redis.Database.Key,
+      redis.raw_command: SORT setkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3767,15 +3913,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: SORT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3787,20 +3934,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_297,
     SpanId: Id_298,
     Name: redis.command,
-    Resource: SPOP,
+    Resource: SORT,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SPOP setkey1,
+      redis.raw_command: SORT StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3817,15 +3965,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SPOP StackExchange.Redis.Database.Set,
+      redis.raw_command: SPOP setkey1,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3837,20 +3986,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_301,
     SpanId: Id_302,
     Name: redis.command,
-    Resource: SRANDMEMBER,
+    Resource: SPOP,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SRANDMEMBER setkey,
+      redis.raw_command: SPOP StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3867,15 +4017,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: SRANDMEMBER setkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3892,15 +4043,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SRANDMEMBER StackExchange.Redis.Database.Set,
+      redis.raw_command: SRANDMEMBER setkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3917,15 +4069,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: SRANDMEMBER StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3937,20 +4090,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_309,
     SpanId: Id_310,
     Name: redis.command,
-    Resource: SREM,
+    Resource: SRANDMEMBER,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SREM setkey,
+      redis.raw_command: SRANDMEMBER StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3967,15 +4121,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SREM StackExchange.Redis.Database.Set,
+      redis.raw_command: SREM setkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -3987,20 +4142,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_313,
     SpanId: Id_314,
     Name: redis.command,
-    Resource: STRLEN,
+    Resource: SREM,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: STRLEN key,
+      redis.raw_command: SREM StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4017,15 +4173,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: STRLEN StackExchange.Redis.Database.Key,
+      redis.raw_command: STRLEN key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4037,20 +4194,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_317,
     SpanId: Id_318,
     Name: redis.command,
-    Resource: SUNION,
+    Resource: STRLEN,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SUNION setkey1,
+      redis.raw_command: STRLEN StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4067,15 +4225,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SUNION StackExchange.Redis.Database.Set,
+      redis.raw_command: SUNION setkey1,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4087,20 +4246,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_321,
     SpanId: Id_322,
     Name: redis.command,
-    Resource: SUNIONSTORE,
+    Resource: SUNION,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SUNIONSTORE setkey,
+      redis.raw_command: SUNION StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4117,15 +4277,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: SUNIONSTORE StackExchange.Redis.Database.Set,
+      redis.raw_command: SUNIONSTORE setkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4137,20 +4298,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_325,
     SpanId: Id_326,
     Name: redis.command,
-    Resource: TIME,
+    Resource: SUNIONSTORE,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: TIME,
+      redis.raw_command: SUNIONSTORE StackExchange.Redis.Database.Set,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4162,20 +4324,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_327,
     SpanId: Id_328,
     Name: redis.command,
-    Resource: TYPE,
+    Resource: TIME,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: TYPE key,
+      redis.raw_command: TIME,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4192,15 +4355,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: TYPE StackExchange.Redis.Database.Key,
+      redis.raw_command: TYPE key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4212,20 +4376,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_331,
     SpanId: Id_332,
     Name: redis.command,
-    Resource: UNLINK,
+    Resource: TYPE,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: UNLINK StackExchange.Redis.Database.Key,
+      redis.raw_command: TYPE StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4237,20 +4402,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_333,
     SpanId: Id_334,
     Name: redis.command,
-    Resource: ZADD,
+    Resource: UNLINK,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZADD ssetkey,
+      redis.raw_command: UNLINK StackExchange.Redis.Database.Key,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4267,15 +4433,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZADD StackExchange.Redis.Database.SortedSet,
+      redis.raw_command: ZADD ssetkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4287,20 +4454,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_337,
     SpanId: Id_338,
     Name: redis.command,
-    Resource: ZCARD,
+    Resource: ZADD,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZCARD ssetkey,
+      redis.raw_command: ZADD StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4317,15 +4485,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZCARD StackExchange.Redis.Database.SortedSet,
+      redis.raw_command: ZCARD ssetkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4337,20 +4506,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_341,
     SpanId: Id_342,
     Name: redis.command,
-    Resource: ZINCRBY,
+    Resource: ZCARD,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZINCRBY ssetkey,
+      redis.raw_command: ZCARD StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4367,15 +4537,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: ZINCRBY ssetkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4392,15 +4563,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZINCRBY StackExchange.Redis.Database.SortedSet,
+      redis.raw_command: ZINCRBY ssetkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4417,15 +4589,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: ZINCRBY StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4437,20 +4610,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_349,
     SpanId: Id_350,
     Name: redis.command,
-    Resource: ZLEXCOUNT,
+    Resource: ZINCRBY,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZLEXCOUNT ssetkey,
+      redis.raw_command: ZINCRBY StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4467,15 +4641,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZLEXCOUNT StackExchange.Redis.Database.SortedSet,
+      redis.raw_command: ZLEXCOUNT ssetkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4487,20 +4662,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_353,
     SpanId: Id_354,
     Name: redis.command,
-    Resource: ZRANGE,
+    Resource: ZLEXCOUNT,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZRANGE ssetkey,
+      redis.raw_command: ZLEXCOUNT StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4517,15 +4693,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: ZRANGE ssetkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4542,15 +4719,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZRANGE StackExchange.Redis.Database.SortedSet,
+      redis.raw_command: ZRANGE ssetkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4567,15 +4745,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: ZRANGE StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4587,20 +4766,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_361,
     SpanId: Id_362,
     Name: redis.command,
-    Resource: ZRANGEBYLEX,
+    Resource: ZRANGE,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZRANGEBYLEX ssetkey,
+      redis.raw_command: ZRANGE StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4617,15 +4797,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZRANGEBYLEX StackExchange.Redis.Database.SortedSet,
+      redis.raw_command: ZRANGEBYLEX ssetkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4637,20 +4818,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_365,
     SpanId: Id_366,
     Name: redis.command,
-    Resource: ZRANGEBYSCORE,
+    Resource: ZRANGEBYLEX,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZRANGEBYSCORE ssetkey,
+      redis.raw_command: ZRANGEBYLEX StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4667,15 +4849,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: ZRANGEBYSCORE ssetkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4692,15 +4875,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZRANGEBYSCORE StackExchange.Redis.Database.SortedSet,
+      redis.raw_command: ZRANGEBYSCORE ssetkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4717,15 +4901,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: ZRANGEBYSCORE StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4737,20 +4922,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_373,
     SpanId: Id_374,
     Name: redis.command,
-    Resource: ZRANK,
+    Resource: ZRANGEBYSCORE,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZRANK ssetkey,
+      redis.raw_command: ZRANGEBYSCORE StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4767,15 +4953,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZRANK StackExchange.Redis.Database.SortedSet,
+      redis.raw_command: ZRANK ssetkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4787,20 +4974,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_377,
     SpanId: Id_378,
     Name: redis.command,
-    Resource: ZREM,
+    Resource: ZRANK,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZREM ssetkey,
+      redis.raw_command: ZRANK StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4817,15 +5005,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZREM StackExchange.Redis.Batch.GeoRemoveAsync,
+      redis.raw_command: ZREM ssetkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4842,15 +5031,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZREM StackExchange.Redis.Database.Geo,
+      redis.raw_command: ZREM StackExchange.Redis.Batch.GeoRemoveAsync,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4867,15 +5057,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZREM StackExchange.Redis.Database.SortedSet,
+      redis.raw_command: ZREM StackExchange.Redis.Database.Geo,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4887,20 +5078,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_385,
     SpanId: Id_386,
     Name: redis.command,
-    Resource: ZREMRANGEBYLEX,
+    Resource: ZREM,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZREMRANGEBYLEX ssetkey,
+      redis.raw_command: ZREM StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4917,15 +5109,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZREMRANGEBYLEX StackExchange.Redis.Database.SortedSet,
+      redis.raw_command: ZREMRANGEBYLEX ssetkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4937,20 +5130,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_389,
     SpanId: Id_390,
     Name: redis.command,
-    Resource: ZREMRANGEBYRANK,
+    Resource: ZREMRANGEBYLEX,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZREMRANGEBYRANK ssetkey,
+      redis.raw_command: ZREMRANGEBYLEX StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4967,15 +5161,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZREMRANGEBYRANK StackExchange.Redis.Database.SortedSet,
+      redis.raw_command: ZREMRANGEBYRANK ssetkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -4987,20 +5182,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_393,
     SpanId: Id_394,
     Name: redis.command,
-    Resource: ZREMRANGEBYSCORE,
+    Resource: ZREMRANGEBYRANK,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZREMRANGEBYSCORE ssetkey,
+      redis.raw_command: ZREMRANGEBYRANK StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -5017,15 +5213,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZREMRANGEBYSCORE StackExchange.Redis.Database.SortedSet,
+      redis.raw_command: ZREMRANGEBYSCORE ssetkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -5037,20 +5234,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_397,
     SpanId: Id_398,
     Name: redis.command,
-    Resource: ZSCORE,
+    Resource: ZREMRANGEBYSCORE,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZSCORE ssestkey,
+      redis.raw_command: ZREMRANGEBYSCORE StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -5067,15 +5265,16 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZSCORE StackExchange.Redis.Database.SortedSet,
+      redis.raw_command: ZSCORE ssestkey,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -5087,20 +5286,21 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     TraceId: Id_401,
     SpanId: Id_402,
     Name: redis.command,
-    Resource: ZUNIONSTORE,
+    Resource: ZSCORE,
     Service: Samples.StackExchange.Redis-redis,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
-      redis.raw_command: ZUNIONSTORE ssetkey1,
+      redis.raw_command: ZSCORE StackExchange.Redis.Database.SortedSet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
@@ -5117,15 +5317,42 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
     Type: redis,
     Tags: {
       component: StackExchangeRedis,
-      db.redis.database_index: 1,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZUNIONSTORE ssetkey1,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      db.redis.database_index: 1.0,
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_405,
+    SpanId: Id_406,
+    Name: redis.command,
+    Resource: ZUNIONSTORE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
       env: integration_tests,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: ZUNIONSTORE StackExchange.Redis.Database.SortedSet2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.p.dm: -0
     },
     Metrics: {
+      db.redis.database_index: 1.0,
       process_id: 0,
       _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
