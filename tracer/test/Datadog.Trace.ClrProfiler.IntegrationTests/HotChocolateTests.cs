@@ -8,6 +8,7 @@
 #pragma warning disable SA1649 // File name should match first type name
 
 using System;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -17,10 +18,26 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class HotChocolateTests : HotChocolateTestsBase
+    public class HotChocolateSchemaV0Tests : HotChocolateTests
     {
-        public HotChocolateTests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base("HotChocolate", fixture, output, nameof(HotChocolateTests))
+        public HotChocolateSchemaV0Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v0")
+        {
+        }
+    }
+
+    public class HotChocolateSchemaV1Tests : HotChocolateTests
+    {
+        public HotChocolateSchemaV1Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v1")
+        {
+        }
+    }
+
+    public abstract class HotChocolateTests : HotChocolateTestsBase
+    {
+        public HotChocolateTests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string metadataSchemaVersion)
+            : base("HotChocolate", fixture, output, nameof(HotChocolateTests), metadataSchemaVersion)
         {
         }
 
@@ -47,13 +64,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private const string ServiceVersion = "1.0.0";
 
         private readonly string _testName;
+        private readonly string _metadataSchemaVersion;
 
-        protected HotChocolateTestsBase(string sampleAppName, AspNetCoreTestFixture fixture, ITestOutputHelper output, string testName)
+        protected HotChocolateTestsBase(string sampleAppName, AspNetCoreTestFixture fixture, ITestOutputHelper output, string testName, string metadataSchemaVersion)
             : base(sampleAppName, output)
         {
             SetServiceVersion(ServiceVersion);
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
 
             _testName = testName;
+            _metadataSchemaVersion = metadataSchemaVersion;
 
             Fixture = fixture;
             Fixture.SetOutput(output);
@@ -66,33 +86,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Fixture.SetOutput(null);
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.Type switch
-            {
-                "graphql" => span.IsHotChocolate(),
-                _ => Result.DefaultSuccess,
-            };
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsHotChocolate();
 
         protected async Task RunSubmitsTraces(string packageVersion = "", bool usingWebsockets = false)
         {
             SetInstrumentationVerification();
+
+            var serviceName = $"Samples.{EnvironmentHelper.SampleName}";
+            var isExternalSpan = _metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{serviceName}-graphql" : serviceName;
 
             await Fixture.TryStartApp(this);
             var testStart = DateTime.UtcNow;
             var expectedSpans = await SubmitRequests(Fixture.HttpPort, usingWebsockets);
 
             var spans = Fixture.Agent.WaitForSpans(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
-            foreach (var span in spans)
-            {
-                // TODO: Refactor to use ValidateIntegrationSpans when the HotChocolate server integration is fixed. It currently produces a service name of {service]-graphql
-                var result = ValidateIntegrationSpan(span);
-                Assert.True(result.Success, result.ToString());
-            }
+
+            var graphQLSpans = spans.Where(span => span.Type == "graphql");
+            ValidateIntegrationSpans(graphQLSpans, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
             await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName($"HotChocolateTests{(usingWebsockets ? "Websockets" : string.Empty)}.SubmitsTraces")
+                                  .UseFileName($"HotChocolateTests{(usingWebsockets ? "Websockets" : string.Empty)}.SubmitsTraces.Schema{_metadataSchemaVersion.ToUpper()}")
                                   .DisableRequireUniquePrefix(); // all package versions should be the same
 
             VerifyInstrumentation(Fixture.Process);
