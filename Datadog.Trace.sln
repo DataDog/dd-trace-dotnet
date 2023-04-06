@@ -490,6 +490,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Probes.External", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DataStreams.Kafka", "tracer\test\test-applications\integrations\Samples.DataStreams.Kafka\Samples.DataStreams.Kafka.csproj", "{7415B0FB-A446-41D6-A0CD-D64B703F15AD}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DataStreams.RabbitMQ", "tracer\test\test-applications\integrations\Samples.DataStreams.RabbitMQ\Samples.DataStreams.RabbitMQ.csproj", "{8DFE1168-B1CC-43D1-B256-B5708BADD47B}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.WeakCipher", "tracer\test\test-applications\integrations\Samples.WeakCipher\Samples.WeakCipher.csproj", "{43C696FA-3812-4312-9529-98CECCD32A81}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Deduplication", "tracer\test\test-applications\integrations\Samples.Deduplication\Samples.Deduplication.csproj", "{63B3A841-F3E0-4D60-B85D-156D7251FFDF}"
@@ -768,6 +770,10 @@ Global
 		{7415B0FB-A446-41D6-A0CD-D64B703F15AD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7415B0FB-A446-41D6-A0CD-D64B703F15AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7415B0FB-A446-41D6-A0CD-D64B703F15AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8DFE1168-B1CC-43D1-B256-B5708BADD47B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8DFE1168-B1CC-43D1-B256-B5708BADD47B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8DFE1168-B1CC-43D1-B256-B5708BADD47B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8DFE1168-B1CC-43D1-B256-B5708BADD47B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0F0F7D45-0E13-42B0-A158-8F303BBE8358}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0F0F7D45-0E13-42B0-A158-8F303BBE8358}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BB2D2ED3-4378-4B44-974E-8BE80F0021EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
