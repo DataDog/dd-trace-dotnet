@@ -8,6 +8,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -18,10 +21,26 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
 #if NETCOREAPP3_1_OR_GREATER
-    public class GraphQL7Tests : GraphQLTests
+    public class GraphQL7SchemaV0Tests : GraphQL7Tests
     {
-        public GraphQL7Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base("GraphQL7", fixture, output, nameof(GraphQL7Tests))
+        public GraphQL7SchemaV0Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v0")
+        {
+        }
+    }
+
+    public class GraphQL7SchemaV1Tests : GraphQL7Tests
+    {
+        public GraphQL7SchemaV1Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v1")
+        {
+        }
+    }
+
+    public abstract class GraphQL7Tests : GraphQLTests
+    {
+        public GraphQL7Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string metadataSchemaVersion)
+            : base("GraphQL7", fixture, output, nameof(GraphQL7Tests), metadataSchemaVersion)
         {
         }
 
@@ -46,10 +65,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             => await RunSubmitsTraces("SubmitsTracesWebsockets", packageVersion, true);
     }
 
-    public class GraphQL4Tests : GraphQLTests
+    public class GraphQL4SchemaV0Tests : GraphQL4Tests
     {
-        public GraphQL4Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base("GraphQL4", fixture, output, nameof(GraphQL4Tests))
+        public GraphQL4SchemaV0Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v0")
+        {
+        }
+    }
+
+    public class GraphQL4SchemaV1Tests : GraphQL4Tests
+    {
+        public GraphQL4SchemaV1Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v1")
+        {
+        }
+    }
+
+    public abstract class GraphQL4Tests : GraphQLTests
+    {
+        public GraphQL4Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string metadataSchemaVersion)
+            : base("GraphQL4", fixture, output, nameof(GraphQL4Tests), metadataSchemaVersion)
         {
         }
 
@@ -68,10 +103,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 #endif
 
-    public class GraphQL3Tests : GraphQLTests
+    public class GraphQL3SchemaV0Tests : GraphQL3Tests
     {
-        public GraphQL3Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base("GraphQL3", fixture, output, nameof(GraphQL3Tests))
+        public GraphQL3SchemaV0Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v0")
+        {
+        }
+    }
+
+    public class GraphQL3SchemaV1Tests : GraphQL3Tests
+    {
+        public GraphQL3SchemaV1Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v1")
+        {
+        }
+    }
+
+    public abstract class GraphQL3Tests : GraphQLTests
+    {
+        public GraphQL3Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string metadataSchemaVersion)
+            : base("GraphQL3", fixture, output, nameof(GraphQL3Tests), metadataSchemaVersion)
         {
         }
 
@@ -83,10 +134,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             => await RunSubmitsTraces();
     }
 
-    public class GraphQL2Tests : GraphQLTests
+    public class GraphQL2SchemaV0Tests : GraphQL2Tests
     {
-        public GraphQL2Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base("GraphQL", fixture, output, nameof(GraphQL2Tests))
+        public GraphQL2SchemaV0Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v0")
+        {
+        }
+    }
+
+    public class GraphQL2SchemaV1Tests : GraphQL2Tests
+    {
+        public GraphQL2SchemaV1Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v1")
+        {
+        }
+    }
+
+    public abstract class GraphQL2Tests : GraphQLTests
+    {
+        public GraphQL2Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string metadataSchemaVersion)
+            : base("GraphQL", fixture, output, nameof(GraphQL2Tests), metadataSchemaVersion)
         {
         }
 
@@ -115,13 +182,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private const string ServiceVersion = "1.0.0";
 
         private readonly string _testName;
+        private readonly string _metadataSchemaVersion;
 
-        protected GraphQLTests(string sampleAppName, AspNetCoreTestFixture fixture, ITestOutputHelper output, string testName)
+        protected GraphQLTests(string sampleAppName, AspNetCoreTestFixture fixture, ITestOutputHelper output, string testName, string metadataSchemaVersion)
             : base(sampleAppName, output)
         {
             SetServiceVersion(ServiceVersion);
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
 
             _testName = testName;
+            _metadataSchemaVersion = metadataSchemaVersion;
 
             Fixture = fixture;
             Fixture.SetOutput(output);
@@ -134,15 +204,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Fixture.SetOutput(null);
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.Type switch
-            {
-                "graphql" => span.IsGraphQL(),
-                _ => Result.DefaultSuccess,
-            };
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsGraphQL();
 
         protected async Task RunSubmitsTraces(string testName = "SubmitsTraces", string packageVersion = "", bool usingWebsockets = false)
         {
+            var serviceName = $"Samples.{EnvironmentHelper.SampleName}";
+            var isExternalSpan = _metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{serviceName}-graphql" : serviceName;
+
             SetInstrumentationVerification();
 
             await Fixture.TryStartApp(this);
@@ -150,12 +219,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var expectedSpans = await SubmitRequests(Fixture.HttpPort, usingWebsockets);
 
             var spans = Fixture.Agent.WaitForSpans(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
-            foreach (var span in spans)
-            {
-                // TODO: Refactor to use ValidateIntegrationSpans when the graphql server integration is fixed. It currently produces a service name of {service]-graphql
-                var result = ValidateIntegrationSpan(span);
-                Assert.True(result.Success, result.ToString());
-            }
+
+            var graphQLSpans = spans.Where(span => span.Type == "graphql");
+            ValidateIntegrationSpans(graphQLSpans, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
@@ -169,7 +235,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Ensures that we get nice file nesting in Solution Explorer
             var fxSuffix = EnvironmentHelper.IsCoreClr() ? string.Empty : ".netfx";
             await VerifyHelper.VerifySpans(spans, settings)
-                              .UseFileName($"{_testName}.{testName}{fxSuffix}")
+                              .UseFileName($"{_testName}.{testName}{fxSuffix}.Schema{_metadataSchemaVersion.ToUpper()}")
                               .DisableRequireUniquePrefix(); // all package versions should be the same
 
             VerifyInstrumentation(Fixture.Process);

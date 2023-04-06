@@ -4,7 +4,7 @@
     SpanId: Id_2,
     Name: aspnet_core.request,
     Resource: GET /graphql,
-    Service: Samples.GraphQL4,
+    Service: Samples.GraphQL7,
     Type: web,
     Tags: {
       component: aspnet_core,
@@ -32,7 +32,7 @@
     SpanId: Id_4,
     Name: aspnet_core.request,
     Resource: GET /graphql,
-    Service: Samples.GraphQL4,
+    Service: Samples.GraphQL7,
     Type: web,
     Tags: {
       component: aspnet_core,
@@ -60,7 +60,7 @@
     SpanId: Id_6,
     Name: aspnet_core.request,
     Resource: GET /graphql,
-    Service: Samples.GraphQL4,
+    Service: Samples.GraphQL7,
     Type: web,
     Tags: {
       component: aspnet_core,
@@ -88,7 +88,7 @@
     SpanId: Id_8,
     Name: aspnet_core.request,
     Resource: GET /graphql,
-    Service: Samples.GraphQL4,
+    Service: Samples.GraphQL7,
     Type: web,
     Tags: {
       component: aspnet_core,
@@ -116,7 +116,7 @@
     SpanId: Id_9,
     Name: graphql.validate,
     Resource: graphql.validate,
-    Service: Samples.GraphQL4-graphql,
+    Service: Samples.GraphQL7,
     Type: graphql,
     ParentId: Id_2,
     Tags: {
@@ -124,11 +124,8 @@
       env: integration_tests,
       graphql.source: query HeroQuery{hero {name appearsIn}},
       language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: server,
+      version: 1.0.0
     }
   },
   {
@@ -136,7 +133,7 @@
     SpanId: Id_10,
     Name: graphql.execute,
     Resource: Query HeroQuery,
-    Service: Samples.GraphQL4-graphql,
+    Service: Samples.GraphQL7,
     Type: graphql,
     ParentId: Id_2,
     Tags: {
@@ -146,11 +143,8 @@
       graphql.operation.type: Query,
       graphql.source: query HeroQuery{hero {name appearsIn}},
       language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: server,
+      version: 1.0.0
     }
   },
   {
@@ -158,7 +152,7 @@
     SpanId: Id_11,
     Name: graphql.validate,
     Resource: graphql.validate,
-    Service: Samples.GraphQL4-graphql,
+    Service: Samples.GraphQL7,
     Type: graphql,
     ParentId: Id_4,
     Tags: {
@@ -166,11 +160,8 @@
       env: integration_tests,
       graphql.source: subscription NotImplementedSub{throwNotImplementedException {name}},
       language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: server,
+      version: 1.0.0
     }
   },
   {
@@ -178,7 +169,7 @@
     SpanId: Id_12,
     Name: graphql.execute,
     Resource: Subscription NotImplementedSub,
-    Service: Samples.GraphQL4-graphql,
+    Service: Samples.GraphQL7,
     Type: graphql,
     ParentId: Id_4,
     Error: 1,
@@ -206,11 +197,8 @@ errors: [
       graphql.operation.type: Subscription,
       graphql.source: subscription NotImplementedSub{throwNotImplementedException {name}},
       language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: server,
+      version: 1.0.0
     }
   },
   {
@@ -218,7 +206,7 @@ errors: [
     SpanId: Id_13,
     Name: graphql.validate,
     Resource: graphql.validate,
-    Service: Samples.GraphQL4-graphql,
+    Service: Samples.GraphQL7,
     Type: graphql,
     ParentId: Id_6,
     Error: 1,
@@ -253,11 +241,8 @@ errors: [
       error.type: GraphQL.Validation.ValidationError,
       graphql.source: query HumanError{human(id:1){name apearsIn}},
       language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: server,
+      version: 1.0.0
     }
   },
   {
@@ -265,7 +250,7 @@ errors: [
     SpanId: Id_14,
     Name: graphql.validate,
     Resource: graphql.validate,
-    Service: Samples.GraphQL4-graphql,
+    Service: Samples.GraphQL7,
     Type: graphql,
     ParentId: Id_8,
     Tags: {
@@ -273,11 +258,8 @@ errors: [
       env: integration_tests,
       graphql.source: mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}},
       language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: server,
+      version: 1.0.0
     }
   },
   {
@@ -285,7 +267,7 @@ errors: [
     SpanId: Id_15,
     Name: graphql.execute,
     Resource: Mutation AddBobaFett,
-    Service: Samples.GraphQL4-graphql,
+    Service: Samples.GraphQL7,
     Type: graphql,
     ParentId: Id_8,
     Tags: {
@@ -295,11 +277,8 @@ errors: [
       graphql.operation.type: Mutation,
       graphql.source: mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}},
       language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: server,
+      version: 1.0.0
     }
   }
 ]
