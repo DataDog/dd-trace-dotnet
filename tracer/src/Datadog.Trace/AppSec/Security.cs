@@ -33,7 +33,7 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
         private readonly SecuritySettings _settings;
-        private readonly Dictionary<string, AsmRemoteConfigurationProduct> _products = AsmRemoteConfigurationProducts.GetAll();
+        private readonly IReadOnlyDictionary<string, AsmRemoteConfigurationProduct> _products = AsmRemoteConfigurationProducts.GetAll;
         private readonly ConfigurationStatus _configurationStatus;
         private readonly bool _noLocalRules;
         private RemoteConfigurationManager? _remoteConfigurationManager;
