@@ -18,6 +18,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Telemetry;
@@ -249,23 +250,23 @@ namespace Datadog.Trace.TestHelpers
             int timeoutInMilliseconds,
             Func<IImmutableList<MockDataStreamsPayload>, bool> waitFunc)
         {
-            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
+            var source = new CancellationTokenSource();
+            source.CancelAfter(timeoutInMilliseconds);
 
-            IImmutableList<MockDataStreamsPayload> stats = ImmutableList<MockDataStreamsPayload>.Empty;
-
-            while (DateTime.UtcNow < deadline)
-            {
-                stats = DataStreams;
-
-                if (waitFunc(stats))
+            using var task = new Task(
+                () =>
                 {
-                    break;
-                }
+                    while (!source.Token.IsCancellationRequested && !waitFunc(DataStreams))
+                    {
+                        Thread.Sleep(100);
+                    }
+                });
+            task.Start();
+            // just to be safe and avoid using wait without a timeout we gonna
+            // use double of the originally set timeout
+            task.Wait(timeoutInMilliseconds * 2);
 
-                Thread.Sleep(500);
-            }
-
-            return stats;
+            return DataStreams;
         }
 
         public IImmutableList<MockDataStreamsPayload> WaitForDataStreamsPoints(
