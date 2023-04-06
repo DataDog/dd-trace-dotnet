@@ -16,6 +16,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class WebRequest20Tests : TracingIntegrationTest
     {
+        private const string ServiceName = "Samples.WebRequest.NetFramework20";
+
         public WebRequest20Tests(ITestOutputHelper output)
             : base("WebRequest.NetFramework20", output)
         {
@@ -28,32 +30,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void SubmitsTraces()
-        {
-            int expectedSpanCount = 45;
-            const string expectedOperationName = "http.request";
+        public void SubmitsTracesV0() => RunTest("v0");
 
-            int httpPort = TcpPortProvider.GetOpenPort();
-            Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
-
-            using var telemetry = this.ConfigureTelemetry();
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
-            {
-                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                Assert.Equal(expectedSpanCount, spans.Count);
-                ValidateIntegrationSpans(spans, expectedServiceName: "Samples.WebRequest.NetFramework20-http-client");
-
-                var firstSpan = spans.First();
-                var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
-
-                Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
-                Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
-
-                telemetry.AssertIntegrationEnabled(IntegrationId.WebRequest);
-            }
-        }
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        public void SubmitsTracesV1() => RunTest("v1");
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
@@ -81,6 +64,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.Equal("false", tracingEnabled);
                 telemetry.AssertIntegrationDisabled(IntegrationId.WebRequest);
                 VerifyInstrumentation(processResult.Process);
+            }
+        }
+
+        private void RunTest(string metadataSchemaVersion)
+        {
+            int expectedSpanCount = 45;
+            const string expectedOperationName = "http.request";
+
+            int httpPort = TcpPortProvider.GetOpenPort();
+            Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-http-client" : ServiceName;
+
+            using var telemetry = this.ConfigureTelemetry();
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            {
+                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+                Assert.Equal(expectedSpanCount, spans.Count);
+                ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+
+                var firstSpan = spans.First();
+                var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
+                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+
+                Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
+                Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
+
+                telemetry.AssertIntegrationEnabled(IntegrationId.WebRequest);
             }
         }
     }
