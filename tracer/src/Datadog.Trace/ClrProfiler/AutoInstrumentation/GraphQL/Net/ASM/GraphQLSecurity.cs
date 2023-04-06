@@ -117,6 +117,10 @@ internal sealed class GraphQLSecurity
             // Get variable value from the name
             value = GetVariableValue(context, variableName);
         }
+        else if (arg.TryDuckCast<GraphQLStringValueProxy>(out var argString))
+        {
+            value = argString.Value.ToString();
+        }
 
         return value;
     }
