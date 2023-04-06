@@ -1,10 +1,10 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
     Name: command_execution,
     Resource: nonexisting1.exe,
-    Service: Samples.ProcessStart-command,
+    Service: Samples.ProcessStart,
     Type: system,
     Error: 1,
     Tags: {
@@ -13,6 +13,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -28,7 +29,7 @@
     SpanId: Id_4,
     Name: command_execution,
     Resource: nonexisting2.exe,
-    Service: Samples.ProcessStart-command,
+    Service: Samples.ProcessStart,
     Type: system,
     Error: 1,
     Tags: {
@@ -40,6 +41,7 @@ Path=testPath
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -55,7 +57,7 @@ Path=testPath
     SpanId: Id_6,
     Name: command_execution,
     Resource: nonexisting3.exe,
-    Service: Samples.ProcessStart-command,
+    Service: Samples.ProcessStart,
     Type: system,
     Error: 1,
     Tags: {
@@ -67,6 +69,7 @@ Path=testPath
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -82,7 +85,7 @@ Path=testPath
     SpanId: Id_8,
     Name: command_execution,
     Resource: nonexisting4.exe,
-    Service: Samples.ProcessStart-command,
+    Service: Samples.ProcessStart,
     Type: system,
     Error: 1,
     Tags: {
@@ -94,6 +97,7 @@ Path=testPath
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -109,7 +113,7 @@ Path=testPath
     SpanId: Id_10,
     Name: command_execution,
     Resource: nonexisting5.exe,
-    Service: Samples.ProcessStart-command,
+    Service: Samples.ProcessStart,
     Type: system,
     Error: 1,
     Tags: {
@@ -121,6 +125,7 @@ Path=testPath
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
+      version: 1.0.0,
       _dd.p.dm: -0
     },
     Metrics: {
