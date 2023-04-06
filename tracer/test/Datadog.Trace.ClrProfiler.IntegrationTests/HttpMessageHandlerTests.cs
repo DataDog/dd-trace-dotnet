@@ -21,6 +21,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [CollectionDefinition(nameof(HttpMessageHandlerTests), DisableParallelization = true)]
     public class HttpMessageHandlerTests : TracingIntegrationTest
     {
+        private const string ServiceName = "Samples.HttpMessageHandler";
+
         public HttpMessageHandlerTests(ITestOutputHelper output)
             : base("HttpMessageHandler", output)
         {
@@ -47,7 +49,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             from socketHandlerEnabled in new[] { true, false }
             from queryStringEnabled in new[] { true, false }
             from queryStringSizeAndExpectation in new[] { new KeyValuePair<int?, string>(null, "?key1=value1&<redacted>"), new KeyValuePair<int?, string>(200, "?key1=value1&<redacted>"), new KeyValuePair<int?, string>(2, "?k") }
-            select new object[] { instrumentationOptions, socketHandlerEnabled, queryStringEnabled, queryStringSizeAndExpectation.Key,  queryStringSizeAndExpectation.Value };
+            from metadataSchemaVersion in new[] { "v0", "v1" }
+            select new object[] { instrumentationOptions, socketHandlerEnabled, queryStringEnabled, queryStringSizeAndExpectation.Key,  queryStringSizeAndExpectation.Value, metadataSchemaVersion };
 
         public override Result ValidateIntegrationSpan(MockSpan span) => span.IsHttpMessageHandler();
 
@@ -56,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
         [MemberData(nameof(IntegrationConfigWithObfuscation))]
-        public void HttpClient_SubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler, bool queryStringCaptureEnabled, int? queryStringSize, string expectedQueryString)
+        public void HttpClient_SubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler, bool queryStringCaptureEnabled, int? queryStringSize, string expectedQueryString, string metadataSchemaVersion)
         {
             SetInstrumentationVerification();
             ConfigureInstrumentation(instrumentation, enableSocketsHandler);
@@ -73,10 +76,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var expectedSpanCount = expectedAsyncCount + expectedSyncCount;
 
             const string expectedOperationName = "http.request";
-            const string expectedServiceName = "Samples.HttpMessageHandler-http-client";
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-http-client" : ServiceName;
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
@@ -84,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
                 Assert.Equal(expectedSpanCount, spans.Count);
-                ValidateIntegrationSpans(spans, expectedServiceName: expectedServiceName);
+                ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 foreach (var span in spans)
                 {
