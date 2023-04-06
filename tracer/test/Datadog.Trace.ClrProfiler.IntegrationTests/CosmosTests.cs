@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -17,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class CosmosTests : TracingIntegrationTest
     {
         private const string ExpectedOperationName = "cosmosdb.query";
-        private const string ExpectedServiceName = "Samples.CosmosDb-cosmosdb";
+        private const string ServiceName = "Samples.CosmosDb";
 
         public CosmosTests(ITestOutputHelper output)
             : base("CosmosDb", output)
@@ -32,17 +33,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.CosmosDb
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
         public override Result ValidateIntegrationSpan(MockSpan span) => span.IsCosmosDb();
 
         [SkippableTheory(Skip = "Cosmos emulator is too flaky at the moment")]
-        [MemberData(nameof(PackageVersions.CosmosDb), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "LinuxUnsupported")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTraces(string packageVersion)
+        public void SubmitTraces(string packageVersion, string metadataSchemaVersion)
         {
             var expectedSpanCount = 14;
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-cosmosdb" : ServiceName;
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
@@ -60,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var dbTags = 0;
                 var containerTags = 0;
-                ValidateIntegrationSpans(spans, expectedServiceName: ExpectedServiceName);
+                ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 foreach (var span in spans)
                 {
