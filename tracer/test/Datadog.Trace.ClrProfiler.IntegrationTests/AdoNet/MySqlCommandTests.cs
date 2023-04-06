@@ -16,6 +16,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
     [Trait("RequiresDockerDependency", "true")]
     public class MySqlCommandTests : TracingIntegrationTest
     {
+        private const string ServiceName = "Samples.MySql";
+
         public MySqlCommandTests(ITestOutputHelper output)
             : base("MySql", output)
         {
@@ -31,7 +33,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                     continue;
                 }
 
-                yield return item;
+                yield return new[] { item[0], "v0" };
+                yield return new[] { item[0], "v1" };
             }
         }
 
@@ -44,7 +47,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                     continue;
                 }
 
-                yield return item;
+                yield return new[] { item[0], "v0" };
+                yield return new[] { item[0], "v1" };
             }
         }
 
@@ -53,18 +57,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesInMySql8(string packageVersion)
+        public void SubmitsTracesInMySql8(string packageVersion, string metadataSchemaVersion)
         {
-            SubmitsTraces(packageVersion);
+            SubmitsTraces(packageVersion, metadataSchemaVersion);
         }
 
         [SkippableTheory]
         [MemberData(nameof(GetOldMySqlData))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTracesInOldMySql(string packageVersion)
+        public void SubmitsTracesInOldMySql(string packageVersion, string metadataSchemaVersion)
         {
-            SubmitsTraces(packageVersion);
+            SubmitsTraces(packageVersion, metadataSchemaVersion);
         }
 
         [SkippableFact]
@@ -90,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             telemetry.AssertIntegrationDisabled(IntegrationId.MySql);
         }
 
-        private void SubmitsTraces(string packageVersion)
+        private void SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
             // ALWAYS: 75 spans
             // - MySqlCommand: 19 spans (3 groups * 7 spans - 2 missing spans)
@@ -111,7 +115,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             const string dbType = "mysql";
             const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.MySql-" + dbType;
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-{dbType}" : ServiceName;
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
@@ -120,7 +127,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             int actualSpanCount = spans.Count(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase)); // Remove unexpected DB spans from the calculation
 
             Assert.Equal(expectedSpanCount, actualSpanCount);
-            ValidateIntegrationSpans(spans, expectedServiceName: expectedServiceName);
+            ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
             telemetry.AssertIntegrationEnabled(IntegrationId.MySql);
         }
     }

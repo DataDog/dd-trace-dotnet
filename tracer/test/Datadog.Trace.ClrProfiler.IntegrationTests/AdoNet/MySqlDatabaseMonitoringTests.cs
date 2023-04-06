@@ -20,6 +20,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
     [UsesVerify]
     public class MySqlDatabaseMonitoringTests : TracingIntegrationTest
     {
+        private const string ServiceName = "Samples.MySql";
+
         public MySqlDatabaseMonitoringTests(ITestOutputHelper output)
             : base("MySql", output)
         {
@@ -36,7 +38,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                     continue;
                 }
 
-                yield return item;
+                yield return new[] { item[0], "v0" };
+                yield return new[] { item[0], "v1" };
             }
         }
 
@@ -45,49 +48,49 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitDbmCommentedSpanspropagationNotSet(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationNotSet(string packageVersion, string metadataSchemaVersion)
         {
-            await SubmitDbmCommentedSpans(packageVersion, string.Empty);
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, string.Empty);
         }
 
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitDbmCommentedSpanspropagationIntValue(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationIntValue(string packageVersion, string metadataSchemaVersion)
         {
-            await SubmitDbmCommentedSpans(packageVersion, "100");
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "100");
         }
 
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitDbmCommentedSpanspropagationRandomValue(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationRandomValue(string packageVersion, string metadataSchemaVersion)
         {
-            await SubmitDbmCommentedSpans(packageVersion, "randomValue");
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "randomValue");
         }
 
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitDbmCommentedSpanspropagationDisabled(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationDisabled(string packageVersion, string metadataSchemaVersion)
         {
-            await SubmitDbmCommentedSpans(packageVersion, "disabled");
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "disabled");
         }
 
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitDbmCommentedSpanspropagationService(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationService(string packageVersion, string metadataSchemaVersion)
         {
-            await SubmitDbmCommentedSpans(packageVersion, "service");
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "service");
         }
 
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitDbmCommentedSpanspropagationFull(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationFull(string packageVersion, string metadataSchemaVersion)
         {
-            await SubmitDbmCommentedSpans(packageVersion, "full");
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "full");
         }
 
         // Check that the spans have been tagged after the comment was propagated
@@ -109,7 +112,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        private async Task SubmitDbmCommentedSpans(string packageVersion, string propagationLevel)
+        private async Task SubmitDbmCommentedSpans(string packageVersion, string metadataSchemaVersion, string propagationLevel)
         {
             if (propagationLevel != string.Empty)
             {
@@ -135,6 +138,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             const string dbType = "mysql";
             const string expectedOperationName = dbType + ".query";
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
@@ -163,6 +168,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 "service" or "full" => ".enabled",
                 _ => ".disabled",
             });
+
+            fileName += $".Schema{metadataSchemaVersion.ToUpper()}";
 
             await VerifyHelper.VerifySpans(filteredSpans, settings)
                 .DisableRequireUniquePrefix()

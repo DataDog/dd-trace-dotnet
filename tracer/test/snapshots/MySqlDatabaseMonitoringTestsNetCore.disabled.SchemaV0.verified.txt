@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -15,8 +15,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -38,8 +37,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -61,8 +59,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -84,8 +81,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -107,8 +103,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -130,8 +125,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -153,8 +147,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -176,8 +169,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -199,8 +191,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -222,8 +213,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -245,8 +235,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -268,8 +257,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -291,8 +279,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -314,8 +301,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -337,8 +323,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -360,8 +345,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -383,8 +367,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -406,8 +389,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -429,8 +411,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -452,8 +433,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -475,8 +455,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -498,8 +477,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -521,8 +499,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -544,8 +521,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -567,8 +543,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -590,8 +565,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -613,8 +587,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -636,8 +609,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -659,8 +631,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -682,8 +653,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -705,8 +675,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -728,8 +697,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -751,8 +719,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -774,8 +741,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -797,8 +763,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -820,8 +785,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -843,8 +807,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -866,8 +829,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -889,8 +851,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -912,8 +873,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -935,8 +895,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -958,8 +917,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -981,8 +939,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1004,8 +961,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1027,8 +983,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1050,8 +1005,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1073,8 +1027,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1096,8 +1049,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1119,8 +1071,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1142,8 +1093,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1165,8 +1115,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1188,8 +1137,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1211,8 +1159,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1234,8 +1181,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1257,8 +1203,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1280,8 +1225,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1303,8 +1247,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1326,8 +1269,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1349,8 +1291,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1372,8 +1313,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1395,8 +1335,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1418,8 +1357,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1441,8 +1379,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1464,8 +1401,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1487,8 +1423,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1510,8 +1445,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1533,8 +1467,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1556,8 +1489,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1579,8 +1511,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1602,8 +1533,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1625,8 +1555,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1648,8 +1577,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1671,8 +1599,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1694,8 +1621,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1717,8 +1643,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1740,8 +1665,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1763,8 +1687,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1786,8 +1709,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1809,8 +1731,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1832,8 +1753,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1855,8 +1775,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1878,8 +1797,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1901,8 +1819,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1924,8 +1841,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1947,8 +1863,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1970,8 +1885,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1993,8 +1907,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2016,8 +1929,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2039,8 +1951,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2062,8 +1973,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2085,8 +1995,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2108,8 +2017,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2131,8 +2039,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2154,8 +2061,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2177,8 +2083,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2200,8 +2105,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2223,8 +2127,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2246,8 +2149,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2269,8 +2171,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2292,8 +2193,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2315,8 +2215,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2338,8 +2237,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2361,8 +2259,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2384,8 +2281,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2407,8 +2303,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2430,8 +2325,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2453,8 +2347,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2476,8 +2369,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2499,8 +2391,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2522,8 +2413,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2545,8 +2435,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2568,8 +2457,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2591,8 +2479,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2614,8 +2501,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2637,8 +2523,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2660,8 +2545,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2683,8 +2567,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2706,8 +2589,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2729,8 +2611,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2752,8 +2633,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2775,8 +2655,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2798,8 +2677,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2821,8 +2699,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2844,8 +2721,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2867,8 +2743,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2890,8 +2765,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2913,8 +2787,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2936,8 +2809,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2959,8 +2831,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2982,8 +2853,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3005,8 +2875,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3028,8 +2897,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3051,8 +2919,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3074,8 +2941,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3097,8 +2963,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3120,8 +2985,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3143,8 +3007,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3166,8 +3029,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3189,8 +3051,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3212,8 +3073,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3235,8 +3095,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3258,8 +3117,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3281,8 +3139,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3304,8 +3161,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3327,8 +3183,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3350,8 +3205,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3373,8 +3227,7 @@
       env: testing,
       out.host: mysql,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.dbm_trace_injected: true
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
