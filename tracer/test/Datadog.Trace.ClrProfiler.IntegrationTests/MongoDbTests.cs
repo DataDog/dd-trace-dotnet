@@ -22,6 +22,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public class MongoDbTests : TracingIntegrationTest
     {
+        private const string ServiceName = "Samples.MongoDB";
+
         private static readonly Regex OsRegex = new(@"""os"" : \{.*?\} ");
         private static readonly Regex ObjectIdRegex = new(@"ObjectId\("".*?""\)");
 
@@ -31,13 +33,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.MongoDB
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
         public override Result ValidateIntegrationSpan(MockSpan span) => span.IsMongoDb();
 
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.MongoDB), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitsTraces(string packageVersion)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-mongodb" : ServiceName;
+
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
@@ -80,16 +91,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                     .ToList();
 
                 await VerifyHelper.VerifySpans(nonAdminSpans, settings)
-                                  .UseTextForParameters($"packageVersion={snapshotSuffix}")
+                                  .UseTextForParameters($"packageVersion={snapshotSuffix}.Schema{metadataSchemaVersion.ToUpper()}")
                                   .DisableRequireUniquePrefix();
 
-                ValidateIntegrationSpans(allMongoSpans, expectedServiceName: "Samples.MongoDB-mongodb");
+                ValidateIntegrationSpans(allMongoSpans, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.MongoDb);
 
                 // do some basic verification on the "admin" spans
                 using var scope = new AssertionScope();
-                adminSpans.Should().AllBeEquivalentTo(new { Service = "Samples.MongoDB-mongodb", Type = "mongodb", });
+                adminSpans.Should().AllBeEquivalentTo(new { Service = clientSpanServiceName, Type = "mongodb", });
                 foreach (var adminSpan in adminSpans)
                 {
                     adminSpan.Tags.Should().IntersectWith(new Dictionary<string, string>

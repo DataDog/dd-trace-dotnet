@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -51,7 +51,7 @@
     SpanId: Id_5,
     Name: mongodb.query,
     Resource: delete test-db,
-    Service: Samples.MongoDB-mongodb,
+    Service: Samples.MongoDB,
     Type: mongodb,
     ParentId: Id_3,
     Tags: {
@@ -62,11 +62,8 @@
       mongodb.query: { "delete" : "employees", "ordered" : true },
       out.host: mongo,
       out.port: 27017,
-      runtime-id: Guid_1,
-      span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: client,
+      version: 1.0.0
     }
   },
   {
@@ -74,7 +71,7 @@
     SpanId: Id_6,
     Name: mongodb.query,
     Resource: insert test-db,
-    Service: Samples.MongoDB-mongodb,
+    Service: Samples.MongoDB,
     Type: mongodb,
     ParentId: Id_3,
     Tags: {
@@ -85,11 +82,8 @@
       mongodb.query: { "insert" : "employees", "ordered" : true },
       out.host: mongo,
       out.port: 27017,
-      runtime-id: Guid_1,
-      span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: client,
+      version: 1.0.0
     }
   },
   {
@@ -97,7 +91,7 @@
     SpanId: Id_7,
     Name: mongodb.query,
     Resource: aggregate test-db,
-    Service: Samples.MongoDB-mongodb,
+    Service: Samples.MongoDB,
     Type: mongodb,
     ParentId: Id_3,
     Tags: {
@@ -108,11 +102,8 @@
       mongodb.query: { "aggregate" : "employees", "pipeline" : [{ "$match" : { } }, { "$group" : { "_id" : 1, "n" : { "$sum" : 1 } } }], "cursor" : { } },
       out.host: mongo,
       out.port: 27017,
-      runtime-id: Guid_1,
-      span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: client,
+      version: 1.0.0
     }
   },
   {
@@ -120,7 +111,7 @@
     SpanId: Id_8,
     Name: mongodb.query,
     Resource: find test-db,
-    Service: Samples.MongoDB-mongodb,
+    Service: Samples.MongoDB,
     Type: mongodb,
     ParentId: Id_3,
     Tags: {
@@ -131,11 +122,8 @@
       mongodb.query: { "find" : "employees", "filter" : { } },
       out.host: mongo,
       out.port: 27017,
-      runtime-id: Guid_1,
-      span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: client,
+      version: 1.0.0
     }
   },
   {
@@ -143,7 +131,7 @@
     SpanId: Id_9,
     Name: mongodb.query,
     Resource: find test-db,
-    Service: Samples.MongoDB-mongodb,
+    Service: Samples.MongoDB,
     Type: mongodb,
     ParentId: Id_3,
     Tags: {
@@ -154,11 +142,8 @@
       mongodb.query: { "find" : "employees", "filter" : { } },
       out.host: mongo,
       out.port: 27017,
-      runtime-id: Guid_1,
-      span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: client,
+      version: 1.0.0
     }
   },
   {
@@ -166,7 +151,7 @@
     SpanId: Id_10,
     Name: mongodb.query,
     Resource: delete test-db,
-    Service: Samples.MongoDB-mongodb,
+    Service: Samples.MongoDB,
     Type: mongodb,
     ParentId: Id_4,
     Tags: {
@@ -177,11 +162,8 @@
       mongodb.query: { "delete" : "employees", "ordered" : true },
       out.host: mongo,
       out.port: 27017,
-      runtime-id: Guid_1,
-      span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: client,
+      version: 1.0.0
     }
   },
   {
@@ -189,7 +171,7 @@
     SpanId: Id_11,
     Name: mongodb.query,
     Resource: insert test-db,
-    Service: Samples.MongoDB-mongodb,
+    Service: Samples.MongoDB,
     Type: mongodb,
     ParentId: Id_4,
     Tags: {
@@ -200,11 +182,8 @@
       mongodb.query: { "insert" : "employees", "ordered" : true },
       out.host: mongo,
       out.port: 27017,
-      runtime-id: Guid_1,
-      span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: client,
+      version: 1.0.0
     }
   },
   {
@@ -212,7 +191,7 @@
     SpanId: Id_12,
     Name: mongodb.query,
     Resource: aggregate test-db,
-    Service: Samples.MongoDB-mongodb,
+    Service: Samples.MongoDB,
     Type: mongodb,
     ParentId: Id_4,
     Tags: {
@@ -223,11 +202,8 @@
       mongodb.query: { "aggregate" : "employees", "pipeline" : [{ "$match" : { } }, { "$group" : { "_id" : 1, "n" : { "$sum" : 1 } } }], "cursor" : { } },
       out.host: mongo,
       out.port: 27017,
-      runtime-id: Guid_1,
-      span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: client,
+      version: 1.0.0
     }
   },
   {
@@ -235,7 +211,7 @@
     SpanId: Id_13,
     Name: mongodb.query,
     Resource: find test-db,
-    Service: Samples.MongoDB-mongodb,
+    Service: Samples.MongoDB,
     Type: mongodb,
     ParentId: Id_4,
     Tags: {
@@ -246,11 +222,8 @@
       mongodb.query: { "find" : "employees", "filter" : { } },
       out.host: mongo,
       out.port: 27017,
-      runtime-id: Guid_1,
-      span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: client,
+      version: 1.0.0
     }
   }
 ]
