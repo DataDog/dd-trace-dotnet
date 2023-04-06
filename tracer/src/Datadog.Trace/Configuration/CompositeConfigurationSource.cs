@@ -3,11 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
@@ -17,7 +14,7 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public class CompositeConfigurationSource : IConfigurationSource, IEnumerable<IConfigurationSource>
     {
-        private readonly List<IConfigurationSource> _sources = new List<IConfigurationSource>();
+        private readonly List<IConfigurationSource> _sources = new();
 
         /// <summary>
         /// Adds a new configuration source to this instance.
@@ -51,8 +48,15 @@ namespace Datadog.Trace.Configuration
         /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
         public string GetString(string key)
         {
-            return _sources.Select(source => source.GetString(key))
-                           .FirstOrDefault(value => value != null);
+            for (var i = 0; i < _sources.Count; i++)
+            {
+                if (_sources[i].GetString(key) is { } value)
+                {
+                    return value;
+                }
+            }
+
+            return default;
         }
 
         /// <summary>
@@ -64,8 +68,15 @@ namespace Datadog.Trace.Configuration
         /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
         public int? GetInt32(string key)
         {
-            return _sources.Select(source => source.GetInt32(key))
-                           .FirstOrDefault(value => value != null);
+            for (var i = 0; i < _sources.Count; i++)
+            {
+                if (_sources[i].GetInt32(key) is { } value)
+                {
+                    return value;
+                }
+            }
+
+            return default;
         }
 
         /// <summary>
@@ -77,8 +88,15 @@ namespace Datadog.Trace.Configuration
         /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
         public double? GetDouble(string key)
         {
-            return _sources.Select(source => source.GetDouble(key))
-                           .FirstOrDefault(value => value != null);
+            for (var i = 0; i < _sources.Count; i++)
+            {
+                if (_sources[i].GetDouble(key) is { } value)
+                {
+                    return value;
+                }
+            }
+
+            return default;
         }
 
         /// <summary>
@@ -90,8 +108,22 @@ namespace Datadog.Trace.Configuration
         /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
         public bool? GetBool(string key)
         {
-            return _sources.Select(source => source.GetBool(key))
-                           .FirstOrDefault(value => value != null);
+            for (var i = 0; i < _sources.Count; i++)
+            {
+                if (_sources[i].GetBool(key) is { } value)
+                {
+                    return value;
+                }
+            }
+
+            return default;
+        }
+
+        /// <summary>Returns an enumerator that iterates through the <see cref="T:System.Collections.Generic.List`1" />.</summary>
+        /// <returns>A <see cref="T:System.Collections.Generic.List`1.Enumerator" /> for the <see cref="T:System.Collections.Generic.List`1" />.</returns>
+        internal List<IConfigurationSource>.Enumerator GetEnumerator()
+        {
+            return _sources.GetEnumerator();
         }
 
         /// <inheritdoc />
@@ -109,15 +141,29 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         public IDictionary<string, string> GetDictionary(string key)
         {
-            return _sources.Select(source => source.GetDictionary(key))
-                        .FirstOrDefault(value => value != null);
+            for (var i = 0; i < _sources.Count; i++)
+            {
+                if (_sources[i].GetDictionary(key) is { } value)
+                {
+                    return value;
+                }
+            }
+
+            return default;
         }
 
         /// <inheritdoc />
         public IDictionary<string, string> GetDictionary(string key, bool allowOptionalMappings)
         {
-            return _sources.Select(source => source.GetDictionary(key, allowOptionalMappings))
-                        .FirstOrDefault(value => value != null);
+            for (var i = 0; i < _sources.Count; i++)
+            {
+                if (_sources[i].GetDictionary(key, allowOptionalMappings) is { } value)
+                {
+                    return value;
+                }
+            }
+
+            return default;
         }
     }
 }

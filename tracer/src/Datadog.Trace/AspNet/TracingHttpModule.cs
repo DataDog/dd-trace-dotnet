@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
@@ -126,8 +125,7 @@ namespace Datadog.Trace.AspNet
 
                 HttpRequest httpRequest = httpContext.Request;
                 SpanContext propagatedContext = null;
-                var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
-
+                IEnumerable<KeyValuePair<string, string>> tagsFromHeaders = Array.Empty<KeyValuePair<string, string>>();
                 if (tracer.InternalActiveScope == null)
                 {
                     try

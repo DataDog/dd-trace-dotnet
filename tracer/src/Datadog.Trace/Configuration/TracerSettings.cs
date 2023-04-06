@@ -6,12 +6,10 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Vendors.Serilog;
 
@@ -76,7 +74,7 @@ namespace Datadog.Trace.Configuration
 
             var disabledIntegrationNames = source?.GetString(ConfigurationKeys.DisabledIntegrations)
                                                  ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
-                                           Enumerable.Empty<string>();
+                                           Array.Empty<string>();
 
             DisabledIntegrationNames = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
 
@@ -101,11 +99,23 @@ namespace Datadog.Trace.Configuration
                          // backwards compatibility for names used in the past
                          source?.GetDictionary("DD_TRACE_GLOBAL_TAGS") ??
                          // default value (empty)
-                         new ConcurrentDictionary<string, string>();
+                         new Dictionary<string, string>();
 
             // Filter out tags with empty keys or empty values, and trim whitespace
-            GlobalTags = GlobalTags.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                                   .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+            var globalTagsCount = GlobalTags.Count;
+            if (globalTagsCount > 0)
+            {
+                var globalTags = new Dictionary<string, string>(globalTagsCount);
+                foreach (var kvp in GlobalTags)
+                {
+                    if (!string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                    {
+                        globalTags[kvp.Key.Trim()] = kvp.Value.Trim();
+                    }
+                }
+
+                GlobalTags = globalTags;
+            }
 
             var inputHeaderTags = source?.GetDictionary(ConfigurationKeys.HeaderTags, allowOptionalMappings: true) ??
                                   // default value (empty)
@@ -115,11 +125,27 @@ namespace Datadog.Trace.Configuration
             // Filter out tags with empty keys or empty values, and trim whitespaces
             HeaderTags = InitializeHeaderTags(inputHeaderTags, headerTagsNormalizationFixEnabled);
 
-            var serviceNameMappings = source?.GetDictionary(ConfigurationKeys.ServiceNameMappings)
-                                            ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                                            ?.ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+            Dictionary<string, string> serviceNameMappings;
+            if (source?.GetDictionary(ConfigurationKeys.ServiceNameMappings) is { Count: > 0 } tmpServiceNameMappings)
+            {
+                var sNameMaps = new Dictionary<string, string>(tmpServiceNameMappings.Count);
+                foreach (var kvp in tmpServiceNameMappings)
+                {
+                    if (!string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                    {
+                        sNameMaps[kvp.Key.Trim()] = kvp.Value.Trim();
+                    }
+                }
 
-            ServiceNameMappings = new ServiceNames(serviceNameMappings);
+                serviceNameMappings = sNameMaps;
+            }
+            else
+            {
+                serviceNameMappings = null;
+            }
+
+            // Use the same recently created dictionary on the ServiceNames instance creation.
+            ServiceNameMappings = ServiceNames.FromDictionary(serviceNameMappings);
 
             TracerMetricsEnabled = source?.GetBool(ConfigurationKeys.TracerMetricsEnabled) ??
                                    // default value
