@@ -454,7 +454,6 @@ namespace Datadog.Trace.TestHelpers
             bool sendResponse;
             var isTraceCommand = false;
 
-            Output.WriteLine($"Request at {request.PathAndQuery}");
             if (TelemetryEnabled && request.PathAndQuery.StartsWith("/" + TelemetryConstants.AgentTelemetryEndpoint))
             {
                 HandlePotentialTelemetryData(request);
