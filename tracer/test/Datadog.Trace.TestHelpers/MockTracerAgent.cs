@@ -1128,7 +1128,6 @@ namespace Datadog.Trace.TestHelpers
             private readonly PipeServer _statsPipeServer;
             private readonly PipeServer _tracesPipeServer;
             private readonly Task _statsdTask;
-            private readonly Task _tracesListenerTask;
 
             public NamedPipeAgent(WindowsPipesConfig config)
                 : base(config.UseTelemetry, TestTransports.WindowsNamedPipe)
@@ -1171,7 +1170,7 @@ namespace Datadog.Trace.TestHelpers
                     ex => Exceptions.Add(ex),
                     x => Output?.WriteLine(x));
 
-                _tracesListenerTask = Task.Run(_tracesPipeServer.Start);
+                _tracesPipeServer.Start();
             }
 
             public string TracesWindowsPipeName { get; }
@@ -1244,7 +1243,7 @@ namespace Datadog.Trace.TestHelpers
                     _log = log;
                 }
 
-                public Task Start()
+                public void Start()
                 {
                     for (var i = 0; i < ConcurrentInstanceCount; i++)
                     {
@@ -1254,8 +1253,6 @@ namespace Datadog.Trace.TestHelpers
                         _tasks.Add(startPipe);
                         mutex.Wait(5_000);
                     }
-
-                    return Task.CompletedTask;
                 }
 
                 public void Dispose()
