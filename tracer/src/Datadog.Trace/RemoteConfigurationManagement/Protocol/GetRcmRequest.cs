@@ -23,12 +23,5 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 
         [JsonProperty("cached_target_files")]
         public List<RcmCachedTargetFile> CachedTargetFiles { get; }
-
-        public bool Matches(GetRcmResponse response)
-        {
-            var requestBackendClientState = Client.State.BackendClientState;
-            var responseBackendClientstate = response.Targets.Signed.Custom.OpaqueBackendState;
-            return requestBackendClientState == responseBackendClientstate;
-        }
     }
 }
