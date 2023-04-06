@@ -44,8 +44,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         /// </summary>
         private readonly Dictionary<string, RemoteConfigurationCache> _appliedConfigurations = new();
 
-        private readonly int _rootVersion;
+        private readonly List<ISubscription> _subscriptions = new();
 
+        private readonly int _rootVersion;
+        private HashSet<string> _subscriptionsProductKeys = new();
         private BigInteger _capabilities;
         private int _targetsVersion;
         private string? _lastPollError;
@@ -293,11 +295,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     ThrowHelper.ThrowException($"Missing config {remoteConfigurationPath.Path} in targets");
                 }
 
-                if (!_subscriptionsProductKeys.Contains(remoteConfigurationPath.Product))
-                {
-                    ThrowHelper.ThrowException($"Received config {remoteConfigurationPath} for a product that was not requested");
-                }
-
                 var isConfigApplied = _appliedConfigurations.TryGetValue(remoteConfigurationPath.Path, out var appliedConfig) && appliedConfig.Hashes.SequenceEqual(signedTarget.Hashes);
                 if (isConfigApplied)
                 {
@@ -400,6 +397,27 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private void SetRcmEnabled(AgentConfiguration c)
         {
             _isRcmEnabled = !string.IsNullOrEmpty(c.ConfigurationEndpoint);
+        }
+
+        /// <summary>
+        /// Subscribe to changes in rcm
+        /// </summary>
+        /// <param name="callback">callback func that returns the applied status. The callback takes first the changed configs and second, the removed configs, always by product name as a key</param>
+        /// <param name="productKeys">productKeys (names)</param>
+        /// <returns>the subscription</returns>
+        public ISubscription SubscribeToChanges(Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, List<ApplyDetails>> callback, params string[] productKeys)
+        {
+            var subscription = new Subscription(this, callback, productKeys);
+            _subscriptions.Add(subscription);
+            _subscriptionsProductKeys.UnionWith(productKeys);
+            return subscription;
+        }
+
+        public void Unsubscribe(ISubscription subscription)
+        {
+            _subscriptions.Remove(subscription);
+            // we cant just remove the keys here as we want to allow more than one subscriptions to the same key
+            _subscriptionsProductKeys = new HashSet<string>(_subscriptions.SelectMany(s => s.ProductKeys));
         }
     }
 }
