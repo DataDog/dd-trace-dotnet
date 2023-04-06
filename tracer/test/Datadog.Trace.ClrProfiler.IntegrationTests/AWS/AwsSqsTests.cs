@@ -21,23 +21,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
     [UsesVerify]
     public class AwsSqsTests : TracingIntegrationTest
     {
+        private const string ServiceName = "Samples.AWS.SQS";
+
         public AwsSqsTests(ITestOutputHelper output)
             : base("AWS.SQS", output)
         {
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.Name switch
-            {
-                "sqs.request" => span.IsAwsSqs(),
-                _ => Result.DefaultSuccess,
-            };
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.AwsSqs
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsAwsSqs();
 
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.AwsSqs), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitsTraces(string packageVersion)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-aws-sqs" : ServiceName;
+
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
@@ -50,17 +56,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var frameworkName = "NetCore";
 #endif
                 var spans = agent.WaitForSpans(expectedCount);
-                foreach (var span in spans)
-                {
-                    // TODO: Refactor to use ValidateIntegrationSpans later once we figure out how to best handle the combination of "http-client" and "sqs" service names produced by the integration
-                    var result = ValidateIntegrationSpan(span);
-                    Assert.True(result.Success, result.ToString());
-                }
+                var sqsSpans = spans.Where(span => span.Name == "sqs.request");
+                ValidateIntegrationSpans(sqsSpans, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var host = Environment.GetEnvironmentVariable("AWS_SQS_HOST");
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                settings.UseFileName($"{nameof(AwsSqsTests)}.{frameworkName}");
+                settings.UseFileName($"{nameof(AwsSqsTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}");
                 if (!string.IsNullOrWhiteSpace(host))
                 {
                     settings.AddSimpleScrubber(host, "localhost:00000");
