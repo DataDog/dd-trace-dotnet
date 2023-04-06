@@ -13,6 +13,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     public class FakeCommandTests : TracingIntegrationTest
     {
+        private const string ServiceName = "Samples.FakeDbCommand";
+
         public FakeCommandTests(ITestOutputHelper output)
             : base("FakeDbCommand", output)
         {
@@ -23,7 +25,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces()
+        public void SubmitsTracesV0() => RunTest("v0");
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        public void SubmitsTracesV1() => RunTest("v1");
+
+        private void RunTest(string metadataSchemaVersion)
         {
             // ALWAYS: 91 spans
             // - FakeCommand: 21 spans (3 groups * 7 spans)
@@ -37,7 +45,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const int expectedSpanCount = 91;
             const string dbType = "fake";
             const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.FakeDbCommand-fake";
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-{dbType}" : ServiceName;
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
@@ -46,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             int actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
 
             Assert.Equal(expectedSpanCount, actualSpanCount);
-            ValidateIntegrationSpans(spans, expectedServiceName: expectedServiceName);
+            ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             foreach (var span in spans)
             {
