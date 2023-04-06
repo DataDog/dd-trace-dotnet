@@ -51,8 +51,13 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
 
         using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
         {
-            var points = agent.WaitForDataStreamsPoints(4);
-            points.Should().HaveCount(8);
+            var payloads = agent.WaitForDataStreamsPoints(4);
+            // we should get at least one payload
+            payloads.Should().NotBeEmpty();
+
+            var points = PayloadsToPoints(payloads);
+            // and exactly 4 points
+            points.Should().HaveCount(4);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.UseParameters(packageVersion);
@@ -66,7 +71,7 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
                         x => x.PathwayLatency,
                         (_, v) =>  v?.Length == 0 ? v : new byte[] { 0xFF });
                 });
-            await Verifier.Verify(PayloadsToPoints(agent.DataStreams), settings)
+            await Verifier.Verify(, settings)
                           .UseFileName($"{nameof(DataStreamsMonitoringRabbitMQTests)}.{nameof(HandleProduceAndConsume)}")
                           .DisableRequireUniquePrefix();
         }
