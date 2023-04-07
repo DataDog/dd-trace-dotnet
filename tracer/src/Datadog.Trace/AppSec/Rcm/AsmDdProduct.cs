@@ -14,8 +14,6 @@ namespace Datadog.Trace.AppSec.Rcm;
 
 internal class AsmDdProduct : AsmRemoteConfigurationProduct
 {
-    public override string Name => "ASM_DD";
-
     protected override void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
     {
         var firstFile = files.First();

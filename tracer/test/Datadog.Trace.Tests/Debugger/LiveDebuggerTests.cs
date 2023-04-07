@@ -30,18 +30,18 @@ public class LiveDebuggerTests
         var settings = DebuggerSettings.FromSource(new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.Enabled, "1" }, }));
 
         var discoveryService = new DiscoveryServiceMock();
-        var managerMock = new RemoteConfigurationManagerMock();
+        var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create("env", "version");
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, managerMock, lineProbeResolver, debuggerSink, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
+        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, debuggerSink, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         await debugger.InitializeAsync();
 
         probeStatusPoller.Called.Should().BeTrue();
         debuggerSink.Called.Should().BeTrue();
-        managerMock.ProductKeys.Contains(LiveDebugger.Instance.Product.Name).Should().BeTrue();
+        rcmSubscriptionManagerMock.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().BeTrue();
     }
 
     [Fact]
@@ -50,19 +50,19 @@ public class LiveDebuggerTests
         var settings = DebuggerSettings.FromSource(new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.Enabled, "0" }, }));
 
         var discoveryService = new DiscoveryServiceMock();
-        var managerMock = new RemoteConfigurationManagerMock();
+        var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create(string.Empty, string.Empty);
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, managerMock, lineProbeResolver, debuggerSink, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
+        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, debuggerSink, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         await debugger.InitializeAsync();
 
         lineProbeResolver.Called.Should().BeFalse();
         debuggerSink.Called.Should().BeFalse();
         probeStatusPoller.Called.Should().BeFalse();
-        managerMock.ProductKeys.Contains(LiveDebugger.Instance.Product.Name).Should().BeFalse();
+        rcmSubscriptionManagerMock.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().BeFalse();
     }
 
     private class DiscoveryServiceMock : IDiscoveryService
@@ -90,10 +90,36 @@ public class LiveDebuggerTests
         public Task DisposeAsync() => Task.CompletedTask;
     }
 
+    private class RcmSubscriptionManagerMock : IRcmSubscriptionManager
+    {
+        public bool HasAnySubscription { get; }
+
+        public ICollection<string> ProductKeys { get; } = new List<string>();
+
+        public void SubscribeToChanges(ISubscription subscription)
+        {
+            foreach (var productKey in subscription.ProductKeys)
+            {
+                ProductKeys.Add(productKey);
+            }
+        }
+
+        public void Unsubscribe(ISubscription subscription)
+        {
+            foreach (var productKey in subscription.ProductKeys)
+            {
+                ProductKeys.Remove(productKey);
+            }
+        }
+
+        public List<ApplyDetails> Update(Dictionary<string, List<RemoteConfiguration>> configByProducts, Dictionary<string, List<RemoteConfigurationPath>> removedConfigsByProduct)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     private class RemoteConfigurationManagerMock : IRemoteConfigurationManager
     {
-        public List<string> ProductKeys { get; } = new();
-
         internal bool Called { get; private set; }
 
         public Task StartPollingAsync()
@@ -104,24 +130,6 @@ public class LiveDebuggerTests
 
         public void SetCapability(BigInteger index, bool available)
         {
-        }
-
-        public ISubscription SubscribeToChanges(Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>, List<ApplyDetails>> callback, params string[] productKeys)
-        {
-            foreach (var productKey in productKeys)
-            {
-                ProductKeys.Add(productKey);
-            }
-
-            return null;
-        }
-
-        public void Unsubscribe(ISubscription subscription)
-        {
-            foreach (var productKey in subscription.ProductKeys)
-            {
-                ProductKeys.Remove(productKey);
-            }
         }
     }
 
