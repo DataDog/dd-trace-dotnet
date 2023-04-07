@@ -85,6 +85,12 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
 
         using var assertionScope = new AssertionScope();
         using var agent = EnvironmentHelper.GetMockAgent();
+        var agentType = agent.GetType().Name;
+        agent.RequestReceived += (sender, args) =>
+        {
+            _output.WriteLine($"{agentType} -> Got request at {args.Value.Request.RawUrl}");
+        };
+
         using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
         {
             var spans = agent.WaitForSpans(8);
