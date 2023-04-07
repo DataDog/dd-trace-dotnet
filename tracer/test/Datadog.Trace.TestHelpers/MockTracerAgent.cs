@@ -506,7 +506,15 @@ namespace Datadog.Trace.TestHelpers
 
             while (!source.IsCancellationRequested && !waitFunc(DataStreams))
             {
-                await Task.Delay(500, source.Token);
+                try
+                {
+                    await Task.Delay(500, source.Token);
+                }
+                catch (Exception) when (source.IsCancellationRequested)
+                {
+                    // the task was cancelled due to timeout
+                    break;
+                }
             }
 
             return DataStreams;
