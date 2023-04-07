@@ -6,6 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM;
@@ -68,6 +70,24 @@ internal sealed class GraphQLSecurity
         resolverCalls.Add(arguments);
     }
 
+    public static void RunSecurity(Scope scope)
+    {
+        var security = Security.Instance;
+        var asmEnabled = true; // security.Settings.Enabled;
+        if (asmEnabled)
+        {
+            var allResolvers = GraphQLSecurity.PopScope(scope);
+            var securityCoordinator = new SecurityCoordinator(security, null, scope.Span);
+            var args = new Dictionary<string, object> { { "graphql.server.all_resolvers", allResolvers } };
+#if NETFRAMEWORK
+            securityCoordinator.CheckAndBlock(args);
+#else
+            var result = securityCoordinator.RunWaf(args);
+            securityCoordinator.CheckAndBlock(result);
+#endif
+        }
+    }
+
     public static Dictionary<string, List<Dictionary<string, object>>> PopScope(IScope scope)
     {
         var resolvers = GraphQLSecurity.GetInstance().GetScopeResolvers(scope);
@@ -79,7 +99,6 @@ internal sealed class GraphQLSecurity
         where TContext : IExecutionContext
         where TNode : IExecutionNode
     {
-        Console.WriteLine("REGISTER A RESOLVER!!!!!!");
         var scope = Tracer.Instance.ActiveScope;
         var resolverName = node.Name;
 
