@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             }
 
             // Run the WAF scan
-            var allResolvers = GraphQLSecurity.PopScope(scope);
+            GraphQLSecurity.RunSecurity(scope);
 
             try
             {
