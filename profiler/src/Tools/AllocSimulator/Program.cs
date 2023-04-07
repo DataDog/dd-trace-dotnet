@@ -43,16 +43,19 @@ namespace AllocSimulator
                     throw new InvalidOperationException($"{extension} file extension is not supported");
                 }
 
-                var sampler = new AllocSampler();
-                Engine engine = new Engine(provider, sampler);
+                //var sampler = new FixedSampler();
+                //var upscaler = new FixedUpscaler();
+                var sampler = new PoissonSampler();
+                var upscaler = new PoissonUpscaler();
+                Engine engine = new Engine(provider, sampler, upscaler);
                 engine.Run();
                 var realAllocations = engine.GetAllocations();
-                var sampledAllocations = sampler.GetAllocs().ToList();
+                var sampledAllocations = upscaler.GetAllocs().ToList();
 
                 var filename = Path.GetFileNameWithoutExtension(allocFile);
                 Console.WriteLine($"Simulate allocations - {filename}");
                 Console.WriteLine("---------------------------------------------");
-                foreach (var realAllocation in realAllocations)
+                foreach (var realAllocation in realAllocations.OrderBy(alloc => { return alloc.Size; }))
                 {
                     var realKey = $"{realAllocation.Type}+{realAllocation.Key}";              // V--- use realKey when key is used
                     Console.WriteLine($"{realAllocation.Count,9} | {realAllocation.Size,13} - {realAllocation.Type}");
