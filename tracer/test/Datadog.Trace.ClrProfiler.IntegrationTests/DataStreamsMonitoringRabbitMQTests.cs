@@ -54,7 +54,7 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
 
         using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
         {
-            var payloads = await agent.WaitForDataStreamsPoints(8);
+            var payloads = await agent.WaitForDataStreamsPoints(8, 1000 * 60);
             var points = PayloadsToPoints(payloads);
             points.Should().HaveCount(8);
 
