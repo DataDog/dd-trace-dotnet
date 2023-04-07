@@ -12,9 +12,9 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Rcm;
 
-internal class AsmDdProduct : AsmRemoteConfigurationProduct
+internal class AsmDdProduct : IAsmConfigUpdater
 {
-    protected override void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
+    public void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
     {
         var firstFile = files.First();
         var asmDd = new NamedRawFile(firstFile!.Path, firstFile.Contents);
@@ -38,7 +38,7 @@ internal class AsmDdProduct : AsmRemoteConfigurationProduct
         }
     }
 
-    protected override void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
+    public void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
     {
         var oneRemoved = false;
         foreach (var removedConfig in removedConfigsForThisProduct)

@@ -15,6 +15,7 @@ using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
@@ -33,7 +34,14 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
         private readonly SecuritySettings _settings;
-        private readonly IReadOnlyDictionary<string, AsmRemoteConfigurationProduct> _products = AsmRemoteConfigurationProducts.GetAll;
+        private readonly IReadOnlyDictionary<string, IAsmConfigUpdater> _productConfigUpdaters = new Dictionary<string, IAsmConfigUpdater>
+        {
+            { RcmProducts.AsmFeatures, new AsmFeaturesProduct() },
+            { RcmProducts.Asm, new AsmProduct() },
+            { RcmProducts.AsmDd, new AsmDdProduct() },
+            { RcmProducts.AsmData, new AsmDataProduct() }
+        };
+
         private readonly ConfigurationStatus _configurationStatus;
         private readonly bool _noLocalRules;
         private IRcmSubscriptionManager _rcmSubscriptionManager;
@@ -153,13 +161,20 @@ namespace Datadog.Trace.AppSec
 
             try
             {
-                foreach (var product in _products)
+                foreach (var product in _productConfigUpdaters)
                 {
-                    configsByProduct.TryGetValue(product.Key, out var configurations);
-                    List<RemoteConfigurationPath>? configsForThisProductToRemove = null;
-                    removedConfigs?.TryGetValue(product.Key, out configsForThisProductToRemove);
-                    product.Value.UpdateRemoteConfigurationStatus(configurations, configsForThisProductToRemove, _configurationStatus);
+                    if (configsByProduct.TryGetValue(product.Key, out var configurations))
+                    {
+                        product.Value.ProcessUpdates(_configurationStatus, configurations);
+                    }
+
+                    if (removedConfigs?.TryGetValue(product.Key, out var configsForThisProductToRemove) is true)
+                    {
+                        product.Value.ProcessRemovals(_configurationStatus, configsForThisProductToRemove);
+                    }
                 }
+
+                _configurationStatus.EnableAsm = !_configurationStatus.AsmFeaturesByFile.IsEmpty() && _configurationStatus.AsmFeaturesByFile.All(a => a.Value.Enabled == true);
 
                 // normally CanBeToggled should not need a check as asm_features capacity is only sent if AppSec env var is null, but still guards it in case
                 if (_configurationStatus.IncomingUpdateState.SecurityStateChange && _settings.CanBeToggled)
