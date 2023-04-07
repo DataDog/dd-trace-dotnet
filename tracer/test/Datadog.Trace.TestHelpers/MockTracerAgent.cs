@@ -246,21 +246,6 @@ namespace Datadog.Trace.TestHelpers
             return stats;
         }
 
-        private async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreams(
-            int timeoutInMilliseconds,
-            Func<IImmutableList<MockDataStreamsPayload>, bool> waitFunc)
-        {
-            var source = new CancellationTokenSource();
-            source.CancelAfter(timeoutInMilliseconds);
-
-            while (!source.IsCancellationRequested && !waitFunc(DataStreams))
-            {
-                await Task.Delay(500, source.Token);
-            }
-
-            return DataStreams;
-        }
-
         public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsPoints(
             int statsCount,
             int timeoutInMilliseconds = 20000)
@@ -510,6 +495,21 @@ namespace Datadog.Trace.TestHelpers
                 SendResponse = sendResponse,
                 StatusCode = statusCode
             };
+        }
+
+        private async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreams(
+            int timeoutInMilliseconds,
+            Func<IImmutableList<MockDataStreamsPayload>, bool> waitFunc)
+        {
+            var source = new CancellationTokenSource();
+            source.CancelAfter(timeoutInMilliseconds);
+
+            while (!source.IsCancellationRequested && !waitFunc(DataStreams))
+            {
+                await Task.Delay(500, source.Token);
+            }
+
+            return DataStreams;
         }
 
         private void HandlePotentialTraces(MockHttpParser.MockHttpRequest request)
