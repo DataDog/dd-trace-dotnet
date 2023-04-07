@@ -7,6 +7,7 @@
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using Datadog.Trace.RemoteConfigurationManagement;
 
 namespace Datadog.Trace.AppSec.Rcm;
 
@@ -22,9 +23,9 @@ internal static class AsmRemoteConfigurationProducts
 
     public static IReadOnlyDictionary<string, AsmRemoteConfigurationProduct> GetAll => new ReadOnlyDictionary<string, AsmRemoteConfigurationProduct>(new Dictionary<string, AsmRemoteConfigurationProduct>
     {
-        { AsmFeaturesProduct.Name, AsmFeaturesProduct },
-        { AsmProduct.Name, AsmProduct },
-        { AsmDdProduct.Name, AsmDdProduct },
-        { AsmDataProduct.Name, AsmDataProduct }
+        { RcmProducts.AsmFeatures, AsmFeaturesProduct },
+        { RcmProducts.Asm, AsmProduct },
+        { RcmProducts.AsmDd, AsmDdProduct },
+        { RcmProducts.AsmData, AsmDataProduct }
     });
 }

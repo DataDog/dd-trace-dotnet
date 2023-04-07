@@ -9,7 +9,7 @@ using Datadog.Trace.RemoteConfigurationManagement;
 
 namespace Datadog.Trace.AppSec.Rcm;
 
-internal abstract class AsmRemoteConfigurationProduct : Product
+internal abstract class AsmRemoteConfigurationProduct
 {
     internal virtual void UpdateRemoteConfigurationStatus(List<RemoteConfiguration>? files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus)
     {

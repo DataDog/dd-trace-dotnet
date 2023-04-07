@@ -36,7 +36,7 @@ namespace Datadog.Trace.AppSec
         private readonly IReadOnlyDictionary<string, AsmRemoteConfigurationProduct> _products = AsmRemoteConfigurationProducts.GetAll;
         private readonly ConfigurationStatus _configurationStatus;
         private readonly bool _noLocalRules;
-        private RemoteConfigurationManager? _remoteConfigurationManager;
+        private IRcmSubscriptionManager _rcmSubscriptionManager;
         private ISubscription? _rcmSubscription;
         private LibraryInitializationResult? _libraryInitializationResult;
         private IWaf? _waf;
@@ -47,8 +47,8 @@ namespace Datadog.Trace.AppSec
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
         /// </summary>
-        public Security(SecuritySettings? settings = null, IWaf? waf = null, IDictionary<string, Action>? actions = null)
-            : this(settings, waf)
+        public Security(SecuritySettings? settings = null, IWaf? waf = null, IDictionary<string, Action>? actions = null, IRcmSubscriptionManager? rcmSubscriptionManager = null)
+            : this(settings, waf, rcmSubscriptionManager)
         {
             if (actions != null)
             {
@@ -56,9 +56,9 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private Security(SecuritySettings? settings = null, IWaf? waf = null)
+        private Security(SecuritySettings? settings = null, IWaf? waf = null, IRcmSubscriptionManager? rcmSubscriptionManager = null)
         {
-            _remoteConfigurationManager = RemoteConfigurationManager.Instance;
+            _rcmSubscriptionManager ??= RcmSubscriptionManager.Instance;
             try
             {
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
@@ -79,12 +79,12 @@ namespace Datadog.Trace.AppSec
                 var subscriptionsKeys = new List<string>();
                 if (_settings.CanBeToggled)
                 {
-                    subscriptionsKeys.Add(AsmRemoteConfigurationProducts.AsmFeaturesProduct.Name);
+                    subscriptionsKeys.Add(RcmProducts.AsmFeatures);
                 }
 
                 if ((_settings.Enabled || _settings.CanBeToggled) && _noLocalRules)
                 {
-                    subscriptionsKeys.Add(AsmRemoteConfigurationProducts.AsmDdProduct.Name);
+                    subscriptionsKeys.Add(RcmProducts.AsmDd);
                 }
 
                 SubscribeToChanges(subscriptionsKeys.ToArray());
@@ -104,7 +104,7 @@ namespace Datadog.Trace.AppSec
         /// </summary>
         public static Security Instance
         {
-            get => LazyInitializer.EnsureInitialized(ref _instance!, ref _globalInstanceInitialized, ref _globalInstanceLock, () => new Security(null, null));
+            get => LazyInitializer.EnsureInitialized(ref _instance!, ref _globalInstanceInitialized, ref _globalInstanceLock, () => new Security(null, null, null));
 
             set
             {
@@ -135,28 +135,14 @@ namespace Datadog.Trace.AppSec
 
         internal void SubscribeToChanges(params string[] productNames)
         {
-            void RcmSubscription(RemoteConfigurationManager remoteConfigurationManager)
+            if (_rcmSubscription is not null)
             {
-                _remoteConfigurationManager ??= remoteConfigurationManager;
-                IEnumerable<string> allProductNames = productNames;
-                if (_rcmSubscription is not null)
-                {
-                    allProductNames = _rcmSubscription.ProductKeys.Union(productNames);
-                }
-
-                _rcmSubscription = remoteConfigurationManager.SubscribeToChanges(
-                    UpdateFromRcm,
-                    allProductNames.ToArray());
-            }
-
-            if (_remoteConfigurationManager is null)
-            {
-                // todo: at some point refactor security like livedebugger so that it takes an instance of RemoteConfigurationManager to start with
-                RemoteConfigurationManager.CallbackWithInitializedInstance(RcmSubscription);
+                _rcmSubscription.AddProductKeys(productNames);
             }
             else
             {
-                RcmSubscription(_remoteConfigurationManager);
+                _rcmSubscription = new Subscription(UpdateFromRcm, productNames.ToArray());
+                _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription);
             }
         }
 
@@ -428,7 +414,7 @@ namespace Datadog.Trace.AppSec
                 _waf = _wafInitResult.Waf;
                 oldWaf?.Dispose();
                 Log.Debug("Disposed old waf and affected new waf");
-                SubscribeToChanges(AsmRemoteConfigurationProducts.AsmDataProduct.Name, AsmRemoteConfigurationProducts.AsmProduct.Name);
+                SubscribeToChanges(RcmProducts.AsmData, RcmProducts.Asm);
                 AddAppsecSpecificInstrumentations();
                 _rateLimiter ??= new(_settings.TraceRateLimit);
                 Enabled = true;
@@ -456,7 +442,7 @@ namespace Datadog.Trace.AppSec
         {
             if (Enabled)
             {
-                _rcmSubscription = _rcmSubscription?.RemoveProductKeys(AsmRemoteConfigurationProducts.AsmDataProduct.Name, AsmRemoteConfigurationProducts.AsmProduct.Name);
+                _rcmSubscription?.RemoveProductKeys(RcmProducts.AsmData, RcmProducts.Asm);
                 RemoveAppsecSpecificInstrumentations();
                 Enabled = false;
                 Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
@@ -481,7 +467,7 @@ namespace Datadog.Trace.AppSec
 
         private void RunShutdown()
         {
-            _rcmSubscription?.Dispose();
+            _rcmSubscriptionManager.Unsubscribe(_rcmSubscription);
             Dispose();
         }
     }

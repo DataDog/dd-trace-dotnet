@@ -12,8 +12,6 @@ namespace Datadog.Trace.AppSec.Rcm;
 
 internal class AsmDataProduct : AsmRemoteConfigurationProduct
 {
-    public override string Name => "ASM_DATA";
-
     protected override void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
     {
         foreach (var file in files)

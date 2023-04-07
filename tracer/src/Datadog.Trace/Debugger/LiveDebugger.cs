@@ -33,7 +33,8 @@ namespace Datadog.Trace.Debugger
 
         private readonly DebuggerSettings _settings;
         private readonly IDiscoveryService _discoveryService;
-        private readonly IRemoteConfigurationManager _remoteConfigurationManager;
+        private readonly IRcmSubscriptionManager _subscriptionManager;
+        private readonly ISubscription _subscription;
         private readonly IDebuggerSink _debuggerSink;
         private readonly ILineProbeResolver _lineProbeResolver;
         private readonly List<ProbeDefinition> _unboundProbes;
@@ -48,7 +49,7 @@ namespace Datadog.Trace.Debugger
             DebuggerSettings settings,
             string serviceName,
             IDiscoveryService discoveryService,
-            IRemoteConfigurationManager remoteConfigurationManager,
+            IRcmSubscriptionManager remoteConfigurationManager,
             ILineProbeResolver lineProbeResolver,
             IDebuggerSink debuggerSink,
             IProbeStatusPoller probeStatusPoller,
@@ -60,18 +61,23 @@ namespace Datadog.Trace.Debugger
             _lineProbeResolver = lineProbeResolver;
             _debuggerSink = debuggerSink;
             _probeStatusPoller = probeStatusPoller;
-            _remoteConfigurationManager = remoteConfigurationManager;
+            _subscriptionManager = remoteConfigurationManager;
             _configurationUpdater = configurationUpdater;
             _dogStats = dogStats;
             _unboundProbes = new List<ProbeDefinition>();
-            Product = new LiveDebuggerProduct();
             ServiceName = serviceName;
+            _subscription = new Subscription(
+                (updates, removals) =>
+                {
+                    AcceptAddedConfiguration(updates.Values.SelectMany(u => u).Select(i => new NamedRawFile(i.Path, i.Contents)));
+                    AcceptRemovedConfiguration(removals.Values.SelectMany(u => u));
+                    return new List<ApplyDetails>(0);
+                },
+                RcmProducts.LiveDebugging);
             discoveryService?.SubscribeToChanges(DiscoveryCallback);
         }
 
         public static LiveDebugger Instance { get; private set; }
-
-        public LiveDebuggerProduct Product { get; }
 
         public string ServiceName { get; }
 
@@ -79,7 +85,7 @@ namespace Datadog.Trace.Debugger
             DebuggerSettings settings,
             string serviceName,
             IDiscoveryService discoveryService,
-            IRemoteConfigurationManager remoteConfigurationManager,
+            IRcmSubscriptionManager remoteConfigurationManager,
             ILineProbeResolver lineProbeResolver,
             IDebuggerSink debuggerSink,
             IProbeStatusPoller probeStatusPoller,
@@ -107,14 +113,7 @@ namespace Datadog.Trace.Debugger
             try
             {
                 Log.Information("Live Debugger initialization started");
-                _remoteConfigurationManager.SubscribeToChanges(
-                    (updates, removals) =>
-                    {
-                        AcceptAddedConfiguration(updates.Values.SelectMany(u => u).Select(i => new NamedRawFile(i.Path, i.Contents)));
-                        AcceptRemovedConfiguration(removals.Values.SelectMany(u => u));
-                        return new List<ApplyDetails>(0);
-                    },
-                    LiveDebuggerProduct.ProductName);
+                _subscriptionManager.SubscribeToChanges(_subscription);
 
                 DebuggerSnapshotSerializer.SetConfig(_settings);
                 AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
@@ -162,6 +161,7 @@ namespace Datadog.Trace.Debugger
                 LifetimeManager.Instance.AddShutdownTask(_debuggerSink.Dispose);
                 LifetimeManager.Instance.AddShutdownTask(_probeStatusPoller.Dispose);
                 LifetimeManager.Instance.AddShutdownTask(_dogStats.Dispose);
+                LifetimeManager.Instance.AddShutdownTask(() => _subscriptionManager.Unsubscribe(_subscription));
             }
         }
 

@@ -24,7 +24,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
-    internal partial class RemoteConfigurationManager : IRemoteConfigurationManager
+    internal class RemoteConfigurationManager : IRemoteConfigurationManager
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationManager));
         private static readonly object LockObject = new object();
@@ -36,6 +36,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private readonly IRemoteConfigurationApi _remoteConfigurationApi;
         private readonly IGitMetadataTagsProvider _gitMetadataTagsProvider;
         private readonly TimeSpan _pollInterval;
+        private readonly IRcmSubscriptionManager _subscriptionManager;
 
         private readonly CancellationTokenSource _cancellationSource;
 
@@ -44,10 +45,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         /// </summary>
         private readonly Dictionary<string, RemoteConfigurationCache> _appliedConfigurations = new();
 
-        private readonly List<ISubscription> _subscriptions = new();
-
         private readonly int _rootVersion;
-        private HashSet<string> _subscriptionsProductKeys = new();
         private BigInteger _capabilities;
         private int _targetsVersion;
         private string? _lastPollError;
@@ -62,7 +60,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             string id,
             RcmClientTracer rcmTracer,
             TimeSpan pollInterval,
-            IGitMetadataTagsProvider gitMetadataTagsProvider)
+            IGitMetadataTagsProvider gitMetadataTagsProvider,
+            IRcmSubscriptionManager subscriptionManager)
         {
             _discoveryService = discoveryService;
             _remoteConfigurationApi = remoteConfigurationApi;
@@ -74,13 +73,14 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             _rootVersion = 1;
             _targetsVersion = 0;
             _lastPollError = null;
+            _subscriptionManager = subscriptionManager;
             _cancellationSource = new CancellationTokenSource();
             discoveryService.SubscribeToChanges(SetRcmEnabled);
         }
 
         public static RemoteConfigurationManager? Instance { get; private set; }
 
-        public static RemoteConfigurationManager Create(IDiscoveryService discoveryService, IRemoteConfigurationApi remoteConfigurationApi, RemoteConfigurationSettings settings, string serviceName, ImmutableTracerSettings tracerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
+        public static RemoteConfigurationManager Create(IDiscoveryService discoveryService, IRemoteConfigurationApi remoteConfigurationApi, RemoteConfigurationSettings settings, string serviceName, ImmutableTracerSettings tracerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IRcmSubscriptionManager subscriptionManager)
         {
             var tags = GetTags(settings, tracerSettings);
             lock (LockObject)
@@ -91,7 +91,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     id: settings.Id,
                     rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, TraceUtil.NormalizeTag(tracerSettings.Environment), tracerSettings.ServiceVersion, tags),
                     pollInterval: settings.PollInterval,
-                    gitMetadataTagsProvider);
+                    gitMetadataTagsProvider,
+                    subscriptionManager);
             }
 
             while (_initializationQueue.TryDequeue(out var action))
@@ -166,9 +167,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             while (!_cancellationSource.IsCancellationRequested)
             {
                 var isRcmEnabled = Volatile.Read(ref _isRcmEnabled);
-                var anySubscriber = _subscriptions.Count > 0;
 
-                if (isRcmEnabled && anySubscriber)
+                if (isRcmEnabled && _subscriptionManager.HasAnySubscription)
                 {
                     await Poll().ConfigureAwait(false);
                     _lastPollError = null;
@@ -243,7 +243,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             Array.Reverse(capabilitiesArray);
 #endif
             var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, _lastPollError != null, _lastPollError, _backendClientState);
-            var rcmClient = new RcmClient(_id, _subscriptionsProductKeys, _rcmTracer, rcmState, capabilitiesArray);
+            var rcmClient = new RcmClient(_id, _subscriptionManager.ProductKeys, _rcmTracer, rcmState, capabilitiesArray);
             EnrichTagsWithGitMetadata(rcmClient.ClientTracer.Tags);
             var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
             return rcmRequest;
@@ -275,7 +275,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         {
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                var description = response.TargetFiles.Count > 0 ? "with the following paths: " + string.Join(",", response.TargetFiles.Select(t => t.Path)) : "that is empty.";
+                var description = response.TargetFiles.Count > 0
+                    ? "with the following paths: " + string.Join(",", response.TargetFiles.Select(t => t.Path))
+                    : "that is empty.";
                 Log.Debug("Received Remote Configuration response {ResponseDescription}.", description);
             }
 
@@ -288,14 +290,17 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 var remoteConfigurationPath = RemoteConfigurationPath.FromPath(clientConfig);
                 receivedPaths.Add(remoteConfigurationPath.Path);
                 var signed = response.Targets.Signed.Targets;
-                var targetFiles = (response.TargetFiles ?? Enumerable.Empty<RcmFile>()).ToDictionary(f => f.Path, f => f);
+                var targetFiles =
+                    (response.TargetFiles ?? Enumerable.Empty<RcmFile>()).ToDictionary(f => f.Path, f => f);
 
                 if (!signed.TryGetValue(remoteConfigurationPath.Path, out var signedTarget))
                 {
                     ThrowHelper.ThrowException($"Missing config {remoteConfigurationPath.Path} in targets");
                 }
 
-                var isConfigApplied = _appliedConfigurations.TryGetValue(remoteConfigurationPath.Path, out var appliedConfig) && appliedConfig.Hashes.SequenceEqual(signedTarget.Hashes);
+                var isConfigApplied =
+                    _appliedConfigurations.TryGetValue(remoteConfigurationPath.Path, out var appliedConfig) &&
+                    appliedConfig.Hashes.SequenceEqual(signedTarget.Hashes);
                 if (isConfigApplied)
                 {
                     continue;
@@ -329,7 +334,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
                 if (!removedConfigsByProduct.ContainsKey(appliedConfiguration.Value.Path.Product))
                 {
-                    removedConfigsByProduct[appliedConfiguration.Value.Path.Product] = new List<RemoteConfigurationPath>();
+                    removedConfigsByProduct[appliedConfiguration.Value.Path.Product] =
+                        new List<RemoteConfigurationPath>();
                 }
 
                 removedConfigsByProduct[appliedConfiguration.Value.Path.Product].Add(appliedConfiguration.Value.Path);
@@ -344,52 +350,27 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 }
             }
 
-            // call subscriptions
-            foreach (var subscription in _subscriptions)
+            var results = _subscriptionManager.Update(configByProducts, removedConfigsByProduct);
+
+            if (results != null)
             {
-                var configByProduct = configByProducts.Where(c => subscription.ProductKeys.Contains(c.Key)).ToDictionary(c => c.Key, c => c.Value);
-                if (configByProduct.Count == 0 && removedConfigsByProduct?.Count == 0)
+                foreach (var result in results)
                 {
-                    continue;
-                }
-
-                try
-                {
-                    List<ApplyDetails>? results = null;
-                    try
+                    switch (result.ApplyState)
                     {
-                        results = subscription.Invoke(configByProduct, removedConfigsByProduct);
+                        case ApplyStates.UNACKNOWLEDGED:
+                            // Do nothing
+                            break;
+                        case ApplyStates.ACKNOWLEDGED:
+                            _appliedConfigurations[result.Filename].Applied();
+                            break;
+                        case ApplyStates.ERROR:
+                            _appliedConfigurations[result.Filename].ErrorOccured(result.Error);
+                            break;
+                        default:
+                            Log.Warning("Unexpected ApplyState: {ApplyState}", result.ApplyState);
+                            break;
                     }
-                    catch (Exception e)
-                    {
-                        Log.Error(e, "Failed to apply remote configurations for products {ProductKeys}", string.Join(", ", subscription.ProductKeys));
-                    }
-
-                    if (results != null)
-                    {
-                        foreach (var result in results)
-                        {
-                            switch (result.ApplyState)
-                            {
-                                case ApplyStates.UNACKNOWLEDGED:
-                                    // Do nothing
-                                    break;
-                                case ApplyStates.ACKNOWLEDGED:
-                                    _appliedConfigurations[result.Filename].Applied();
-                                    break;
-                                case ApplyStates.ERROR:
-                                    _appliedConfigurations[result.Filename].ErrorOccured(result.Error);
-                                    break;
-                                default:
-                                    Log.Warning("Unexpected ApplyState: {ApplyState}", result.ApplyState);
-                                    break;
-                            }
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e, "An error happened while polling new changes from remote configuration");
                 }
             }
         }
@@ -397,27 +378,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private void SetRcmEnabled(AgentConfiguration c)
         {
             _isRcmEnabled = !string.IsNullOrEmpty(c.ConfigurationEndpoint);
-        }
-
-        /// <summary>
-        /// Subscribe to changes in rcm
-        /// </summary>
-        /// <param name="callback">callback func that returns the applied status. The callback takes first the changed configs and second, the removed configs, always by product name as a key</param>
-        /// <param name="productKeys">productKeys (names)</param>
-        /// <returns>the subscription</returns>
-        public ISubscription SubscribeToChanges(Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, List<ApplyDetails>> callback, params string[] productKeys)
-        {
-            var subscription = new Subscription(this, callback, productKeys);
-            _subscriptions.Add(subscription);
-            _subscriptionsProductKeys.UnionWith(productKeys);
-            return subscription;
-        }
-
-        public void Unsubscribe(ISubscription subscription)
-        {
-            _subscriptions.Remove(subscription);
-            // we cant just remove the keys here as we want to allow more than one subscriptions to the same key
-            _subscriptionsProductKeys = new HashSet<string>(_subscriptions.SelectMany(s => s.ProductKeys));
         }
     }
 }

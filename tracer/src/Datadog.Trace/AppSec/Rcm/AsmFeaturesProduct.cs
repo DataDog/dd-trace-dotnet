@@ -15,8 +15,6 @@ namespace Datadog.Trace.AppSec.Rcm;
 
 internal class AsmFeaturesProduct : AsmRemoteConfigurationProduct
 {
-    public override string Name => "ASM_FEATURES";
-
     internal override void UpdateRemoteConfigurationStatus(List<RemoteConfiguration>? files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus)
     {
         base.UpdateRemoteConfigurationStatus(files, removedConfigsForThisProduct, configurationStatus);
