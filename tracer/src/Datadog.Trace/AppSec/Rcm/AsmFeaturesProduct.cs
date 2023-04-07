@@ -13,15 +13,9 @@ using Datadog.Trace.RemoteConfigurationManagement;
 
 namespace Datadog.Trace.AppSec.Rcm;
 
-internal class AsmFeaturesProduct : AsmRemoteConfigurationProduct
+internal class AsmFeaturesProduct : IAsmConfigUpdater
 {
-    internal override void UpdateRemoteConfigurationStatus(List<RemoteConfiguration>? files, List<RemoteConfigurationPath>? removedConfigsForThisProduct, ConfigurationStatus configurationStatus)
-    {
-        base.UpdateRemoteConfigurationStatus(files, removedConfigsForThisProduct, configurationStatus);
-        configurationStatus.EnableAsm = !configurationStatus.AsmFeaturesByFile.IsEmpty() && configurationStatus.AsmFeaturesByFile.All(a => a.Value.Enabled == true);
-    }
-
-    protected override void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
+    public void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
     {
         foreach (var file in files)
         {
@@ -35,7 +29,7 @@ internal class AsmFeaturesProduct : AsmRemoteConfigurationProduct
         }
     }
 
-    protected override void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
+    public void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
     {
         foreach (var removedConfig in removedConfigsForThisProduct)
         {

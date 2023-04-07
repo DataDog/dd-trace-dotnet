@@ -11,33 +11,36 @@ using Datadog.Trace.RemoteConfigurationManagement;
 
 namespace Datadog.Trace.AppSec.Rcm;
 
-internal class AsmProduct : AsmRemoteConfigurationProduct
+internal class AsmProduct : IAsmConfigUpdater
 {
-    protected override void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
+    public void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
     {
         foreach (var file in files)
         {
-            var asmConfig = new NamedRawFile(file.Path, file.Contents).Deserialize<Payload>();
-            if (asmConfig.TypedFile == null)
+            var payload = new NamedRawFile(file.Path, file.Contents).Deserialize<Payload>();
+            if (payload.TypedFile == null)
             {
                 continue;
             }
 
-            if (asmConfig.TypedFile.RuleOverrides != null)
+            var asmConfig = payload.TypedFile;
+            var asmConfigName = payload.Name;
+
+            if (asmConfig.RuleOverrides != null)
             {
-                configurationStatus.RulesOverridesByFile[asmConfig.Name] = asmConfig.TypedFile.RuleOverrides;
+                configurationStatus.RulesOverridesByFile[asmConfigName] = asmConfig.RuleOverrides;
                 configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
             }
 
-            if (asmConfig.TypedFile.Exclusions != null)
+            if (asmConfig.Exclusions != null)
             {
-                configurationStatus.ExclusionsByFile[asmConfig.Name] = asmConfig.TypedFile.Exclusions;
+                configurationStatus.ExclusionsByFile[asmConfigName] = asmConfig.Exclusions;
                 configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsKey);
             }
 
-            if (asmConfig.TypedFile.Actions != null)
+            if (asmConfig.Actions != null)
             {
-                foreach (var action in asmConfig.TypedFile.Actions)
+                foreach (var action in asmConfig.Actions)
                 {
                     if (action.Id is not null)
                     {
@@ -45,7 +48,7 @@ internal class AsmProduct : AsmRemoteConfigurationProduct
                     }
                 }
 
-                if (asmConfig.TypedFile.Actions.Length == 0)
+                if (asmConfig.Actions.Length == 0)
                 {
                     configurationStatus.Actions.Clear();
                 }
@@ -53,7 +56,7 @@ internal class AsmProduct : AsmRemoteConfigurationProduct
         }
     }
 
-    protected override void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
+    public void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
     {
         var removedRulesOveride = false;
         var removedExclusions = false;

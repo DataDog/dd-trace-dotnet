@@ -10,9 +10,9 @@ using Datadog.Trace.RemoteConfigurationManagement;
 
 namespace Datadog.Trace.AppSec.Rcm;
 
-internal class AsmDataProduct : AsmRemoteConfigurationProduct
+internal class AsmDataProduct : IAsmConfigUpdater
 {
-    protected override void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
+    public void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
     {
         foreach (var file in files)
         {
@@ -27,7 +27,7 @@ internal class AsmDataProduct : AsmRemoteConfigurationProduct
         }
     }
 
-    protected override void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
+    public void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
     {
         var removedData = false;
         foreach (var configurationPath in removedConfigsForThisProduct)
