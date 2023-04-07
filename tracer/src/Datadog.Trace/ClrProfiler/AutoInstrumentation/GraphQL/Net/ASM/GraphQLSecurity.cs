@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM;
@@ -78,6 +79,7 @@ internal sealed class GraphQLSecurity
         where TContext : IExecutionContext
         where TNode : IExecutionNode
     {
+        Console.WriteLine("REGISTER A RESOLVER!!!!!!");
         var scope = Tracer.Instance.ActiveScope;
         var resolverName = node.Name;
 
@@ -109,17 +111,28 @@ internal sealed class GraphQLSecurity
     private static object GetArgumentValue<TContext>(TContext context, object arg)
         where TContext : IExecutionContext
     {
-        object value = null;
-        if (arg.TryDuckCast<GraphQLVariableProxy>(out var argVariable))
+        if (arg is null)
         {
-            var variableName = argVariable.Name.StringValue;
-
-            // Get variable value from the name
-            value = GetVariableValue(context, variableName);
+            return null;
         }
-        else if (arg.TryDuckCast<GraphQLStringValueProxy>(out var argString))
+
+        object value = null;
+
+        if (arg.TryDuckCast<ASTNode>(out var node))
         {
-            value = argString.Value.ToString();
+            value = node.Kind switch
+            {
+                ASTNodeKindProxy.Variable => GetVariableValue(context, arg.DuckCast<GraphQLVariableProxy>().Name.StringValue),
+                ASTNodeKindProxy.StringValue => arg.DuckCast<GraphQLValueProxy>().ToString(),
+                ASTNodeKindProxy.IntValue => int.Parse(arg.DuckCast<GraphQLValueProxy>().Value.ToString()),
+                ASTNodeKindProxy.FloatValue => float.Parse(arg.DuckCast<GraphQLValueProxy>().Value.ToString()),
+                ASTNodeKindProxy.BooleanValue => bool.Parse(arg.DuckCast<GraphQLValueProxy>().Value.ToString()),
+                ASTNodeKindProxy.EnumValue => arg.DuckCast<GraphQLValueNameProxy>().Name.StringValue,
+                ASTNodeKindProxy.ListValue => arg.DuckCast<GraphQLValueListProxy>().Values.Select(x => GetArgumentValue<TContext>(context, x)).ToList(),
+                ASTNodeKindProxy.ObjectValue => arg.DuckCast<GraphQLValueObjectProxy>().Fields!.Select(x => GetArgumentValue<TContext>(context, x)).ToList(),
+
+                _ => null
+            };
         }
 
         return value;
