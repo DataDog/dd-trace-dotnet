@@ -93,15 +93,22 @@ internal sealed class GraphQLSecurity
         Dictionary<string, object> resolverArguments = new();
         foreach (var arg in node.Field.Arguments)
         {
-            if (arg.TryDuckCast<GraphQLArgumentProxy>(out var argument))
+            try
             {
-                var name = argument.Name.StringValue;
-                var value = GetArgumentValue(context, argument.Value);
-                resolverArguments.Add(name, value);
+                if (arg.TryDuckCast<GraphQLArgumentProxy>(out var argument))
+                {
+                    var name = argument.Name.StringValue;
+                    var value = GetArgumentValue(context, argument.Value);
+                    resolverArguments.Add(name, value);
+                }
+                else
+                {
+                    // An unknown type of Argument is in the AST
+                }
             }
-            else
+            catch
             {
-                // An unknown type of Argument is in the AST
+                // Failed to add the argument to the resolver args list
             }
         }
 
@@ -123,7 +130,7 @@ internal sealed class GraphQLSecurity
             value = node.Kind switch
             {
                 ASTNodeKindProxy.Variable => GetVariableValue(context, arg.DuckCast<GraphQLVariableProxy>().Name.StringValue),
-                ASTNodeKindProxy.StringValue => arg.DuckCast<GraphQLValueProxy>().ToString(),
+                ASTNodeKindProxy.StringValue => arg.DuckCast<GraphQLValueProxy>().Value.ToString(),
                 ASTNodeKindProxy.IntValue => int.Parse(arg.DuckCast<GraphQLValueProxy>().Value.ToString()),
                 ASTNodeKindProxy.FloatValue => float.Parse(arg.DuckCast<GraphQLValueProxy>().Value.ToString()),
                 ASTNodeKindProxy.BooleanValue => bool.Parse(arg.DuckCast<GraphQLValueProxy>().Value.ToString()),
