@@ -1,4 +1,4 @@
- <Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">6.0.0</ApiVersion>

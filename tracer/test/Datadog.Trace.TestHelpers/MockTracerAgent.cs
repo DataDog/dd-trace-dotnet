@@ -246,46 +246,38 @@ namespace Datadog.Trace.TestHelpers
             return stats;
         }
 
-        public IImmutableList<MockDataStreamsPayload> WaitForDataStreams(
+        private async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreams(
             int timeoutInMilliseconds,
             Func<IImmutableList<MockDataStreamsPayload>, bool> waitFunc)
         {
             var source = new CancellationTokenSource();
             source.CancelAfter(timeoutInMilliseconds);
 
-            using var task = new Task(
-                () =>
-                {
-                    while (!source.Token.IsCancellationRequested && !waitFunc(DataStreams))
-                    {
-                        Thread.Sleep(100);
-                    }
-                });
-            task.Start();
-            // just to be safe and avoid using wait without a timeout we gonna
-            // use double of the originally set timeout
-            task.Wait(timeoutInMilliseconds * 2);
+            while (!source.IsCancellationRequested && !waitFunc(DataStreams))
+            {
+                await Task.Delay(500, source.Token);
+            }
 
             return DataStreams;
         }
 
-        public IImmutableList<MockDataStreamsPayload> WaitForDataStreamsPoints(
+        public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsPoints(
             int statsCount,
             int timeoutInMilliseconds = 20000)
         {
-            return WaitForDataStreams(
-                timeoutInMilliseconds,
-                (stats) =>
-                {
-                    return stats.Sum(s => s.Stats.Sum(bucket => bucket.Stats.Length)) == statsCount;
-                });
+            return await WaitForDataStreams(
+                       timeoutInMilliseconds,
+                       (stats) =>
+                       {
+                           return DataStreams.Sum(s => s.Stats.Sum(bucket => bucket.Stats.Length)) == statsCount;
+                       });
         }
 
-        public IImmutableList<MockDataStreamsPayload> WaitForDataStreams(
+        public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreams(
             int payloadCount,
             int timeoutInMilliseconds = 20000)
         {
-            return WaitForDataStreams(
+            return await WaitForDataStreams(
                 timeoutInMilliseconds,
                 (stats) => stats.Count == payloadCount);
         }

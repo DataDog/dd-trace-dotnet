@@ -71,7 +71,7 @@ public class DataStreamsMonitoringTransportTests
 
         await writer.DisposeAsync();
 
-        var result = agent.WaitForDataStreams(1);
+        var result = await agent.WaitForDataStreams(1);
 
         var payload = result.Should().ContainSingle().Subject;
         payload.Env.Should().Be("env");

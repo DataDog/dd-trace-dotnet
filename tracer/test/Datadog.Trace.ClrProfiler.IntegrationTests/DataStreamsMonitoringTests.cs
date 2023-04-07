@@ -159,7 +159,7 @@ public class DataStreamsMonitoringTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "ArmUnsupported")]
-    public void WhenDisabled_DoesNotSubmitDataStreams()
+    public async void WhenDisabled_DoesNotSubmitDataStreams()
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "0");
 
@@ -167,7 +167,7 @@ public class DataStreamsMonitoringTests : TestHelper
         using var processResult = RunSampleAndWaitForExit(agent);
 
         using var assertionScope = new AssertionScope();
-        var dataStreams = agent.WaitForDataStreams(2);
+        var dataStreams = await agent.WaitForDataStreams(2);
         dataStreams.Should().BeEmpty();
     }
 
