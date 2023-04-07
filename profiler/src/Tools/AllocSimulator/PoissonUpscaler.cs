@@ -7,12 +7,17 @@ namespace AllocSimulator
 {
     public class PoissonUpscaler : UpscalerBase
     {
-        private const float MeanSamplingSize = 512 * 1024;      // 512 KB is the mean of the distribution for Java
+        private float _meanPoisson;
+
+        public PoissonUpscaler(int meanPoisson)
+        {
+            _meanPoisson = meanPoisson * 1024;
+        }
 
         protected override void OnUpscale(AllocInfo sampled, ref AllocInfo upscaled)
         {
             var averageSize = (double)sampled.Size / (double)sampled.Count;
-            var scale = 1 / (1 - Math.Exp(-averageSize / MeanSamplingSize));
+            var scale = 1 / (1 - Math.Exp(-averageSize / _meanPoisson));
 
             upscaled.Size = (long)((float)sampled.Size * scale);
             upscaled.Count = (int)((float)sampled.Count * scale);

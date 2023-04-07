@@ -7,14 +7,14 @@ namespace AllocSimulator
 {
     public class PoissonSampler : ISampler
     {
-        private const ulong MeanSamplingSize = 512 * 1024;      // 512 KB is the mean of the distribution for Java
-
         private Random _randomizer = new Random(DateTime.Now.Millisecond);
         private ulong _totalAllocatedAmount;
         private ulong _threshold;  // number of bytes until the next sample
+        private float _meanPoisson;
 
-        public PoissonSampler()
+        public PoissonSampler(int meanPoisson)
         {
+            _meanPoisson = meanPoisson * 1024;
             _threshold = GetNextThreshold();
         }
 
@@ -36,7 +36,7 @@ namespace AllocSimulator
         {
             var q = _randomizer.NextDouble();
 
-            ulong next = (ulong)((-Math.Log(1 - q)) * MeanSamplingSize) + 1;
+            ulong next = (ulong)((-Math.Log(1 - q)) * _meanPoisson) + 1;
             return next;
         }
     }
