@@ -276,8 +276,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 var description = response.TargetFiles.Count > 0
-                    ? "with the following paths: " + string.Join(",", response.TargetFiles.Select(t => t.Path))
-                    : "that is empty.";
+                                      ? "with the following paths: " + string.Join(",", response.TargetFiles.Select(t => t.Path))
+                                      : "that is empty.";
                 Log.Debug("Received Remote Configuration response {ResponseDescription}.", description);
             }
 
@@ -296,6 +296,12 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 if (!signed.TryGetValue(remoteConfigurationPath.Path, out var signedTarget))
                 {
                     ThrowHelper.ThrowException($"Missing config {remoteConfigurationPath.Path} in targets");
+                }
+
+                if (!_subscriptionManager.ProductKeys.Contains(remoteConfigurationPath.Product))
+                {
+                    Log.Warning("Received config {RemoteConfigurationPath} for a product that was not requested", remoteConfigurationPath);
+                    continue;
                 }
 
                 var isConfigApplied =

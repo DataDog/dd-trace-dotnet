@@ -44,7 +44,7 @@ namespace Datadog.Trace.AppSec
 
         private readonly ConfigurationStatus _configurationStatus;
         private readonly bool _noLocalRules;
-        private IRcmSubscriptionManager _rcmSubscriptionManager;
+        private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
         private ISubscription? _rcmSubscription;
         private LibraryInitializationResult? _libraryInitializationResult;
         private IWaf? _waf;
@@ -66,7 +66,7 @@ namespace Datadog.Trace.AppSec
 
         private Security(SecuritySettings? settings = null, IWaf? waf = null, IRcmSubscriptionManager? rcmSubscriptionManager = null)
         {
-            _rcmSubscriptionManager ??= RcmSubscriptionManager.Instance;
+            _rcmSubscriptionManager = rcmSubscriptionManager ?? RcmSubscriptionManager.Instance;
             try
             {
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
