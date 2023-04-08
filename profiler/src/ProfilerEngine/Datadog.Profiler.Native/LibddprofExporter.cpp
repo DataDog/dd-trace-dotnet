@@ -529,6 +529,7 @@ bool LibddprofExporter::Export()
         additionalTags.Add("number_of_cpu_cores", std::to_string(OsSpecificApi::GetProcessorCount()));
 
         auto* request = CreateRequest(serializedProfile, exporter, additionalTags);
+
         if (request != nullptr)
         {
             exported &= Send(request, exporter);
@@ -538,6 +539,7 @@ bool LibddprofExporter::Export()
             exported = false;
             Log::Error("Unable to create a request to send the profile.");
         }
+
         ddog_prof_Exporter_drop(exporter);
     }
 
@@ -685,16 +687,11 @@ bool LibddprofExporter::Send(ddog_prof_Exporter_Request* request, ddog_prof_Expo
 
     auto result = ddog_prof_Exporter_send(exporter, &request, nullptr);
 
-    on_leave
-    {
-        if (result.tag == DDOG_PROF_EXPORTER_SEND_RESULT_ERR)
-            ddog_Error_drop(&result.err);
-    };
-
     if (result.tag == DDOG_PROF_EXPORTER_SEND_RESULT_ERR)
     {
         auto errorMessage = ddog_Error_message(&result.err);
         Log::Error("Failed to send profile (", std::string_view(errorMessage.ptr, errorMessage.len), ")"); // NOLINT
+        ddog_Error_drop(&result.err);
         return false;
     }
 
@@ -744,7 +741,11 @@ bool LibddprofExporter::SerializedProfile::IsValid() const
 
 LibddprofExporter::SerializedProfile::~SerializedProfile()
 {
-    if (!IsValid())
+    if (IsValid())
+    {
+        ddog_prof_EncodedProfile_drop(&_encodedProfile.ok);
+    }
+    else
     {
         ddog_Error_drop(&_encodedProfile.err);
     }
