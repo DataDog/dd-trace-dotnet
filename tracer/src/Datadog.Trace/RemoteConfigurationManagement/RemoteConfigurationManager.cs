@@ -295,6 +295,12 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     ThrowHelper.ThrowException($"Missing config {remoteConfigurationPath.Path} in targets");
                 }
 
+                if (!_subscriptionsProductKeys.Contains(remoteConfigurationPath.Product))
+                {
+                    Log.Warning("Received config {RemoteConfigurationPath} for a product that was not requested", remoteConfigurationPath);
+                    continue;
+                }
+
                 var isConfigApplied = _appliedConfigurations.TryGetValue(remoteConfigurationPath.Path, out var appliedConfig) && appliedConfig.Hashes.SequenceEqual(signedTarget.Hashes);
                 if (isConfigApplied)
                 {
