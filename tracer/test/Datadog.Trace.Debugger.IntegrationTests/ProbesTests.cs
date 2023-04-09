@@ -590,7 +590,7 @@ public class ProbesTests : TestHelper
 
                                 break;
 
-                            case "expression":
+                            case "expr":
                                 if (value.StartsWith("Convert("))
                                 {
                                     var stringToRemove = ", IConvertible";
