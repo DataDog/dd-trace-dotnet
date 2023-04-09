@@ -15,11 +15,13 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 503,
-      http.url: http://localhost/api/statuscode/503,
+      http.url: http://localhost:00000/api/statuscode/503,
       http.useragent: testhelper,
       language: dotnet,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -37,11 +39,13 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 503,
-      http.url: http://localhost/api/statuscode/503,
+      http.url: http://localhost:00000/api/statuscode/503,
       http.useragent: testhelper,
       language: dotnet,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -63,12 +67,14 @@ at Samples.AspNetMvc5.Controllers.ApiController.BadRequestWithStatusCodeAndTrans
       http.request.headers.host: localhost:00000,
       http.route: api/statuscode/{value},
       http.status_code: 503,
-      http.url: http://localhost/api/TransferRequest/503,
+      http.url: http://localhost:00000/api/TransferRequest/503,
       http.useragent: testhelper,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -99,11 +105,13 @@ at Samples.AspNetMvc5.Controllers.ApiController.BadRequestWithStatusCodeAndTrans
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,
-      http.url: http://localhost/api/TransferRequest/503,
+      http.url: http://localhost:00000/api/TransferRequest/503,
       http.useragent: testhelper,
       language: dotnet,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   }
 ]

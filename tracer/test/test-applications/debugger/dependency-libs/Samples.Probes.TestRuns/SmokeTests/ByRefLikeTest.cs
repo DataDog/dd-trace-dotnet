@@ -1,8 +1,8 @@
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LineProbeTestData(10)]
-    [LineProbeTestData(11)]
-    [LineProbeTestData(12)]
+    [LogLineProbeTestData(10)]
+    [LogLineProbeTestData(11)]
+    [LogLineProbeTestData(12)]
     public class ByRefLikeTest : IRun
     {
         public void Run()
@@ -22,19 +22,19 @@ namespace Samples.Probes.TestRuns.SmokeTests
                 _whoAmI = whoAmI;
             }
 
-            [MethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */)]
+            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */, expectProbeStatusFailure: true)]
             public ref ByRefLike CallMe(string @in, ByRefLike byRefLike, ref ByRefLike refByRefLike)
             {
                 return ref refByRefLike;
             }
 
-            [MethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */)]
+            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */, expectProbeStatusFailure: true)]
             public ByRefLike CallMe2(string @in, ByRefLike byRefLike, ref ByRefLike refByRefLike)
             {
                 return byRefLike;
             }
 
-            [MethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */)]
+            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0 /* byref-like is not supported for now */, expectProbeStatusFailure: true)]
             public string CallMe3(string @in, ByRefLike byRefLike, ref ByRefLike refByRefLike)
             {
                 return @in + "Hello World";

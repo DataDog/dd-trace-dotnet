@@ -89,6 +89,28 @@ namespace BuggyBits.Controllers
             return View("Index");
         }
 
+        // GET: Products in parallel with a lock
+        [Route("Products/ParallelLock")]
+        public IActionResult ParallelLock()
+        {
+            var sw = new Stopwatch();
+            sw.Start();
+            var products = dataLayer.GetAllProductsInParallelWithLock($"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}");
+            var productsTable = new StringBuilder(1024 * 100);
+            productsTable.Append("<table><tr><th>Product Name</th><th>Description</th><th>Price</th></tr>");
+            foreach (var product in products)
+            {
+                productsTable.Append($"<tr><td>{product.ProductName}</td><td>{product.Description}</td><td>${product.Price}</td></tr>");
+            }
+
+            productsTable.Append("</table>");
+            sw.Stop();
+
+            ViewData["ElapsedTimeInMs"] = sw.ElapsedMilliseconds;
+            ViewData["ProductsTable"] = productsTable;
+            return View("Index");
+        }
+
         // GET: Product/Info/42
         [Route("Products/Info/{productId}")]
         [Produces("application/json")]

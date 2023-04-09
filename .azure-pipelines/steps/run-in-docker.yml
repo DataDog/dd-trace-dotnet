@@ -6,21 +6,25 @@ parameters:
   - name: 'target'
     type: 'string'
     default: tester
-    
+
   - name: build
     type: boolean
     default: false
-    
+
   - name: command
     type: string
 
   - name: extraArgs
     type: string
     default: ''
-    
+
   - name: 'apiKey'
     type: string
     default: ''
+
+  - name: retryCountForRunCommand
+    type: number
+    default: 0
 
 steps:
 - ${{ if eq(parameters.build, true) }}:
@@ -76,5 +80,6 @@ steps:
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
   displayName: Run '${{ parameters.command }}' in Docker
+  retryCountOnTaskFailure: ${{ parameters.retryCountForRunCommand }}
   env:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}

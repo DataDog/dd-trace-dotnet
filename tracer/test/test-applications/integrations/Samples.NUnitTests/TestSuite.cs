@@ -71,9 +71,10 @@ namespace Samples.NUnitTests
         // **********************************************************************************
 
         [Theory]
-        [TestCase(1, 1, 2)]
-        [TestCase(2, 2, 4)]
-        [TestCase(3, 3, 6)]
+        [Category("ParemeterizedTest")]
+        [TestCase(1, 1, 2, Category = "FirstCase")]
+        [TestCase(2, 2, 4, Category = "SecondCase")]
+        [TestCase(3, 3, 6, Category = "ThirdCase")]
         public void SimpleParameterizedTest(int xValue, int yValue, int expectedResult)
         {
             Assert.AreEqual(expectedResult, xValue + yValue);
@@ -143,4 +144,69 @@ namespace Samples.NUnitTests
 
     public class TestString : TestBase<string>
     { }
+
+    public class TestSetupError : TestBase<object>
+    {
+        [SetUp]
+        public void Setup()
+        {
+            throw new Exception("SetUp exception.");
+        }
+        
+        [Test]
+        public void Test01()
+        {
+        }
+        
+        [Test]
+        public void Test02()
+        {
+        }
+        
+        [Test]
+        public void Test03()
+        {
+        }
+        
+        [Test]
+        public void Test04()
+        {
+        }
+        
+        [Test]
+        public void Test05()
+        {
+        }
+    }
+
+    public class TestFixtureSetupError : TestFixtureTest
+    {
+        public TestFixtureSetupError(string name)
+            : base(name)
+        {}
+        
+        [OneTimeSetUp]
+        public void Setup()
+        {
+            throw new Exception("SetUp exception.");
+        }
+    }
+    
+    public class TestTearDownError : TestBase<object>
+    {
+        [TearDown]
+        public void TearDown()
+        {
+            throw new Exception("TearDown exception.");
+        }
+    }
+
+    public class TestTearDown2Error : TestBase<object>
+    {
+        [OneTimeTearDown]
+        public void TearDown()
+        {
+            throw new Exception("TearDown exception.");
+        }
+    }
 }

@@ -8,6 +8,9 @@
 #include "RawSample.h"
 #include "Sample.h"
 
+#include <string>
+#include <vector>
+
 class RawGarbageCollectionSample : public GCBaseRawSample
 {
 public:
@@ -18,8 +21,8 @@ public:
 
     inline void DoAdditionalTransform(std::shared_ptr<Sample> sample, uint32_t valueOffset) const override
     {
-        sample->AddLabel(Label(Sample::GarbageCollectionReasonLabel, std::to_string(Reason)));
-        sample->AddLabel(Label(Sample::GarbageCollectionTypeLabel, std::to_string(Type)));
+        sample->AddLabel(Label(Sample::GarbageCollectionReasonLabel, GetReasonText()));
+        sample->AddLabel(Label(Sample::GarbageCollectionTypeLabel, GetTypeText()));
         sample->AddLabel(Label(Sample::GarbageCollectionCompactingLabel, (IsCompacting ? "true" : "false")));
 
         // set event type
@@ -32,4 +35,31 @@ public:
     bool IsCompacting;
     uint64_t PauseDuration;  // not used today
     uint64_t TotalDuration;
+
+private:
+    inline std::string GetReasonText() const
+    {
+        if ((size_t)Reason >= _reasons.size())
+        {
+            return std::to_string(Reason);
+        }
+
+        return _reasons[Reason];
+    }
+
+    inline std::string GetTypeText() const
+    {
+        if ((size_t)Type >= _types.size())
+        {
+            return std::to_string(Type);
+        }
+
+        return _types[Type];
+    }
+
+private:
+// text translation of enumerations
+// TODO: update it if new ones appear in forthcoming versions of .NET
+    static const std::vector<std::string> _reasons;
+    static const std::vector<std::string> _types;
 };

@@ -679,7 +679,7 @@ namespace MyTests.TestListNameSpace
     }
 }";
             var (diagnostics, output) = TestHelpers.GetGeneratedOutput<TagListGenerator>(input);
-            Assert.Contains(diagnostics, diag => diag.Id == DuplicateAttributeDiagnostic.Id);
+            Assert.Contains(diagnostics, diag => diag.Id == InvalidMetricPropertyReturnTypeDiagnostic.Id);
         }
 
         [Theory]

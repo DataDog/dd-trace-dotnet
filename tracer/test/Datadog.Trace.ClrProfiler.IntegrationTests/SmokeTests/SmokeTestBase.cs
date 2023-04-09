@@ -75,26 +75,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             {
                 agent.ShouldDeserializeTraces = shouldDeserializeTraces;
 
+                // Command becomes: dotnet.exe <applicationPath>
+                var args = EnvironmentHelper.IsCoreClr() ? applicationPath : null;
                 // Using the following code to avoid possible hangs on WaitForExit due to synchronous reads: https://stackoverflow.com/questions/139593/processstartinfo-hanging-on-waitforexit-why
-                using (var process = new Process())
+                using (var process = ProfilerHelper.StartProcessWithProfiler(executable, EnvironmentHelper, agent, arguments: args, aspNetCorePort: aspNetCorePort, processToProfile: executable))
                 {
-                    // Initialize StartInfo
-                    process.StartInfo.FileName = executable;
-                    EnvironmentHelper.SetEnvironmentVariables(agent, aspNetCorePort, process.StartInfo.Environment, processToProfile: executable);
-                    if (EnvironmentHelper.IsCoreClr())
-                    {
-                        // Command becomes: dotnet.exe <applicationPath>
-                        process.StartInfo.Arguments = applicationPath;
-                    }
-
-                    process.StartInfo.UseShellExecute = false;
-                    process.StartInfo.CreateNoWindow = true;
-                    process.StartInfo.RedirectStandardOutput = true;
-                    process.StartInfo.RedirectStandardError = true;
-                    process.StartInfo.RedirectStandardInput = false;
-
-                    process.Start();
-
                     using var helper = new ProcessHelper(process);
 
                     var ranToCompletion = process.WaitForExit(MaxTestRunMilliseconds) && helper.Drain(MaxTestRunMilliseconds / 2);

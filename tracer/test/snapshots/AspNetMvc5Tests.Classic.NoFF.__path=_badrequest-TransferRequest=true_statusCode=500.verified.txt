@@ -18,12 +18,14 @@ at Samples.AspNetMvc5.Controllers.HomeController.BadRequest(),
       http.request.headers.host: localhost:00000,
       http.route: badrequest,
       http.status_code: 500,
-      http.url: http://localhost/badrequest?TransferRequest=true,
+      http.url: http://localhost:00000/badrequest?TransferRequest=true,
       http.useragent: testhelper,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -56,11 +58,13 @@ at Samples.AspNetMvc5.Controllers.HomeController.BadRequest(),
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,
-      http.url: http://localhost/badrequest?TransferRequest=true,
+      http.url: http://localhost:00000/badrequest?TransferRequest=true,
       http.useragent: testhelper,
       language: dotnet,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   }
 ]

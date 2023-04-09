@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Agent;
-using Datadog.Trace.Ci.Coverage.Models;
+using Datadog.Trace.Ci.Coverage.Models.Tests;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
@@ -60,9 +60,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             var settings = CIVisibility.Settings;
             var sender = new Mock<ICIVisibilityProtocolWriterSender>();
             var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object);
-            var coveragePayload = new CoveragePayload
+            var coveragePayload = new TestCoverage
             {
-                TraceId = 42,
+                SessionId = 42,
+                SuiteId = 56,
                 SpanId = 84,
                 Files =
                 {
@@ -249,13 +250,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public void CoverageBufferTest()
         {
+            int headerSize = Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>.HeaderSize + Ci.Agent.Payloads.MultipartPayload.HeaderSize;
+
             var settings = CIVisibility.Settings;
 
-            int bufferSize = 256;
+            int bufferSize = headerSize + 1024;
             int maxBufferSize = (int)(4.5 * 1024 * 1024);
-            var coveragePayload = new CoveragePayload
+            var coveragePayload = new TestCoverage
             {
-                TraceId = 42,
+                SessionId = 42,
+                SuiteId = 56,
                 SpanId = 84,
                 Files =
                 {
@@ -282,8 +286,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 
                 // The number of items in the events should be the same as the num calculated
                 // without decimals (items that doesn't fit doesn't get added)
-                var numItemsTrunc = bufferSize / coveragePayloadInBytes.Length;
-                Assert.Equal(numItemsTrunc + 1, payloadBuffer.Count);
+                var numItemsTrunc = (bufferSize - headerSize) / coveragePayloadInBytes.Length;
+                Assert.Equal(numItemsTrunc, payloadBuffer.Events.Count);
 
                 bufferSize *= 2;
             }

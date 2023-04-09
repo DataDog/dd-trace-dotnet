@@ -45,7 +45,8 @@ private:
 
     HRESULT ModifyLocalSig(ILRewriter* reWriter, TypeSignature* methodReturnValue, ULONG* callTargetStateIndex,
                            ULONG* exceptionIndex, ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
-                           mdToken* callTargetStateToken, mdToken* exceptionToken, mdToken* callTargetReturnToken, bool isAsyncMethod = false);
+                           mdToken* callTargetStateToken, mdToken* exceptionToken, mdToken* callTargetReturnToken, std::vector<ULONG>& additionalLocalIndices, bool
+                           isAsyncMethod = false);
 
 protected:
     // CallTarget tokens
@@ -69,13 +70,13 @@ protected:
     virtual const shared::WSTRING& GetCallTargetStateType() = 0;
     virtual const shared::WSTRING& GetCallTargetReturnType() = 0;
     virtual const shared::WSTRING& GetCallTargetReturnGenericType() = 0;
-    virtual int GetAdditionalLocalsCount();
     virtual void AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize, bool isAsyncMethod);
 
-    CallTargetTokens(ModuleMetadata* moduleMetadataPtr, const bool enableByRefInstrumentation,
-                     const bool enableCallTargetStateByRef);
+    CallTargetTokens(ModuleMetadata* moduleMetadataPtr, bool enableByRefInstrumentation,
+                     bool enableCallTargetStateByRef);
 
 public:
+    virtual int GetAdditionalLocalsCount();
     mdTypeRef GetObjectTypeRef();
     mdTypeRef GetExceptionTypeRef();
     mdTypeRef GetRuntimeTypeHandleTypeRef();
@@ -87,7 +88,8 @@ public:
                                         ULONG* callTargetStateIndex, ULONG* exceptionIndex,
                                         ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
                                         mdToken* callTargetStateToken, mdToken* exceptionToken,
-                                        mdToken* callTargetReturnToken, ILInstr** firstInstruction, bool isAsyncMethod = false);
+                                        mdToken* callTargetReturnToken, ILInstr** firstInstruction, std::vector<ULONG>& additionalLocalIndices, bool
+                                        isAsyncMethod = false);
 
     HRESULT WriteCallTargetReturnGetReturnValue(void* rewriterWrapperPtr, mdTypeSpec callTargetReturnTypeSpec,
                                                 ILInstr** instruction);

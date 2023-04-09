@@ -18,7 +18,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
@@ -66,11 +65,11 @@ internal class IntelligentTestRunnerClient
 
     public IntelligentTestRunnerClient(string workingDirectory, CIVisibilitySettings? settings = null)
     {
-        _id = SpanIdGenerator.CreateNew().ToString(CultureInfo.InvariantCulture);
+        _id = RandomIdGenerator.Shared.NextSpanId().ToString(CultureInfo.InvariantCulture);
         _settings = settings ?? CIVisibility.Settings;
 
         _workingDirectory = workingDirectory;
-        _environment = TraceUtil.NormalizeTag(_settings.TracerSettings.Environment ?? string.Empty) ?? string.Empty;
+        _environment = TraceUtil.NormalizeTag(_settings.TracerSettings.Environment ?? "none") ?? "none";
         _serviceName = NormalizerTraceProcessor.NormalizeService(_settings.TracerSettings.ServiceName) ?? string.Empty;
         _customConfigurations = null;
 
@@ -219,7 +218,7 @@ internal class IntelligentTestRunnerClient
             return 0;
         }
 
-        Log.Debug<int>("ITR: Local commits = {count}", localCommits.Length);
+        Log.Debug<int>("ITR: Local commits = {Count}", localCommits.Length);
         var remoteCommitsData = await SearchCommitAsync(localCommits).ConfigureAwait(false);
         return await SendObjectsPackFileAsync(localCommits[0], remoteCommitsData).ConfigureAwait(false);
     }
@@ -227,6 +226,11 @@ internal class IntelligentTestRunnerClient
     public async Task<SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false)
     {
         Log.Debug("ITR: Getting settings...");
+        if (!_useEvpProxy && string.IsNullOrEmpty(_settings.ApplicationKey))
+        {
+            Log.Error("ITR: Error getting settings: Application key is missing.");
+        }
+
         var framework = FrameworkDescription.Instance;
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var branchName = await _getBranchNameTask.ConfigureAwait(false);
@@ -260,7 +264,7 @@ internal class IntelligentTestRunnerClient
             default);
         var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
         var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
-        Log.Debug("ITR: JSON RQ = {json}", jsonQuery);
+        Log.Debug("ITR: JSON RQ = {Json}", jsonQuery);
 
         return await WithRetries(InternalGetSettingsAsync, jsonQueryBytes, MaxRetries).ConfigureAwait(false);
 
@@ -271,14 +275,19 @@ internal class IntelligentTestRunnerClient
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug("ITR: Getting settings from: {url}", _settingsUrl.ToString());
+                Log.Debug("ITR: Getting settings from: {Url}", _settingsUrl.ToString());
             }
 
             using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
             CheckResponseStatusCode(response, responseContent, finalTry);
 
-            Log.Debug("ITR: JSON RS = {json}", responseContent);
+            Log.Debug("ITR: JSON RS = {Json}", responseContent);
+            if (string.IsNullOrEmpty(responseContent))
+            {
+                return default;
+            }
+
             var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<SettingsResponse>?>>(responseContent);
             return deserializedResult.Data?.Attributes ?? default;
         }
@@ -287,6 +296,11 @@ internal class IntelligentTestRunnerClient
     public async Task<SkippableTest[]> GetSkippableTestsAsync()
     {
         Log.Debug("ITR: Getting skippable tests...");
+        if (!_useEvpProxy && string.IsNullOrEmpty(_settings.ApplicationKey))
+        {
+            Log.Error("ITR: Error getting skippable tests: Application key is missing.");
+        }
+
         var framework = FrameworkDescription.Instance;
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var currentShaCommand = await _getShaTask.ConfigureAwait(false);
@@ -318,7 +332,7 @@ internal class IntelligentTestRunnerClient
             default);
         var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
         var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
-        Log.Debug("ITR: JSON RQ = {json}", jsonQuery);
+        Log.Debug("ITR: JSON RQ = {Json}", jsonQuery);
 
         return await WithRetries(InternalGetSkippableTestsAsync, jsonQueryBytes, MaxRetries).ConfigureAwait(false);
 
@@ -329,14 +343,19 @@ internal class IntelligentTestRunnerClient
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug("ITR: Searching skippable tests from: {url}", _skippableTestsUrl.ToString());
+                Log.Debug("ITR: Searching skippable tests from: {Url}", _skippableTestsUrl.ToString());
             }
 
             using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
             CheckResponseStatusCode(response, responseContent, finalTry);
 
-            Log.Debug("ITR: JSON RS = {json}", responseContent);
+            Log.Debug("ITR: JSON RS = {Json}", responseContent);
+            if (string.IsNullOrEmpty(responseContent))
+            {
+                return Array.Empty<SkippableTest>();
+            }
+
             var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<SkippableTest>>>(responseContent);
             if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
             {
@@ -375,7 +394,7 @@ internal class IntelligentTestRunnerClient
 
             if (Log.IsEnabled(LogEventLevel.Debug) && deserializedResult.Data.Length != testAttributes.Count)
             {
-                Log.Debug("ITR: JSON Filtered = {json}", JsonConvert.SerializeObject(testAttributes));
+                Log.Debug("ITR: JSON Filtered = {Json}", JsonConvert.SerializeObject(testAttributes));
             }
 
             return testAttributes.ToArray();
@@ -407,7 +426,7 @@ internal class IntelligentTestRunnerClient
 
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var jsonPushedSha = JsonConvert.SerializeObject(new DataArrayEnvelope<Data<object>>(commitRequests, repository), SerializerSettings);
-        Log.Debug("ITR: JSON RQ = {json}", jsonPushedSha);
+        Log.Debug("ITR: JSON RQ = {Json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
 
         return await WithRetries(InternalSearchCommitAsync, jsonPushedShaBytes, MaxRetries).ConfigureAwait(false);
@@ -419,14 +438,19 @@ internal class IntelligentTestRunnerClient
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug("ITR: Searching commits from: {url}", _searchCommitsUrl.ToString());
+                Log.Debug("ITR: Searching commits from: {Url}", _searchCommitsUrl.ToString());
             }
 
             using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
             CheckResponseStatusCode(response, responseContent, finalTry);
 
-            Log.Debug("ITR: JSON RS = {json}", responseContent);
+            Log.Debug("ITR: JSON RS = {Json}", responseContent);
+            if (string.IsNullOrEmpty(responseContent))
+            {
+                return Array.Empty<string>();
+            }
+
             var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<object>>>(responseContent);
             if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
             {
@@ -464,14 +488,14 @@ internal class IntelligentTestRunnerClient
 
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var jsonPushedSha = JsonConvert.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, default), repository), SerializerSettings);
-        Log.Debug("ITR: JSON RQ = {json}", jsonPushedSha);
+        Log.Debug("ITR: JSON RQ = {Json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
 
         long totalUploadSize = 0;
         foreach (var packFile in packFilesObject.Files)
         {
             // Send PackFile content
-            Log.Information("ITR: Sending {packFile}", packFile);
+            Log.Information("ITR: Sending {PackFile}", packFile);
             totalUploadSize += await WithRetries(InternalSendObjectsPackFileAsync, packFile, MaxRetries).ConfigureAwait(false);
 
             // Delete temporal pack file
@@ -481,7 +505,7 @@ internal class IntelligentTestRunnerClient
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "ITR: Error deleting pack file: '{packFile}'", packFile);
+                Log.Warning(ex, "ITR: Error deleting pack file: '{PackFile}'", packFile);
             }
         }
 
@@ -494,11 +518,11 @@ internal class IntelligentTestRunnerClient
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "ITR: Error deleting temporary folder: '{temporaryFolder}'", packFilesObject.TemporaryFolder);
+                Log.Warning(ex, "ITR: Error deleting temporary folder: '{TemporaryFolder}'", packFilesObject.TemporaryFolder);
             }
         }
 
-        Log.Information("ITR: Total pack file upload: {totalUploadSize} bytes", totalUploadSize);
+        Log.Information("ITR: Total pack file upload: {TotalUploadSize} bytes", totalUploadSize);
         return totalUploadSize;
 
         async Task<long> InternalSendObjectsPackFileAsync(string packFile, bool finalTry)
@@ -567,7 +591,7 @@ internal class IntelligentTestRunnerClient
 
             if (packObjectsResultCommand.ExitCode != 0)
             {
-                Log.Warning("ITR: 'git pack-objects...' command error: {stderr}", packObjectsResultCommand.Error);
+                Log.Warning("ITR: 'git pack-objects...' command error: {Stderr}", packObjectsResultCommand.Error);
             }
         }
 
@@ -586,7 +610,7 @@ internal class IntelligentTestRunnerClient
             }
             else
             {
-                Log.Warning("ITR: The file '{packFile}' doesn't exist.", file);
+                Log.Warning("ITR: The file '{PackFile}' doesn't exist.", file);
             }
         }
 
@@ -631,11 +655,11 @@ internal class IntelligentTestRunnerClient
             throw new RateLimitException(rateLimitDurationInSeconds);
         }
 
-        if (response.StatusCode is < 200 or >= 300 && response.StatusCode != 404)
+        if (response.StatusCode is < 200 or >= 300 && response.StatusCode != 404 && response.StatusCode != 502)
         {
             if (finalTry)
             {
-                Log.Error<int, string>("Request failed with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
+                Log.Error<int, string>("ITR: Request failed with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
             }
 
             throw new WebException($"Status: {response.StatusCode}, Content: {responseContent}");
@@ -670,7 +694,7 @@ internal class IntelligentTestRunnerClient
                 if (isFinalTry || sourceException is RateLimitException { DelayTimeInSeconds: null })
                 {
                     // stop retrying
-                    Log.Error<int>(sourceException, "An error occurred while sending intelligent test runner data after {Retries} retries.", retryCount);
+                    Log.Error<int>(sourceException, "ITR: An error occurred while sending intelligent test runner data after {Retries} retries.", retryCount);
                     exceptionDispatchInfo.Throw();
                 }
 

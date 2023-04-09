@@ -71,8 +71,8 @@ namespace datadog::shared::nativeloader
     //
 
     DynamicDispatcherImpl::DynamicDispatcherImpl() :
-        m_continuousProfilerInstance(nullptr), 
-        m_tracerInstance(nullptr), 
+        m_continuousProfilerInstance(nullptr),
+        m_tracerInstance(nullptr),
         m_customInstance(nullptr)
     {
     }
@@ -84,8 +84,9 @@ namespace datadog::shared::nativeloader
         Log::Debug("DynamicDispatcherImpl::LoadConfiguration:  Setting environment variable: ", nativeLoaderPathKey, "=", nativeLoaderPath);
         bool nativeLoaderEnvSet = ::shared::SetEnvironmentValue(nativeLoaderPathKey, nativeLoaderPath);
         Log::Debug("DynamicDispatcherImpl::LoadConfiguration: SetEnvironmentValue result: ", nativeLoaderEnvSet);
-        
-        if (!fs::exists(configFilePath))
+
+        std::error_code ec; // fs::exists might throw if no error_code parameter is provided
+        if (!fs::exists(configFilePath, ec))
         {
             Log::Warn("DynamicDispatcherImpl::LoadConfiguration: Configuration file doesn't exist.");
             return;

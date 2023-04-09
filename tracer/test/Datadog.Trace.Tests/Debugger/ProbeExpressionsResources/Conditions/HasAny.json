@@ -1,0 +1,14 @@
+{
+  "dsl": "hasAny(ref CollectionLocal, { @it == 'hello' })",
+  "hasAny": [
+    {
+      "ref": "CollectionLocal"
+    },
+    {
+      "eq": [
+        "@it",
+        "hello"
+      ]
+    }
+  ]
+}

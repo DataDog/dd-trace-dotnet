@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -41,7 +42,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             };
 
             // CI visibility mode checks if there's a running agent
-            using var agent = EnableCiVisibilityMode ? MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort()) : null;
+            using var agent = EnableCiVisibilityMode ? GetMockTracerAgent() : null;
 
             var agentUrl = $"http://localhost:{agent?.Port ?? 1111}";
 
@@ -98,7 +99,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             };
 
             // CI visibility mode checks if there's a running agent
-            using var agent = EnableCiVisibilityMode ? MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort()) : null;
+            using var agent = EnableCiVisibilityMode ? GetMockTracerAgent() : null;
 
             var agentUrl = $"http://localhost:{agent?.Port ?? 1111}";
 
@@ -133,7 +134,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             };
 
             // CI visibility mode checks if there's a running agent
-            using var agent = EnableCiVisibilityMode ? MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort()) : null;
+            using var agent = EnableCiVisibilityMode ? GetMockTracerAgent() : null;
 
             var agentUrl = $"http://localhost:{agent?.Port ?? 1111}";
 
@@ -150,7 +151,15 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             exitCode.Should().Be(1);
             callbackInvoked.Should().BeFalse();
-            console.Output.Should().Contain("Error: Missing command");
+            console.Output.Should().Contain("Missing command");
+        }
+
+        private static MockTracerAgent.TcpUdpAgent GetMockTracerAgent()
+        {
+            var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+            // We remove the evp_proxy endpoint to force the APM protocol compatibility
+            agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v2")).ToArray();
+            return agent;
         }
     }
 }

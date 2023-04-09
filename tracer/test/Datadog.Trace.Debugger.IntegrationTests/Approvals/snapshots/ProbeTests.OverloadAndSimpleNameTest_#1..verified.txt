@@ -51,6 +51,12 @@
           }
         },
         "duration": "ScrubbedValue",
+        "errors": [
+          {
+            "expression": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -72,7 +78,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -118,6 +124,12 @@
           }
         },
         "duration": "ScrubbedValue",
+        "errors": [
+          {
+            "expression": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -139,7 +151,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -463,6 +475,12 @@
           }
         },
         "duration": "ScrubbedValue",
+        "errors": [
+          {
+            "expression": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -484,7 +502,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -526,6 +544,12 @@
           }
         },
         "duration": "ScrubbedValue",
+        "errors": [
+          {
+            "expression": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -547,7 +571,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -673,6 +697,12 @@
           }
         },
         "duration": "ScrubbedValue",
+        "errors": [
+          {
+            "expression": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -694,7 +724,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -736,6 +766,12 @@
           }
         },
         "duration": "ScrubbedValue",
+        "errors": [
+          {
+            "expression": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -757,7 +793,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -799,6 +835,12 @@
           }
         },
         "duration": "ScrubbedValue",
+        "errors": [
+          {
+            "expression": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -820,7 +862,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -872,6 +914,12 @@
           }
         },
         "duration": "ScrubbedValue",
+        "errors": [
+          {
+            "expression": "\"1\")",
+            "message": "ScrubbedValue"
+          }
+        ],
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -893,7 +941,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -956,6 +1004,6 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   }
 ]

@@ -4,7 +4,10 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Text;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -14,10 +17,8 @@ namespace Datadog.Trace
     /// <summary>
     /// Extension methods for the <see cref="ISpan"/> interface
     /// </summary>
-    public static class SpanExtensions
+    public static partial class SpanExtensions
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanExtensions));
-
         /// <summary>
         /// Sets the details of the user on the local root span
         /// </summary>
@@ -35,26 +36,16 @@ namespace Datadog.Trace
                 ThrowHelper.ThrowArgumentException(nameof(userDetails) + ".Id must be set to a value other than null or the empty string", nameof(userDetails));
             }
 
-            TraceContext traceContext = null;
-            if (span is Span spanClass)
-            {
-                traceContext = spanClass.Context.TraceContext;
-            }
+            var setTag = TaggingUtils.GetSpanSetter(span, out var spanClass);
 
-            Action<string, string> setTag =
-                traceContext != null
-                    ? (name, value) => traceContext.Tags.SetTag(name, value)
-                    : (name, value) => span.SetTag(name, value);
+            // usr.id should always be set, even when PropagateId is true
+            setTag(Tags.User.Id, userDetails.Id);
 
             if (userDetails.PropagateId)
             {
                 var base64UserId = Convert.ToBase64String(Encoding.UTF8.GetBytes(userDetails.Id));
                 const string propagatedUserIdTag = TagPropagation.PropagatedTagPrefix + Tags.User.Id;
                 setTag(propagatedUserIdTag, base64UserId);
-            }
-            else
-            {
-                setTag(Tags.User.Id, userDetails.Id);
             }
 
             if (userDetails.Email is not null)
@@ -80,6 +71,11 @@ namespace Datadog.Trace
             if (userDetails.Scope is not null)
             {
                 setTag(Tags.User.Scope, userDetails.Scope);
+            }
+
+            if (spanClass != null)
+            {
+                RunBlockingCheck(spanClass, userDetails.Id);
             }
         }
     }

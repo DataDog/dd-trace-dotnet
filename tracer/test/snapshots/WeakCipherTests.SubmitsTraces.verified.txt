@@ -5,6 +5,7 @@
     Name: weak_cipher,
     Resource: weak_cipher,
     Service: Samples.WeakCipher,
+    Type: vulnerability,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -39,6 +40,7 @@
     Name: weak_cipher,
     Resource: weak_cipher,
     Service: Samples.WeakCipher,
+    Type: vulnerability,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -73,6 +75,7 @@
     Name: weak_cipher,
     Resource: weak_cipher,
     Service: Samples.WeakCipher,
+    Type: vulnerability,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -107,6 +110,7 @@
     Name: weak_cipher,
     Resource: weak_cipher,
     Service: Samples.WeakCipher,
+    Type: vulnerability,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -141,6 +145,7 @@
     Name: weak_cipher,
     Resource: weak_cipher,
     Service: Samples.WeakCipher,
+    Type: vulnerability,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -175,6 +180,7 @@
     Name: weak_cipher,
     Resource: weak_cipher,
     Service: Samples.WeakCipher,
+    Type: vulnerability,
     Tags: {
       env: integration_tests,
       language: dotnet,

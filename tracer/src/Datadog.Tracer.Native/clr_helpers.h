@@ -622,17 +622,19 @@ HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
 bool FindTypeDefByName(const shared::WSTRING& instrumentationTargetMethodTypeName, const shared::WSTRING& assemblyName,
                        const ComPtr<IMetaDataImport2>& metadata_import, mdTypeDef& typeDef);
 
-HRESULT HasAsyncStateMachineAttribute(const ComPtr<IMetaDataImport2>& metadataImport, const mdMethodDef methodDefToken, bool& hasAsyncAttribute);
-HRESULT IsByRefLike(const ComPtr<IMetaDataImport2>& metadataImport, const mdTypeDef typeDefToken, bool& hasByRefLikeAttribute);
+HRESULT HasAsyncStateMachineAttribute(const ComPtr<IMetaDataImport2>& metadataImport, mdMethodDef methodDefToken, bool& hasAsyncAttribute);
+HRESULT IsByRefLike(const ComPtr<IMetaDataImport2>& metadataImport, mdTypeDef typeDefToken, bool& hasByRefLikeAttribute);
 HRESULT ResolveTypeInternal(ICorProfilerInfo4* info, const std::vector<ModuleID>& loadedModules,
                             const std::vector<WCHAR>& refTypeName,
-                            const mdToken parentToken, const shared::WSTRING& resolutionScopeName,
+                            mdToken parentToken, const shared::WSTRING& resolutionScopeName,
                             mdTypeDef& resolvedTypeDefToken, ComPtr<IMetaDataImport2>& resolvedTypeDefMetadataImport);
 HRESULT ResolveType(ICorProfilerInfo4* info, const ComPtr<IMetaDataImport2>& metadata_import,
                     const ComPtr<IMetaDataAssemblyImport>& assembly_import,
-                    const mdTypeRef typeRefToken, mdTypeDef& resolvedTypeDefToken,
+                    mdTypeRef typeRefToken, mdTypeDef& resolvedTypeDefToken,
                     ComPtr<IMetaDataImport2>& resolvedMetadataImport);
+shared::WSTRING GetStringValueFromBlob(PCCOR_SIGNATURE& signature);
 
+void LogManagedProfilerAssemblyDetails();
 } // namespace trace
 
 #endif // DD_CLR_PROFILER_CLR_HELPERS_H_

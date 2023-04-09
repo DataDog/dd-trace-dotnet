@@ -86,7 +86,7 @@ namespace Datadog.Trace.Util
         /// <returns>Task with the output of the command</returns>
         public static async Task<CommandOutput?> RunCommandAsync(Command command, string? input = null)
         {
-            Log.Debug("Running command: {command} {args}", command.Cmd, command.Arguments);
+            Log.Debug("Running command: {Command} {Args}", command.Cmd, command.Arguments);
             var processStartInfo = GetProcessStartInfo(command);
             if (input is not null)
             {
@@ -118,7 +118,7 @@ namespace Datadog.Trace.Util
             outputStringBuilder.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
             errorStringBuilder.Append(await processInfo.StandardError.ReadToEndAsync().ConfigureAwait(false));
 
-            Log.Debug<int>("Process finished with exit code: {value}.", processInfo.ExitCode);
+            Log.Debug<int>("Process finished with exit code: {Value}.", processInfo.ExitCode);
             return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), processInfo.ExitCode);
         }
 

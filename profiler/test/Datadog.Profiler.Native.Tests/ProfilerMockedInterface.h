@@ -56,6 +56,10 @@ public:
     MOCK_METHOD(int32_t, CpuThreadsThreshold, (), (const override));
     MOCK_METHOD(int32_t, CodeHotspotsThreadsThreshold, (), (const override));
     MOCK_METHOD(bool, IsGarbageCollectionProfilingEnabled, (), (const override));
+    MOCK_METHOD(bool, IsHeapProfilingEnabled, (), (const override));
+    MOCK_METHOD(bool, UseBacktrace2, (), (const override));
+    MOCK_METHOD(bool, IsAllocationRecorderEnabled, (), (const override));
+    MOCK_METHOD(bool, IsDebugInfoEnabled, (), (const override));
 };
 
 class MockExporter : public IExporter
@@ -69,7 +73,8 @@ public:
 class MockSamplesCollector : public ISamplesCollector
 {
 public:
-    MOCK_METHOD(void, Register, (ISamplesProvider * sampleProvider), (override));
+    MOCK_METHOD(void, Register, (ISamplesProvider* sampleProvider), (override));
+    MOCK_METHOD(void, RegisterBatchedProvider, (IBatchedSamplesProvider* sampleProvider), (override));
 };
 
 class MockSampleProvider : public ISamplesProvider

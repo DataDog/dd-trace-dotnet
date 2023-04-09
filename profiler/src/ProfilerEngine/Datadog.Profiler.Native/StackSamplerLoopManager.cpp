@@ -32,7 +32,8 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     IManagedThreadList* pManagedThreadList,
     IManagedThreadList* pCodeHotspotThreadList,
     ICollector<RawWallTimeSample>* pWallTimeCollector,
-    ICollector<RawCpuSample>* pCpuTimeCollector
+    ICollector<RawCpuSample>* pCpuTimeCollector,
+    MetricsRegistry& metricsRegistry
     ) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pConfiguration{pConfiguration},
@@ -59,7 +60,7 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     _deadlockInterventionInProgress{0}
 {
     _pCorProfilerInfo->AddRef();
-    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
+    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, pConfiguration);
 
     _currentStatistics = std::make_unique<Statistics>();
     _statisticCollectionStartNs = OpSysTools::GetHighPrecisionNanoseconds();
@@ -233,11 +234,14 @@ void StackSamplerLoopManager::WatcherLoopIteration()
 
     if (_deadlockInterventionInProgress >= 1)
     {
-        _deadlockInterventionInProgress++;
-        Log::Info("StackSamplerLoopManager::WatcherLoopIteration - Deadlock intervention still in progress for thread ", _pTargetThread->GetOsThreadId(),
-                   std::hex, " (= 0x", _pTargetThread->GetOsThreadId(), ")");
         // TODO: Validate that calling resuming again (and again) could unlock the situation.
         // The previous call to ResumeThread failed.
+        if (_deadlockInterventionInProgress == 1)
+        {
+            _deadlockInterventionInProgress++;
+            Log::Info("StackSamplerLoopManager::WatcherLoopIteration - Deadlock intervention still in progress for thread ", _pTargetThread->GetOsThreadId(),
+                       std::hex, " (= 0x", _pTargetThread->GetOsThreadId(), ")");
+        }
         return;
     }
 
@@ -280,6 +284,7 @@ void StackSamplerLoopManager::WatcherLoopIteration()
     }
 #endif
 
+    // TODO: update deadlock count metrics when available
     _currentStatistics->IncrDeadlockCount();
 
     PerformDeadlockIntervention(collectionDurationNs);
@@ -508,7 +513,11 @@ void StackSamplerLoopManager::NotifyCollectionEnd()
     std::lock_guard<std::mutex> guardedLock(_watcherActivityLock);
 
     std::int64_t collectionEndTimeNs = OpSysTools::GetHighPrecisionNanoseconds();
-    _currentStatistics->AddCollectionTime(collectionEndTimeNs - _collectionStartNs);
+    auto collectionDuration = collectionEndTimeNs - _collectionStartNs;
+
+    // TODO: update colletion time metric when available
+
+    _currentStatistics->AddCollectionTime(collectionDuration);
 
     _collectionStartNs = 0;
     _kernelTime = {0};
@@ -526,9 +535,13 @@ void StackSamplerLoopManager::NotifyIterationFinished()
     _isTargetThreadSuspended = false;
 
     std::int64_t threadCollectionEndTimeNs = OpSysTools::GetHighPrecisionNanoseconds();
-    _currentStatistics->AddSuspensionTime(threadCollectionEndTimeNs - _threadSuspensionStart);
+    auto suspensionDuration = threadCollectionEndTimeNs - _threadSuspensionStart;
 
-    if (threadCollectionEndTimeNs - _statisticCollectionStartNs >= StatisticAggregationPeriodNs.count())
+    // TODO: update suspension time metric when available
+
+    _currentStatistics->AddSuspensionTime(suspensionDuration);
+
+    if (_metricsSender != nullptr && threadCollectionEndTimeNs - _statisticCollectionStartNs >= StatisticAggregationPeriodNs.count())
     {
         Log::Debug("Notify-ThreadStackSampleCollection-Finished invoked - Prepare statistics to be sent.");
         _statisticsReadyToSend.reset(_currentStatistics.release());
@@ -569,7 +582,7 @@ inline bool StackSamplerLoopManager::GetUpdateIsThreadSafeForStackSampleCollecti
 
 inline bool StackSamplerLoopManager::ShouldCollectThread(
     std::uint64_t threadAggPeriodDeadlockCount,
-    std::uint64_t globalAggPeriodDeadlockCount) const
+    std::uint64_t globalAggPeriodDeadlockCount) 
 {
     return (threadAggPeriodDeadlockCount <= DeadlocksPerThreadThreshold) &&
            (globalAggPeriodDeadlockCount <= TotalDeadlocksThreshold);

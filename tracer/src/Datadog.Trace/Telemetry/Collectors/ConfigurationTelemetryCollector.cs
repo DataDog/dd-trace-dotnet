@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast.Settings;
@@ -35,7 +36,7 @@ namespace Datadog.Trace.Telemetry
                 serviceName: defaultServiceName,
                 env: tracerSettings.Environment,
                 tracerVersion: TracerConstants.AssemblyVersion,
-                languageName: "dotnet",
+                languageName: TracerConstants.Language,
                 languageVersion: FrameworkDescription.Instance.ProductVersion)
             {
                 ServiceVersion = tracerSettings.ServiceVersion,
@@ -128,13 +129,14 @@ namespace Datadog.Trace.Telemetry
 
             var settings = _settings.Settings;
 
-            var data = new List<TelemetryValue>(settings.IsRunningInAzureAppService ? 31 : 26)
+            var data = new List<TelemetryValue>(27 + (settings.IsRunningInAzureAppService ? 5 : 0))
             {
                 new(ConfigTelemetryData.Platform, value: FrameworkDescription.Instance.ProcessArchitecture),
                 new(ConfigTelemetryData.Enabled, value: settings.TraceEnabled),
                 new(ConfigTelemetryData.AgentUrl, value: settings.Exporter.AgentUri.ToString()),
                 new(ConfigTelemetryData.AgentTraceTransport, value: settings.Exporter.TracesTransport.ToString()),
                 new(ConfigTelemetryData.Debug, value: GlobalSettings.Instance.DebugEnabled),
+                new(ConfigTelemetryData.NativeTracerVersion, value: Instrumentation.GetNativeTracerVersion()),
 #pragma warning disable CS0618
                 new(ConfigTelemetryData.AnalyticsEnabled, value: settings.AnalyticsEnabled),
 #pragma warning restore CS0618
@@ -151,7 +153,7 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.IastEnabled, value: _iastSettings?.Enabled),
                 new(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted),
                 new(ConfigTelemetryData.TraceMethods, value: settings.TraceMethods),
-                new(ConfigTelemetryData.ActivityListenerEnabled, value: settings.IsActivityListenerEnabled),
+                new(ConfigTelemetryData.OpenTelemetryEnabled, value: settings.IsActivityListenerEnabled),
                 new(ConfigTelemetryData.ProfilerLoaded, value: _profiler?.Status.IsProfilerReady),
                 new(ConfigTelemetryData.CodeHotspotsEnabled, value: _profiler?.ContextTracker.IsEnabled),
                 new(ConfigTelemetryData.StatsComputationEnabled, value: settings.StatsComputationEnabled),

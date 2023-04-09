@@ -14,7 +14,10 @@ namespace GenerateSpanDocumentation
     public class SpanDocumentationGenerator
     {
         private const string HeaderConst =
-@"This file is intended for development purposes only. The markdown is generated from assertions authored [here](/tracer/test/Datadog.Trace.TestHelpers/SpanMetadataRules.cs) and the assertions are actively tested in the tracing integration tests.";
+@"This file is intended for development purposes only. The markdown is generated from assertions authored [here](/tracer/test/Datadog.Trace.TestHelpers/SpanMetadataRules.cs) and the assertions are actively tested in the tracing integration tests.
+
+The Integration Name (used for configuring individual integrations) of each span corresponds to the markdown header, with the following exceptions:
+- The `AspNetCoreMvc` span has the Integration Name `AspNetCore`";
         private readonly AbsolutePath _spanModelRulesFilePath;
         private readonly AbsolutePath _outputFilePath;
 
@@ -77,7 +80,9 @@ namespace GenerateSpanDocumentation
                     case SpanModel.ModelState.Initialized:
                     case SpanModel.ModelState.ParsingProperties:
                     case SpanModel.ModelState.ParsingTags:
+                    case SpanModel.ModelState.ParsingAdditionalTags:
                     case SpanModel.ModelState.ParsingMetrics:
+                    case SpanModel.ModelState.ParsingIntegrationName:
                         var trimmedLine = line.Trim();
 
                         // Finish the section
@@ -109,11 +114,28 @@ namespace GenerateSpanDocumentation
                                 currentModel.State = SpanModel.ModelState.ParsingTags;
                             }
 
+                            functionStartIndex = line.IndexOf("AdditionalTags(");
+                            if (functionStartIndex > -1)
+                            {
+                                processRequirement = false;
+                                currentModel.State = SpanModel.ModelState.ParsingAdditionalTags;
+                            }
+
                             functionStartIndex = line.IndexOf("Metrics(");
                             if (functionStartIndex > -1)
                             {
                                 processRequirement = false;
                                 currentModel.State = SpanModel.ModelState.ParsingMetrics;
+                            }
+
+                            functionStartIndex = line.IndexOf("WithIntegrationName(");
+                            if (functionStartIndex > -1)
+                            {
+                                processRequirement = false;
+                                var nameStart = line.IndexOf("\"", functionStartIndex) + 1;
+                                var nameEnd = line.IndexOf("\"", nameStart) - 1;
+                                currentModel.IntegrationName = line.Substring(nameStart, nameEnd - nameStart + 1);
+                                currentModel.State = SpanModel.ModelState.ParsingIntegrationName;
                             }
 
                             if (processRequirement)
@@ -137,6 +159,11 @@ namespace GenerateSpanDocumentation
         private static void GenerateSectionMarkdown(StringBuilder sb, SpanModel model)
         {
             sb.AppendLine($"## {model.SectionName}");
+
+            if (model.IntegrationName is not null)
+            {
+                sb.AppendLine($"> ⚠️ Note: This span is controlled by integration name `{model.IntegrationName}`");
+            }
 
             // Add span properties first
             bool spanHeaderAdded = false;
@@ -172,6 +199,23 @@ namespace GenerateSpanDocumentation
                 sb.AppendLine(requirement.ToString());
             }
 
+            // Add AdditionalTags next
+            bool additionalTagsHeaderAdded = false;
+            foreach (var requirement in model.Requirements
+                                        .Where(r => r.PropertyType == SpanModel.PropertyType.AdditionalTags)
+                                        .OrderBy(r => r.Property))
+            {
+                if (!additionalTagsHeaderAdded)
+                {
+                    sb.AppendLine("### AdditionalTags");
+                    sb.AppendLine("Source | Operation | Required |");
+                    sb.AppendLine("---------|-----------|----------------|");
+                    additionalTagsHeaderAdded = true;
+                }
+
+                sb.AppendLine(requirement.ToString());
+            }
+
             // Add Metrics next
             bool metricsHeaderAdded = false;
             foreach (var requirement in model.Requirements
@@ -196,6 +240,7 @@ namespace GenerateSpanDocumentation
         {
             public ModelState State = SpanModel.ModelState.Missing;
             public string SectionName;
+            public string IntegrationName;
 
             public List<Requirement> Requirements = new List<Requirement>();
 
@@ -203,8 +248,10 @@ namespace GenerateSpanDocumentation
             {
                 Missing,
                 Initialized,
+                ParsingIntegrationName,
                 ParsingProperties,
                 ParsingTags,
+                ParsingAdditionalTags,
                 ParsingMetrics,
             }
 
@@ -212,6 +259,7 @@ namespace GenerateSpanDocumentation
             {
                 Span,
                 Tag,
+                AdditionalTags,
                 Metric,
             }
 
@@ -219,17 +267,23 @@ namespace GenerateSpanDocumentation
             {
                 private static readonly Requirement Unknown = new Requirement
                 {
-                    Property = "unknown",
                     PropertyType = PropertyType.Span,
+                    Property = "unknown",
+                    OperationName = null,
                     RequiredValue = "unknown",
                 };
 
-                public string Property { get; init; }
                 public PropertyType PropertyType { get; init; }
+                public string Property { get; init; }
+                public string OperationName { get; init; }
                 public string RequiredValue { get; init; }
 
                 public override string ToString()
-                    => $"{Property} | {RequiredValue}";
+                    => PropertyType switch
+                    {
+                        PropertyType.AdditionalTags => $"{Property} | {OperationName} | {RequiredValue}",
+                        _ => $"{Property} | {RequiredValue}",
+                    };
 
                 public static Requirement GenerateRequirement(string line, ModelState state)
                 {
@@ -252,6 +306,7 @@ namespace GenerateSpanDocumentation
                     {
                         ModelState.ParsingProperties => PropertyType.Span,
                         ModelState.ParsingTags => PropertyType.Tag,
+                        ModelState.ParsingAdditionalTags => PropertyType.AdditionalTags,
                         ModelState.ParsingMetrics => PropertyType.Metric,
                         _ => throw new ArgumentException()
                     };
@@ -262,26 +317,37 @@ namespace GenerateSpanDocumentation
                             {
                                 Property = $"{parts[1]}",
                                 PropertyType = propertyType,
+                                OperationName = null,
                                 RequiredValue = $"`{parts[2]}`",
                             },
                         (_, "MatchesOneOf") => new Requirement
                             {
                                 Property = $"{parts[1]}",
                                 PropertyType = propertyType,
+                                OperationName = null,
                                 RequiredValue = string.Join("; ", parts.Skip(2).Select(s => $"`{s}`")),
                             },
-                        (ModelState.ParsingTags, "IsOptional") => new Requirement
+                        (ModelState.ParsingTags, "IsOptional") or (ModelState.ParsingMetrics, "IsOptional")  => new Requirement
                             {
                                 Property = $"{parts[1]}",
                                 PropertyType = propertyType,
+                                OperationName = null,
                                 RequiredValue = "No",
                             },
-                        (ModelState.ParsingTags, "IsPresent") => new Requirement
+                        (ModelState.ParsingTags, "IsPresent") or (ModelState.ParsingMetrics, "IsPresent") => new Requirement
                             {
                                 Property = $"{parts[1]}",
                                 PropertyType = propertyType,
+                                OperationName = null,
                                 RequiredValue = "Yes",
                             },
+                        (ModelState.ParsingAdditionalTags, "PassesThroughSource") => new Requirement
+                            {
+                                Property = $"{string.Join(" ", parts.Skip(1).Take(parts.Length - 2))}",
+                                PropertyType = propertyType,
+                                OperationName = "PassThru",
+                                RequiredValue = "No",
+                        },
                         (_, _) => throw new Exception($"Invalid requirement. RequirementName:{parts[0]}, State:{state}"),
                     };
                 }

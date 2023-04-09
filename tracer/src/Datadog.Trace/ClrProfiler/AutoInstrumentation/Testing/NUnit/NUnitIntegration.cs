@@ -5,24 +5,24 @@
 #nullable enable
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     internal static class NUnitIntegration
     {
-        private const string TestModuleConst = "Assembly";
-        private const string TestSuiteConst = "TestFixture";
+        internal const string TestModuleConst = "Assembly";
+        internal const string TestSuiteConst = "TestFixture";
 
-        private static readonly ConditionalWeakTable<object, object> TestItems = new();
+        private static readonly ConditionalWeakTable<object, object> ModulesItems = new();
+        private static readonly ConditionalWeakTable<object, object> SuiteItems = new();
+        private static readonly ConditionalWeakTable<object, object> ExistingTestCreation = new();
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.NUnit);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.NUnit;
@@ -33,12 +33,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
         internal static Test? CreateTest(ITest currentTest)
         {
-            var testMethod = currentTest.Method.MethodInfo;
+            if (ExistingTestCreation.TryGetValue(currentTest.Instance!, out _))
+            {
+                return null;
+            }
+
+            var testMethod = currentTest.Method?.MethodInfo;
             var testMethodArguments = currentTest.Arguments;
             var testMethodProperties = currentTest.Properties;
 
             if (testMethod == null)
             {
+                Log.Warning("Test method cannot be found.");
                 return null;
             }
 
@@ -48,6 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             var test = suite.CreateTest(testMethod.Name);
+            ExistingTestCreation.GetOrCreateValue(currentTest.Instance!);
             string? skipReason = null;
 
             // Get test parameters
@@ -57,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 var testParameters = new TestParameters();
                 testParameters.Metadata = new Dictionary<string, object>();
                 testParameters.Arguments = new Dictionary<string, object>();
-                testParameters.Metadata[TestTags.MetadataTestName] = currentTest.Name;
+                testParameters.Metadata[TestTags.MetadataTestName] = currentTest.Name ?? string.Empty;
 
                 for (int i = 0; i < methodParameters.Length; i++)
                 {
@@ -78,34 +85,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             // Get traits
             if (testMethodProperties != null)
             {
-                var traits = new Dictionary<string, List<string>>();
                 skipReason = (string)testMethodProperties.Get(SkipReasonKey);
-                foreach (var key in testMethodProperties.Keys)
-                {
-                    if (key == SkipReasonKey || key == "_JOINTYPE")
-                    {
-                        continue;
-                    }
 
-                    var value = testMethodProperties[key];
-                    if (value != null)
-                    {
-                        var lstValues = new List<string>();
-                        foreach (var valObj in value)
-                        {
-                            if (valObj is null)
-                            {
-                                continue;
-                            }
-
-                            lstValues.Add(valObj.ToString() ?? string.Empty);
-                        }
-
-                        traits[key] = lstValues;
-                    }
-                }
-
-                if (traits.Count > 0)
+                Dictionary<string, List<string>>? traits = null;
+                ExtractTraits(currentTest, ref traits);
+                if (traits?.Count > 0)
                 {
                     test.SetTraits(traits);
                 }
@@ -126,6 +110,51 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
             test.ResetStartTime();
             return test;
+        }
+
+        private static void ExtractTraits(ITest currentTest, ref Dictionary<string, List<string>>? traits)
+        {
+            if (currentTest.Instance is null)
+            {
+                return;
+            }
+
+            if (currentTest.Parent is { Instance: { } })
+            {
+                ExtractTraits(currentTest.Parent, ref traits);
+            }
+
+            if (currentTest.Properties is { Keys: { Count: > 0 } } properties)
+            {
+                foreach (var key in properties.Keys)
+                {
+                    if (key is SkipReasonKey or "_APPDOMAIN" or "_JOINTYPE" or "_PID" or "_PROVIDERSTACKTRACE")
+                    {
+                        continue;
+                    }
+
+                    var value = properties[key];
+                    if (value is not null)
+                    {
+                        traits ??= new();
+                        if (!traits.TryGetValue(key, out var lstValues))
+                        {
+                            lstValues = new List<string>();
+                            traits[key] = lstValues;
+                        }
+
+                        foreach (var valObj in value)
+                        {
+                            if (valObj is null)
+                            {
+                                continue;
+                            }
+
+                            lstValues.Add(valObj.ToString() ?? string.Empty);
+                        }
+                    }
+                }
+            }
         }
 
         internal static void FinishTest(Test test, Exception? ex)
@@ -174,7 +203,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             if (test is not null &&
-                TestItems.TryGetValue(test.Instance, out var moduleObject) && moduleObject is TestModule module)
+                ModulesItems.TryGetValue(test.Instance!, out var moduleObject) &&
+                moduleObject is TestModule module)
             {
                 return module;
             }
@@ -186,11 +216,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         {
             if (test.TestType == TestModuleConst)
             {
-                TestItems.Add(test.Instance, module);
+                ModulesItems.Add(test.Instance!, module);
             }
             else if (GetParentWithTestType(test, TestModuleConst) is { } assemblyITest)
             {
-                TestItems.Add(assemblyITest.Instance, module);
+                ModulesItems.Add(assemblyITest.Instance!, module);
             }
         }
 
@@ -207,7 +237,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             if (test is not null &&
-                TestItems.TryGetValue(test.Instance, out var suiteObject) && suiteObject is TestSuite suite)
+                SuiteItems.TryGetValue(test.Instance!, out var suiteObject) &&
+                suiteObject is TestSuite suite)
             {
                 return suite;
             }
@@ -219,11 +250,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         {
             if (test.TestType == TestSuiteConst)
             {
-                TestItems.Add(test.Instance, suite);
+                SuiteItems.Add(test.Instance!, suite);
             }
             else if (GetParentWithTestType(test, TestSuiteConst) is { } suiteITest)
             {
-                TestItems.Add(suiteITest.Instance, suite);
+                SuiteItems.Add(suiteITest.Instance!, suite);
             }
         }
 
@@ -237,6 +268,88 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             var testMethod = currentTest.Method.MethodInfo;
             var testSuite = testMethod.DeclaringType?.FullName ?? string.Empty;
             return Common.ShouldSkip(testSuite, testMethod.Name, currentTest.Arguments, testMethod.GetParameters());
+        }
+
+        internal static void WriteSetUpOrTearDownError(ICompositeWorkItem compositeWorkItem, string exceptionType)
+        {
+            WriteSetUpOrTearDownError(compositeWorkItem.Result, compositeWorkItem.Test, exceptionType);
+            foreach (var item in compositeWorkItem.Children)
+            {
+                if (item?.GetType().Name is { Length: > 0 } itemName)
+                {
+                    if (itemName == "CompositeWorkItem" && item.TryDuckCast<ICompositeWorkItem>(out var compositeWorkItem2))
+                    {
+                        WriteSetUpOrTearDownError(compositeWorkItem2, exceptionType);
+                    }
+                    else if (item.TryDuckCast<IWorkItem>(out var itemWorkItem) && itemWorkItem is { Result: { } testResult })
+                    {
+                        WriteSetUpOrTearDownError(!string.IsNullOrEmpty(testResult.Message) ? testResult : compositeWorkItem.Result, testResult.Test, exceptionType);
+                    }
+                }
+            }
+        }
+
+        internal static void WriteSkip(ITest item, string skipMessage)
+        {
+            if (item.Method?.MethodInfo is not null && CreateTest(item) is { } test)
+            {
+                test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, skipMessage);
+            }
+
+            if (item.TestType == TestSuiteConst && GetTestSuiteFrom(item) is null && GetTestModuleFrom(item) is { } module)
+            {
+                SetTestSuiteTo(item, module.GetOrCreateSuite(item.FullName));
+            }
+
+            if (item.Tests is { Count: > 0 } tests)
+            {
+                foreach (var childTest in tests)
+                {
+                    if (childTest.TryDuckCast<ITest>(out var childTestDuckTyped))
+                    {
+                        WriteSkip(childTestDuckTyped, skipMessage);
+                    }
+                }
+            }
+        }
+
+        private static void WriteSetUpOrTearDownError(ITestResult testResult, ITest item, string exceptionType)
+        {
+            if (item.Method?.MethodInfo is not null && CreateTest(item) is { } test)
+            {
+                test.SetErrorInfo(exceptionType, testResult.Message, testResult.StackTrace);
+                test.Close(Ci.TestStatus.Fail, TimeSpan.Zero);
+            }
+
+            TestSuite? suite = null;
+            if (item.TestType == TestSuiteConst)
+            {
+                if (GetTestSuiteFrom(item) is { } existingSuite)
+                {
+                    existingSuite.SetErrorInfo(exceptionType, testResult.Message, testResult.StackTrace);
+                    existingSuite.Tags.Status = TestTags.StatusFail;
+                }
+                else if (GetTestModuleFrom(item) is { } module)
+                {
+                    suite = module.GetOrCreateSuite(item.FullName);
+                    suite.SetErrorInfo(exceptionType, testResult.Message, testResult.StackTrace);
+                    suite.Tags.Status = TestTags.StatusFail;
+                    SetTestSuiteTo(item, suite);
+                }
+            }
+
+            if (item.Tests is { Count: > 0 } tests)
+            {
+                foreach (var childTest in tests)
+                {
+                    if (childTest.TryDuckCast<ITest>(out var childTestDuckTyped))
+                    {
+                        WriteSetUpOrTearDownError(testResult, childTestDuckTyped, exceptionType);
+                    }
+                }
+            }
+
+            suite?.Close();
         }
 
         private static ITest? GetParentWithTestType(ITest test, string testType)

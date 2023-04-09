@@ -12,33 +12,25 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal class Result : IResult
     {
-        private readonly WafNative wafNative;
         private readonly DDWAF_RET_CODE returnCode;
-        private DdwafResultStruct returnStruct;
-        private bool disposed;
 
-        public Result(DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode, WafNative wafNative, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
+        public Result(DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
         {
-            this.returnStruct = returnStruct;
             this.returnCode = returnCode;
-            this.wafNative = wafNative;
-            Actions = new string[returnStruct.ActionsSize];
+            Actions = new((int)returnStruct.ActionsSize);
             ReadActions(returnStruct);
-
+            ShouldBlock = Actions.Contains("block");
+            ShouldBeReported = returnCode >= DDWAF_RET_CODE.DDWAF_MATCH;
             AggregatedTotalRuntime = aggregatedTotalRuntime;
             AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
-        }
-
-        ~Result()
-        {
-            Dispose(false);
+            Data = ShouldBeReported ? Marshal.PtrToStringAnsi(returnStruct.Data) : string.Empty;
         }
 
         public ReturnCode ReturnCode => Encoder.DecodeReturnCode(returnCode);
 
-        public string Data => Marshal.PtrToStringAnsi(returnStruct.Data);
+        public string Data { get; }
 
-        public string[] Actions { get; }
+        public List<string> Actions { get; }
 
         /// <summary>
         /// Gets the total runtime in microseconds
@@ -50,6 +42,10 @@ namespace Datadog.Trace.AppSec.Waf
         /// </summary>
         public ulong AggregatedTotalRuntimeWithBindings { get; }
 
+        public bool ShouldBlock { get; }
+
+        public bool ShouldBeReported { get; }
+
         private void ReadActions(DdwafResultStruct returnStruct)
         {
             var pointer = returnStruct.ActionsArray;
@@ -57,26 +53,8 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 var pointerString = Marshal.ReadIntPtr(pointer, IntPtr.Size * i);
                 var action = Marshal.PtrToStringAnsi(pointerString);
-                Actions[i] = action;
+                Actions.Add(action);
             }
-        }
-
-        public void Dispose(bool disposing)
-        {
-            if (disposed)
-            {
-                return;
-            }
-
-            disposed = true;
-
-            wafNative.ResultFree(ref returnStruct);
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
         }
     }
 }

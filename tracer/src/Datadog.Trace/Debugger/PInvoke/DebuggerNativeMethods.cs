@@ -7,20 +7,21 @@ using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Debugger.ProbeStatuses;
+using Datadog.Trace.Debugger.Sink.Models;
 
 namespace Datadog.Trace.Debugger.PInvoke
 {
     internal static class DebuggerNativeMethods
     {
-        public static void InstrumentProbes(NativeMethodProbeDefinition[] methodProbes, NativeLineProbeDefinition[] lineProbes, NativeRemoveProbeRequest[] revertProbes)
+        public static void InstrumentProbes(NativeMethodProbeDefinition[] methodProbes, NativeLineProbeDefinition[] lineProbes, NativeSpanProbeDefinition[] spanProbes, NativeRemoveProbeRequest[] revertProbes)
         {
             if (FrameworkDescription.Instance.IsWindows())
             {
-                Windows.InstrumentProbes(methodProbes, methodProbes.Length, lineProbes, lineProbes.Length, revertProbes, revertProbes.Length);
+                Windows.InstrumentProbes(methodProbes, methodProbes.Length, lineProbes, lineProbes.Length, spanProbes, spanProbes.Length, revertProbes, revertProbes.Length);
             }
             else
             {
-                NonWindows.InstrumentProbes(methodProbes, methodProbes.Length, lineProbes, lineProbes.Length, revertProbes, revertProbes.Length);
+                NonWindows.InstrumentProbes(methodProbes, methodProbes.Length, lineProbes, lineProbes.Length, spanProbes, spanProbes.Length, revertProbes, revertProbes.Length);
             }
         }
 
@@ -45,8 +46,17 @@ namespace Datadog.Trace.Debugger.PInvoke
                                  .Select(
                                       nativeProbeStatus =>
                                           new ProbeStatus(
-                                              Marshal.PtrToStringUni(nativeProbeStatus.ProbeId), nativeProbeStatus.Status))
+                                              Marshal.PtrToStringUni(nativeProbeStatus.ProbeId),
+                                              nativeProbeStatus.Status,
+                                              CreateErrorMessageIfNeeded(nativeProbeStatus)))
                                  .ToArray();
+        }
+
+        private static string CreateErrorMessageIfNeeded(NativeProbeStatus nativeProbeStatus)
+        {
+            return (nativeProbeStatus.Status == Status.ERROR && nativeProbeStatus.ErrorMessage != IntPtr.Zero) ?
+                       Marshal.PtrToStringUni(nativeProbeStatus.ErrorMessage) :
+                       null;
         }
 
         // the "dll" extension is required on .NET Framework
@@ -60,6 +70,8 @@ namespace Datadog.Trace.Debugger.PInvoke
                 int methodProbesLength,
                 [In] NativeLineProbeDefinition[] lineProbes,
                 int lineProbesLength,
+                [In] NativeSpanProbeDefinition[] spanProbes,
+                int spanProbesLength,
                 [In] NativeRemoveProbeRequest[] revertProbes,
                 int revertProbesLength);
 
@@ -80,6 +92,8 @@ namespace Datadog.Trace.Debugger.PInvoke
                 int methodProbesLength,
                 [In] NativeLineProbeDefinition[] lineProbes,
                 int lineProbesLength,
+                [In] NativeSpanProbeDefinition[] spanProbes,
+                int spanProbesLength,
                 [In] NativeRemoveProbeRequest[] revertProbes,
                 int revertProbesLength);
 

@@ -1,0 +1,8 @@
+{
+    "dsl": "The collection has {count(ref CollectionLocal)} items",
+    "count": [
+        {
+            "ref": "CollectionLocal"
+        }
+    ]
+}

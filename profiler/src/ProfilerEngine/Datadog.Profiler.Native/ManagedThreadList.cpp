@@ -196,7 +196,7 @@ bool ManagedThreadList::SetThreadName(ThreadID clrThreadId, const shared::WSTRIN
     return true;
 }
 
-uint32_t ManagedThreadList::Count(void)
+uint32_t ManagedThreadList::Count()
 {
     std::lock_guard<std::recursive_mutex> lock(_mutex);
     return static_cast<uint32_t>(_threads.size());
@@ -350,7 +350,7 @@ HRESULT ManagedThreadList::TryGetCurrentThreadInfo(std::shared_ptr<ManagedThread
     }
     else
     {
-        return S_FALSE;
+        return E_FAIL;
     }
 }
 

@@ -32,5 +32,5 @@ public:
         IConfiguration* pConfiguration);
 
     // Inherited via IGCSuspensionsListener
-    virtual void OnSuspension(int32_t number, uint32_t generation, uint64_t pauseDuration, uint64_t timestamp) override;
+    void OnSuspension(int32_t number, uint32_t generation, uint64_t pauseDuration, uint64_t timestamp) override;
 };

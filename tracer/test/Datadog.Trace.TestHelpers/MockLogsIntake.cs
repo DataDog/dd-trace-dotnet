@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -257,6 +258,12 @@ namespace Datadog.Trace.TestHelpers
             {
                 set => Version = value;
             }
+
+            // Using tuple return instead of out, as can't use out parameters in FluentAssertion expressions
+            public (bool Exists, string Value) TryGetProperty(string key) =>
+                !OtherProperties.TryGetValue(key, out var obj)
+                    ? (false, null)
+                    : (true, obj.ToString());
         }
     }
 }

@@ -10,28 +10,28 @@ using namespace trace;
 class CLRHelperTest : public ::CLRHelperTestBase {};
 
 TEST_F(CLRHelperTest, EnumeratesTypeDefs) {
-  std::vector<std::wstring> expected_types = {
-      L"Samples.ExampleLibrary.Class1",
-      L"Samples.ExampleLibrary.GenericTests.ComprehensiveCaller`2",
-      L"Samples.ExampleLibrary.GenericTests.GenericTarget`2",
-      L"Samples.ExampleLibrary.GenericTests.PointStruct",
-      L"Samples.ExampleLibrary.GenericTests.StructContainer`1",
-      L"Samples.ExampleLibrary.FakeClient.Biscuit`1",
-      L"Samples.ExampleLibrary.FakeClient.Biscuit",
-      L"Samples.ExampleLibrary.FakeClient.StructBiscuit",
-      L"Samples.ExampleLibrary.FakeClient.DogClient`2",
-      L"Samples.ExampleLibrary.FakeClient.DogTrick`1",
-      L"Samples.ExampleLibrary.FakeClient.DogTrick",
-      L"<>c",
-      L"Cookie",
-      L"Cookie",
-      L"<StayAndLayDown>d__4`2",
-      L"Raisin"};
+  std::vector<shared::WSTRING> expected_types = {
+      WStr("Samples.ExampleLibrary.Class1"),
+      WStr("Samples.ExampleLibrary.GenericTests.ComprehensiveCaller`2"),
+      WStr("Samples.ExampleLibrary.GenericTests.GenericTarget`2"),
+      WStr("Samples.ExampleLibrary.GenericTests.PointStruct"),
+      WStr("Samples.ExampleLibrary.GenericTests.StructContainer`1"),
+      WStr("Samples.ExampleLibrary.FakeClient.Biscuit`1"),
+      WStr("Samples.ExampleLibrary.FakeClient.Biscuit"),
+      WStr("Samples.ExampleLibrary.FakeClient.StructBiscuit"),
+      WStr("Samples.ExampleLibrary.FakeClient.DogClient`2"),
+      WStr("Samples.ExampleLibrary.FakeClient.DogTrick`1"),
+      WStr("Samples.ExampleLibrary.FakeClient.DogTrick"),
+      WStr("<>c"),
+      WStr("Cookie"),
+      WStr("Cookie"),
+      WStr("<StayAndLayDown>d__4`2"),
+      WStr("Raisin")};
 
-  std::vector<std::wstring> actual_types;
+  std::vector<shared::WSTRING> actual_types;
 
   for (auto& def : EnumTypeDefs(metadata_import_)) {
-    std::wstring name(256, 0);
+    shared::WSTRING name(256, 0);
     DWORD name_sz = 0;
     DWORD flags = 0;
     mdToken extends = 0;
@@ -49,12 +49,12 @@ TEST_F(CLRHelperTest, EnumeratesTypeDefs) {
 }
 
 TEST_F(CLRHelperTest, EnumeratesAssemblyRefs) {
-  std::vector<std::wstring> expected_assemblies = {
-      L"System.Runtime",
-      L"System.Collections",
-      L"System.Threading.Tasks",
-      L"System.Diagnostics.Debug"};
-  std::vector<std::wstring> actual_assemblies;
+  std::vector<shared::WSTRING> expected_assemblies = {
+      WStr("System.Runtime"),
+      WStr("System.Collections"),
+      WStr("System.Threading.Tasks"),
+      WStr("System.Diagnostics.Debug")};
+  std::vector<shared::WSTRING> actual_assemblies;
   for (auto& ref : EnumAssemblyRefs(assembly_import_)) {
     auto name = GetReferencedAssemblyMetadata(assembly_import_, ref).name;
     if (!name.empty()) {
@@ -65,23 +65,23 @@ TEST_F(CLRHelperTest, EnumeratesAssemblyRefs) {
 }
 
 TEST_F(CLRHelperTest, GetsTypeInfoFromTypeDefs) {
-  std::set<std::wstring> expected = {
-      L"<>c",
-      L"<StayAndLayDown>d__4`2",
-      L"Cookie",
-      L"Raisin",
-      L"Samples.ExampleLibrary.Class1",
-      L"Samples.ExampleLibrary.FakeClient.Biscuit",
-      L"Samples.ExampleLibrary.FakeClient.Biscuit`1",
-      L"Samples.ExampleLibrary.FakeClient.DogClient`2",
-      L"Samples.ExampleLibrary.FakeClient.DogTrick",
-      L"Samples.ExampleLibrary.FakeClient.DogTrick`1",
-      L"Samples.ExampleLibrary.FakeClient.StructBiscuit",
-      L"Samples.ExampleLibrary.GenericTests.ComprehensiveCaller`2",
-      L"Samples.ExampleLibrary.GenericTests.GenericTarget`2",
-      L"Samples.ExampleLibrary.GenericTests.PointStruct",
-      L"Samples.ExampleLibrary.GenericTests.StructContainer`1"};
-  std::set<std::wstring> actual;
+  std::set<shared::WSTRING> expected = {
+      WStr("<>c"),
+      WStr("<StayAndLayDown>d__4`2"),
+      WStr("Cookie"),
+      WStr("Raisin"),
+      WStr("Samples.ExampleLibrary.Class1"),
+      WStr("Samples.ExampleLibrary.FakeClient.Biscuit"),
+      WStr("Samples.ExampleLibrary.FakeClient.Biscuit`1"),
+      WStr("Samples.ExampleLibrary.FakeClient.DogClient`2"),
+      WStr("Samples.ExampleLibrary.FakeClient.DogTrick"),
+      WStr("Samples.ExampleLibrary.FakeClient.DogTrick`1"),
+      WStr("Samples.ExampleLibrary.FakeClient.StructBiscuit"),
+      WStr("Samples.ExampleLibrary.GenericTests.ComprehensiveCaller`2"),
+      WStr("Samples.ExampleLibrary.GenericTests.GenericTarget`2"),
+      WStr("Samples.ExampleLibrary.GenericTests.PointStruct"),
+      WStr("Samples.ExampleLibrary.GenericTests.StructContainer`1")};
+  std::set<shared::WSTRING> actual;
   for (auto& type_def : EnumTypeDefs(metadata_import_)) {
     auto type_info = GetTypeInfo(metadata_import_, type_def);
     if (type_info.IsValid()) {
@@ -92,52 +92,52 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromTypeDefs) {
 }
 
 TEST_F(CLRHelperTest, GetsTypeInfoFromTypeRefs) {
-  std::set<std::wstring> expected = {
-      L"DebuggingModes",
-      L"Enumerator",
-      L"System.Array",
-      L"System.Collections.DictionaryEntry",
-      L"System.Collections.Generic.Dictionary`2",
-      L"System.Collections.Generic.IList`1",
-      L"System.Collections.Generic.List`1",
-      L"System.Diagnostics.DebuggableAttribute",
+  std::set<shared::WSTRING> expected = {
+      WStr("DebuggingModes"),
+      WStr("Enumerator"),
+      WStr("System.Array"),
+      WStr("System.Collections.DictionaryEntry"),
+      WStr("System.Collections.Generic.Dictionary`2"),
+      WStr("System.Collections.Generic.IList`1"),
+      WStr("System.Collections.Generic.List`1"),
+      WStr("System.Diagnostics.DebuggableAttribute"),
 #ifdef _DEBUG
-      L"System.Diagnostics.DebuggerBrowsableAttribute",
-      L"System.Diagnostics.DebuggerBrowsableState",
+      WStr("System.Diagnostics.DebuggerBrowsableAttribute"),
+      WStr("System.Diagnostics.DebuggerBrowsableState"),
 #endif
-      L"System.Diagnostics.DebuggerHiddenAttribute",
+      WStr("System.Diagnostics.DebuggerHiddenAttribute"),
 #ifdef _DEBUG
-      L"System.Diagnostics.DebuggerStepThroughAttribute",
+      WStr("System.Diagnostics.DebuggerStepThroughAttribute"),
 #endif
-      L"System.Exception",
-      L"System.Func`3",
-      L"System.Guid",
-      L"System.Int32",
-      L"System.Object",
-      L"System.Reflection.AssemblyCompanyAttribute",
-      L"System.Reflection.AssemblyConfigurationAttribute",
-      L"System.Reflection.AssemblyFileVersionAttribute",
-      L"System.Reflection.AssemblyInformationalVersionAttribute",
-      L"System.Reflection.AssemblyProductAttribute",
-      L"System.Reflection.AssemblyTitleAttribute",
-      L"System.Runtime.CompilerServices.AsyncStateMachineAttribute",
-      L"System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1",
-      L"System.Runtime.CompilerServices.CompilationRelaxationsAttribute",
-      L"System.Runtime.CompilerServices.CompilerGeneratedAttribute",
-      L"System.Runtime.CompilerServices.IAsyncStateMachine",
-      L"System.Runtime.CompilerServices.RuntimeCompatibilityAttribute",
-      L"System.Runtime.CompilerServices.TaskAwaiter",
-      L"System.Runtime.CompilerServices.TaskAwaiter`1",
-      L"System.Runtime.Versioning.TargetFrameworkAttribute",
-      L"System.RuntimeTypeHandle",
-      L"System.String",
-      L"System.Threading.Tasks.Task",
-      L"System.Threading.Tasks.Task`1",
-      L"System.Tuple`2",
-      L"System.Tuple`7",
-      L"System.Type",
-      L"System.ValueType"};
-  std::set<std::wstring> actual;
+      WStr("System.Exception"),
+      WStr("System.Func`3"),
+      WStr("System.Guid"),
+      WStr("System.Int32"),
+      WStr("System.Object"),
+      WStr("System.Reflection.AssemblyCompanyAttribute"),
+      WStr("System.Reflection.AssemblyConfigurationAttribute"),
+      WStr("System.Reflection.AssemblyFileVersionAttribute"),
+      WStr("System.Reflection.AssemblyInformationalVersionAttribute"),
+      WStr("System.Reflection.AssemblyProductAttribute"),
+      WStr("System.Reflection.AssemblyTitleAttribute"),
+      WStr("System.Runtime.CompilerServices.AsyncStateMachineAttribute"),
+      WStr("System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1"),
+      WStr("System.Runtime.CompilerServices.CompilationRelaxationsAttribute"),
+      WStr("System.Runtime.CompilerServices.CompilerGeneratedAttribute"),
+      WStr("System.Runtime.CompilerServices.IAsyncStateMachine"),
+      WStr("System.Runtime.CompilerServices.RuntimeCompatibilityAttribute"),
+      WStr("System.Runtime.CompilerServices.TaskAwaiter"),
+      WStr("System.Runtime.CompilerServices.TaskAwaiter`1"),
+      WStr("System.Runtime.Versioning.TargetFrameworkAttribute"),
+      WStr("System.RuntimeTypeHandle"),
+      WStr("System.String"),
+      WStr("System.Threading.Tasks.Task"),
+      WStr("System.Threading.Tasks.Task`1"),
+      WStr("System.Tuple`2"),
+      WStr("System.Tuple`7"),
+      WStr("System.Type"),
+      WStr("System.ValueType")};
+  std::set<shared::WSTRING> actual;
   for (auto& type_ref : EnumTypeRefs(metadata_import_)) {
     auto type_info = GetTypeInfo(metadata_import_, type_ref);
     if (type_info.IsValid()) {
@@ -149,8 +149,8 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromTypeRefs) {
 
 TEST_F(CLRHelperTest, GetsTypeInfoFromModuleRefs) {
   // TODO(cbd): figure out how to create a module ref, for now its empty
-  std::set<std::wstring> expected = {};
-  std::set<std::wstring> actual;
+  std::set<shared::WSTRING> expected = {};
+  std::set<shared::WSTRING> actual;
   for (auto& module_ref : EnumModuleRefs(metadata_import_)) {
     auto type_info = GetTypeInfo(metadata_import_, module_ref);
     actual.insert(type_info.name);
@@ -159,23 +159,23 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromModuleRefs) {
 }
 
 TEST_F(CLRHelperTest, GetsTypeInfoFromMethods) {
-  std::set<std::wstring> expected = {
-      L"<>c",
-      L"<StayAndLayDown>d__4`2",
-      L"Cookie",
-      L"Raisin",
-      L"Samples.ExampleLibrary.Class1",
-      L"Samples.ExampleLibrary.FakeClient.Biscuit",
-      L"Samples.ExampleLibrary.FakeClient.Biscuit`1",
-      L"Samples.ExampleLibrary.FakeClient.DogClient`2",
-      L"Samples.ExampleLibrary.FakeClient.DogTrick",
-      L"Samples.ExampleLibrary.FakeClient.DogTrick`1",
-      L"Samples.ExampleLibrary.FakeClient.StructBiscuit",
-      L"Samples.ExampleLibrary.GenericTests.ComprehensiveCaller`2",
-      L"Samples.ExampleLibrary.GenericTests.GenericTarget`2",
-      L"Samples.ExampleLibrary.GenericTests.PointStruct",
-      L"Samples.ExampleLibrary.GenericTests.StructContainer`1"};
-  std::set<std::wstring> actual;
+  std::set<shared::WSTRING> expected = {
+      WStr("<>c"),
+      WStr("<StayAndLayDown>d__4`2"),
+      WStr("Cookie"),
+      WStr("Raisin"),
+      WStr("Samples.ExampleLibrary.Class1"),
+      WStr("Samples.ExampleLibrary.FakeClient.Biscuit"),
+      WStr("Samples.ExampleLibrary.FakeClient.Biscuit`1"),
+      WStr("Samples.ExampleLibrary.FakeClient.DogClient`2"),
+      WStr("Samples.ExampleLibrary.FakeClient.DogTrick"),
+      WStr("Samples.ExampleLibrary.FakeClient.DogTrick`1"),
+      WStr("Samples.ExampleLibrary.FakeClient.StructBiscuit"),
+      WStr("Samples.ExampleLibrary.GenericTests.ComprehensiveCaller`2"),
+      WStr("Samples.ExampleLibrary.GenericTests.GenericTarget`2"),
+      WStr("Samples.ExampleLibrary.GenericTests.PointStruct"),
+      WStr("Samples.ExampleLibrary.GenericTests.StructContainer`1")};
+  std::set<shared::WSTRING> actual;
   for (auto& type_def : EnumTypeDefs(metadata_import_)) {
     for (auto& method_def : EnumMethods(metadata_import_, type_def)) {
       auto type_info = GetTypeInfo(metadata_import_, method_def);
@@ -188,51 +188,51 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromMethods) {
 }
 
 TEST_F(CLRHelperTest, FindTypeDefsByName) {
-  std::vector<std::wstring> expected_types = {
-      L"Samples.ExampleLibrary.Class1",
-      L"Samples.ExampleLibrary.GenericTests.ComprehensiveCaller`2",
-      L"Samples.ExampleLibrary.GenericTests.GenericTarget`2",
-      L"Samples.ExampleLibrary.GenericTests.PointStruct",
-      L"Samples.ExampleLibrary.GenericTests.StructContainer`1",
-      L"Samples.ExampleLibrary.FakeClient.Biscuit`1",
-      L"Samples.ExampleLibrary.FakeClient.Biscuit",
-      L"Samples.ExampleLibrary.FakeClient.DogClient`2",
-      L"Samples.ExampleLibrary.FakeClient.DogTrick`1",
-      L"Samples.ExampleLibrary.FakeClient.DogTrick"};
+  std::vector<shared::WSTRING> expected_types = {
+      WStr("Samples.ExampleLibrary.Class1"),
+      WStr("Samples.ExampleLibrary.GenericTests.ComprehensiveCaller`2"),
+      WStr("Samples.ExampleLibrary.GenericTests.GenericTarget`2"),
+      WStr("Samples.ExampleLibrary.GenericTests.PointStruct"),
+      WStr("Samples.ExampleLibrary.GenericTests.StructContainer`1"),
+      WStr("Samples.ExampleLibrary.FakeClient.Biscuit`1"),
+      WStr("Samples.ExampleLibrary.FakeClient.Biscuit"),
+      WStr("Samples.ExampleLibrary.FakeClient.DogClient`2"),
+      WStr("Samples.ExampleLibrary.FakeClient.DogTrick`1"),
+      WStr("Samples.ExampleLibrary.FakeClient.DogTrick")};
 
   for (auto& def : expected_types) {
     mdTypeDef typeDef = mdTypeDefNil;
-    auto found = FindTypeDefByName(def, L"Samples.ExampleLibrary",
+    auto found = FindTypeDefByName(def, WStr("Samples.ExampleLibrary"),
                                    metadata_import_, typeDef);
-    EXPECT_TRUE(found) << "Failed type is : " << def << std::endl;
-    EXPECT_NE(typeDef, mdTypeDefNil) << "Failed type is : " << def << std::endl;
+    EXPECT_TRUE(found) << "Failed type is : " << shared::ToString(def) << std::endl;
+    EXPECT_NE(typeDef, mdTypeDefNil) << "Failed type is : " << shared::ToString(def) << std::endl;
   }
 }
 
 TEST_F(CLRHelperTest, FindNestedTypeDefsByName) {
-  std::vector<std::wstring> expected_types = {
-      L"Samples.ExampleLibrary.FakeClient.Biscuit+Cookie",
-      L"Samples.ExampleLibrary.FakeClient.StructBiscuit+Cookie"};
+  std::vector<shared::WSTRING> expected_types = {
+      WStr("Samples.ExampleLibrary.FakeClient.Biscuit+Cookie"),
+      WStr("Samples.ExampleLibrary.FakeClient.StructBiscuit+Cookie")};
 
   for (auto& def : expected_types) {
     mdTypeDef typeDef = mdTypeDefNil;
-    auto found = FindTypeDefByName(def, L"Samples.ExampleLibrary",
+    auto found = FindTypeDefByName(def, WStr("Samples.ExampleLibrary"),
                                    metadata_import_, typeDef);
-    EXPECT_TRUE(found) << "Failed type is : " << def << std::endl;
-    EXPECT_NE(typeDef, mdTypeDefNil) << "Failed type is : " << def << std::endl;
+    EXPECT_TRUE(found) << "Failed type is : " << shared::ToString(def) << std::endl;
+    EXPECT_NE(typeDef, mdTypeDefNil) << "Failed type is : " << shared::ToString(def) << std::endl;
   }
 }
 
 TEST_F(CLRHelperTest, DoesNotFindDoubleNestedTypeDefsByName) {
-  std::vector<std::wstring> expected_types = {
-      L"Samples.ExampleLibrary.NotARealClass",
-      L"Samples.ExampleLibrary.FakeClient.Biscuit+Cookie+Raisin"};
+  std::vector<shared::WSTRING> expected_types = {
+      WStr("Samples.ExampleLibrary.NotARealClass"),
+      WStr("Samples.ExampleLibrary.FakeClient.Biscuit+Cookie+Raisin")};
 
   for (auto& def : expected_types) {
     mdTypeDef typeDef = mdTypeDefNil;
-    auto found = FindTypeDefByName(def, L"Samples.ExampleLibrary",
+    auto found = FindTypeDefByName(def, WStr("Samples.ExampleLibrary"),
                                    metadata_import_, typeDef);
-    EXPECT_FALSE(found) << "Failed type is : " << def << std::endl;
-    EXPECT_EQ(typeDef, mdTypeDefNil) << "Failed type is : " << def << std::endl;
+    EXPECT_FALSE(found) << "Failed type is : " << shared::ToString(def) << std::endl;
+    EXPECT_EQ(typeDef, mdTypeDefNil) << "Failed type is : " << shared::ToString(def) << std::endl;
   }
 }

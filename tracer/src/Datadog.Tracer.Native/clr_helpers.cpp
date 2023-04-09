@@ -1,15 +1,19 @@
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
 #include "clr_helpers.h"
 
 #include <cstring>
 
 #include "dd_profiler_constants.h"
 #include "environment_variables.h"
+#include "environment_variables_util.h"
 #include "logger.h"
 #include "macros.h"
 #include <set>
 #include <stack>
 
 #include "../../../shared/src/native-src/pal.h"
+
+#include <codecvt>
 
 namespace trace
 {
@@ -338,7 +342,7 @@ HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
         Logger::Debug("Using existing corlib reference: ", corAssemblyProperty.szName);
         return assembly_emit->DefineAssemblyRef(corAssemblyProperty.ppbPublicKey, corAssemblyProperty.pcbPublicKey,
                                                 corAssemblyProperty.szName.c_str(), &corAssemblyProperty.pMetaData,
-                                                NULL, 0, corAssemblyProperty.assemblyFlags, corlib_ref);
+                                                nullptr, 0, corAssemblyProperty.assemblyFlags, corlib_ref);
     }
     else
     {
@@ -349,7 +353,7 @@ HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
         metadata.usBuildNumber = 0;
         metadata.usRevisionNumber = 0;
         BYTE public_key[] = {0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89};
-        return assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key), WStr("mscorlib"), &metadata, NULL, 0,
+        return assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key), WStr("mscorlib"), &metadata, nullptr, 0,
                                                 corAssemblyProperty.assemblyFlags, corlib_ref);
     }
 }
@@ -1010,13 +1014,34 @@ HRESULT FunctionLocalSignature::TryParse(PCCOR_SIGNATURE pbBase, unsigned len, s
     return S_OK;
 }
 
+shared::WSTRING GetStringValueFromBlob(PCCOR_SIGNATURE& signature)
+{
+    // If it's null
+    if (*signature == UINT8_MAX)
+    {
+        signature += 1;
+        return shared::WSTRING();
+    }
+
+    // Read size and advance
+    ULONG size{CorSigUncompressData(signature)};
+    shared::WSTRING wstr;
+    wstr.reserve(size);
+
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    std::wstring temp =
+        converter.from_bytes(reinterpret_cast<const char*>(signature), reinterpret_cast<const char*>(signature) + size);
+    wstr.assign(temp.begin(), temp.end());
+    signature += size;
+    return wstr;
+}
+
 HRESULT HasAsyncStateMachineAttribute(const ComPtr<IMetaDataImport2>& metadataImport, const mdMethodDef methodDefToken, bool& hasAsyncAttribute)
 {
     const void* ppData = nullptr;
     ULONG pcbData = 0;
     auto hr = metadataImport->GetCustomAttributeByName(
         methodDefToken, WStr("System.Runtime.CompilerServices.AsyncStateMachineAttribute"), &ppData, &pcbData);
-
     IfFailRet(hr);
     hasAsyncAttribute = pcbData > 0;
     return hr;
@@ -1412,4 +1437,38 @@ HRESULT GenericTypeProps::TryParse()
     return S_OK;
 }
 
+void LogManagedProfilerAssemblyDetails()
+{
+    if (!IsDebugEnabled())
+    {
+        return;
+    }
+
+    Logger::Debug("pcbPublicKey: ", managed_profiler_assembly_property.pcbPublicKey);
+    Logger::Debug("ppbPublicKey: ", shared::HexStr(managed_profiler_assembly_property.ppbPublicKey,
+                                                  managed_profiler_assembly_property.pcbPublicKey));
+    Logger::Debug("szName: ", managed_profiler_assembly_property.szName);
+
+    Logger::Debug("Metadata.cbLocale: ", managed_profiler_assembly_property.pMetaData.cbLocale);
+    Logger::Debug("Metadata.szLocale: ", managed_profiler_assembly_property.pMetaData.szLocale);
+
+    if (managed_profiler_assembly_property.pMetaData.rOS != nullptr)
+    {
+        Logger::Debug("Metadata.rOS.dwOSMajorVersion: ",
+                     managed_profiler_assembly_property.pMetaData.rOS->dwOSMajorVersion);
+        Logger::Debug("Metadata.rOS.dwOSMinorVersion: ",
+                     managed_profiler_assembly_property.pMetaData.rOS->dwOSMinorVersion);
+        Logger::Debug("Metadata.rOS.dwOSPlatformId: ",
+                     managed_profiler_assembly_property.pMetaData.rOS->dwOSPlatformId);
+    }
+
+    Logger::Debug("Metadata.usBuildNumber: ", managed_profiler_assembly_property.pMetaData.usBuildNumber);
+    Logger::Debug("Metadata.usMajorVersion: ", managed_profiler_assembly_property.pMetaData.usMajorVersion);
+    Logger::Debug("Metadata.usMinorVersion: ", managed_profiler_assembly_property.pMetaData.usMinorVersion);
+    Logger::Debug("Metadata.usRevisionNumber: ", managed_profiler_assembly_property.pMetaData.usRevisionNumber);
+
+    Logger::Debug("pulHashAlgId: ", managed_profiler_assembly_property.pulHashAlgId);
+    Logger::Debug("sizeof(pulHashAlgId): ", sizeof(managed_profiler_assembly_property.pulHashAlgId));
+    Logger::Debug("assemblyFlags: ", managed_profiler_assembly_property.assemblyFlags);
+}
 } // namespace trace

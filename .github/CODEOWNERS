@@ -1,25 +1,29 @@
 # See https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-on-github/about-code-owners
 
 # By default every team is owner
-*                                         @DataDog/apm-dotnet @DataDog/debugger-dotnet @DataDog/profiling-dotnet
+*                                         @DataDog/apm-dotnet
 
 # Tracer
-/tracer/                                  @DataDog/apm-dotnet
+/tracer/                                  @DataDog/tracing-dotnet
 
 # CI
-/tracer/src/Datadog.Trace/Ci/             @DataDog/apm-dotnet @DataDog/ci-app-libraries-dotnet
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/CI/   @DataDog/ci-app-libraries-dotnet
+/tracer/src/Datadog.Trace/Ci/             @DataDog/ci-app-libraries-dotnet @DataDog/apm-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/CI/   @DataDog/ci-app-libraries-dotnet @DataDog/apm-dotnet
 
 # ASM
-/tracer/src/Datadog.Trace/AppSec/         @DataDog/apm-dotnet @DataDog/asm-dotnet
-/tracer/test/test-applications/security   @DataDog/apm-dotnet @DataDog/asm-dotnet
-/tracer/test/Datadog.Trace.Security.IntegrationTests @DataDog/apm-dotnet @DataDog/asm-dotnet
-/tracer/test/Datadog.Trace.Security.Unit.Tests       @DataDog/apm-dotnet @DataDog/asm-dotnet
+/tracer/src/Datadog.Trace/AppSec/         @DataDog/asm-dotnet
+/tracer/src/Datadog.Trace/IAST/           @DataDog/asm-dotnet
+/tracer/src/Datadog.Tracer.Native/iast/    @DataDog/asm-dotnet
+/tracer/test/test-applications/security/   @DataDog/asm-dotnet
+/tracer/test/Datadog.Trace.Security.IntegrationTests/ @DataDog/asm-dotnet
+/tracer/test/Datadog.Trace.Security.Unit.Tests/       @DataDog/asm-dotnet
+/tracer/test/snapshots/Security*          @DataDog/asm-dotnet
 
 # Profiler
 /profiler/                                @DataDog/profiling-dotnet
 .github/workflows/profiler-pipeline.yml   @DataDog/profiling-dotnet
-/tracer/src/Datadog.Trace/ContinuousProfiler @DataDog/apm-dotnet @DataDog/profiling-dotnet
+/tracer/src/Datadog.Trace/ContinuousProfiler/ @DataDog/profiling-dotnet @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.Tests/ContinuousProfiler/ @DataDog/profiling-dotnet @DataDog/tracing-dotnet
 
 # Debugger
 /tracer/src/Datadog.Trace/Debugger/        @DataDog/debugger-dotnet
@@ -27,6 +31,12 @@
 /tracer/src/Datadog.Trace/PDBs/            @DataDog/debugger-dotnet @DataDog/ci-app-libraries-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Debugger/ @DataDog/debugger-dotnet
 /tracer/test/test-applications/debugger/   @DataDog/debugger-dotnet
+debugger_*.cpp                             @DataDog/debugger-dotnet
+debugger_*.h                               @DataDog/debugger-dotnet
+/tracer/test/Datadog.Trace.Tests/Debugger  @DataDog/debugger-dotnet
+/tracer/test/Datadog.Trace.Debugger.IntegrationTests/ @DataDog/debugger-dotnet
+tracer/src/Datadog.InstrumentedAssemblyGenerator/ @DataDog/debugger-dotnet
+tracer/src/Datadog.InstrumentedAssemblyVerification/ @DataDog/debugger-dotnet
 
 # Shared code we could move to the root folder
-/tracer/build/                            @DataDog/apm-dotnet @DataDog/debugger-dotnet @DataDog/profiling-dotnet @DataDog/asm-dotnet
+/tracer/build/                            @DataDog/apm-dotnet

@@ -54,6 +54,10 @@ public:
     int32_t CpuThreadsThreshold() const override;
     int32_t CodeHotspotsThreadsThreshold() const override;
     bool IsGarbageCollectionProfilingEnabled() const override;
+    bool IsHeapProfilingEnabled() const override;
+    bool UseBacktrace2() const override;
+    bool IsAllocationRecorderEnabled() const override;
+    bool IsDebugInfoEnabled() const override;
 
 private:
     static tags ExtractUserTags();
@@ -94,6 +98,7 @@ private:
     bool _isAllocationProfilingEnabled;
     bool _isContentionProfilingEnabled;
     bool _isGarbageCollectionProfilingEnabled;
+    bool _isHeapProfilingEnabled;
     bool _debugLogEnabled;
     fs::path _logDirectory;
     fs::path _pprofDirectory;
@@ -119,8 +124,11 @@ private:
     int32_t _walltimeThreadsThreshold;
     int32_t _cpuThreadsThreshold;
     int32_t _codeHotspotsThreadsThreshold;
+    bool _useBacktrace2;
+    bool _isAllocationRecorderEnabled;
 
     double _minimumCores;
     std::string _namedPipeName;
     bool _isTimestampsAsLabelEnabled;
+    bool _isDebugInfoEnabled;
 };

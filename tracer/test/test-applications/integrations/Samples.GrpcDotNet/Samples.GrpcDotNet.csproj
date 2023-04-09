@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
-    <Platforms>x86;x64</Platforms>
     <!-- Suppress warnings about lowercase variable names in generated code -->
     <NoWarn>0618;NETSDK1138;CS8981</NoWarn>
 
@@ -18,6 +17,11 @@
     <GeneratedFolder>Generated_Code\$(TargetFramework)</GeneratedFolder>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(IsOSX)' == 'true'">
+    <!-- If OSX we force the x64 version (protoc is only available in x64) -->
+    <Protobuf_ToolsCpu>x64</Protobuf_ToolsCpu>
+  </PropertyGroup>
+  
   <ItemGroup>
     <Protobuf Include="Protos\greet.proto" GrpcServices="Both" OutputDir="$(GeneratedFolder)\$(ApiVersion)" />
   </ItemGroup>

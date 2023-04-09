@@ -17,12 +17,12 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     [UsesVerify]
-    public class AspNetCoreMvcWrongMethodTestBase : TracingIntegrationTest, IClassFixture<AspNetCoreMvcTestBase.AspNetCoreTestFixture>
+    public class AspNetCoreMvcWrongMethodTestBase : TracingIntegrationTest, IClassFixture<AspNetCoreTestFixture>
     {
-        private readonly AspNetCoreMvcTestBase.AspNetCoreTestFixture fixture;
+        private readonly AspNetCoreTestFixture fixture;
         private readonly string _testName;
 
-        public AspNetCoreMvcWrongMethodTestBase(string testName, string sampleName, AspNetCoreMvcTestBase.AspNetCoreTestFixture fixture, ITestOutputHelper output)
+        public AspNetCoreMvcWrongMethodTestBase(string testName, string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper output)
             : base(sampleName, output)
         {
             this.fixture = fixture;

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+    <!-- System.Runtime.CompilerServices.Unsafe doesn't support netcoreapp2.1-->
+    <!-- https://andrewlock.net/stop-lying-about-netstandard-2-support/-->
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">1.3.1</ApiVersion>
+    <DefineConstants Condition="'$(ApiVersion)'>='1.2.0'">$(DefineConstants);OTEL_1_2</DefineConstants>
+    </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenTelemetry" Version="$(ApiVersion)" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="$(ApiVersion)" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="$(ApiVersion)" />
+  </ItemGroup>
+</Project>

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Datadog.Trace.Tools.Runner.Crank;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using Spectre.Console.Rendering;
@@ -125,6 +126,10 @@ namespace Datadog.Trace.Tools.Runner
                     c.AddCommand<RunCiCommand>("run")
                         .WithDescription("Run a command and instrument the tests")
                         .WithExample("ci run -- dotnet test".Split(' '));
+                    c.AddCommand<CrankCommand>("crank-import")
+                        .IsHidden()
+                        .WithDescription("Import a Microsoft Crank json file")
+                        .WithExample("ci crank-import ./crank-results.json".Split(' '));
                 });
 
             config.AddBranch(
@@ -147,6 +152,17 @@ namespace Datadog.Trace.Tools.Runner
             config.AddCommand<AotCommand>("apply-aot")
                   .WithDescription("Apply AOT automatic instrumentation on application folder")
                   .WithExample("apply-aot c:\\input\\ c:\\output\\".Split(' '))
+                  .IsHidden();
+
+            config.AddCommand<AnalyzeInstrumentationErrorsCommand>("analyze-instrumentation")
+                  .WithDescription("Analyze instrumentation errors")
+                  .WithExample("analyze-instrumentation [--process-name dotnet]".Split(' '))
+                  .WithExample("analyze-instrumentation [--pid 12345]".Split(' '))
+                  .WithExample("analyze-instrumentation [--log-path \"C:\\ProgramData\\Datadog .NET Tracer\\logs\\\"]".Split(' '));
+
+            config.AddCommand<CoverageMergerCommand>("coverage-merge")
+                  .WithDescription("Merges all coverage json files into a single one.")
+                  .WithExample("coverage-merge c:\\coverage_folder\\ total-coverage.json".Split(' '))
                   .IsHidden();
         }
 

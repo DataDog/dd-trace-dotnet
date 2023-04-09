@@ -3,9 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP
-using System.Text.RegularExpressions;
+using System.IO;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
@@ -17,7 +18,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast;
 public class DeduplicationTests : TestHelper
 {
     private const string ExpectedOperationName = "weak_hashing";
-    private static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
 
     public DeduplicationTests(ITestOutputHelper output)
         : base("Deduplication", output)
@@ -34,12 +34,23 @@ public class DeduplicationTests : TestHelper
     [Trait("RunOnWindows", "True")]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task SubmitsTraces(bool deduplicationEnabled)
+    [InlineData(false, "DD_IAST_WEAK_HASH_ALGORITHMS", "noexistingalgorithm")]
+    [InlineData(false, $"DD_TRACE_{nameof(IntegrationId.HashAlgorithm)}_ENABLED", "false")]
+    public async Task SubmitsTraces(bool deduplicationEnabled, string disableKey = "", string disableValue = "")
     {
-        SetEnvironmentVariable("DD_IAST_ENABLED", "true");
-        SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", deduplicationEnabled.ToString());
+        bool instrumented = string.IsNullOrEmpty(disableKey);
+        if (!instrumented)
+        {
+            SetEnvironmentVariable(disableKey, disableValue);
+            instrumented = false;
+        }
 
-        int expectedSpanCount = deduplicationEnabled ? 1 : 5;
+        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+        SetEnvironmentVariable("DD_IAST_ENABLED", "1");
+        SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", deduplicationEnabled.ToString());
+        SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory));
+
+        int expectedSpanCount = instrumented ? (deduplicationEnabled ? 1 : 5) : 0;
         var filename = deduplicationEnabled ? "iast.deduplication.deduplicated" : "iast.deduplication.duplicated";
 
         using var agent = EnvironmentHelper.GetMockAgent();
@@ -47,12 +58,19 @@ public class DeduplicationTests : TestHelper
         var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
-        await VerifyHelper.VerifySpans(spans, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
+        settings.AddIastScrubbing();
 
-        VerifyInstrumentation(process.Process);
+        if (instrumented)
+        {
+            await VerifyHelper.VerifySpans(spans, settings)
+                              .UseFileName(filename)
+                              .DisableRequireUniquePrefix();
+
+            VerifyInstrumentation(process.Process);
+        }
+        else
+        {
+            Assert.Empty(spans);
+        }
     }
 }
-#endif

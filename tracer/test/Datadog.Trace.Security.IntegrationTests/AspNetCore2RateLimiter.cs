@@ -17,11 +17,21 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCore2RateLimiter : AspNetBase, IDisposable
+    public class AspNetCore2RateLimiter : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
-        public AspNetCore2RateLimiter(ITestOutputHelper outputHelper)
+        private readonly AspNetCoreTestFixture fixture;
+
+        public AspNetCore2RateLimiter(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
             : base("AspNetCore2", outputHelper, "/shutdown")
         {
+            this.fixture = fixture;
+            this.fixture.SetOutput(outputHelper);
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            this.fixture.SetOutput(null);
         }
 
         [SkippableTheory(Skip = "Don't run in CI as test is slow, can be run manually by removing this attribute")]
@@ -35,8 +45,10 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("Category", "ArmUnsupported")]
         public async Task TestRateLimiterSecurity(bool enableSecurity, int totalRequests, int traceRateLimit, string url = DefaultAttackUrl)
         {
-            var agent = await RunOnSelfHosted(enableSecurity, traceRateLimit: traceRateLimit, externalRulesFile: DefaultRuleFile);
-            await TestRateLimiter(enableSecurity, url, agent, traceRateLimit, totalRequests, 1);
+            EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_TRACE_RATE_LIMIT", traceRateLimit.ToString());
+            await fixture.TryStartApp(this, enableSecurity, externalRulesFile: DefaultRuleFile);
+            SetHttpPort(fixture.HttpPort);
+            await TestRateLimiter(enableSecurity, url, fixture.Agent, traceRateLimit, totalRequests, 1);
         }
     }
 }

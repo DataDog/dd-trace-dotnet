@@ -213,6 +213,6 @@
       "version": "2"
     },
     "message": "AsyncWithGenericArgumentAndLocal+NestedAsyncGenericClass`1+<Method>d__6.MoveNext(generic=NestedAsyncGenericClass`1, input=.RunAsync): AsyncWithGenericArgumentAndLocal.RunAsync.Hello.MethodSamples.Probes.Shared.Generic - Array\r\n@return=AsyncWithGenericArgumentAndLocal.RunAsync.Hello.MethodSamples.Probes.Shared.Generic - Array, list=count: 1, output=AsyncWithGenericArgumentAndLocal.RunAsync.Hello.",
-    "service": "Probes"
+    "service": "probes"
   }
 ]

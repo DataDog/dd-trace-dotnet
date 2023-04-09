@@ -1,0 +1,87 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "seed": {
+                "type": "Int32",
+                "value": "3"
+              },
+              "this": {
+                "type": "TemplateWithLocalAtEntry",
+                "value": "TemplateWithLocalAtEntry"
+              }
+            },
+            "staticFields": {
+              "Json": {
+                "type": "String",
+                "value": "{\r\n        \"ref\": \"i\"\r\n}"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "seed": {
+                "type": "Int32",
+                "value": "3"
+              },
+              "this": {
+                "type": "TemplateWithLocalAtEntry",
+                "value": "TemplateWithLocalAtEntry"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "9"
+              },
+              "i": {
+                "type": "Int32",
+                "value": "6"
+              }
+            },
+            "staticFields": {
+              "Json": {
+                "type": "String",
+                "value": "{\r\n        \"ref\": \"i\"\r\n}"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "errors": [
+          {
+            "expression": "this.i",
+            "message": "ScrubbedValue"
+          }
+        ],
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.ExpressionTests.TemplateWithLocalAtEntry"
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.ExpressionTests.TemplateWithLocalAtEntry",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

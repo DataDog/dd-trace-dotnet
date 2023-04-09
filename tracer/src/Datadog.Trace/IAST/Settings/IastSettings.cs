@@ -23,8 +23,7 @@ internal class IastSettings
         WeakCipherAlgorithmsArray = WeakCipherAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
         WeakHashAlgorithms = source?.GetString(ConfigurationKeys.Iast.WeakHashAlgorithms) ?? WeakHashAlgorithmsDefault;
         WeakHashAlgorithmsArray = WeakHashAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
-        Enabled = (source?.GetBool(ConfigurationKeys.Iast.Enabled) ?? false) &&
-            (WeakHashAlgorithmsArray.Length > 0 || WeakCipherAlgorithmsArray.Length > 0);
+        Enabled = (source?.GetBool(ConfigurationKeys.Iast.Enabled) ?? false);
         DeduplicationEnabled = source?.GetBool(ConfigurationKeys.Iast.IsIastDeduplicationEnabled) ?? true;
         RequestSampling = source?.GetInt32(ConfigurationKeys.Iast.RequestSampling) is { } requestSampling and > 0 and <= 100
             ? requestSampling : RequestSamplingDefault;

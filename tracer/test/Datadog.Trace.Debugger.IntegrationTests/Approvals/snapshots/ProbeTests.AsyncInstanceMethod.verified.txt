@@ -68,7 +68,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -90,6 +90,12 @@
                 "output": {
                   "isNull": "true",
                   "type": "String"
+                }
+              },
+              "staticFields": {
+                "ClassName": {
+                  "type": "String",
+                  "value": "AsyncInstanceMethod"
                 }
               }
             }
@@ -119,6 +125,6 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   }
 ]

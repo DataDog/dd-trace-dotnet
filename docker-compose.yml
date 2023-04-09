@@ -63,9 +63,25 @@ services:
 
   stackexchangeredis_arm64:
     image: redis:4-alpine
+    hostname: stackexchangeredis_arm64
     command: redis-server --bind 0.0.0.0
     ports:
     - "6379"
+
+  stackexchangeredis_arm64-replica:
+    image: redis:4-alpine
+    hostname: stackexchangeredis_arm64-replica
+    command: redis-server --bind 0.0.0.0 --slaveof stackexchangeredis_arm64 6379
+    ports:
+    - "127.0.0.1:6390:6379"
+
+  stackexchangeredis_arm64-single:
+    image: redis:4-alpine
+    hostname: stackexchangeredis_arm64-single
+    command: redis-server --bind 0.0.0.0
+    ports:
+    - "127.0.0.1:6391:6379"
+
 
 # Dependencies
   aws_sqs:
@@ -93,9 +109,24 @@ services:
 
   stackexchangeredis:
     image: redis:4-alpine
+    hostname: stackexchangeredis
     command: redis-server --bind 0.0.0.0
     ports:
     - "127.0.0.1:6389:6379"
+
+  stackexchangeredis-replica:
+    image: redis:4-alpine
+    hostname: stackexchangeredis-replica
+    command: redis-server --bind 0.0.0.0 --slaveof stackexchangeredis 6379
+    ports:
+    - "127.0.0.1:6390:6379"
+
+  stackexchangeredis-single:
+    image: redis:4-alpine
+    hostname: stackexchangeredis-single
+    command: redis-server --bind 0.0.0.0
+    ports:
+    - "127.0.0.1:6391:6379"
 
   mongo:
     image: mongo:4.0.9
@@ -316,9 +347,9 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunProfilerLinuxIntegrationTests
+    command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerIntegrationTests
     volumes:
       - ./:/project
     cap_add:
@@ -363,9 +394,9 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:-true}
     volumes:
       - ./:/project
     cap_add:
@@ -375,6 +406,7 @@ services:
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
+      - runCodeCoverage=${runCodeCoverage:-true}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
@@ -384,7 +416,8 @@ services:
       - IncludeAllTestFrameworks
       - MONGO_HOST=mongo
       - SERVICESTACK_REDIS_HOST=servicestackredis:6379
-      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
+      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379,stackexchangeredis-replica:6379
+      - STACKEXCHANGE_REDIS_SINGLE_HOST=stackexchangeredis-single:6379
       - ELASTICSEARCH7_HOST=elasticsearch7:9200
       - ELASTICSEARCH6_HOST=elasticsearch6:9200
       - ELASTICSEARCH5_HOST=elasticsearch5:9200
@@ -431,6 +464,8 @@ services:
       - aerospike
       - servicestackredis
       - stackexchangeredis
+      - stackexchangeredis-replica
+      - stackexchangeredis-single
       - elasticsearch7
       - elasticsearch6
       - elasticsearch5
@@ -450,9 +485,9 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage --targetplatform x64
+    command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:-true} --targetplatform x64
     volumes:
       - ./:/project
     cap_add:
@@ -462,6 +497,7 @@ services:
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
+      - runCodeCoverage=${runCodeCoverage:-true}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
@@ -498,9 +534,9 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --filter Category=Lambda --code-coverage
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --filter Category=Lambda --code-coverage ${runCodeCoverage:-true}
     volumes:
       - ./:/project
     cap_add:
@@ -510,6 +546,7 @@ services:
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
+      - runCodeCoverage=${runCodeCoverage:-true}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
@@ -550,9 +587,9 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunExplorationTests --explorationTestUseCase ${explorationTestUseCase:-debugger} --explorationTestName ${explorationTestName:-eshoponweb} --framework ${framework:-netcoreapp3.1} --code-coverage
+    command: dotnet /build/bin/Debug/_build.dll RunExplorationTests --explorationTestUseCase ${explorationTestUseCase:-debugger} --explorationTestName ${explorationTestName:-eshoponweb} --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:-true}
     volumes:
       - ./:/project
     cap_add:
@@ -561,6 +598,7 @@ services:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
+      - runCodeCoverage=${runCodeCoverage:-true}
       - explorationTestUseCase=${explorationTestUseCase:-debugger}
       - explorationTestName=${explorationTestName:-eshoponweb}
       - baseImage=${baseImage:-default}
@@ -598,6 +636,8 @@ services:
       - aerospike
       - servicestackredis
       - stackexchangeredis
+      - stackexchangeredis-replica
+      - stackexchangeredis-single
       - elasticsearch7
       - elasticsearch6
       - elasticsearch5
@@ -613,14 +653,14 @@ services:
       - couchbase
     environment:
       - TIMEOUT_LENGTH=120
-    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324 couchbase:11210
+    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324 couchbase:11210
 
   IntegrationTests.ARM64:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
     image: dd-trace-dotnet/${baseImage:-debian}-tester
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
     volumes:
@@ -641,7 +681,8 @@ services:
       - IncludeAllTestFrameworks
       - MONGO_HOST=mongo_arm64
       - SERVICESTACK_REDIS_HOST=servicestackredis_arm64:6379
-      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis_arm64:6379
+      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis_arm64:6379,stackexchangeredis_arm64-replica:6379
+      - STACKEXCHANGE_REDIS_SINGLE_HOST=stackexchangeredis_arm64-single:6379
       - ELASTICSEARCH7_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
@@ -679,6 +720,8 @@ services:
     depends_on:
       - servicestackredis_arm64
       - stackexchangeredis_arm64
+      - stackexchangeredis_arm64-replica
+      - stackexchangeredis_arm64-single
       - elasticsearch7_arm64
       - sqledge_arm64
       - mongo_arm64
@@ -692,6 +735,8 @@ services:
     depends_on:
       - servicestackredis_arm64
       - stackexchangeredis_arm64
+      - stackexchangeredis_arm64-replica
+      - stackexchangeredis_arm64-single
       - elasticsearch7_arm64
       - sqledge_arm64
       - mongo_arm64
@@ -701,14 +746,14 @@ services:
       - aws_sqs_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 aws_sqs_arm64:9324
+    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 aws_sqs_arm64:9324
 
   IntegrationTests.ARM64.Debugger:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
     image: dd-trace-dotnet/${baseImage:-debian}-tester
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests --framework ${framework:-netcoreapp3.1} --targetplatform x64
     volumes:
@@ -866,3 +911,104 @@ services:
     - DD_TRACE_AGENT_URL=http://test-agent:8126
     depends_on:
     - test-agent
+
+  StartDependencies.OSXARM64:
+    image: andrewlock/wait-for-dependencies
+    depends_on:
+      - servicestackredis_osx_arm64
+      - stackexchangeredis_osx_arm64
+      - stackexchangeredis_osx_arm64-replica
+      - stackexchangeredis_osx_arm64-single
+      - elasticsearch7_osx_arm64
+      - sqledge_osx_arm64
+      - mongo_osx_arm64
+      - postgres_osx_arm64
+      - mysql_osx_arm64
+      - rabbitmq_osx_arm64
+      - aws_sqs_osx_arm64
+    environment:
+      - TIMEOUT_LENGTH=120
+    command: servicestackredis_osx_arm64:6379 stackexchangeredis_osx_arm64:6379 stackexchangeredis_osx_arm64-replica:6379 stackexchangeredis_osx_arm64-single:6379 elasticsearch7_osx_arm64:9200 sqledge_osx_arm64:1433 mongo_osx_arm64:27017 postgres_osx_arm64:5432 mysql_osx_arm64:3306 rabbitmq_osx_arm64:5672 aws_sqs_osx_arm64:9324
+
+  # OSX ARM64 dependencies
+
+  aws_sqs_osx_arm64:
+    image: softwaremill/elasticmq
+    ports:
+      - "9324:9324"
+
+  elasticsearch7_osx_arm64:
+    image: elasticsearch:7.10.1
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
+  mongo_osx_arm64:
+    image: mongo:4.0.9
+    ports:
+      - "27017:27017"
+    command: mongod
+
+  mysql_osx_arm64:
+    image: mysql/mysql-server:8.0
+    environment:
+      - MYSQL_DATABASE=world
+      - MYSQL_ROOT_PASSWORD=mysqldb
+      - MYSQL_USER=mysqldb
+      - MYSQL_PASSWORD=mysqldb
+    ports:
+      - "3306:3306"
+
+  postgres_osx_arm64:
+    image: postgres:10.5-alpine
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5432:5432"
+
+  rabbitmq_osx_arm64:
+    image: rabbitmq:3-management
+    command: rabbitmq-server
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  servicestackredis_osx_arm64:
+    image: redis:4-alpine
+    command: redis-server --bind 0.0.0.0
+    ports:
+      - "6379:6379"
+
+  stackexchangeredis_osx_arm64:
+    image: redis:4-alpine
+    hostname: stackexchangeredis_osx_arm64
+    command: redis-server --bind 0.0.0.0
+    ports:
+      - "6392:6379"
+
+  stackexchangeredis_osx_arm64-replica:
+    image: redis:4-alpine
+    hostname: stackexchangeredis_osx_arm64-replica
+    command: redis-server --bind 0.0.0.0 --slaveof stackexchangeredis_osx_arm64 6379
+    ports:
+      - "6390:6379"
+
+  stackexchangeredis_osx_arm64-single:
+    image: redis:4-alpine
+    hostname: stackexchangeredis_osx_arm64-single
+    command: redis-server --bind 0.0.0.0
+    ports:
+      - "6391:6379"
+
+  sqledge_osx_arm64:
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Strong!Passw0rd

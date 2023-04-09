@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Threading;
@@ -47,7 +48,7 @@ namespace BuggyBits
             {
                 try
                 {
-                    string asyncEndpoint = GetEndpoint(rootUrl);
+                    List<string> asyncEndpoints = GetEndpoints(rootUrl);
 
                     // Run for the given number of iterations
                     // 0 means wait for cancellation
@@ -56,9 +57,12 @@ namespace BuggyBits
                         ((iterations == 0) && !_exitToken.IsCancellationRequested) ||
                         (iterations > current))
                     {
-                        await Task.Delay(SleepDuration);
-                        await ExecuteIterationAsync(asyncEndpoint);
+                        foreach (var asyncEndpoint in asyncEndpoints)
+                        {
+                            await ExecuteIterationAsync(asyncEndpoint);
+                        }
 
+                        await Task.Delay(SleepDuration);
                         current++;
                     }
                 }
@@ -73,6 +77,11 @@ namespace BuggyBits
 
         private void CreateIdleThreads()
         {
+            if (_nbIdleThreads == 0)
+            {
+                return;
+            }
+
             Console.WriteLine($"----- Creating {_nbIdleThreads} idle threads");
 
             for (var i = 0; i < _nbIdleThreads; i++)
@@ -81,26 +90,57 @@ namespace BuggyBits
             }
         }
 
-        private string GetEndpoint(string rootUrl)
+        private List<string> GetEndpoints(string rootUrl)
         {
-            switch (_scenario)
+            List<string> urls = new List<string>();
+            if (_scenario == Scenario.None)
             {
-                case Scenario.StringConcat:
-                default:
-                    return $"{rootUrl}/Products/Index";
-
-                case Scenario.StringBuilder:
-                    return $"{rootUrl}/Products/Builder";
-
-                case Scenario.Parallel:
-                    return $"{rootUrl}/Products/Parallel";
-
-                case Scenario.Async:
-                    return $"{rootUrl}/Products/async";
-
-                case Scenario.FormatExceptions:
-                    return $"{rootUrl}/Products/Sales";
+                urls.Add($"{rootUrl}/Products");
             }
+            else
+            {
+                if ((_scenario & Scenario.StringConcat) == Scenario.StringConcat)
+                {
+                    urls.Add($"{rootUrl}/Products");
+                }
+
+                if ((_scenario & Scenario.StringBuilder) == Scenario.StringBuilder)
+                {
+                    urls.Add($"{rootUrl}/Products/Builder");
+                }
+
+                if ((_scenario & Scenario.Parallel) == Scenario.Parallel)
+                {
+                    urls.Add($"{rootUrl}/Products/Parallel");
+                }
+
+                if ((_scenario & Scenario.Async) == Scenario.Async)
+                {
+                    urls.Add($"{rootUrl}/Products/async");
+                }
+
+                if ((_scenario & Scenario.FormatExceptions) == Scenario.FormatExceptions)
+                {
+                    urls.Add($"{rootUrl}/Products/Sales");
+                }
+
+                if ((_scenario & Scenario.ParallelLock) == Scenario.ParallelLock)
+                {
+                    urls.Add($"{rootUrl}/Products/ParallelLock");
+                }
+
+                if ((_scenario & Scenario.MemoryLeak) == Scenario.MemoryLeak)
+                {
+                    urls.Add($"{rootUrl}/News");
+                }
+
+                if ((_scenario & Scenario.EndpointsCount) == Scenario.EndpointsCount)
+                {
+                    urls.Add($"{rootUrl}/End.Point.With.Dots");
+                }
+            }
+
+            return urls;
         }
 
         private async Task ExecuteIterationAsync(string endpointUrl)
@@ -111,7 +151,7 @@ namespace BuggyBits
                 var response = await _httpClient.GetAsync(endpointUrl, _exitToken);
                 if (!response.IsSuccessStatusCode)
                 {
-                    Console.WriteLine($"[Error] Request failed {response.StatusCode}");
+                    Console.WriteLine($"[Error] Request '{endpointUrl}' failed {response.StatusCode}");
                     return;
                 }
 

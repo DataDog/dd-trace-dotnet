@@ -26,8 +26,8 @@ public:
     ~MetadataInterfaces();
 
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
-    ULONG STDMETHODCALLTYPE AddRef(void) override;
-    ULONG STDMETHODCALLTYPE Release(void) override;
+    ULONG STDMETHODCALLTYPE AddRef() override;
+    ULONG STDMETHODCALLTYPE Release() override;
     void WriteMetadataChange(const mdToken* pToken, const shared::WSTRING& metadataName) const;
     HRESULT STDMETHODCALLTYPE OnError(HRESULT hrError, mdToken token) override;
     HRESULT STDMETHODCALLTYPE Map(mdToken tkImp, mdToken tkEmit) override;

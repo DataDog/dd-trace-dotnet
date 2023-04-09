@@ -39,7 +39,7 @@ class MetadataBuilderTest : public ::testing::Test {
     ASSERT_TRUE(SUCCEEDED(hr));
 
     ComPtr<IUnknown> metadataInterfaces;
-    hr = metadata_dispenser_->OpenScope(L"Samples.ExampleLibrary.dll",
+    hr = metadata_dispenser_->OpenScope(WStr("Samples.ExampleLibrary.dll"),
                                         ofReadWriteMask, IID_IMetaDataImport2,
                                         metadataInterfaces.GetAddressOf());
     ASSERT_TRUE(SUCCEEDED(hr)) << "File not found: Samples.ExampleLibrary.dll";
@@ -53,7 +53,7 @@ class MetadataBuilderTest : public ::testing::Test {
     const auto assemblyEmit =
         metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-    const std::wstring assemblyName = L"Samples.ExampleLibrary";
+    const shared::WSTRING assemblyName = WStr("Samples.ExampleLibrary");
 
     const AppDomainID app_domain_id{};
 
@@ -74,7 +74,7 @@ class MetadataBuilderTest : public ::testing::Test {
                             metadataEmit, assemblyImport, assemblyEmit);
 
     hr = metadata_builder_->EmitAssemblyRef(trace::AssemblyReference(
-        L"Samples.ExampleLibraryTracer, Version=1.0.0.0"));
+        WStr("Samples.ExampleLibraryTracer, Version=1.0.0.0")));
     ASSERT_TRUE(SUCCEEDED(hr));
   }
 

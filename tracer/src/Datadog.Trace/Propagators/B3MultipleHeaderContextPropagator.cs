@@ -7,6 +7,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Propagators
 {
@@ -28,6 +29,10 @@ namespace Datadog.Trace.Propagators
         public const string Sampled = "x-b3-sampled";
 
         public static readonly B3MultipleHeaderContextPropagator Instance = new();
+
+        private B3MultipleHeaderContextPropagator()
+        {
+        }
 
         public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
@@ -53,22 +58,26 @@ namespace Datadog.Trace.Propagators
 
             if (IsValidTraceId(rawTraceId) && IsValidSpanId(rawSpanId))
             {
+                ulong traceId;
 #if NETCOREAPP
-                var traceId = rawTraceId.Length == 32 ?
-                                  ParseUtility.ParseFromHexOrDefault(rawTraceId.AsSpan(16)) :
-                                  ParseUtility.ParseFromHexOrDefault(rawTraceId);
+                var success = rawTraceId.Length == 32 ?
+                                  HexString.TryParseUInt64(rawTraceId.AsSpan(16), out traceId) :
+                                  HexString.TryParseUInt64(rawTraceId, out traceId);
 #else
-                var traceId = rawTraceId.Length == 32 ?
-                                  ParseUtility.ParseFromHexOrDefault(rawTraceId.Substring(16)) :
-                                  ParseUtility.ParseFromHexOrDefault(rawTraceId);
+                var success = rawTraceId.Length == 32 ?
+                                  HexString.TryParseUInt64(rawTraceId.Substring(16), out traceId) :
+                                  HexString.TryParseUInt64(rawTraceId, out traceId);
 #endif
 
-                if (traceId == 0)
+                if (!success || traceId == 0)
                 {
                     return false;
                 }
 
-                var parentId = ParseUtility.ParseFromHexOrDefault(rawSpanId);
+                if (!HexString.TryParseUInt64(rawSpanId, out var parentId))
+                {
+                    parentId = 0;
+                }
 
                 spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId);
                 return true;

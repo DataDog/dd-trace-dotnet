@@ -25,10 +25,7 @@ partial class Build
         .Executes(() =>
         {
             // If we're building for x64, build for x86 too
-            var platforms =
-                Equals(TargetPlatform, MSBuildTargetPlatform.x64)
-                    ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
-                    : new[] { MSBuildTargetPlatform.x86 };
+            var platforms = ArchitecturesForPlatformForTracer;
 
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
             // Build native profiler assets
@@ -42,6 +39,41 @@ partial class Build
                     .SetTargetPlatform(platform)));
         });
 
+    Target CompileNativeLoaderTestsWindows => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            // If we're building for x64, build for x86 too
+            var platforms =
+                Equals(TargetPlatform, MSBuildTargetPlatform.x64)
+                    ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
+                    : new[] { MSBuildTargetPlatform.x86 };
+
+            // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
+            // Build native profiler assets
+            MSBuild(s => s
+                .SetTargetPath(NativeLoaderTestsProject)
+                .SetConfiguration(BuildConfiguration)
+                .SetMSBuildPath()
+                .DisableRestore()
+                .SetMaxCpuCount(null)
+                .CombineWith(platforms, (m, platform) => m
+                    .SetTargetPlatform(platform)));
+        });
+
+    Target RunNativeLoaderTestsWindows => _ => _
+        .Unlisted()
+        .After(CompileNativeLoaderTestsWindows)
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            var workingDirectory = SharedTestsDirectory / FileNames.NativeLoaderTests / "bin" / BuildConfiguration.ToString() / TargetPlatform.ToString();
+            var exePath = workingDirectory / $"{FileNames.NativeLoaderTests}.exe";
+            var testExe = ToolResolver.GetLocalTool(exePath);
+            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
+        });
+
     Target CompileNativeLoaderLinux => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsLinux)
@@ -50,10 +82,40 @@ partial class Build
             EnsureExistingDirectory(NativeBuildDirectory);
 
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory}");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
             CMake.Value(
                 arguments: $"--build . --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoader}",
                 workingDirectory: NativeBuildDirectory);
+        });
+
+    Target CompileNativeLoaderTestsLinux => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(NativeBuildDirectory);
+
+            CMake.Value(
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+            CMake.Value(
+                arguments: $"--build . --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoaderTests}",
+                workingDirectory: NativeBuildDirectory);
+        });
+
+    Target RunNativeLoaderTestsLinux => _ => _
+        .Unlisted()
+        .After(CompileNativeLoaderTestsLinux)
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            var workingDirectory = SharedTestsDirectory / FileNames.NativeLoaderTests / "bin";
+            EnsureExistingDirectory(workingDirectory);
+
+            var exePath = workingDirectory / FileNames.NativeLoaderTests;
+            Chmod.Value.Invoke("+x " + exePath);
+
+            var testExe = ToolResolver.GetLocalTool(exePath);
+            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
         });
 
     Target CompileNativeLoaderOsx => _ => _
@@ -69,10 +131,10 @@ partial class Build
                 DeleteDirectory(NativeBuildDirectory);
 
                 var envVariables = new Dictionary<string, string> { ["CMAKE_OSX_ARCHITECTURES"] = arch };
-                
+
                 // Build native
                 CMake.Value(
-                    arguments: $"-B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE=Release",
+                    arguments: $"-B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}",
                     environmentVariables: envVariables);
                 CMake.Value(
                     arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoader}",
@@ -88,10 +150,10 @@ partial class Build
                 {
                     throw new ApplicationException($"Invalid architecture, expected: '{arch}', actual: '{strOutput}'");
                 }
-                
+
                 // Copy binary to the temporal destination
                 CopyFile(sourceFile, destFile, FileExistsPolicy.Overwrite);
-                
+
                 // Add library to the list
                 lstNativeBinaries.Add(destFile);
             }
@@ -108,7 +170,7 @@ partial class Build
         .Unlisted()
         .Description("Runs CppCheck over the native loader")
         .DependsOn(CppCheckNativeLoaderUnix);
-    
+
     Target CppCheckNativeLoaderUnix => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsLinux || IsOsx)
@@ -131,7 +193,7 @@ partial class Build
         .After(CompileNativeLoader)
         .Executes(() =>
         {
-            foreach (var architecture in ArchitecturesForPlatform)
+            foreach (var architecture in ArchitecturesForPlatformForTracer)
             {
                 var archFolder = $"win-{architecture}";
 
@@ -183,7 +245,7 @@ partial class Build
                 NativeLoaderProject.Directory / "bin" / "loader.conf",
                 dest,
                 FileExistsPolicy.Overwrite);
-            
+
             // Copy the universal binary to the output folder
             CopyFileToDirectory(
                 NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.dylib",

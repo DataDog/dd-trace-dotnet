@@ -402,21 +402,20 @@ namespace Datadog.Trace.Ci
                     {
                         string pgpLine = line.Substring(GpgSigPrefix.Length) + Environment.NewLine;
                         PgpSignature = pgpLine;
-                        while (!pgpLine.Contains("END PGP SIGNATURE"))
+                        while (!pgpLine.Contains("END PGP SIGNATURE") && !pgpLine.Contains("END SSH SIGNATURE") && i + 1 < lines.Length)
                         {
                             i++;
                             pgpLine = lines[i];
                             PgpSignature += pgpLine + Environment.NewLine;
                         }
 
-                        i++;
                         continue;
                     }
 
-                    msgLines.Add(line);
+                    msgLines.Add(line.Trim());
                 }
 
-                Message += string.Join(Environment.NewLine, msgLines);
+                Message = string.Join(Environment.NewLine, msgLines);
             }
 
             public static bool TryGetFromObjectFile(string filePath, out GitCommitObject commitObject)
@@ -490,7 +489,7 @@ namespace Datadog.Trace.Ci
                             }
 
                             // Check if the object size is in the aceptable range
-                            if (objectSize > 0 && objectSize < ushort.MaxValue)
+                            if (objectSize is > 0 and < ushort.MaxValue)
                             {
                                 // Advance 2 bytes to skip the zlib magic number
                                 uint zlibMagicNumber = br.ReadUInt16();
@@ -509,12 +508,12 @@ namespace Datadog.Trace.Ci
                                 }
                                 else
                                 {
-                                    Log.Warning("The commit data doesn't have a valid zlib header magic number.");
+                                    Log.Warning("The commit data doesn't have a valid zlib header magic number. [Received: 0x{ZlibMagicNumber}, Expected: 0x78]", zlibMagicNumber.ToString("X2"));
                                 }
                             }
                             else
                             {
-                                Log.Warning<int>("The object size is outside of an acceptable range: {objectSize}", objectSize);
+                                Log.Warning<int>("The object size is outside of an acceptable range: {ObjectSize}", objectSize);
                             }
                         }
                     }

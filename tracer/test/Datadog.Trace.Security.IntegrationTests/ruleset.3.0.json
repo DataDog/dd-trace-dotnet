@@ -118,6 +118,42 @@
       ]
     },
     {
+      "id": "test-dummy-rule",
+      "name": "Dummy rule to test blocking",
+      "tags": {
+        "type": "security_scanner",
+        "crs_id": "913121",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.path_params"
+              }
+            ],
+            "list": [
+              "dummy_rule"
+            ]
+          },
+          "operator": "phrase_match"
+        }
+      ],
+      "transformers": [
+        "lowercase"
+      ],
+      "on_match": [
+        "block"
+      ]
+    },
+    {
       "id": "crs-920-260",
       "name": "Unicode Full/Half Width Abuse Attack Attempt",
       "tags": {

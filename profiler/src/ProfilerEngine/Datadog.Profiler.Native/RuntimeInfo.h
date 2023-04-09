@@ -11,10 +11,10 @@ public:
     RuntimeInfo(uint16_t dotnetMajor, uint16_t dotnetMinor, bool isFramework);
 
     // Inherited via IRuntimeInfo
-    virtual bool IsDotnetFramework() const override;
-    virtual uint16_t GetDotnetMajorVersion() const override;
-    virtual uint16_t GetDotnetMinorVersion() const override;
-    virtual std::string GetOs() const override;
+    bool IsDotnetFramework() const override;
+    uint16_t GetDotnetMajorVersion() const override;
+    uint16_t GetDotnetMinorVersion() const override;
+    std::string GetOs() const override;
 
 private:
     uint16_t _dotnetMajor;

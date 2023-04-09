@@ -3,48 +3,48 @@
     "ddsource": "dd_debugger",
     "debugger": {
       "diagnostics": {
-        "Exception": null,
+        "exception": null,
         "probeId": "17c1e39c-e46c-828e-4e02-21be0f3b5358",
         "status": "INSTALLED"
       }
     },
     "message": "Installed probe 17c1e39c-e46c-828e-4e02-21be0f3b5358.",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "ddsource": "dd_debugger",
     "debugger": {
       "diagnostics": {
-        "Exception": null,
-        "probeId": "1828a3f0-e94b-eb91-81e3-12bcf19ac41a",
-        "status": "INSTALLED"
-      }
-    },
-    "message": "Installed probe 1828a3f0-e94b-eb91-81e3-12bcf19ac41a.",
-    "service": "Probes"
-  },
-  {
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "diagnostics": {
-        "Exception": null,
+        "exception": null,
         "probeId": "3410cda1-5b13-a34e-6f84-a54adf7a0ea0",
         "status": "INSTALLED"
       }
     },
     "message": "Installed probe 3410cda1-5b13-a34e-6f84-a54adf7a0ea0.",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "ddsource": "dd_debugger",
     "debugger": {
       "diagnostics": {
-        "Exception": null,
+        "exception": null,
+        "probeId": "35543785-ac9a-85ea-44af-13938dff3136",
+        "status": "INSTALLED"
+      }
+    },
+    "message": "Installed probe 35543785-ac9a-85ea-44af-13938dff3136.",
+    "service": "probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
         "probeId": "8286d046-9740-a3e4-95cf-ff46699c73c4",
         "status": "INSTALLED"
       }
     },
     "message": "Installed probe 8286d046-9740-a3e4-95cf-ff46699c73c4.",
-    "service": "Probes"
+    "service": "probes"
   }
 ]

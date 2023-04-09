@@ -3,29 +3,51 @@
 
 #include "../../../shared/src/native-src/util.h"
 #include "cor.h"
+#include "module_metadata.h"
+
+struct ILInstr;
+class ILRewriterWrapper;
 
 namespace trace
 {
     // forward declarations
     class RejitHandlerModule;
     class RejitHandlerModuleMethod;
+    class CorProfiler;
 
 class MethodRewriter
 {
+protected:
+    CorProfiler* m_corProfiler;
+
 public:
+    MethodRewriter(CorProfiler* corProfiler)
+        : m_corProfiler(corProfiler)
+    {        
+    }
+
     virtual HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) = 0;
+
+    virtual ~MethodRewriter() = default;
 };
 
 
-class TracerMethodRewriter : public MethodRewriter, public shared::Singleton<TracerMethodRewriter>
+class TracerMethodRewriter : public MethodRewriter
 {
-    friend class shared::Singleton<TracerMethodRewriter>;
-
 private:
-    TracerMethodRewriter(){}
+    ILInstr* CreateFilterForException(ILRewriterWrapper* rewriter, mdTypeRef exception, mdTypeRef type_ref, ULONG exceptionValueIndex);
 
 public:
+
+    TracerMethodRewriter(CorProfiler* corProfiler) : MethodRewriter(corProfiler)
+    {
+    }
+
     HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;
+
+    std::tuple<WSTRING, WSTRING> GetResourceNameAndOperationName(const ComPtr<IMetaDataImport2>& metadataImport,
+                                                             const FunctionInfo* caller,
+                                                             TracerTokens* tracerTokens) const;
 };
 
 } // namespace trace

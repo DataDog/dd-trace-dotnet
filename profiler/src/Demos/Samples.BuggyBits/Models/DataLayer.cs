@@ -221,6 +221,43 @@ namespace BuggyBits.Models
             return products;
         }
 
+        public IEnumerable<Product> GetAllProductsInParallelWithLock(string rootPath)
+        {
+            // Note: moving to asynchronous is much slower so reduce the number of product to return
+            const int productCount = 2000;
+            var path = GetProductInfoRoot(rootPath);
+            var products = new List<Product>(productCount);
+            object listLock = new object();
+
+            // https://docs.microsoft.com/en-us/dotnet/standard/parallel-programming/how-to-write-a-parallel-for-loop-with-thread-local-variables
+            Parallel.For(
+                0,
+                productCount,
+                new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount * 2 },
+                (id) => // download each product and store them in a common list protected by a lock
+                {
+                    // don't create too many spans
+                    var product = GetProduct(id);
+                    lock (listLock)
+                    {
+                        products.Add(product);
+                        Thread.Sleep(1);
+                    }
+                });
+
+            // note that products have to be sorted
+            products.Sort((p1, p2) =>
+            {
+                var prefixLength = "product".Length;
+                var sId1 = p1.ProductName.AsSpan(prefixLength, p1.ProductName.Length - prefixLength);
+                var sId2 = p2.ProductName.AsSpan(prefixLength, p2.ProductName.Length - prefixLength);
+                int.TryParse(sId1, out var id1);
+                int.TryParse(sId2, out var id2);
+                return id1 - id2;
+            });
+            return products;
+        }
+
         public async Task<Product> GetProductAsync(string path, int index)
         {
             var uri = $"{path}/{index}";

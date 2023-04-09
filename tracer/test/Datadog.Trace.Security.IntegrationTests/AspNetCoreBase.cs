@@ -6,70 +6,64 @@
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public abstract class AspNetCoreBase : AspNetBase
+    public abstract class AspNetCoreBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
-        public AspNetCoreBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath)
-            : base(sampleName, outputHelper, shutdownPath ?? "/shutdown")
+        public AspNetCoreBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, bool enableSecurity = true, string testName = null)
+            : base(sampleName, outputHelper, shutdownPath ?? "/shutdown", testName: testName)
         {
+            EnableSecurity = enableSecurity;
+            Fixture = fixture;
+            Fixture.SetOutput(outputHelper);
+        }
+
+        protected AspNetCoreTestFixture Fixture { get; }
+
+        protected bool EnableSecurity { get; }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            Fixture.SetOutput(null);
+        }
+
+        public async Task TryStartApp()
+        {
+            await Fixture.TryStartApp(this, EnableSecurity);
+            SetHttpPort(Fixture.HttpPort);
         }
 
         [SkippableTheory]
-        [InlineData(AddressesConstants.RequestQuery, true, HttpStatusCode.OK, "/Health/?[$slice]=value")]
-        [InlineData(AddressesConstants.RequestQuery, false, HttpStatusCode.OK, "/Health/?[$slice]=value")]
-        [InlineData(AddressesConstants.RequestQuery, true, HttpStatusCode.OK, "/Health/?arg&[$slice]")]
-        [InlineData(AddressesConstants.RequestQuery, false, HttpStatusCode.OK, "/Health/?arg&[$slice]")]
-        [InlineData(AddressesConstants.RequestPathParams, true, HttpStatusCode.OK, "/health/params/appscan_fingerprint")]
-        [InlineData(AddressesConstants.RequestPathParams, false, HttpStatusCode.OK, "/health/params/appscan_fingerprint")]
-        [InlineData("discovery.scans", true, HttpStatusCode.NotFound, "/Health/login.php")]
-        [InlineData("discovery.scans", false, HttpStatusCode.OK, "/Health/login.php")]
+        [InlineData(AddressesConstants.RequestQuery, HttpStatusCode.OK, "/Health/?[$slice]=value")]
+        [InlineData(AddressesConstants.RequestQuery, HttpStatusCode.OK, "/Health/?arg&[$slice]")]
+        [InlineData(AddressesConstants.RequestPathParams, HttpStatusCode.OK, "/health/params/appscan_fingerprint")]
         [Trait("RunOnWindows", "True")]
-        public async Task TestRequest(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url)
+        public async Task TestRequest(string test, HttpStatusCode expectedStatusCode, string url)
         {
-            var agent = await RunOnSelfHosted(enableSecurity);
+            await TryStartApp();
+            var agent = Fixture.Agent;
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-            var settings = VerifyHelper.GetSpanVerifierSettings(test, enableSecurity, (int)expectedStatusCode, sanitisedUrl);
+            var settings = VerifyHelper.GetSpanVerifierSettings(test, (int)expectedStatusCode, sanitisedUrl);
             await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
         }
 
         [SkippableTheory]
-        [InlineData("blocking", true, HttpStatusCode.Forbidden, "/")]
-        [InlineData("blocking", false, HttpStatusCode.OK, "/")]
+        [InlineData("discovery.scans", "/Health/login.php")]
         [Trait("RunOnWindows", "True")]
-        public async Task TestBlockedRequest(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url)
+        public async Task TestDiscoveryScan(string test, string url)
         {
-            var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: DefaultRuleFile);
+            await TryStartApp();
+            var agent = Fixture.Agent;
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-            var settings = VerifyHelper.GetSpanVerifierSettings(test, enableSecurity, (int)expectedStatusCode, sanitisedUrl);
-            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings, userAgent: "Hello/V");
-        }
-
-        [SkippableTheory]
-        [InlineData(AddressesConstants.RequestBody, true, HttpStatusCode.OK, "/data/model", "property=[$slice]&property2=value2")]
-        [InlineData(AddressesConstants.RequestBody, true, HttpStatusCode.OK, "/dataapi/model", "{\"property\":\"[$slice]\", \"property2\":\"test2\"}")]
-        [InlineData(AddressesConstants.RequestBody, true, HttpStatusCode.OK, "/datarazorpage", "property=[$slice]&property2=value2")]
-        [Trait("RunOnWindows", "True")]
-        public async Task TestBody(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url, string body)
-        {
-            var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: DefaultRuleFile);
-
-            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-            var settings = VerifyHelper.GetSpanVerifierSettings(test, enableSecurity, (int)expectedStatusCode, sanitisedUrl, body);
-            var contentType = "application/x-www-form-urlencoded";
-            if (url.Contains("api"))
-            {
-                contentType = "application/json";
-            }
-
-            await TestAppSecRequestWithVerifyAsync(agent, url, body, 5, 1, settings, contentType);
+            var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
+            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
         }
     }
 }

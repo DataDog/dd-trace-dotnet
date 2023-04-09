@@ -28,7 +28,7 @@ internal class SymmetricAlgorithmIntegrationCommon
 
         try
         {
-            return ((instance is null) ? null : IastModule.OnCipherAlgorithm(instance.GetType(), IntegrationId, iast));
+            return ((instance is null) ? null : IastModule.OnCipherAlgorithm(instance.GetType(), IntegrationId));
         }
         catch (Exception ex)
         {

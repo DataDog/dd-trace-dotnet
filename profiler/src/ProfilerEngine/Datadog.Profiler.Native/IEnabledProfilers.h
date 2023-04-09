@@ -13,9 +13,9 @@ ENUM_FLAGS(RuntimeProfiler, size_t)
     Cpu = 2,
     Exceptions = 4,
     Allocations = 8,
-
-    Contention = 16
-    // Heap = 32
+    LockContention = 16,
+    GC = 32,
+    Heap = 64
 };
 
 class IEnabledProfilers

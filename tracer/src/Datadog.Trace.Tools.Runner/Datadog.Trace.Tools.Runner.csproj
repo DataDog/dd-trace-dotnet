@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>2.21.0</Version>
+    <Version>2.28.0</Version>
     <Title>Datadog APM Auto-instrumentation Runner</Title>
     <Copyright>Copyright 2020 Datadog, Inc.</Copyright>
     <Description>Auto-instrumentation dotnet global tool for Datadog APM</Description>
@@ -131,19 +131,19 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Datadog.InstrumentedAssemblyGenerator\Datadog.InstrumentedAssemblyGenerator.csproj" />
+    <ProjectReference Include="..\Datadog.InstrumentedAssemblyVerification\Datadog.InstrumentedAssemblyVerification.csproj" />
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\Datadog.Trace.Coverage.collector\Datadog.Trace.Coverage.collector.csproj" />
   </ItemGroup>
 
   <Target Name="RemoveDuplicate" AfterTargets="ComputeFilesToPublish" BeforeTargets="_HandleFileConflictsForPublish">
-    <!-- Required for StrongNamer: https://github.com/dsplaisted/strongnamer/issues/61 -->
-    <PropertyGroup>
-      <DuplicateFileToRemove>$(BaseIntermediateOutputPath)$(Configuration)\$(TargetFramework)\$(RuntimeIdentifier)\linked\Spectre.Console.dll</DuplicateFileToRemove>
-    </PropertyGroup>
 
+    <!-- Required for StrongNamer: https://github.com/dsplaisted/strongnamer/issues/61 -->
     <Message Text="Removing $(DuplicateFileToRemove) from publish output" Importance="high" />
     <ItemGroup>
-      <ResolvedFileToPublish Remove="$(DuplicateFileToRemove)" />
+      <ResolvedFileToPublish Remove="$(BaseIntermediateOutputPath)$(Configuration)\$(TargetFramework)\$(RuntimeIdentifier)\linked\Spectre.Console.dll" />
+      <ResolvedFileToPublish Remove="$(BaseIntermediateOutputPath)$(Configuration)\$(TargetFramework)\$(RuntimeIdentifier)\linked\ILVerification.dll" />
     </ItemGroup>
   </Target>
 </Project>

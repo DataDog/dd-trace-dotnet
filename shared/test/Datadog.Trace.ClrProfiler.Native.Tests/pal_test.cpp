@@ -5,7 +5,9 @@ using namespace shared;
 
 TEST(pal, EnvironmentVariables)
 {
-    EXPECT_TRUE(WStr("Windows_NT") == GetEnvironmentValue(WStr("OS")));
+#ifdef WINDOWS
+    EXPECT_EQ(WStr("Windows_NT"), GetEnvironmentValue(WStr("OS")));
+#endif
     EXPECT_TRUE(GetEnvironmentValues(WStr("PATH")).size() > 0);
 
     bool isSet = SetEnvironmentValue(WStr("CUSTOM_ENV_VAR_KEY"), WStr("CUSTOM_ENV_VAR_VALUE"));

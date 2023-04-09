@@ -2,22 +2,26 @@ include(ExternalProject)
 
 SET(RE2_VERSION "2018-10-01")
 
+set (DOWNLOAD_COMMAND ${CMAKE_COMMAND} -DPROJECT_NAME=re2 -DPROJECT_REPOSITORY=https://github.com/google/re2.git -DPROJECT_BRANCH=${RE2_VERSION} -P ${CMAKE_SOURCE_DIR}/build/cmake/git-clone-quiet-once.cmake)
+
 if (ISMACOS)
     ExternalProject_Add(re2
-        DOWNLOAD_COMMAND git clone --quiet --depth 1 --branch ${RE2_VERSION} --config advice.detachedHead=false https://github.com/google/re2.git
+        DOWNLOAD_COMMAND ${DOWNLOAD_COMMAND}
         TIMEOUT 5
         INSTALL_COMMAND ""
         CONFIGURE_COMMAND ""
+        UPDATE_COMMAND ""
         BUILD_IN_SOURCE TRUE
         BUILD_COMMAND ${CMAKE_COMMAND} -E env LDFLAGS=-arch\ ${OSX_ARCH} ARFLAGS=-r\ -s\ -c CXXFLAGS=-O3\ -g\ -fPIC\ -target\ ${OSX_ARCH}-apple-darwin${CMAKE_HOST_SYSTEM_VERSION}\ -D_GLIBCXX_USE_CXX11_ABI=0 make -j
         BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/re2-prefix/src/re2/obj/libre2.a
     )
 elseif(ISLINUX)
     ExternalProject_Add(re2
-        DOWNLOAD_COMMAND git clone --quiet --depth 1 --branch ${RE2_VERSION} --config advice.detachedHead=false https://github.com/google/re2.git
+        DOWNLOAD_COMMAND ${DOWNLOAD_COMMAND}
         TIMEOUT 5
         INSTALL_COMMAND ""
         CONFIGURE_COMMAND ""
+        UPDATE_COMMAND ""
         BUILD_IN_SOURCE TRUE
         BUILD_COMMAND ${CMAKE_COMMAND} -E env ARFLAGS=-r\ -s\ -c CXXFLAGS=-O3\ -g\ -fPIC\ -D_GLIBCXX_USE_CXX11_ABI=0 make -j
         BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/re2-prefix/src/re2/obj/libre2.a

@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.RemoteConfigurationManagement;
 
 namespace Datadog.Trace.Configuration
@@ -17,7 +18,10 @@ namespace Datadog.Trace.Configuration
             /// Maximum value is 5000 ms
             /// </summary>
             /// <seealso cref="RemoteConfigurationSettings.PollInterval"/>
-            public const string PollInterval = "DD_INTERNAL_RCM_POLL_INTERVAL";
+            public const string PollInterval = "DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS";
+
+            [Obsolete("Use PollInterval instead")]
+            public const string PollIntervalInternal = "DD_INTERNAL_RCM_POLL_INTERVAL";
         }
     }
 }

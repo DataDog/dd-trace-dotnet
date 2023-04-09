@@ -3,16 +3,16 @@
     "ddsource": "dd_debugger",
     "debugger": {
       "diagnostics": {
-        "Exception": {
-          "Message": "Probe location did not map out to a valid bytecode offset",
-          "StackTrace": null,
-          "Type": null
+        "exception": {
+          "message": "Probe location did not map out to a valid bytecode offset",
+          "stacktrace": null,
+          "type": "NO_TYPE"
         },
         "probeId": "8286d046-9740-a3e4-95cf-ff46699c73c4",
         "status": "ERROR"
       }
     },
     "message": "Error installing probe 8286d046-9740-a3e4-95cf-ff46699c73c4.",
-    "service": "Probes"
+    "service": "probes"
   }
 ]

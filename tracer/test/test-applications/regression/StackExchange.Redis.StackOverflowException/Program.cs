@@ -13,7 +13,7 @@ namespace StackExchange.Redis.StackOverflowException
             {
                 Console.WriteLine($"Profiler attached: {Samples.SampleHelpers.IsProfilerAttached()}");
 
-                string host = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";
+                string host = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_SINGLE_HOST") ?? "localhost:6389";
                 const int database = 1;
 
                 var connectionString = $"{host},allowAdmin=true,abortConnect=false,syncTimeout=10000";

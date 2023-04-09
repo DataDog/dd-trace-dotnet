@@ -23,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private const int ExpectedSpans = 3;
         private const string ServiceVersion = "1.0.0";
+        private readonly ITestOutputHelper _output;
 
         public TelemetryTests(ITestOutputHelper output)
             : base("Telemetry", output)
@@ -30,6 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "true");
             SetServiceVersion(ServiceVersion);
             EnableDebugMode();
+            _output = output;
         }
 
         [SkippableFact]
@@ -56,6 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             var data = telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+            telemetry.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
             AssertTelemetry(data);
             agent.Telemetry.Should().BeEmpty();
         }
@@ -81,6 +84,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             var data = agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+            agent.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
             AssertTelemetry(data);
         }
 
@@ -133,7 +137,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
                 catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
                 {
-                    Output.WriteLine($"Error executing test. {attemptsRemaining} attempts remaining. {ex}");
+                    await ReportRetry(_output, attemptsRemaining, this.GetType(), ex);
                 }
             }
 
@@ -153,6 +157,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 var data = agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+                agent.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
 
                 AssertTelemetry(data);
             }

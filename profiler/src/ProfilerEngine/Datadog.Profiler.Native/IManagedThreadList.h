@@ -21,12 +21,12 @@ public:
     virtual uint32_t Count() = 0;
     virtual uint32_t CreateIterator() = 0;
     virtual std::shared_ptr<ManagedThreadInfo> LoopNext(uint32_t iterator) = 0;
-    virtual bool TryGetThreadInfo(const uint32_t profilerThreadInfoId,
+    virtual bool TryGetThreadInfo(uint32_t profilerThreadInfoId,
                           ThreadID* pClrThreadId,
                           DWORD* pOsThreadId,
                           HANDLE* pOsThreadHandle,
                           WCHAR* pThreadNameBuff,
-                          const uint32_t threadNameBuffLen,
+                          uint32_t threadNameBuffLen,
                           uint32_t* pActualThreadNameLen) = 0;
     virtual HRESULT TryGetCurrentThreadInfo(std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) = 0;
 };

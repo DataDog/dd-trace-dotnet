@@ -1,0 +1,38 @@
+﻿Condition:
+Json:
+{
+  "eq": [
+    {
+      "ref": "StringLocal"
+    },
+    null
+  ]
+}
+Expression: (
+    scopeMember,
+    scopeMember,
+    scopeMember,
+    exception,
+    scopeMemberArray) =>
+{
+    var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
+    var @return = (string)scopeMember.Value;
+    var @duration = (TimeSpan)scopeMember.Value;
+    var @exception = exception;
+    var IntLocal = (int)scopeMemberArray[0].Value;
+    var DoubleLocal = (double)scopeMemberArray[1].Value;
+    var StringLocal = (string)scopeMemberArray[2].Value;
+    var CollectionLocal = (List<string>)scopeMemberArray[3].Value;
+    var DictionaryLocal = (Dictionary<string, string>)scopeMemberArray[4].Value;
+    var NestedObjectLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[5].Value;
+    var NullLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[6].Value;
+    var IntArg = (int)scopeMemberArray[7].Value;
+    var DoubleArg = (double)scopeMemberArray[8].Value;
+    var StringArg = (string)scopeMemberArray[9].Value;
+    var CollectionArg = (List<string>)scopeMemberArray[10].Value;
+    var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[11].Value;
+    var $dd_el_result = StringLocal == null;
+
+    return $dd_el_result;
+}
+Result: False

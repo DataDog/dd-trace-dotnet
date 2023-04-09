@@ -9,9 +9,10 @@ namespace trace
 
 // RejitPreprocessor
 template <class RejitRequestDefinition>
-RejitPreprocessor<RejitRequestDefinition>::RejitPreprocessor(std::shared_ptr<RejitHandler> rejit_handler,
+RejitPreprocessor<RejitRequestDefinition>::RejitPreprocessor(CorProfiler* corProfiler,
+                                                             std::shared_ptr<RejitHandler> rejit_handler,
                                                              std::shared_ptr<RejitWorkOffloader> work_offloader) :
-    m_rejit_handler(std::move(rejit_handler)), m_work_offloader(std::move(work_offloader))
+    m_corProfiler(corProfiler), m_rejit_handler(std::move(rejit_handler)), m_work_offloader(std::move(work_offloader))
 {
 }
 
@@ -304,7 +305,7 @@ void RejitPreprocessor<RejitRequestDefinition>::RequestRevert(std::vector<Method
 
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests,
-    std::promise<void>* promise)
+    std::shared_ptr<std::promise<void>> promise)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -340,7 +341,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<
 
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRevert(std::vector<MethodIdentifier>& revertRequests,
-                                                                    std::promise<void>* promise)
+                                                                    std::shared_ptr<std::promise<void>> promise)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -377,7 +378,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRevert(std::vector
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModules(
     const std::vector<ModuleID>& modulesVector, const std::vector<RejitRequestDefinition>& definitions,
-    std::promise<ULONG>* promise)
+    std::shared_ptr<std::promise<ULONG>> promise)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -415,7 +416,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRevertForLoadedModules(
     const std::vector<ModuleID>& modulesVector, const std::vector<RejitRequestDefinition>& definitions,
-    std::promise<ULONG>* promise)
+    std::shared_ptr<std::promise<ULONG>> promise)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -748,7 +749,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
 
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueuePreprocessRejitRequests(const std::vector<ModuleID>& modulesVector, const std::vector<RejitRequestDefinition>& definitions,
-    std::promise<std::vector<MethodIdentifier>>* promise)
+    std::shared_ptr<std::promise<std::vector<MethodIdentifier>>> promise)
 {
     std::vector<MethodIdentifier> rejitRequests;
 
@@ -820,9 +821,10 @@ const std::unique_ptr<RejitHandlerModuleMethod> TracerRejitPreprocessor::CreateM
                                                 const IntegrationDefinition& integrationDefinition)
 {
     return std::make_unique<TracerRejitHandlerModuleMethod>(methodDef,
-                                                                       module,
-                                                                       functionInfo,
-                                                                       integrationDefinition);
+                                                            module,
+                                                            functionInfo,
+                                                            integrationDefinition,
+                                                            std::make_unique<TracerMethodRewriter>(m_corProfiler));
 }
 
 bool TracerRejitPreprocessor::ShouldSkipModule(const ModuleInfo& moduleInfo, const IntegrationDefinition& integrationDefinition)
@@ -835,7 +837,7 @@ bool TracerRejitPreprocessor::ShouldSkipModule(const ModuleInfo& moduleInfo, con
            target_method.type.assembly.name != moduleInfo.assembly.name;
 }
 
-template class RejitPreprocessor<debugger::MethodProbeDefinition>;
+template class RejitPreprocessor<std::shared_ptr<debugger::MethodProbeDefinition>>;
 template class RejitPreprocessor<IntegrationDefinition>;
 
 } // namespace trace

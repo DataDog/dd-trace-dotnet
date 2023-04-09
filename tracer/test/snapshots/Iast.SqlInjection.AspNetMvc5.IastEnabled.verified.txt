@@ -1,0 +1,83 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet.request,
+    Resource: GET /iast/sqlquery,
+    Service: sample,
+    Type: web,
+    Tags: {
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.route: {controller}/{action}/{id},
+      http.status_code: 200,
+      http.url: http://localhost:00000/Iast/SqlQuery?username=Vicent,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.iast.enabled: 1,
+      _dd.iast.json:
+{
+  "vulnerabilities": [
+    {
+      "type": "SQL_INJECTION",
+      
+      "evidence": {
+        "valueParts": [
+          {
+            "value": "SELECT Surname from Persons where name = '"
+          },
+          {
+            "value": "Vicent",
+            "source": 0
+          },
+          {
+            "value": "'"
+          }
+        ]
+      }
+    }
+  ],
+  "sources": [
+    {
+      "origin": "http.request.parameter",
+      "name": "username",
+      "value": "Vicent"
+    }
+  ]
+},
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet-mvc.request,
+    Resource: GET /iast/sqlquery,
+    Service: sample,
+    Type: web,
+    ParentId: Id_2,
+    Tags: {
+      aspnet.action: sqlquery,
+      aspnet.controller: iast,
+      aspnet.route: {controller}/{action}/{id},
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Iast/SqlQuery?username=Vicent,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      span.kind: server
+    }
+  }
+]

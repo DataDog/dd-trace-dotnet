@@ -5,6 +5,7 @@
     Name: weak_hashing,
     Resource: weak_hashing,
     Service: Samples.Deduplication,
+    Type: vulnerability,
     Tags: {
       env: integration_tests,
       language: dotnet,

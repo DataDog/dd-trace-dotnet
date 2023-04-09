@@ -15,14 +15,6 @@ namespace Datadog.Trace.Tests.Propagators
     public class ParseUtilityTests
     {
         [Theory]
-        [InlineData("00000000075bcd15", 123456789)]
-        [InlineData("gfd", 0)]
-        public void ParseFromHexOrDefaultTest(string hex, ulong res)
-        {
-            ParseUtility.ParseFromHexOrDefault(hex).Should().Be(res);
-        }
-
-        [Theory]
         [InlineData("42", 42UL)]
         [InlineData("4x", null)]
         public void ParseUInt64Test(string actual, object expected)

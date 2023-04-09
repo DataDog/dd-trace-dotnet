@@ -43,7 +43,7 @@ namespace Datadog.Trace.TestHelpers
             _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
             _output = output;
             MonitoringHome = GetMonitoringHomePath();
-            LogDirectory = DatadogLogging.GetLogDirectory();
+            LogDirectory = DatadogLoggingFactory.GetLogDirectory();
 
             var parts = _targetFramework.FrameworkName.Split(',');
             _runtime = parts[0];
@@ -123,15 +123,14 @@ namespace Datadog.Trace.TestHelpers
         {
             var monitoringHome = GetMonitoringHomePath();
 
-            var (extension, dir) = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform(), IsAlpine()) switch
+            var (extension, dir) = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform(), EnvironmentTools.GetTestTargetPlatform(), IsAlpine()) switch
             {
-                ("win", "X64", _) => ("dll", "win-x64"),
-                ("win", "X86", _) => ("dll", "win-x86"),
-                ("linux", "X64", false) => ("so", "linux-x64"),
-                ("linux", "X64", true) => ("so", "linux-musl-x64"),
-                ("linux", "Arm64", _) => ("so", "linux-arm64"),
-                ("osx", "X64", _) => ("dylib", "osx-x64"),
-                ("osx", "Arm64", _) => ("dylib", "osx-arm64"),
+                ("win", _, "X64", _) => ("dll", "win-x64"),
+                ("win", _, "X86", _) => ("dll", "win-x86"),
+                ("linux", "Arm64", _, _) => ("so", "linux-arm64"),
+                ("linux", "X64", _, false) => ("so", "linux-x64"),
+                ("linux", "X64", _, true) => ("so", "linux-musl-x64"),
+                ("osx", _, _, _) => ("dylib", "osx"),
                 _ => throw new PlatformNotSupportedException()
             };
 
@@ -189,7 +188,13 @@ namespace Datadog.Trace.TestHelpers
         {
             string profilerEnabled = AutomaticInstrumentationEnabled ? "1" : "0";
             environmentVariables["DD_DOTNET_TRACER_HOME"] = MonitoringHome;
-            environmentVariables["COMPlus_TieredCompilation"] = "0";
+
+            // see https://github.com/DataDog/dd-trace-dotnet/pull/3579
+            environmentVariables["DD_INTERNAL_WORKAROUND_77973_ENABLED"] = "1";
+
+            // Set a canary variable that should always be ignored
+            // and check that it doesn't appear in the logs
+            environmentVariables["SUPER_SECRET_CANARY"] = "MySuperSecretCanary";
 
             // Everything should be using the native loader now
             var nativeLoaderPath = GetNativeLoaderPath();
@@ -351,7 +356,7 @@ namespace Datadog.Trace.TestHelpers
         }
 
         public string GetIisExpressPath()
-            => $"C:\\Program Files{(Environment.Is64BitProcess ? string.Empty : " (x86)")}\\IIS Express\\iisexpress.exe";
+            => $"C:\\Program Files{(EnvironmentTools.IsTestTarget64BitProcess() ? string.Empty : " (x86)")}\\IIS Express\\iisexpress.exe";
 
         public string GetDotNetTest()
         {
@@ -385,14 +390,14 @@ namespace Datadog.Trace.TestHelpers
         }
 
         public string GetDotnetExe()
-            => (EnvironmentTools.IsWindows(), Environment.Is64BitProcess) switch
+            => (EnvironmentTools.IsWindows(), EnvironmentTools.IsTestTarget64BitProcess()) switch
             {
-                (true, true) => "dotnet.exe",
                 (true, false) => Environment.GetEnvironmentVariable("DOTNET_EXE_32") ??
                                  Path.Combine(
                                      Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
                                      "dotnet",
                                      "dotnet.exe"),
+                (true, _) => "dotnet.exe",
                 _ => "dotnet",
             };
 
@@ -428,7 +433,6 @@ namespace Datadog.Trace.TestHelpers
                 outputDir = Path.Combine(
                     binDir,
                     packageVersion,
-                    EnvironmentTools.GetPlatform(),
                     EnvironmentTools.GetBuildConfiguration(),
                     targetFramework);
             }

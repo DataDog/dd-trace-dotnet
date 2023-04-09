@@ -20,6 +20,8 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] DbUserBytes = new byte[] { 100, 98, 46, 117, 115, 101, 114 };
         // OutHostBytes = System.Text.Encoding.UTF8.GetBytes("out.host");
         private static readonly byte[] OutHostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
+        // DbmDataPropagatedBytes = System.Text.Encoding.UTF8.GetBytes("_dd.dbm_trace_injected");
+        private static readonly byte[] DbmDataPropagatedBytes = new byte[] { 95, 100, 100, 46, 100, 98, 109, 95, 116, 114, 97, 99, 101, 95, 105, 110, 106, 101, 99, 116, 101, 100 };
 
         public override string? GetTag(string key)
         {
@@ -31,6 +33,7 @@ namespace Datadog.Trace.Tagging
                 "db.name" => DbName,
                 "db.user" => DbUser,
                 "out.host" => OutHost,
+                "_dd.dbm_trace_injected" => DbmDataPropagated,
                 _ => base.GetTag(key),
             };
         }
@@ -53,6 +56,9 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "out.host": 
                     OutHost = value;
+                    break;
+                case "_dd.dbm_trace_injected": 
+                    DbmDataPropagated = value;
                     break;
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(SqlTags));
@@ -93,6 +99,11 @@ namespace Datadog.Trace.Tagging
             if (OutHost is not null)
             {
                 processor.Process(new TagItem<string>("out.host", OutHost, OutHostBytes));
+            }
+
+            if (DbmDataPropagated is not null)
+            {
+                processor.Process(new TagItem<string>("_dd.dbm_trace_injected", DbmDataPropagated, DbmDataPropagatedBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -139,6 +150,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("out.host (tag):")
                   .Append(OutHost)
+                  .Append(',');
+            }
+
+            if (DbmDataPropagated is not null)
+            {
+                sb.Append("_dd.dbm_trace_injected (tag):")
+                  .Append(DbmDataPropagated)
                   .Append(',');
             }
 

@@ -17,8 +17,15 @@ TEST(string, ToString)
 
     EXPECT_TRUE("42" == ToString(42));
 
+#ifndef LINUX
     EXPECT_TRUE("LPTSTR String" == ToString(TEXT("LPTSTR String")));
     EXPECT_TRUE("\tLPTSTR String\0" == ToString(TEXT("\tLPTSTR String\0")));
+#endif
+
+    const GUID guid01 = {0x846f5f1c, 0xf9ae, 0x4b07, {0x96, 0x9e, 0x5, 0xc2, 0x6b, 0xc0, 0x60, 0xd8}};
+    const GUID guid02 = {0xBD1A650D, 0xAC5D, 0x4896, {0xB6, 0x4F, 0xD6, 0xFA, 0x25, 0xD6, 0xB2, 0x6A}};
+    EXPECT_TRUE("{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" == shared::ToString(guid01));
+    EXPECT_TRUE("{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}" == shared::ToString(guid02));
 }
 
 TEST(string, ToWSTRING)
@@ -26,7 +33,7 @@ TEST(string, ToWSTRING)
     EXPECT_TRUE(WStr("Normal String") == ToWSTRING(std::string("Normal String")));
     EXPECT_TRUE(WStr("\tNormal String\0") == ToWSTRING(std::string("\tNormal String\0")));
 
-    EXPECT_TRUE(WStr("42") == ToWSTRING(42));
+    EXPECT_EQ(WStr("42"), ToWSTRING(42));
 }
 
 TEST(string, Trim)
@@ -80,4 +87,20 @@ TEST(string, Split)
     EXPECT_TRUE(WStr(" A ") == wres[0]);
     EXPECT_TRUE(WStr(" B ") == wres[1]);
     EXPECT_TRUE(WStr(" C ") == wres[2]);
+}
+
+TEST(string, PadLeft)
+{
+    EXPECT_TRUE("   PadLeft" == PadLeft("PadLeft", 10));
+    EXPECT_TRUE("PadLeft" == PadLeft("PadLeft", 5));
+    EXPECT_TRUE("0000000A" == PadLeft("A", 8, '0'));
+}
+
+TEST(string, Hex)
+{
+    EXPECT_TRUE("0x00000000" == Hex(0));
+    EXPECT_TRUE("0x0000000A" == Hex(10));
+    EXPECT_TRUE("0xFFFFFFFF" == Hex(-1));
+    EXPECT_TRUE("0x00000001" == Hex(S_FALSE));
+    EXPECT_TRUE("0x80004005" == Hex(E_FAIL));
 }

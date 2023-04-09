@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation;
 using Datadog.Trace.Logging;
 
@@ -126,7 +127,7 @@ namespace Datadog.Trace.Debugger.Helpers
         {
             if (field.Name.StartsWith(StateMachineFieldsNamePrefix))
             {
-                Log.Debug("Ignoring local (state machine field): " + field.FieldType.Name + " " + field.DeclaringType?.Name + " " + field.Name);
+                Log.Debug("Ignoring local (state machine field): {FieldType} {DeclaringType} {FieldName}", field.FieldType.Name, field.DeclaringType?.Name, field.Name);
                 return true;
             }
 
@@ -153,7 +154,7 @@ namespace Datadog.Trace.Debugger.Helpers
                 }
                 else
                 {
-                    AsyncMethodDebuggerInvoker.Log.Information($"Ignoring local {field.FieldType.Name} {field.DeclaringType?.Name}.{field.Name}");
+                    AsyncMethodDebuggerInvoker.Log.Information("Ignoring local {FieldType} {DeclaringType}.{FieldName}", field.FieldType.Name, field.DeclaringType?.Name, field.Name);
                     return true;
                 }
             }

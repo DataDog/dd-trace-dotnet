@@ -11,8 +11,10 @@ using System.ComponentModel;
 using System.Linq;
 using System.Web;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -172,23 +174,27 @@ namespace Datadog.Trace.AspNet
                 var security = Security.Instance;
                 if (security.Settings.Enabled)
                 {
-                    security.InstrumentationGateway.RaiseRequestStart(httpContext, httpContext.Request, scope.Span);
+                    SecurityCoordinator.ReportWafInitInfoOnce(security, scope.Span);
+                    var securityCoordinator = new SecurityCoordinator(security, httpContext, scope.Span);
 
+                    // request args
+                    var args = securityCoordinator.GetBasicRequestArgsForWaf();
+
+                    // body args
                     if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     {
-                        var formData = new Dictionary<string, object>();
-                        foreach (string key in httpRequest.Form.Keys)
-                        {
-                            formData.Add(key, httpRequest.Form[key]);
-                        }
-
-                        security.InstrumentationGateway.RaiseBodyAvailable(httpContext, scope.Span, formData);
+                        var bodyArgs = securityCoordinator.GetBodyFromRequest();
+                        args.Add(AddressesConstants.RequestBody, bodyArgs);
                     }
 
-                    security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, args =>
-                    {
-                        AddHeaderTagsFromHttpResponse(args.Context, args.Scope);
-                    });
+                    securityCoordinator.CheckAndBlock(args);
+                }
+
+                if (Iast.Iast.Instance.Settings.Enabled && OverheadController.Instance.AcquireRequest())
+                {
+                    var traceContext = scope?.Span?.Context?.TraceContext;
+                    traceContext?.EnableIastInRequest();
+                    traceContext?.IastRequestContext?.AddRequestData(httpRequest);
                 }
             }
             catch (Exception ex)
@@ -199,15 +205,14 @@ namespace Datadog.Trace.AspNet
                     scope?.Dispose();
                 }
 
-                if (ex is not BlockException)
-                {
-                    Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
-                }
+                Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
             }
         }
 
         private void OnEndRequest(object sender, EventArgs eventArgs)
         {
+            var securityContextCleaned = false;
+
             try
             {
                 var tracer = Tracer.Instance;
@@ -271,38 +276,40 @@ namespace Datadog.Trace.AspNet
                         var security = Security.Instance;
                         if (security.Settings.Enabled)
                         {
-                            var httpContext = (sender as HttpApplication)?.Context;
-
-                            if (httpContext == null)
+                            var securityCoordinator = new SecurityCoordinator(security, app.Context, rootSpan);
+                            if (!securityCoordinator.IsBlocked)
                             {
-                                return;
+                                // path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
+                                var args = securityCoordinator.GetBasicRequestArgsForWaf();
+                                args.Add(AddressesConstants.RequestPathParams, securityCoordinator.GetPathParams());
+                                securityCoordinator.CheckAndBlock(args);
                             }
 
-                            if (!(httpContext.Items["block"] is bool blocked && blocked))
-                            {
-                                // raise path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
-                                security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, scope.Span, httpContext.Request.RequestContext.RouteData.Values, eraseExistingAddress: false);
-                                security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, scope.Span);
-                                security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, scope.Span);
-                                security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, args =>
-                                {
-                                    AddHeaderTagsFromHttpResponse(args.Context, args.Scope);
-                                });
-                            }
+                            securityCoordinator.AddResponseHeadersToSpanAndCleanup();
+                            securityContextCleaned = true;
                         }
-
-                        scope.Dispose();
                     }
                     finally
                     {
+                        scope.Dispose();
                         // Clear the context to make sure another TracingHttpModule doesn't try to close the same scope
                         TryClearContext(app.Context);
                     }
                 }
             }
-            catch (Exception ex) when (ex is not BlockException)
+            catch (Exception ex)
             {
                 Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
+            }
+            finally
+            {
+                // security might have been disabled in the meantime but contexts would still be open
+                // and this integration may be disabled but others might have opened a context
+                if (!securityContextCleaned && sender is HttpApplication app)
+                {
+                    var securityTransport = new SecurityCoordinator.HttpTransport(app.Context);
+                    securityTransport.DisposeAdditiveContext();
+                }
             }
         }
 
@@ -343,10 +350,7 @@ namespace Datadog.Trace.AspNet
             }
             catch (Exception ex)
             {
-                if (ex is not BlockException)
-                {
-                    Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
-                }
+                Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
             }
         }
 

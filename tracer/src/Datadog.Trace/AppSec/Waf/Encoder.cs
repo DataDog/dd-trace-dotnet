@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
@@ -15,32 +16,23 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Waf
 {
-    internal class Encoder
+    internal static class Encoder
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Encoder));
-        private readonly WafNative _wafNative;
-
-        public Encoder(WafNative wafNative) => _wafNative = wafNative;
+        private static readonly int ObjectStructSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
 
         public static ObjType DecodeArgsType(DDWAF_OBJ_TYPE t)
         {
-            switch (t)
+            return t switch
             {
-                case DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID:
-                    return ObjType.Invalid;
-                case DDWAF_OBJ_TYPE.DDWAF_OBJ_SIGNED:
-                    return ObjType.SignedNumber;
-                case DDWAF_OBJ_TYPE.DDWAF_OBJ_UNSIGNED:
-                    return ObjType.UnsignedNumber;
-                case DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING:
-                    return ObjType.String;
-                case DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY:
-                    return ObjType.Array;
-                case DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP:
-                    return ObjType.Map;
-                default:
-                    throw new Exception($"Invalid DDWAF_INPUT_TYPE {t}");
-            }
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID => ObjType.Invalid,
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_SIGNED => ObjType.SignedNumber,
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_UNSIGNED => ObjType.UnsignedNumber,
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING => ObjType.String,
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY => ObjType.Array,
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP => ObjType.Map,
+                _ => throw new Exception($"Invalid DDWAF_INPUT_TYPE {t}")
+            };
         }
 
         public static ReturnCode DecodeReturnCode(DDWAF_RET_CODE rc) => rc switch
@@ -54,35 +46,91 @@ namespace Datadog.Trace.AppSec.Waf
             _ => throw new Exception($"Unknown return code: {rc}")
         };
 
-        private static string TruncateLongString(string s) =>
-            s.Length > WafConstants.MaxStringLength ? s.Substring(0, WafConstants.MaxStringLength) : s;
+        private static string TruncateLongString(string s) => s.Length > WafConstants.MaxStringLength ? s.Substring(0, WafConstants.MaxStringLength) : s;
 
-        public Obj Encode(object o, List<Obj>? argCache = null, bool applySafetyLimits = true) =>
-            EncodeInternal(o, argCache, WafConstants.MaxContainerDepth, applySafetyLimits);
+        public static Obj Encode(object o, WafLibraryInvoker wafLibraryInvoker, List<Obj>? argCache = null, bool applySafetyLimits = true) => EncodeInternal(o, argCache, WafConstants.MaxContainerDepth, applySafetyLimits, wafLibraryInvoker);
 
-        private Obj EncodeInternal(object o, List<Obj>? argCache, int remainingDepth, bool applyLimits)
+        public static object Decode(Obj o) => InnerDecode(o.InnerStruct);
+
+        public static object InnerDecode(DdwafObjectStruct o)
+        {
+            switch (DecodeArgsType(o.Type))
+            {
+                case ObjType.Invalid:
+                    return new object();
+                case ObjType.SignedNumber:
+                    return o.IntValue;
+                case ObjType.UnsignedNumber:
+                    return o.UintValue;
+                case ObjType.String:
+                    return Marshal.PtrToStringAnsi(o.Array) ?? string.Empty;
+                case ObjType.Array:
+                    var arr = new object[o.NbEntries];
+                    for (var i = 0; i < arr.Length; i++)
+                    {
+                        var nextObj = Marshal.PtrToStructure(o.Array + (i * ObjectStructSize), typeof(DdwafObjectStruct));
+                        if (nextObj != null)
+                        {
+                            var next = (DdwafObjectStruct)nextObj;
+                            arr[i] = InnerDecode(next);
+                        }
+                    }
+
+                    return arr;
+                case ObjType.Map:
+                    var entries = (int)o.NbEntries;
+                    var map = new Dictionary<string, object>(entries);
+                    for (int i = 0; i < entries; i++)
+                    {
+                        var nextObj = Marshal.PtrToStructure(o.Array + (i * ObjectStructSize), typeof(DdwafObjectStruct));
+                        if (nextObj != null)
+                        {
+                            var next = (DdwafObjectStruct)nextObj;
+                            var key = Marshal.PtrToStringAnsi(next.ParameterName, (int)next.ParameterNameLength) ?? string.Empty;
+                            map[key] = InnerDecode(next);
+                            var nextO = InnerDecode(next);
+                            map[key] = nextO;
+                        }
+                    }
+
+                    return map;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private static Obj EncodeUnknownType(object o, WafLibraryInvoker wafLibraryInvoker)
+        {
+            Log.Warning("Couldn't encode object of unknown type {Type}, falling back to ToString", o.GetType());
+
+            var s = o.ToString() ?? string.Empty;
+
+            return CreateNativeString(s, applyLimits: true, wafLibraryInvoker);
+        }
+
+        private static Obj EncodeInternal(object o, List<Obj>? argCache, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
         {
             var value =
                 o switch
                 {
-                    null => CreateNativeString(string.Empty, applyLimits),
-                    string s => CreateNativeString(s, applyLimits),
-                    JValue jv => CreateNativeString(jv.Value?.ToString() ?? string.Empty, applyLimits),
-                    int i => CreateNativeString(i.ToString(), applyLimits),
-                    long i => CreateNativeString(i.ToString(), applyLimits),
-                    uint i => CreateNativeString(i.ToString(), applyLimits),
-                    ulong i => CreateNativeString(i.ToString(), applyLimits),
-                    bool b => CreateNativeBool(b),
-                    IEnumerable<KeyValuePair<string, JToken>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits),
-                    IEnumerable<KeyValuePair<string, string>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits),
-                    IEnumerable<KeyValuePair<string, List<string>>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits),
-                    IEnumerable<KeyValuePair<string, string[]>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits),
-                    IEnumerable<KeyValuePair<string, bool>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits),
-                    IEnumerable<KeyValuePair<string, object>> objDict => EncodeDictionary(objDict, argCache, remainingDepth, applyLimits),
-                    IList<JToken> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth, applyLimits),
-                    IList<string> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth, applyLimits),
-                    IList<object> objs => EncodeList(objs, argCache, remainingDepth, applyLimits),
-                    _ => throw new Exception($"Couldn't encode type: {o?.GetType()}")
+                    null => CreateNativeString(string.Empty, applyLimits, wafLibraryInvoker),
+                    string s => CreateNativeString(s, applyLimits, wafLibraryInvoker),
+                    JValue jv => CreateNativeString(jv.Value?.ToString() ?? string.Empty, applyLimits, wafLibraryInvoker),
+                    int i => CreateNativeString(i.ToString(), applyLimits, wafLibraryInvoker),
+                    long i => CreateNativeString(i.ToString(), applyLimits, wafLibraryInvoker),
+                    uint i => CreateNativeString(i.ToString(), applyLimits, wafLibraryInvoker),
+                    ulong i => CreateNativeString(i.ToString(), applyLimits, wafLibraryInvoker),
+                    bool b => CreateNativeBool(b, wafLibraryInvoker),
+                    IEnumerable<KeyValuePair<string, JToken>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits, wafLibraryInvoker),
+                    IEnumerable<KeyValuePair<string, string>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits, wafLibraryInvoker),
+                    IEnumerable<KeyValuePair<string, List<string>>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits, wafLibraryInvoker),
+                    IEnumerable<KeyValuePair<string, string[]>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits, wafLibraryInvoker),
+                    IEnumerable<KeyValuePair<string, bool>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits, wafLibraryInvoker),
+                    IEnumerable<KeyValuePair<string, object>> objDict => EncodeDictionary(objDict, argCache, remainingDepth, applyLimits, wafLibraryInvoker),
+                    IList<JToken> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth, applyLimits, wafLibraryInvoker),
+                    IList<string> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth, applyLimits, wafLibraryInvoker),
+                    IList<object> objs => EncodeList(objs, argCache, remainingDepth, applyLimits, wafLibraryInvoker),
+                    _ => EncodeUnknownType(o, wafLibraryInvoker),
                 };
 
             argCache?.Add(value);
@@ -90,9 +138,9 @@ namespace Datadog.Trace.AppSec.Waf
             return value;
         }
 
-        private Obj EncodeList(IEnumerable<object> objEnumerator, List<Obj>? argCache, int remainingDepth, bool applyLimits)
+        private static Obj EncodeList(IEnumerable<object> objEnumerator, List<Obj>? argCache, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
         {
-            var arrNat = _wafNative.ObjectArray();
+            var arrNat = wafLibraryInvoker.ObjectArray();
 
             if (applyLimits && remainingDepth-- <= 0)
             {
@@ -109,16 +157,16 @@ namespace Datadog.Trace.AppSec.Waf
 
             foreach (var o in objEnumerator)
             {
-                var value = EncodeInternal(o, argCache, remainingDepth, applyLimits);
-                _wafNative.ObjectArrayAdd(arrNat, value.RawPtr);
+                var value = EncodeInternal(o, argCache, remainingDepth, applyLimits, wafLibraryInvoker);
+                wafLibraryInvoker.ObjectArrayAdd(arrNat, value.RawPtr);
             }
 
             return new Obj(arrNat);
         }
 
-        private Obj EncodeDictionary(IEnumerable<KeyValuePair<string, object>> objDictEnumerator, List<Obj>? argCache, int remainingDepth, bool applyLimits)
+        private static Obj EncodeDictionary(IEnumerable<KeyValuePair<string, object>> objDictEnumerator, List<Obj>? argCache, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
         {
-            var mapNat = _wafNative.ObjectMap();
+            var mapNat = wafLibraryInvoker.ObjectMap();
 
             if (applyLimits && remainingDepth-- <= 0)
             {
@@ -139,8 +187,8 @@ namespace Datadog.Trace.AppSec.Waf
                 var name = o.Key;
                 if (name != null)
                 {
-                    var value = EncodeInternal(o.Value, argCache, remainingDepth, applyLimits);
-                    _wafNative.ObjectMapAdd(mapNat, name, Convert.ToUInt64(name.Length), value.RawPtr);
+                    var value = EncodeInternal(o.Value, argCache, remainingDepth, applyLimits, wafLibraryInvoker);
+                    wafLibraryInvoker.ObjectMapAdd(mapNat, name, Convert.ToUInt64(name.Length), value.RawPtr);
                 }
                 else
                 {
@@ -151,18 +199,18 @@ namespace Datadog.Trace.AppSec.Waf
             return new Obj(mapNat);
         }
 
-        private Obj CreateNativeString(string s, bool applyLimits)
+        private static Obj CreateNativeString(string s, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
         {
             var encodeString =
-                    applyLimits
-                        ? TruncateLongString(s)
-                        : s;
-            return new Obj(_wafNative.ObjectStringLength(encodeString, Convert.ToUInt64(encodeString.Length)));
+                applyLimits
+                    ? TruncateLongString(s)
+                    : s;
+            return new Obj(wafLibraryInvoker.ObjectStringLength(encodeString, Convert.ToUInt64(encodeString.Length)));
         }
 
-        private Obj CreateNativeBool(bool b)
+        private static Obj CreateNativeBool(bool b, WafLibraryInvoker wafLibraryInvoker)
         {
-            return new Obj(_wafNative.ObjectBool(b));
+            return new Obj(wafLibraryInvoker.ObjectBool(b));
         }
 
         public static string FormatArgs(object o)

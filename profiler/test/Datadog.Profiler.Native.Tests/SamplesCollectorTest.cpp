@@ -45,7 +45,8 @@ std::unique_ptr<IExporter> CreateTransparentExporter(std::list<std::shared_ptr<S
     return std::move(exporter);
 }
 
-class FakeSamplesProvider : public ISamplesProvider
+template <typename T>
+class FakeSamplesProvider : public T
 {
 public:
     FakeSamplesProvider(std::string_view runtimeId, int nbSamples) :
@@ -73,7 +74,7 @@ public:
 
         auto s = std::make_shared<Sample>(rid);
 
-        s->AddFrame(ModuleName, FunctionName);
+        s->AddFrame({ModuleName, FunctionName, "", 0});
 
         return s;
     }
@@ -99,13 +100,14 @@ private:
     int _calls;
 };
 
+
 TEST(SamplesCollectorTest, MustCollectSamplesFromTwoProviders)
 {
     std::string runtimeId = "MyRid";
-    FakeSamplesProvider samplesProvider(runtimeId, 1);
+    FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1);
 
     std::string runtimeId2 = "MyRid2";
-    FakeSamplesProvider samplesProvider2(runtimeId2, 2);
+    FakeSamplesProvider<ISamplesProvider> samplesProvider2(runtimeId2, 2);
 
     auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
@@ -164,18 +166,81 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromTwoProviders)
     ASSERT_EQ(pendingSamples.size(), 0);
 }
 
-TEST(SamplesCollectorTest, MustStopCollectingSamples)
+TEST(SamplesCollectorTest, MustCollectSamplesFromProviderAndBatchedProvider)
 {
-    const std::string runtimeId = "MyRid";
-    FakeSamplesProvider samplesProvider(runtimeId, 1);
+    std::string runtimeId = "MyRid";
+    FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1);
+
+    std::string runtimeId2 = "MyRid2";
+    FakeSamplesProvider<IBatchedSamplesProvider> batchedSamplesProvider(runtimeId2, 2);
 
     auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(1000s));
 
-    std::list<Sample> pendingSamples;
-    std::list<Sample> exportedSamples;
+    std::list<std::shared_ptr<Sample>> pendingSamples;
+    std::list<std::shared_ptr<Sample>> exportedSamples;
+
+    auto exporter = CreateTransparentExporter(pendingSamples, exportedSamples);
+    auto metricsSender = MockMetricsSender();
+
+    auto collector = SamplesCollector(configuration.get(), &threadsCpuManagerHelper, exporter.get(), &metricsSender);
+    collector.Register(&samplesProvider);
+    collector.RegisterBatchedProvider(&batchedSamplesProvider);
+
+    collector.Start();
+
+    // wait for more than process interval so that ProcessSamples() is called at least once for the SamplesProvider
+    std::this_thread::sleep_for(90ms);
+
+    collector.Stop();
+
+    auto exportsCount = samplesProvider.GetNbCalls();
+    ASSERT_EQ(exportsCount, 2);  // 1 at work time + 1 at stop time
+    auto exportsCount2 = batchedSamplesProvider.GetNbCalls();
+    ASSERT_EQ(exportsCount2, 1); // 1 at export time
+
+    uint32_t samplesCount1 = 0;
+    uint32_t samplesCount2 = 0;
+
+    for (auto& sample : exportedSamples)
+    {
+        if (sample->GetRuntimeId() == runtimeId)
+        {
+            samplesCount1++;
+        }
+        else if (sample->GetRuntimeId() == runtimeId2)
+        {
+            samplesCount2++;
+        }
+        else
+        {
+            // unexpected
+            ASSERT_TRUE(false);
+        }
+    }
+
+    ASSERT_EQ(samplesCount1, exportsCount);
+    ASSERT_EQ(samplesCount2, exportsCount2 * 2);
+
+    exportedSamples.clear();
+
+    collector.Export();
+
+    ASSERT_EQ(exportedSamples.size(), 2);  // the BatchedSamplesProvider is called once in export
+    ASSERT_EQ(pendingSamples.size(), 0);
+}
+
+TEST(SamplesCollectorTest, MustStopCollectingSamples)
+{
+    const std::string runtimeId = "MyRid";
+    FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1);
+
+    auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
+
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(1000s));
 
     auto [exporter, mockExporter] = CreateExporter();
     auto metricsSender = MockMetricsSender();
@@ -210,7 +275,7 @@ TEST(SamplesCollectorTest, MustNotFailWhenSendingProfileThrows)
     EXPECT_CALL(mockExporter, Export()).Times(2).WillRepeatedly(Throw(std::exception()));
 
     const std::string runtimeId = "MyRid";
-    FakeSamplesProvider samplesProvider(runtimeId, 1);
+    FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1);
 
     auto metricsSender = MockMetricsSender();
     auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
@@ -242,7 +307,7 @@ TEST(SamplesCollectorTest, MustExportAfterStop)
     auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
     const std::string runtimeId = "MyRid";
-    FakeSamplesProvider samplesProvider(runtimeId, 1);
+    FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1);
 
     auto collector = SamplesCollector(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
 
@@ -261,7 +326,7 @@ TEST(SamplesCollectorTest, MustExportAfterStop)
 TEST(SamplesCollectorTest, MustNotFailWhenAddingSampleThrows)
 {
     const std::string runtimeId = "MyRid";
-    FakeSamplesProvider samplesProvider(runtimeId, 1);
+    FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1);
 
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(1s));

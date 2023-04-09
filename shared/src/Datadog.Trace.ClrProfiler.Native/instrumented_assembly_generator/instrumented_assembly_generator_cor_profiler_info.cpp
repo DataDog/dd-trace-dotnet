@@ -49,12 +49,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerInfo::QueryInterface(REFIID riid, void** pp
     return E_NOINTERFACE;
 }
 
-ULONG STDMETHODCALLTYPE CorProfilerInfo::AddRef(void)
+ULONG STDMETHODCALLTYPE CorProfilerInfo::AddRef()
 {
     return std::atomic_fetch_add(&this->m_refCount, 1) + 1;
 }
 
-ULONG STDMETHODCALLTYPE CorProfilerInfo::Release(void)
+ULONG STDMETHODCALLTYPE CorProfilerInfo::Release()
 {
     int count = std::atomic_fetch_sub(&this->m_refCount, 1) - 1;
 

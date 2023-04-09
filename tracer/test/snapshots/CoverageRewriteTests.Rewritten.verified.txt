@@ -10,7 +10,7 @@ using Datadog.Trace.Ci.Coverage.Metadata.Target;
 
 [assembly: CompilationRelaxations(8)]
 [assembly: RuntimeCompatibility(WrapNonExceptionThrows = true)]
-[assembly: Debuggable(DebuggableAttribute.DebuggingModes.Default | DebuggableAttribute.DebuggingModes.DisableOptimizations | DebuggableAttribute.DebuggingModes.IgnoreSymbolStoreSequencePoints | DebuggableAttribute.DebuggingModes.EnableEditAndContinue)]
+[assembly: Debuggable(DebuggableAttribute.DebuggingModes.IgnoreSymbolStoreSequencePoints)]
 [assembly: TargetFramework(".NETStandard,Version=v2.0", FrameworkDisplayName = "")]
 [assembly: AssemblyCompany("CoverageRewriterAssembly")]
 [assembly: AssemblyConfiguration("Debug")]
@@ -29,21 +29,14 @@ namespace CoverageRewriterAssembly
 			[CompilerGenerated]
 			get
 			{
-				if (!CoverageReporter<ModuleCoverage>.TryGetScope(1, 0, out var counters))
-				{
-					return <MyProperty>k__BackingField;
-				}
+				int[] counters = CoverageReporter<ModuleCoverage>.GetCounters(0);
 				counters[0]++;
 				return <MyProperty>k__BackingField;
 			}
 			[CompilerGenerated]
 			set
 			{
-				if (!CoverageReporter<ModuleCoverage>.TryGetScope(1, 1, out var counters))
-				{
-					<MyProperty>k__BackingField = value;
-					return;
-				}
+				int[] counters = CoverageReporter<ModuleCoverage>.GetCounters(1);
 				counters[0]++;
 				<MyProperty>k__BackingField = value;
 			}
@@ -51,36 +44,26 @@ namespace CoverageRewriterAssembly
 
 		public void Main()
 		{
-			int i;
-			if (!CoverageReporter<ModuleCoverage>.TryGetScope(1, 2, out var counters))
-			{
-				Console.WriteLine("Main Method");
-				for (i = 0; i < 100; i++)
-				{
-					Console.WriteLine(i);
-				}
-				MyProperty = "Value";
-				Console.WriteLine(MyProperty);
-				return;
-			}
+			int[] counters = CoverageReporter<ModuleCoverage>.GetCounters(2);
+			_ = counters[10];
 			counters[0]++;
 			counters[1]++;
 			Console.WriteLine("Main Method");
 			counters[2]++;
-			i = 0;
+			int num = 0;
 			while (true)
 			{
 				counters[7]++;
-				if (i >= 100)
+				if (num >= 100)
 				{
 					break;
 				}
 				counters[3]++;
 				counters[4]++;
-				Console.WriteLine(i);
+				Console.WriteLine(num);
 				counters[5]++;
 				counters[6]++;
-				i++;
+				num++;
 			}
 			counters[8]++;
 			MyProperty = "Value";
@@ -89,9 +72,16 @@ namespace CoverageRewriterAssembly
 			counters[10]++;
 		}
 
-		public async Task MainAsync()
+		[AsyncStateMachine(typeof(<MainAsync>d__5))]
+		[DebuggerStepThrough]
+		public Task MainAsync()
 		{
-			await Task.Delay(100);
+			<MainAsync>d__5 stateMachine = new <MainAsync>d__5();
+			stateMachine.<>t__builder = AsyncTaskMethodBuilder.Create();
+			stateMachine.<>4__this = this;
+			stateMachine.<>1__state = -1;
+			stateMachine.<>t__builder.Start(ref stateMachine);
+			return stateMachine.<>t__builder.Task;
 		}
 	}
 }
@@ -101,12 +91,17 @@ namespace Datadog.Trace.Ci.Coverage.Metadata.Target
 	{
 		public ModuleCoverage()
 		{
-			Metadata = new int[2][];
-			Metadata[0] = Array.Empty<int>();
-			Metadata[1] = new int[5];
-			Metadata[1][0] = 1;
-			Metadata[1][1] = 1;
-			Metadata[1][2] = 11;
+			SequencePoints = new int[4];
+			SequencePoints[0] = 1;
+			SequencePoints[1] = 1;
+			SequencePoints[2] = 11;
+			SequencePoints[3] = 3;
+			Metadata = new long[4];
+			Metadata[0] = 4294967296L;
+			Metadata[1] = 4294967297L;
+			Metadata[2] = 4294967298L;
+			Metadata[3] = 8589934593L;
+			TotalInstructions = 16L;
 		}
 	}
 }

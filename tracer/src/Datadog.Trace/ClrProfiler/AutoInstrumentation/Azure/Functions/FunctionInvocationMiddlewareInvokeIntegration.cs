@@ -6,7 +6,10 @@
 #if !NETFRAMEWORK
 using System;
 using System.ComponentModel;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
@@ -27,6 +30,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class FunctionInvocationMiddlewareInvokeIntegration
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FunctionInvocationMiddlewareInvokeIntegration));
+        private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new(Log, AzureFunctionsCommon.OperationName, AzureFunctionsCommon.IntegrationId);
+
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -36,7 +42,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, HttpContext httpContext)
         {
-            return AzureFunctionsCommon.OnFunctionMiddlewareBegin(instance, httpContext);
+            var tracer = Tracer.Instance;
+
+            if (tracer.Settings.IsIntegrationEnabled(AzureFunctionsCommon.IntegrationId))
+            {
+                var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, Security.Instance, httpContext, resourceName: null);
+
+                if (scope != null)
+                {
+                    return new CallTargetState(scope, state: httpContext);
+                }
+            }
+
+            return CallTargetState.GetDefault();
         }
 
         /// <summary>
@@ -51,7 +69,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            state.Scope?.DisposeWithException(exception);
+            if (state.Scope is { } scope)
+            {
+                var tracer = Tracer.Instance;
+                var security = Security.Instance;
+                var httpContext = state.State as HttpContext;
+                try
+                {
+                    if (exception != null)
+                    {
+                        AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, security, scope.Span, httpContext, exception);
+                    }
+                }
+                finally
+                {
+                    AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, security, scope, httpContext);
+                }
+            }
+
             return returnValue;
         }
     }

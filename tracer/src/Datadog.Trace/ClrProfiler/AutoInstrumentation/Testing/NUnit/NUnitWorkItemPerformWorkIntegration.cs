@@ -40,18 +40,18 @@ public static class NUnitWorkItemPerformWorkIntegration
             var item = instance.Test;
             switch (item.TestType)
             {
-                case "Assembly" when item.Instance.TryDuckCast<TestAssemblyStruct>(out var itemAssembly):
+                case "Assembly" when NUnitIntegration.GetTestModuleFrom(item) is null && item.Instance.TryDuckCast<TestAssemblyStruct>(out var itemAssembly):
                     var assemblyName = itemAssembly.Assembly?.GetName().Name ?? string.Empty;
                     var frameworkVersion = item.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
                     CIVisibility.WaitForSkippableTaskToFinish();
                     NUnitIntegration.SetTestModuleTo(item, TestModule.Create(assemblyName, "NUnit", frameworkVersion));
                     break;
-                case "TestFixture" when NUnitIntegration.GetTestModuleFrom(item) is { } module:
+                case "TestFixture" when NUnitIntegration.GetTestSuiteFrom(item) is null && NUnitIntegration.GetTestModuleFrom(item) is { } module:
                     NUnitIntegration.SetTestSuiteTo(item, module.GetOrCreateSuite(item.FullName));
                     break;
                 case "TestMethod" when NUnitIntegration.ShouldSkip(item):
                     var testMethod = item.Method.MethodInfo;
-                    Common.Log.Debug("ITR: Test skipped: {class}.{name}", testMethod.DeclaringType?.FullName, testMethod.Name);
+                    Common.Log.Debug("ITR: Test skipped: {Class}.{Name}", testMethod.DeclaringType?.FullName, testMethod.Name);
                     item.RunState = RunState.Ignored;
                     item.Properties.Set(NUnitIntegration.SkipReasonKey, "Skipped by the Intelligent Test Runner");
                     break;

@@ -1,5 +1,8 @@
 # Span Metadata
 This file is intended for development purposes only. The markdown is generated from assertions authored [here](/tracer/test/Datadog.Trace.TestHelpers/SpanMetadataRules.cs) and the assertions are actively tested in the tracing integration tests.
+
+The Integration Name (used for configuring individual integrations) of each span corresponds to the markdown header, with the following exceptions:
+- The `AspNetCoreMvc` span has the Integration Name `AspNetCore`
 ## AdoNet
 ### Span properties
 Name | Required |
@@ -113,6 +116,7 @@ network.client.ip | No
 span.kind | `server`
 
 ## AspNetCoreMvc
+> ⚠️ Note: This span is controlled by integration name `AspNetCore`
 ### Span properties
 Name | Required |
 ---------|----------------|
@@ -277,10 +281,14 @@ kafka.group | No
 kafka.offset | No
 kafka.partition | No
 kafka.tombstone | No
-message.queue_time_ms | No
 span.kind | Yes
+### Metrics
+Name | Required |
+---------|----------------|
+_dd.measured | Yes
+message.queue_time_ms | No
 
-## MongoDB
+## MongoDb
 ### Span properties
 Name | Required |
 ---------|----------------|
@@ -344,6 +352,21 @@ db.type | `postgres`
 out.host | Yes
 span.kind | `client`
 
+## OpenTelemetry
+### Tags
+Name | Required |
+---------|----------------|
+otel.library.name | Yes
+otel.library.version | No
+otel.status_code | `STATUS_CODE_UNSET`; `STATUS_CODE_OK`; `STATUS_CODE_ERROR`
+otel.status_description | No
+otel.trace_id | Yes
+span.kind | `internal`; `server`; `client`; `producer`; `consumer`
+### AdditionalTags
+Source | Operation | Required |
+---------|-----------|----------------|
+OTEL Resource Attributes | PassThru | No
+
 ## Oracle
 ### Span properties
 Name | Required |
@@ -388,27 +411,6 @@ component | `RabbitMQ`
 message.size | No
 span.kind | Yes
 
-## ServiceFabric
-### Span properties
-Name | Required |
----------|----------------|
-Name | `service_remoting.client`; `service_remoting.server`
-### Tags
-Name | Required |
----------|----------------|
-service-fabric.application-id | Yes
-service-fabric.application-name | Yes
-service-fabric.node-id | Yes
-service-fabric.node-name | Yes
-service-fabric.partition-id | Yes
-service-fabric.service-name | Yes
-service-fabric.service-remoting.interface-id | No
-service-fabric.service-remoting.invocation-id | No
-service-fabric.service-remoting.method-id | No
-service-fabric.service-remoting.method-name | Yes
-service-fabric.service-remoting.uri | Yes
-span.kind | `client`; `server`
-
 ## ServiceRemoting
 ### Span properties
 Name | Required |
@@ -417,6 +419,12 @@ Name | `service_remoting.client`; `service_remoting.server`
 ### Tags
 Name | Required |
 ---------|----------------|
+service-fabric.application-id | No
+service-fabric.application-name | No
+service-fabric.node-id | No
+service-fabric.node-name | No
+service-fabric.partition-id | No
+service-fabric.service-name | No
 service-fabric.service-remoting.interface-id | No
 service-fabric.service-remoting.invocation-id | No
 service-fabric.service-remoting.method-id | No
@@ -438,6 +446,10 @@ out.host | Yes
 out.port | Yes
 redis.raw_command | Yes
 span.kind | `client`
+### Metrics
+Name | Required |
+---------|----------------|
+db.redis.database_index | Yes
 
 ## StackExchangeRedis
 ### Span properties
@@ -453,6 +465,10 @@ out.host | Yes
 out.port | Yes
 redis.raw_command | Yes
 span.kind | `client`
+### Metrics
+Name | Required |
+---------|----------------|
+db.redis.database_index | No
 
 ## Sqlite
 ### Span properties

@@ -57,7 +57,7 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
             }
             catch (RegexMatchTimeoutException exception)
             {
-                _logger.Error(exception, "Query string obfuscation timed out with timeout value of {TotalMilliseconds} ms and regex pattern {pattern}", _timeout.TotalMilliseconds, _regex.ToString());
+                _logger.Error(exception, "Query string obfuscation timed out with timeout value of {TotalMilliseconds} ms and regex pattern {Pattern}", _timeout.TotalMilliseconds, _regex.ToString());
             }
 
             return string.Empty;

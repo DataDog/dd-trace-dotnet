@@ -41,6 +41,15 @@ typedef struct _DebuggerLineProbeDefinition
     
 } DebuggerLineProbeDefinition;
 
+typedef struct _DebuggerMethodSpanProbeDefinition
+{
+    WCHAR* probeId;
+    WCHAR* targetType;
+    WCHAR* targetMethod;
+    WCHAR** targetParameterTypes;
+    USHORT targetParameterTypesLength;
+} DebuggerMethodSpanProbeDefinition;
+
 typedef struct _DebuggerRemoveProbesDefinition
 {
     WCHAR* probeId;
@@ -125,6 +134,28 @@ struct LineProbeDefinition : public ProbeDefinition
 
 typedef std::vector<std::shared_ptr<LineProbeDefinition>> LineProbeDefinitions;
 
+struct SpanProbeOnMethodDefinition : public MethodProbeDefinition
+{
+    SpanProbeOnMethodDefinition(shared::WSTRING probeId, trace::MethodReference&& targetMethod,
+                                bool is_exact_signature_match) :
+        MethodProbeDefinition(std::move(probeId), std::move(targetMethod), is_exact_signature_match)
+    {
+    }
+
+    SpanProbeOnMethodDefinition(const SpanProbeOnMethodDefinition& other) :
+        MethodProbeDefinition(other)
+    {
+    }
+
+    inline bool operator==(const SpanProbeOnMethodDefinition& other) const
+    {
+        return probeId == other.probeId && target_method == other.target_method &&
+               is_exact_signature_match == other.is_exact_signature_match;
+    }
+};
+
+typedef std::vector<std::shared_ptr<SpanProbeOnMethodDefinition>> SpanProbeOnMethodDefinitions;
+
 enum class ProbeStatus
 {
     RECEIVED,
@@ -139,18 +170,34 @@ enum class ProbeStatus
 
 struct ProbeMetadata
 {
-    shared::WSTRING probeId;
+    WSTRING probeId;
+    WSTRING errorMessage;
     std::set<trace::MethodIdentifier> methods;
     ProbeStatus status = ProbeStatus::RECEIVED;
+    std::set<int> probeIndices;
 
     ProbeMetadata() = default;
     ProbeMetadata(const ProbeMetadata& other) = default;
     ProbeMetadata(ProbeMetadata&& other) = default;
 
-    ProbeMetadata(const shared::WSTRING& probeId, std::set<trace::MethodIdentifier>&& methods, ProbeStatus initialStatus) : probeId(probeId), methods(std::move(methods)), status(initialStatus)
+    ProbeMetadata(const WSTRING& probeId, std::set<trace::MethodIdentifier>&& methods, ProbeStatus initialStatus,
+                  std::set<int>&& probeDataIndices) :
+        probeId(probeId),
+        methods(std::move(methods)),
+        status(initialStatus),
+        probeIndices(std::move(probeDataIndices))
     {
     }
-    
+
+    ProbeMetadata(const WSTRING& probeId, const WSTRING& errorMessage, std::set<trace::MethodIdentifier>&& methods,
+                  ProbeStatus initialStatus, std::set<int>&& probeDataIndices) :
+        probeId(probeId),
+        errorMessage(errorMessage),
+        methods(std::move(methods)),
+        status(initialStatus),
+        probeIndices(std::move(probeDataIndices))
+    {
+    }
 
     inline bool operator==(const ProbeMetadata& other) const
     {
@@ -169,6 +216,7 @@ typedef struct _ProbeStatusesRequest
 typedef struct _DebuggerProbeStatus
 {
     const WCHAR* probeId;
+    const WCHAR* errorMessage;
     ProbeStatus status;
 } DebuggerProbeStatus;
 

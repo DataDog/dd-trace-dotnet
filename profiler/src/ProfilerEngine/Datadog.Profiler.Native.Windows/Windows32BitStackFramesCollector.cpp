@@ -8,7 +8,7 @@
 
 #include "Log.h"
 #include "ManagedThreadInfo.h"
-#include "StackSnapshotResultReusableBuffer.h"
+#include "StackSnapshotResultBuffer.h"
 
 // This method is called from the CLR so we need to use STDMETHODCALLTYPE macro to match the CLR declaration
 HRESULT STDMETHODCALLTYPE StackSnapshotCallbackHandlerImpl(FunctionID funcId, UINT_PTR ip, COR_PRF_FRAME_INFO frameInfo, ULONG32 contextSize, BYTE context[], void* clientData);

@@ -4,6 +4,11 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Linq;
+using Datadog.Profiler.IntegrationTests;
+using Datadog.Profiler.IntegrationTests.Helpers;
+using FluentAssertions;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.SmokeTests
@@ -50,6 +55,42 @@ namespace Datadog.Profiler.SmokeTests
         public void CheckFibonacci(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", _output);
+            runner.RunAndCheck();
+        }
+
+        [Trait("Category", "LinuxOnly")]
+        [TestAppFact("Samples.Computer01")]
+        public void CheckAppDomainForOldWayToStackWalk(string appName, string framework, string appAssembly)
+        {
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", _output);
+            runner.EnvironmentHelper.CustomEnvironmentVariables[EnvironmentVariables.UseBacktrace2] = "0";
+            runner.RunAndCheck();
+        }
+
+        [Trait("Category", "LinuxOnly")]
+        [TestAppFact("Samples.Computer01")]
+        public void CheckGenericsForOldWayToStackWalk(string appName, string framework, string appAssembly)
+        {
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", _output);
+            runner.EnvironmentHelper.CustomEnvironmentVariables[EnvironmentVariables.UseBacktrace2] = "0";
+            runner.RunAndCheck();
+        }
+
+        [Trait("Category", "LinuxOnly")]
+        [TestAppFact("Samples.Computer01")]
+        public void CheckPiForOldWayToStackWalk(string appName, string framework, string appAssembly)
+        {
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", _output);
+            runner.EnvironmentHelper.CustomEnvironmentVariables[EnvironmentVariables.UseBacktrace2] = "0";
+            runner.RunAndCheck();
+        }
+
+        [Trait("Category", "LinuxOnly")]
+        [TestAppFact("Samples.Computer01")]
+        public void CheckFibonacciForOldWayToStackWalk(string appName, string framework, string appAssembly)
+        {
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", _output);
+            runner.EnvironmentHelper.CustomEnvironmentVariables[EnvironmentVariables.UseBacktrace2] = "0";
             runner.RunAndCheck();
         }
     }

@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -18,9 +19,10 @@ public class DistributedPropagatorTests
     private const ulong SpanId = 2;
     private const int SamplingPriority = SamplingPriorityValues.UserReject;
     private const string Origin = "origin";
-    private const string RawTraceId = "1";
-    private const string RawSpanId = "2";
-    private const string PropagatedTags = "key1=value1;key2=value2";
+    private const string RawTraceId = "1a";
+    private const string RawSpanId = "2b";
+    private const string PropagatedTagsString = "_dd.p.key1=value1,_dd.p.key2=value2";
+    private const string AdditionalW3CTraceState = "key3=value3,key4=value4";
 
     private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
 
@@ -34,8 +36,20 @@ public class DistributedPropagatorTests
         new("__DistributedKey-Origin", Origin),
         new("__DistributedKey-RawTraceId", RawTraceId),
         new("__DistributedKey-RawSpanId", RawSpanId),
-        new("__DistributedKey-PropagatedTags", PropagatedTags),
+        new("__DistributedKey-PropagatedTags", PropagatedTagsString),
+        new("__DistributedKey-AdditionalW3CTraceState", AdditionalW3CTraceState),
     };
+
+    private static readonly TraceTagCollection PropagatedTagsCollection = new(
+        TagPropagation.OutgoingTagPropagationHeaderMaxLength,
+        new List<KeyValuePair<string, string>>
+        {
+            new("_dd.p.key1", "value1"),
+            new("_dd.p.key2", "value2"),
+        },
+        PropagatedTagsString);
+
+    private static readonly TraceTagCollection EmptyPropagatedTags = new(TagPropagation.OutgoingTagPropagationHeaderMaxLength);
 
     static DistributedPropagatorTests()
     {
@@ -56,7 +70,10 @@ public class DistributedPropagatorTests
     [Fact]
     public void Extract_ReadOnlyDictionary()
     {
+        // set up all key/value pairs
         var headers = SetupMockReadOnlyDictionary();
+
+        // extract SpanContext
         var result = Propagator.Extract(headers.Object);
 
         VerifyGetCalls(headers);
@@ -67,16 +84,22 @@ public class DistributedPropagatorTests
                    {
                        TraceId = TraceId,
                        SpanId = SpanId,
+                       RawTraceId = RawTraceId,
+                       RawSpanId = RawSpanId,
                        Origin = Origin,
                        SamplingPriority = SamplingPriority,
-                       PropagatedTags = PropagatedTags,
+                       PropagatedTags = PropagatedTagsCollection,
+                       AdditionalW3CTraceState = AdditionalW3CTraceState,
                    });
     }
 
     [Fact]
     public void Extract_EmptyHeadersReturnsNull()
     {
+        // empty
         var headers = new Mock<IReadOnlyDictionary<string, string>>();
+
+        // extract SpanContext
         var result = Propagator.Extract(headers.Object);
 
         result.Should().BeNull();
@@ -85,23 +108,51 @@ public class DistributedPropagatorTests
     [Fact]
     public void Extract_TraceIdOnly()
     {
-        var headers = new Mock<IReadOnlyDictionary<string, string>>();
+        var value = TraceId.ToString(InvariantCulture);
 
         // only setup TraceId, other properties remain null/empty
-        var value = TraceId.ToString(InvariantCulture);
+        var headers = new Mock<IReadOnlyDictionary<string, string>>();
         headers.Setup(h => h.TryGetValue("__DistributedKey-TraceId", out value)).Returns(true);
+
+        // extract SpanContext
         var result = Propagator.Extract(headers.Object);
 
-        result.Should().BeEquivalentTo(new SpanContextMock { TraceId = TraceId });
+        result.Should().BeEquivalentTo(new SpanContextMock
+                                       {
+                                           TraceId = TraceId,
+                                           PropagatedTags = EmptyPropagatedTags,
+                                       });
     }
 
     [Fact]
     public void SpanContextRoundTrip()
     {
-        var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin) { PropagatedTags = PropagatedTags };
+        var propagatedTags = new TraceTagCollection(100);
+        propagatedTags.SetTag("_dd.p.key1", "value1");
+        propagatedTags.SetTag("_dd.p.key2", "value2");
+
+        var traceContext = new TraceContext(tracer: null, propagatedTags);
+        traceContext.SetSamplingPriority(SamplingPriority);
+        traceContext.Origin = Origin;
+        traceContext.AdditionalW3CTraceState = AdditionalW3CTraceState;
+
+        // create and populate SpanContext
+        IReadOnlyDictionary<string, string> context = new SpanContext(
+            parent: SpanContext.None,
+            traceContext,
+            serviceName: null,
+            TraceId,
+            SpanId,
+            RawTraceId,
+            RawSpanId);
+
+        // extract SpanContext
         var result = Propagator.Extract(context);
 
+        // they are not the same SpanContext instance...
         result.Should().NotBeSameAs(context);
+
+        // ...but they contain the same values
         result.Should().BeEquivalentTo(context);
     }
 
@@ -109,12 +160,14 @@ public class DistributedPropagatorTests
     [MemberData(nameof(GetInvalidIds))]
     public void Extract_InvalidTraceId(string traceId)
     {
+        // set up all key/value pairs
         var headers = SetupMockReadOnlyDictionary();
 
         // replace TraceId setup
         var value = traceId;
         headers.Setup(h => h.TryGetValue("__DistributedKey-TraceId", out value)).Returns(true);
 
+        // extract SpanContext
         var result = Propagator.Extract(headers.Object);
 
         // invalid traceId should return a null context even if other values are set
@@ -125,12 +178,14 @@ public class DistributedPropagatorTests
     [MemberData(nameof(GetInvalidIds))]
     public void Extract_InvalidSpanId(string spanId)
     {
+        // set up all key/value pairs
         var headers = SetupMockReadOnlyDictionary();
 
         // replace ParentId setup
         var value = spanId;
         headers.Setup(h => h.TryGetValue("__DistributedKey-ParentId", out value)).Returns(true);
 
+        // extract SpanContext
         var result = Propagator.Extract(headers.Object);
 
         result.Should()
@@ -140,8 +195,11 @@ public class DistributedPropagatorTests
                        // SpanId has default value
                        TraceId = TraceId,
                        Origin = Origin,
+                       RawTraceId = RawTraceId,
+                       RawSpanId = RawSpanId,
                        SamplingPriority = SamplingPriority,
-                       PropagatedTags = PropagatedTags,
+                       PropagatedTags = PropagatedTagsCollection,
+                       AdditionalW3CTraceState = AdditionalW3CTraceState
                    });
     }
 
@@ -154,15 +212,17 @@ public class DistributedPropagatorTests
     public void Extract_InvalidSamplingPriority(string samplingPriority, int? expectedSamplingPriority)
     {
         // if the extracted sampling priority is a valid integer, pass it along as-is,
-        // even if we don't recognize its value to allow forward compatibility with newly added values.
+        // even if we don't recognize its value (to allow forward compatibility with newly added values).
         // ignore the extracted sampling priority if it is not a valid integer.
 
+        // set up all key/value pairs
         var headers = SetupMockReadOnlyDictionary();
 
         // replace SamplingPriority setup
         var value = samplingPriority;
         headers.Setup(h => h.TryGetValue("__DistributedKey-SamplingPriority", out value)).Returns(true);
 
+        // extract SpanContext
         object result = Propagator.Extract(headers.Object);
 
         result.Should()
@@ -171,9 +231,12 @@ public class DistributedPropagatorTests
                    {
                        TraceId = TraceId,
                        SpanId = SpanId,
+                       RawTraceId = RawTraceId,
+                       RawSpanId = RawSpanId,
                        Origin = Origin,
                        SamplingPriority = expectedSamplingPriority,
-                       PropagatedTags = PropagatedTags,
+                       PropagatedTags = PropagatedTagsCollection,
+                       AdditionalW3CTraceState = AdditionalW3CTraceState,
                    });
     }
 

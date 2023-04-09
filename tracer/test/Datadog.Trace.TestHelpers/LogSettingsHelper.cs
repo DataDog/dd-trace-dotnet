@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
@@ -16,9 +17,11 @@ namespace Datadog.Trace.TestHelpers
     {
         public static LogFormatter GetFormatter() => new(
             GetValidSettings(),
+            aasSettings: null,
             serviceName: "MyTestService",
             env: "integration_tests",
-            version: "1.0.0");
+            version: "1.0.0",
+            gitMetadataTagsProvider: new NullGitMetadataProvider());
 
         public static ImmutableDirectLogSubmissionSettings GetValidSettings()
         {

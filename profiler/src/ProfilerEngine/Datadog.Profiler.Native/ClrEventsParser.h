@@ -8,10 +8,11 @@
 #include "corprof.h"
 // end
 
-#include <string>
 #include <map>
-#include <shared_mutex>
 #include <math.h>
+#include <shared_mutex>
+#include <string>
+#include <vector>
 
 #include "GarbageCollection.h"
 #include "IAllocationsListener.h"
@@ -118,8 +119,7 @@ public:
     ClrEventsParser(ICorProfilerInfo12* pCorProfilerInfo,
                     IAllocationsListener* pAllocationListener,
                     IContentionListener* pContentionListener,
-                    IGCSuspensionsListener* pGCSuspensionsListener,
-                    IGarbageCollectionsListener* pGarbageCollectionsListener
+                    IGCSuspensionsListener* pGCSuspensionsListener
                     );
 
     void ParseEvent(EVENTPIPE_PROVIDER provider,
@@ -135,6 +135,7 @@ public:
                     ULONG numStackFrames,
                     UINT_PTR stackFrames[]
                     );
+    void Register(IGarbageCollectionsListener* pGarbageCollectionsListener);
 
 private:
     bool TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata, WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version);
@@ -150,7 +151,9 @@ private:
     void OnGCHeapStats();
     void OnGCGlobalHeapHistory(GCGlobalHeapPayload& payload);
     void NotifySuspension(uint32_t number, uint32_t generation, uint64_t duration, uint64_t timestamp);
-    void NotifyGarbageCollection(
+    void NotifyGarbageCollectionStarted(int32_t number, uint32_t generation, GCReason reason, GCType type);
+
+    void NotifyGarbageCollectionEnd(
         int32_t number,
         uint32_t generation,
         GCReason reason,
@@ -163,14 +166,14 @@ private:
     GCDetails& GetCurrentGC();
     void InitializeGC(GCDetails& gc, GCStartPayload& payload);
     void ClearCollections();
-    void ResetGC(GCDetails& gc);
-    uint64_t GetCurrentTimestamp();
+    static void ResetGC(GCDetails& gc);
+    static uint64_t GetCurrentTimestamp();
 
 
 private:
     // Points to the UTF16, null terminated string from the given event data buffer
     // and update the offset accordingly
-    WCHAR* ReadWideString(LPCBYTE eventData, ULONG cbEventData, ULONG* offset)
+    static WCHAR* ReadWideString(LPCBYTE eventData, ULONG cbEventData, ULONG* offset)
     {
         WCHAR* start = (WCHAR*)(eventData + *offset);
         size_t length = WStrLen(start);
@@ -200,7 +203,7 @@ private:
     IAllocationsListener* _pAllocationListener = nullptr;
     IContentionListener* _pContentionListener = nullptr;
     IGCSuspensionsListener* _pGCSuspensionsListener = nullptr;
-    IGarbageCollectionsListener* _pGarbageCollectionsListener = nullptr;
+    std::vector<IGarbageCollectionsListener*> _pGarbageCollectionsListeners;
 
  // state for garbage collection details including Stop The World duration
 private:

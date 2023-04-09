@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Logging.Internal.Configuration;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
@@ -232,7 +233,7 @@ namespace Datadog.Trace.Tests.Logging
             }
 
             // Running method to delete the old files
-            DatadogLogging.CleanLogFiles(tempLogsDir);
+            DatadogLogging.CleanLogFiles(32, tempLogsDir);
 
             var deletedLogFiles = Directory.EnumerateFiles(tempLogsDir, "DD-DotNet-Profiler-Native-*").Count();
             var retainedLogFiles = Directory.EnumerateFiles(tempLogsDir, "dotnet-tracer-*").Count();
@@ -245,6 +246,54 @@ namespace Datadog.Trace.Tests.Logging
             deletedLogFiles.Should().Be(0);
             retainedLogFiles.Should().Be(2);
             ignoredLogFiles.Should().Be(3);
+        }
+
+        [Fact]
+        public void WritingToAnInvalidPathDoesntCauseErrors()
+        {
+            string directory;
+
+            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                // Windows
+                directory = @"Z:\i-dont-exist";
+            }
+            else
+            {
+                // Linux
+                directory = "/proc/self";
+            }
+
+            // make sure we can't write to it
+            IsDirectoryWritable(directory).Should().BeFalse();
+
+            var config = DatadogLoggingFactory.GetConfiguration(new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.LogDirectory, directory }
+            }));
+            var logger = DatadogLoggingFactory.CreateFromConfiguration(config, DomainMetadata.Instance);
+            logger.Should().NotBeNull();
+
+            logger!.Error("Trying to write an error");
+
+            logger.CloseAndFlush();
+
+            static bool IsDirectoryWritable(string dirPath)
+            {
+                try
+                {
+                    var path = Path.Combine(dirPath, Path.GetRandomFileName());
+                    using (var fs = File.Create(path, bufferSize: 1, FileOptions.DeleteOnClose))
+                    {
+                    }
+
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
         }
 
         private void WriteRateLimitedLogMessage(IDatadogLogger logger, string message)

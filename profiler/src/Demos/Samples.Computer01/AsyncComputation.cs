@@ -4,80 +4,21 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Samples.Computer01
 {
-    public class AsyncComputation
+    public class AsyncComputation : ScenarioBase
     {
-        private readonly int _nbThreads;
-        private ManualResetEvent _stopEvent;
-        private List<Task> _activeTasks;
-
         public AsyncComputation(int nbThreads)
+            : base(nbThreads)
         {
-            _nbThreads = nbThreads;
         }
 
-        public void Start()
-        {
-            if (_stopEvent != null)
-            {
-                throw new InvalidOperationException("Already running...");
-            }
-
-            _stopEvent = new ManualResetEvent(false);
-            _activeTasks = CreateThreads();
-        }
-
-        public void Run()
+        public override void OnProcess()
         {
             Compute1().Wait();
-        }
-
-        public void Stop()
-        {
-            if (_stopEvent == null)
-            {
-                throw new InvalidOperationException("Not running...");
-            }
-
-            _stopEvent.Set();
-
-            Task.WhenAll(_activeTasks).Wait();
-
-            _stopEvent.Dispose();
-            _stopEvent = null;
-            _activeTasks = null;
-        }
-
-        private List<Task> CreateThreads()
-        {
-            var result = new List<Task>(_nbThreads);
-
-            for (var i = 0; i < _nbThreads; i++)
-            {
-                result.Add(
-                    Task.Factory.StartNew(
-                        () =>
-                        {
-                            while (!IsEventSet())
-                            {
-                                Compute1().Wait();
-                            }
-                        },
-                        TaskCreationOptions.LongRunning));
-            }
-
-            return result;
-        }
-
-        private bool IsEventSet()
-        {
-            return _stopEvent.WaitOne(0);
         }
 
         private async Task Compute1()

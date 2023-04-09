@@ -1,0 +1,8 @@
+{
+    "dsl": "SomeLocal > 2",
+    "gt": [
+        "# SomeLocal should have a 'ref' prefix",
+        "SomeLocal",
+        2
+    ]
+}

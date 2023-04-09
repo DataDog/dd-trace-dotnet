@@ -21,11 +21,14 @@ namespace Datadog.Profiler.IntegrationTests
     public abstract class MockDatadogAgent : IDisposable
     {
         private readonly CancellationTokenSource _cancellationTokenSource = new();
+        private readonly ManualResetEventSlim _readinessNotifier = new();
 
         public event EventHandler<EventArgs<HttpListenerContext>> ProfilerRequestReceived;
         public event EventHandler<EventArgs<HttpListenerContext>> TracerRequestReceived;
 
         public int NbCallsOnProfilingEndpoint { get; private set; }
+
+        public bool IsReady => _readinessNotifier.Wait(TimeSpan.FromSeconds(5)); // wait for 5 sec to declare it as not ready
 
         protected ITestOutputHelper Output { get; set; }
 
@@ -36,6 +39,7 @@ namespace Datadog.Profiler.IntegrationTests
         public virtual void Dispose()
         {
             _cancellationTokenSource.Cancel();
+            _readinessNotifier.Dispose();
         }
 
         private void OnProfilesRequestReceived(HttpListenerContext ctx)
@@ -107,6 +111,8 @@ namespace Datadog.Profiler.IntegrationTests
 
             private void HandleHttpRequests()
             {
+                _readinessNotifier.Set();
+
                 while (_listener.IsListening)
                 {
                     string message = null;
@@ -168,7 +174,7 @@ namespace Datadog.Profiler.IntegrationTests
         public class NamedPipeAgent : MockDatadogAgent
         {
             private readonly PipeServer _namedPipeServer;
-            private readonly Task _tracesListenerTask;
+            private readonly Task _profilesListenerTask;
             private readonly byte[] _responseBytes;
 
             private int _nbTime = 0;
@@ -209,9 +215,10 @@ namespace Datadog.Profiler.IntegrationTests
                     PipeDirection.InOut,
                     _cancellationTokenSource,
                     (ss, t) => HandleNamedPipeProfiles(ss, t),
-                    x => Output.WriteLine(x));
+                    x => Output.WriteLine(x),
+                    _readinessNotifier);
 
-                _tracesListenerTask = Task.Run(_namedPipeServer.Start);
+                _profilesListenerTask = Task.Run(_namedPipeServer.Start);
             }
 
             public string ProfilesPipeName { get; }
@@ -251,6 +258,7 @@ namespace Datadog.Profiler.IntegrationTests
             private readonly Func<NamedPipeServerStream, CancellationToken, Task> _handleReadFunc;
             private readonly ConcurrentBag<Task> _tasks = new();
             private readonly Action<string> _log;
+            private readonly ManualResetEventSlim _readinessNotifier;
             private int _instanceCount = 0;
 
             public PipeServer(
@@ -258,13 +266,15 @@ namespace Datadog.Profiler.IntegrationTests
                 PipeDirection pipeDirection,
                 CancellationTokenSource tokenSource,
                 Func<NamedPipeServerStream, CancellationToken, Task> handleReadFunc,
-                Action<string> log)
+                Action<string> log,
+                ManualResetEventSlim readinessNotifier)
             {
                 _cancellationTokenSource = tokenSource;
                 _pipeDirection = pipeDirection;
                 _pipeName = pipeName;
                 _handleReadFunc = handleReadFunc;
                 _log = log;
+                _readinessNotifier = readinessNotifier;
             }
 
             public Task Start()
@@ -295,10 +305,12 @@ namespace Datadog.Profiler.IntegrationTests
                     _log("Starting NamedPipeServerStream instance " + instance);
                     using var serverStream = new NamedPipeServerStream(
                         _pipeName,
-                        _pipeDirection, // we don't send responses to stats requests
+                        _pipeDirection,
                         NamedPipeServerStream.MaxAllowedServerInstances,
                         PipeTransmissionMode.Byte,
                         PipeOptions.Asynchronous);
+
+                    _readinessNotifier.Set();
 
                     _log("Starting wait for connection " + instance);
                     var connectTask = serverStream.WaitForConnectionAsync(_cancellationTokenSource.Token).ConfigureAwait(false);

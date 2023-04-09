@@ -1,0 +1,6 @@
+{
+    "dsl": "reverse(SomeLocal)",
+    "reverse": [
+        "SomeLocal"
+    ]
+}

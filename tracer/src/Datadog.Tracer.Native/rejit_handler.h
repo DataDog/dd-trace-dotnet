@@ -31,6 +31,9 @@ class RejitHandler;
 /// </summary>
 class RejitHandlerModuleMethod
 {
+private:
+    std::unique_ptr<MethodRewriter> m_methodRewriter;
+
 protected:
     mdMethodDef m_methodDef;
     ICorProfilerFunctionControl* m_pFunctionControl;
@@ -39,7 +42,7 @@ protected:
     RejitHandlerModule* m_module;
 
 public:
-    RejitHandlerModuleMethod(mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo);
+    RejitHandlerModuleMethod(mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo, std::unique_ptr<MethodRewriter> methodRewriter); 
     mdMethodDef GetMethodDef();
     RejitHandlerModule* GetModule();
 
@@ -50,7 +53,7 @@ public:
     void SetFunctionInfo(const FunctionInfo& functionInfo);
 
     bool RequestRejitForInlinersInModule(ModuleID moduleId);
-    virtual MethodRewriter* GetMethodRewriter() = 0;
+    MethodRewriter* GetMethodRewriter();
 
     virtual ~RejitHandlerModuleMethod() = default;
 };
@@ -68,10 +71,10 @@ public:
                     mdMethodDef methodDef,
                     RejitHandlerModule* module,
                     const FunctionInfo& functionInfo,
-                    const IntegrationDefinition& integrationDefinition);
+                    const IntegrationDefinition& integrationDefinition,
+                    std::unique_ptr<MethodRewriter> methodRewriter);
     
     IntegrationDefinition* GetIntegrationDefinition();
-    MethodRewriter* GetMethodRewriter() override;
 };
 
 using RejitHandlerModuleMethodCreatorFunc = std::function<std::unique_ptr<RejitHandlerModuleMethod>(const mdMethodDef, RejitHandlerModule*)>;
@@ -101,7 +104,7 @@ public:
     ModuleMetadata* GetModuleMetadata();
     void SetModuleMetadata(ModuleMetadata* metadata);
 
-    bool CreateMethodIfNotExists(const mdMethodDef methodDef, RejitHandlerModuleMethodCreatorFunc creator,
+    bool CreateMethodIfNotExists(mdMethodDef methodDef, RejitHandlerModuleMethodCreatorFunc creator,
                                  RejitHandlerModuleMethodUpdaterFunc updater);
     bool ContainsMethod(mdMethodDef methodDef);
     bool TryGetMethod(mdMethodDef methodDef, /* OUT */ RejitHandlerModuleMethod** methodHandler);
@@ -159,7 +162,7 @@ public:
 
     HRESULT NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId,
                                   ICorProfilerFunctionControl* pFunctionControl);
-    HRESULT NotifyReJITCompilationStarted(FunctionID functionId, ReJITID rejitId);
+    static HRESULT NotifyReJITCompilationStarted(FunctionID functionId, ReJITID rejitId);
 
     ICorProfilerInfo7* GetCorProfilerInfo();
 

@@ -49,6 +49,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [Trait("RunOnWindows", "True")]
         public async Task DetectRuntime()
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             using var helper = await StartConsole(enableProfiler: false);
             var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
 
@@ -71,6 +72,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [Trait("RunOnWindows", "True")]
         public async Task VersionConflict1X()
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var environmentHelper = new EnvironmentHelper("VersionConflict.1x", typeof(TestHelper), Output);
             using var helper = await StartConsole(environmentHelper, enableProfiler: true);
             var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
@@ -92,6 +94,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [Trait("RunOnWindows", "True")]
         public async Task NoEnvironmentVariables()
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             using var helper = await StartConsole(enableProfiler: false);
             var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
 
@@ -126,6 +129,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [Trait("RunOnWindows", "True")]
         public async Task WrongEnvironmentVariables()
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             using var helper = await StartConsole(
                 enableProfiler: false,
                 ("DD_PROFILING_ENABLED", "1"),
@@ -166,6 +170,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [Trait("RunOnWindows", "True")]
         public async Task Working()
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             using var helper = await StartConsole(enableProfiler: true);
             var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
 
@@ -203,6 +208,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [SkippableFact]
         public async Task WorkingWithContinuousProfiler()
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             string archFolder;
 
             if (FrameworkDescription.Instance.ProcessArchitecture == ProcessArchitecture.Arm64)
@@ -254,6 +260,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [SkippableFact]
         public async Task WrongLdPreload()
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             using var helper = await StartConsole(
                                    enableProfiler: true,
                                    ("DD_PROFILING_ENABLED", "1"),
@@ -279,6 +286,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [SkippableFact]
         public async Task LdPreloadNotFound()
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             using var helper = await StartConsole(
                                    enableProfiler: true,
                                    ("DD_PROFILING_ENABLED", "1"),
@@ -307,6 +315,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [InlineData(null)]
         public async Task DetectContinousProfilerState(bool? enabled)
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var environmentVariables = enabled == null ? Array.Empty<(string, string)>()
                 : new[] { ("DD_PROFILING_ENABLED", enabled == true ? "1" : "0") };
 
@@ -340,6 +349,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [Trait("RunOnWindows", "True")]
         public void GoodRegistry()
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var registryService = MockRegistryService(Array.Empty<string>(), ProfilerPath);
 
             using var console = ConsoleHelper.Redirect();
@@ -359,6 +369,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [InlineData(false)]
         public void BadRegistryKey(bool wow64)
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var registryService = MockRegistryService(new[] { "cor_profiler" }, ProfilerPath, wow64);
 
             using var console = ConsoleHelper.Redirect();
@@ -376,6 +387,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [Trait("RunOnWindows", "True")]
         public void ProfilerNotRegistered()
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var registryService = MockRegistryService(Array.Empty<string>(), null);
 
             using var console = ConsoleHelper.Redirect();
@@ -391,6 +403,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [Trait("RunOnWindows", "True")]
         public void ProfilerNotFoundRegistry()
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var registryService = MockRegistryService(Array.Empty<string>(), "dummyPath/" + Path.GetFileName(ProfilerPath));
 
             using var console = ConsoleHelper.Redirect();
@@ -407,6 +420,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [Trait("RunOnWindows", "True")]
         public void WrongProfilerRegistry()
         {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var registryService = MockRegistryService(Array.Empty<string>(), "wrongProfiler.dll");
 
             using var console = ConsoleHelper.Redirect();

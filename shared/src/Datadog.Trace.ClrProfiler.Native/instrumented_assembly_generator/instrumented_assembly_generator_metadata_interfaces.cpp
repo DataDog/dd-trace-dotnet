@@ -126,12 +126,12 @@ HRESULT STDMETHODCALLTYPE MetadataInterfaces::QueryInterface(REFIID riid, void**
     return E_NOINTERFACE;
 }
 
-ULONG STDMETHODCALLTYPE MetadataInterfaces::AddRef(void)
+ULONG STDMETHODCALLTYPE MetadataInterfaces::AddRef()
 {
     return std::atomic_fetch_add(&this->m_refCount, 1) + 1;
 }
 
-ULONG STDMETHODCALLTYPE MetadataInterfaces::Release(void)
+ULONG STDMETHODCALLTYPE MetadataInterfaces::Release()
 {
     int count = std::atomic_fetch_sub(&this->m_refCount, 1) - 1;
 

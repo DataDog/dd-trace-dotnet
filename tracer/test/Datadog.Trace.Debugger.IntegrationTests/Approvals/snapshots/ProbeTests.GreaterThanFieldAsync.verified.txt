@@ -1,0 +1,69 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "return": {
+            "arguments": {
+              "intArg": {
+                "type": "Int32",
+                "value": "3"
+              },
+              "this": {
+                "fields": {
+                  "_field": {
+                    "type": "Int32",
+                    "value": "13"
+                  }
+                },
+                "type": "GreaterThanFieldAsync",
+                "value": "GreaterThanFieldAsync"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "String",
+                "value": "Field is: 13"
+              },
+              "result": {
+                "type": "Int32",
+                "value": "8"
+              }
+            },
+            "staticFields": {
+              "Json": {
+                "type": "String",
+                "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"_field\"},\r\n      6\r\n    ]\r\n}"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.ExpressionTests.GreaterThanFieldAsync"
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.ExpressionTests.GreaterThanFieldAsync",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

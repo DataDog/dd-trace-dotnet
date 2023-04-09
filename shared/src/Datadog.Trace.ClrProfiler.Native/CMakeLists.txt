@@ -5,7 +5,7 @@ cmake_policy(SET CMP0015 NEW)
 # Project definition
 # ******************************************************
 
-project("Datadog.Trace.ClrProfiler.Native" VERSION 2.21.0)
+project("Datadog.Trace.ClrProfiler.Native" VERSION 2.28.0)
 
 # ******************************************************
 # Environment detection
@@ -142,14 +142,12 @@ endif()
 # ******************************************************
 # Define target
 # ******************************************************
-add_library("Datadog.Trace.ClrProfiler.Native" SHARED
+add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
         cor_profiler.cpp
         cor_profiler_class_factory.cpp
-        dllmain.cpp
         dynamic_dispatcher.cpp
         dynamic_instance.cpp
         runtimeid_store.cpp
-        exported_functions.cpp
         instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_function_control.cpp
         instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_info.cpp
         instrumented_assembly_generator/instrumented_assembly_generator_metadata_interfaces.cpp
@@ -162,20 +160,20 @@ add_library("Datadog.Trace.ClrProfiler.Native" SHARED
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/dynamic_com_library.cpp
         )
 
-target_compile_definitions("Datadog.Trace.ClrProfiler.Native" PRIVATE "-D_GLIBCXX_USE_CXX11_ABI=0")
+target_compile_definitions("Datadog.Trace.ClrProfiler.Native.static" PRIVATE "-D_GLIBCXX_USE_CXX11_ABI=0")
 
-set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
+set_target_properties("Datadog.Trace.ClrProfiler.Native.static" PROPERTIES PREFIX "")
 
 # Define linker libraries
 if (ISMACOS)
-    target_link_libraries("Datadog.Trace.ClrProfiler.Native"
+    target_link_libraries("Datadog.Trace.ClrProfiler.Native.static"
         ${CMAKE_DL_LIBS}
         coreclr
         fmt-lib
         spdlog-headers
     )
 elseif(ISLINUX)
-    target_link_libraries("Datadog.Trace.ClrProfiler.Native"
+    target_link_libraries("Datadog.Trace.ClrProfiler.Native.static"
         -static-libgcc
         -static-libstdc++
         ${CMAKE_DL_LIBS}
@@ -185,4 +183,17 @@ elseif(ISLINUX)
     )
 endif()
 
-add_dependencies("Datadog.Trace.ClrProfiler.Native" fmt-lib coreclr spdlog-headers)
+add_dependencies("Datadog.Trace.ClrProfiler.Native.static" fmt-lib coreclr spdlog-headers)
+
+# ******************************************************
+# Define shared target
+# ******************************************************
+add_library("Datadog.Trace.ClrProfiler.Native" SHARED
+    dllmain.cpp
+    exported_functions.cpp
+)
+  
+set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
+
+# Define linker libraries
+target_link_libraries("Datadog.Trace.ClrProfiler.Native" "Datadog.Trace.ClrProfiler.Native.static")

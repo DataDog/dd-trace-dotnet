@@ -42,6 +42,25 @@ namespace Datadog.Trace.Configuration
         public const string ServiceVersion = "DD_VERSION";
 
         /// <summary>
+        /// Configuration key for the application's git repo URL. Sets the "_dd.git.repository_url" tag on every <see cref="Span"/>.
+        /// </summary>
+        /// <seealso cref="TracerSettings.GitRepositoryUrl"/>
+        public const string GitRepositoryUrl = "DD_GIT_REPOSITORY_URL";
+
+        /// <summary>
+        /// Configuration key for the application's git commit hash. Sets the "_dd.git.commit.sha" tag on every <see cref="Span"/>.
+        /// </summary>
+        /// <seealso cref="TracerSettings.GitCommitSha"/>
+        public const string GitCommitSha = "DD_GIT_COMMIT_SHA";
+
+        /// <summary>
+        /// Configuration key for enabling the tagging of every telemetry event with git metadata.
+        /// Default is value is true (enabled).
+        /// </summary>
+        /// <seealso cref="TracerSettings.GitMetadataEnabled"/>
+        public const string GitMetadataEnabled = "DD_TRACE_GIT_METADATA_ENABLED";
+
+        /// <summary>
         /// Configuration key for enabling or disabling the Tracer.
         /// Default is value is true (enabled).
         /// </summary>
@@ -53,6 +72,18 @@ namespace Datadog.Trace.Configuration
         /// Default is value is false (disabled).
         /// </summary>
         public const string DebugEnabled = "DD_TRACE_DEBUG";
+
+        /// <summary>
+        /// Configuration key for enabling or disabling the Tracer's debugger mode.
+        /// Default is value is false (disabled).
+        /// </summary>
+        public const string WaitForDebuggerAttach = "DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH";
+
+        /// <summary>
+        /// Configuration key for enabling or disabling the Tracer's native debugger mode.
+        /// Default is value is false (disabled).
+        /// </summary>
+        public const string WaitForNativeDebuggerAttach = "DD_INTERNAL_WAIT_FOR_NATIVE_DEBUGGER_ATTACH";
 
         /// <summary>
         /// Configuration key for a list of integrations to disable. All other integrations remain enabled.
@@ -128,12 +159,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="TracerSettings.MaxTracesSubmittedPerSecond"/>
         public const string TraceRateLimit = "DD_TRACE_RATE_LIMIT";
-
-        /// <summary>
-        /// Configuration key for enabling or disabling the diagnostic log at startup
-        /// </summary>
-        /// <seealso cref="TracerSettings.StartupDiagnosticLogEnabled"/>
-        public const string StartupDiagnosticLogEnabled = "DD_TRACE_STARTUP_LOGS";
 
         /// <summary>
         /// Configuration key for setting custom sampling rules based on regular expressions.
@@ -214,36 +239,6 @@ namespace Datadog.Trace.Configuration
         /// Default value is <c>false</c> (disabled).
         /// </summary>
         public const string RuntimeMetricsEnabled = "DD_RUNTIME_METRICS_ENABLED";
-
-        /// <summary>
-        /// Configuration key for setting the approximate maximum size,
-        /// in bytes, for Tracer log files.
-        /// Default value is 10 MB.
-        /// </summary>
-        public const string MaxLogFileSize = "DD_MAX_LOGFILE_SIZE";
-
-        /// <summary>
-        /// Configuration key for setting the number of seconds between,
-        /// identical log messages, for Tracer log files.
-        /// Default value is 60s. Setting to 0 disables rate limiting.
-        /// </summary>
-        public const string LogRateLimit = "DD_TRACE_LOGGING_RATE";
-
-        /// <summary>
-        /// Configuration key for setting the path to the .NET Tracer native log file.
-        /// This also determines the output folder of the .NET Tracer managed log files.
-        /// Overridden by <see cref="LogDirectory"/> if present.
-        /// </summary>
-        [Obsolete(DeprecationMessages.LogPath)]
-        public const string ProfilerLogPath = "DD_TRACE_LOG_PATH";
-
-        /// <summary>
-        /// Configuration key for setting the directory of the .NET Tracer logs.
-        /// Overrides the value in <see cref="ProfilerLogPath"/> if present.
-        /// Default value is "%ProgramData%"\Datadog .NET Tracer\logs\" on Windows
-        /// or "/var/log/datadog/dotnet/" on Linux.
-        /// </summary>
-        public const string LogDirectory = "DD_TRACE_LOG_DIRECTORY";
 
         /// <summary>
         /// Configuration key for when a standalone instance of the Trace Agent needs to be started.
@@ -389,6 +384,13 @@ namespace Datadog.Trace.Configuration
         public const string ObfuscationQueryStringRegexTimeout = "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP_TIMEOUT";
 
         /// <summary>
+        /// Configuration key for setting the max size of the querystring to report, before obfuscation
+        /// Default value is 5000, 0 means that we don't limit the size.
+        /// </summary>
+        /// <seealso cref="TracerSettings.QueryStringReportingSize"/>
+        public const string QueryStringReportingSize = "DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE";
+
+        /// <summary>
         /// Configuration key for enabling/disabling reporting query string
         /// Default value is true
         /// </summary>
@@ -396,9 +398,11 @@ namespace Datadog.Trace.Configuration
         public const string QueryStringReportingEnabled = "DD_HTTP_SERVER_TAG_QUERY_STRING";
 
         /// <summary>
-        /// Configuration key for setting in number of days when to delete log files based on their last writetime date.
+        /// Configuration key for setting DBM propagation mode
+        /// Default value is disabled, expected values are either: disabled, service or full
         /// </summary>
-        public const string LogFileRetentionDays = "DD_TRACE_LOGFILE_RETENTION_DAYS";
+        /// <seealso cref="TracerSettings.DbmPropagationMode"/>
+        public const string DbmPropagationMode = "DD_DBM_PROPAGATION_MODE";
 
         /// <summary>
         /// String constants for CI Visibility configuration keys.
@@ -437,6 +441,16 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for re-signing assemblies after the Code Coverage modification.
             /// </summary>
             public const string CodeCoverageSnkFile = "DD_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling jit optimizations in the Code Coverage
+            /// </summary>
+            public const string CodeCoverageEnableJitOptimizations = "DD_CIVISIBILITY_CODE_COVERAGE_ENABLE_JIT_OPTIMIZATIONS";
+
+            /// <summary>
+            /// Configuration key for setting the code coverage jsons destination path.
+            /// </summary>
+            public const string CodeCoveragePath = "DD_CIVISIBILITY_CODE_COVERAGE_PATH";
 
             /// <summary>
             /// Configuration key for enabling or disabling Uploading Git Metadata in CI Visibility

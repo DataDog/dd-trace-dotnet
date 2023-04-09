@@ -1,86 +1,86 @@
-﻿[
+[
   {
     "ddsource": "dd_debugger",
     "debugger": {
       "diagnostics": {
-        "Exception": {
-          "Message": null,
-          "StackTrace": null,
-          "Type": null
+        "exception": {
+          "message": "Dynamic Instrumentation of methods that return a `ref struct` is not yet supported.",
+          "stacktrace": null,
+          "type": "NO_TYPE"
         },
-        "probeId": "17c1e39c-e46c-828e-4e02-21be0f3b5358",
-        "status": "ERROR"
-      }
-    },
-    "message": "Error installing probe 17c1e39c-e46c-828e-4e02-21be0f3b5358.",
-    "service": "Probes"
-  },
-  {
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "diagnostics": {
-        "Exception": {
-          "Message": null,
-          "StackTrace": null,
-          "Type": null
-        },
-        "probeId": "3410cda1-5b13-a34e-6f84-a54adf7a0ea0",
-        "status": "ERROR"
-      }
-    },
-    "message": "Error installing probe 3410cda1-5b13-a34e-6f84-a54adf7a0ea0.",
-    "service": "Probes"
-  },
-  {
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "diagnostics": {
-        "Exception": {
-          "Message": null,
-          "StackTrace": null,
-          "Type": null
-        },
-        "probeId": "8286d046-9740-a3e4-95cf-ff46699c73c4",
-        "status": "ERROR"
-      }
-    },
-    "message": "Error installing probe 8286d046-9740-a3e4-95cf-ff46699c73c4.",
-    "service": "Probes"
-  },
-  {
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "diagnostics": {
-        "Exception": null,
         "probeId": "1828a3f0-e94b-eb91-81e3-12bcf19ac41a",
-        "status": "INSTALLED"
+        "status": "ERROR"
       }
     },
-    "message": "Installed probe 1828a3f0-e94b-eb91-81e3-12bcf19ac41a.",
-    "service": "Probes"
+    "message": "Error installing probe 1828a3f0-e94b-eb91-81e3-12bcf19ac41a.",
+    "service": "probes"
   },
   {
     "ddsource": "dd_debugger",
     "debugger": {
       "diagnostics": {
-        "Exception": null,
+        "exception": {
+          "message": "Dynamic Instrumentation of methods in a `ref-struct` is not yet supported.",
+          "stacktrace": null,
+          "type": "NO_TYPE"
+        },
         "probeId": "3c5a4d30-f652-b355-51d6-9589d1d290b4",
-        "status": "INSTALLED"
+        "status": "ERROR"
       }
     },
-    "message": "Installed probe 3c5a4d30-f652-b355-51d6-9589d1d290b4.",
-    "service": "Probes"
+    "message": "Error installing probe 3c5a4d30-f652-b355-51d6-9589d1d290b4.",
+    "service": "probes"
   },
   {
     "ddsource": "dd_debugger",
     "debugger": {
       "diagnostics": {
-        "Exception": null,
+        "exception": {
+          "message": "Dynamic Instrumentation of methods that return a `ref struct` is not yet supported.",
+          "stacktrace": null,
+          "type": "NO_TYPE"
+        },
         "probeId": "86a95ec1-5bda-bd57-3f8e-e610398f9334",
+        "status": "ERROR"
+      }
+    },
+    "message": "Error installing probe 86a95ec1-5bda-bd57-3f8e-e610398f9334.",
+    "service": "probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
+        "probeId": "17c1e39c-e46c-828e-4e02-21be0f3b5358",
         "status": "INSTALLED"
       }
     },
-    "message": "Installed probe 86a95ec1-5bda-bd57-3f8e-e610398f9334.",
-    "service": "Probes"
+    "message": "Installed probe 17c1e39c-e46c-828e-4e02-21be0f3b5358.",
+    "service": "probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
+        "probeId": "3410cda1-5b13-a34e-6f84-a54adf7a0ea0",
+        "status": "INSTALLED"
+      }
+    },
+    "message": "Installed probe 3410cda1-5b13-a34e-6f84-a54adf7a0ea0.",
+    "service": "probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
+        "probeId": "8286d046-9740-a3e4-95cf-ff46699c73c4",
+        "status": "INSTALLED"
+      }
+    },
+    "message": "Installed probe 8286d046-9740-a3e4-95cf-ff46699c73c4.",
+    "service": "probes"
   }
 ]

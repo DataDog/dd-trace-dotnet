@@ -1,5 +1,6 @@
 #include "rejit_handler.h"
 
+#include "cor_profiler.h"
 #include "dd_profiler_constants.h"
 #include "logger.h"
 #include "stats.h"
@@ -12,11 +13,12 @@ namespace trace
 //
 
 RejitHandlerModuleMethod::RejitHandlerModuleMethod(mdMethodDef methodDef, RejitHandlerModule* module,
-                                                   const FunctionInfo& functionInfo) :
+                                                   const FunctionInfo& functionInfo, std::unique_ptr<MethodRewriter> methodRewriter) :
     m_methodDef(methodDef),
     m_module(module),
     m_pFunctionControl(nullptr),
-    m_functionInfo(std::make_unique<FunctionInfo>(functionInfo))
+    m_functionInfo(std::make_unique<FunctionInfo>(functionInfo)),
+    m_methodRewriter(std::move(methodRewriter))
 {
 }
 
@@ -77,7 +79,7 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
             unsigned int total = 0;
             std::vector<ModuleID> modules;
             std::vector<mdMethodDef> methods;
-            while (methodEnum->Next(1, &method, NULL) == S_OK)
+            while (methodEnum->Next(1, &method, nullptr) == S_OK)
             {
                 Logger::Debug("NGEN:: Asking rewrite for inliner [ModuleId=", method.moduleId,
                               ",MethodDef=", method.methodId, "]");
@@ -129,14 +131,19 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
     return false;
 }
 
+MethodRewriter* RejitHandlerModuleMethod::GetMethodRewriter()
+{
+    return m_methodRewriter.get();
+}
+
 //
 // TracerRejitHandlerModuleMethod
 //
 
 TracerRejitHandlerModuleMethod::TracerRejitHandlerModuleMethod(
     mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo,
-    const IntegrationDefinition& integrationDefinition) :
-    RejitHandlerModuleMethod(methodDef, module, functionInfo),
+    const IntegrationDefinition& integrationDefinition, std::unique_ptr<MethodRewriter> methodRewriter) :
+    RejitHandlerModuleMethod(methodDef, module, functionInfo, std::move(methodRewriter)),
     m_integrationDefinition(std::make_unique<IntegrationDefinition>(integrationDefinition))
 {
 }
@@ -144,11 +151,6 @@ TracerRejitHandlerModuleMethod::TracerRejitHandlerModuleMethod(
 IntegrationDefinition* TracerRejitHandlerModuleMethod::GetIntegrationDefinition()
 {
     return m_integrationDefinition.get();
-}
-
-MethodRewriter* TracerRejitHandlerModuleMethod::GetMethodRewriter()
-{
-    return TracerMethodRewriter::Instance();
 }
 
 //

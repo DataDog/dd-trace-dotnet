@@ -13,7 +13,25 @@ namespace Datadog.Trace.Iast;
 internal static class StackWalker
 {
     public static readonly string[] ExcludeSpanGenerationTypes = { "Datadog.Trace.Debugger.Helpers.StringExtensions" };
-    public static readonly string[] AssemblyNamesToSkip = { "Datadog.Trace", "System.Security.Cryptography", "System.Security.Cryptography.Primitives", "System.Security.Cryptography.Algorithms", "System.Security.Cryptography.Csp" };
+    public static readonly string[] AssemblyNamesToSkip =
+    {
+        "Datadog.Trace",
+        "Microsoft.Data.SqlClient",
+        "Microsoft.Data.Sqlite",
+        "MySql.Data",
+        "MySqlConnector",
+        "Npgsql",
+        "Oracle.DataAccess",
+        "Oracle.ManagedDataAccess",
+        "System.Data",
+        "System.Data.Common",
+        "System.Security.Cryptography",
+        "System.Security.Cryptography.Algorithms",
+        "System.Security.Cryptography.Csp",
+        "System.Security.Cryptography.Primitives",
+        "System.Data.SqlClient",
+        "System.Data.SQLite"
+    };
 
     private const int DefaultSkipFrames = 2;
 

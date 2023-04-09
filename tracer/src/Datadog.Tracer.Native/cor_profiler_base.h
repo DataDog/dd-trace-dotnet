@@ -163,12 +163,12 @@ public:
         return E_NOINTERFACE;
     }
 
-    ULONG STDMETHODCALLTYPE AddRef(void) override
+    ULONG STDMETHODCALLTYPE AddRef() override
     {
         return std::atomic_fetch_add(&this->ref_count_, 1) + 1;
     }
 
-    ULONG STDMETHODCALLTYPE Release(void) override
+    ULONG STDMETHODCALLTYPE Release() override
     {
         int count = std::atomic_fetch_sub(&this->ref_count_, 1) - 1;
 

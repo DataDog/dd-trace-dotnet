@@ -39,7 +39,24 @@ namespace Datadog.Trace.Util
 
         public static TagsCacheItem GetTagsFromDbCommand(IDbCommand command)
         {
-            var connectionString = command.Connection?.ConnectionString;
+            string connectionString = null;
+            try
+            {
+                if (command.GetType().FullName == "System.Data.Common.DbDataSource.DbCommandWrapper")
+                {
+                    return default;
+                }
+
+                connectionString = command.Connection?.ConnectionString;
+            }
+            catch (NotSupportedException nsException)
+            {
+                Log.Debug(nsException, "ConnectionString cannot be retrieved from the command.");
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error trying to retrieve the ConnectionString from the command.");
+            }
 
             if (connectionString is null)
             {
@@ -67,7 +84,7 @@ namespace Datadog.Trace.Util
                 // Use atomic operation to log only once
                 if (Interlocked.Exchange(ref _cache, null) != null)
                 {
-                    Log.Information($"More than {MaxConnectionStrings} different connection strings were used, disabling cache");
+                    Log.Information<int>("More than {MaxConnectionStrings} different connection strings were used, disabling cache", MaxConnectionStrings);
                 }
             }
 

@@ -84,6 +84,6 @@
       "version": "2"
     },
     "message": "AsyncGenericMethod+<Method>d__2`1.MoveNext(input=.RunAsync, obj=AsyncWithGenericMethod): AsyncWithGenericMethod.RunAsync.Method\r\n@return=AsyncWithGenericMethod.RunAsync.Method, output=AsyncWithGenericMethod.RunAsync.",
-    "service": "Probes"
+    "service": "probes"
   }
 ]

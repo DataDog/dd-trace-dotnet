@@ -16,12 +16,15 @@ namespace BuggyBits
 {
     public enum Scenario
     {
-        None,
-        StringConcat,    // using += / String.Concat
-        StringBuilder,   // using StringBuilder
-        Parallel,        // using parallel code
-        Async,           // using async code
-        FormatExceptions // generating FormatExceptions for prices
+        None = 0,
+        StringConcat = 1,      // using += / String.Concat
+        StringBuilder = 2,     // using StringBuilder
+        Parallel = 4,          // using parallel code
+        Async = 8,             // using async code
+        FormatExceptions = 16, // generating FormatExceptions for prices
+        ParallelLock = 32,     // using parallel code with lock
+        MemoryLeak = 64, // keep a controller in memory due to instance callback passed to a cache
+        EndpointsCount = 128 // Specific test with '.' in endpoint name
     }
 
     public class Program

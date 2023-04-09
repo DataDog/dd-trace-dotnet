@@ -32,7 +32,7 @@ namespace Datadog.Trace
 
                 var edgeTags = edgeTagString.Split(',');
                 spanContext.MergePathwayContext(pathwayContext);
-                spanContext.SetCheckpoint(dsm, edgeTags);
+                spanContext.SetCheckpoint(dsm, CheckpointKind.Consume, edgeTags);
             }
 
             return spanContext;

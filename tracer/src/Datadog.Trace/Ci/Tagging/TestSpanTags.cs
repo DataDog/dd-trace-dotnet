@@ -21,7 +21,6 @@ internal partial class TestSpanTags : TestSuiteSpanTags
         Suite = suiteTags.Suite;
         Framework = suiteTags.Framework;
         Module = suiteTags.Module;
-        Status = suiteTags.Status;
         Type = suiteTags.Type;
         FrameworkVersion = suiteTags.FrameworkVersion;
         GitBranch = suiteTags.GitBranch;

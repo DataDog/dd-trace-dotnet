@@ -54,14 +54,14 @@ internal static partial class DotNetSettingsExtensions
         return settings.SetProcessArgumentConfigurator(
             arg => arg.Add("/nowarn:netsdk1138"));
     }
-    
+
     public static T SetPlatform<T>(this T settings, MSBuildTargetPlatform platform)
         where T: NuGetRestoreSettings
     {
         return settings.SetProcessArgumentConfigurator(
             arg => arg.Add($"/p:\"Platform={platform}\""));
     }
-    
+
     public static T SetDDEnvironmentVariables<T>(this T settings, string serviceName)
         where T: ToolSettings
     {
@@ -73,7 +73,7 @@ internal static partial class DotNetSettingsExtensions
     {
         return settings.SetProcessEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logsDirectory);
     }
-    
+
     public static T SetProcessEnvironmentVariables<T>(this T settings, IEnumerable<KeyValuePair<string, string>> variables)
         where T: ToolSettings
     {
@@ -91,7 +91,7 @@ internal static partial class DotNetSettingsExtensions
         return settings.SetProperty("BuildProjectReferences", false);
     }
 
-    public static DotNetTestSettings EnableCrashDumps(this DotNetTestSettings settings, MiniDumpType dumpType = MiniDumpType.MiniDumpWithPrivateReadWriteMemory)
+    public static DotNetTestSettings EnableCrashDumps(this DotNetTestSettings settings, MiniDumpType dumpType = MiniDumpType.MiniDumpWithFullMemory)
     {
         if (bool.Parse(Environment.GetEnvironmentVariable("enable_crash_dumps") ?? "false"))
         {
@@ -145,22 +145,43 @@ internal static partial class DotNetSettingsExtensions
     public static T SetDotnetPath<T>(this T settings, MSBuildTargetPlatform platform)
         where T : ToolSettings
     {
-        if (platform != MSBuildTargetPlatform.x86 && platform != MSBuildTargetPlatform.Win32)
-        {
-            return settings;
-        }
+        var dotnetPath = GetDotNetPath(platform);
+        return settings.SetProcessToolPath(dotnetPath);
+    }
 
+    /// <summary>
+    /// Get the path to `dotnet` depending on the platform
+    /// </summary>
+    public static string GetDotNetPath(MSBuildTargetPlatform platform)
+    {
+        if (!MSBuildTargetPlatform.x86.Equals(platform))
+            return DotNetTasks.DotNetPath;
 
-        // assume it's installed where we expect
         var dotnetPath = EnvironmentInfo.GetVariable<string>("DOTNET_EXE_32")
-                      ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "dotnet", "dotnet.exe");
+                 ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "dotnet", "dotnet.exe");
 
         if (!File.Exists(dotnetPath))
         {
             throw new Exception($"Error locating 32-bit dotnet process. Expected at '{dotnetPath}'");
         }
+        return dotnetPath;
+    }
 
-        return settings.SetProcessToolPath(dotnetPath);
+    public static T SetTestTargetPlatform<T>(this T settings, MSBuildTargetPlatform platform)
+        where T : ToolSettings
+    {
+        // To avoid annoying differences in the test code, convert the MSBuildTargetPlatform string values to
+        // the same values returned by Environment.Platform(), and skip unsupported values (e.g. MSIL, arm)
+        var strPlatform = platform.ToString().ToLowerInvariant();
+        var target = strPlatform switch
+        {
+            "x86" => "X86",
+            "x64" => "X64",
+            "arm64" => "ARM64",
+            _ => throw new InvalidOperationException($"Should only use x64, x86 or ARM64 for Test target platform. (Invalid : {strPlatform})"),
+        };
+
+        return settings.SetProcessEnvironmentVariable("TargetPlatform", target);
     }
 
     /// <summary>
@@ -221,5 +242,24 @@ internal static partial class DotNetSettingsExtensions
         }
 
         return settings;
+    }
+
+    public static T SetLocalOsxEnvironmentVariables<T>(this T toolSettings)
+        where T : ToolSettings
+    {
+        return toolSettings
+            .SetProcessEnvironmentVariable("MONGO_HOST", "localhost")
+            .SetProcessEnvironmentVariable("SERVICESTACK_REDIS_HOST", "localhost:6379")
+            .SetProcessEnvironmentVariable("STACKEXCHANGE_REDIS_HOST", "localhost:6392,127.0.0.1:6390")
+            .SetProcessEnvironmentVariable("STACKEXCHANGE_REDIS_SINGLE_HOST", "localhost:6391")
+            .SetProcessEnvironmentVariable("ELASTICSEARCH7_HOST", "localhost:9200")
+            .SetProcessEnvironmentVariable("ELASTICSEARCH6_HOST", "localhost:9200")
+            .SetProcessEnvironmentVariable("ELASTICSEARCH5_HOST", "localhost:9200")
+            .SetProcessEnvironmentVariable("SQLSERVER_CONNECTION_STRING", "Server=localhost;User=sa;Password=Strong!Passw0rd")
+            .SetProcessEnvironmentVariable("POSTGRES_HOST", "localhost")
+            .SetProcessEnvironmentVariable("MYSQL_HOST", "localhost")
+            .SetProcessEnvironmentVariable("MYSQL_PORT", "3306")
+            .SetProcessEnvironmentVariable("RABBITMQ_HOST", "localhost")
+            .SetProcessEnvironmentVariable("AWS_SQS_HOST", "localhost:9324");
     }
 }

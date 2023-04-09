@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Logging;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
@@ -22,6 +21,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public event EventHandler<ProductConfigChangedEventArgs> ConfigChanged;
 
+        public event EventHandler<ProductConfigChangedEventArgs> ConfigRemoved;
+
         public abstract string Name { get; }
 
         public Dictionary<string, RemoteConfigurationCache> AppliedConfigurations { get; }
@@ -35,12 +36,16 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 var remoteConfigurationCache = new RemoteConfigurationCache(config.Path, config.Length, config.Hashes, config.Version);
                 AppliedConfigurations[remoteConfigurationCache.Path.Path] = remoteConfigurationCache;
 
-                if (RemoteConfigurationPredicate(config))
-                {
-                    filteredConfigs ??= new List<NamedRawFile>();
-                    filteredConfigs.Add(new NamedRawFile(config.Path.Path, config.Contents));
-                }
+                filteredConfigs ??= new List<NamedRawFile>();
+                filteredConfigs.Add(new NamedRawFile(config.Path, config.Contents));
             }
+
+            Log.Debug<int, string, int>(
+                "Received {ConfigsAmount} Remote Configuration records for product {Name}, " +
+                      "of which {FilteredAmount} matched the predicate.",
+                changedConfigs.Count,
+                Name,
+                filteredConfigs?.Count ?? 0);
 
             if (filteredConfigs is not null)
             {
@@ -53,7 +58,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 {
                     foreach (var item in filteredConfigs)
                     {
-                        e.Error(item.Name, ex.Message);
+                        Log.Debug(ex, "Failed to apply Remote Configuration record {RecordName} for product {ProductName}", item.Path, Name);
+                        e.Error(item.Path.Path, ex.Message);
                     }
                 }
 
@@ -79,9 +85,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
         }
 
-        protected virtual bool RemoteConfigurationPredicate(RemoteConfiguration configuration)
+        public void RemoveConfigs(List<RemoteConfigurationCache> removedConfigs)
         {
-            return true;
+            var e = new ProductConfigChangedEventArgs(removedConfigs.Select(cache => new NamedRawFile(cache.Path, Array.Empty<byte>())));
+            ConfigRemoved?.Invoke(this, e);
         }
     }
 }

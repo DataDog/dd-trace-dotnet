@@ -3,24 +3,24 @@
     "ddsource": "dd_debugger",
     "debugger": {
       "diagnostics": {
-        "Exception": null,
-        "probeId": "d1bf6b7f-7fae-6c5f-3c28-d47a96e0ad70",
+        "exception": null,
+        "probeId": "31d232fd-e292-63a1-cfc5-f0e71d98afd1",
         "status": "INSTALLED"
       }
     },
-    "message": "Installed probe d1bf6b7f-7fae-6c5f-3c28-d47a96e0ad70.",
-    "service": "Probes"
+    "message": "Installed probe 31d232fd-e292-63a1-cfc5-f0e71d98afd1.",
+    "service": "probes"
   },
   {
     "ddsource": "dd_debugger",
     "debugger": {
       "diagnostics": {
-        "Exception": null,
+        "exception": null,
         "probeId": "f23aa325-ec46-b774-3f32-a89b9879ce7d",
         "status": "INSTALLED"
       }
     },
     "message": "Installed probe f23aa325-ec46-b774-3f32-a89b9879ce7d.",
-    "service": "Probes"
+    "service": "probes"
   }
 ]

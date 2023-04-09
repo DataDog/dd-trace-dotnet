@@ -40,6 +40,13 @@ namespace Datadog.Trace.Agent
             _formatter = _formatterResolver.GetFormatter<TraceChunkModel>();
         }
 
+        public enum WriteStatus
+        {
+            Success = 0,
+            Full = 1,
+            Overflow = 2
+        }
+
         public ArraySegment<byte> Data
         {
             get
@@ -66,7 +73,7 @@ namespace Datadog.Trace.Agent
         // For tests only
         internal bool IsEmpty => !_locked && !IsFull && TraceCount == 0 && SpanCount == 0 && _offset == HeaderSize;
 
-        public bool TryWrite(ArraySegment<Span> spans, ref byte[] temporaryBuffer)
+        public WriteStatus TryWrite(ArraySegment<Span> spans, ref byte[] temporaryBuffer, int? samplingPriority = null)
         {
             bool lockTaken = false;
 
@@ -77,14 +84,14 @@ namespace Datadog.Trace.Agent
                 if (!lockTaken || _locked)
                 {
                     // A flush operation is in progress, consider this buffer full
-                    return false;
+                    return WriteStatus.Full;
                 }
 
                 // since all we have is an array of spans, use the trace context from the first span
                 // to get the other values we need (sampling priority, origin, trace tags, etc) for now.
                 // the idea is that as we refactor further, we can pass more than just the spans,
                 // and these values can come directly from the trace context.
-                var traceChunk = new TraceChunkModel(spans);
+                var traceChunk = new TraceChunkModel(spans, samplingPriority);
 
                 // We don't know what the serialized size of the payload will be,
                 // so we need to write to a temporary buffer first
@@ -92,17 +99,23 @@ namespace Datadog.Trace.Agent
 
                 if (_formatter is SpanMessagePackFormatter spanFormatter)
                 {
-                    size = spanFormatter.Serialize(ref temporaryBuffer, 0, in traceChunk, _formatterResolver);
+                    size = spanFormatter.Serialize(ref temporaryBuffer, 0, in traceChunk, _formatterResolver, maxSize: _maxBufferSize);
                 }
                 else
                 {
                     size = _formatter.Serialize(ref temporaryBuffer, 0, traceChunk, _formatterResolver);
                 }
 
+                if (size == 0)
+                {
+                    // Serialization failed because the trace is too big
+                    return WriteStatus.Overflow;
+                }
+
                 if (!EnsureCapacity(size + _offset))
                 {
                     IsFull = true;
-                    return false;
+                    return WriteStatus.Full;
                 }
 
                 Buffer.BlockCopy(temporaryBuffer, 0, _buffer, _offset, size);
@@ -111,7 +124,7 @@ namespace Datadog.Trace.Agent
                 TraceCount++;
                 SpanCount += traceChunk.SpanCount;
 
-                return true;
+                return WriteStatus.Success;
             }
             finally
             {

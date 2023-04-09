@@ -4,13 +4,19 @@
 
 #include "../../../shared/src/native-src/util.h"
 
-datadog::shared::nativeloader::RuntimeIdStore::RuntimeIdStore()
+namespace datadog::shared::nativeloader
 {
-    m_isIis = IsRunningOnIIS();
+RuntimeIdStore::RuntimeIdStore() : RuntimeIdStore(IsRunningOnIIS())
+{
+}
+
+RuntimeIdStore::RuntimeIdStore(bool isIis) :
+    m_isIis{isIis}
+{
     m_process_runtime_id = ::shared::GenerateRuntimeId();
 }
 
-const std::string& datadog::shared::nativeloader::RuntimeIdStore::Get(AppDomainID app_domain)
+const std::string& RuntimeIdStore::Get(AppDomainID app_domain)
 {
     if (!m_isIis) return m_process_runtime_id;
 
@@ -23,3 +29,4 @@ const std::string& datadog::shared::nativeloader::RuntimeIdStore::Get(AppDomainI
 
     return rid;
 }
+} // namespace datadog::shared::nativeloader

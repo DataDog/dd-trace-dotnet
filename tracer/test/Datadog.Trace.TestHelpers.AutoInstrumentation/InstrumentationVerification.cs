@@ -14,30 +14,40 @@ using Xunit;
 
 namespace Datadog.Trace.TestHelpers;
 
-internal static class InstrumentationVerification
+public static class InstrumentationVerification
 {
     /// <summary>
-    /// Configuration key for enabling or disabling the instrumentation verification.
-    /// Default is value is disabled.
+    /// Configuration key for enabling or disabling writing the instrumentation changes to disk
+    /// (to allow for post-mortem instrumentation verification analysis).
+    /// Default value is enabled.
     /// </summary>
     public const string InstrumentationVerificationEnabled = "DD_WRITE_INSTRUMENTATION_TO_DISK";
 
+    /// <summary>
+    /// Configuration key for enabling or disabling the copying original modules to disk so we can do offline investigation.
+    /// Default is value is disabled.
+    /// </summary>
+    public const string CopyingOriginalModulesEnabled = "DD_COPY_ORIGINALS_MODULES_TO_DISK";
+
     public static void VerifyInstrumentation(Process process, string logDirectory)
     {
-        var instrumentedLogsPath = GetInstrumentationLogsFolder(process, logDirectory);
+        var instrumentedLogsPath = FindInstrumentationLogsFolder(process, logDirectory);
+        if (instrumentedLogsPath == null)
+        {
+            throw new Exception($"Unable to find instrumentation verification directory for process {process.Id}");
+        }
 
-        var generatorArgs = new AssemblyGeneratorArgs(instrumentedLogsPath);
+        var copyOriginalsModulesToDisk = Environment.GetEnvironmentVariable(InstrumentationVerification.CopyingOriginalModulesEnabled);
+        var generatorArgs = new AssemblyGeneratorArgs(instrumentedLogsPath, copyOriginalModulesToDisk: copyOriginalsModulesToDisk?.ToLower() is "true" or "1");
         var generatedModules = InstrumentedAssemblyGeneration.Generate(generatorArgs);
 
         var results = new List<VerificationOutcome>();
-        foreach (var (modulePath, methods) in generatedModules)
+        foreach (var instrumentedAssembly in generatedModules)
         {
-            var moduleName = Path.GetFileName(modulePath);
-            var originalModulePath = Path.Combine(instrumentedLogsPath, InstrumentedAssemblyGeneratorConsts.OriginalModulesFolderName, moduleName);
             var result = new VerificationsRunner(
-                modulePath,
-                originalModulePath,
-                methods).Run();
+                instrumentedAssembly.InstrumentedAssemblyPath,
+                instrumentedAssembly.OriginalAssemblyPath,
+                instrumentedAssembly.ModifiedMethods.Select(m => (m.TypeFullName, m.MethodAndArgumentsName)).ToList()).Run();
             results.Add(result);
         }
 
@@ -46,7 +56,7 @@ internal static class InstrumentationVerification
             "Instrumentation verification test failed:" + Environment.NewLine + string.Join(Environment.NewLine, results.Where(r => !r.IsValid).Select(r => r.FailureReason)));
     }
 
-    private static string GetInstrumentationLogsFolder(Process process, string logsFolder)
+    public static string FindInstrumentationLogsFolder(Process process, string logsFolder)
     {
         var processExecutableFileName = Path.GetFileNameWithoutExtension(process.StartInfo.FileName);
         Assert.NotNull(logsFolder);
@@ -54,7 +64,7 @@ internal static class InstrumentationVerification
 
         if (!instrumentationLogsFolder.Exists)
         {
-            throw new Exception($"Unable to find instrumentation verification directory at {instrumentationLogsFolder}");
+            return null;
         }
 
         string pattern = $"{processExecutableFileName}_{process.Id}_*"; // * wildcard matches process start time
@@ -64,11 +74,6 @@ internal static class InstrumentationVerification
                .OrderBy(d => d.CreationTime)
                .LastOrDefault();
 
-        if (processSpecificInstrumentationLogsFolder == null)
-        {
-            throw new Exception($"Unable to find instrumentation verification directory that matches pattern '{pattern}' in {instrumentationLogsFolder}");
-        }
-
-        return processSpecificInstrumentationLogsFolder.FullName;
+        return processSpecificInstrumentationLogsFolder?.FullName;
     }
 }

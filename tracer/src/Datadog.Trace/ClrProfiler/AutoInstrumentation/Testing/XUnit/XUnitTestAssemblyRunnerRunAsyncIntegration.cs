@@ -7,6 +7,7 @@
 using System;
 using System.ComponentModel;
 using System.Reflection;
+using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
@@ -14,7 +15,7 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
 /// <summary>
-/// Xunit.Sdk.TestAssemblyRunner`1.RunTestCollectionAsync calltarget instrumentation
+/// Xunit.Sdk.TestAssemblyRunner`1.RunAsync calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
     AssemblyNames = new[] { "xunit.execution.dotnet", "xunit.execution.desktop" },
@@ -102,11 +103,11 @@ public static class XUnitTestAssemblyRunnerRunAsyncIntegration
     /// <param name="exception">Exception instance in case the original code threw an exception.</param>
     /// <param name="state">Calltarget state value</param>
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-    internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+    internal static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
     {
         if (state.State is TestModule testModule)
         {
-            testModule.Close();
+            await testModule.CloseAsync().ConfigureAwait(false);
         }
 
         return returnValue;

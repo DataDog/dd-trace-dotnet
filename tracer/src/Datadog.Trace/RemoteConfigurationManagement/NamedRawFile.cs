@@ -5,24 +5,29 @@
 
 #nullable enable
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal readonly struct NamedRawFile
     {
-        public NamedRawFile(string name, byte[] value)
+        public NamedRawFile(RemoteConfigurationPath path, byte[] value)
         {
-            Name = name;
+            Path = path;
             RawFile = value;
         }
 
-        public string Name { get; }
+        public RemoteConfigurationPath Path { get; }
 
         public byte[] RawFile { get; }
+
+        public NamedTypedFile<T?> Deserialize<T>()
+        {
+            using var stream = new MemoryStream(RawFile);
+            using var streamReader = new StreamReader(stream);
+            using var jsonReader = new JsonTextReader(streamReader);
+            return new NamedTypedFile<T?>(Path.Path, JsonSerializer.CreateDefault().Deserialize<T>(jsonReader));
+        }
     }
 }

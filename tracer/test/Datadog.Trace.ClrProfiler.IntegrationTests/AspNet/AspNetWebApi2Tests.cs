@@ -215,7 +215,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Overriding the method name to _
             // Overriding the parameters to remove the expectedSpanCount parameter, which is necessary for operation but unnecessary for the filename
             await Verifier.Verify(spans, settings)
-                          .UseFileName($"{_testName}.__path={sanitisedPath}_statusCode={(int)statusCode}");
+                          .UseFileName($"{_testName}.__path={sanitisedPath}_statusCode={(int)statusCode}")
+                          .DisableRequireUniquePrefix(); // sharing snapshots between web api and owin
         }
     }
 

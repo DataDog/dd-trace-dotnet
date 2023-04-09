@@ -20,11 +20,12 @@
 class IManagedThreadList;
 class ProfilerSignalManager;
 class ProfilerSignalManager;
+class IConfiguration;
 
 class LinuxStackFramesCollector : public StackFramesCollectorBase
 {
 public:
-    explicit LinuxStackFramesCollector(ProfilerSignalManager* signalManager);
+    explicit LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* configuration);
     ~LinuxStackFramesCollector() override;
     LinuxStackFramesCollector(LinuxStackFramesCollector const&) = delete;
     LinuxStackFramesCollector& operator=(LinuxStackFramesCollector const&) = delete;
@@ -55,8 +56,10 @@ private:
 private:
     void NotifyStackWalkCompleted(std::int32_t resultErrorCode);
     void UpdateErrorStats(std::int32_t errorCode);
-    bool ShouldLogStats();
+    static bool ShouldLogStats();
     bool CanCollect(int32_t threadId, pid_t processId) const;
+    std::int32_t CollectStackManually(void* ctx);
+    std::int32_t CollectStackWithBacktrace2(void* ctx);
 
     std::int32_t _lastStackWalkErrorCode;
     std::condition_variable _stackWalkInProgressWaiter;
@@ -80,4 +83,5 @@ private:
     std::int32_t CollectCallStackCurrentThread(void* ucontext);
 
     ErrorStatistics _errorStatistics;
+    bool _useBacktrace2;
 };

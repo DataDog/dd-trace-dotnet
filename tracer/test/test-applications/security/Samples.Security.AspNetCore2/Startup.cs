@@ -43,6 +43,14 @@ namespace Samples.Security.AspNetCore2
                 app.UseDeveloperExceptionPage();
             }
 
+            app.Map("/alive-check", builder =>
+            {
+                builder.Run(async context =>
+                {
+                    await context.Response.WriteAsync("Yes");
+                });
+            });
+
             app.Map("/shutdown", builder =>
             {
                 builder.Run(async context =>

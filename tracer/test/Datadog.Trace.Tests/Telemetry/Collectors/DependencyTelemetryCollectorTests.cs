@@ -20,6 +20,40 @@ namespace Datadog.Trace.Tests.Telemetry
     public class DependencyTelemetryCollectorTests
     {
         [Fact]
+        public void RecordsExpectedValues()
+        {
+            var name = "MyAssemblyName.Core";
+            var assemblyName = CreateAssemblyName(new Version(2, 2, 3, 123), name: name);
+            var moduleVersionId = Guid.NewGuid().ToString();
+
+            var collector = new DependencyTelemetryCollector();
+            collector.AssemblyLoaded(assemblyName, moduleVersionId);
+
+            var data = collector.GetData();
+
+            var dependency = data.Should().ContainSingle().Subject;
+            dependency.Name.Should().Be(name);
+            dependency.Version.Should().Be("2.2.3.123");
+            dependency.Hash.Should().Be(moduleVersionId);
+        }
+
+        [Fact]
+        public void RecordsValuesFromAssembly()
+        {
+            var thisAssembly = typeof(DependencyTelemetryCollectorTests).Assembly;
+
+            var collector = new DependencyTelemetryCollector();
+            collector.AssemblyLoaded(thisAssembly);
+
+            var data = collector.GetData();
+
+            var dependency = data.Should().ContainSingle().Subject;
+            dependency.Name.Should().Be("Datadog.Trace.Tests");
+            dependency.Version.Should().Be("1.0.0.0");
+            dependency.Hash.Should().Be(thisAssembly.ManifestModule.ModuleVersionId.ToString());
+        }
+
+        [Fact]
         public void HasChangesAfterAssemblyLoaded()
         {
             var collector = new DependencyTelemetryCollector();
@@ -75,7 +109,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var ignoredName = CreateAssemblyName(new Version(1, 0), name: assemblyName);
 
             var collector = new DependencyTelemetryCollector();
-            collector.AssemblyLoaded(ignoredName);
+            collector.AssemblyLoaded(ignoredName, "Some-Guid");
 
             collector.HasChanges().Should().BeFalse();
         }
@@ -109,7 +143,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 var ignoredName = CreateAssemblyName(new Version(1, 0), name: name);
 
                 var collector = new DependencyTelemetryCollector();
-                collector.AssemblyLoaded(ignoredName);
+                collector.AssemblyLoaded(ignoredName, "some-guid");
 
                 collector.HasChanges().Should().BeFalse($"{name} is a temp file name");
             }
@@ -121,12 +155,34 @@ namespace Datadog.Trace.Tests.Telemetry
             var assemblyV1 = CreateAssemblyName(new Version(1, 0));
             var assemblyV2 = CreateAssemblyName(new Version(2, 0));
             var collector = new DependencyTelemetryCollector();
-            collector.AssemblyLoaded(assemblyV1);
+            collector.AssemblyLoaded(assemblyV1, "mvid");
 
             collector.GetData();
             collector.HasChanges().Should().BeFalse();
 
-            collector.AssemblyLoaded(assemblyV2);
+            collector.AssemblyLoaded(assemblyV2, "mvid");
+            collector.HasChanges().Should().BeTrue();
+            var data = collector.GetData();
+            data.Should().NotBeNull();
+            data.Should()
+                .NotBeNullOrEmpty()
+                .And.HaveCount(1) // as we send to the backend only new versions
+                .And.OnlyHaveUniqueItems();
+        }
+
+        [Fact]
+        public void HasChangesWhenAddingSameAssemblyWithDifferentHash()
+        {
+            var assemblyName = CreateAssemblyName(new Version(1, 0));
+            var assemblyV1ModuleVersionId = Guid.NewGuid().ToString();
+            var assemblyV2ModuleVersionId = Guid.NewGuid().ToString();
+            var collector = new DependencyTelemetryCollector();
+            collector.AssemblyLoaded(assemblyName, assemblyV1ModuleVersionId);
+
+            collector.GetData();
+            collector.HasChanges().Should().BeFalse();
+
+            collector.AssemblyLoaded(assemblyName, assemblyV2ModuleVersionId);
             collector.HasChanges().Should().BeTrue();
             var data = collector.GetData();
             data.Should().NotBeNull();

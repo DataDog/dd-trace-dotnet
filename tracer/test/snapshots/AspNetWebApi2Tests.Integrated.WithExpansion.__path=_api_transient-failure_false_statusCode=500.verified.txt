@@ -10,7 +10,9 @@
       env: integration_tests,
       language: dotnet,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -32,12 +34,14 @@ at Samples.AspNetMvc5.Controllers.ApiController.TransientFailure(String value),
       http.request.headers.host: localhost:00000,
       http.route: api/transient-failure/{value},
       http.status_code: 500,
-      http.url: http://localhost/api/transient-failure/false,
+      http.url: http://localhost:00000/api/transient-failure/false,
       http.useragent: testhelper,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -68,11 +72,13 @@ at Samples.AspNetMvc5.Controllers.ApiController.TransientFailure(String value),
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,
-      http.url: http://localhost/api/transient-failure/false,
+      http.url: http://localhost:00000/api/transient-failure/false,
       http.useragent: testhelper,
       language: dotnet,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   }
 ]

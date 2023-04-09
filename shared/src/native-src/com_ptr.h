@@ -8,8 +8,8 @@
 
 template <typename Interface>
 class RemoveAddRefRelease : public Interface {
-	ULONG __stdcall AddRef();
-	ULONG __stdcall Release();
+	ULONG __stdcall AddRef() override;
+	ULONG __stdcall Release() override;
 };
 
 template <typename Interface>

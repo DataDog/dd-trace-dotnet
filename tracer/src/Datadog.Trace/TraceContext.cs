@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.Globalization;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
@@ -33,6 +34,9 @@ namespace Datadog.Trace
         {
             var settings = tracer?.Settings;
 
+            // TODO: Environment, ServiceVersion, GitCommitSha, and GitRepositoryUrl are stored on the TraceContext
+            // even though they likely won't change for the lifetime of the process. We should consider moving them
+            // elsewhere to reduce the memory usage.
             if (settings is not null)
             {
                 // these could be set from DD_ENV/DD_VERSION or from DD_TAGS
@@ -70,6 +74,13 @@ namespace Datadog.Trace
         public string Origin { get; set; }
 
         /// <summary>
+        /// Gets or sets additional key/value pairs from upstream "tracestate" header that we will propagate downstream.
+        /// This value will _not_ include the "dd" key, which is parsed out into other individual values
+        /// (e.g. sampling priority, origin, propagates tags, etc).
+        /// </summary>
+        internal string AdditionalW3CTraceState { get; set; }
+
+        /// <summary>
         /// Gets the IAST context.
         /// </summary>
         internal IastRequestContext IastRequestContext => _iastRequestContext;
@@ -93,30 +104,15 @@ namespace Datadog.Trace
             {
                 if (RootSpan == null)
                 {
-                    // first span added is the root span
+                    // first span added is the local root span
                     RootSpan = span;
 
+                    // if we don't have a sampling priority yet, make a sampling decision now
                     if (_samplingPriority == null)
                     {
-                        if (span.Context.Parent is SpanContext { SamplingPriority: { } samplingPriority })
-                        {
-                            // this is a local root span created from a propagated context that contains a sampling priority.
-                            // any distributed tags were already parsed from SpanContext.PropagatedTags and added to the TraceContext.
-                            SetSamplingPriority(samplingPriority);
-                        }
-                        else
-                        {
-                            // this is a local root span with no upstream service.
-                            // make a sampling decision early so it's ready if we need it for propagation.
-                            var samplingDecision = Tracer.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
-                            SetSamplingPriority(samplingDecision);
-                        }
+                        var samplingDecision = Tracer.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
+                        SetSamplingPriority(samplingDecision);
                     }
-
-                    // if the trace's origin is not set and this span has an origin
-                    // (probably propagated from an upstream service),
-                    // copy the span's origin into the trace
-                    Origin ??= span.Context.Origin;
                 }
 
                 _openSpans++;
@@ -154,7 +150,7 @@ namespace Datadog.Trace
                 else if (ShouldTriggerPartialFlush())
                 {
                     Log.Debug<ulong, ulong, int>(
-                        "Closing span {spanId} triggered a partial flush of trace {traceId} with {spanCount} pending spans",
+                        "Closing span {SpanId} triggered a partial flush of trace {TraceId} with {SpanCount} pending spans",
                         span.SpanId,
                         span.TraceId,
                         _spans.Count);

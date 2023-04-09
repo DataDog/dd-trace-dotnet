@@ -3,9 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
+using Datadog.Trace.SourceGenerators.Helpers;
 
 namespace Datadog.Trace.SourceGenerators.TagsListGenerator
 {
@@ -78,7 +77,7 @@ namespace ");
               .Append(
                    @"
     {");
-            if (tagList.MetricProperties is not null)
+            if (tagList.MetricProperties.HasValues())
             {
                 foreach (var property in tagList.MetricProperties)
                 {
@@ -109,7 +108,7 @@ namespace ");
                 }
             }
 
-            if (tagList.TagProperties is not null)
+            if (tagList.TagProperties.HasValues())
             {
                 foreach (var property in tagList.TagProperties)
                 {
@@ -148,7 +147,7 @@ namespace ");
             {
                 ");
 
-                for (int i = 0; i < tagList.TagProperties.Count; i++)
+                for (int i = 0; i < tagList.TagProperties.Length; i++)
                 {
                     var property = tagList.TagProperties[i];
                     sb.Append('"')
@@ -171,7 +170,7 @@ namespace ");
             {
                 ");
 
-                for (int i = 0; i < tagList.TagProperties.Count; i++)
+                for (int i = 0; i < tagList.TagProperties.Length; i++)
                 {
                     var property = tagList.TagProperties[i];
                     if (property.IsReadOnly)
@@ -192,7 +191,7 @@ namespace ");
                 }
 
                 var haveReadOnlyTags = false;
-                for (int i = 0; i < tagList.TagProperties.Count; i++)
+                for (int i = 0; i < tagList.TagProperties.Length; i++)
                 {
                     var property = tagList.TagProperties[i];
                     if (property.IsReadOnly)
@@ -276,9 +275,9 @@ namespace ");
         }");
             }
 
-            if (tagList.MetricProperties is not null)
+            if (tagList.MetricProperties.HasValues())
             {
-                if (tagList.TagProperties is null)
+                if (tagList.TagProperties.IsDefaultOrEmpty)
                 {
                     sb.AppendLine();
                 }
@@ -333,7 +332,7 @@ namespace ");
                 }
 
                 var haveReadOnlyMetrics = false;
-                for (int i = 0; i < tagList.MetricProperties.Count; i++)
+                for (int i = 0; i < tagList.MetricProperties.Length; i++)
                 {
                     var property = tagList.MetricProperties[i];
                     if (property.IsReadOnly)

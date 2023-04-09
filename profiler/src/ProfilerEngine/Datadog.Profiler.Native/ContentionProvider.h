@@ -7,7 +7,12 @@
 #include "IContentionListener.h"
 #include "RawContentionSample.h"
 #include "GenericSampler.h"
+#include "GroupSampler.h"
+#include "MetricsRegistry.h"
+#include "CounterMetric.h"
+#include "MeanMaxMetric.h"
 
+class IConfiguration;
 class IManagedThreadList;
 class IFrameStore;
 class IThreadsCpuManager;
@@ -29,14 +34,22 @@ public:
         IThreadsCpuManager* pThreadsCpuManager,
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
-        IConfiguration* pConfiguration);
+        IConfiguration* pConfiguration,
+        MetricsRegistry& metricsRegistry);
 
-    void OnContention(double contentionDuration) override;
+    void OnContention(double contentionDurationNs) override;
 
 private:
+    static std::string GetBucket(double contentionDurationNs);
+
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
-    GenericSampler _sampler;
+    GroupSampler<std::string> _sampler;
     int32_t _contentionDurationThreshold;
     int32_t _sampleLimit;
+    IConfiguration const* const _pConfiguration;
+    std::shared_ptr<CounterMetric> _lockContentionsCountMetric;
+    std::shared_ptr<MeanMaxMetric> _lockContentionsDurationMetric;
+    std::shared_ptr<CounterMetric> _sampledLockContentionsCountMetric;
+    std::shared_ptr<MeanMaxMetric> _sampledLockContentionsDurationMetric;
 };

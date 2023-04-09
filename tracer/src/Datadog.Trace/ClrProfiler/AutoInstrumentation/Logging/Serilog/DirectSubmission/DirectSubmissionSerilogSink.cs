@@ -17,6 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
     {
         private readonly IDatadogSink _sink;
         private readonly int _minimumLevel;
+        private bool _isDisabled;
 
         internal DirectSubmissionSerilogSink(IDatadogSink sink, DirectSubmissionLogLevel minimumLevel)
         {
@@ -31,17 +32,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
         [DuckReverseMethod(ParameterTypeNames = new[] { "Serilog.Events.LogEvent, Serilog" })]
         public void Emit(ILogEvent? logEvent)
         {
-            if (logEvent is null)
-            {
-                return;
-            }
-
-            if ((int)logEvent.Level < _minimumLevel)
+            if (_isDisabled
+                || logEvent is null
+                || (int)logEvent.Level < _minimumLevel)
             {
                 return;
             }
 
             _sink.EnqueueLog(new SerilogDatadogLogEvent(logEvent));
+        }
+
+        internal void Disable()
+        {
+            _isDisabled = true;
         }
     }
 }

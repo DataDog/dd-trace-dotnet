@@ -5,8 +5,8 @@
 
 using System;
 using System.ComponentModel;
-using System.Reflection;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Snapshots;
 
 namespace Datadog.Trace.Debugger.Instrumentation
@@ -20,13 +20,24 @@ namespace Datadog.Trace.Debugger.Instrumentation
     public class AsyncMethodDebuggerState
     {
         /// <summary>
+        /// Gets a disabled state
+        /// </summary>
+        private static readonly AsyncMethodDebuggerState _disabledState = new() { IsActive = false };
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="AsyncMethodDebuggerState"/> class.
         /// </summary>
-        internal AsyncMethodDebuggerState()
+        internal AsyncMethodDebuggerState(string probeId, ref ProbeData probeData)
         {
+            ProbeId = probeId;
             HasLocalsOrReturnValue = false;
             HasArguments = false;
-            SnapshotCreator = new DebuggerSnapshotCreator();
+            SnapshotCreator = DebuggerSnapshotCreator.BuildSnapshotCreator(probeData.Processor);
+            ProbeData = probeData;
+        }
+
+        private AsyncMethodDebuggerState()
+        {
         }
 
         /// <summary>
@@ -46,14 +57,14 @@ namespace Datadog.Trace.Debugger.Instrumentation
         internal bool HasArguments { get; set; }
 
         /// <summary>
-        /// Gets or sets a value of the parent (caller) state
-        /// </summary>
-        internal AsyncMethodDebuggerState Parent { get; set; }
-
-        /// <summary>
         /// Gets the value of the MethodMetadataInfo that related to the current async method
         /// </summary>
-        internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataProvider.Get(MethodMetadataIndex);
+        internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataCollection.Instance.Get(MethodMetadataIndex);
+
+        /// <summary>
+        /// Gets the value of ProbeData associated with the state
+        /// </summary>
+        internal ProbeData ProbeData { get; }
 
         /// <summary>
         /// Gets the LiveDebugger SnapshotCreator
@@ -101,9 +112,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static AsyncMethodDebuggerState CreateInvalidatedDebuggerState()
         {
-            var state = new AsyncMethodDebuggerState();
-            state.IsActive = false;
-            return state;
+            return _disabledState;
         }
 
         /// <summary>

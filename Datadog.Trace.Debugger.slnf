@@ -4,12 +4,12 @@
     "projects": [
       "tracer\\build\\_build\\_build.csproj",
       "tracer\\src\\Datadog.InstrumentedAssemblyGenerator\\Datadog.InstrumentedAssemblyGenerator.csproj",
-      "tracer\\src\\Datadog.InstrumentedAssemblyVerification.Standalone\\Datadog.InstrumentedAssemblyVerification.Standalone.csproj",
       "tracer\\src\\Datadog.InstrumentedAssemblyVerification\\Datadog.InstrumentedAssemblyVerification.csproj",
       "tracer\\src\\Datadog.Trace.Annotations\\Datadog.Trace.Annotations.csproj",
       "tracer\\src\\Datadog.Trace.AspNet\\Datadog.Trace.AspNet.csproj",
       "tracer\\src\\Datadog.Trace.SourceGenerators\\Datadog.Trace.SourceGenerators.csproj",
       "tracer\\src\\Datadog.Trace.Tools.Analyzers\\Datadog.Trace.Tools.Analyzers.csproj",
+      "tracer\\src\\Datadog.Trace.Tools.Runner\\Datadog.Trace.Tools.Runner.csproj",
       "tracer\\src\\Datadog.Trace\\Datadog.Trace.csproj",
       "tracer\\src\\Datadog.Tracer.Native\\Datadog.Tracer.Native.DLL.vcxproj",
       "tracer\\src\\Datadog.Tracer.Native\\Datadog.Tracer.Native.vcxproj",

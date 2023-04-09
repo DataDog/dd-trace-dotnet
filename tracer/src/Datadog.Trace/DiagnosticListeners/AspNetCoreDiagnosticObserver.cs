@@ -12,10 +12,13 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
@@ -78,7 +81,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private Tracer CurrentTracer => _tracer ?? Tracer.Instance;
 
-        private IDatadogSecurity CurrentSecurity => _security ?? Security.Instance;
+        private Security CurrentSecurity => _security ?? Security.Instance;
 
 #if NETCOREAPP
         protected override void OnNext(string eventName, object arg)
@@ -397,32 +400,10 @@ namespace Datadog.Trace.DiagnosticListeners
                 // these will already be set correctly
                 parentTags.AspNetCoreRoute = aspNetRoute;
                 parentSpan.ResourceName = span.ResourceName;
-                parentSpan.SetTag(Tags.HttpRoute, aspNetRoute);
+                parentTags.HttpRoute = aspNetRoute;
             }
 
             return span;
-        }
-
-        internal static void DoBeforeRequestStops(HttpContext httpContext, Scope scope, ImmutableTracerSettings tracerSettings)
-        {
-            var span = scope.Span;
-            var isMissingHttpStatusCode = !span.HasHttpStatusCode();
-
-            if (string.IsNullOrEmpty(span.ResourceName) || isMissingHttpStatusCode)
-            {
-                if (string.IsNullOrEmpty(span.ResourceName))
-                {
-                    span.ResourceName = AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request);
-                }
-
-                if (isMissingHttpStatusCode)
-                {
-                    span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracerSettings);
-                }
-            }
-
-            span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracerSettings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
-            scope.Dispose();
         }
 
         private void OnHostingHttpRequestInStart(object arg)
@@ -441,38 +422,16 @@ namespace Datadog.Trace.DiagnosticListeners
             if (arg.TryDuckCast<HttpRequestInStartStruct>(out var requestStruct))
             {
                 HttpContext httpContext = requestStruct.HttpContext;
-                HttpRequest request = httpContext.Request;
-                Span span = null;
-                Scope scope = null;
                 if (shouldTrace)
                 {
                     // Use an empty resource name here, as we will likely replace it as part of the request
                     // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
-                    scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty);
-                    span = scope.Span;
-                }
-
-                if (shouldSecure)
-                {
-                    httpContext.Response.OnCompleted(
-                        () =>
-                        {
-                            security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, span);
-                            return Task.CompletedTask;
-                        });
-
-                    httpContext.Response.OnStarting(
-                        () =>
-                        {
-                            // we subscribe here because in OnHostingHttpRequestInStop or HostingEndRequest it's too late,
-                            // the waf is already disposed by the registerfordispose callback, but we need to be at the end to get the real response status code
-                            security.InstrumentationGateway.RaiseRequestEnd(httpContext, request, span);
-                            return Task.CompletedTask;
-                        });
-
-                    security.InstrumentationGateway.RaiseRequestStart(httpContext, request, span);
-                    // Should we get rid of the Instrumentation Gateway, it s been making the code very cumbersome and hard to follow and an event driven model doesnt seem adapted here cause we need to get a return value from the security component to know here that we need to flush the span after blocking, hence the cumbersome action (last param here), binding parameters to avoid capturing local variables but so hard to read. It would be simpler to just call the security component with the current data, get the return, flush the span and throw if needed.
-                    security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, (args) => DoBeforeRequestStops(args.Context, args.Scope, args.TracerSettings));
+                    var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, CurrentSecurity, httpContext, resourceName: string.Empty);
+                    if (shouldSecure)
+                    {
+                        CoreHttpContextStore.Instance.Set(httpContext);
+                        SecurityCoordinator.ReportWafInitInfoOnce(security, scope.Span);
+                    }
                 }
             }
         }
@@ -598,20 +557,14 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     span.ResourceName = resourceName;
                     tags.AspNetCoreRoute = normalizedRoute;
-                    span.SetTag(Tags.HttpRoute, normalizedRoute);
+                    tags.HttpRoute = normalizedRoute;
                 }
 
-                var security = CurrentSecurity;
-                var shouldSecure = security.Settings.Enabled;
-                if (shouldSecure)
+                CurrentSecurity.CheckPathParams(httpContext, span, routeValues);
+
+                if (Iast.Iast.Instance.Settings.Enabled)
                 {
-                    security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, span, routeValues);
-                    security.InstrumentationGateway.RaiseBlockingOpportunity(
-                        httpContext,
-                        tracer.InternalActiveScope,
-                        tracer.Settings,
-                        args =>
-                            DoBeforeRequestStops(args.Context, args.Scope, args.TracerSettings));
+                    span.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
                 }
             }
         }
@@ -623,8 +576,9 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
             var shouldSecure = security.Settings.Enabled;
+            var shouldUseIast = Iast.Iast.Instance.Settings.Enabled;
 
-            if (!shouldTrace && !shouldSecure)
+            if (!shouldTrace && !shouldSecure && !shouldUseIast)
             {
                 return;
             }
@@ -651,20 +605,11 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                 }
 
-                if (shouldSecure && typedArg.ActionDescriptor?.Parameters != null)
-                {
-                    var pathParams = typedArg.ActionDescriptor.Parameters;
-                    var eventData = new Dictionary<string, object>(pathParams.Count);
-                    for (var i = 0; i < pathParams.Count; i++)
-                    {
-                        var p = typedArg.ActionDescriptor.Parameters[i];
-                        if (typedArg.RouteData.Values.ContainsKey(p.Name))
-                        {
-                            eventData.Add(p.Name, typedArg.RouteData.Values[p.Name]);
-                        }
-                    }
+                CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
 
-                    security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, span ?? parentSpan, eventData);
+                if (shouldUseIast)
+                {
+                    parentSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
                 }
             }
         }
@@ -719,17 +664,9 @@ namespace Datadog.Trace.DiagnosticListeners
             }
 
             var scope = tracer.InternalActiveScope;
+            var httpContext = scope is not null ? arg.DuckCast<HttpRequestInStopStruct>().HttpContext : null;
 
-            if (scope != null)
-            {
-                // We may need to update the resource name if none of the routing/mvc events updated it.
-                // If we had an unhandled exception, the status code will already be updated correctly,
-                // but if the span was manually marked as an error, we still need to record the status code
-                var httpRequest = arg.DuckCast<HttpRequestInStopStruct>();
-                HttpContext httpContext = httpRequest.HttpContext;
-
-                DoBeforeRequestStops(httpContext, scope, tracer.Settings);
-            }
+            AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, CurrentSecurity, scope, httpContext);
         }
 
         private void OnHostingUnhandledException(object arg)
@@ -745,28 +682,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (span != null && arg.TryDuckCast<UnhandledExceptionStruct>(out var unhandledStruct))
             {
-                int statusCode = 500;
-
-                if (unhandledStruct.Exception.TryDuckCast<BadHttpRequestExceptionStruct>(out var badRequestException))
-                {
-                    statusCode = badRequestException.StatusCode;
-                }
-
-                // Generic unhandled exceptions are converted to 500 errors by Kestrel
-                span.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
-
-                var security = CurrentSecurity;
-                if (unhandledStruct.Exception is not BlockException)
-                {
-                    span.SetException(unhandledStruct.Exception);
-                    if (security.Settings.Enabled)
-                    {
-                        span.SetException(unhandledStruct.Exception);
-                        var httpContext = unhandledStruct.HttpContext;
-                        security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, span);
-                        security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, tracer.InternalActiveScope, tracer.Settings);
-                    }
-                }
+                AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, CurrentSecurity, span, unhandledStruct.HttpContext, unhandledStruct.Exception);
             }
         }
 

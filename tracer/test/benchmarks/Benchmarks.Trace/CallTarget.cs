@@ -28,10 +28,9 @@ namespace Benchmarks.Trace
                 {
                     state = CallTargetInvoker.BeginMethod<TIntegration, TTarget>(targetInstance);
                 }
-                catch(Exception ex)
+                catch(Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
                 result = bodyCallback();
             }
@@ -47,10 +46,9 @@ namespace Benchmarks.Trace
                     cReturn = new CallTargetReturn<TResult>(CallTargetInvoker.EndMethod<TIntegration, TTarget, TResult>(targetInstance, result, exception, in state).GetReturnValue());
                     result = cReturn.GetReturnValue();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
             }
             return result;
@@ -69,10 +67,9 @@ namespace Benchmarks.Trace
                 {
                     state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1>(targetInstance, ref arg1);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
                 result = bodyCallback(arg1);
             }
@@ -88,10 +85,9 @@ namespace Benchmarks.Trace
                     cReturn = new CallTargetReturn<TResult>(CallTargetInvoker.EndMethod<TIntegration, TTarget, TResult>(targetInstance, result, exception, in state).GetReturnValue());
                     result = cReturn.GetReturnValue();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
             }
             return result;
@@ -110,10 +106,9 @@ namespace Benchmarks.Trace
                 {
                     state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2>(targetInstance, ref arg1, ref arg2);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
                 result = bodyCallback(arg1, arg2);
             }
@@ -129,10 +124,9 @@ namespace Benchmarks.Trace
                     cReturn = new CallTargetReturn<TResult>(CallTargetInvoker.EndMethod<TIntegration, TTarget, TResult>(targetInstance, result, exception, in state).GetReturnValue());
                     result = cReturn.GetReturnValue();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
             }
             return result;
@@ -151,10 +145,9 @@ namespace Benchmarks.Trace
                 {
                     state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3>(targetInstance, ref arg1, ref arg2, ref arg3);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
                 result = bodyCallback(arg1, arg2, arg3);
             }
@@ -170,10 +163,9 @@ namespace Benchmarks.Trace
                     cReturn = new CallTargetReturn<TResult>(CallTargetInvoker.EndMethod<TIntegration, TTarget, TResult>(targetInstance, result, exception, in state).GetReturnValue());
                     result = cReturn.GetReturnValue();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
             }
             return result;
@@ -192,10 +184,9 @@ namespace Benchmarks.Trace
                 {
                     state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
                 result = bodyCallback(arg1, arg2, arg3, arg4);
             }
@@ -211,10 +202,9 @@ namespace Benchmarks.Trace
                     cReturn = new CallTargetReturn<TResult>(CallTargetInvoker.EndMethod<TIntegration, TTarget, TResult>(targetInstance, result, exception, in state).GetReturnValue());
                     result = cReturn.GetReturnValue();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
             }
             return result;
@@ -233,10 +223,9 @@ namespace Benchmarks.Trace
                 {
                     state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
                 result = bodyCallback(arg1, arg2, arg3, arg4, arg5);
             }
@@ -252,10 +241,9 @@ namespace Benchmarks.Trace
                     cReturn = new CallTargetReturn<TResult>(CallTargetInvoker.EndMethod<TIntegration, TTarget, TResult>(targetInstance, result, exception, in state).GetReturnValue());
                     result = cReturn.GetReturnValue();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
             }
             return result;
@@ -274,10 +262,9 @@ namespace Benchmarks.Trace
                 {
                     state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
                 result = bodyCallback(arg1, arg2, arg3, arg4, arg5, arg6);
             }
@@ -293,10 +280,9 @@ namespace Benchmarks.Trace
                     cReturn = new CallTargetReturn<TResult>(CallTargetInvoker.EndMethod<TIntegration, TTarget, TResult>(targetInstance, result, exception, in state).GetReturnValue());
                     result = cReturn.GetReturnValue();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
             }
             return result;
@@ -315,10 +301,9 @@ namespace Benchmarks.Trace
                 {
                     state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6, ref arg7);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
                 result = bodyCallback(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
             }
@@ -334,10 +319,9 @@ namespace Benchmarks.Trace
                     cReturn = new CallTargetReturn<TResult>(CallTargetInvoker.EndMethod<TIntegration, TTarget, TResult>(targetInstance, result, exception, in state).GetReturnValue());
                     result = cReturn.GetReturnValue();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
             }
             return result;
@@ -356,10 +340,9 @@ namespace Benchmarks.Trace
                 {
                     state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6, ref arg7, ref arg8);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
                 result = bodyCallback(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
             }
@@ -375,10 +358,9 @@ namespace Benchmarks.Trace
                     cReturn = new CallTargetReturn<TResult>(CallTargetInvoker.EndMethod<TIntegration, TTarget, TResult>(targetInstance, result, exception, in state).GetReturnValue());
                     result = cReturn.GetReturnValue();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
             }
             return result;
@@ -400,10 +382,9 @@ namespace Benchmarks.Trace
                 {
                     state = CallTargetInvoker.BeginMethod<TIntegration, TTarget>(targetInstance);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
                 bodyCallback();
             }
@@ -419,10 +400,9 @@ namespace Benchmarks.Trace
                     CallTargetInvoker.EndMethod<TIntegration, TTarget>(targetInstance, exception, in state);
                     cReturn = CallTargetReturn.GetDefault();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
             }
         }
@@ -439,10 +419,9 @@ namespace Benchmarks.Trace
                 {
                     state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1>(targetInstance, ref arg1);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
                 bodyCallback(arg1);
             }
@@ -458,10 +437,9 @@ namespace Benchmarks.Trace
                     CallTargetInvoker.EndMethod<TIntegration, TTarget>(targetInstance, exception, in state);
                     cReturn = CallTargetReturn.GetDefault();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
             }
         }
@@ -478,10 +456,9 @@ namespace Benchmarks.Trace
                 {
                     state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2>(targetInstance, ref arg1, ref arg2);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
                 bodyCallback(arg1, arg2);
             }
@@ -497,10 +474,9 @@ namespace Benchmarks.Trace
                     CallTargetInvoker.EndMethod<TIntegration, TTarget>(targetInstance, exception, in state);
                     cReturn = CallTargetReturn.GetDefault();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
             }
         }
@@ -517,10 +493,9 @@ namespace Benchmarks.Trace
                 {
                     state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3>(targetInstance, ref arg1, ref arg2, ref arg3);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
                 bodyCallback(arg1, arg2, arg3);
             }
@@ -536,10 +511,9 @@ namespace Benchmarks.Trace
                     CallTargetInvoker.EndMethod<TIntegration, TTarget>(targetInstance, exception, in state);
                     cReturn = CallTargetReturn.GetDefault();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
             }
         }
@@ -556,10 +530,9 @@ namespace Benchmarks.Trace
                 {
                     state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
                 bodyCallback(arg1, arg2, arg3, arg4);
             }
@@ -575,10 +548,9 @@ namespace Benchmarks.Trace
                     CallTargetInvoker.EndMethod<TIntegration, TTarget>(targetInstance, exception, in state);
                     cReturn = CallTargetReturn.GetDefault();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
             }
         }
@@ -595,10 +567,9 @@ namespace Benchmarks.Trace
                 {
                     state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
                 bodyCallback(arg1, arg2, arg3, arg4, arg5);
             }
@@ -614,10 +585,9 @@ namespace Benchmarks.Trace
                     CallTargetInvoker.EndMethod<TIntegration, TTarget>(targetInstance, exception, in state);
                     cReturn = CallTargetReturn.GetDefault();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
             }
         }
@@ -634,10 +604,9 @@ namespace Benchmarks.Trace
                 {
                     state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
                 bodyCallback(arg1, arg2, arg3, arg4, arg5, arg6);
             }
@@ -653,10 +622,9 @@ namespace Benchmarks.Trace
                     CallTargetInvoker.EndMethod<TIntegration, TTarget>(targetInstance, exception, in state);
                     cReturn = CallTargetReturn.GetDefault();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
             }
         }
@@ -673,10 +641,9 @@ namespace Benchmarks.Trace
                 {
                     state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6, ref arg7);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
                 bodyCallback(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
             }
@@ -692,10 +659,9 @@ namespace Benchmarks.Trace
                     CallTargetInvoker.EndMethod<TIntegration, TTarget>(targetInstance, exception, in state);
                     cReturn = CallTargetReturn.GetDefault();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
             }
         }
@@ -712,10 +678,9 @@ namespace Benchmarks.Trace
                 {
                     state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6, ref arg7, ref arg8);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
                 bodyCallback(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
             }
@@ -731,10 +696,9 @@ namespace Benchmarks.Trace
                     CallTargetInvoker.EndMethod<TIntegration, TTarget>(targetInstance, exception, in state);
                     cReturn = CallTargetReturn.GetDefault();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not CallTargetBubbleUpException)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
-                    throw;
                 }
             }
         }

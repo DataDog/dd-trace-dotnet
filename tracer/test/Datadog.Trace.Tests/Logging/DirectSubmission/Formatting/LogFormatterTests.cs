@@ -11,6 +11,8 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
+using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Tests.PlatformHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -25,13 +27,13 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
         private const string Service = "TestService";
         private const string Env = "integrationTests";
         private const string Version = "1.0.0";
-        private readonly LogFormatter _formatter;
         private readonly JsonTextWriter _writer;
         private readonly StringBuilder _sb;
+        private readonly ImmutableDirectLogSubmissionSettings _settings;
 
         public LogFormatterTests()
         {
-            var settings = ImmutableDirectLogSubmissionSettings.Create(
+            _settings = ImmutableDirectLogSubmissionSettings.Create(
                 host: Host,
                 source: Source,
                 intakeUrl: "http://localhost",
@@ -40,13 +42,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
                 globalTags: new Dictionary<string, string> { { "Key1", "Value1" }, { "Key2", "Value2" } },
                 enabledLogShippingIntegrations: new List<string> { nameof(IntegrationId.ILogger) },
                 batchingOptions: new BatchingSinkOptions(batchSizeLimit: 100, queueLimit: 1000, TimeSpan.FromSeconds(2)));
-            settings.IsEnabled.Should().BeTrue();
-
-            _formatter = new LogFormatter(
-                settings,
-                serviceName: Service,
-                env: Env,
-                version: Version);
+            _settings.IsEnabled.Should().BeTrue();
 
             _sb = new StringBuilder();
             _writer = LogFormatter.GetJsonWriter(_sb);
@@ -138,15 +134,25 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
             bool hasRenderedHost,
             bool hasRenderedTags,
             bool hasRenderedEnv,
-            bool hasRenderedVersion)
+            bool hasRenderedVersion,
+            bool isInAas)
         {
             var timestamp = new DateTime(year: 2020, month: 3, day: 7, hour: 11, minute: 23, second: 26, millisecond: 500, DateTimeKind.Utc);
             var sb = new StringBuilder();
             var state = new TestObject();
             var message = "Some message";
             var logLevel = "Info";
+            var aasSettings = isInAas ? GetAasSettings() : null;
 
-            _formatter.FormatLog(sb, state, timestamp, message, eventId: null, logLevel, exception: null, RenderProperties);
+            var formatter = new LogFormatter(
+                _settings,
+                aasSettings: aasSettings,
+                serviceName: Service,
+                env: Env,
+                version: Version,
+                gitMetadataTagsProvider: new NullGitMetadataProvider());
+
+            formatter.FormatLog(sb, state, timestamp, message, eventId: null, logLevel, exception: null, RenderProperties);
 
             var log = sb.ToString();
 
@@ -160,7 +166,14 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
             HasExpectedValue(log, !hasRenderedSource, $"\"ddsource\":\"{Source}\"");
             HasExpectedValue(log, !hasRenderedService, $"\"service\":\"{Service}\"");
             HasExpectedValue(log, !hasRenderedHost, $"\"host\":\"{Host}\"");
-            HasExpectedValue(log, !hasRenderedTags, $"\"ddtags\":\"Key1:Value1,Key2:Value2\"");
+            var (shouldContainLogs, expectedLogValue) = (isInAas, hasRenderedTags) switch
+            {
+                (_, true) => (false, "\"ddtags\""), // if the log itself adds this, we don't add the global tags currently
+                (true, false) => (true, $"\"ddtags\":\"aas.resource.id:{aasSettings!.ResourceId},Key1:Value1,Key2:Value2\""),
+                (false, false) => (true, $"\"ddtags\":\"Key1:Value1,Key2:Value2\""),
+            };
+
+            HasExpectedValue(log, shouldContainLogs, expectedLogValue);
             HasExpectedValue(log, !hasRenderedEnv, $"\"dd_env\":\"{Env}\"");
             HasExpectedValue(log, !hasRenderedVersion, $"\"dd_version\":\"{Version}\"");
 
@@ -185,6 +198,16 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
                     log.Should().NotContain(value);
                 }
             }
+
+            ImmutableAzureAppServiceSettings GetAasSettings()
+            {
+                return new ImmutableAzureAppServiceSettings(
+                    AzureAppServiceHelper.GetRequiredAasConfigurationValues(
+                        subscriptionId: "8c500027-5f00-400e-8f00-60000000000f",
+                        deploymentId: "AzureExampleSiteName",
+                        planResourceGroup: "apm-dotnet",
+                        siteResourceGroup: "apm-dotnet-site-resource-group"));
+            }
         }
 
         private class TestData
@@ -198,7 +221,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
                    from tags in Options
                    from env in Options
                    from version in Options
-                   select new object[] { src, service, host, tags, env, version };
+                   from aas in Options
+                   select new object[] { src, service, host, tags, env, version, aas };
         }
 
         private class FormattableObject : IFormattable

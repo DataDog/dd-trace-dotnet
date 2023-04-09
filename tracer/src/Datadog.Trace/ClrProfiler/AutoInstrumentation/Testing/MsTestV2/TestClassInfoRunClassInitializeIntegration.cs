@@ -49,7 +49,7 @@ public static class TestClassInfoRunClassInitializeIntegration
 
         if (!TestClassInfos.TryGetValue(instance.Instance, out var suiteObject))
         {
-            instance.TestCleanupMethod ??= EmptyCleanUpMethodInfo;
+            instance.ClassCleanupMethod ??= EmptyCleanUpMethodInfo;
             var module = TestModule.Current;
             var suite = module.GetOrCreateSuite(instance.ClassType.FullName);
             TestClassInfos.Add(instance.Instance, suite);

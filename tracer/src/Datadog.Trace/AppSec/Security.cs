@@ -6,22 +6,18 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
-using Datadog.Trace.AppSec.Transports;
+using Datadog.Trace.AppSec.RcmModels;
+using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.Waf.Initialization;
+using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Serilog.Core;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec
 {
@@ -32,74 +28,43 @@ namespace Datadog.Trace.AppSec
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Security>();
 
-        private static readonly Dictionary<string, string> RequestHeaders;
-        private static readonly Dictionary<string, string> ResponseHeaders;
-
         private static Security _instance;
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
-
-        private readonly InstrumentationGateway _instrumentationGateway;
         private readonly SecuritySettings _settings;
+        private readonly RemoteConfigurationStatus _remoteConfigurationStatus = new();
+        private LibraryInitializationResult _libraryInitializationResult;
         private IWaf _waf;
+        private WafLibraryInvoker _wafLibraryInvoker;
         private AppSecRateLimiter _rateLimiter;
         private bool _enabled = false;
-        private IDictionary<string, RcmModels.AsmData.Payload> _asmDataConfigs = new Dictionary<string, RcmModels.AsmData.Payload>();
-        private IDictionary<string, bool> _ruleStatus = null;
-        private string _remoteRulesJson = null;
-
-        private bool? _usingIntegratedPipeline = null;
+        private InitResult _wafInitResult;
 
         static Security()
         {
-            RequestHeaders = new()
-            {
-                { "X-FORWARDED-FOR", string.Empty },
-                { "X-CLIENT-IP", string.Empty },
-                { "X-REAL-IP", string.Empty },
-                { "X-FORWARDED", string.Empty },
-                { "X-CLUSTER-CLIENT-IP", string.Empty },
-                { "FORWARDED-FOR", string.Empty },
-                { "FORWARDED", string.Empty },
-                { "VIA", string.Empty },
-                { "TRUE-CLIENT-IP", string.Empty },
-                { "Content-Length", string.Empty },
-                { "Content-Type", string.Empty },
-                { "Content-Encoding", string.Empty },
-                { "Content-Language", string.Empty },
-                { "Host", string.Empty },
-                { "user-agent", string.Empty },
-                { "Accept", string.Empty },
-                { "Accept-Encoding", string.Empty },
-                { "Accept-Language", string.Empty },
-            };
-
-            ResponseHeaders = new()
-            {
-                { "content-length", string.Empty }, { "content-type", string.Empty }, { "Content-Encoding", string.Empty }, { "Content-Language", string.Empty },
-            };
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
         /// </summary>
-        public Security()
-            : this(null, null)
-        {
-        }
+        public Security(SecuritySettings settings = null, IWaf waf = null, IDictionary<string, RcmModels.Asm.Action> actions = null)
+            : this(settings, waf) => _remoteConfigurationStatus.Actions = actions;
 
-        private Security(SecuritySettings settings = null, InstrumentationGateway instrumentationGateway = null, IWaf waf = null)
+        private Security(SecuritySettings settings = null, IWaf waf = null)
         {
             try
             {
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
-                _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
                 _waf = waf;
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
 
                 if (_settings.CanBeEnabled)
                 {
-                    UpdateStatus();
+                    if (_settings.Enabled && _waf == null)
+                    {
+                        InitWafAndInstrumentations();
+                    }
+
                     AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged += FeaturesProductConfigChanged;
                     AsmRemoteConfigurationProducts.AsmDDProduct.ConfigChanged += AsmDDProductConfigChanged;
                 }
@@ -122,7 +87,7 @@ namespace Datadog.Trace.AppSec
         /// </summary>
         public static Security Instance
         {
-            get => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock);
+            get => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock, () => new Security(null, null));
 
             set
             {
@@ -134,14 +99,11 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        /// <summary>
-        /// Gets <see cref="InstrumentationGateway"/> instance
-        /// </summary>
-        InstrumentationGateway IDatadogSecurity.InstrumentationGateway => _instrumentationGateway;
+        internal bool WafExportsErrorHappened => _libraryInitializationResult?.ExportErrorHappened ?? false;
 
-        internal InstrumentationGateway InstrumentationGateway => _instrumentationGateway;
+        internal string WafRuleFileVersion { get; private set; }
 
-        internal bool WafExportsErrorHappened => _waf?.InitializationResult?.ExportErrors ?? false;
+        internal InitResult WafInitResult => _wafInitResult;
 
         /// <summary>
         /// Gets <see cref="SecuritySettings"/> instance
@@ -152,53 +114,93 @@ namespace Datadog.Trace.AppSec
 
         internal string DdlibWafVersion => _waf?.Version;
 
-        private static void AnnotateSpan(Span span)
+        internal BlockingAction GetBlockingAction(string id, string[] requestAcceptHeaders)
         {
-            // we should only tag service entry span, the first span opened for a
-            // service. For WAF it's safe to assume we always have service entry spans
-            // we'll need to revisit this for RASP.
-            if (span != null)
-            {
-                span.SetMetric(Metrics.AppSecEnabled, 1.0);
-                span.SetTag(Tags.RuntimeFamily, TracerConstants.Language);
-            }
-        }
+            var blockingAction = new BlockingAction();
+            RcmModels.Asm.Action action = null;
+            _remoteConfigurationStatus.Actions?.TryGetValue(id, out action);
 
-        private static void LogMatchesIfDebugEnabled(string result, bool blocked)
-        {
-            if (Log.IsEnabled(LogEventLevel.Debug))
+            void SetAutomaticResponseContent()
             {
-                var results = JsonConvert.DeserializeObject<WafMatch[]>(result);
-                for (var i = 0; i < results.Length; i++)
+                if (requestAcceptHeaders != null)
                 {
-                    var match = results[i];
-                    Log.Debug(blocked ? "DDAS-0012-02: Blocking current transaction (rule: {RuleId})" : "DDAS-0012-01: Detecting an attack from rule {RuleId}", match.Rule);
+                    foreach (var value in requestAcceptHeaders)
+                    {
+                        if (value?.Contains(AspNet.MimeTypes.Json) ?? false)
+                        {
+                            SetJsonResponseContent();
+                            break;
+                        }
+
+                        if (value?.Contains(AspNet.MimeTypes.TextHtml) ?? false)
+                        {
+                            SetHtmlResponseContent();
+                        }
+                    }
+                }
+
+                if (blockingAction.ContentType == null)
+                {
+                    SetJsonResponseContent();
                 }
             }
-        }
 
-        private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string> headersToCollect, string prefix)
-        {
-            var tags = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headersToCollect, defaultTagPrefix: prefix);
-            foreach (var tag in tags)
+            void SetJsonResponseContent()
             {
-                span.SetTag(tag.Key, tag.Value);
+                blockingAction.ContentType = AspNet.MimeTypes.Json;
+                blockingAction.ResponseContent = _settings.BlockedJsonTemplate;
             }
-        }
 
-        private static Span GetLocalRootSpan(Span span)
-        {
-            var localRootSpan = span.Context.TraceContext?.RootSpan;
-            return localRootSpan ?? span;
-        }
-
-        private static void TryAddEndPoint(Span span)
-        {
-            var route = span.GetTag(Tags.AspNetCoreRoute) ?? span.GetTag(Tags.AspNetRoute);
-            if (route != null)
+            void SetHtmlResponseContent()
             {
-                span.SetTag(Tags.HttpEndpoint, route);
+                blockingAction.ContentType = AspNet.MimeTypes.TextHtml;
+                blockingAction.ResponseContent = _settings.BlockedHtmlTemplate;
             }
+
+            if (action?.Parameters == null)
+            {
+                SetAutomaticResponseContent();
+                blockingAction.StatusCode = 403;
+            }
+            else
+            {
+                if (action.Type == BlockingAction.BlockRequestType)
+                {
+                    switch (action.Parameters!.Type)
+                    {
+                        case "auto":
+                            SetAutomaticResponseContent();
+                            break;
+
+                        case "json":
+                            SetJsonResponseContent();
+                            break;
+
+                        case "html":
+                            SetHtmlResponseContent();
+                            break;
+                    }
+
+                    blockingAction.StatusCode = action.Parameters.StatusCode;
+                }
+                else if (action.Type == BlockingAction.RedirectRequestType)
+                {
+                    if (!string.IsNullOrEmpty(action.Parameters.Location))
+                    {
+                        blockingAction.StatusCode = action.Parameters.StatusCode is >= 300 and < 400 ? action.Parameters.StatusCode : 303;
+                        blockingAction.RedirectLocation = action.Parameters.Location;
+                        blockingAction.IsRedirect = true;
+                    }
+                    else
+                    {
+                        Log.Warning("Received a custom block action of type redirect with a status code {StatusCode}, an automatic response will be set", action.Parameters.StatusCode.ToString());
+                        SetAutomaticResponseContent();
+                        blockingAction.StatusCode = 403;
+                    }
+                }
+            }
+
+            return blockingAction;
         }
 
         private static void AddAppsecSpecificInstrumentations()
@@ -213,7 +215,7 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error adding CallTarget AppSec integration definitions to native library");
             }
 
             try
@@ -225,10 +227,10 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error adding CallTarget appsec derived integration definitions to native library");
             }
 
-            Log.Information($"{defs} AppSec definitions and {derived} AppSec derived definitions added to the profiler.");
+            Log.Information<int, int>("{DefinitionCount} AppSec definitions and {DerivedCount} AppSec derived definitions added to the profiler.", defs, derived);
         }
 
         private static void RemoveAppsecSpecificInstrumentations()
@@ -243,7 +245,7 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error removing CallTarget AppSec integration definitions from native library");
             }
 
             try
@@ -255,39 +257,55 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error removing CallTarget appsec derived integration definitions from native library");
             }
 
-            Log.Information($"{defs} AppSec definitions and {derived} AppSec derived definitions removed from the profiler.");
+            Log.Information<int, int>("{DefinitionCount} AppSec definitions and {DerivedCount} AppSec derived definitions removed from the profiler.", defs, derived);
         }
 
         /// <summary> Frees resources </summary>
-        public void Dispose()
-        {
-            _waf?.Dispose();
-        }
+        public void Dispose() => _waf?.Dispose();
 
         private void SetRemoteConfigCapabilites()
         {
             RemoteConfigurationManager.CallbackWithInitializedInstance(
                 rcm =>
                 {
+                    var noLocalRules = _settings.Rules == null;
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeEnabled);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, _settings.Rules == null);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, true);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, noLocalRules);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, noLocalRules);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusion, noLocalRules);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmRequestBlocking, noLocalRules);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmResponseBlocking, noLocalRules);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, noLocalRules);
                 });
         }
 
         private void AsmDDProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
         {
-            var asmDD = e.GetConfigurationAsString().FirstOrDefault();
-            if (!string.IsNullOrEmpty(asmDD.TypedFile))
+            var asmDd = e.GetConfigurationAsString().FirstOrDefault();
+            if (!string.IsNullOrEmpty(asmDd.TypedFile))
             {
-                _remoteRulesJson = asmDD.TypedFile;
-                UpdateStatus(true);
+                _remoteConfigurationStatus.RemoteRulesJson = asmDd.TypedFile;
+                if (_enabled)
+                {
+                    var result = _waf?.UpdateRules(_remoteConfigurationStatus.RemoteRulesJson);
+                    WafRuleFileVersion = result?.RuleFileVersion;
+                    if (_wafInitResult?.Success ?? false)
+                    {
+                        e.Acknowledge(asmDd.Name);
+                    }
+                    else
+                    {
+                        e.Error(asmDd.Name, "An error happened updating waf rules");
+                    }
+
+                    return;
+                }
             }
 
-            e.Acknowledge(asmDD.Name);
+            e.Acknowledge(asmDd.Name);
         }
 
         private void FeaturesProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
@@ -295,36 +313,43 @@ namespace Datadog.Trace.AppSec
             var features = e.GetDeserializedConfigurations<AsmFeatures>().FirstOrDefault();
             if (features.TypedFile != null)
             {
-                lock (_settings)
+                _settings.Enabled = features.TypedFile.Asm.Enabled;
+                if (_settings.Enabled)
                 {
-                    _settings.Enabled = features.TypedFile.Asm.Enabled;
-                    UpdateStatus(true);
+                    InitWafAndInstrumentations(true);
+                }
+                else
+                {
+                    DisposeWafAndInstrumentations(true);
                 }
             }
 
             e.Acknowledge(features.Name);
         }
 
-        private void AsmDataProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
+        private void AsmDataProductConfigRemoved(object sender, ProductConfigChangedEventArgs e)
         {
-            if (!_enabled) { return; }
-
             var asmDataConfigs = e.GetDeserializedConfigurations<RcmModels.AsmData.Payload>();
-            lock (_asmDataConfigs)
+            foreach (var asmDataConfig in asmDataConfigs)
             {
-                foreach (var asmDataConfig in asmDataConfigs)
+                if (_remoteConfigurationStatus.RulesDataByFile.ContainsKey(asmDataConfig.Name))
                 {
-                    _asmDataConfigs[asmDataConfig.Name] = asmDataConfig.TypedFile;
-                    e.Acknowledge(asmDataConfig.Name);
+                    _remoteConfigurationStatus.RulesDataByFile.Remove(asmDataConfig.Name);
                 }
             }
 
-            var updated = UpdateRulesData();
+            var updated = true;
+            if (_enabled)
+            {
+                var ruleData = _remoteConfigurationStatus.RulesDataByFile.SelectMany(x => x.Value).ToList();
+                updated = UpdateWafWithRulesData(ruleData);
+            }
+
             foreach (var asmDataConfig in asmDataConfigs)
             {
                 if (!updated)
                 {
-                    e.Error(asmDataConfig.Name, "Waf could not update the rules");
+                    e.Error(asmDataConfig.Name, "Waf could not remove the rules data");
                 }
                 else
                 {
@@ -333,205 +358,220 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void AsmProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
+        private void AsmDataProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
         {
-            if (!_enabled) { return; }
+            var asmDataConfigs = e.GetDeserializedConfigurations<RcmModels.AsmData.Payload>();
+            foreach (var asmDataConfig in asmDataConfigs)
+            {
+                if (asmDataConfig.TypedFile?.RulesData?.Length > 0)
+                {
+                    _remoteConfigurationStatus.RulesDataByFile[asmDataConfig.Name] = asmDataConfig.TypedFile.RulesData;
+                }
+            }
 
+            var updated = true;
+            if (_enabled)
+            {
+                var ruleData = _remoteConfigurationStatus.RulesDataByFile.SelectMany(x => x.Value).ToList();
+                updated = UpdateWafWithRulesData(ruleData);
+            }
+
+            foreach (var asmDataConfig in asmDataConfigs)
+            {
+                if (!updated)
+                {
+                    e.Error(asmDataConfig.Name, "Waf could not update the rules data");
+                }
+                else
+                {
+                    e.Acknowledge(asmDataConfig.Name);
+                }
+            }
+        }
+
+        private void AsmProductConfigRemoved(object sender, ProductConfigChangedEventArgs e)
+        {
             var asmConfigs = e.GetDeserializedConfigurations<RcmModels.Asm.Payload>();
-            int ruleCount = 0;
-            var ruleStatus = new Dictionary<string, bool>(StringComparer.InvariantCultureIgnoreCase);
+
             foreach (var asmConfig in asmConfigs)
             {
-                try
+                if (_remoteConfigurationStatus.RulesOverridesByFile.ContainsKey(asmConfig.Name))
                 {
-                    var rulesStatus = asmConfig.TypedFile.RuleStatus;
-                    foreach (var data in rulesStatus)
+                    _remoteConfigurationStatus.RulesOverridesByFile.Remove(asmConfig.Name);
+                }
+
+                if (_remoteConfigurationStatus.ExclusionsByFile.ContainsKey(asmConfig.Name))
+                {
+                    _remoteConfigurationStatus.ExclusionsByFile.Remove(asmConfig.Name);
+                }
+            }
+
+            var result = true;
+            if (_enabled)
+            {
+                var overrides = _remoteConfigurationStatus.RulesOverridesByFile.SelectMany(x => x.Value).ToList();
+                var exclusions = _remoteConfigurationStatus.ExclusionsByFile.SelectMany(x => x.Value).ToList();
+
+                result = _waf.UpdateRulesStatus(overrides, exclusions);
+                Log.Debug<bool, int, int>(
+                    "_waf.Update was updated for removal: {Success}, ({RulesOverridesCount} rule status entries), ({ExclusionsCount} exclusion filters)",
+                    result,
+                    overrides.Count,
+                    exclusions.Count);
+            }
+
+            foreach (var asmConfig in asmConfigs)
+            {
+                if (result)
+                {
+                    e.Acknowledge(asmConfig.Name);
+                }
+                else
+                {
+                    e.Error(asmConfig.Name, "waf couldn't be remove with rule asm product");
+                }
+            }
+        }
+
+        private void AsmProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
+        {
+            var asmConfigs = e.GetDeserializedConfigurations<RcmModels.Asm.Payload>();
+
+            foreach (var asmConfig in asmConfigs)
+            {
+                if (asmConfig.TypedFile.RuleOverrides?.Length > 0)
+                {
+                    _remoteConfigurationStatus.RulesOverridesByFile[asmConfig.Name] = asmConfig.TypedFile.RuleOverrides;
+                }
+
+                if (asmConfig.TypedFile.Exclusions?.Count > 0)
+                {
+                    _remoteConfigurationStatus.ExclusionsByFile[asmConfig.Name] = asmConfig.TypedFile.Exclusions;
+                }
+
+                if (asmConfig.TypedFile.Actions != null)
+                {
+                    foreach (var action in asmConfig.TypedFile.Actions)
                     {
-                        if (data.Id == null || data.Enabled == null)
+                        if (action.Id is not null)
                         {
-                            var id = data.Id ?? "NULL";
-                            var enabled = data.Enabled?.ToString() ?? "NULL";
-                            e.Error(asmConfig.Name, $"Received Null values on message ({id}={enabled}).");
-                            continue;
+                            _remoteConfigurationStatus.Actions[action.Id] = action;
                         }
-
-                        ruleStatus[data.Id] = data.Enabled.Value;
-                        ruleCount++;
                     }
 
-                    if (ruleCount > 0)
+                    if (asmConfig.TypedFile.Actions.Length == 0)
                     {
-                        e.Acknowledge(asmConfig.Name);
+                        _remoteConfigurationStatus.Actions.Clear();
                     }
-                    else
-                    {
-                        e.Error(asmConfig.Name, "No valid Waf rule status data received.");
-                    }
-                }
-                catch (Exception err)
-                {
-                    e.Error(asmConfig.Name, "Waf rule status data error: " + err.Message);
                 }
             }
 
-            _ruleStatus = new ReadOnlyDictionary<string, bool>(ruleStatus);
-            UpdateRuleStatus(_ruleStatus);
-        }
-
-        private bool UpdateRulesData()
-        {
-            bool res = false;
-            lock (_asmDataConfigs)
+            var result = true;
+            if (_enabled)
             {
-                res = _waf?.UpdateRules(_asmDataConfigs?.SelectMany(p => p.Value.RulesData)) ?? false;
+                var overrides = _remoteConfigurationStatus.RulesOverridesByFile.SelectMany(x => x.Value).ToList();
+                var exclusions = _remoteConfigurationStatus.ExclusionsByFile.SelectMany(x => x.Value).ToList();
+
+                result = _waf.UpdateRulesStatus(overrides, exclusions);
+                Log.Debug<bool, int, int>(
+                    "_waf.Update was updated for change: {Success}, ({RulesOverridesCount} rule status entries), ({ExclusionsCount} exclusion filters)",
+                    result,
+                    overrides.Count,
+                    exclusions.Count);
             }
 
-            UpdateRuleStatus(_ruleStatus);
-            return res;
-        }
-
-        private void UpdateRuleStatus(IDictionary<string, bool> ruleStatus)
-        {
-            if (ruleStatus != null && ruleStatus.Count > 0 && !_waf.ToggleRules(ruleStatus))
+            foreach (var asmConfig in asmConfigs)
             {
-                Log.Debug($"_waf.ToggleRules returned false ({ruleStatus.Count} rule status entries)");
-            }
-        }
-
-        private void UpdateStatus(bool fromRemoteConfig = false)
-        {
-            lock (_settings)
-            {
-                if (_settings.Enabled)
+                if (result)
                 {
-                    _waf?.Dispose();
-
-                    _waf = Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteRulesJson);
-                    if (_waf?.InitializedSuccessfully ?? false)
-                    {
-                        UpdateRulesData();
-                        EnableWaf(fromRemoteConfig);
-                    }
-                    else
-                    {
-                        _settings.Enabled = false;
-                    }
+                    e.Acknowledge(asmConfig.Name);
                 }
-
-                if (!_settings.Enabled)
+                else
                 {
-                    DisableWaf(fromRemoteConfig);
+                    e.Error(asmConfig.Name, "waf couldn't be updated with asm product");
                 }
             }
         }
 
-        private void EnableWaf(bool fromRemoteConfig)
+        private bool UpdateWafWithRulesData(List<RuleData> ruleData) => _waf?.UpdateRulesData(ruleData) ?? false;
+
+        private void InitWafAndInstrumentations(bool fromRemoteConfig = false)
+        {
+            // initialization of WafLibraryInvoker
+            if (_libraryInitializationResult == null)
+            {
+                _libraryInitializationResult = WafLibraryInvoker.Initialize();
+                if (!_libraryInitializationResult.Success)
+                {
+                    _settings.Enabled = false;
+                    // logs happened during the process of initializing
+                    return;
+                }
+
+                _wafLibraryInvoker = _libraryInitializationResult.WafLibraryInvoker;
+            }
+
+            _wafInitResult = Waf.Waf.Create(_wafLibraryInvoker!, _settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteConfigurationStatus.RemoteRulesJson);
+            if (_wafInitResult.Success)
+            {
+                WafRuleFileVersion = _wafInitResult.RuleFileVersion;
+                var oldWaf = _waf;
+                _waf = _wafInitResult.Waf;
+                oldWaf?.Dispose();
+                Log.Debug("Disposed old waf and affected new waf");
+                var ruleData = _remoteConfigurationStatus.RulesDataByFile.SelectMany(x => x.Value).ToList();
+                UpdateWafWithRulesData(ruleData);
+                AddInstrumentationsAndProducts(fromRemoteConfig);
+            }
+            else
+            {
+                _wafInitResult.Waf?.Dispose();
+                _settings.Enabled = false;
+            }
+        }
+
+        private void DisposeWafAndInstrumentations(bool fromRemoteConfig = false)
+        {
+            RemoveInstrumentationsAndProducts(fromRemoteConfig);
+            _waf?.Dispose();
+            _waf = null;
+        }
+
+        private void AddInstrumentationsAndProducts(bool fromRemoteConfig)
         {
             if (!_enabled)
             {
                 AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged += AsmDataProductConfigChanged;
                 AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged += AsmProductConfigChanged;
-                _instrumentationGateway.StartRequest += RunWafAndReact;
-                _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
-                _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
-                _instrumentationGateway.BodyAvailable += RunWafAndReact;
-                _instrumentationGateway.BlockingOpportunity += MightStopRequest;
-#if NETFRAMEWORK
-                if (_usingIntegratedPipeline == null)
-                {
-                    try
-                    {
-                        _usingIntegratedPipeline = TryGetUsingIntegratedPipelineBool();
-                    }
-                    catch (Exception ex)
-                    {
-                        _usingIntegratedPipeline = false;
-                        Log.Error(ex, "Unable to query the IIS pipeline. Request and response information may be limited.");
-                    }
-                }
-
-                if (_usingIntegratedPipeline.Value)
-                {
-                    _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
-                }
-
-#else
-                _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
-#endif
+                AsmRemoteConfigurationProducts.AsmDataProduct.ConfigRemoved += AsmDataProductConfigRemoved;
+                AsmRemoteConfigurationProducts.AsmProduct.ConfigRemoved += AsmProductConfigRemoved;
                 AddAppsecSpecificInstrumentations();
 
-                _instrumentationGateway.StartRequest += ReportWafInitInfoOnce;
                 _rateLimiter ??= new AppSecRateLimiter(_settings.TraceRateLimit);
 
                 _enabled = true;
 
-                Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, coming from remote config: {enableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
+                Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
             }
         }
 
-        private void DisableWaf(bool fromRemoteConfig)
+        private void RemoveInstrumentationsAndProducts(bool fromRemoteConfig)
         {
             if (_enabled)
             {
-                _instrumentationGateway.StartRequest -= RunWafAndReact;
-                _instrumentationGateway.EndRequest -= RunWafAndReactAndCleanup;
-                _instrumentationGateway.PathParamsAvailable -= RunWafAndReact;
-                _instrumentationGateway.BodyAvailable -= RunWafAndReact;
-                _instrumentationGateway.BlockingOpportunity -= MightStopRequest;
-                _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
-                _instrumentationGateway.StartRequest -= ReportWafInitInfoOnce;
-
                 AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
                 AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged -= AsmProductConfigChanged;
+                AsmRemoteConfigurationProducts.AsmDataProduct.ConfigRemoved -= AsmDataProductConfigRemoved;
+                AsmRemoteConfigurationProducts.AsmProduct.ConfigRemoved -= AsmProductConfigRemoved;
                 RemoveAppsecSpecificInstrumentations();
 
                 _enabled = false;
 
-                Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {enableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
+                Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
             }
         }
 
-        private void InstrumentationGateway_AddHeadersResponseTags(object sender, InstrumentationGatewayEventArgs e)
-        {
-            if (e.RelatedSpan.GetTag(Tags.AppSecEvent) == "true")
-            {
-                AddResponseHeaderTags(e.Transport, e.RelatedSpan);
-            }
-        }
-
-        private void Report(ITransport transport, Span span, IResult result, bool blocked)
-        {
-            span.SetTag(Tags.AppSecEvent, "true");
-            if (blocked)
-            {
-                span.SetTag(Tags.AppSecBlocked, "true");
-            }
-
-            var resultData = result.Data;
-            SetTraceSamplingPriority(span);
-
-            LogMatchesIfDebugEnabled(resultData, blocked);
-
-            span.SetTag(Tags.AppSecJson, "{\"triggers\":" + resultData + "}");
-            var clientIp = span.GetTag(Tags.HttpClientIp);
-            if (!string.IsNullOrEmpty(clientIp))
-            {
-                span.SetTag(Tags.ActorIp, clientIp);
-            }
-
-            if (span.Context.TraceContext is { Origin: null } traceContext)
-            {
-                traceContext.Origin = "appsec";
-            }
-
-            span.SetTag(Tags.AppSecRuleFileVersion, _waf.InitializationResult.RuleFileVersion);
-            span.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
-            span.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
-            var headers = transport.GetRequestHeaders();
-            AddHeaderTags(span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
-        }
-
-        private void SetTraceSamplingPriority(Span span)
+        internal void SetTraceSamplingPriority(Span span)
         {
             if (!_settings.KeepTraces)
             {
@@ -545,129 +585,17 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private bool CanAccessHeaders()
-        {
-            return _usingIntegratedPipeline == true || _usingIntegratedPipeline is null;
-        }
-
-        private void AddResponseHeaderTags(ITransport transport, Span span)
-        {
-            TryAddEndPoint(span);
-            var headers =
-                CanAccessHeaders() ?
-                    transport.GetResponseHeaders() :
-                    new NameValueHeadersCollection(new NameValueCollection());
-            AddHeaderTags(span, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
-        }
-
-        private IContext GetOrCreateContext(ITransport transport)
-        {
-            var additiveContext = transport.GetAdditiveContext();
-
-            if (additiveContext == null)
-            {
-                additiveContext = _waf.CreateContext();
-                transport.SetAdditiveContext(additiveContext);
-            }
-
-            return additiveContext;
-        }
-
-        private void MightStopRequest(object sender, InstrumentationGatewayBlockingEventArgs args)
-        {
-            if (args.Transport.Blocked)
-            {
-                AddResponseHeaderTags(args.Transport, args.Scope.Span);
-                args.InvokeDoBeforeBlocking();
-                var transport = args.Transport;
-                var additiveContext = GetOrCreateContext(transport);
-                additiveContext.Dispose();
-
-                throw new BlockException();
-            }
-        }
-
-        private void RunWafAndReactAndCleanup(object sender, InstrumentationGatewaySecurityEventArgs e)
-        {
-            RunWafAndReact(sender, e);
-            e.Transport.DisposeAdditiveContext();
-        }
-
-        private void RunWafAndReact(object sender, InstrumentationGatewaySecurityEventArgs e)
-        {
-            try
-            {
-                if (e.Transport.Blocked)
-                {
-                    return;
-                }
-
-                var additiveContext = GetOrCreateContext(e.Transport);
-                var span = GetLocalRootSpan(e.RelatedSpan);
-
-                AnnotateSpan(span);
-
-                // run the WAF and execute the results
-                using var wafResult = additiveContext.Run(e.EventData, _settings.WafTimeoutMicroSeconds);
-                if (wafResult.ReturnCode is ReturnCode.Match or ReturnCode.Block)
-                {
-                    var block = wafResult.Actions.Contains("block");
-                    if (block)
-                    {
-                        e.Transport.WriteBlockedResponse(_settings.BlockedJsonTemplate, _settings.BlockedHtmlTemplate, CanAccessHeaders());
-                    }
-
-                    Report(e.Transport, span, wafResult, block);
-                }
-            }
-            catch (Exception ex) when (ex is not BlockException)
-            {
-                Log.Error(ex, "Call into the security module failed");
-            }
-        }
-
-        private void ReportWafInitInfoOnce(object sender, InstrumentationGatewaySecurityEventArgs e)
-        {
-            _instrumentationGateway.StartRequest -= ReportWafInitInfoOnce;
-            var span = e.RelatedSpan.Context.TraceContext.RootSpan ?? e.RelatedSpan;
-            span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
-            span.SetMetric(Metrics.AppSecWafInitRulesLoaded, _waf.InitializationResult.LoadedRules);
-            span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, _waf.InitializationResult.FailedToLoadRules);
-            if (_waf.InitializationResult.HasErrors)
-            {
-                span.SetTag(Tags.AppSecWafInitRuleErrors, _waf.InitializationResult.ErrorMessage);
-            }
-
-            span.SetTag(Tags.AppSecWafVersion, _waf.Version);
-        }
+        internal IContext CreateAdditiveContext() => _waf?.CreateContext();
 
         private void RunShutdown()
         {
-            if (_instrumentationGateway != null)
-            {
-                _instrumentationGateway.PathParamsAvailable -= RunWafAndReact;
-                _instrumentationGateway.BodyAvailable -= RunWafAndReact;
-                _instrumentationGateway.StartRequest -= RunWafAndReact;
-                _instrumentationGateway.EndRequest -= RunWafAndReactAndCleanup;
-                _instrumentationGateway.BlockingOpportunity -= MightStopRequest;
-                _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
-            }
-
             AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
             AsmRemoteConfigurationProducts.AsmProduct.ConfigChanged -= AsmProductConfigChanged;
+            AsmRemoteConfigurationProducts.AsmDataProduct.ConfigRemoved -= AsmDataProductConfigRemoved;
+            AsmRemoteConfigurationProducts.AsmProduct.ConfigRemoved -= AsmProductConfigRemoved;
             AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged -= FeaturesProductConfigChanged;
             AsmRemoteConfigurationProducts.AsmDDProduct.ConfigChanged -= AsmDDProductConfigChanged;
             Dispose();
         }
-
-#if NETFRAMEWORK
-        /// <summary>
-        /// ! This method should be called from within a try-catch block !
-        /// If the application is running in partial trust, then trying to call this method will result in
-        /// a SecurityException to be thrown at the method CALLSITE, not inside the <c>TryGetUsingIntegratedPipelineBool(..)</c> method itself.
-        /// </summary>
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private bool TryGetUsingIntegratedPipelineBool() => System.Web.HttpRuntime.UsingIntegratedPipeline;
-#endif
     }
 }

@@ -3,9 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.SmokeTests;
 using FluentAssertions;
@@ -20,6 +22,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         private const string Scenario1 = "--scenario 1";
         private const string Scenario2 = "--scenario 2";
         private const string Scenario3 = "--scenario 3";
+        private const string ScenarioMeasureException = "--scenario 6";
 
         private readonly ITestOutputHelper _output;
 
@@ -44,6 +47,11 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 expectedStack = new StackTrace(
                     new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"),
                     new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |fn:StartCallback"));
+            }
+            else if (framework == "net7.0")
+            {
+                expectedStack = new StackTrace(
+                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"));
             }
             else
             {
@@ -73,7 +81,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 total += sample.Count;
                 sample.Type.Should().Be("System.Exception");
                 sample.Message.Should().BeEmpty();
-                sample.Stacktrace.Should().Be(expectedStack);
+                Assert.True(sample.Stacktrace.EndWith(expectedStack));
             }
 
             foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
@@ -182,6 +190,201 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             // only walltime profiler enabled so should see 1 value per sample
             SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 1);
+        }
+
+        [TestAppFact("Samples.ExceptionGenerator")]
+        public void MeasureExceptions(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioMeasureException);
+
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
+            runner.Run(agent);
+
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            var exceptionSamples = ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+            exceptionSamples.Should().NotBeEmpty();
+
+            // this test always succeeds: it is used to display the differences between sampled and real exceptions
+            Dictionary<string, int> profiledExceptions = GetProfiledExceptions(exceptionSamples);
+            Dictionary<string, int> realExceptions = GetRealExceptions(runner.ProcessOutput);
+
+            _output.WriteLine("Comparing exceptions");
+            _output.WriteLine("-------------------------------------------------------");
+            _output.WriteLine("      Count          Type");
+            _output.WriteLine("-------------------------------------------------------");
+            foreach (var exception in profiledExceptions)
+            {
+                var exceptionCount = exception.Value;
+                var type = exception.Key;
+                int pos = type.LastIndexOf('.');
+                if (pos != -1)
+                {
+                    type = type.Substring(pos + 1);
+                }
+
+                // TODO: dump real and profiled count
+                if (!realExceptions.TryGetValue(type, out var stats))
+                {
+                    continue;
+                }
+
+                StringBuilder builder = new StringBuilder();
+                builder.AppendLine($"{exceptionCount,11} {type}");
+                builder.AppendLine($"{stats,11}");
+                _output.WriteLine(builder.ToString());
+            }
+        }
+
+        private static Dictionary<string, int> GetRealExceptions(string output)
+        {
+            const string startToken = "Exceptions start";
+            const string endToken = "Exceptions end";
+
+            var realExceptions = new Dictionary<string, int>();
+            if (output == null)
+            {
+                return realExceptions;
+            }
+
+            // look for the following sections with type=count,size
+            /*
+                Exceptions start
+                ArgumentException=3879
+                SystemException=4000
+                InvalidOperationException=4023
+                InvalidCastException=4053
+                TimeoutException=4045
+                Exceptions end
+            */
+            int pos = 0;
+            int next = 0;
+            int end = 0;
+            while (true)
+            {
+                // look for an exceptions block
+                next = output.IndexOf(startToken, pos);
+                if (next == -1)
+                {
+                    break;
+                }
+
+                next += startToken.Length;
+                next = GotoEoL(output, next);
+                if (next == -1)
+                {
+                    break;
+                }
+
+                pos = next + 1; // point to the beginning of the first exception stats
+
+                // look for the end of the exceptions block
+                end = output.IndexOf(endToken, pos);
+                if (end == -1)
+                {
+                    break;
+                }
+
+                // extract line by line the exception stats from this block
+                int eol = 0;
+                while (true)
+                {
+                    next = GotoEoL(output, pos);
+                    if (next == -1)
+                    {
+                        break;
+                    }
+
+                    // handle Windows (\r\n) and Linux (\n) cases
+                    if (output[next - 1] == '\r')
+                    {
+                        eol = next - 1;
+                    }
+                    else
+                    {
+                        eol = next;
+                    }
+
+                    // extract type and count
+                    //   ArgumentException=3879
+                    var line = output.AsSpan(pos, eol - pos);
+
+                    // get type name
+                    var current = output.IndexOf('=', pos);
+                    if (current == -1)
+                    {
+                        next = -1;
+                        break;
+                    }
+
+                    var name = output.Substring(pos, current - pos);
+                    pos = current + 1;
+                    if (pos >= end)
+                    {
+                        next = -1;
+                        break;
+                    }
+
+                    // get count
+                    var text = output.AsSpan(pos, eol - pos);
+                    var count = int.Parse(text);
+
+                    // add the stats
+                    if (!realExceptions.TryGetValue(name, out var stats))
+                    {
+                        realExceptions.Add(name, 0);
+                    }
+
+                    stats += count;
+                    realExceptions[name] = stats;
+
+                    // goto the next line (or the end token)
+                    pos = next + 1;
+
+                    // check for the last stats
+                    if (next == (end - 1))
+                    {
+                        break;
+                    }
+                }
+
+                if (next == -1)
+                {
+                    break;
+                }
+            }
+
+            return realExceptions;
+        }
+
+        private static int GotoEoL(string text, int pos)
+        {
+            var next = text.IndexOf('\n', pos);
+            return next;
+        }
+
+        private static Dictionary<string, int> GetProfiledExceptions(IEnumerable<(string Type, string Message, long Count, StackTrace Stacktrace)> exceptions)
+        {
+            var profiledExceptions = new Dictionary<string, int>();
+
+            foreach (var exception in exceptions)
+            {
+                if (!profiledExceptions.TryGetValue(exception.Type, out var stats))
+                {
+                    stats = 0;
+                    profiledExceptions.Add(exception.Type, 0);
+                }
+
+                stats += (int)exception.Count;
+                profiledExceptions[exception.Type] = stats;
+            }
+
+            return profiledExceptions;
         }
 
         private static IEnumerable<(string Type, string Message, long Count, StackTrace Stacktrace)> ExtractExceptionSamples(string directory)

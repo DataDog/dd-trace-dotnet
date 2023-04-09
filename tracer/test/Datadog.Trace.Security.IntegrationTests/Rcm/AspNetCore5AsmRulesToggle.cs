@@ -8,19 +8,12 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Numerics;
-using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.RcmModels.Asm;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.TestHelpers;
-using FluentAssertions;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -30,8 +23,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     {
         private const string ASMProduct = "ASM";
 
-        public AspNetCore5AsmRulesToggle(ITestOutputHelper outputHelper)
-            : base(outputHelper, testName: nameof(AspNetCore5AsmRulesToggle))
+        public AspNetCore5AsmRulesToggle(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmRulesToggle))
         {
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
         }
@@ -41,29 +34,89 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         public async Task TestRulesToggling()
         {
             var url = "/Health/?[$slice]=value";
-            var agent = await RunOnSelfHosted(true);
+            await TryStartApp();
+            var agent = Fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings();
             var ruleId = "crs-942-290";
 
+            var spans0 = await SendRequestsAsync(agent, url);
+            var acknowledgedId = nameof(TestRulesToggling) + Guid.NewGuid();
+
+            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = false } } }, acknowledgedId) }, ASMProduct, appliedServiceNames: new[] { acknowledgedId });
+            CheckAckState(request1, ASMProduct, 1, ApplyStates.ACKNOWLEDGED, null, "First RCM call");
+
             var spans1 = await SendRequestsAsync(agent, url);
 
-            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload() { RuleStatus = new[] { new RuleStatus { Id = ruleId, Enabled = false } } }, "1") }, ASMProduct);
-            CheckAckState(request1, ASMProduct, ApplyStates.ACKNOWLEDGED, null, "First RCM call");
-
+            var acknowledgedId2 = nameof(TestRulesToggling) + Guid.NewGuid();
+            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = true } } }, acknowledgedId2) }, ASMProduct, appliedServiceNames: new[] { acknowledgedId2 });
+            CheckAckState(request2, ASMProduct, 1, ApplyStates.ACKNOWLEDGED, null, "Second RCM call");
             var spans2 = await SendRequestsAsync(agent, url);
 
-            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload() { RuleStatus = new[] { new RuleStatus { Id = ruleId, Enabled = true } } }, "2") }, ASMProduct);
-            CheckAckState(request2, ASMProduct, ApplyStates.ACKNOWLEDGED, null, "Second RCM call");
-
+            var acknowledgedId3 = nameof(TestRulesToggling) + Guid.NewGuid();
+            var acknowledgedId4 = nameof(TestRulesToggling) + Guid.NewGuid();
+            var payload1 = ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = true } } }, acknowledgedId3);
+            var payload2 = ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, OnMatch = new[] { "block" } } } }, acknowledgedId4);
+            var request3 = await agent.SetupRcmAndWait(Output, new[] { payload1, payload2 }, ASMProduct, appliedServiceNames: new[] { acknowledgedId3, acknowledgedId4 });
+            CheckAckState(request3, ASMProduct, 2, ApplyStates.ACKNOWLEDGED, null, "Third RCM call");
             var spans3 = await SendRequestsAsync(agent, url);
 
+            var acknowledgedId5 = nameof(TestRulesToggling) + Guid.NewGuid();
+            var payload3 = ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = true } } }, acknowledgedId5);
+            var request4 = await agent.SetupRcmAndWait(Output, new[] { payload3 }, ASMProduct, appliedServiceNames: new[] { acknowledgedId5 });
+            CheckAckState(request4, ASMProduct, 1, ApplyStates.ACKNOWLEDGED, null, "Forth RCM call");
+            var spans4 = await SendRequestsAsync(agent, url);
+
             var spans = new List<MockSpan>();
+            spans.AddRange(spans0);
             spans.AddRange(spans1);
             spans.AddRange(spans2);
             spans.AddRange(spans3);
+            spans.AddRange(spans4);
 
-            await VerifySpans(spans.ToImmutableList(), settings, true);
+            await VerifySpans(spans.ToImmutableList(), settings);
         }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestGlobalRulesToggling()
+        {
+            var url = "/Health/";
+            await TryStartApp();
+            var agent = Fixture.Agent;
+            var settings = VerifyHelper.GetSpanVerifierSettings(nameof(TestGlobalRulesToggling));
+            // var ruleId = "crs-942-290";
+
+            var spans0 = await SendRequestsAsync(agent, url, null, 1, 1, string.Empty, userAgent: "acunetix-product");
+            var acknowledgedId = nameof(TestRulesToggling) + Guid.NewGuid();
+
+            var request1 = await agent.SetupRcmAndWait(
+                               Output,
+                               new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = null, OnMatch = new[] { "block" }, RulesTarget = JToken.Parse(@"[{'tags': {'confidence': '1'}}]") } } }, acknowledgedId) },
+                               ASMProduct,
+                               appliedServiceNames: new[] { acknowledgedId });
+            CheckAckState(request1, ASMProduct, 1, ApplyStates.ACKNOWLEDGED, null, "First RCM call");
+
+            var spans1 = await SendRequestsAsync(agent, url);
+
+            // reset
+            acknowledgedId = nameof(TestRulesToggling) + Guid.NewGuid();
+            var request2 = await agent.SetupRcmAndWait(
+                               Output,
+                               new[] { ((object)new Payload { RuleOverrides = Array.Empty<RuleOverride>() }, acknowledgedId) },
+                               ASMProduct,
+                               appliedServiceNames: new[] { acknowledgedId });
+            CheckAckState(request2, ASMProduct, 1, ApplyStates.ACKNOWLEDGED, null, "Reset RCM call");
+            var spans2 = await SendRequestsAsync(agent, url);
+
+            var spans = new List<MockSpan>();
+            spans.AddRange(spans0);
+            spans.AddRange(spans1);
+            spans.AddRange(spans2);
+
+            await VerifySpans(spans.ToImmutableList(), settings, testName: nameof(TestGlobalRulesToggling));
+        }
+
+        protected override string GetTestName() => Prefix + nameof(AspNetCore5AsmRulesToggle);
     }
 }
 #endif

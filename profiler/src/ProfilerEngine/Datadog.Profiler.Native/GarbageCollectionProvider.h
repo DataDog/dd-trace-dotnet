@@ -6,6 +6,9 @@
 #include "CollectorBase.h"
 #include "IGarbageCollectionsListener.h"
 #include "RawGarbageCollectionSample.h"
+#include "MetricsRegistry.h"
+#include "CounterMetric.h"
+#include "MeanMaxMetric.h"
 
 
 class GarbageCollectionProvider
@@ -22,10 +25,18 @@ public:
         IThreadsCpuManager* pThreadsCpuManager,
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
-        IConfiguration* pConfiguration);
+        IConfiguration* pConfiguration,
+        MetricsRegistry& metricsRegistry);
 
     // Inherited via IGarbageCollectionsListener
-    virtual void OnGarbageCollection(
+    void OnGarbageCollectionStart(
+        int32_t number,
+        uint32_t generation,
+        GCReason reason,
+        GCType type
+        ) override;
+
+    void OnGarbageCollectionEnd(
         int32_t number,
         uint32_t generation,
         GCReason reason,
@@ -35,4 +46,13 @@ public:
         uint64_t totalDuration, // from start to end (includes pauses)
         uint64_t endTimestamp   // end of GC
         ) override;
+
+private:
+    std::shared_ptr<CounterMetric> _gen0CountMetric;
+    std::shared_ptr<CounterMetric> _gen1CountMetric;
+    std::shared_ptr<CounterMetric> _gen2CountMetric;
+    std::shared_ptr<MeanMaxMetric> _suspensionDurationMetric;
+    std::shared_ptr<CounterMetric> _inducedCountMetric;
+    std::shared_ptr<CounterMetric> _compactingGen2CountMetric;
+    std::shared_ptr<CounterMetric> _memoryPressureCountMetric;
 };

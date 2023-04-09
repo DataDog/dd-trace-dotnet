@@ -5,15 +5,20 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 {
-    internal class ContinuationGenerator<TTarget, TReturn>
+    internal abstract class ContinuationGenerator<TTarget, TReturn>
     {
-        public virtual TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
-        {
-            return returnValue;
-        }
+        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContinuationGenerator<TTarget, TReturn>));
+
+        internal delegate object ObjectContinuationMethodDelegate(TTarget target, object returnValue, Exception exception, in CallTargetState state);
+
+        internal delegate Task<object> AsyncObjectContinuationMethodDelegate(TTarget target, object returnValue, Exception exception, in CallTargetState state);
+
+        public abstract TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected static TReturn ToTReturn<TFrom>(TFrom returnValue)
@@ -34,5 +39,27 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
             return ContinuationsHelper.Convert<TReturn, TTo>(returnValue);
 #endif
         }
+
+        internal abstract class CallbackHandler
+        {
+            public abstract TReturn ExecuteCallback(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state);
+        }
+
+        internal class NoOpCallbackHandler : CallbackHandler
+        {
+            public override TReturn ExecuteCallback(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            {
+                return returnValue;
+            }
+        }
+    }
+
+#pragma warning disable SA1402
+    internal abstract class ContinuationGenerator<TTarget, TReturn, TResult> : ContinuationGenerator<TTarget, TReturn>
+#pragma warning restore SA1402
+    {
+        internal delegate TResult ContinuationMethodDelegate(TTarget target, TResult returnValue, Exception exception, in CallTargetState state);
+
+        internal delegate Task<TResult> AsyncContinuationMethodDelegate(TTarget target, TResult returnValue, Exception exception, in CallTargetState state);
     }
 }

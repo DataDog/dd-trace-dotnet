@@ -109,7 +109,7 @@ namespace Datadog.Trace.RuntimeMetrics
             _previousGen1Count = gen1;
             _previousGen2Count = gen2;
 
-            Log.Debug("Sent the following metrics to the DD agent: {metrics}", GarbageCollectionMetrics);
+            Log.Debug("Sent the following metrics to the DD agent: {Metrics}", GarbageCollectionMetrics);
         }
 
         protected virtual void InitializePerformanceCounters()

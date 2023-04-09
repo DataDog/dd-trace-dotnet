@@ -1,0 +1,46 @@
+{
+  "enableDatadog": true,
+  "jsonExporterFilePath": "$(CWD)\\results_Samples.FakeDbCommand.windows.net462.json",
+  "warmUpCount": 5,
+  "count": 25,
+  "scenarios": [
+    {
+      "name": "Baseline",
+      "environmentVariables": {
+        "CORECLR_ENABLE_PROFILING": "0",
+        "COR_ENABLE_PROFILING": "0"
+      }
+    },
+    {
+      "name": "CallTarget\u002BInlining\u002BNGEN"
+    }
+  ],
+  "processName": "$(CWD)\\..\\..\\..\\test\\test-applications\\integrations\\Samples.FakeDbCommand\\bin\\Release\\net462\\Samples.FakeDbCommand.exe",
+  "processArguments": "no-wait",
+  "processTimeout": 15,
+  "workingDirectory": "$(CWD)\\..\\..\\..\\test\\test-applications\\integrations\\Samples.FakeDbCommand\\bin\\Release\\net462",
+  "environmentVariables": {
+    "CORECLR_ENABLE_PROFILING": "1",
+    "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+    "CORECLR_PROFILER_PATH_32": "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll",
+    "CORECLR_PROFILER_PATH_64": "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
+    "CORECLR_PROFILER_PATH_ARM64": "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-ARM64\\Datadog.Trace.ClrProfiler.Native.dll",
+    "DD_DOTNET_TRACER_HOME": "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home",
+    "COR_ENABLE_PROFILING": "1",
+    "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+    "COR_PROFILER_PATH_32": "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll",
+    "COR_PROFILER_PATH_64": "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
+    "COR_PROFILER_PATH_ARM64": "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-ARM64\\Datadog.Trace.ClrProfiler.Native.dll"
+  },
+  "pathValidations": [
+    "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll",
+    "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll"
+  ],
+  "tags": {
+    "runtime.architecture": "x64",
+    "runtime.name": ".NET Framework",
+    "runtime.version": "4.6.2",
+    "benchmark.job.runtime.name": ".NET Framework 4.6.2",
+    "benchmark.job.runtime.moniker": "net462"
+  }
+}

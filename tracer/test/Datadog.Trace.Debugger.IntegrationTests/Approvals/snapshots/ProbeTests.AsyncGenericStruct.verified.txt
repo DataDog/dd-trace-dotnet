@@ -84,6 +84,6 @@
       "version": "2"
     },
     "message": "AsyncGenericStruct+NestedAsyncGenericStruct`1+<Method>d__0`1.MoveNext(generic=Generic, input=.RunAsync): NestedAsyncGenericStruct.RunAsync.Method\r\n@return=NestedAsyncGenericStruct.RunAsync.Method, output=NestedAsyncGenericStruct.RunAsync.",
-    "service": "Probes"
+    "service": "probes"
   }
 ]

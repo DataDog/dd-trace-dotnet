@@ -1,0 +1,101 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "d": {
+                "type": "Double",
+                "value": "1"
+              },
+              "this": {
+                "type": "ConditionAndTemplateChangeTest",
+                "value": "ConditionAndTemplateChangeTest"
+              }
+            },
+            "staticFields": {
+              "Condition_EvaluatesToFalse_Json": {
+                "type": "String",
+                "value": "{\r\n    \"lt\": [\r\n      {\"ref\": \"local\"},\r\n      {\"ref\": \"arg\"}\r\n    ]\r\n}"
+              },
+              "Condition_EvaluatesToTrue_Json": {
+                "type": "String",
+                "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"local\"},\r\n      {\"ref\": \"arg\"}\r\n    ]\r\n}"
+              },
+              "Phase1_TemplateJson": {
+                "type": "String",
+                "value": "{\r\n        \"ref\": \"arg\"\r\n}"
+              },
+              "TemplateJson": {
+                "type": "String",
+                "value": "{\r\n        \"ref\": \"local\"\r\n}"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "d": {
+                "type": "Double",
+                "value": "1"
+              },
+              "this": {
+                "type": "ConditionAndTemplateChangeTest",
+                "value": "ConditionAndTemplateChangeTest"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "2"
+              }
+            },
+            "staticFields": {
+              "Condition_EvaluatesToFalse_Json": {
+                "type": "String",
+                "value": "{\r\n    \"lt\": [\r\n      {\"ref\": \"local\"},\r\n      {\"ref\": \"arg\"}\r\n    ]\r\n}"
+              },
+              "Condition_EvaluatesToTrue_Json": {
+                "type": "String",
+                "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"local\"},\r\n      {\"ref\": \"arg\"}\r\n    ]\r\n}"
+              },
+              "Phase1_TemplateJson": {
+                "type": "String",
+                "value": "{\r\n        \"ref\": \"arg\"\r\n}"
+              },
+              "TemplateJson": {
+                "type": "String",
+                "value": "{\r\n        \"ref\": \"local\"\r\n}"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "GetInt",
+            "type": "Samples.Probes.TestRuns.ExpressionTests.ConditionAndTemplateChangeTest"
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "GetInt",
+      "name": "Samples.Probes.TestRuns.ExpressionTests.ConditionAndTemplateChangeTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

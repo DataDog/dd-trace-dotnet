@@ -18,7 +18,7 @@ public:
 
         sample->AddValue(GetValue(), durationIndex);
 
-        sample->AddLabel(Label(Sample::GarbageCollectionNumberLabel, std::to_string(Number)));
+        sample->AddNumericLabel(NumericLabel(Sample::GarbageCollectionNumberLabel, Number));
         AddGenerationLabel(sample, Generation);
 
         BuildCallStack(sample, Generation);
@@ -46,6 +46,8 @@ public:
 private:
     inline static void AddGenerationLabel(std::shared_ptr<Sample>& sample, uint32_t generation)
     {
+        // we currently don't store the generation as a numeric label because there is no way to
+        // make the difference between a 0 value and a 0 string index (i.e. empty string)
         switch (generation)
         {
             case 0:
@@ -69,25 +71,25 @@ private:
     inline static void BuildCallStack(std::shared_ptr<Sample>& sample, uint32_t generation)
     {
         // add same root frame
-        sample->AddFrame(EmptyModule, RootFrame);
+        sample->AddFrame({EmptyModule, RootFrame, "", 0});
 
         // add generation based frame
         switch (generation)
         {
             case 0:
-                sample->AddFrame(EmptyModule, Gen0Frame);
+                sample->AddFrame({EmptyModule, Gen0Frame, "", 0});
                 break;
 
             case 1:
-                sample->AddFrame(EmptyModule, Gen1Frame);
+                sample->AddFrame({EmptyModule, Gen1Frame, "", 0});
                 break;
 
             case 2:
-                sample->AddFrame(EmptyModule, Gen2Frame);
+                sample->AddFrame({EmptyModule, Gen2Frame, "", 0});
                 break;
 
             default:
-                sample->AddFrame(EmptyModule, UnknownGenerationFrame);
+                sample->AddFrame({EmptyModule, UnknownGenerationFrame, "", 0});
                 break;
         }
     }

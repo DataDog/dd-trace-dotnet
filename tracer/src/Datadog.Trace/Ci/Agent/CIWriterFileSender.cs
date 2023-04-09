@@ -45,12 +45,12 @@ namespace Datadog.Trace.Ci.Agent
             var msgPackBytes = payload.ToArray();
             var msgPackFile = str + ".mpack";
             File.WriteAllBytes(msgPackFile, msgPackBytes);
-            Log.Debug("File written: {file}", msgPackFile);
+            Log.Debug("File written: {File}", msgPackFile);
 
             var json = Vendors.MessagePack.MessagePackSerializer.ToJson(msgPackBytes);
             var jsonFile = str + ".json";
             File.WriteAllText(jsonFile, json);
-            Log.Debug("File written: {file}", jsonFile);
+            Log.Debug("File written: {File}", jsonFile);
 
             return Task.CompletedTask;
         }
@@ -77,12 +77,12 @@ namespace Datadog.Trace.Ci.Agent
                 {
                     var msgPackFile = str + $"{item.Name}.mpack";
                     File.WriteAllBytes(msgPackFile, bytes);
-                    Log.Debug("File written: {file}", msgPackFile);
+                    Log.Debug("File written: {File}", msgPackFile);
 
                     var json = Vendors.MessagePack.MessagePackSerializer.ToJson(bytes);
                     var jsonFile = str + $"{item.Name}.json";
                     File.WriteAllText(jsonFile, json);
-                    Log.Debug("File written: {file}", jsonFile);
+                    Log.Debug("File written: {File}", jsonFile);
                 }
             }
 

@@ -112,7 +112,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, ex.Message);
+                    Log.Error(ex, "Error serializing item to EventsBuffer");
                 }
 
                 if (_offset >= _maxBufferSize)

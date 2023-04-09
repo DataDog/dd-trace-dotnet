@@ -40,11 +40,13 @@ ENV DD_PROFILING_ENABLED=1 \
     DD_TRACE_DEBUG=1 \
     DD_APPSEC_ENABLED=1 \
     DD_TRACE_LOG_DIRECTORY="C:\logs" \
-    DD_PROFILING_LOG_DIR="C:\logs" \
     ASPNETCORE_URLS=http://localhost:5000
 
-# see https://github.com/dotnet/runtime/issues/77973
-ENV COMPlus_TieredCompilation=0
+# Set a random env var we should ignore
+ENV SUPER_SECRET_CANARY=MySuperSecretCanary
+
+# see https://github.com/DataDog/dd-trace-dotnet/pull/3579
+ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 
 # Copy the app across
 COPY --from=builder /src/publish /app/.

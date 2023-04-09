@@ -13,8 +13,9 @@ namespace Datadog.Trace.Debugger.Configurations
 {
     internal class ConfigurationUpdater
     {
-        private const int MaxAllowedSnapshotProbes = 100;
+        private const int MaxAllowedLogProbes = 100;
         private const int MaxAllowedMetricProbes = 100;
+        private const int MaxAllowedSpanProbes = 100;
         private readonly string? _env;
         private readonly string? _version;
 
@@ -32,7 +33,7 @@ namespace Datadog.Trace.Debugger.Configurations
             return new ConfigurationUpdater(environment, serviceVersion);
         }
 
-        public bool Accept(ProbeConfiguration configuration)
+        public bool AcceptAdded(ProbeConfiguration configuration)
         {
             try
             {
@@ -41,7 +42,7 @@ namespace Datadog.Trace.Debugger.Configurations
 
                 if (comparer.HasProbeRelatedChanges)
                 {
-                    HandleProbesChanges(comparer);
+                    HandleAddedProbesChanges(comparer);
                 }
 
                 if (comparer.HasRateLimitChanged)
@@ -55,7 +56,21 @@ namespace Datadog.Trace.Debugger.Configurations
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Failed to accept configurations");
+                Log.Error(ex, "Failed to add configurations");
+                return false;
+            }
+        }
+
+        public bool AcceptRemoved(string[] removedProbesIds)
+        {
+            try
+            {
+                HandleRemovedProbesChanges(removedProbesIds);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to remove configurations");
                 return false;
             }
         }
@@ -64,12 +79,10 @@ namespace Datadog.Trace.Debugger.Configurations
         {
             return new ProbeConfiguration()
             {
-                Id = configuration.Id,
-                AllowList = configuration.AllowList,
-                DenyList = configuration.DenyList,
-                OpsConfiguration = configuration.OpsConfiguration,
-                SnapshotProbes = Filter(configuration.SnapshotProbes, MaxAllowedSnapshotProbes),
-                MetricProbes = Filter(configuration.MetricProbes, MaxAllowedMetricProbes)
+                ServiceConfiguration = configuration.ServiceConfiguration,
+                LogProbes = Filter(configuration.LogProbes, MaxAllowedLogProbes),
+                MetricProbes = Filter(configuration.MetricProbes, MaxAllowedMetricProbes),
+                SpanProbes = Filter(configuration.SpanProbes, MaxAllowedSpanProbes)
             };
 
             T[] Filter<T>(T[] probes, int maxAllowedProbes)
@@ -77,7 +90,6 @@ namespace Datadog.Trace.Debugger.Configurations
             {
                 return
                     probes
-                       .Where(probe => probe.Active)
                        .Where(probe => probe.Language == TracerConstants.Language)
                        .Where(IsEnvAndVersionMatch)
                        .Take(maxAllowedProbes)
@@ -105,9 +117,14 @@ namespace Datadog.Trace.Debugger.Configurations
             }
         }
 
-        private void HandleProbesChanges(ProbeConfigurationComparer comparer)
+        private void HandleAddedProbesChanges(ProbeConfigurationComparer comparer)
         {
-            LiveDebugger.Instance.UpdateProbeInstrumentations(comparer.AddedDefinitions, comparer.RemovedDefinitions);
+            LiveDebugger.Instance.UpdateAddedProbeInstrumentations(comparer.AddedDefinitions);
+        }
+
+        private void HandleRemovedProbesChanges(string[] removedProbesIds)
+        {
+            LiveDebugger.Instance.UpdateRemovedProbeInstrumentations(removedProbesIds);
         }
 
         private void HandleRateLimitChanged(ProbeConfigurationComparer comparer)

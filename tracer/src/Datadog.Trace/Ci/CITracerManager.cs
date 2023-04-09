@@ -24,34 +24,53 @@ namespace Datadog.Trace.Ci
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CITracerManager>();
 
-        public CITracerManager(ImmutableTracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, RuntimeMetricsWriter runtimeMetricsWriter, DirectLogSubmissionManager logSubmissionManager, ITelemetryController telemetry, IDiscoveryService discoveryService, DataStreamsManager dataStreamsManager, string defaultServiceName)
-            : base(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetricsWriter, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, new Trace.Processors.ITraceProcessor[]
+        public CITracerManager(ImmutableTracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, RuntimeMetricsWriter runtimeMetricsWriter, DirectLogSubmissionManager logSubmissionManager, ITelemetryController telemetry, IDiscoveryService discoveryService, DataStreamsManager dataStreamsManager, string defaultServiceName, IGitMetadataTagsProvider gitMetadataTagsProvider)
+            : base(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetricsWriter, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, GetProcessors(settings.Exporter.PartialFlushEnabled, agentWriter is CIVisibilityProtocolWriter))
+        {
+        }
+
+        private static Trace.Processors.ITraceProcessor[] GetProcessors(bool partialFlushEnabled, bool isCiVisibilityProtocol)
+        {
+            if (isCiVisibilityProtocol)
+            {
+                return new Trace.Processors.ITraceProcessor[]
+                {
+                    new Trace.Processors.NormalizerTraceProcessor(),
+                    new Trace.Processors.TruncatorTraceProcessor(),
+                    new Processors.OriginTagTraceProcessor(partialFlushEnabled, true),
+                };
+            }
+
+            return new Trace.Processors.ITraceProcessor[]
             {
                 new Trace.Processors.NormalizerTraceProcessor(),
                 new Trace.Processors.TruncatorTraceProcessor(),
-                new Processors.TestSuiteVisibilityProcessor(agentWriter is CIVisibilityProtocolWriter),
-                new Processors.OriginTagTraceProcessor(settings.Exporter.PartialFlushEnabled, agentWriter is CIVisibilityProtocolWriter),
-            })
-        {
+                new Processors.TestSuiteVisibilityProcessor(),
+                new Processors.OriginTagTraceProcessor(partialFlushEnabled, false),
+            };
         }
 
         private Span ProcessSpan(Span span)
         {
-            if (span is not null)
+            if (span is null)
             {
-                foreach (var processor in TraceProcessors)
+                return span;
+            }
+
+            foreach (var processor in TraceProcessors)
+            {
+                if (processor is null)
                 {
-                    if (processor is not null)
-                    {
-                        try
-                        {
-                            span = processor.Process(span);
-                        }
-                        catch (Exception e)
-                        {
-                            Log.Error(e, e.Message);
-                        }
-                    }
+                    continue;
+                }
+
+                try
+                {
+                    span = processor.Process(span);
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error executing trace processor {TraceProcessorType}", processor?.GetType());
                 }
             }
 

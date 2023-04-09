@@ -40,7 +40,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
             // Check if the test should be skipped by the ITR
             if (XUnitIntegration.ShouldSkip(ref runnerInstance) && instance.TryDuckCast<ITestRunnerSkippable>(out var skippableRunnerInstance))
             {
-                Common.Log.Debug("ITR: Test skipped: {class}.{name}", runnerInstance.TestClass?.FullName ?? string.Empty, runnerInstance.TestMethod?.Name ?? string.Empty);
+                Common.Log.Debug("ITR: Test skipped: {Class}.{Name}", runnerInstance.TestClass?.FullName ?? string.Empty, runnerInstance.TestMethod?.Name ?? string.Empty);
                 skippableRunnerInstance.SkipReason = "Skipped by the Intelligent Test Runner";
             }
             else if (runnerInstance.SkipReason is not null)

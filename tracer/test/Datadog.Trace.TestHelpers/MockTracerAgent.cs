@@ -78,9 +78,9 @@ namespace Datadog.Trace.TestHelpers
 
         public IImmutableList<NameValueCollection> TraceRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
-        public List<string> Snapshots { get; private set; } = new();
+        public IImmutableList<string> Snapshots { get; private set; } = ImmutableList<string>.Empty;
 
-        public List<string> ProbesStatuses { get; private set; } = new();
+        public IImmutableList<string> ProbesStatuses { get; private set; } = ImmutableList<string>.Empty;
 
         public ConcurrentQueue<string> StatsdRequests { get; } = new();
 
@@ -246,8 +246,8 @@ namespace Datadog.Trace.TestHelpers
         }
 
         public IImmutableList<MockDataStreamsPayload> WaitForDataStreams(
-            int count,
-            int timeoutInMilliseconds = 20000)
+            int timeoutInMilliseconds,
+            Func<IImmutableList<MockDataStreamsPayload>, bool> waitFunc)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
 
@@ -257,7 +257,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 stats = DataStreams;
 
-                if (stats.Count >= count)
+                if (waitFunc(stats))
                 {
                     break;
                 }
@@ -266,6 +266,27 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return stats;
+        }
+
+        public IImmutableList<MockDataStreamsPayload> WaitForDataStreamsPoints(
+            int statsCount,
+            int timeoutInMilliseconds = 20000)
+        {
+            return WaitForDataStreams(
+                timeoutInMilliseconds,
+                (stats) =>
+                {
+                    return stats.Sum(s => s.Stats.Sum(bucket => bucket.Stats.Length)) == statsCount;
+                });
+        }
+
+        public IImmutableList<MockDataStreamsPayload> WaitForDataStreams(
+            int payloadCount,
+            int timeoutInMilliseconds = 20000)
+        {
+            return WaitForDataStreams(
+                timeoutInMilliseconds,
+                (stats) => stats.Count == payloadCount);
         }
 
         /// <summary>
@@ -315,7 +336,7 @@ namespace Datadog.Trace.TestHelpers
 
         public void ClearSnapshots()
         {
-            Snapshots.Clear();
+            Snapshots = Snapshots.Clear();
         }
 
         /// <summary>
@@ -323,8 +344,9 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         /// <param name="statusCount">The expected number of probe statuses when more than one status is expected (e.g. multiple line probes in method).</param>
         /// <param name="timeout">The timeout</param>
+        /// <param name="expectedFailedStatuses">determines if we expect to see probe status failure</param>
         /// <returns>The list of probe statuses.</returns>
-        public async Task<string[]> WaitForProbesStatuses(int statusCount, TimeSpan? timeout = null)
+        public async Task<string[]> WaitForProbesStatuses(int statusCount, TimeSpan? timeout = null, int expectedFailedStatuses = 0)
         {
             using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(5));
 
@@ -332,6 +354,16 @@ namespace Datadog.Trace.TestHelpers
             while (!isFound && !cancellationSource.IsCancellationRequested)
             {
                 isFound = ProbesStatuses.Count == statusCount;
+
+                // If we expect failed probe statuses, then we try to reach the batch that contains it.
+                // Due to complex race conditions, this requirement is not easily achieved thus what we do is
+                // basically let this function spin until a batch with "Error installing probe" arrives, or we timeout and fail.
+                if (isFound &&
+                    expectedFailedStatuses != ProbesStatuses.Count(probeStatus => probeStatus.Contains("Error installing probe")))
+                {
+                    ClearProbeStatuses();
+                    isFound = false;
+                }
 
                 if (!isFound)
                 {
@@ -341,7 +373,8 @@ namespace Datadog.Trace.TestHelpers
 
             if (!isFound)
             {
-                throw new InvalidOperationException($"Probes Status count not found. Expected {statusCount}, actual {ProbesStatuses.Count}");
+                throw new InvalidOperationException($"Probes Status count not found. Expected {statusCount}, actual {ProbesStatuses.Count}. " +
+                                                    $"Expected failed statuses count is {expectedFailedStatuses}, actual failures:  {ProbesStatuses.Count(probeStatus => probeStatus.Contains("Error installing probe"))} failed");
             }
 
             return ProbesStatuses.ToArray();
@@ -349,7 +382,30 @@ namespace Datadog.Trace.TestHelpers
 
         public void ClearProbeStatuses()
         {
-            ProbesStatuses.Clear();
+            ProbesStatuses = ProbesStatuses.Clear();
+        }
+
+        public async Task<string[]> WaitForStatsdRequests(int statsdRequestsCount, TimeSpan? timeout = null)
+        {
+            using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(5));
+
+            var isFound = false;
+            while (!isFound && !cancellationSource.IsCancellationRequested)
+            {
+                isFound = StatsdRequests.Count >= statsdRequestsCount;
+
+                if (!isFound)
+                {
+                    await Task.Delay(100, cancellationSource.Token);
+                }
+            }
+
+            if (!isFound)
+            {
+                throw new InvalidOperationException($"Stats requested count not found. Expected {statsdRequestsCount}, actual {ProbesStatuses.Count}");
+            }
+
+            return StatsdRequests.ToArray();
         }
 
         public virtual void Dispose()
@@ -833,8 +889,8 @@ namespace Datadog.Trace.TestHelpers
 
             // We override the previous Probes Statuses as the debugger-agent is always emitting complete set of probes statuses, so we can
             // solely rely on that.
-            ProbesStatuses = probeStatuses.Values.ToList();
-            Snapshots.AddRange(snapshots);
+            ProbesStatuses = probeStatuses.Values.ToImmutableArray();
+            Snapshots = Snapshots.AddRange(snapshots);
         }
 
         public readonly struct EvpProxyPayload
@@ -1072,7 +1128,6 @@ namespace Datadog.Trace.TestHelpers
             private readonly PipeServer _statsPipeServer;
             private readonly PipeServer _tracesPipeServer;
             private readonly Task _statsdTask;
-            private readonly Task _tracesListenerTask;
 
             public NamedPipeAgent(WindowsPipesConfig config)
                 : base(config.UseTelemetry, TestTransports.WindowsNamedPipe)
@@ -1115,7 +1170,7 @@ namespace Datadog.Trace.TestHelpers
                     ex => Exceptions.Add(ex),
                     x => Output?.WriteLine(x));
 
-                _tracesListenerTask = Task.Run(_tracesPipeServer.Start);
+                _tracesPipeServer.Start();
             }
 
             public string TracesWindowsPipeName { get; }
@@ -1188,7 +1243,7 @@ namespace Datadog.Trace.TestHelpers
                     _log = log;
                 }
 
-                public Task Start()
+                public void Start()
                 {
                     for (var i = 0; i < ConcurrentInstanceCount; i++)
                     {
@@ -1198,8 +1253,6 @@ namespace Datadog.Trace.TestHelpers
                         _tasks.Add(startPipe);
                         mutex.Wait(5_000);
                     }
-
-                    return Task.CompletedTask;
                 }
 
                 public void Dispose()
@@ -1353,6 +1406,25 @@ namespace Datadog.Trace.TestHelpers
                     catch (Exception) when (_cancellationTokenSource.IsCancellationRequested)
                     {
                         return;
+                    }
+                    catch (SocketException ex)
+                    {
+                        var message = ex.Message.ToLowerInvariant();
+                        if (message.Contains("interrupted"))
+                        {
+                            // Accept call is likely interrupted by a dispose
+                            // Swallow the exception and let the test finish
+                            return;
+                        }
+
+                        if (message.Contains("broken") || message.Contains("forcibly closed") || message.Contains("invalid argument"))
+                        {
+                            // The application was likely shut down
+                            // Swallow the exception and let the test finish
+                            return;
+                        }
+
+                        throw;
                     }
                     catch (Exception ex)
                     {

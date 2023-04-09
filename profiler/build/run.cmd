@@ -1,2 +1,9 @@
 @echo off
-%GOPATH%\\bin\\timeit.exe %1.windows.%2.json
+
+set file=%1.windows.%2.json
+
+if exist %file% (
+   %GOPATH%\\bin\\timeit.exe %file%
+) else (
+   echo missing %file%
+)

@@ -10,7 +10,14 @@
 class IGarbageCollectionsListener
 {
 public:
-    virtual void OnGarbageCollection(
+    virtual void OnGarbageCollectionStart(
+        int32_t number,
+        uint32_t generation,
+        GCReason reason,
+        GCType type
+        ) = 0;
+
+    virtual void OnGarbageCollectionEnd(
         int32_t number,
         uint32_t generation,
         GCReason reason,
@@ -18,7 +25,7 @@ public:
         bool isCompacting,
         uint64_t pauseDuration,
         uint64_t totalDuration, // from start to end (includes pauses)
-        uint64_t endTimestamp      // end of GC
+        uint64_t endTimestamp   // end of GC
         ) = 0;
 
     virtual ~IGarbageCollectionsListener() = default;

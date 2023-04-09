@@ -15,11 +15,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        private const string AssemblyName = "Datadog.Trace, Version=2.21.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+        private const string AssemblyName = "Datadog.Trace, Version=2.28.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
         private const string AzureAppServicesKey = "DD_AZURE_APP_SERVICES";
         private const string AasCustomTracingKey = "DD_AAS_ENABLE_CUSTOM_TRACING";
         private const string AasCustomMetricsKey = "DD_AAS_ENABLE_CUSTOM_METRICS";
         private const string TraceEnabledKey = "DD_TRACE_ENABLED";
+        private const string ProfilingEnabledKey = "DD_PROFILING_ENABLED";
 
         /// <summary>
         /// Initializes static members of the <see cref="Startup"/> class.
@@ -51,8 +52,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var customTracingEnabled = ReadBooleanEnvironmentVariable(AasCustomTracingKey, false);
             var needsDogStatsD = ReadBooleanEnvironmentVariable(AasCustomMetricsKey, false);
             var automaticTraceEnabled = ReadBooleanEnvironmentVariable(TraceEnabledKey, true);
+            var automaticProfilingEnabled = ReadBooleanEnvironmentVariable(ProfilingEnabledKey, false);
 
-            if (automaticTraceEnabled || customTracingEnabled || needsDogStatsD)
+            if (automaticTraceEnabled || customTracingEnabled || needsDogStatsD || automaticProfilingEnabled)
             {
                 StartupLogger.Log("Invoking managed method to start external processes.");
                 TryInvokeManagedMethod("Datadog.Trace.AgentProcessManager", "Initialize", "Datadog.Trace.AgentProcessManagerLoader");

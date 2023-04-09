@@ -12,24 +12,26 @@
 #include <unordered_map>
 #include <errno.h>
 
+#include "IConfiguration.h"
 #include "Log.h"
 #include "ManagedThreadInfo.h"
 #include "OpSysTools.h"
 #include "ProfilerSignalManager.h"
 #include "ScopeFinalizer.h"
-#include "StackSnapshotResultReusableBuffer.h"
+#include "StackSnapshotResultBuffer.h"
 
 using namespace std::chrono_literals;
 
 std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
 LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackWalking = nullptr;
 
-LinuxStackFramesCollector::LinuxStackFramesCollector(ProfilerSignalManager* signalManager) :
+LinuxStackFramesCollector::LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* const configuration) :
     _lastStackWalkErrorCode{0},
     _stackWalkFinished{false},
     _errorStatistics{},
     _processId{OpSysTools::GetProcId()},
-    _signalManager{signalManager}
+    _signalManager{signalManager},
+    _useBacktrace2{configuration->UseBacktrace2()}
 {
     _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
 }
@@ -125,7 +127,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
                 if (!_signalManager->CheckSignalHandler())
                 {
                     _lastStackWalkErrorCode = E_FAIL;
-                    Log::Debug("Profiler signal handler was replaced but we failed or stopped at restoring it. We won't be able to collect callstacks.");
+                    Log::Info("Profiler signal handler was replaced but we failed or stopped at restoring it. We won't be able to collect callstacks.");
                     *pHR = E_FAIL;
                     return GetStackSnapshotResult();
                 }
@@ -156,84 +158,104 @@ void LinuxStackFramesCollector::NotifyStackWalkCompleted(std::int32_t resultErro
     _stackWalkInProgressWaiter.notify_one();
 }
 
-// This symbol is defined in the Datadog.Linux.ApiWrapper to handle the special case of __pthread_create
-// For __pthread_create we cannot block the signals while calling the *real* pthread_create and restore it after,
-// because the newly created thread will inherit the signal mask from its parent (which will be "block all signals").
-// So to prevent it, dd_IsInPthreadCreate will indicate if the current callstack is executing __pthread_create.
-// If it's the case, we just bail, otherwise we stackwalk the current thread.
-extern "C" int dd_IsInPthreadCreate() __attribute__((weak));
+// This symbol is defined in the Datadog.Linux.ApiWrapper. It allows us to check if the thread to be profiled
+// contains a frame of a function that might cause a deadlock.
+extern "C" unsigned long long dd_inside_wrapped_functions() __attribute__((weak));
 
 std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
 {
-    if (dd_IsInPthreadCreate != nullptr && dd_IsInPthreadCreate() == 1)
+    if (dd_inside_wrapped_functions != nullptr && dd_inside_wrapped_functions() != 0)
     {
         return E_ABORT;
     }
 
     try
     {
-        std::int32_t resultErrorCode;
         // Collect data for TraceContext tracking:
         bool traceContextDataCollected = TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
 
-        // if we are in the signal handler, ctx won't be null, so we will use the context
-        // This will allow us to skip the syscall frame and start from the frame before the syscall.
-        auto flag = UNW_INIT_SIGNAL_FRAME;
-        unw_context_t context;
-        if (ctx != nullptr)
-        {
-            context = *reinterpret_cast<unw_context_t*>(ctx);
-        }
-        else
-        {
-            // not in signal handler. Get the context and initialize the cursor form here
-            resultErrorCode = unw_getcontext(&context);
-            if (resultErrorCode != 0)
-            {
-                return E_ABORT; // unw_getcontext does not return a specific error code. Only -1
-            }
-
-            flag = static_cast<unw_init_local2_flags_t>(0);
-        }
-
-        unw_cursor_t cursor;
-        resultErrorCode = unw_init_local2(&cursor, &context, flag);
-
-        if (resultErrorCode < 0)
-        {
-            return resultErrorCode;
-        }
-
-        do
-        {
-            // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
-            if (IsCurrentCollectionAbortRequested())
-            {
-                AddFakeFrame();
-                return E_ABORT;
-            }
-
-            unw_word_t ip;
-            resultErrorCode = unw_get_reg(&cursor, UNW_REG_IP, &ip);
-            if (resultErrorCode != 0)
-            {
-                return resultErrorCode;
-            }
-
-            if (!AddFrame(ip))
-            {
-                return S_FALSE;
-            }
-
-            resultErrorCode = unw_step(&cursor);
-        } while (resultErrorCode > 0);
-
-        return resultErrorCode;
+        return _useBacktrace2 ? CollectStackWithBacktrace2(ctx) : CollectStackManually(ctx);
     }
     catch (...)
     {
         return E_ABORT;
     }
+}
+
+std::int32_t LinuxStackFramesCollector::CollectStackManually(void* ctx)
+{
+    std::int32_t resultErrorCode;
+
+    // if we are in the signal handler, ctx won't be null, so we will use the context
+    // This will allow us to skip the syscall frame and start from the frame before the syscall.
+    auto flag = UNW_INIT_SIGNAL_FRAME;
+    unw_context_t context;
+    if (ctx != nullptr)
+    {
+        context = *reinterpret_cast<unw_context_t*>(ctx);
+    }
+    else
+    {
+        // not in signal handler. Get the context and initialize the cursor form here
+        resultErrorCode = unw_getcontext(&context);
+        if (resultErrorCode != 0)
+        {
+            return E_ABORT; // unw_getcontext does not return a specific error code. Only -1
+        }
+
+        flag = static_cast<unw_init_local2_flags_t>(0);
+    }
+
+    unw_cursor_t cursor;
+    resultErrorCode = unw_init_local2(&cursor, &context, flag);
+
+    if (resultErrorCode < 0)
+    {
+        return resultErrorCode;
+    }
+
+    do
+    {
+        // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
+        if (IsCurrentCollectionAbortRequested())
+        {
+            AddFakeFrame();
+            return E_ABORT;
+        }
+
+        unw_word_t ip;
+        resultErrorCode = unw_get_reg(&cursor, UNW_REG_IP, &ip);
+        if (resultErrorCode != 0)
+        {
+            return resultErrorCode;
+        }
+
+        if (!AddFrame(ip))
+        {
+            return S_FALSE;
+        }
+
+        resultErrorCode = unw_step(&cursor);
+    } while (resultErrorCode > 0);
+
+    return resultErrorCode;
+}
+
+std::int32_t LinuxStackFramesCollector::CollectStackWithBacktrace2(void* ctx)
+{
+    auto* context = reinterpret_cast<unw_context_t*>(ctx);
+
+    // Now walk the stack:
+    auto [data, size] = Data();
+    auto count = unw_backtrace2((void**)data, size, context);
+
+    if (count == 0)
+    {
+        return E_FAIL;
+    }
+
+    SetFrameCount(count);
+    return S_OK;
 }
 
 bool LinuxStackFramesCollector::CanCollect(int32_t threadId, pid_t processId) const

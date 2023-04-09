@@ -143,7 +143,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             {
                 var hresult = RegGetValue(HKEY.HKEY_LOCAL_MACHINE, key, value, RFlags.Any, out var _, pvData, ref pcbData);
 
-                Log.Debug<int>("RegGetValue - read string data: {pcbData}", pcbData);
+                Log.Debug<int>("RegGetValue - read string data: {PcbData}", pcbData);
 
                 if (hresult != 0)
                 {

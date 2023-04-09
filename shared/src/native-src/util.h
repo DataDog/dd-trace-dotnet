@@ -51,7 +51,7 @@ namespace shared
     // GetEnvironmentValues returns environment variable values for the given name
     // split by the delimiter. Space is trimmed and empty values are ignored.
     std::vector<WSTRING> GetEnvironmentValues(const WSTRING& name,
-        const wchar_t delim);
+        wchar_t delim);
 
     // GetEnvironmentValues calls GetEnvironmentValues with a semicolon delimiter.
     std::vector<WSTRING> GetEnvironmentValues(const WSTRING& name);

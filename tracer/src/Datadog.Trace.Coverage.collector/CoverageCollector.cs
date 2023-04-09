@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using Datadog.Trace.Ci.Configuration;
@@ -29,6 +30,7 @@ namespace Datadog.Trace.Coverage.Collector
         private DataCollectionEvents? _events;
         private CIVisibilitySettings? _ciVisibilitySettings;
         private string? _tracerHome;
+        private int _testNumber;
 
         /// <inheritdoc />
         public override void Initialize(XmlElement configurationElement, DataCollectionEvents events, DataCollectionSink dataSink, DataCollectionLogger logger, DataCollectionEnvironmentContext environmentContext)
@@ -38,42 +40,68 @@ namespace Datadog.Trace.Coverage.Collector
 
             Initialize();
 
-            if (_events is not null)
+            if (events is not null)
             {
-                _events.SessionStart += OnSessionStart;
-                _events.SessionEnd += OnSessionEnd;
+                events.SessionStart += OnSessionStart;
+                events.SessionEnd += OnSessionEnd;
+                events.TestHostLaunched += (sender, args) =>
+                {
+                    _logger?.Debug($"Test host launched with PID: {args.TestHostProcessId} / SessionId: {args.Context?.SessionId?.Id.ToString() ?? "(empty)"}");
+                };
+                events.TestCaseStart += (sender, args) =>
+                {
+                    _logger?.Debug($"Test case start [{Interlocked.Increment(ref _testNumber)}]: {args.TestCaseName}");
+                };
+                events.TestCaseEnd += (sender, args) =>
+                {
+                    _logger?.Debug($"Test case end: {args.TestCaseName} | Status: {args.TestOutcome}");
+                };
             }
         }
 
         private void OnSessionStart(object? sender, SessionStartEventArgs e)
         {
             _logger?.SetContext(e.Context);
-            var testSources = e.GetPropertyValue("TestSources");
-            if (testSources is string testSourceString)
+            try
             {
-                // Process folder
-                var outputFolder = Path.GetDirectoryName(testSourceString);
-                if (outputFolder is not null)
+                var testSources = e.GetPropertyValue("TestSources");
+                if (testSources is string testSourceString)
                 {
-                    ProcessFolder(outputFolder, SearchOption.TopDirectoryOnly);
-                }
-            }
-            else if (testSources is List<string> testSourcesList)
-            {
-                // Process folder
-                foreach (var source in testSourcesList)
-                {
-                    var outputFolder = Path.GetDirectoryName(source);
+                    // Process folder
+                    var outputFolder = Path.GetDirectoryName(testSourceString);
                     if (outputFolder is not null)
                     {
                         ProcessFolder(outputFolder, SearchOption.TopDirectoryOnly);
                     }
                 }
+                else if (testSources is List<string> testSourcesList)
+                {
+                    // Process folder
+                    foreach (var source in testSourcesList)
+                    {
+                        var outputFolder = Path.GetDirectoryName(source);
+                        if (outputFolder is not null)
+                        {
+                            ProcessFolder(outputFolder, SearchOption.TopDirectoryOnly);
+                        }
+                    }
+                }
+                else
+                {
+                    // Process folder
+                    ProcessFolder(Environment.CurrentDirectory, SearchOption.AllDirectories);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                // Process folder
-                ProcessFolder(Environment.CurrentDirectory, SearchOption.AllDirectories);
+                if (_logger is { } logger)
+                {
+                    logger.Error(ex);
+                }
+                else
+                {
+                    throw;
+                }
             }
         }
 
@@ -134,31 +162,54 @@ namespace Datadog.Trace.Coverage.Collector
                     {
                         if (File.Exists(Path.Combine(path, fileWithoutExtension + ".pdb")) || File.Exists(Path.Combine(path, fileWithoutExtension + ".PDB")))
                         {
-                            try
+                            List<Exception>? exceptions = null;
+                            var remain = 3;
+                            Retry:
+                            if (--remain > 0)
                             {
-                                var asmProcessor = new AssemblyProcessor(file, _tracerHome, _logger, _ciVisibilitySettings);
-                                asmProcessor.Process();
-
-                                lock (processedDirectories)
+                                try
                                 {
-                                    numAssemblies++;
-                                    processedDirectories.Add(Path.GetDirectoryName(file) ?? string.Empty);
+                                    var asmProcessor = new AssemblyProcessor(file, _tracerHome, _logger, _ciVisibilitySettings);
+                                    asmProcessor.Process();
+                                    Interlocked.Increment(ref numAssemblies);
+                                    if (asmProcessor.HasTracerAssemblyCopied)
+                                    {
+                                        lock (processedDirectories)
+                                        {
+                                            processedDirectories.Add(Path.GetDirectoryName(file) ?? string.Empty);
+                                        }
+                                    }
+                                }
+                                catch (PdbNotFoundException)
+                                {
+                                    // If the PDB file was not found, we skip the assembly without throwing error.
+                                    _logger?.Debug($"{nameof(PdbNotFoundException)} processing file: {file}");
+                                }
+                                catch (BadImageFormatException)
+                                {
+                                    // If the Assembly has not the correct format (eg. native dll / exe)
+                                    // We skip processing the assembly.
+                                    _logger?.Debug($"{nameof(BadImageFormatException)} processing file: {file}");
+                                }
+                                catch (IOException ioException)
+                                {
+                                    // We do retries if we have an IOException.
+                                    // For cases like: `The process cannot access the file 'file path' because
+                                    // it is being used by another process`
+                                    exceptions ??= new List<Exception>();
+                                    exceptions.Add(ioException);
+                                    Thread.Sleep(1000);
+                                    goto Retry;
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger?.Error(ex);
                                 }
                             }
-                            catch (PdbNotFoundException)
+
+                            if (exceptions?.Count > 0)
                             {
-                                // If the PDB file was not found, we skip the assembly without throwing error.
-                                _logger?.Debug($"{nameof(PdbNotFoundException)} processing file: {file}");
-                            }
-                            catch (BadImageFormatException)
-                            {
-                                // If the Assembly has not the correct format (eg. native dll / exe)
-                                // We skip processing the assembly.
-                                _logger?.Debug($"{nameof(BadImageFormatException)} processing file: {file}");
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger?.Error(ex);
+                                _logger?.Error(new AggregateException(exceptions));
                             }
                         }
                     }

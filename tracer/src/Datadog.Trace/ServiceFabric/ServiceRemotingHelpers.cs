@@ -30,7 +30,7 @@ namespace Datadog.Trace.ServiceFabric
                 {
                     if (PlatformHelpers.ServiceFabric.IsRunningInServiceFabric())
                     {
-                        Log.Warning("Could not get type {typeName}.", typeName);
+                        Log.Warning("Could not get type {TypeName}.", typeName);
                     }
 
                     return false;
@@ -42,7 +42,7 @@ namespace Datadog.Trace.ServiceFabric
                 {
                     if (PlatformHelpers.ServiceFabric.IsRunningInServiceFabric())
                     {
-                        Log.Warning("Could not get event {eventName}.", fullEventName);
+                        Log.Warning("Could not get event {EventName}.", fullEventName);
                     }
 
                     return false;
@@ -50,12 +50,12 @@ namespace Datadog.Trace.ServiceFabric
 
                 // use null target because event is static
                 eventInfo.AddEventHandler(target: null, eventHandler);
-                Log.Debug("Subscribed to event {eventName}.", fullEventName);
+                Log.Debug("Subscribed to event {EventName}.", fullEventName);
                 return true;
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error adding event handler to {eventName}.", fullEventName);
+                Log.Error(ex, "Error adding event handler to {EventName}.", fullEventName);
                 return false;
             }
         }
@@ -160,7 +160,7 @@ namespace Datadog.Trace.ServiceFabric
 
                 if (expectedSpanName != scope.Span.OperationName)
                 {
-                    Log.Warning("Expected span name {expectedSpanName}, but found {actualSpanName} instead.", expectedSpanName, scope.Span.OperationName);
+                    Log.Warning("Expected span name {ExpectedSpanName}, but found {ActualSpanName} instead.", expectedSpanName, scope.Span.OperationName);
                     return;
                 }
 

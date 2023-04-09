@@ -7,15 +7,18 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
+using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Ci;
@@ -28,6 +31,7 @@ public sealed class TestModule
     private static readonly AsyncLocal<TestModule?> CurrentModule = new();
     private readonly Span _span;
     private readonly Dictionary<string, TestSuite> _suites;
+    private readonly TestSession? _fakeSession;
     private int _finished;
 
     private TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
@@ -38,7 +42,7 @@ public sealed class TestModule
     internal TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate, TestSessionSpanTags? sessionSpanTags)
     {
         // First we make sure that CI Visibility is initialized.
-        CIVisibility.Initialize();
+        CIVisibility.InitializeFromManualInstrumentation();
 
         var environment = CIEnvironmentValues.Instance;
         var frameworkDescription = FrameworkDescription.Instance;
@@ -130,6 +134,17 @@ public sealed class TestModule
                     tags.WorkingDirectory = testSessionWorkingDirectory;
                 }
             }
+            else
+            {
+                Log.Information("A session cannot be found, creating a fake session as a parent of the module.");
+                _fakeSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, null, startDate, false);
+                if (_fakeSession.Tags is { } fakeSessionTags)
+                {
+                    tags.SessionId = fakeSessionTags.SessionId;
+                    tags.Command = fakeSessionTags.Command;
+                    tags.WorkingDirectory = fakeSessionTags.WorkingDirectory;
+                }
+            }
         }
 
         // Check if Intelligent Test Runner has skippable tests and set the flag according to that
@@ -149,7 +164,7 @@ public sealed class TestModule
 
         _span = span;
         Current = this;
-        CIVisibility.Log.Debug("### Test Module Created: {name}", name);
+        CIVisibility.Log.Debug("### Test Module Created: {Name}", name);
 
         if (startDate is null)
         {
@@ -269,6 +284,7 @@ public sealed class TestModule
     /// <summary>
     /// Close test module
     /// </summary>
+    /// <remarks>Use CloseAsync() version whenever possible.</remarks>
     public void Close()
     {
         Close(null);
@@ -277,12 +293,51 @@ public sealed class TestModule
     /// <summary>
     /// Close test module
     /// </summary>
+    /// <remarks>Use CloseAsync() version whenever possible.</remarks>
     /// <param name="duration">Duration of the test module</param>
     public void Close(TimeSpan? duration)
     {
+        if (InternalClose(duration))
+        {
+            CIVisibility.Log.Debug("### Test Module Flushing after close: {Name}", Name);
+            CIVisibility.Flush();
+        }
+    }
+
+    /// <summary>
+    /// Close test module
+    /// </summary>
+    /// <returns>Task instance </returns>
+    public Task CloseAsync()
+    {
+        return CloseAsync(null);
+    }
+
+    /// <summary>
+    /// Close test module
+    /// </summary>
+    /// <param name="duration">Duration of the test module</param>
+    /// <returns>Task instance </returns>
+    public Task CloseAsync(TimeSpan? duration)
+    {
+        if (InternalClose(duration))
+        {
+            CIVisibility.Log.Debug("### Test Module Flushing after close: {Name}", Name);
+            return CIVisibility.FlushAsync();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Close test module
+    /// </summary>
+    /// <param name="duration">Duration of the test module</param>
+    private bool InternalClose(TimeSpan? duration)
+    {
         if (Interlocked.Exchange(ref _finished, 1) == 1)
         {
-            return;
+            return false;
         }
 
         var span = _span;
@@ -307,11 +362,70 @@ public sealed class TestModule
         // Update status
         Tags.Status ??= TestTags.StatusPass;
 
+        if (CIVisibility.Settings.CodeCoverageEnabled == true &&
+            CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler &&
+            coverageHandler.GetCodeCoveragePercentage() is { } globalCoverage)
+        {
+            // We only report global code coverage if we don't skip any test
+            if (!CIVisibility.HasSkippableTests())
+            {
+                // Adds the global code coverage percentage to the module
+                span.SetTag(CommonTags.CodeCoverageTotalLines, globalCoverage.Data[0].ToString(CultureInfo.InvariantCulture));
+            }
+
+            // If the code coverage path environment variable is set, we store the json file
+            if (!string.IsNullOrWhiteSpace(CIVisibility.Settings.CodeCoveragePath))
+            {
+                var codeCoveragePath = Path.Combine(CIVisibility.Settings.CodeCoveragePath, $"coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-{Guid.NewGuid():n}.json");
+                try
+                {
+                    using var fStream = File.OpenWrite(codeCoveragePath);
+                    using var sWriter = new StreamWriter(fStream, Encoding.UTF8, 4096, false);
+                    new JsonSerializer().Serialize(sWriter, globalCoverage);
+                }
+                catch (Exception ex)
+                {
+                    CIVisibility.Log.Error(ex, "Error writing global code coverage.");
+                }
+            }
+        }
+
+        if (CIVisibility.Settings.TestsSkippingEnabled.HasValue)
+        {
+            span.SetTag(CommonTags.TestModuleTestsSkippingEnabled, CIVisibility.Settings.TestsSkippingEnabled.Value ? "true" : "false");
+            span.SetTag(CommonTags.TestsSkipped, CIVisibility.HasSkippableTests() ? "true" : "false");
+        }
+
+        if (CIVisibility.Settings.CodeCoverageEnabled.HasValue)
+        {
+            span.SetTag(CommonTags.TestModuleCodeCoverageEnabled, CIVisibility.Settings.CodeCoverageEnabled.Value ? "true" : "false");
+        }
+
         span.Finish(duration.Value);
 
         Current = null;
-        CIVisibility.Log.Debug("### Test Module Closed: {name}", Name);
-        CIVisibility.FlushSpans();
+        CIVisibility.Log.Debug("### Test Module Closed: {Name} | {Status}", Name, Tags.Status);
+
+        if (_fakeSession is { } fakeSession)
+        {
+            switch (Tags.Status)
+            {
+                case TestTags.StatusPass:
+                    fakeSession.InternalClose(TestStatus.Pass, duration.Value);
+                    break;
+                case TestTags.StatusFail:
+                    fakeSession.InternalClose(TestStatus.Fail, duration.Value);
+                    break;
+                case TestTags.StatusSkip:
+                    fakeSession.InternalClose(TestStatus.Skip, duration.Value);
+                    break;
+                default:
+                    fakeSession.InternalClose(TestStatus.Pass, duration.Value);
+                    break;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>

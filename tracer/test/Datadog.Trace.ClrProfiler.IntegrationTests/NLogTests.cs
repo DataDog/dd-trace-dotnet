@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Formatting;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -136,12 +137,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 .And.OnlyContain(x => x.Host == hostName)
                 .And.OnlyContain(x => x.Source == "csharp")
                 .And.OnlyContain(x => x.Exception == null)
-                .And.OnlyContain(x => x.LogLevel == DirectSubmissionLogLevel.Information);
+                .And.OnlyContain(x => x.LogLevel == DirectSubmissionLogLevel.Information)
+                .And.OnlyContain(x => x.TryGetProperty(NLogLogFormatter.LoggerNameKey).Exists);
 
             logs
                .Where(x => !x.Message.Contains(ExcludeMessagePrefix))
                .Should()
-               .NotBeEmpty()
+               .HaveCount(1)
                .And.OnlyContain(x => !string.IsNullOrEmpty(x.TraceId))
                .And.OnlyContain(x => !string.IsNullOrEmpty(x.SpanId));
             VerifyInstrumentation(processResult.Process);

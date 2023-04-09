@@ -15,11 +15,13 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 503,
-      http.url: http://localhost/my-app/api/statuscode/503,
+      http.url: http://localhost:00000/my-app/api/statuscode/503,
       http.useragent: testhelper,
       language: dotnet,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -37,12 +39,14 @@
       http.request.headers.host: localhost:00000,
       http.route: api/statuscode/{value},
       http.status_code: 503,
-      http.url: http://localhost/my-app/api/statuscode/503,
+      http.url: http://localhost:00000/my-app/api/statuscode/503,
       http.useragent: testhelper,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {

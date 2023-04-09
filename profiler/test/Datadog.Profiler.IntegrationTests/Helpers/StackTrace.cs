@@ -4,7 +4,10 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
@@ -21,6 +24,28 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public StackTrace(IEnumerable<StackFrame> items)
         {
             _stackFrames = items.ToList();
+        }
+
+        public int FramesCount => _stackFrames.Count;
+
+        public StackFrame this[int offset] => _stackFrames[offset];
+
+        public bool EndWith(StackTrace other)
+        {
+            if (_stackFrames.Count < other._stackFrames.Count)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < other._stackFrames.Count; i++)
+            {
+                if (!_stackFrames[i].Equals(other._stackFrames[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public int CompareTo(StackTrace other)
@@ -42,5 +67,36 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public override int GetHashCode() => _stackFrames.Count;
 
         public override string ToString() => string.Join(Environment.NewLine, _stackFrames);
+
+        public bool Contains(StackTrace other)
+        {
+            if (_stackFrames.Count < other._stackFrames.Count)
+            {
+                return false;
+            }
+
+            int i = 0;
+            while (i < _stackFrames.Count && !_stackFrames[i].Equals(other._stackFrames[0]))
+            {
+                i++;
+            }
+
+            if (_stackFrames.Count - i + 1 < other._stackFrames.Count)
+            {
+                return false;
+            }
+
+            int j = 0;
+
+            for (; j < other._stackFrames.Count; i++, j++)
+            {
+                if (!_stackFrames[i].Equals(other._stackFrames[j]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 }

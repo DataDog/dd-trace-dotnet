@@ -11,17 +11,13 @@
     <CppProject Include="$(EnlistmentRoot)\profiler\src\ProfilerEngine\*\*.vcxproj"  Exclude="$(EnlistmentRoot)\profiler\src\ProfilerEngine\*\Datadog.Profiler.Native.Linux.vcxproj"/>
     <CppTestProject Include="$(EnlistmentRoot)\profiler\test\**\*.vcxproj" />
   </ItemGroup>
-  
-  <Target Name="Restore">
-    <Exec Command="nuget.exe restore %(CppTestProject.Identity) -PackagesDirectory $(PackagesDir)"/>
-  </Target>
 
   <Target Name="Clean">
     <MSBuild Targets="Clean" Projects="@(CppProject);@(CppTestProject)"/>
   </Target>
 
   <!-- default target -->
-  <Target Name="Build" DependsOnTargets="Restore">
+  <Target Name="Build">
     <MSBuild Targets="Build" Projects="@(CppProject);@(CppTestProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
@@ -42,20 +38,20 @@
   <Target Name="BuildCppTests" DependsOnTargets="Restore;BuildCppTestsOnly">
   </Target>
 
-  <Target Name="BuildCppWithAsan"  DependsOnTargets="Restore">
+  <Target Name="BuildCppWithAsan">
     <MSBuild Targets="Build" Projects="@(CppProject)" Properties="EnableASAN=true">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
 
-  <Target Name="RunCppCheck" DependsOnTargets="Restore">
+  <Target Name="RunCppCheck">
     <!-- if we change the "cppcheck-results-" prefix, we must propage the change in the .github\workflow\cppcheck.yml file.
           Environment variable CI_ANALYSIS_RESULTS_FOLDER is set in CI.
      -->
     <Exec Command="cppcheck.exe --enable=all --project-configuration=&quot;$(Configuration)|$(Platform)&quot; --project=%(CppProject.FullPath) --output-file=$(CI_ANALYSIS_RESULTS_FOLDER)\cppcheck-results-%(CppProject.Filename).txt" />
   </Target>
 
-  <Target Name="RunClangTidy" DependsOnTargets="Restore">
+  <Target Name="RunClangTidy">
     <MSBuild Targets="Build" Projects="@(CppProject)" Properties="RunCodeAnalysis=true;EnableClangTidyCodeAnalysis=true">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>

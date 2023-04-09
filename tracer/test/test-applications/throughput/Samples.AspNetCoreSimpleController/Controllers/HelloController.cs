@@ -16,7 +16,14 @@ namespace Samples.AspNetCoreSimpleController.Controllers
         }
 
         [HttpGet]
-        public string Get() => "Hello world";
+        public string Get()
+        {
+#if MANUAL_INSTRUMENTATION
+            using var scope = Datadog.Trace.Tracer.Instance.StartActive("manual");
+            scope.Span.SetTag("location", "outer");
+#endif
+            return "Hello world";
+        }
 
         [HttpGet]
         [Route("exception")]

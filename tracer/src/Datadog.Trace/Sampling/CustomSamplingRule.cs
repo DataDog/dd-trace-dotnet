@@ -42,7 +42,7 @@ namespace Datadog.Trace.Sampling
             }
             catch (ArgumentException e)
             {
-                Log.Error("Custom sampling rule regex for service name was invalid.", e);
+                Log.Error(e, "Custom sampling rule regex for service name was invalid.");
                 throw;
             }
 
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Sampling
             }
             catch (ArgumentException e)
             {
-                Log.Error("Custom sampling rule regex for operation name was invalid.", e);
+                Log.Error(e, "Custom sampling rule regex for operation name was invalid.");
                 throw;
             }
 

@@ -5,6 +5,7 @@
 
 using System;
 using System.Linq;
+using Datadog.Trace.Util;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -91,7 +92,7 @@ namespace Datadog.Trace.Tools.Runner
                                 return 1;
                             }
                         }
-                        else if (Utils.CheckAgentConnectionAsync(options.AgentUrl).GetAwaiter().GetResult() is null)
+                        else if (AsyncUtil.RunSync(() => Utils.CheckAgentConnectionAsync(options.AgentUrl)).Configuration is null)
                         {
                             return 1;
                         }

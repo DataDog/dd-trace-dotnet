@@ -70,7 +70,6 @@ pr:
       - LICENSE
       - LICENSE-3rdparty.csv
       - NOTICE
-      - profiler/
 
 schedules:
   - cron: "0 3 * * *"
@@ -95,7 +94,7 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 7.0.100
+  dotnetCoreSdkLatestVersion: 7.0.101
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
@@ -106,8 +105,10 @@ variables:
   slackWebhookUrl: $(SLACK_WEBHOOK_URL)
   isMainRepository: $[eq(variables['GITHUB_REPOSITORY_NAME'], 'dd-trace-dotnet')]
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
-  isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hostfix/'))]
+  isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'))]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
+  # Run code coverage on main branches only, on scheduled build only
+  runCodeCoverage: $[and(eq(variables['Build.Reason'], 'Schedule'), or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/')))] 
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
   relativeNugetPackageDirectory: packages
@@ -168,7 +169,7 @@ stages:
 # where the first stages of the build execute against one merge commit, and later stages
 # run against another
 
-- stage: master_commit_id
+- stage: merge_commit_id
   dependsOn: []
   jobs:
   - job: fetch
@@ -179,21 +180,32 @@ stages:
     steps:
     - checkout: none
     - bash: |
+        TARGET_BRANCH=$SYSTEM_PULLREQUEST_TARGETBRANCH
+        echo "SYSTEM_PULLREQUEST_TARGETBRANCH=$TARGET_BRANCH"
+        if [[ "$TARGET_BRANCH" == refs/heads/hotfix/* ]]; then
+          TARGET_BRANCH=$(echo $TARGET_BRANCH| cut -c 11-)
+        else
+          TARGET_BRANCH=master
+        fi
+        echo "Using target branch $TARGET_BRANCH"
+
         rm -rf ./s
-        git clone --quiet --no-checkout --depth 1 --branch master $BUILD_REPOSITORY_URI ./s
+        git clone --quiet --no-checkout --depth 1 --branch $TARGET_BRANCH $BUILD_REPOSITORY_URI ./s
         cd s
-        MASTER_SHA=$(git rev-parse origin/master)
+        TARGET_SHA=$(git rev-parse origin/$TARGET_BRANCH)
         rm -rf ./s
-        echo "Using master commit ID $MASTER_SHA"
-        echo "##vso[task.setvariable variable=master;isOutput=true]$MASTER_SHA"
+        echo "Using master commit ID $TARGET_SHA"
+        echo "##vso[task.setvariable variable=sha;isOutput=true]$TARGET_SHA"
+        echo "##vso[task.setvariable variable=branch;isOutput=true]$TARGET_BRANCH"
       failOnStderr: true
       displayName: Fetch master id
       name: set_sha
 
 - stage: generate_variables
-  dependsOn: [master_commit_id]
+  dependsOn: [merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -208,7 +220,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
     - powershell: |
@@ -217,9 +230,10 @@ stages:
       name: generate_variables_step
 
 - stage: build_windows_tracer
-  dependsOn: [master_commit_id]
+  dependsOn: [merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -232,11 +246,13 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
     - script: tracer\build.cmd BuildTracerHome BuildNativeLoader
       displayName: Build tracer home
+      retryCountOnTaskFailure: 1
 
     - publish: $(monitoringHome)
       displayName: Upload Windows tracer home directory
@@ -247,9 +263,10 @@ stages:
       artifact: build-windows-working-directory
 
 - stage: build_windows_profiler
-  dependsOn: [master_commit_id]
+  dependsOn: [merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -261,11 +278,13 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
     - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
+      retryCountOnTaskFailure: 1
 
     - publish: $(monitoringHome)
       displayName: Upload Windows profiler home directory
@@ -275,10 +294,15 @@ stages:
       displayName: Upload Windows profiler symbols
       artifact: windows-profiler-symbols
 
+    - publish: $(System.DefaultWorkingDirectory)/profiler/_build
+      displayName: Upload Windows profiler directory
+      artifact: windows-profiler-binaries
+
 - stage: build_linux_tracer
-  dependsOn: [master_commit_id]
+  dependsOn: [merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -299,13 +323,15 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
         baseImage: $(baseImage)
         command: "Clean CppCheckNativeSrc BuildTracerHome CppCheckNativeLoader BuildNativeLoader ExtractDebugInfoLinux"
+        retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
@@ -320,9 +346,10 @@ stages:
       artifact: linux-tracer-symbols-$(baseImage)
 
 - stage: build_linux_profiler
-  dependsOn: [master_commit_id]
+  dependsOn: [merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -343,13 +370,15 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
         baseImage: $(baseImage)
         command: "Clean BuildProfilerHome ExtractDebugInfoLinux"
+        retryCountForRunCommand: 1
 
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build
       displayName: Uploading linux profiler output build folder
@@ -364,9 +393,10 @@ stages:
       artifact: linux-profiler-symbols-$(baseImage)
 
 - stage: package_linux
-  dependsOn: [master_commit_id, build_linux_tracer, build_linux_profiler]
+  dependsOn: [merge_commit_id, build_linux_tracer, build_linux_profiler]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -387,7 +417,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tracer linux native binary
@@ -407,6 +438,7 @@ stages:
         target: builder
         baseImage: $(baseImage)
         command: "ZipMonitoringHome"
+        retryCountForRunCommand: 1
 
     - publish: $(artifacts)/linux-x64
       displayName: Upload linux-x64 packages
@@ -417,9 +449,10 @@ stages:
       artifact: linux-monitoring-home-$(baseImage)
 
 - stage: build_arm64_tracer
-  dependsOn: [master_commit_id]
+  dependsOn: [merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -435,13 +468,15 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
         baseImage: debian
         command: "Clean CppCheckNativeSrc BuildTracerHome CppCheckNativeLoader BuildNativeLoader ExtractDebugInfoLinux"
+        retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
@@ -456,9 +491,10 @@ stages:
       artifact: linux-tracer-symbols-arm64
 
 - stage: build_arm64_profiler
-  dependsOn: [master_commit_id]
+  dependsOn: [merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -474,13 +510,15 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
         baseImage: debian
         command: "Clean BuildProfilerHome ExtractDebugInfoLinux"
+        retryCountForRunCommand: 1
 
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build
       displayName: Uploading linux profiler output build folder
@@ -495,9 +533,10 @@ stages:
       artifact: linux-profiler-symbols-arm64
 
 - stage: package_arm64
-  dependsOn: [master_commit_id, build_arm64_tracer, build_arm64_profiler]
+  dependsOn: [merge_commit_id, build_arm64_tracer, build_arm64_profiler]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -512,7 +551,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tracer arm64 native binary
@@ -532,6 +572,7 @@ stages:
         target: builder
         baseImage: debian
         command: "ZipMonitoringHome"
+        retryCountForRunCommand: 1
 
     - publish: $(artifacts)/linux-arm64
       displayName: Upload arm64 packages
@@ -543,9 +584,10 @@ stages:
 
 - stage: build_macos
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [master_commit_id]
+  dependsOn: [merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -559,7 +601,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
     - script: brew install cppcheck
@@ -567,6 +610,7 @@ stages:
 
     - script: ./tracer/build.sh CppCheckNativeSrc BuildTracerHome CppCheckNativeLoader BuildNativeLoader
       displayName: Build tracer home
+      retryCountOnTaskFailure: 1
 
     - publish: $(monitoringHome)
       displayName: Uploading macos profiler artifact
@@ -578,9 +622,10 @@ stages:
 
 - stage: package_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [ build_windows_tracer, build_windows_profiler, master_commit_id]
+  dependsOn: [ build_windows_tracer, build_windows_profiler, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   pool:
     name: azure-windows-scale-set-3
   jobs:
@@ -592,7 +637,8 @@ stages:
     steps:
       - template: steps/clone-repo.yml
         parameters:
-          masterCommitId: $(masterCommitId)
+          targetShaId: $(targetShaId)
+          targetBranch: $(targetBranch)
       - template: steps/install-latest-dotnet-sdk.yml
       - template: steps/restore-working-directory.yml
 
@@ -604,6 +650,7 @@ stages:
 
       - script: tracer\build.cmd PackageTracerHome
         displayName: Build MSI and Tracer home
+        retryCountOnTaskFailure: 1
 
       - publish: $(artifacts)/windows-tracer-home.zip
         displayName: Publish tracer-home.zip
@@ -623,9 +670,10 @@ stages:
 
 - stage: unit_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, master_commit_id]
+  dependsOn: [build_windows_tracer, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   pool:
     name: azure-windows-scale-set-3
 
@@ -639,11 +687,12 @@ stages:
       steps:
       - template: steps/clone-repo.yml
         parameters:
-          masterCommitId: $(masterCommitId)
+          targetShaId: $(targetShaId)
+          targetBranch: $(targetBranch)
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
 
-      - script: tracer\build.cmd BuildAndRunManagedUnitTests --code-coverage
+      - script: tracer\build.cmd BuildAndRunManagedUnitTests --code-coverage $(runCodeCoverage)
         displayName: Build and Test
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -665,7 +714,8 @@ stages:
       steps:
       - template: steps/clone-repo.yml
         parameters:
-          masterCommitId: $(masterCommitId)
+          targetShaId: $(targetShaId)
+          targetBranch: $(targetBranch)
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
 
@@ -679,14 +729,15 @@ stages:
         inputs:
           testResultsFiles: |
             tracer/test/**/test*.xml
-            profiler/_build/bin/**/test*.xml
+            profiler/build_data/*.xml
         condition: succeededOrFailed()
 
 - stage: unit_tests_macos
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_macos, master_commit_id]
+  dependsOn: [build_macos, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -699,13 +750,14 @@ stages:
     steps:
       - template: steps/clone-repo.yml
         parameters:
-          masterCommitId: $(masterCommitId)
+          targetShaId: $(targetShaId)
+          targetBranch: $(targetBranch)
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
         parameters:
           artifact: build-macos-working-directory
 
-      - script: ./tracer/build.sh BuildAndRunManagedUnitTests --code-coverage
+      - script: ./tracer/build.sh BuildAndRunManagedUnitTests --code-coverage $(runCodeCoverage)
         displayName: Build and Test
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -724,9 +776,10 @@ stages:
 
 - stage: unit_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_linux_tracer, build_linux_profiler, master_commit_id]
+  dependsOn: [build_linux_tracer, build_linux_profiler, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -746,7 +799,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - template: steps/restore-working-directory.yml
       parameters:
@@ -756,7 +810,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildAndRunManagedUnitTests --code-coverage"
+        command: "BuildAndRunManagedUnitTests --code-coverage $(runCodeCoverage)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: tracer/build_data
@@ -785,7 +839,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - template: steps/restore-working-directory.yml
       parameters:
@@ -807,14 +862,15 @@ stages:
     - task: PublishTestResults@2
       displayName: publish profiler test results
       inputs:
-        testResultsFiles: profiler/_build/bin/**/test*.xml
+        testResultsFiles: profiler/build_data/*.xml
       condition: succeededOrFailed()
 
 - stage: unit_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_arm64_tracer, master_commit_id]
+  dependsOn: [build_arm64_tracer, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -829,7 +885,8 @@ stages:
       steps:
         - template: steps/clone-repo.yml
           parameters:
-            masterCommitId: $(masterCommitId)
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
         - template: steps/restore-working-directory.yml
           parameters:
             artifact: build-linux-arm64-working-directory
@@ -855,9 +912,10 @@ stages:
 
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -873,7 +931,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - template: steps/install-dotnet-sdks.yml
       parameters:
         includeX86: true
@@ -895,7 +954,7 @@ stages:
       displayName: 'Initialize LocalDB'
       workingDirectory: $(Build.Repository.LocalPath)
 
-    - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --code-coverage
+    - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --code-coverage $(runCodeCoverage)
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -929,9 +988,10 @@ stages:
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
     )
-  dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -947,14 +1007,15 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - template: steps/install-dotnet-sdks.yml
       parameters:
         includeX86: true
-    
+
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --code-coverage
+    - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType $(debugType) --Optimize $(optimize) --code-coverage $(runCodeCoverage)
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -983,9 +1044,10 @@ stages:
 
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1004,13 +1066,14 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage
+    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage $(runCodeCoverage)
       displayName: RunWindowsIisTracerIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1039,9 +1102,10 @@ stages:
 
 - stage: integration_tests_windows_iis_security
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1060,13 +1124,14 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsSecurityIisIntegrationTests -Framework $(framework) --code-coverage
+    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsSecurityIisIntegrationTests -Framework $(framework) --code-coverage $(runCodeCoverage)
       displayName: RunWindowsIisSecurityIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1094,9 +1159,10 @@ stages:
       displayName: Check logs for errors
 
 - stage: integration_tests_azure_functions
-  dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1113,10 +1179,11 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
- 
+
     - script: |
         $(runtimeInstall)
         func
@@ -1130,7 +1197,7 @@ stages:
       workingDirectory: $(Pipeline.Workspace)
       retryCountOnTaskFailure: 5
 
-    - script: tracer\build.cmd BuildAndRunWindowsAzureFunctionsTests -Framework $(framework) --code-coverage
+    - script: tracer\build.cmd BuildAndRunWindowsAzureFunctionsTests -Framework $(framework) --code-coverage $(runCodeCoverage)
       displayName: Run Azure Functions tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1164,11 +1231,89 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
+- stage: static_analysis_tests_profiler
+  condition: >
+    and(
+      succeeded(), 
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+    )
+  dependsOn: [merge_commit_id, generate_variables]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Win, Linux]
+
+  - job: Win
+    pool:
+      name: azure-windows-scale-set-3
+    timeoutInMinutes: 60 #default value
+
+    steps:
+    - powershell: |
+        choco install cppcheck -y --version 2.9
+        Write-Host "##vso[task.setvariable variable=PATH;]${env:PATH};C:\Program Files\Cppcheck";
+        refreshenv
+      displayName: Install CppCheck
+
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - script: tracer\build.cmd RunCppCheckProfiler RunClangTidyProfiler
+      displayName: Run CppCheck and Clang-Tidy on Profiler
+
+    - script: tracer\build.cmd CheckProfilerStaticAnalysisResults
+      displayName: Check static analyzers results for errors
+
+    - publish: profiler/build_data
+      displayName: Publish Static Analysis Results
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+  - job: Linux
+    timeoutInMinutes: 60 #default value
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        command: "RunCppCheckProfiler RunClangTidyProfiler"
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: false
+        target: builder
+        command: "CheckProfilerStaticAnalysisResults"
+
+    - publish: profiler/build_data
+      displayName: Publish Static Analysis Results
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
 - stage: msi_integration_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, package_windows, generate_variables, master_commit_id]
+  dependsOn: [build_windows_tracer, package_windows, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1187,7 +1332,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
       parameters:
         includeX86: true
@@ -1211,7 +1357,7 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-    - script: tracer\build.cmd RunWindowsMsiIntegrationTests -Framework $(framework) --code-coverage
+    - script: tracer\build.cmd RunWindowsMsiIntegrationTests -Framework $(framework) --code-coverage $(runCodeCoverage)
       displayName: RunWindowsIisIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1250,9 +1396,10 @@ stages:
 
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_linux, generate_variables, master_commit_id]
+  dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1273,7 +1420,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - template: steps/restore-working-directory.yml
       parameters:
@@ -1301,13 +1449,14 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
+          runCodeCoverage=$(runCodeCoverage)
           DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=false IntegrationTests
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=false IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-    
-    - script: |      
+
+    - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
@@ -1351,7 +1500,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - template: steps/restore-working-directory.yml
       parameters:
@@ -1373,7 +1523,7 @@ stages:
         path: $(monitoringHome)
 
     - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
+        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg runCodeCoverage=$(runCodeCoverage) IntegrationTests
         docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies
       env:
         baseImage: $(baseImage)
@@ -1388,9 +1538,10 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
+          runCodeCoverage=$(runCodeCoverage)
           framework=$(publishTargetFramework)
           DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=true IntegrationTests
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=true IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1405,7 +1556,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
 
-    - script: |      
+    - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
@@ -1462,7 +1613,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - template: steps/restore-working-directory.yml
       parameters:
@@ -1489,11 +1641,13 @@ stages:
           build \
           --build-arg baseImage=$(baseImage) \
           --build-arg framework=$(publishTargetFramework) \
+          --build-arg runCodeCoverage=$(runCodeCoverage) \
           IntegrationTests.Serverless
 
         docker-compose -p ddtrace_$(Build.BuildNumber) \
           -f $(System.DefaultWorkingDirectory)/docker-compose.yml \
           -f docker-compose.serverless.yml \
+          --build-arg runCodeCoverage=$(runCodeCoverage) \
           --build-arg framework=$(publishTargetFramework) \
           pull --include-deps StartDependencies.Serverless
 
@@ -1517,8 +1671,9 @@ stages:
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
           lambdaBaseImage=$(lambdaBaseImage)
+          runCodeCoverage=$(runCodeCoverage)
           DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests.Serverless
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) IntegrationTests.Serverless
         additionalDockerComposeFiles: |
           docker-compose.serverless.yml
         projectName: ddtrace_$(Build.BuildNumber)
@@ -1577,7 +1732,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
 
-    - script: |      
+    - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
@@ -1613,9 +1768,10 @@ stages:
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
     )
-  dependsOn: [package_linux, generate_variables, master_commit_id]
+  dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1636,7 +1792,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - template: steps/restore-working-directory.yml
       parameters:
@@ -1648,7 +1805,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64"
+        command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64 --debugtype portable --optimize $(optimize)"
         apikey: $(DD_LOGGER_DD_API_KEY)
 
     - task: DownloadPipelineArtifact@2
@@ -1664,13 +1821,14 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
+          runCodeCoverage=$(runCodeCoverage)
           DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests.Debugger
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) IntegrationTests.Debugger
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-    
-    - script: |      
+
+    - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
@@ -1699,11 +1857,78 @@ stages:
         command: "CheckBuildLogsForErrors"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
+- stage: profiler_integration_tests_windows
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [package_windows, generate_variables, merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Win]
+
+  - job: Win
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix:
+        x86:
+          targetPlatform: "x86"
+        x64:
+          targetPlatform: "x64"
+
+    variables:
+      IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
+
+    pool:
+      name: azure-windows-scale-set-3
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/install-dotnet-sdks.yml
+      parameters:
+        includeX86: true
+
+    # windows-tracer-home.zip file contains profiler, tracer...
+    - task: DownloadPipelineArtifact@2
+      displayName: Download monitoring home zip
+      inputs:
+        artifact: windows-tracer-home.zip
+        patterns: "windows-tracer-home.zip"
+        path: $(Agent.TempDirectory)
+
+    - task: ExtractFiles@1
+      inputs:
+        archiveFilePatterns: '$(Agent.TempDirectory)/windows-tracer-home.zip'
+        destinationFolder: $(monitoringHome)
+
+    - script: tracer\build.cmd BuildProfilerSamples BuildAndRunProfilerIntegrationTests --TargetPlatform $(targetPlatform)
+      displayName: Run Profiler Integration tests
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+
+    - publish: profiler/build_data
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: profiler/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
 - stage: profiler_integration_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_linux, generate_variables, master_commit_id]
+  dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1727,7 +1952,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - template: steps/restore-working-directory.yml
       parameters:
@@ -1745,20 +1971,20 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildProfilerLinuxIntegrationTests"
+        command: "BuildProfilerSamples"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
-        command: "RunProfilerCpuLimitTests"
+        command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
-        command: "RunProfilerCpuLimitTests"
+        command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
@@ -1786,11 +2012,125 @@ stages:
         testResultsFiles: profiler/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
+- stage: asan_profiler_tests
+  #address sanitizer tests
+  condition: >
+    and(
+      succeeded(), 
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+    )
+  dependsOn: [merge_commit_id, generate_variables]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Linux,Windows]
+
+  - job: Linux
+    timeoutInMinutes: 60 #default value
+
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        command: "RunProfilerAsanTest -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - publish: profiler/build_data
+      displayName: Uploading Address sanitizer test results
+      artifact: _$(System.StageName)_$(Agent.JobName)_test_results_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: false
+
+  - job: Windows
+    timeoutInMinutes: 60 #default value
+    pool:
+      name: azure-windows-scale-set-3
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/install-latest-dotnet-sdk.yml
+      parameters:
+        includeX86: true
+
+    - script: tracer\build.cmd RunProfilerAsanTest -Framework net7.0
+      displayName: Run Profiler ASAN test
+
+    - publish: profiler/build_data
+      displayName: Uploading Address sanitizer test results
+      artifact: _$(System.StageName)_$(Agent.JobName)_test_results_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: false
+
+- stage: ubsan_profiler_tests
+#undefined behavior sanitizer tests
+  condition: > 
+    and(
+      succeeded(), 
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+    )
+  dependsOn: [merge_commit_id, generate_variables]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Linux]
+
+  - job: Linux
+    timeoutInMinutes: 60 #default value
+
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        command: "RunProfilerUbsanTest -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - publish: profiler/build_data
+      displayName: Uploading test results
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: false
+
 - stage: integration_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_arm64, generate_variables, master_commit_id]
+  dependsOn: [package_arm64, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     TestAllPackageVersions: true
     IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
     baseImage: debian
@@ -1818,7 +2158,8 @@ stages:
       steps:
         - template: steps/clone-repo.yml
           parameters:
-            masterCommitId: $(masterCommitId)
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
 
         - template: steps/restore-working-directory.yml
           parameters:
@@ -1844,8 +2185,9 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
+              runCodeCoverage=$(runCodeCoverage)
               DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
+            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1892,7 +2234,8 @@ stages:
       steps:
         - template: steps/clone-repo.yml
           parameters:
-            masterCommitId: $(masterCommitId)
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
 
         - template: steps/restore-working-directory.yml
           parameters:
@@ -1912,7 +2255,7 @@ stages:
             path: $(monitoringHome)
 
         - script: |
-            docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64
+            docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg runCodeCoverage=$(runCodeCoverage) IntegrationTests.ARM64
             docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies.ARM64
           env:
             baseImage: $(baseImage)
@@ -1928,8 +2271,9 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
+              runCodeCoverage=$(runCodeCoverage)
               DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
+            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1969,13 +2313,16 @@ stages:
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
 - stage: integration_tests_arm64_debugger
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_arm64, generate_variables, master_commit_id]
+  condition: >
+    and(
+      succeeded(),
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
+    )
+  dependsOn: [package_arm64, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    TestAllPackageVersions: true
-    IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
-    baseImage: debian
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -1985,13 +2332,8 @@ stages:
     - job: Test
       timeoutInMinutes: 60 #default value
       strategy:
-        matrix:
-          net5_0:
-            publishTargetFramework: net5.0
-          net6_0:
-            publishTargetFramework: net6.0
-          net7_0:
-            publishTargetFramework: net7.0
+        matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_arm64_debugger_matrix']]
+
       workspace:
         clean: all
       pool:
@@ -2000,7 +2342,8 @@ stages:
       steps:
         - template: steps/clone-repo.yml
           parameters:
-            masterCommitId: $(masterCommitId)
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
 
         - template: steps/restore-working-directory.yml
           parameters:
@@ -2010,7 +2353,7 @@ stages:
           parameters:
             build: true
             baseImage: $(baseImage)
-            command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64"
+            command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64 --debugtype portable --optimize $(optimize)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
         - task: DownloadPipelineArtifact@2
@@ -2026,8 +2369,9 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
+              runCodeCoverage=$(runCodeCoverage)
               DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests.ARM64.Debugger
+            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) IntegrationTests.ARM64.Debugger
             projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2067,9 +2411,10 @@ stages:
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
       )
     )
-  dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -2090,7 +2435,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - template: steps/install-dotnet-sdks.yml
 
@@ -2124,9 +2470,10 @@ stages:
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
       )
     )
-  dependsOn: [package_linux, generate_variables, master_commit_id]
+  dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -2147,7 +2494,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     # Doing a clean of obj files _before_ restore to remove build output from previous runs
     # Can't do a full clean, as otherwise restore-working-directory fails
     # Only necessary for ARM64, but shouldn't cause any harm on others
@@ -2178,7 +2526,7 @@ stages:
       inputs:
         containerregistrytype: Container Registry
         additionalDockerComposeFiles: docker-compose.ci.azdo.yml
-        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg explorationTestUseCase=$(explorationTestUseCase) --build-arg explorationTestName=$(explorationTestName) --build-arg framework=$(publishTargetFramework) ExplorationTests
+        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg explorationTestUseCase=$(explorationTestUseCase) --build-arg explorationTestName=$(explorationTestName) --build-arg framework=$(publishTargetFramework) --build-arg runCodeCoverage=$(runCodeCoverage) ExplorationTests
 
     - task: DockerCompose@0
       displayName: docker-compose run ExplorationTests
@@ -2191,9 +2539,10 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
+          runCodeCoverage=$(runCodeCoverage)
           explorationTestUseCase=$(explorationTestUseCase)
           explorationTestName=$(explorationTestName)
-        dockerComposeCommand: run --rm -e DD_AGENT_HOST=dd_agent -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) ExplorationTests
+        dockerComposeCommand: run --rm -e DD_AGENT_HOST=dd_agent -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) ExplorationTests
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -2215,9 +2564,10 @@ stages:
 
 - stage: benchmarks
   condition: and(succeeded(), eq(variables.isMainRepository, true))
-  dependsOn: [build_windows_tracer, master_commit_id]
+  dependsOn: [build_windows_tracer, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -2248,7 +2598,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
@@ -2271,7 +2622,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - template: steps/install-latest-dotnet-sdk.yml
 
@@ -2327,9 +2679,10 @@ stages:
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, build_linux_tracer, build_arm64_tracer, build_macos, master_commit_id]
+  dependsOn: [build_windows_tracer, build_windows_profiler, build_linux_tracer, build_linux_profiler, build_arm64_tracer, build_arm64_profiler, build_macos, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -2344,7 +2697,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
 
@@ -2460,9 +2814,10 @@ stages:
       displayName: Add $(dotnetToolTag) build tag
 
 - stage: tool_artifacts_tests_windows
-  dependsOn: [dotnet_tool, master_commit_id]
+  dependsOn: [dotnet_tool, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     runnerTool: $(System.DefaultWorkingDirectory)/$(relativeRunnerTool)
     runnerStandalone: $(System.DefaultWorkingDirectory)/$(relativeRunnerStandalone)
   jobs:
@@ -2485,7 +2840,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
       parameters:
         includeX86: true
@@ -2502,13 +2858,13 @@ stages:
       inputs:
         artifact: runner-standalone-win-$(targetPlatform)
         path: $(Agent.TempDirectory)/runner
-    
+
     - task: ExtractFiles@1
       inputs:
         archiveFilePatterns: '$(Agent.TempDirectory)/runner/*.zip'
         destinationFolder: $(runnerStandalone)
         cleanDestinationFolder: false
-        
+
     - script: tracer\build.cmd BuildAndRunToolArtifactTests --ToolSource $(runnerTool)
       displayName: Build and Test tool
       env:
@@ -2527,9 +2883,10 @@ stages:
       condition: succeededOrFailed()
 
 - stage: tool_artifacts_tests_linux
-  dependsOn: [dotnet_tool, master_commit_id]
+  dependsOn: [dotnet_tool, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     runnerTool: $(System.DefaultWorkingDirectory)/$(relativeRunnerTool)
     runnerStandalone: $(System.DefaultWorkingDirectory)/$(relativeRunnerStandalone)
   jobs:
@@ -2563,7 +2920,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(name)-working-directory
@@ -2585,7 +2943,7 @@ stages:
         archiveFilePatterns: '$(Agent.TempDirectory)/runner/*.tar.gz'
         destinationFolder: $(runnerStandalone)
         cleanDestinationFolder: false
-        
+
     - script: |
         ls $(runnerStandalone)
         chmod +x $(runnerStandalone)/dd-trace
@@ -2611,9 +2969,10 @@ stages:
 
 - stage: upload_to_s3
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables.isMainRepository, true))
-  dependsOn: [package_windows, package_linux, package_arm64, master_commit_id]
+  dependsOn: [package_windows, package_linux, package_arm64, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - job: s3_upload
     timeoutInMinutes: 60 #default value
@@ -2624,7 +2983,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - script: |
         mkdir s3_upload
@@ -2711,9 +3071,10 @@ stages:
 
 - stage: upload_to_azure
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables.isMainRepository, true))
-  dependsOn: [package_windows, package_linux, package_arm64, dotnet_tool, master_commit_id]
+  dependsOn: [package_windows, package_linux, package_arm64, dotnet_tool, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
     - job: upload
       timeoutInMinutes: 60 #default value
@@ -2722,7 +3083,8 @@ stages:
       steps:
         - template: steps/clone-repo.yml
           parameters:
-            masterCommitId: $(masterCommitId)
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
 
         - task: DownloadPipelineArtifact@2
           displayName: Download NuGet packages
@@ -2763,13 +3125,13 @@ stages:
           inputs:
             artifact: linux-profiler-symbols-alpine
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
-  
+
         - task: DownloadPipelineArtifact@2
           displayName: Download linux profiler CentOS7 symbols
           inputs:
             artifact: linux-profiler-symbols-centos7
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
-  
+
         - task: DownloadPipelineArtifact@2
           displayName: Download linux profiler Arm64 symbols
           inputs:
@@ -2781,13 +3143,13 @@ stages:
           inputs:
             artifact: linux-tracer-symbols-alpine
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
-  
+
         - task: DownloadPipelineArtifact@2
           displayName: Download linux tracer CentOS7 symbols
           inputs:
             artifact: linux-tracer-symbols-centos7
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
-  
+
         - task: DownloadPipelineArtifact@2
           displayName: Download linux tracer Arm64 symbols
           inputs:
@@ -2878,7 +3240,15 @@ stages:
               --destination-path "$(Build.SourceVersion)" \
               --source "$(Build.ArtifactStagingDirectory)"
           displayName: Upload blobs to Azure
-          condition: and(succeeded(), eq(variables.isMainBranch, true))
+          condition: >
+            and(
+              succeeded(),
+              ne(variables['push_artifacts_to_azure_storage'], 'false'),
+              or(
+                eq(variables['push_artifacts_to_azure_storage'], 'true'),
+                eq(variables.isMainBranch, true)
+              )
+            )
           env:
             AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
             AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
@@ -2902,13 +3272,51 @@ stages:
             AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
             AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
 
+- stage: upload_container_images
+  condition: and(succeeded(), eq(variables['Build.Reason'], 'IndividualCI'), eq(variables.isMainRepository, true), eq(variables.isMainOrReleaseBranch, true))
+  dependsOn: [upload_to_azure]
+  jobs:
+    - job: upload
+      timeoutInMinutes: 60 #default value
+      pool:
+        vmImage: ubuntu-20.04
+      steps:
+      - checkout: none
+      - bash: |
+          echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/lib-injection.yml with ref=$(Build.SourceBranch) and azdo_build_id=$(Build.BuildId)"
+          curl \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: token $GITHUB_TOKEN"\
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/DataDog/dd-trace-dotnet/actions/workflows/lib-injection.yml/dispatches \
+            -d '{"ref":"$(Build.SourceBranch)","inputs":{"azdo_build_id":"$(Build.BuildId)"}}'
+        displayName: Start lib-injection GitHub Actions worfklow
+        env:
+          GITHUB_TOKEN: $(GITHUB_TOKEN)
+
+      - bash: |
+          echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/docker-base-images.yml with ref=$(Build.SourceBranch) and azdo_build_id=$(Build.BuildId) and is_snapshot=$(isMainBranch)"
+          curl \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: token $GITHUB_TOKEN"\
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/DataDog/dd-trace-dotnet/actions/workflows/docker-base-images.yml/dispatches \
+            -d '{"ref":"$(Build.SourceBranch)","inputs":{"azdo_build_id":"$(Build.BuildId)","is_snapshot":"$(isMainBranch)"}}'
+        displayName: Start the generation of docker base images on GitHub Actions worfklow
+        env:
+          GITHUB_TOKEN: $(GITHUB_TOKEN)
+
 - stage: throughput
   condition: and(succeeded(), eq(variables.isMainRepository, true))
-  dependsOn: [package_linux, package_arm64, build_windows_tracer, master_commit_id]
+  dependsOn: [package_linux, package_arm64, build_windows_tracer, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     # By default all throughput tests happen on release or master branches only, or when running a benchmarks only build. Overridable by setting 'run_extended_throughput_tests' to true
     runExtendedThroughputTests: $[or(eq(variables.isMainOrReleaseBranch, 'true'), not(eq(variables['isBenchmarksOnlyBuild'], 'False')), eq(variables.run_extended_throughput_tests, 'true'))]
+    CrankDir: $(System.DefaultWorkingDirectory)/tracer/build/crank
   pool: Throughput
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -2922,7 +3330,9 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
     - task: DownloadPipelineArtifact@2
       displayName: Download linux native binary
       inputs:
@@ -2933,15 +3343,30 @@ stages:
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
-        cd $(System.DefaultWorkingDirectory)/tracer/build/crank
+        mkdir -p tracer/bin/netcoreapp3.1
+        cp tracer/tracer-home-linux/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll 
+        cd $(CrankDir)
         chmod +x ./run.sh
         ./run.sh "linux" "$(runExtendedThroughputTests)"
-      displayName: Crank
+      displayName: Crank tracer
       env:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
         DD_CIVISIBILITY_AGENTLESS_ENABLED: true
         DD_API_KEY: $(ddApiKey)
+
+    - script: |
+        mkdir -p $(CrankDir)/results
+        cp $(CrankDir)/*.json $(CrankDir)/results
+      displayName: Copy the results to results dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(CrankDir)/results"
+      displayName: Publish results
+      artifact: crank_linux_x64_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
   - job: Windows64
     timeoutInMinutes: 60
@@ -2949,7 +3374,9 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
     - task: DownloadPipelineArtifact@2
       displayName: Download windows native binary
       inputs:
@@ -2960,15 +3387,30 @@ stages:
         test ! -s "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-win/win-x64/Datadog.Tracer.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Tracer.Native.dll does not exist" && exit 1
         test ! -s "tracer/tracer-home-win/win-x64/ddwaf.dll" && echo "tracer/tracer-home-win/win-x64/ddwaf.dll does not exist" && exit 1
-        cd $(System.DefaultWorkingDirectory)/tracer/build/crank
+        mkdir -p tracer/bin/netcoreapp3.1
+        cp tracer/tracer-home-win/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll 
+        cd $(CrankDir)
         chmod +x ./run.sh
         ./run.sh "windows" "$(runExtendedThroughputTests)"
-      displayName: Crank
+      displayName: Crank tracer
       env:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
         DD_CIVISIBILITY_AGENTLESS_ENABLED: true
         DD_API_KEY: $(ddApiKey)
+
+    - script: |
+        mkdir -p $(CrankDir)/results
+        cp $(CrankDir)/*.json $(CrankDir)/results
+      displayName: Copy the results to results dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(CrankDir)/results"
+      displayName: Publish results
+      artifact: crank_windows_x64_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
   - job: LinuxArm64
     timeoutInMinutes: 60
@@ -2976,7 +3418,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - task: DownloadPipelineArtifact@2
       displayName: Download arm64 native binary
       inputs:
@@ -2987,6 +3430,8 @@ stages:
         test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/libddwaf.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/libddwaf.so does not exist" && exit 1
+        mkdir -p tracer/bin/netcoreapp3.1
+        cp tracer/tracer-home-linux-arm64/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll 
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
         ./run.sh "linux_arm64" "$(runExtendedThroughputTests)"
@@ -2997,11 +3442,130 @@ stages:
         DD_CIVISIBILITY_AGENTLESS_ENABLED: true
         DD_API_KEY: $(ddApiKey)
 
+    - script: |
+        mkdir -p $(CrankDir)/results
+        cp $(CrankDir)/*.json $(CrankDir)/results
+      displayName: Copy the results to results dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(CrankDir)/results"
+      displayName: Publish results
+      artifact: crank_linux_arm64_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+- stage: throughput_profiler
+  condition: > 
+    and(
+      succeeded(), 
+      ne(variables['isNgenTestBuild'], 'True'),
+      eq(variables.isMainRepository, true),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+    )
+  dependsOn: [package_linux, generate_variables, build_windows_tracer, merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    crankDir: $(System.DefaultWorkingDirectory)/profiler/build/crank
+  pool: Throughput-profiler
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Linux64, Windows64]
+  #### Throughput Linux 64, windows 64, linux arm 64
+
+  - job: Linux64
+    timeoutInMinutes: 60
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux native binary
+      inputs:
+        artifact: linux-monitoring-home-centos7
+        path: $(System.DefaultWorkingDirectory)/monitoring-home-linux
+
+    - script: |
+        test ! -s "monitoring-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "monitoring-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
+        test ! -s "monitoring-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "monitoring-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
+        test ! -s "monitoring-home-linux/linux-x64/libddwaf.so" && echo "monitoring-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
+        cd $(crankDir)
+        chmod +x ./run.sh
+        ./run.sh "linux"
+      displayName: Crank profiler
+      env:
+        DD_SERVICE: dd-trace-dotnet-profiler
+        DD_ENV: CI
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+        DD_API_KEY: $(ddApiKey)
+
+    - script: |
+        mkdir -p $(crankDir)/results
+        cp $(crankDir)/*.json $(crankDir)/results
+      displayName: Copy the results to results dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(crankDir)/results"
+      displayName: Publish results
+      artifact: crank_profiler_linux_x64_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+  - job: Windows64
+    timeoutInMinutes: 60
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download windows native binary
+      inputs:
+        artifact: windows-tracer-home
+        path: $(System.DefaultWorkingDirectory)/monitoring-home-windows
+
+    - script: |
+        test ! -s "monitoring-home-windows/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "monitoring-home-windows/win-x64/Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
+        test ! -s "monitoring-home-windows/win-x64/ddwaf.dll" && echo "monitoring-home-windows/win-x64/ddwaf.dll does not exist" && exit 1
+        cd $(crankDir)
+        chmod +x ./run.sh
+        ./run.sh "windows"
+      displayName: Crank profiler
+
+      env:
+        DD_SERVICE: dd-trace-dotnet-profiler
+        DD_ENV: CI
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+        DD_API_KEY: $(ddApiKey)
+
+    - script: |
+        mkdir -p $(crankDir)/results
+        cp $(crankDir)/*.json $(crankDir)/results
+      displayName: Copy the results to results dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(crankDir)/results"
+      displayName: Publish results
+      artifact: crank_profiler_windows64_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
 - stage: throughput_appsec
   condition: and(succeeded(), eq(variables.isMainRepository, true))
-  dependsOn: [package_linux, master_commit_id]
+  dependsOn: [package_linux, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CrankDir: $(System.DefaultWorkingDirectory)/tracer/build/crank
   pool: Throughput-AppSec
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -3015,7 +3579,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - task: DownloadPipelineArtifact@2
       displayName: Download linux native binary
       inputs:
@@ -3026,7 +3591,7 @@ stages:
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
-        cd $(System.DefaultWorkingDirectory)/tracer/build/crank
+        cd $(CrankDir)
         chmod +x ./run-appsec.sh
         ./run-appsec.sh "linux"
       displayName: Crank
@@ -3034,9 +3599,22 @@ stages:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
 
+    - script: |
+        mkdir -p $(CrankDir)/results
+        cp $(CrankDir)/*.json $(CrankDir)/results
+      displayName: Copy the results to results dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(CrankDir)/results"
+      displayName: Publish results
+      artifact: crank_linux_x64_asm_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
 - stage: coverage
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: 
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables['runCodeCoverage'], 'True'))
+  dependsOn:
     - integration_tests_windows
     - integration_tests_windows_iis
     - integration_tests_windows_iis_security
@@ -3048,11 +3626,12 @@ stages:
     - unit_tests_macos
     - unit_tests_arm64
     - unit_tests_windows
-    - master_commit_id
+    - merge_commit_id
     - tool_artifacts_tests_windows
     - tool_artifacts_tests_linux
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
     - job: Windows
       timeoutInMinutes: 30
@@ -3063,7 +3642,8 @@ stages:
       steps:
       - template: steps/clone-repo.yml
         parameters:
-          masterCommitId: $(masterCommitId)
+          targetShaId: $(targetShaId)
+          targetBranch: $(targetBranch)
       - template: steps/install-latest-dotnet-sdk.yml
 
       - task: DownloadPipelineArtifact@2
@@ -3094,13 +3674,14 @@ stages:
 
 - stage: execution_benchmarks
   condition: and(succeeded(), eq(variables.isMainRepository, true))
-  dependsOn: [build_windows_tracer, master_commit_id]
+  dependsOn: [build_windows_tracer, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [Windows]
+      jobs: [Windows, compare]
 
   - job: Windows
     strategy:
@@ -3115,12 +3696,11 @@ stages:
       name: $(poolName)
     timeoutInMinutes: 30 #default value
 
-    # These VMs have the Datadog Agent installed directly, as they don't run docker, and timeit doesn't support agentless yet
-
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
 
@@ -3138,39 +3718,74 @@ stages:
         workingDirectory: $(System.DefaultWorkingDirectory)/tracer/test/test-applications/integrations/Samples.$(sampleName)
       displayName: 'dotnet build Release $(sampleName)'
 
-    - task: GoTool@0
-      displayName: 'Install Go 1.16'
-      inputs:
-        version: '1.16'
-        GOPATH: $(Agent.TempDirectory)
-      retryCountOnTaskFailure: 5
-
-    - task: Go@0
-      displayName: 'Install timeit tool'
-      inputs:
-        command: 'install'
-        arguments: 'github.com/tonyredondo/timeit@latest'
-        workingDirectory: $(System.DefaultWorkingDirectory)
-      retryCountOnTaskFailure: 5
-
     - script: run.cmd
       workingDirectory: $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.$(sampleName)
       displayName: Execute Samples.$(sampleName) benchmark
       env:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
+        DOTNET_ROOT: $(LOCALAPPDATA)\Microsoft\dotnet
+        DD_API_KEY: $(ddApiKey)
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
+        DD_CIVISIBILITY_LOGS_ENABLED: 0
+        DD_CIVISIBILITY_ITR_ENABLED: 0
 
-    - task: PowerShell@2
-      displayName: Wait 20 seconds to agent flush before finishing pipeline
+    - powershell: |
+        mkdir -p $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+        cp $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.$(sampleName)/results_*.json $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+      displayName: Copy the results to benchmarks dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks"
+      displayName: Publish results
+      artifact: execution_time_benchmarks_windows_x64_$(sampleName)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+  - job: compare
+    timeoutInMinutes: 60 #default value
+    dependsOn: [Windows]
+    pool:
+      vmImage: windows-2022
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download HttpMessageHandler
       inputs:
-        targetType: 'inline'
-        script: 'Start-Sleep -s 20'
+        artifact: execution_time_benchmarks_windows_x64_HttpMessageHandler_1 #only download the first lot, ignores retries
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_HttpMessageHandler_1
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download FakeDbCommand
+      inputs:
+        artifact: execution_time_benchmarks_windows_x64_FakeDbCommand_1 #only download the first lot, ignores retries
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_FakeDbCommand_1
+
+    - script: tracer\build.cmd CompareExecutionTimeBenchmarkResults
+      displayName: Compare execution-time results
+      env:
+        PR_NUMBER: $(System.PullRequest.PullRequestNumber)
+        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
+        GITHUB_TOKEN: $(GITHUB_TOKEN)
+
+    - publish: $(System.DefaultWorkingDirectory)/tracer/build_data/execution_benchmarks/execution_time_report.md
+      displayName: Upload report
+      artifact: execution_time_report
 
 - stage: system_tests
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_linux, master_commit_id]
+  dependsOn: [package_linux, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -3181,8 +3796,16 @@ stages:
     pool:
       vmImage: ubuntu-20.04
 
+    strategy:
+      matrix:
+        poc:
+          WEBLOG_VARIANT: "poc"
+        uds:
+          WEBLOG_VARIANT: "uds"
+
     steps:
       - checkout: none
+
       - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
 
@@ -3198,6 +3821,7 @@ stages:
           echo Moving $PACKAGE_NAME to system-tests/binaries
           mv $(Build.ArtifactStagingDirectory)/$PACKAGE_NAME system-tests/binaries/
         displayName: Move dotnet binary to system test folder
+
       - script: ./build.sh dotnet
         workingDirectory: system-tests
         displayName: Build images
@@ -3208,38 +3832,41 @@ stages:
         env:
           DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
 
-      - publish: system-tests/logs
-        condition: always()
-        displayName: System tests logs
-        artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-
-      - script: ./run.sh UDS
-        workingDirectory: system-tests
-        displayName: Run tests over UDS
-        env:
-          DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
-        
-      - publish: system-tests/logs_uds
-        condition: always()
-        displayName: System tests UDS logs
-        artifact: _$(System.StageName)_$(Agent.JobName)_logs_uds_$(System.JobAttempt)
-        
       - script: ./run.sh REMOTE_CONFIG_MOCKED_BACKEND_LIVE_DEBUGGING
         workingDirectory: system-tests
         displayName: Run RCM tests
         env:
           DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
 
-      - publish: system-tests/logs_remote_config_mocked_backend_live_debugging
+      - script: |
+          mkdir -p all_logs
+          cp -r ./logs* ./all_logs
+        workingDirectory: system-tests
         condition: always()
-        displayName: RCM tests logs
-        artifact: _$(System.StageName)_$(Agent.JobName)_logs_rcm_$(System.JobAttempt)
+        displayName: Group logs
+
+      - publish: system-tests/all_logs/
+        condition: always()
+        displayName: System tests logs
+        artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+
+      - script: |
+          cd parametric
+          pip install wheel
+          pip install -r requirements.txt
+          ./run.sh
+        workingDirectory: system-tests
+        displayName: Run parametric tests
+        env:
+          DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
+          CLIENTS_ENABLED: dotnet
 
 - stage: installer_smoke_tests
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_linux, generate_variables, master_commit_id]
+  dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -3257,7 +3884,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
     - task: DownloadPipelineArtifact@2
       displayName: Download artifacts to smoke test directory
       inputs:
@@ -3301,9 +3929,10 @@ stages:
 
 - stage: nuget_installer_smoke_tests
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, package_windows, generate_variables, master_commit_id]
+  dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -3321,7 +3950,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download bundle nuget
@@ -3350,7 +3980,7 @@ stages:
           nuget-smoke-tests
       env:
         dockerTag: $(dockerTag)
-      displayName: docker-compose build nuget-smoke-tests 
+      displayName: docker-compose build nuget-smoke-tests
       retryCountOnTaskFailure: 3
 
     - template: steps/run-snapshot-test.yml
@@ -3371,9 +4001,10 @@ stages:
 
 - stage: dotnet_tool_nuget_smoke_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, generate_variables, master_commit_id]
+  dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -3391,7 +4022,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tool runner-dotnet-tool
@@ -3433,9 +4065,10 @@ stages:
 
 - stage: dotnet_tool_smoke_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, generate_variables, master_commit_id]
+  dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -3453,7 +4086,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tool runner-standalone-$(platformSuffix)
@@ -3499,9 +4133,10 @@ stages:
 
 - stage: dotnet_tool_self_instrument_smoke_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, generate_variables, master_commit_id]
+  dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -3523,7 +4158,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download artifacts to smoke test directory
@@ -3575,9 +4211,10 @@ stages:
 
 - stage: installer_smoke_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_arm64, generate_variables, master_commit_id]
+  dependsOn: [package_arm64, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -3615,7 +4252,7 @@ stages:
             dockerTag: $(dockerTag)
           displayName: docker-compose build smoke-tests
           retryCountOnTaskFailure: 3
-    
+
         - template: steps/run-snapshot-test.yml
           parameters:
             target: 'smoke-tests'
@@ -3634,9 +4271,10 @@ stages:
 
 - stage: nuget_installer_smoke_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, package_windows, generate_variables, master_commit_id]
+  dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -3654,7 +4292,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download bundle nuget
@@ -3703,9 +4342,10 @@ stages:
 
 - stage: dotnet_tool_smoke_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, generate_variables, master_commit_id]
+  dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -3765,9 +4405,10 @@ stages:
 
 - stage: nuget_installer_smoke_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, package_windows, generate_variables, master_commit_id]
+  dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -3785,7 +4426,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download bundle nuget
@@ -3803,7 +4445,7 @@ stages:
         mkdir -p tracer/build_data/snapshots
         mkdir -p tracer/build_data/logs
       displayName: create test data directories
-    
+
     - bash: |
         docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
@@ -3834,9 +4476,10 @@ stages:
 
 - stage: dotnet_tool_smoke_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, package_windows, generate_variables, master_commit_id]
+  dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -3854,7 +4497,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download dotnet tool
@@ -3869,7 +4513,7 @@ stages:
         mkdir -f -p $(smokeTestAppDir)/artifacts
         mv $(Agent.TempDirectory)/*.zip $(smokeTestAppDir)/artifacts/dd-trace-win.zip
       displayName: Create test data directories
-      
+
     - bash: |
         docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
@@ -3899,9 +4543,10 @@ stages:
 
 - stage: msi_installer_smoke_tests
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [package_windows, generate_variables, master_commit_id]
+  dependsOn: [package_windows, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -3919,7 +4564,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download MSI to temp directory
@@ -3964,9 +4610,10 @@ stages:
 
 - stage: tracer_home_smoke_tests
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_windows, generate_variables, master_commit_id]
+  dependsOn: [package_windows, generate_variables, merge_commit_id]
   variables:
-    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -3984,7 +4631,8 @@ stages:
     steps:
     - template: steps/clone-repo.yml
       parameters:
-        masterCommitId: $(masterCommitId)
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
 
     - powershell: |
         mkdir -p tracer/build_data/snapshots
@@ -4026,10 +4674,69 @@ stages:
     - script: tracer\build.cmd CheckSmokeTestsForErrors
       displayName: CheckSmokeTestsForErrors
 
+- stage: compare_throughput
+  condition: and(succeeded(), eq(variables.isMainRepository, true))
+  dependsOn: [throughput, throughput_appsec, merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - job: compare
+    timeoutInMinutes: 60 #default value
+    pool:
+      vmImage: windows-2022
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download crank_linux_arm64_1
+      inputs:
+        artifact: crank_linux_arm64_1 #only download the first lot, ignores retries
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_linux_arm64_1
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download crank_linux_x64_1
+      inputs:
+        artifact: crank_linux_x64_1 #only download the first lot, ignores retries
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_linux_x64_1
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download crank_linux_x64_asm_1
+      inputs:
+        artifact: crank_linux_x64_asm_1 #only download the first lot, ignores retries
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_linux_x64_asm_1
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download crank_windows_x64_1
+      inputs:
+        artifact: crank_windows_x64_1 #only download the first lot, ignores retries
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_windows_x64_1
+
+    - script: tracer\build.cmd CompareThroughputResults
+      displayName: Compare Crank results
+      env:
+        PR_NUMBER: $(System.PullRequest.PullRequestNumber)
+        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
+        GITHUB_TOKEN: $(GITHUB_TOKEN)
+
+    - publish: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/throughput_report.md
+      displayName: Upload report
+      artifact: crank_throughput_report
+
 - stage: trace_pipeline
-  condition: eq(variables['isBenchmarksOnlyBuild'], 'False')
+  condition: |
+    and(
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      in(dependencies.coverage.result, 'Succeeded','SucceededWithIssues','Skipped')
+    )
   dependsOn:
-    - master_commit_id
+    - merge_commit_id
     - unit_tests_linux
     - unit_tests_macos
     - unit_tests_windows
@@ -4045,6 +4752,7 @@ stages:
     - integration_tests_arm64
     - integration_tests_arm64_debugger
     - profiler_integration_tests_linux
+    - profiler_integration_tests_windows
     - exploration_tests_windows
     - exploration_tests_linux
     - benchmarks
@@ -4054,6 +4762,7 @@ stages:
     - tool_artifacts_tests_linux
     - upload_to_s3
     - upload_to_azure
+    - upload_container_images
     - execution_benchmarks
     - installer_smoke_tests
     - installer_smoke_tests_arm64
@@ -4068,6 +4777,7 @@ stages:
     - msi_installer_smoke_tests
     - tracer_home_smoke_tests
     - coverage
+    - compare_throughput
     - system_tests
   jobs:
   - job: build_and_run
@@ -4080,6 +4790,7 @@ stages:
       dd_agent: dd_agent
 
     steps:
+    - template: steps/install-latest-dotnet-sdk.yml
     - bash: dotnet run $(Build.BuildId)
       displayName: "Run"
       workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"
@@ -4107,5 +4818,5 @@ stages:
         curl -X POST \
         -H "Content-Type: application/json" \
         -d '{"commit": "'$sha'"}' \
-          $(slackWebhookUrl) 
+          $(slackWebhookUrl)
       displayName: "notify"

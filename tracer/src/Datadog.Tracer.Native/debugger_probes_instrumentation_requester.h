@@ -12,6 +12,7 @@ namespace debugger
 class DebuggerProbesInstrumentationRequester
 {
 private:
+    CorProfiler* m_corProfiler;
     std::recursive_mutex m_probes_mutex;
     std::vector<ProbeDefinition_S> m_probes;
     std::unique_ptr<DebuggerRejitPreprocessor> m_debugger_rejit_preprocessor = nullptr;
@@ -24,25 +25,29 @@ private:
     void RemoveProbes(debugger::DebuggerRemoveProbesDefinition* removeProbes, int removeProbesLength,
                       std::set<MethodIdentifier>& revertRequests);
     void AddMethodProbes(debugger::DebuggerMethodProbeDefinition* methodProbes, int methodProbesLength,
+                         debugger::DebuggerMethodSpanProbeDefinition* spanProbes, int spanProbesLength,
                          std::set<trace::MethodIdentifier>& rejitRequests);
     void AddLineProbes(debugger::DebuggerLineProbeDefinition* lineProbes, int lineProbesLength,
                        std::set<MethodIdentifier>& rejitRequests);
     void DetermineReInstrumentProbes(std::set<MethodIdentifier>& revertRequests, std::set<MethodIdentifier>& reInstrumentRequests) const;
 
+    bool ProbeIdExists(const WCHAR* probeId);
+
 public:
-    DebuggerProbesInstrumentationRequester(std::shared_ptr<trace::RejitHandler> rejit_handler,
+    DebuggerProbesInstrumentationRequester(CorProfiler* corProfiler, std::shared_ptr<trace::RejitHandler> rejit_handler,
                                            std::shared_ptr<trace::RejitWorkOffloader> work_offloader);
 
     void InstrumentProbes(debugger::DebuggerMethodProbeDefinition* methodProbes, int methodProbesLength,
                    debugger::DebuggerLineProbeDefinition* lineProbes, int lineProbesLength,
+                   debugger::DebuggerMethodSpanProbeDefinition* spanProbes, int spanProbesLength,
                    debugger::DebuggerRemoveProbesDefinition* removeProbes, int removeProbesLength);
     static int GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses);
     void PerformInstrumentAllIfNeeded(const ModuleID& module_id, const mdToken& function_token);
     const std::vector<std::shared_ptr<ProbeDefinition>>& GetProbes() const;
     DebuggerRejitPreprocessor* GetPreprocessor();
-    void RequestRejitForLoadedModule(const ModuleID moduleId);
-    void ModuleLoadFinished_AddMetadataToModule(const ModuleID moduleId) const;
-    HRESULT STDMETHODCALLTYPE ModuleLoadFinished(const ModuleID moduleId);
+    void RequestRejitForLoadedModule(ModuleID moduleId);
+    void ModuleLoadFinished_AddMetadataToModule(ModuleID moduleId) const;
+    HRESULT STDMETHODCALLTYPE ModuleLoadFinished(ModuleID moduleId);
 
     static HRESULT NotifyReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId, HRESULT hrStatus);
 };

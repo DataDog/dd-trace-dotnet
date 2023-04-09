@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations.Models;
@@ -15,7 +16,9 @@ using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using FluentAssertions;
 using Samples.Probes.TestRuns;
+using Samples.Probes.TestRuns.ExpressionTests;
 using Samples.Probes.TestRuns.SmokeTests;
 using VerifyTests;
 using VerifyXunit;
@@ -29,8 +32,33 @@ namespace Datadog.Trace.Debugger.IntegrationTests;
 [UsesVerify]
 public class ProbesTests : TestHelper
 {
-    private const string LogFileNamePrefix = "dotnet-tracer-managed-";
-    private const string ProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument probes definitions completed.";
+    private const string AddedProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument added probes definitions completed.";
+    private const string RemovedProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to de-instrument probes definitions completed.";
+
+    private static readonly Type[] _unoptimizedNotSupportedTypes = new[]
+    {
+            typeof(AsyncCallChain),
+            typeof(AsyncGenericClass),
+            typeof(AsyncGenericMethodWithLineProbeTest),
+            typeof(AsyncGenericStruct),
+            typeof(AsyncInstanceMethod),
+            typeof(AsyncInterfaceProperties),
+            typeof(AsyncLineProbeWithFieldsArgsAndLocalsTest),
+            typeof(AsyncMethodInsideTaskRun),
+            typeof(AsyncRecursiveCall),
+            typeof(AsyncStaticMethod),
+            typeof(AsyncThrowException),
+            typeof(AsyncTemplateLocalExitFullSnapshot),
+            typeof(AsyncTaskReturnTest),
+            typeof(AsyncTaskReturnWithExceptionTest),
+            typeof(AsyncTemplateArgExitFullSnapshot),
+            typeof(AsyncVoid),
+            typeof(AsyncWithGenericArgumentAndLocal),
+            typeof(HasLocalsAndReturnValue),
+            typeof(MultipleLineProbes),
+            typeof(MultiScopesWithSameLocalNameTest),
+            typeof(NotSupportedFailureTest)
+    };
 
     private readonly string[] _typesToScrub = { nameof(IntPtr), nameof(Guid) };
     private readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1", "stack" };
@@ -39,11 +67,19 @@ public class ProbesTests : TestHelper
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
     {
         SetServiceVersion("1.0.0");
+        EnableDebugMode();
     }
+
+    public static IEnumerable<object[]> UdsMemberData =>
+        new List<object[]>
+        {
+            new object[] { typeof(MetricCountInt) },
+            new object[] { typeof(AsyncGenericMethod) }
+        };
 
     public static IEnumerable<object[]> ProbeTests()
     {
-        return DebuggerTestHelper.AllProbeTestTypes();
+        return DebuggerTestHelper.AllTestDescriptions();
     }
 
     [SkippableFact]
@@ -53,17 +89,17 @@ public class ProbesTests : TestHelper
     {
         Skip.If(true, "Not supported yet. Internal Jira Ticket: #DEBUG-1092.");
 
-        var testType = typeof(AsyncMethodInGenericClassTest);
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(AsyncMethodInGenericClassTest));
         const int expectedNumberOfSnapshots = 1;
 
         var guidGenerator = new DeterministicGuidGenerator();
 
         var probes = new[]
         {
-            CreateProbe("GenericClass`1", "Run", guidGenerator)
+            DebuggerTestHelper.CreateDefaultLogProbe("GenericClass`1", "Run", guidGenerator)
         };
 
-        await RunSingleTestWithApprovals(testType, isMultiPhase: false, expectedNumberOfSnapshots, probes);
+        await RunSingleTestWithApprovals(testDescription, expectedNumberOfSnapshots, probes);
     }
 
     [SkippableFact(Skip = "Too flakey")]
@@ -71,36 +107,36 @@ public class ProbesTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task TransparentCodeCtorInstrumentationTest()
     {
-        var testType = typeof(CtorTransparentCodeTest);
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(CtorTransparentCodeTest));
         const int expectedNumberOfSnapshots = 1;
 
         var guidGenerator = new DeterministicGuidGenerator();
 
         var probes = new[]
         {
-            CreateProbe("SecurityTransparentTest", ".ctor", guidGenerator),
-            CreateProbe("CtorTransparentCodeTest", "Run", guidGenerator)
+            DebuggerTestHelper.CreateDefaultLogProbe("SecurityTransparentTest", ".ctor", guidGenerator),
+            DebuggerTestHelper.CreateDefaultLogProbe("CtorTransparentCodeTest", "Run", guidGenerator)
         };
 
-        await RunSingleTestWithApprovals(testType, isMultiPhase: false, expectedNumberOfSnapshots, probes);
+        await RunSingleTestWithApprovals(testDescription, expectedNumberOfSnapshots, probes);
     }
 
-    [SkippableTheory]
+    [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    [InlineData(typeof(OverloadAndSimpleNameTest))]
-    public async Task InstallAndUninstallMethodProbeWithOverloadsTest(Type testType)
+    public async Task InstallAndUninstallMethodProbeWithOverloadsTest()
     {
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(OverloadAndSimpleNameTest));
         const int expectedNumberOfSnapshots = 9;
 
-        var probes = GetProbeConfiguration(testType, true, new DeterministicGuidGenerator());
+        var probes = GetProbeConfiguration(testDescription.TestType, true, new DeterministicGuidGenerator());
 
         if (probes.Length != 1)
         {
             throw new InvalidOperationException($"{nameof(InstallAndUninstallMethodProbeWithOverloadsTest)} expected one probe request to exist, but found {probes.Length} probes.");
         }
 
-        await RunSingleTestWithApprovals(testType, isMultiPhase: true, expectedNumberOfSnapshots, probes.Select(p => p.Probe).ToArray());
+        await RunSingleTestWithApprovals(testDescription, expectedNumberOfSnapshots, probes.Select(p => p.Probe).ToArray());
     }
 
     [Fact]
@@ -108,20 +144,19 @@ public class ProbesTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task LineProbeEmit100SnapshotsTest()
     {
-        var testType = typeof(Emit100LineProbeSnapshotsTest);
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(Emit100LineProbeSnapshotsTest));
         const int expectedNumberOfSnapshots = 100;
 
-        var probes = GetProbeConfiguration(testType, true, new DeterministicGuidGenerator());
+        var probes = GetProbeConfiguration(testDescription.TestType, true, new DeterministicGuidGenerator());
 
         using var agent = EnvironmentHelper.GetMockAgent();
         SetDebuggerEnvironment(agent);
-        using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
+        using var logEntryWatcher = CreateLogEntryWatcher();
+        using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
         try
         {
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
-
             SetProbeConfiguration(agent, probes.Select(p => p.Probe).ToArray());
-            await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
+            await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
 
             await sample.RunCodeSample();
 
@@ -151,10 +186,10 @@ public class ProbesTests : TestHelper
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [MemberData(nameof(ProbeTests))]
-    public async Task MethodProbeTest(Type testType)
+    public async Task MethodProbeTest(ProbeTestDescription testDescription)
     {
-        SkipOverTestIfNeeded(testType);
-        await RunMethodProbeTests(testType);
+        SkipOverTestIfNeeded(testDescription);
+        await RunMethodProbeTests(testDescription, true);
     }
 
     [SkippableFact]
@@ -170,51 +205,47 @@ public class ProbesTests : TestHelper
         }
 
         var testType = DebuggerTestHelper.FirstSupportedProbeTestType(EnvironmentHelper.GetTargetFramework());
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(AsyncGenericMethod));
         EnvironmentHelper.EnableWindowsNamedPipes();
 
-        await RunMethodProbeTests(testType);
+        await RunMethodProbeTests(testDescription, false);
     }
 
 #if NETCOREAPP3_1_OR_GREATER
-    [SkippableFact]
+    [SkippableTheory]
     [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public async Task MethodProbeTest_UDS()
+    [Trait("RunOnWindows", "False")]
+    [MemberData(nameof(UdsMemberData))]
+    public async Task MethodProbeTest_UDS(Type type)
     {
-        var testType = DebuggerTestHelper.FirstSupportedProbeTestType(EnvironmentHelper.GetTargetFramework());
-        EnvironmentHelper.EnableUnixDomainSockets();
+        if (EnvironmentTools.IsWindows())
+        {
+            throw new SkipException("Can't use UDS on Windows");
+        }
 
-        await RunMethodProbeTests(testType);
+        var testType = DebuggerTestHelper.SpecificTestDescription(type);
+        EnvironmentHelper.EnableUnixDomainSockets();
+        await RunMethodProbeTests(testType, true);
     }
+
 #endif
 
-    private static SnapshotProbe CreateProbe(string typeName, string methodName, DeterministicGuidGenerator guidGenerator)
+    private static LogEntryWatcher CreateLogEntryWatcher()
     {
-        return new SnapshotProbe
-        {
-            Id = guidGenerator.New().ToString(),
-            Language = TracerConstants.Language,
-            Active = true,
-            Where = new Where
-            {
-                TypeName = typeName,
-                MethodName = methodName
-            },
-            Sampling = new Configurations.Models.Sampling { SnapshotsPerSecond = 1000000 }
-        };
+        string processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Probes";
+        return new LogEntryWatcher($"dotnet-tracer-managed-{processName}*");
     }
 
-    private async Task RunMethodProbeTests(Type testType)
+    private async Task RunMethodProbeTests(ProbeTestDescription testDescription, bool useStatsD)
     {
-        var probes = GetProbeConfiguration(testType, false, new DeterministicGuidGenerator());
+        var probes = GetProbeConfiguration(testDescription.TestType, false, new DeterministicGuidGenerator());
 
-        using var agent = EnvironmentHelper.GetMockAgent();
+        using var agent = EnvironmentHelper.GetMockAgent(useStatsD: useStatsD);
         SetDebuggerEnvironment(agent);
-        using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
+        using var logEntryWatcher = CreateLogEntryWatcher();
+        using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
         try
         {
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
-
             var isSinglePhase = probes.Select(p => p.ProbeTestData.Phase).Distinct().Count() == 1;
             if (isSinglePhase)
             {
@@ -251,31 +282,111 @@ public class ProbesTests : TestHelper
                 }
             }
 
-            async Task RunPhase(SnapshotProbe[] snapshotProbes, ProbeAttributeBase[] probeData, bool isMultiPhase = false, int phaseNumber = 1)
+            async Task RunPhase(ProbeDefinition[] snapshotProbes, ProbeAttributeBase[] probeData, bool isMultiPhase = false, int phaseNumber = 1)
             {
                 SetProbeConfiguration(agent, snapshotProbes);
-                await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
+
+                try
+                {
+                    if (phaseNumber == 1)
+                    {
+                        await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+                    }
+                    else
+                    {
+                        await logEntryWatcher.WaitForLogEntries(new[] { AddedProbesInstrumentedLogEntry, RemovedProbesInstrumentedLogEntry });
+                    }
+                }
+                catch (InvalidOperationException e) when (e.Message.StartsWith("Log file was not found for path:"))
+                {
+                    if (testDescription.TestType == typeof(UndefinedValue) || testDescription.TestType == typeof(MultidimensionalArrayTest))
+                    {
+                        return;
+                    }
+                }
 
                 await sample.RunCodeSample();
 
-                var expectedNumberOfSnapshots = DebuggerTestHelper.CalculateExpectedNumberOfSnapshots(probeData);
-                string[] snapshots;
-                if (expectedNumberOfSnapshots == 0)
+                var metricProbes = probeData.Where(DebuggerTestHelper.IsMetricProbe).ToArray();
+
+                if (metricProbes.Any())
                 {
-                    Assert.True(await agent.WaitForNoSnapshots(), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
-                }
-                else
-                {
-                    snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
-                    Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
-                    await ApproveSnapshots(snapshots, testType, isMultiPhase, phaseNumber);
-                    agent.ClearSnapshots();
+                    var requests = await agent.WaitForStatsdRequests(metricProbes.Length);
+                    requests.Should().OnlyContain(s => s.Contains($"service:{EnvironmentHelper.SampleName}"));
+
+                    foreach (var probeAttributeBase in metricProbes)
+                    {
+                        var metricName = (probeAttributeBase as MetricMethodProbeTestDataAttribute)?.MetricName ?? (probeAttributeBase as MetricLineProbeTestDataAttribute)?.MetricName;
+                        var req = requests.SingleOrDefault(r => r.Contains(metricName));
+                        Assert.NotNull(req);
+                        req.Should().Contain($"service:{EnvironmentHelper.SampleName}");
+                    }
                 }
 
-                var statuses = await agent.WaitForProbesStatuses(probeData.Length);
+                var logProbes = probeData.Where(DebuggerTestHelper.IsLogProbe).ToArray();
+
+                if (logProbes.Any())
+                {
+                    var expectedNumberOfSnapshots = DebuggerTestHelper.CalculateExpectedNumberOfSnapshots(logProbes);
+                    string[] snapshots;
+                    if (expectedNumberOfSnapshots == 0)
+                    {
+                        Assert.True(await agent.WaitForNoSnapshots(), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
+                    }
+                    else
+                    {
+                        snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
+                        Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
+                        await ApproveSnapshots(snapshots, testDescription, isMultiPhase, phaseNumber);
+                        agent.ClearSnapshots();
+                    }
+                }
+
+                var spanProbes = probeData.Where(DebuggerTestHelper.IsSpanProbe).ToArray();
+
+                if (spanProbes.Any())
+                {
+                    const string spanProbeOperationName = "dd.dynamic.span";
+
+                    var settings = VerifyHelper.GetSpanVerifierSettings();
+                    settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
+                    settings.AddSimpleScrubber("out.host: localhost", "out.host: debugger");
+                    settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: debugger");
+                    var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
+                    settings.UseFileName($"{nameof(ProbeTests)}.{testName}.Spans");
+
+                    var spans = agent.WaitForSpans(spanProbes.Length, operationName: spanProbeOperationName);
+                    Assert.Equal(spanProbes.Length, spans.Count);
+                    foreach (var span in spans)
+                    {
+                        var result = Result.FromSpan(span)
+                                           .Properties(
+                                                s => s
+                                                   .Matches(_ => (nameof(span.Name), span.Name), spanProbeOperationName))
+                                           .Tags(
+                                                s => s
+                                                    .Matches("component", "trace")
+                                                    .MatchesOneOf("debugger.probeid", snapshotProbes.Select(p => p.Id).ToArray()));
+                        Assert.True(result.Success, result.ToString());
+                    }
+
+                    await VerifyHelper.VerifySpans(spans, settings).DisableRequireUniquePrefix();
+                }
+
+                // The Datadog-Agent is continuously receiving probe statuses.
+                // We may have outdated probe statuses that were sent before the instrumentation took place.
+                // To ensure consistency, we are clearing the probe statuses and requesting a fresh batch.
+                // This will ensure that the next set of probe statuses received will be up-to-date and accurate.
+                agent.ClearProbeStatuses();
+
+                // If there are log probes that expect 0 snapshots it means it's a test that checks failure installation.
+                // For a reference, look at: ByRefLikeTest.
+                var expectedFailedStatuses = probeData.Count(probeData => probeData.ExpectProbeStatusFailure);
+
+                var statuses = await agent.WaitForProbesStatuses(probeData.Length, expectedFailedStatuses: expectedFailedStatuses);
 
                 Assert.Equal(probeData.Length, statuses?.Length);
-                await ApproveStatuses(statuses, testType, isMultiPhase, phaseNumber);
+                await ApproveStatuses(statuses, testDescription, isMultiPhase, phaseNumber);
                 agent.ClearProbeStatuses();
             }
         }
@@ -288,41 +399,48 @@ public class ProbesTests : TestHelper
     /// <summary>
     /// Internal Jira Ticket: DEBUG-1092.
     /// </summary>
-    private void SkipOverTestIfNeeded(Type testType)
+    private void SkipOverTestIfNeeded(ProbeTestDescription testDescription)
     {
-        if (testType == typeof(AsyncInstanceMethod) && !EnvironmentTools.IsWindows())
+        if (testDescription.TestType == typeof(AsyncInstanceMethod) && !EnvironmentTools.IsWindows())
         {
             throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
         }
+
+        if (!testDescription.IsOptimized && _unoptimizedNotSupportedTypes.Contains(testDescription.TestType))
+        {
+            throw new SkipException("Current test is not supported with unoptimized code.");
+        }
     }
 
-    private async Task RunSingleTestWithApprovals(Type testType, bool isMultiPhase, int expectedNumberOfSnapshots, params SnapshotProbe[] probes)
+    private async Task RunSingleTestWithApprovals(ProbeTestDescription testDescription, int expectedNumberOfSnapshots, params ProbeDefinition[] probes)
     {
         using var agent = EnvironmentHelper.GetMockAgent();
 
         SetDebuggerEnvironment(agent);
-        using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
+
+        using var logEntryWatcher = CreateLogEntryWatcher();
+        using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
         try
         {
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
-
             SetProbeConfiguration(agent, probes);
-            await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
+
+            await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
 
             await sample.RunCodeSample();
 
             var snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
             Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
-            await ApproveSnapshots(snapshots, testType, isMultiPhase: true, phaseNumber: 1);
+            await ApproveSnapshots(snapshots, testDescription, isMultiPhase: true, phaseNumber: 1);
             agent.ClearSnapshots();
 
             var statuses = await agent.WaitForProbesStatuses(probes.Length);
             Assert.Equal(probes.Length, statuses?.Length);
-            await ApproveStatuses(statuses, testType, isMultiPhase: true, phaseNumber: 1);
+            await ApproveStatuses(statuses, testDescription, isMultiPhase: true, phaseNumber: 1);
             agent.ClearProbeStatuses();
 
-            SetProbeConfiguration(agent, Array.Empty<SnapshotProbe>());
-            await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
+            SetProbeConfiguration(agent, Array.Empty<LogProbe>());
+
+            await logEntryWatcher.WaitForLogEntry(RemovedProbesInstrumentedLogEntry);
             Assert.True(await agent.WaitForNoSnapshots(6000), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
         }
         finally
@@ -331,17 +449,17 @@ public class ProbesTests : TestHelper
         }
     }
 
-    private async Task ApproveSnapshots(string[] snapshots, Type testType, bool isMultiPhase, int phaseNumber)
+    private async Task ApproveSnapshots(string[] snapshots, ProbeTestDescription testDescription, bool isMultiPhase, int phaseNumber)
     {
-        await ApproveOnDisk(snapshots, testType, isMultiPhase, phaseNumber, "snapshots");
+        await ApproveOnDisk(snapshots, testDescription, isMultiPhase, phaseNumber, "snapshots");
     }
 
-    private async Task ApproveStatuses(string[] statuses, Type testType, bool isMultiPhase, int phaseNumber)
+    private async Task ApproveStatuses(string[] statuses, ProbeTestDescription testDescription, bool isMultiPhase, int phaseNumber)
     {
-        await ApproveOnDisk(statuses, testType, isMultiPhase, phaseNumber, "statuses");
+        await ApproveOnDisk(statuses, testDescription, isMultiPhase, phaseNumber, "statuses");
     }
 
-    private async Task ApproveOnDisk(string[] dataToApprove, Type testType, bool isMultiPhase, int phaseNumber, string path)
+    private async Task ApproveOnDisk(string[] dataToApprove, ProbeTestDescription testDescription, bool isMultiPhase, int phaseNumber, string path)
     {
         if (dataToApprove.Length > 1)
         {
@@ -351,7 +469,7 @@ public class ProbesTests : TestHelper
 
         var settings = new VerifySettings();
 
-        var testName = isMultiPhase ? $"{testType.Name}_#{phaseNumber}." : testType.Name;
+        var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
         settings.UseFileName($"{nameof(ProbeTests)}.{testName}");
         settings.DisableRequireUniquePrefix();
         settings.ScrubEmptyLines();
@@ -430,9 +548,10 @@ public class ProbesTests : TestHelper
 
                             case "message":
                                 if (!value.Contains("Installed probe ") && !value.Contains("Error installing probe ") &&
-                                    !IsParentName(item, parentName: "throwable"))
+                                    !IsParentName(item, parentName: "throwable") &&
+                                    !IsParentName(item, parentName: "exception"))
                                 {
-                                    // remove snapshot message (not probe status and not an exception message)
+                                    // remove snapshot message (not probe status)
                                     item.Value.Replace("ScrubbedValue");
                                 }
 
@@ -442,7 +561,11 @@ public class ProbesTests : TestHelper
                                 if (IsParentName(item, parentName: "throwable"))
                                 {
                                     // take only the first frame of the exception stacktrace
-                                    item.Value.Replace(new JArray(item.Value.Children().First()));
+                                    var firstChild = item.Value.Children().FirstOrDefault();
+                                    if (firstChild != null)
+                                    {
+                                        item.Value.Replace(new JArray(firstChild));
+                                    }
                                 }
 
                                 break;
@@ -479,7 +602,7 @@ public class ProbesTests : TestHelper
                .Replace(@"\n", @"\r\n");
     }
 
-    private (ProbeAttributeBase ProbeTestData, SnapshotProbe Probe)[] GetProbeConfiguration(Type testType, bool unlisted, DeterministicGuidGenerator guidGenerator)
+    private (ProbeAttributeBase ProbeTestData, ProbeDefinition Probe)[] GetProbeConfiguration(Type testType, bool unlisted, DeterministicGuidGenerator guidGenerator)
     {
         var probes = DebuggerTestHelper.GetAllProbes(testType, EnvironmentHelper.GetTargetFramework(), unlisted, guidGenerator);
         if (!probes.Any())
@@ -498,16 +621,24 @@ public class ProbesTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "3");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DiagnosticsInterval, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000");
-        SetProbeConfiguration(agent, Array.Empty<SnapshotProbe>());
+        SetProbeConfiguration(agent, Array.Empty<LogProbe>());
     }
 
-    private void SetProbeConfiguration(MockTracerAgent agent, SnapshotProbe[] snapshotProbes)
+    private void SetProbeConfiguration(MockTracerAgent agent, ProbeDefinition[] snapshotProbes)
     {
-        var probeConfiguration = new ProbeConfiguration { Id = Guid.Empty.ToString(), SnapshotProbes = snapshotProbes };
-        var configurations = new List<(object Config, string Id)>
-        {
-            new(probeConfiguration, EnvironmentHelper.SampleName.ToUUID())
-        };
+        var configurations = snapshotProbes
+            .Select(snapshotProbe =>
+                             {
+                                 var path = snapshotProbe switch
+                                 {
+                                     LogProbe log => DefinitionPaths.LogProbe,
+                                     MetricProbe metric => DefinitionPaths.MetricProbe,
+                                     SpanProbe span => DefinitionPaths.SpanProbe,
+                                     _ => throw new ArgumentOutOfRangeException(snapshotProbe.GetType().FullName, "Add a new probe kind"),
+                                 };
+                                 return (snapshotProbe, $"{path}{snapshotProbe.Id}");
+                             })
+            .Select(dummy => ((object Config, string Id))dummy);
 
         agent.SetupRcm(Output, configurations, LiveDebuggerProduct.ProductName);
     }

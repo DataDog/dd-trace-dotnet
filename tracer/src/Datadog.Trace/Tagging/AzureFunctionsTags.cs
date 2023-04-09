@@ -33,10 +33,12 @@ namespace Datadog.Trace.Tagging
         [Tag(TriggerTypeTagName)]
         public string TriggerType { get; set; } = "Unknown";
 
-        /// <summary>
-        /// Used to set the current tags on a given root span
-        /// </summary>
-        internal void SetRootTags(Span span)
+        internal static void SetRootSpanTags(
+            Span span,
+            string shortName,
+            string fullName,
+            string bindingSource,
+            string triggerType)
         {
             var tags = span.Tags;
             if (span.Tags is AspNetCoreTags aspNetTags)
@@ -49,10 +51,10 @@ namespace Datadog.Trace.Tagging
                 tags.SetTag(Tags.InstrumentationName, ComponentName);
             }
 
-            tags.SetTag(ShortNameTagName, ShortName);
-            tags.SetTag(FullNameTagName, FullName);
-            tags.SetTag(BindingSourceTagName, BindingSource);
-            tags.SetTag(TriggerTypeTagName, TriggerType);
+            tags.SetTag(ShortNameTagName, shortName);
+            tags.SetTag(FullNameTagName, fullName);
+            tags.SetTag(BindingSourceTagName, bindingSource);
+            tags.SetTag(TriggerTypeTagName, triggerType);
         }
     }
 }

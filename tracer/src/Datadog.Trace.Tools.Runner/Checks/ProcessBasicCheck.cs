@@ -25,6 +25,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
         {
             bool ok = true;
             var runtime = process.DotnetRuntime;
+            Version? nativeTracerVersion = null;
 
             if (runtime == ProcessInfo.Runtime.NetFx)
             {
@@ -80,8 +81,12 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 // .so modules don't have version metadata
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    var version = FileVersionInfo.GetVersionInfo(nativeTracerModule);
-                    AnsiConsole.WriteLine(ProfilerVersion(version.FileVersion ?? "{empty}"));
+                    if (!Version.TryParse(FileVersionInfo.GetVersionInfo(nativeTracerModule).FileVersion, out nativeTracerVersion))
+                    {
+                        nativeTracerVersion = null;
+                    }
+
+                    AnsiConsole.WriteLine(ProfilerVersion(nativeTracerVersion != null ? $"{nativeTracerVersion}" : "{empty}"));
                 }
             }
 
@@ -169,7 +174,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                if (!CheckRegistry(registryService))
+                if (!CheckRegistry(registryService, nativeTracerVersion))
                 {
                     ok = false;
                 }
@@ -231,7 +236,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return ok;
         }
 
-        internal static bool CheckRegistry(IRegistryService? registry = null)
+        internal static bool CheckRegistry(IRegistryService? registry = null, Version? tracerVersion = null)
         {
             registry ??= new Windows.RegistryService();
 
@@ -240,8 +245,11 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 bool ok = true;
 
                 // Check that the profiler is properly registered
-                ok &= CheckClsid(registry, ClsidKey);
-                ok &= CheckClsid(registry, Clsid32Key);
+                if (tracerVersion == null || tracerVersion < new Version("2.14.0.0"))
+                {
+                    ok &= CheckClsid(registry, ClsidKey);
+                    ok &= CheckClsid(registry, Clsid32Key);
+                }
 
                 // Look for registry keys that could have been set by other profilers
                 var suspiciousNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)

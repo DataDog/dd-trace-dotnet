@@ -5,6 +5,7 @@
 
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.SmokeTests;
 using FluentAssertions;
@@ -26,14 +27,7 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
         [TestAppFact("Samples.Computer01")]
         public void CheckProfilesSentThroughNamedPipe(string appName, string framework, string appAssembly)
         {
-            if (framework != "netcoreapp3.1")
-            {
-                new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", _output, TransportType.NamedPipe).RunAndCheck();
-            }
-            else
-            {
-                // TODO: need to figure out issue in netcore3.1 for x86
-            }
+            new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", _output, TransportType.NamedPipe).RunAndCheck();
         }
 
         [TestAppFact("Samples.Computer01")]
@@ -54,7 +48,7 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
             var lines = File.ReadAllLines(logFile);
 
             lines.Should().ContainMatch("*Using agent endpoint windows:\\\\.\\pipe\\ForSureThisPipeDoesNotExist__I_Hope*");
-            lines.Should().ContainMatch("*Failed to send profile (error trying to connect: The system cannot find the file specified. (os error 2))*");
+            lines.Should().ContainMatch("*Failed to send profile (*error trying to connect: The system cannot find the file specified. (os error 2)*");
         }
     }
 }

@@ -2,10 +2,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
-#include <string>
 #include "cor.h"
 #include "corprof.h"
 
+#include <string>
+
+struct FrameInfoView
+{
+public:
+    std::string_view ModuleName;
+    std::string_view Frame;
+    std::string_view Filename;
+    std::uint32_t StartLine;
+};
 
 class IFrameStore
 {
@@ -14,8 +23,7 @@ public:
 
     // return
     //  - true if managed frame
-    //  - module name
-    //  - frame text
-    virtual std::tuple<bool, std::string_view, std::string_view> GetFrame(uintptr_t instructionPointer) = 0;
+    virtual std::pair<bool, FrameInfoView> GetFrame(uintptr_t instructionPointer) = 0;
     virtual bool GetTypeName(ClassID classId, std::string& name) = 0;
+    virtual bool GetTypeName(ClassID classId, std::string_view& name) = 0;
 };

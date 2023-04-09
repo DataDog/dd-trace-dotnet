@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
 using Xunit.Abstractions;
@@ -41,17 +42,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             from socketHandlerEnabled in new[] { true, false }
             select new object[] { instrumentationOptions, socketHandlerEnabled };
 
+        public static IEnumerable<object[]> IntegrationConfigWithObfuscation() =>
+            from instrumentationOptions in InstrumentationOptionsValues
+            from socketHandlerEnabled in new[] { true, false }
+            from queryStringEnabled in new[] { true, false }
+            from queryStringSizeAndExpectation in new[] { new KeyValuePair<int?, string>(null, "?key1=value1&<redacted>"), new KeyValuePair<int?, string>(200, "?key1=value1&<redacted>"), new KeyValuePair<int?, string>(2, "?k") }
+            select new object[] { instrumentationOptions, socketHandlerEnabled, queryStringEnabled, queryStringSizeAndExpectation.Key,  queryStringSizeAndExpectation.Value };
+
         public override Result ValidateIntegrationSpan(MockSpan span) => span.IsHttpMessageHandler();
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        [MemberData(nameof(IntegrationConfig))]
-        public void HttpClient_SubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
+        [MemberData(nameof(IntegrationConfigWithObfuscation))]
+        public void HttpClient_SubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler, bool queryStringCaptureEnabled, int? queryStringSize, string expectedQueryString)
         {
             SetInstrumentationVerification();
             ConfigureInstrumentation(instrumentation, enableSocketsHandler);
+            SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING", queryStringCaptureEnabled ? "true" : "false");
+
+            if (queryStringSize.HasValue)
+            {
+                SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE", queryStringSize.ToString());
+            }
 
             var expectedAsyncCount = CalculateExpectedAsyncSpans(instrumentation);
             var expectedSyncCount = CalculateExpectedSyncSpans(instrumentation);
@@ -77,6 +91,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     if (span.Tags[Tags.HttpStatusCode] == "502")
                     {
                         Assert.Equal(1, span.Error);
+                    }
+
+                    if (span.Tags.TryGetValue(Tags.HttpUrl, out var url))
+                    {
+                        if (queryStringCaptureEnabled)
+                        {
+                            url.Should().EndWith(expectedQueryString);
+                        }
+                        else
+                        {
+                            new Uri(url).Query.Should().BeNullOrEmpty();
+                        }
                     }
                 }
 

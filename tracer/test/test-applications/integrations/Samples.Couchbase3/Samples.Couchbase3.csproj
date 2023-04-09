@@ -1,16 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">3.0.0</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">3.4.1</ApiVersion>
     <DefineConstants Condition="'$(ApiVersion)'&lt;'3.1.2'">$(DefineConstants);COUCHBASE_3_0</DefineConstants>
     <OutputType>Exe</OutputType>
     <RequiresDockerDependency>true</RequiresDockerDependency>
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CouchbaseNetClient" Version="$(ApiVersion)" />
-    <PackageReference Condition="'$(ApiVersion)' == '3.0.0' OR ('$(ApiVersion)'&gt;='3.1.2' AND '$(ApiVersion)'&lt;='3.1.7')"
-                      Include="Microsoft.Bcl.AsyncInterfaces" Version="1.0.0.0" />
+    <PackageReference Condition="'$(ApiVersion)' == '3.0.0' OR ('$(ApiVersion)'&gt;='3.1.2' AND '$(ApiVersion)'&lt;='3.1.7')" Include="Microsoft.Bcl.AsyncInterfaces" Version="1.0.0.0" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

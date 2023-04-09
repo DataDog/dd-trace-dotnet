@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.SourceGenerators.Helpers;
 using Microsoft.CodeAnalysis;
 
 namespace Datadog.Trace.SourceGenerators.TagsListGenerator.Diagnostics
@@ -17,6 +18,17 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator.Diagnostics
             Diagnostic.Create(
                 new DiagnosticDescriptor(
                     Id, Title, Message, category: SourceGenerators.Constants.Usage, defaultSeverity: DiagnosticSeverity.Warning, isEnabledByDefault: true),
+                currentNode?.GetLocation());
+
+        public static DiagnosticInfo CreateInfo(SyntaxNode? currentNode)
+            => new(
+                new DiagnosticDescriptor(
+                    Id,
+                    Title,
+                    Message,
+                    category: SourceGenerators.Constants.Usage,
+                    defaultSeverity: DiagnosticSeverity.Warning,
+                    isEnabledByDefault: true),
                 currentNode?.GetLocation());
     }
 }

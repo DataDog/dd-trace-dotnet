@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Platforms>AnyCPU;x64;x86</Platforms>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 

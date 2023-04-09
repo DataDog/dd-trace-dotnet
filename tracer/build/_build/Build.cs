@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Linq;
 using Nuke.Common;
@@ -9,9 +8,9 @@ using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
 using Nuke.Common.Utilities.Collections;
 using static Nuke.Common.EnvironmentInfo;
+using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
-using static Nuke.Common.IO.CompressionTasks;
 
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
@@ -31,8 +30,8 @@ partial class Build : NukeBuild
     [Parameter("Configuration to build - Default is 'Release'")]
     readonly Configuration BuildConfiguration = Configuration.Release;
 
-    [Parameter("Platform to build - x86 or x64. Default is x64")]
-    readonly MSBuildTargetPlatform TargetPlatform = MSBuildTargetPlatform.x64;
+    [Parameter("Platform to build - x86, x64, ARM64. Defaults to the current platform.")]
+    readonly MSBuildTargetPlatform TargetPlatform = GetDefaultTargetPlatform();
 
     [Parameter("The TargetFramework to execute when running or building a sample app, or linux integration tests")]
     readonly TargetFramework Framework;
@@ -55,7 +54,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "2.21.0";
+    readonly string Version = "2.28.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -88,21 +87,21 @@ partial class Build : NukeBuild
     readonly bool IncludeAllTestFrameworks = true;
 
     Target Info => _ => _
-        .Description("Describes the current configuration")
-        .Before(Clean, Restore, BuildTracerHome)
-        .Executes(() =>
-        {
-            Logger.Info($"Configuration: {BuildConfiguration}");
-            Logger.Info($"Platform: {TargetPlatform}");
-            Logger.Info($"Framework: {Framework}");
-            Logger.Info($"TestAllPackageVersions: {TestAllPackageVersions}");
-            Logger.Info($"MonitoringHomeDirectory: {MonitoringHomeDirectory}");
-            Logger.Info($"ArtifactsDirectory: {ArtifactsDirectory}");
-            Logger.Info($"NugetPackageDirectory: {NugetPackageDirectory}");
-            Logger.Info($"IncludeAllTestFrameworks: {IncludeAllTestFrameworks}");
-            Logger.Info($"IsAlpine: {IsAlpine}");
-            Logger.Info($"Version: {Version}");
-        });
+                       .Description("Describes the current configuration")
+                       .Before(Clean, Restore, BuildTracerHome)
+                       .Executes(() =>
+                        {
+                            Logger.Info($"Configuration: {BuildConfiguration}");
+                            Logger.Info($"Platform: {TargetPlatform}");
+                            Logger.Info($"Framework: {Framework}");
+                            Logger.Info($"TestAllPackageVersions: {TestAllPackageVersions}");
+                            Logger.Info($"MonitoringHomeDirectory: {MonitoringHomeDirectory}");
+                            Logger.Info($"ArtifactsDirectory: {ArtifactsDirectory}");
+                            Logger.Info($"NugetPackageDirectory: {NugetPackageDirectory}");
+                            Logger.Info($"IncludeAllTestFrameworks: {IncludeAllTestFrameworks}");
+                            Logger.Info($"IsAlpine: {IsAlpine}");
+                            Logger.Info($"Version: {Version}");
+                        });
 
     Target Clean => _ => _
         .Description("Cleans all build output")
@@ -200,16 +199,9 @@ partial class Build : NukeBuild
         .Description("Builds the integration tests for Windows")
         .DependsOn(CompileDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(CompileSamplesWindows)
         .DependsOn(CompileIntegrationTests)
         .DependsOn(BuildRunnerTool);
-
-    Target BuildDebuggerIntegrationTests => _ => _
-        .Unlisted()
-        .Description("Builds the debugger integration tests")
-        .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileDebuggerIntegrationTests);
 
     Target BuildAspNetIntegrationTests => _ => _
         .Unlisted()
@@ -217,7 +209,6 @@ partial class Build : NukeBuild
         .Description("Builds the ASP.NET integration tests for Windows")
         .DependsOn(CompileDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(PublishIisSamples)
         .DependsOn(CompileIntegrationTests);
 
@@ -226,7 +217,6 @@ partial class Build : NukeBuild
         .Requires(() => IsWin)
         .Description("Builds the regression tests for Windows")
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(CompileRegressionDependencyLibs)
         .DependsOn(CompileRegressionSamples)
         .DependsOn(CompileFrameworkReproductions)
@@ -238,11 +228,6 @@ partial class Build : NukeBuild
         .DependsOn(BuildWindowsIntegrationTests)
         .DependsOn(RunWindowsIntegrationTests);
 
-    Target BuildAndRunDebuggerIntegrationTests => _ => _
-        .Description("Builds and runs the debugger integration tests")
-        .DependsOn(BuildDebuggerIntegrationTests)
-        .DependsOn(RunDebuggerIntegrationTests);
-
     Target BuildAndRunWindowsRegressionTests => _ => _
         .Requires(() => IsWin)
         .Description("Builds and runs the Windows regression tests")
@@ -253,7 +238,6 @@ partial class Build : NukeBuild
         .Requires(() => IsWin)
         .Description("Builds and runs the Windows Azure Functions tests")
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(CompileAzureFunctionsSamplesWindows)
         .DependsOn(BuildRunnerTool)
         .DependsOn(CompileIntegrationTests)
@@ -265,9 +249,9 @@ partial class Build : NukeBuild
         .DependsOn(CompileDependencyLibs)
         .DependsOn(CompileRegressionDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileSamplesLinux)
+        .DependsOn(CompileSamplesLinuxOrOsx)
         .DependsOn(CompileMultiApiPackageVersionSamples)
-        .DependsOn(CompileLinuxIntegrationTests)
+        .DependsOn(CompileLinuxOrOsxIntegrationTests)
         .DependsOn(BuildRunnerTool)
         .DependsOn(CopyServerlessArtifacts);
 
@@ -277,6 +261,24 @@ partial class Build : NukeBuild
         .DependsOn(BuildLinuxIntegrationTests)
         .DependsOn(RunLinuxIntegrationTests);
 
+    Target BuildOsxIntegrationTests => _ => _
+        .Requires(() => IsOsx)
+        .Description("Builds the osx integration tests")
+        .DependsOn(CompileDependencyLibs)
+        .DependsOn(CompileRegressionDependencyLibs)
+        .DependsOn(CompileManagedTestHelpers)
+        .DependsOn(CompileSamplesLinuxOrOsx)
+        .DependsOn(CompileMultiApiPackageVersionSamples)
+        .DependsOn(CompileLinuxOrOsxIntegrationTests)
+        .DependsOn(BuildRunnerTool)
+        .DependsOn(CopyServerlessArtifacts);
+
+    Target BuildAndRunOsxIntegrationTests => _ => _
+        .Requires(() => IsOsx)
+        .Description("Builds and runs the osx integration tests. Requires docker-compose dependencies")
+        .DependsOn(BuildOsxIntegrationTests)
+        .DependsOn(RunOsxIntegrationTests);
+    
     Target BuildAndRunToolArtifactTests => _ => _
        .Description("Builds and runs the tool artifacts tests")
        .DependsOn(CompileManagedTestHelpers)
@@ -318,6 +320,7 @@ partial class Build : NukeBuild
 
     Target BuildRunnerTool => _ => _
         .Unlisted()
+        .DependsOn(CompileInstrumentationVerificationLibrary)
         .After(CreateBundleHome, ExtractDebugInfoLinux)
         .Executes(() =>
         {
@@ -417,6 +420,9 @@ partial class Build : NukeBuild
                     .SetApplicationArguments($"-r net472 netcoreapp3.1 -m -f {Filter ?? "*"} --iterationTime 2000")
                     .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
                     .SetProcessEnvironmentVariable("DD_ENV", "CI")
+                    .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)
+                    .SetProcessEnvironmentVariable("DD_TRACER_HOME", MonitoringHome)
+
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                 );
             }

@@ -11,7 +11,7 @@ public:
 
 public:
 // Inherited via IRuntimeIdStore
-    virtual const char* GetId(AppDomainID appDomainId) override;
+    const char* GetId(AppDomainID appDomainId) override;
 
 private:
     static std::string _guid;

@@ -3,12 +3,12 @@
     "ddsource": "dd_debugger",
     "debugger": {
       "diagnostics": {
-        "Exception": null,
-        "probeId": "22df6346-f993-1027-bd1a-f25f3a06ca56",
+        "exception": null,
+        "probeId": "d1bf6b7f-7fae-6c5f-3c28-d47a96e0ad70",
         "status": "INSTALLED"
       }
     },
-    "message": "Installed probe 22df6346-f993-1027-bd1a-f25f3a06ca56.",
-    "service": "Probes"
+    "message": "Installed probe d1bf6b7f-7fae-6c5f-3c28-d47a96e0ad70.",
+    "service": "probes"
   }
 ]

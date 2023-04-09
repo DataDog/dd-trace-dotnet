@@ -1,0 +1,65 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "return": {
+            "arguments": {
+              "intArg": {
+                "type": "Int32",
+                "value": "1"
+              },
+              "this": {
+                "type": "InvalidCondition",
+                "value": "InvalidCondition"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "String",
+                "value": "Argument: 1"
+              }
+            },
+            "staticFields": {
+              "Json": {
+                "type": "String",
+                "value": "{\r\n    \"gt\": [\r\n       \"undefined\",\r\n      2\r\n    ]\r\n}"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "errors": [
+          {
+            "expression": "\"undefined\" > 2",
+            "message": "ScrubbedValue"
+          }
+        ],
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.ExpressionTests.InvalidCondition"
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.ExpressionTests.InvalidCondition",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

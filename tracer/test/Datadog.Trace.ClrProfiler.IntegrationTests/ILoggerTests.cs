@@ -5,6 +5,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.Formatting;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -115,7 +117,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 .And.OnlyContain(x => x.Env == "integration_tests")
                 .And.OnlyContain(x => x.Version == "1.0.0")
                 .And.OnlyContain(x => x.Exception == null)
-                .And.OnlyContain(x => x.LogLevel == DirectSubmissionLogLevel.Information);
+                .And.OnlyContain(x => x.LogLevel == DirectSubmissionLogLevel.Information)
+                .And.OnlyContain(x => x.TryGetProperty(LoggerLogFormatter.LoggerNameKey).Exists);
 
             if (filterStartupLogs)
             {
@@ -125,6 +128,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 logs.Should().Contain(x => x.Message.Contains("Building pipeline")); // these should not be filtered out
             }
+
+            logs.Where(x => !x.Message.Contains("Waiting for app started handling requests"))
+                .Should()
+                .HaveCount(expectedLogCount);
 
             VerifyInstrumentation(processResult.Process);
         }

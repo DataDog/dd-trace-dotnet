@@ -98,7 +98,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -199,7 +199,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -300,7 +300,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -402,7 +402,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -563,7 +563,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -829,7 +829,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -1095,7 +1095,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -1361,7 +1361,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -1627,7 +1627,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -1893,7 +1893,7 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -2159,6 +2159,6 @@
       "version": "2"
     },
     "message": "ScrubbedValue",
-    "service": "Probes"
+    "service": "probes"
   }
 ]

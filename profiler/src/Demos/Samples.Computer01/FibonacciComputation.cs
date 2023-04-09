@@ -4,19 +4,13 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Samples.Computer01
 {
-    public class FibonacciComputation
+    public class FibonacciComputation : ScenarioBase
     {
         private readonly int _value;
-        private readonly int _nbThreads;
-        private ManualResetEvent _stopEvent;
-        private List<Task> _activeTasks;
 
         public FibonacciComputation(int nbThreads)
             : this(32, nbThreads)
@@ -24,46 +18,9 @@ namespace Samples.Computer01
         }
 
         public FibonacciComputation(int n, int nbThreads)
+            : base(nbThreads)
         {
             _value = n;
-            _nbThreads = nbThreads;
-        }
-
-        public void Start()
-        {
-            if (_stopEvent != null)
-            {
-                throw new InvalidOperationException("Already running...");
-            }
-
-            _stopEvent = new ManualResetEvent(false);
-            _activeTasks = CreateThreads();
-        }
-
-        public void Run()
-        {
-            _stopEvent = new ManualResetEvent(false);
-
-            DoFibonacciComputation();
-
-            _stopEvent.Dispose();
-            _stopEvent = null;
-        }
-
-        public void Stop()
-        {
-            if (_stopEvent == null)
-            {
-                throw new InvalidOperationException("Not running...");
-            }
-
-            _stopEvent.Set();
-
-            Task.WhenAll(_activeTasks).Wait();
-
-            _stopEvent.Dispose();
-            _stopEvent = null;
-            _activeTasks = null;
         }
 
         public long DoFibonacciComputation()
@@ -106,30 +63,9 @@ namespace Samples.Computer01
             return DoComputationImpl(number - 1) + DoComputationImpl(number - 2);
         }
 
-        private List<Task> CreateThreads()
+        public override void OnProcess()
         {
-            var result = new List<Task>(_nbThreads);
-
-            for (var i = 0; i < _nbThreads; i++)
-            {
-                result.Add(
-                    Task.Factory.StartNew(
-                        () =>
-                        {
-                            while (!IsEventSet())
-                            {
-                                DoFibonacciComputation();
-                            }
-                        },
-                        TaskCreationOptions.LongRunning));
-            }
-
-            return result;
-        }
-
-        private bool IsEventSet()
-        {
-            return _stopEvent.WaitOne(0);
+            DoFibonacciComputation();
         }
     }
 }

@@ -15,12 +15,14 @@
       http.request.headers.host: localhost:00000,
       http.route: api2/{action}/{value},
       http.status_code: 201,
-      http.url: http://localhost/api2/statuscode/201?ps=true&ts=false,
+      http.url: http://localhost:00000/api2/statuscode/201?ps=true&ts=false,
       http.useragent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {

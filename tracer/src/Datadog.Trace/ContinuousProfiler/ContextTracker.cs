@@ -73,7 +73,7 @@ namespace Datadog.Trace.ContinuousProfiler
                 {
                     if (_firstEndpointFailure)
                     {
-                        Log.Warning(e, "Unable to set the endpoint for span {spanId}", localRootSpanId);
+                        Log.Warning(e, "Unable to set the endpoint for span {SpanId}", localRootSpanId);
                         _firstEndpointFailure = false;
                     }
                 }

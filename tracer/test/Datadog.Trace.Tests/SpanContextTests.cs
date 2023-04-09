@@ -3,6 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Generic;
+using System.Linq;
+using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
 
@@ -37,6 +40,118 @@ namespace Datadog.Trace.Tests
 
             spanContext.SpanId.Should().Be(childSpanId);
             spanContext.TraceId.Should().Be(parentTraceId, "trace id shouldn't be overriden if a parent trace exists. Doing so would break the HttpWebRequest.GetRequestStream/GetResponse integration.");
+        }
+
+        [Fact]
+        public void EnumerateKeys()
+        {
+            var expectedKeys = new HashSet<string>
+                               {
+                                   "__DistributedKey-TraceId",
+                                   "__DistributedKey-ParentId",
+                                   "__DistributedKey-SamplingPriority",
+                                   "__DistributedKey-Origin",
+                                   "__DistributedKey-RawTraceId",
+                                   "__DistributedKey-RawSpanId",
+                                   "__DistributedKey-PropagatedTags",
+                                   "__DistributedKey-AdditionalW3CTraceState",
+                                   "x-datadog-trace-id",
+                                   "x-datadog-parent-id",
+                                   "x-datadog-sampling-priority",
+                                   "x-datadog-origin",
+                               };
+
+            var context = CreateSpanContext();
+            var actualKeys = context.Keys.ToArray();
+
+            // check for missing and unexpected keys
+            actualKeys.Should().BeSubsetOf(expectedKeys);
+            expectedKeys.Should().BeSubsetOf(actualKeys);
+
+            // check for duplicate keys
+            actualKeys.Should().BeEquivalentTo(actualKeys.Distinct());
+        }
+
+        [Fact]
+        public void EnumerateValues()
+        {
+            var expectedValues = new HashSet<string>
+                                 {
+                                     "1",
+                                     "2",
+                                     "-1",
+                                     "origin",
+                                     "1a",
+                                     "2b",
+                                     "_dd.p.key1=value1,_dd.p.key2=value2",
+                                     "key3=value3,key4=value4",
+                                 };
+
+            var context = CreateSpanContext();
+            var actualValues = context.Values.ToArray();
+
+            // check for missing and unexpected values
+            actualValues.Should().BeSubsetOf(expectedValues);
+            expectedValues.Should().BeSubsetOf(actualValues);
+        }
+
+        [Fact]
+        public void EnumeratePairs()
+        {
+            var expectedPairs = new HashSet<KeyValuePair<string, string>>
+                                {
+                                    new("__DistributedKey-TraceId", "1"),
+                                    new("__DistributedKey-ParentId", "2"),
+                                    new("__DistributedKey-SamplingPriority", "-1"),
+                                    new("__DistributedKey-Origin", "origin"),
+                                    new("__DistributedKey-RawTraceId", "1a"),
+                                    new("__DistributedKey-RawSpanId", "2b"),
+                                    new("__DistributedKey-PropagatedTags", "_dd.p.key1=value1,_dd.p.key2=value2"),
+                                    new("__DistributedKey-AdditionalW3CTraceState", "key3=value3,key4=value4"),
+                                    new("x-datadog-trace-id", "1"),
+                                    new("x-datadog-parent-id", "2"),
+                                    new("x-datadog-sampling-priority", "-1"),
+                                    new("x-datadog-origin", "origin")
+                                };
+
+            var context = CreateSpanContext();
+            var actualPairs = context.ToArray();
+
+            // check for missing and unexpected keys
+            actualPairs.Should().BeSubsetOf(expectedPairs);
+            expectedPairs.Should().BeSubsetOf(actualPairs);
+
+            // check for duplicate keys
+            actualPairs.Should().BeEquivalentTo(actualPairs.Distinct());
+        }
+
+        private static IReadOnlyDictionary<string, string> CreateSpanContext()
+        {
+            const ulong traceId = 1;
+            const ulong spanId = 2;
+            const string rawTraceId = "1a";
+            const string rawSpanId = "2b";
+            const int samplingPriority = SamplingPriorityValues.UserReject;
+            const string origin = "origin";
+            const string additionalW3CTraceState = "key3=value3,key4=value4";
+
+            var propagatedTags = new TraceTagCollection(100);
+            propagatedTags.SetTag("_dd.p.key1", "value1");
+            propagatedTags.SetTag("_dd.p.key2", "value2");
+
+            var traceContext = new TraceContext(tracer: null, propagatedTags);
+            traceContext.SetSamplingPriority(samplingPriority);
+            traceContext.Origin = origin;
+            traceContext.AdditionalW3CTraceState = additionalW3CTraceState;
+
+            return new SpanContext(
+                parent: SpanContext.None,
+                traceContext,
+                serviceName: null,
+                traceId,
+                spanId,
+                rawTraceId,
+                rawSpanId);
         }
     }
 }

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -11,7 +13,6 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Vendors.Serilog;
 
@@ -52,23 +53,30 @@ namespace Datadog.Trace.Configuration
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        public TracerSettings(IConfigurationSource source)
+        public TracerSettings(IConfigurationSource? source)
         {
             var commaSeparator = new[] { ',' };
+            source ??= NullConfigurationSource.Instance;
 
-            Environment = source?.GetString(ConfigurationKeys.Environment);
+            Environment = source.GetString(ConfigurationKeys.Environment);
 
-            ServiceName = source?.GetString(ConfigurationKeys.ServiceName) ??
+            ServiceName = source.GetString(ConfigurationKeys.ServiceName) ??
                           // backwards compatibility for names used in the past
-                          source?.GetString("DD_SERVICE_NAME");
+                          source.GetString("DD_SERVICE_NAME");
 
-            ServiceVersion = source?.GetString(ConfigurationKeys.ServiceVersion);
+            ServiceVersion = source.GetString(ConfigurationKeys.ServiceVersion);
 
-            TraceEnabled = source?.GetBool(ConfigurationKeys.TraceEnabled) ??
+            GitCommitSha = source.GetString(ConfigurationKeys.GitCommitSha);
+
+            GitRepositoryUrl = source.GetString(ConfigurationKeys.GitRepositoryUrl);
+
+            GitMetadataEnabled = source.GetBool(ConfigurationKeys.GitMetadataEnabled) ?? true;
+
+            TraceEnabled = source.GetBool(ConfigurationKeys.TraceEnabled) ??
                            // default value
                            true;
 
-            var disabledIntegrationNames = source?.GetString(ConfigurationKeys.DisabledIntegrations)
+            var disabledIntegrationNames = source.GetString(ConfigurationKeys.DisabledIntegrations)
                                                  ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
                                            Enumerable.Empty<string>();
 
@@ -79,21 +87,21 @@ namespace Datadog.Trace.Configuration
             Exporter = new ExporterSettings(source);
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
-            AnalyticsEnabled = source?.GetBool(ConfigurationKeys.GlobalAnalyticsEnabled) ??
+            AnalyticsEnabled = source.GetBool(ConfigurationKeys.GlobalAnalyticsEnabled) ??
                                // default value
                                false;
 #pragma warning restore 618
 
-            MaxTracesSubmittedPerSecond = source?.GetInt32(ConfigurationKeys.TraceRateLimit) ??
+            MaxTracesSubmittedPerSecond = source.GetInt32(ConfigurationKeys.TraceRateLimit) ??
 #pragma warning disable 618 // this parameter has been replaced but may still be used
-                                          source?.GetInt32(ConfigurationKeys.MaxTracesSubmittedPerSecond) ??
+                                          source.GetInt32(ConfigurationKeys.MaxTracesSubmittedPerSecond) ??
 #pragma warning restore 618
                                           // default value
                                           100;
 
-            GlobalTags = source?.GetDictionary(ConfigurationKeys.GlobalTags) ??
+            GlobalTags = source.GetDictionary(ConfigurationKeys.GlobalTags) ??
                          // backwards compatibility for names used in the past
-                         source?.GetDictionary("DD_TRACE_GLOBAL_TAGS") ??
+                         source.GetDictionary("DD_TRACE_GLOBAL_TAGS") ??
                          // default value (empty)
                          new ConcurrentDictionary<string, string>();
 
@@ -101,98 +109,118 @@ namespace Datadog.Trace.Configuration
             GlobalTags = GlobalTags.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                                    .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
-            var inputHeaderTags = source?.GetDictionary(ConfigurationKeys.HeaderTags, allowOptionalMappings: true) ??
+            var inputHeaderTags = source.GetDictionary(ConfigurationKeys.HeaderTags, allowOptionalMappings: true) ??
                                   // default value (empty)
                                   new Dictionary<string, string>();
 
-            var headerTagsNormalizationFixEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled) ?? true;
+            var headerTagsNormalizationFixEnabled = source.GetBool(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled) ?? true;
             // Filter out tags with empty keys or empty values, and trim whitespaces
             HeaderTags = InitializeHeaderTags(inputHeaderTags, headerTagsNormalizationFixEnabled);
 
-            var serviceNameMappings = source?.GetDictionary(ConfigurationKeys.ServiceNameMappings)
+            var serviceNameMappings = source.GetDictionary(ConfigurationKeys.ServiceNameMappings)
                                             ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                                             ?.ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
             ServiceNameMappings = new ServiceNames(serviceNameMappings);
 
-            TracerMetricsEnabled = source?.GetBool(ConfigurationKeys.TracerMetricsEnabled) ??
+            TracerMetricsEnabled = source.GetBool(ConfigurationKeys.TracerMetricsEnabled) ??
                                    // default value
                                    false;
 
-            StatsComputationEnabled = source?.GetBool(ConfigurationKeys.StatsComputationEnabled) ?? false;
+            StatsComputationEnabled = source.GetBool(ConfigurationKeys.StatsComputationEnabled) ?? false;
 
-            StatsComputationInterval = source?.GetInt32(ConfigurationKeys.StatsComputationInterval) ?? 10;
+            StatsComputationInterval = source.GetInt32(ConfigurationKeys.StatsComputationInterval) ?? 10;
 
-            RuntimeMetricsEnabled = source?.GetBool(ConfigurationKeys.RuntimeMetricsEnabled) ??
+            RuntimeMetricsEnabled = source.GetBool(ConfigurationKeys.RuntimeMetricsEnabled) ??
                                     false;
 
-            CustomSamplingRules = source?.GetString(ConfigurationKeys.CustomSamplingRules);
+            CustomSamplingRules = source.GetString(ConfigurationKeys.CustomSamplingRules);
 
-            SpanSamplingRules = source?.GetString(ConfigurationKeys.SpanSamplingRules);
+            SpanSamplingRules = source.GetString(ConfigurationKeys.SpanSamplingRules);
 
-            GlobalSamplingRate = source?.GetDouble(ConfigurationKeys.GlobalSamplingRate);
+            GlobalSamplingRate = source.GetDouble(ConfigurationKeys.GlobalSamplingRate);
 
-            StartupDiagnosticLogEnabled = source?.GetBool(ConfigurationKeys.StartupDiagnosticLogEnabled) ??
+            StartupDiagnosticLogEnabled = source.GetBool(ConfigurationKeys.StartupDiagnosticLogEnabled) ??
                                           // default value
                                           true;
 
-            var httpServerErrorStatusCodes = source?.GetString(ConfigurationKeys.HttpServerErrorStatusCodes) ??
+            var httpServerErrorStatusCodes = source.GetString(ConfigurationKeys.HttpServerErrorStatusCodes) ??
                                              // Default value
                                              "500-599";
 
             HttpServerErrorStatusCodes = ParseHttpCodesToArray(httpServerErrorStatusCodes);
 
-            var httpClientErrorStatusCodes = source?.GetString(ConfigurationKeys.HttpClientErrorStatusCodes) ??
+            var httpClientErrorStatusCodes = source.GetString(ConfigurationKeys.HttpClientErrorStatusCodes) ??
                                              // Default value
                                              "400-499";
             HttpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodes);
 
-            TraceBufferSize = source?.GetInt32(ConfigurationKeys.BufferSize)
+            TraceBufferSize = source.GetInt32(ConfigurationKeys.BufferSize)
                            ?? 1024 * 1024 * 10; // 10MB
 
-            TraceBatchInterval = source?.GetInt32(ConfigurationKeys.SerializationBatchInterval)
+            TraceBatchInterval = source.GetInt32(ConfigurationKeys.SerializationBatchInterval)
                               ?? 100;
 
-            RouteTemplateResourceNamesEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
+            RouteTemplateResourceNamesEnabled = source.GetBool(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
                                              ?? true;
 
-            ExpandRouteTemplatesEnabled = source?.GetBool(ConfigurationKeys.ExpandRouteTemplatesEnabled)
+            ExpandRouteTemplatesEnabled = source.GetBool(ConfigurationKeys.ExpandRouteTemplatesEnabled)
                                           // disabled by default if route template resource names enabled
                                        ?? !RouteTemplateResourceNamesEnabled;
 
-            KafkaCreateConsumerScopeEnabled = source?.GetBool(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
+            KafkaCreateConsumerScopeEnabled = source.GetBool(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
                                            ?? true; // default
 
-            DelayWcfInstrumentationEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
+            DelayWcfInstrumentationEnabled = source.GetBool(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                           ?? false;
 
-            WcfObfuscationEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled)
+            WcfObfuscationEnabled = source.GetBool(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled)
                                  ?? true; // default value
 
-            ObfuscationQueryStringRegex = source?.GetString(ConfigurationKeys.ObfuscationQueryStringRegex) ?? DefaultObfuscationQueryStringRegex;
+            ObfuscationQueryStringRegex = source.GetString(ConfigurationKeys.ObfuscationQueryStringRegex) ?? DefaultObfuscationQueryStringRegex;
 
-            QueryStringReportingEnabled = source?.GetBool(ConfigurationKeys.QueryStringReportingEnabled) ?? true;
+            QueryStringReportingEnabled = source.GetBool(ConfigurationKeys.QueryStringReportingEnabled) ?? true;
 
-            ObfuscationQueryStringRegexTimeout = source?.GetDouble(ConfigurationKeys.ObfuscationQueryStringRegexTimeout) is { } x and > 0 ? x : 200;
+            QueryStringReportingSize = source.GetInt32(ConfigurationKeys.QueryStringReportingSize) ?? 5000; // 5000 being the tag value length limit
 
-            IsActivityListenerEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled) ??
-                                        source?.GetBool("DD_TRACE_ACTIVITY_LISTENER_ENABLED") ??
+            ObfuscationQueryStringRegexTimeout = source.GetDouble(ConfigurationKeys.ObfuscationQueryStringRegexTimeout) is { } x and > 0 ? x : 200;
+
+            IsActivityListenerEnabled = source.GetBool(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled) ??
+                                        source.GetBool("DD_TRACE_ACTIVITY_LISTENER_ENABLED") ??
                                         // default value
                                         false;
 
-            var propagationStyleInject = source?.GetString(ConfigurationKeys.PropagationStyleInject) ??
-                                         source?.GetString("DD_PROPAGATION_STYLE_INJECT") ?? // deprecated setting name
-                                         source?.GetString(ConfigurationKeys.PropagationStyle) ??
-                                         ContextPropagationHeaderStyle.Datadog; // default value
+            var propagationStyleInject = source.GetString(ConfigurationKeys.PropagationStyleInject) ??
+                                         source.GetString("DD_PROPAGATION_STYLE_INJECT") ?? // deprecated setting name
+                                         source.GetString(ConfigurationKeys.PropagationStyle);
 
             PropagationStyleInject = TrimSplitString(propagationStyleInject, commaSeparator);
 
-            var propagationStyleExtract = source?.GetString(ConfigurationKeys.PropagationStyleExtract) ??
-                                          source?.GetString("DD_PROPAGATION_STYLE_EXTRACT") ?? // deprecated setting name
-                                          source?.GetString(ConfigurationKeys.PropagationStyle) ??
-                                          ContextPropagationHeaderStyle.Datadog; // default value
+            if (PropagationStyleInject.Length == 0)
+            {
+                // default value
+                PropagationStyleInject = new[]
+                                         {
+                                             ContextPropagationHeaderStyle.W3CTraceContext,
+                                             ContextPropagationHeaderStyle.Datadog
+                                         };
+            }
+
+            var propagationStyleExtract = source.GetString(ConfigurationKeys.PropagationStyleExtract) ??
+                                          source.GetString("DD_PROPAGATION_STYLE_EXTRACT") ?? // deprecated setting name
+                                          source.GetString(ConfigurationKeys.PropagationStyle);
 
             PropagationStyleExtract = TrimSplitString(propagationStyleExtract, commaSeparator);
+
+            if (PropagationStyleExtract.Length == 0)
+            {
+                // default value
+                PropagationStyleExtract = new[]
+                                          {
+                                              ContextPropagationHeaderStyle.W3CTraceContext,
+                                              ContextPropagationHeaderStyle.Datadog
+                                          };
+            }
 
             // If Activity support is enabled, we must enable the W3C Trace Context propagators.
             // It's ok to include W3C multiple times, we handle that later.
@@ -201,35 +229,39 @@ namespace Datadog.Trace.Configuration
                 PropagationStyleInject = PropagationStyleInject.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
                 PropagationStyleExtract = PropagationStyleExtract.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
             }
+            else
+            {
+                DisabledIntegrationNames.Add(nameof(Configuration.IntegrationId.OpenTelemetry));
+            }
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source);
 
-            TraceMethods = source?.GetString(ConfigurationKeys.TraceMethods) ??
+            TraceMethods = source.GetString(ConfigurationKeys.TraceMethods) ??
                            // Default value
                            string.Empty;
 
-            var grpcTags = source?.GetDictionary(ConfigurationKeys.GrpcTags, allowOptionalMappings: true) ??
+            var grpcTags = source.GetDictionary(ConfigurationKeys.GrpcTags, allowOptionalMappings: true) ??
                            // default value (empty)
                            new Dictionary<string, string>();
 
             // Filter out tags with empty keys or empty values, and trim whitespaces
             GrpcTags = InitializeHeaderTags(grpcTags, headerTagsNormalizationFixEnabled: true);
 
-            var outgoingTagPropagationHeaderMaxLength = source?.GetInt32(ConfigurationKeys.TagPropagation.HeaderMaxLength);
+            var outgoingTagPropagationHeaderMaxLength = source.GetInt32(ConfigurationKeys.TagPropagation.HeaderMaxLength);
 
             OutgoingTagPropagationHeaderMaxLength = outgoingTagPropagationHeaderMaxLength is >= 0 and <= Tagging.TagPropagation.OutgoingTagPropagationHeaderMaxLength ? (int)outgoingTagPropagationHeaderMaxLength : Tagging.TagPropagation.OutgoingTagPropagationHeaderMaxLength;
 
-            IpHeader = source?.GetString(ConfigurationKeys.IpHeader) ?? source?.GetString(ConfigurationKeys.AppSec.CustomIpHeader);
+            IpHeader = source.GetString(ConfigurationKeys.IpHeader) ?? source.GetString(ConfigurationKeys.AppSec.CustomIpHeader);
 
-            IpHeaderEnabled = source?.GetBool(ConfigurationKeys.IpHeaderEnabled) ?? false;
+            IpHeaderEnabled = source.GetBool(ConfigurationKeys.IpHeaderEnabled) ?? false;
 
-            IsDataStreamsMonitoringEnabled = source?.GetBool(ConfigurationKeys.DataStreamsMonitoring.Enabled) ??
+            IsDataStreamsMonitoringEnabled = source.GetBool(ConfigurationKeys.DataStreamsMonitoring.Enabled) ??
                                              // default value
                                              false;
 
-            IsRareSamplerEnabled = source?.GetBool(ConfigurationKeys.RareSamplerEnabled) ?? false;
+            IsRareSamplerEnabled = source.GetBool(ConfigurationKeys.RareSamplerEnabled) ?? false;
 
-            IsRunningInAzureAppService = source?.GetString(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)?.ToBoolean() ?? false;
+            IsRunningInAzureAppService = source.GetString(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)?.ToBoolean() ?? false;
             if (IsRunningInAzureAppService)
             {
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source);
@@ -239,34 +271,55 @@ namespace Datadog.Trace.Configuration
                 }
             }
 
-            var urlSubstringSkips = source?.GetString(ConfigurationKeys.HttpClientExcludedUrlSubstrings) ??
+            var urlSubstringSkips = source.GetString(ConfigurationKeys.HttpClientExcludedUrlSubstrings) ??
                                     // default value
                                     (IsRunningInAzureAppService ? ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions :
                                      Serverless.Metadata is { IsRunningInLambda: true } m ? m.DefaultHttpClientExclusions : null);
 
-            if (urlSubstringSkips != null)
-            {
-                HttpClientExcludedUrlSubstrings = TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator);
-            }
+            HttpClientExcludedUrlSubstrings = urlSubstringSkips != null
+                                                  ? TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator)
+                                                  : Array.Empty<string>();
+
+            var dbmPropagationMode = source.GetString(ConfigurationKeys.DbmPropagationMode);
+            DbmPropagationMode = dbmPropagationMode == null ? DbmPropagationLevel.Disabled : ValidateDbmPropagationInput(dbmPropagationMode);
         }
 
         /// <summary>
         /// Gets or sets the default environment name applied to all spans.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.Environment"/>
-        public string Environment { get; set; }
+        public string? Environment { get; set; }
 
         /// <summary>
         /// Gets or sets the service name applied to top-level spans and used to build derived service names.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ServiceName"/>
-        public string ServiceName { get; set; }
+        public string? ServiceName { get; set; }
 
         /// <summary>
         /// Gets or sets the version tag applied to all spans.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ServiceVersion"/>
-        public string ServiceVersion { get; set; }
+        public string? ServiceVersion { get; set; }
+
+        /// <summary>
+        /// Gets or sets the application's git repository url.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GitRepositoryUrl"/>
+        internal string? GitRepositoryUrl { get; set; }
+
+        /// <summary>
+        /// Gets or sets the application's git commit hash.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GitCommitSha"/>
+        internal string? GitCommitSha { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether we should tag every telemetry event with git metadata.
+        /// Default value is <c>true</c> (enabled).
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GitMetadataEnabled"/>
+        internal bool GitMetadataEnabled { get; }
 
         /// <summary>
         /// Gets or sets a value indicating whether tracing is enabled.
@@ -320,13 +373,13 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating custom sampling rules.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
-        public string CustomSamplingRules { get; set; }
+        public string? CustomSamplingRules { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating span sampling rules.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.SpanSamplingRules"/>
-        internal string SpanSamplingRules { get; set; }
+        internal string? SpanSamplingRules { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating a global rate for sampling.
@@ -353,7 +406,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
         /// </summary>
-        internal string IpHeader { get; set; }
+        internal string? IpHeader { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the ip header should not be collected. The default is false.
@@ -422,6 +475,12 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating whether or not http.url should contain the query string, enabled by default
         /// </summary>
         internal bool QueryStringReportingEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value limiting the size of the querystring to report and obfuscate
+        /// Default value is 5000, 0 means that we don't limit the size.
+        /// </summary>
+        internal int QueryStringReportingSize { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating a timeout in milliseconds to the execution of the query string obfuscation regex
@@ -541,9 +600,14 @@ namespace Datadog.Trace.Configuration
         internal bool IsRunningInAzureAppService { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the tracer should propagate service data in db queries
+        /// </summary>
+        internal DbmPropagationLevel DbmPropagationMode { get; set; }
+
+        /// <summary>
         /// Gets or sets the AAS settings
         /// </summary>
-        internal ImmutableAzureAppServiceSettings AzureAppServiceMetadata { get; set; }
+        internal ImmutableAzureAppServiceSettings? AzureAppServiceMetadata { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
@@ -637,14 +701,14 @@ namespace Datadog.Trace.Configuration
             return headerTags;
         }
 
-        internal static string[] TrimSplitString(string textValues, char[] separators)
+        internal static string[] TrimSplitString(string? textValues, char[] separators)
         {
             if (string.IsNullOrWhiteSpace(textValues))
             {
                 return Array.Empty<string>();
             }
 
-            var values = textValues.Split(separators);
+            var values = textValues!.Split(separators);
             var list = new List<string>(values.Length);
 
             foreach (var value in values)
@@ -708,6 +772,31 @@ namespace Datadog.Trace.Configuration
             }
 
             return httpErrorCodesArray;
+        }
+
+        internal static DbmPropagationLevel ValidateDbmPropagationInput(string inputValue)
+        {
+            DbmPropagationLevel propagationValue;
+
+            if (inputValue.Equals("disabled", StringComparison.OrdinalIgnoreCase))
+            {
+                propagationValue = DbmPropagationLevel.Disabled;
+            }
+            else if (inputValue.Equals("service", StringComparison.OrdinalIgnoreCase))
+            {
+                propagationValue = DbmPropagationLevel.Service;
+            }
+            else if (inputValue.Equals("full", StringComparison.OrdinalIgnoreCase))
+            {
+                propagationValue = DbmPropagationLevel.Full;
+            }
+            else
+            {
+                propagationValue = DbmPropagationLevel.Disabled;
+                Log.Warning("Wrong setting '{0}' for DD_DBM_PROPAGATION_MODE supported values include: disabled, service or full.", inputValue);
+            }
+
+            return propagationValue;
         }
     }
 }

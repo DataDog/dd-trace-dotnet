@@ -3,8 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
+using Datadog.Trace.SourceGenerators;
+
 namespace Datadog.Trace.Configuration
 {
+    [EnumExtensions]
     internal enum IntegrationId
     {
         HttpMessageHandler,
@@ -51,5 +56,6 @@ namespace Datadog.Trace.Configuration
         Process,
         HashAlgorithm,
         SymmetricAlgorithm,
+        OpenTelemetry
     }
 }

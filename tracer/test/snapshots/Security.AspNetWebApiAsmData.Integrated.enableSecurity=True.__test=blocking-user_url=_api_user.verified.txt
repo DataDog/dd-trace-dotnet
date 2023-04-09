@@ -1,0 +1,123 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet-webapi.request,
+    Resource: GET /api/user/{id},
+    Service: sample,
+    Type: web,
+    ParentId: Id_3,
+    Tags: {
+      aspnet.controller: user,
+      aspnet.route: api/{controller}/{id},
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 200,
+      http.url: http://localhost:00000/api/user,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      span.kind: server
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet.request,
+    Resource: GET /api/user/{id},
+    Service: sample,
+    Type: web,
+    Tags: {
+      env: integration_tests,
+      http.client_ip: 127.0.0.1,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.route: api/{controller}/{id},
+      http.status_code: 200,
+      http.url: http://localhost:00000/api/user,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      network.client.ip: ::1,
+      runtime-id: Guid_1,
+      span.kind: server,
+      usr.id: user3,
+      _dd.p.dm: -0,
+      _dd.runtime_family: dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.appsec.enabled: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_4,
+    SpanId: Id_5,
+    Name: aspnet-webapi.request,
+    Resource: GET /api/user/{id},
+    Service: sample,
+    Type: web,
+    ParentId: Id_6,
+    Tags: {
+      aspnet.controller: user,
+      aspnet.route: api/{controller}/{id},
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 403,
+      http.url: http://localhost:00000/api/user,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      span.kind: server,
+      _dd.origin: appsec
+    }
+  },
+  {
+    TraceId: Id_4,
+    SpanId: Id_6,
+    Name: aspnet.request,
+    Resource: GET /api/user/{id},
+    Service: sample,
+    Type: web,
+    Tags: {
+      actor.ip: 90.91.8.235,
+      appsec.blocked: true,
+      appsec.event: true,
+      env: integration_tests,
+      http.client_ip: 127.0.0.1,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded-for: 90.91.8.235,
+      http.response.headers.content-length: 167,
+      http.response.headers.content-type: application/json; charset=utf-8,
+      http.route: api/{controller}/{id},
+      http.status_code: 403,
+      http.url: http://localhost:00000/api/user,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      network.client.ip: ::1,
+      runtime-id: Guid_1,
+      span.kind: server,
+      usr.id: user3,
+      _dd.appsec.event_rules.version: 1.5.2,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"blk-001-002","name":"Block User Addresses","tags":{"category":"security_response","type":"block_user"}},"rule_matches":[{"operator":"exact_match","operator_value":"","parameters":[{"address":"usr.id","highlight":["user3"],"key_path":[],"value":"user3"}]}]}]},
+      _dd.origin: appsec,
+      _dd.p.dm: -0,
+      _dd.runtime_family: dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    }
+  }
+]

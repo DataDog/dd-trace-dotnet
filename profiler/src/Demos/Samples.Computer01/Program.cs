@@ -23,9 +23,16 @@ namespace Samples.Computer01
         Async,
         Iterator,
         GenericsAllocation,
-        ContentionGenerator,
+        ContentionGenerator, // parameter = contention duration
         LinuxSignalHandler,
-        GarbageCollection
+        GarbageCollection,   // parameter = generation 0, 1 or 2
+        MemoryLeak,          // parameter = number of objects to allocate
+        QuicklyDeadThreads,  // parameter = number of short lived threads to create
+        LinuxMallocDeadlock,
+        MeasureAllocations,
+        InnerMethods,
+        LineNumber,
+        NullThreadNameBug
     }
 
     public class Program
@@ -48,10 +55,17 @@ namespace Samples.Computer01
             // 10: start n threads waiting on the same lock
             // 11: linux signal handler
             // 12: start garbage collections of a given generation
+            // 13: leak x LOH object with GC in between
+            // 14: start n threads creating short lived threads
+            // 15: trigger malloc deadlock on Linux
+            // 16: count sized allocations
+            // 17: generate frames with named and anonymous methods
+            // 18: call stack on functions to check line number(s)
+            // 19: set thread names to null and empty (validate bug fix)
             //
             Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} " +
             $"[--service] [--iterations <number of iterations to execute>] " +
-            $"[--scenario <0=all 1=computer 2=generics 3=wall time 4=pi computation 5=compute fibonacci 6=n sleeping threads 7=async calls 8=iterator calls 9=allocate array of Generic<int>> 10=threads competing for a lock 11=lunix signal handler 12=trigger garbage collections] " +
+            $"[--scenario <0=all 1=computer 2=generics 3=wall time 4=pi computation 5=compute fibonacci 6=n sleeping threads 7=async calls 8=iterator calls 9=allocate array of Generic<int>> 10=threads competing for a lock 11=lunix signal handler 12=trigger garbage collections 13=memory leak 14=short lived threads] " +
             $"[--param <any number to pass to the scenario - used for contention duration for example>] " +
             $"[--timeout <duration in seconds> | --run-infinitely]");
             Console.WriteLine();

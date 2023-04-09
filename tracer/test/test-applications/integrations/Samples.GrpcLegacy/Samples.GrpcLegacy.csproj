@@ -4,7 +4,6 @@
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
-    <Platforms>x86;x64</Platforms>
     <!-- Suppress warnings about lowercase variable names in generated code -->
     <NoWarn>0618;NETSDK1138;CS8981</NoWarn>
 

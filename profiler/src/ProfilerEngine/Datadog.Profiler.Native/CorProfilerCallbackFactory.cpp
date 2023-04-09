@@ -28,13 +28,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallbackFactory::QueryInterface(REFIID riid
     return E_NOINTERFACE;
 }
 
-ULONG STDMETHODCALLTYPE CorProfilerCallbackFactory::AddRef(void)
+ULONG STDMETHODCALLTYPE CorProfilerCallbackFactory::AddRef()
 {
     ULONG refCount = _refCount.fetch_add(1) + 1;
     return refCount;
 }
 
-ULONG STDMETHODCALLTYPE CorProfilerCallbackFactory::Release(void)
+ULONG STDMETHODCALLTYPE CorProfilerCallbackFactory::Release()
 {
     ULONG refCount = _refCount.fetch_sub(1) - 1;
 
@@ -46,7 +46,7 @@ ULONG STDMETHODCALLTYPE CorProfilerCallbackFactory::Release(void)
     return refCount;
 }
 
-ULONG STDMETHODCALLTYPE CorProfilerCallbackFactory::GetRefCount(void)
+ULONG STDMETHODCALLTYPE CorProfilerCallbackFactory::GetRefCount()
 {
     ULONG refCount = _refCount.load();
     return refCount;

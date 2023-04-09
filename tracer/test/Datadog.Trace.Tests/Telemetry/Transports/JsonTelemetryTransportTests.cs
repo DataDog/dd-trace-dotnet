@@ -8,6 +8,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Transports;
+using Datadog.Trace.Tests.Util.JsonAssertions;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Xunit;
@@ -17,10 +18,10 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
     public class JsonTelemetryTransportTests
     {
         [Fact]
-        public async Task SerializeTelemetryShouldProduceJsonWithExpectedFormat()
+        public async Task SerializedAppStartedShouldProduceJsonWithExpectedFormat()
         {
             var transport = new TestJsonTelemetryTransport();
-            var expectedJson = JToken.Parse(GetSampleTelemetryData());
+            var expectedJson = JToken.Parse(GetAppStartedData());
 
             var data = new TelemetryData(
                 requestType: "app-started",
@@ -54,9 +55,9 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                     },
                     dependencies: new List<DependencyTelemetryData>
                     {
-                        new(name: "express") { Version = "8.6.0" },
+                        new(name: "pg") { Version = "8.6.0" },
                         new(name: "express") { Version = "4.17.1" },
-                        new(name: "body-parser") { Version = "1.19.0" },
+                        new(name: "body-parser") { Version = "1.19.0", Hash = "646DF3C3-959F-4011-8673-EE58BD9291E2" },
                     },
                     configuration: new List<TelemetryValue>())
                     {
@@ -70,10 +71,13 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
             actualJson.Should().BeEquivalentTo(expectedJson);
         }
 
-        private static string GetSampleTelemetryData()
+        private static string GetAppStartedData()
+            => GetSampleTelemetryData("telemetry_app-started.json");
+
+        private static string GetSampleTelemetryData(string filename)
         {
             var thisAssembly = typeof(JsonTelemetryTransportTests).Assembly;
-            var stream = thisAssembly.GetManifestResourceStream("Datadog.Trace.Tests.Telemetry.telemetry_data.json");
+            var stream = thisAssembly.GetManifestResourceStream($"Datadog.Trace.Tests.Telemetry.{filename}");
             using var streamReader = new StreamReader(stream);
             return streamReader.ReadToEnd();
         }

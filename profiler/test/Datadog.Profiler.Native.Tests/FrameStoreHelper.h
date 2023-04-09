@@ -12,9 +12,25 @@ public:
 
 public:
     // Inherited via IFrameStore
-    std::tuple<bool, std::string_view, std::string_view> GetFrame(uintptr_t instructionPointer) override;
+    std::pair<bool, FrameInfoView> GetFrame(uintptr_t instructionPointer) override;
     bool GetTypeName(ClassID classId, std::string& name) override;
+    bool GetTypeName(ClassID classId, std::string_view& name) override;
 
 private:
-    std::unordered_map<uintptr_t, std::tuple<bool, std::string, std::string>> _mapping;
+    struct FrameInfo
+    {
+    public:
+        std::string ModuleName;
+        std::string Frame;
+        std::string_view Filename;
+        std::uint32_t StartLine;
+
+        operator FrameInfoView() const
+        {
+            return {ModuleName, Frame, Filename, StartLine};
+        }
+    };
+    std::unordered_map<uintptr_t, std::pair<bool, FrameInfo>> _mapping;
+
+    // Inherited via IFrameStore
 };

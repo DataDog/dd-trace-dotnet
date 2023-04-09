@@ -4,6 +4,7 @@
 #include "FrameStore.h"
 
 #include "COMHelpers.h"
+#include "DebugInfoStore.h"
 #include "IConfiguration.h"
 #include "Log.h"
 #include "OpSysTools.h"
@@ -12,13 +13,14 @@
 #include "shared/src/native-src/dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 
-FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration) :
+FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* debugInfoStore) :
     _pCorProfilerInfo{pCorProfilerInfo},
-    _resolveNativeFrames{pConfiguration->IsNativeFramesEnabled()}
+    _resolveNativeFrames{pConfiguration->IsNativeFramesEnabled()},
+    _pDebugInfoStore{debugInfoStore}
 {
 }
 
-std::tuple<bool, std::string_view, std::string_view> FrameStore::GetFrame(uintptr_t instructionPointer)
+std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer)
 {
     static const std::string NotResolvedModuleName("NotResolvedModule");
     static const std::string NotResolvedFrame("NotResolvedFrame");
@@ -28,18 +30,18 @@ std::tuple<bool, std::string_view, std::string_view> FrameStore::GetFrame(uintpt
 
     if (SUCCEEDED(hr))
     {
-        auto [moduleName, frame] = GetManagedFrame(functionId);
-        return {true, moduleName, frame};
+        auto frameInfo = GetManagedFrame(functionId);
+        return {true, frameInfo};
     }
     else
     {
         if (!_resolveNativeFrames)
         {
-            return {false, NotResolvedModuleName, NotResolvedFrame};
+            return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
 
         auto [moduleName, frame] = GetNativeFrame(instructionPointer);
-        return {true, moduleName, frame};
+        return {true, {moduleName, frame, "", 0}};
     }
 }
 
@@ -82,7 +84,7 @@ std::pair<std::string_view, std::string_view> FrameStore::GetNativeFrame(uintptr
     }
 }
 
-std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(FunctionID functionId)
+FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
 {
     {
         std::lock_guard<std::mutex> lock(_methodsLock);
@@ -105,61 +107,68 @@ std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(Functi
     ULONG32 genericParametersCount;
     if (!GetFunctionInfo(functionId, mdTokenFunc, classId, moduleId, genericParametersCount, genericParameters))
     {
-        return {UnknownManagedAssembly, UnknownManagedFrame};
+        return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
     }
 
     // Use metadata API to get method name
     ComPtr<IMetaDataImport2> pMetadataImport;
     if (!GetMetadataApi(moduleId, functionId, pMetadataImport))
     {
-        return {UnknownManagedAssembly, UnknownManagedFrame};
+        return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
     }
 
     // method name is resolved first because we also get the mdDefToken of its class
     auto [methodName, mdTokenType] = GetMethodName(pMetadataImport.Get(), mdTokenFunc, genericParametersCount, genericParameters.get());
     if (methodName.empty())
     {
-        return {UnknownManagedAssembly, UnknownManagedFrame};
+        return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
     }
 
     // get type related description (assembly, namespace and type name)
     // look into the cache first
-    TypeDesc typeDesc;
-    bool typeInCache = GetCachedTypeDesc(classId, typeDesc);
+    TypeDesc* pTypeDesc = nullptr;  // if already in the cache
+    TypeDesc typeDesc;              // if needed to be built from a given classId
+    bool isEncoded = true;
+    bool typeInCache = GetCachedTypeDesc(classId, pTypeDesc, isEncoded);
     // TODO: would it be interesting to have a (moduleId + mdTokenDef) -> TypeDesc cache for the non cached generic types?
 
     if (!typeInCache)
     {
         // try to get the type description
-        bool isEncoded = true;
-        if (!GetTypeDesc(pMetadataImport.Get(), classId, moduleId, mdTokenType, typeDesc, isEncoded))
+        if (!BuildTypeDesc(pMetadataImport.Get(), classId, moduleId, mdTokenType, typeDesc, false, nullptr, isEncoded))
         {
             // This should never happen but in case it happens, we cache the module/frame value.
             // It's safe to cache, because there is no reason that the next calls to
-            // GetTypeDesc will succeed.
+            // BuildTypeDesc will succeed.
             auto& value = _methods[functionId];
-            value = {UnknownManagedAssembly, UnknownManagedType + " |fn:" + std::move(methodName)};
+            value = {UnknownManagedAssembly, UnknownManagedType + " |fn:" + std::move(methodName), "", 0};
             return value;
         }
 
         if (classId != 0)
         {
-            std::lock_guard<std::mutex> lock(_typesLock);
-
-            _types[classId] = typeDesc;
+            std::lock_guard<std::mutex> lock(_encodedTypesLock);
+            pTypeDesc = &typeDesc;
+            _encodedTypes[classId] = typeDesc;
+        }
+        else
+        {
+            pTypeDesc = &typeDesc;
         }
         // TODO: would it be interesting to have a (moduleId + mdTokenDef) -> TypeDesc cache for the non cached generic types?
     }
 
     // build the frame from assembly, namespace, type and method names
     std::stringstream builder;
-    if (!typeDesc.Assembly.empty())
+    if (!pTypeDesc->Assembly.empty())
     {
-        builder << "|lm:" << typeDesc.Assembly;
+        builder << "|lm:" << pTypeDesc->Assembly;
     }
-    builder << " |ns:" << typeDesc.Namespace;
-    builder << " |ct:" << typeDesc.Type;
+    builder << " |ns:" << pTypeDesc->Namespace;
+    builder << " |ct:" << pTypeDesc->Type;
     builder << " |fn:" << methodName;
+
+    auto debugInfo = _pDebugInfoStore->Get(moduleId, mdTokenFunc);
 
     std::string managedFrame = builder.str();
 
@@ -167,7 +176,7 @@ std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(Functi
         std::lock_guard<std::mutex> lock(_methodsLock);
 
         // store it into the function cache and return an iterator to the stored elements
-        auto [it, _] = _methods.emplace(functionId, std::make_pair(typeDesc.Assembly, managedFrame));
+        auto [it, _] = _methods.emplace(functionId, FrameInfo{pTypeDesc->Assembly, managedFrame, debugInfo.File, debugInfo.StartLine});
         // first is the key, second is the associated value
         return it->second;
     }
@@ -178,69 +187,186 @@ bool FrameStore::GetTypeName(ClassID classId, std::string& name)
     // no backend encoding --> C# like
     bool isEncoded = false;
 
-    TypeDesc typeDesc;
-    if (!GetTypeDesc(classId, typeDesc, isEncoded))
+    TypeDesc* pTypeDesc = nullptr;
+    if (!GetTypeDesc(classId, pTypeDesc, isEncoded))
     {
         return false;
     }
 
-    if (typeDesc.Namespace.empty())
+    if (pTypeDesc->Namespace.empty())
     {
-        name = typeDesc.Type;
+        name = pTypeDesc->Type;
     }
     else
     {
-        name = typeDesc.Namespace + "." + typeDesc.Type;
+        name = pTypeDesc->Namespace + "." + pTypeDesc->Type;
     }
 
     return true;
 }
 
+// This method is supposed to return a string_view over a string in the types cache
+// It is used by the allocations recorder to avoid duplicating type name strings
+// For example if 4 instances of MyType are allocated, the string_view for these 4 allocations
+// will point to the same "MyType" string.
+// This is why it is needed to get a pointer to the TypeDesc held by the cache
+bool FrameStore::GetTypeName(ClassID classId, std::string_view& name)
+{
+    // no backend encoding --> C# like
+    bool isEncoded = false;
 
-bool FrameStore::GetCachedTypeDesc(ClassID classId, TypeDesc& typeDesc)
+    TypeDesc* pTypeDesc = nullptr;
+    if (!GetTypeDesc(classId, pTypeDesc, isEncoded))
+    {
+        return false;
+    }
+
+    if (!GetCachedTypeDesc(classId, pTypeDesc, isEncoded))
+    {
+        return false;
+    }
+
+    // ensure that the string_view is pointing to the string in the cache
+    name = pTypeDesc->Type;
+
+    return true;
+}
+
+bool FrameStore::GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc, bool isEncoded)
 {
     if (classId != 0)
     {
-        std::lock_guard<std::mutex> lock(_typesLock);
-
-        auto typeEntry = _types.find(classId);
-        if (typeEntry != _types.end())
+        if (isEncoded)
         {
-            typeDesc = typeEntry->second;
-            return true;
+            std::lock_guard<std::mutex> lock(_encodedTypesLock);
+
+            auto typeEntry = _encodedTypes.find(classId);
+            if (typeEntry != _encodedTypes.end())
+            {
+                typeDesc = &(_encodedTypes.at(classId));
+                return true;
+            }
+        }
+        else
+        {
+            std::lock_guard<std::mutex> lock(_typesLock);
+
+            auto typeEntry = _types.find(classId);
+            if (typeEntry != _types.end())
+            {
+                typeDesc = &(_types.at(classId));
+                return true;
+            }
         }
     }
 
     return false;
 }
 
-bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc& typeDesc, bool isEncoded)
+void AppendArrayRank(std::string& arrayBuilder, ULONG rank)
+{
+    if (rank == 1)
+    {
+        arrayBuilder = "[]" + arrayBuilder;
+    }
+    else
+    {
+        std::stringstream builder;
+        builder << "[";
+        for (size_t i = 0; i < rank - 1; i++)
+        {
+            builder << ",";
+        }
+        builder << "]";
+
+        arrayBuilder = builder.str() + arrayBuilder;
+    }
+}
+
+bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc*& pTypeDesc, bool isEncoded)
 {
     // get type related description (assembly, namespace and type name)
     // look into the cache first
-    bool typeInCache = GetCachedTypeDesc(classId, typeDesc);
+    bool typeInCache = GetCachedTypeDesc(classId, pTypeDesc, isEncoded);
     // TODO: would it be interesting to have a (moduleId + mdTokenDef) -> TypeDesc cache for the non cached generic types?
 
     if (!typeInCache)
     {
+        ClassID originalClassId = classId;
+
+        // deal with class[]/[,...,]
+        // read https://learn.microsoft.com/en-us/dotnet/framework/unmanaged-api/profiling/icorprofilerinfo-isarrayclass-method for more details
+        bool isArray = false;
+        std::string arrayBuilder;
+
+        CorElementType baseElementType;
+        ClassID itemClassId;
+        ULONG rank = 0;
+        if (_pCorProfilerInfo->IsArrayClass(classId, &baseElementType, &itemClassId, &rank) == S_OK)
+        {
+            classId = itemClassId;
+            isArray = true;
+            AppendArrayRank(arrayBuilder, rank);
+
+            // in case of matrices, it is needed to look for the last "good" item class ID
+            // because all others might be array of array of ...
+            for (size_t i = 0; i < rank; i++)
+            {
+                HRESULT hr = _pCorProfilerInfo->IsArrayClass(classId, &baseElementType, &itemClassId, &rank);
+                if ((hr == S_FALSE) || FAILED(hr))
+                {
+                    itemClassId = classId;
+
+                    break;
+                }
+
+                AppendArrayRank(arrayBuilder, rank);
+                classId = itemClassId;
+            }
+        }
+
         ModuleID moduleId;
         mdTypeDef typeDefToken;
         INVOKE(_pCorProfilerInfo->GetClassIDInfo(classId, &moduleId, &typeDefToken));
+
+        // for some types, it is not possible to find the moduleId ???  --> could be arrays...
+        if (moduleId == 0)
+        {
+            INVOKE(_pCorProfilerInfo->GetClassIDInfo2(classId, &moduleId, &typeDefToken, nullptr, 0, nullptr, nullptr));
+        }
 
         ComPtr<IMetaDataImport2> metadataImport;
         INVOKE(_pCorProfilerInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(metadataImport.GetAddressOf())));
 
         // try to get the type description
-        if (!GetTypeDesc(metadataImport.Get(), classId, moduleId, typeDefToken, typeDesc, isEncoded))
+        TypeDesc typeDesc;
+        if (!BuildTypeDesc(metadataImport.Get(), classId, moduleId, typeDefToken, typeDesc, isArray, arrayBuilder.c_str(), isEncoded))
         {
             return false;
         }
 
-        if (classId != 0)
+        if (originalClassId != 0)
         {
-            std::lock_guard<std::mutex> lock(_typesLock);
+            if (isEncoded)
+            {
+                std::lock_guard<std::mutex> lock(_encodedTypesLock);
 
-            _types[classId] = typeDesc;
+                _encodedTypes[originalClassId] = typeDesc;
+                pTypeDesc = &(_encodedTypes.at(originalClassId));
+            }
+            else
+            {
+                std::lock_guard<std::mutex> lock(_typesLock);
+
+                _types[originalClassId] = typeDesc;
+                pTypeDesc = &(_types.at(originalClassId));
+            }
+        }
+        else
+        {
+            // TODO: check the number of times this happens because a TypeDefs has been constructed but
+            // it is not possible to return a pointer to it (the object is on the stack)!!!
+            return false;
         }
     }
 
@@ -248,12 +374,14 @@ bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc& typeDesc, bool isEncoded
 }
 
 // More explanations in https://chnasarre.medium.com/dealing-with-modules-assemblies-and-types-with-clr-profiling-apis-a7522a5abaa9?source=friends_link&sk=3e010ab991456db0394d4cca29cb8cb2
-bool FrameStore::GetTypeDesc(
+bool FrameStore::BuildTypeDesc(
     IMetaDataImport2* pMetadataImport,
     ClassID classId,
     ModuleID moduleId,
     mdTypeDef mdTokenType,
     TypeDesc& typeDesc,
+    bool isArray,
+    const char* arraySuffix,
     bool isEncoded)
 {
     // 1. Get the assembly from the module
@@ -263,7 +391,7 @@ bool FrameStore::GetTypeDesc(
     }
 
     // 2. Look for the type name including namespace (need to take into account nested types and generic types)
-    auto [ns, ct] = GetManagedTypeName(_pCorProfilerInfo, pMetadataImport, moduleId, classId, mdTokenType, isEncoded);
+    auto [ns, ct] = GetManagedTypeName(_pCorProfilerInfo, pMetadataImport, moduleId, classId, mdTokenType, isArray, arraySuffix, isEncoded);
     typeDesc.Namespace = ns;
     typeDesc.Type = ct;
 
@@ -477,7 +605,7 @@ std::string FrameStore::GetTypeNameFromMetadata(IMetaDataImport2* pMetadata, mdT
     return shared::ToString(shared::WSTRING(pBuffer));
 }
 
-std::pair<std::string, std::string> FrameStore::GetTypeWithNamespace(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType)
+std::pair<std::string, std::string> FrameStore::GetTypeWithNamespace(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType, bool isArray, const char* arraySuffix)
 {
     mdTypeDef mdEnclosingType = 0;
     HRESULT hr = pMetadata->GetNestedClassProps(mdTokenType, &mdEnclosingType);
@@ -487,7 +615,7 @@ std::pair<std::string, std::string> FrameStore::GetTypeWithNamespace(IMetaDataIm
     std::string ns;
     if (isNested)
     {
-        std::tie(ns, enclosingType) = GetTypeWithNamespace(pMetadata, mdEnclosingType);
+        std::tie(ns, enclosingType) = GetTypeWithNamespace(pMetadata, mdEnclosingType, false, nullptr);
     }
 
     // Get type name
@@ -577,7 +705,6 @@ std::string FrameStore::FormatGenericTypeParameters(IMetaDataImport2* pMetadata,
     return builder.str();
 }
 
-
 void FrameStore::ConcatUnknownGenericType(std::stringstream& builder, bool isEncoded)
 {
     if (isEncoded)
@@ -625,7 +752,7 @@ std::string FrameStore::FormatGenericParameters(
                 }
                 else
                 {
-                    auto [ns, ct] = GetManagedTypeName(pInfo, pMetadata.Get(), argModuleId, argClassId, mdType, isEncoded);
+                    auto [ns, ct] = GetManagedTypeName(pInfo, pMetadata.Get(), argModuleId, argClassId, mdType, false, nullptr, isEncoded);
                     if (isEncoded)
                     {
                         builder << "|ns:" << ns << " |ct:" << ct;
@@ -666,9 +793,11 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(
     ModuleID moduleId,
     ClassID classId,
     mdTypeDef mdTokenType,
+    bool isArray,
+    const char* arraySuffix,
     bool isEncoded)
 {
-    auto [ns, typeName] = GetTypeWithNamespace(pMetadata, mdTokenType);
+    auto [ns, typeName] = GetTypeWithNamespace(pMetadata, mdTokenType, isArray, arraySuffix);
     // we have everything we need if not a generic type
 
     // if classId == 0 (i.e. one generic parameter is a reference type), no way to get the exact generic parameters
@@ -677,24 +806,42 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(
     {
         // concat the generic parameter types from metadata based on mdTokenType
         auto genericParameters = FormatGenericTypeParameters(pMetadata, mdTokenType, isEncoded);
-        return std::make_pair(std::move(ns), typeName + genericParameters);
+
+        if (isArray)
+        {
+            return std::make_pair(std::move(ns), typeName + genericParameters + arraySuffix);
+        }
+        else
+        {
+            return std::make_pair(std::move(ns), typeName + genericParameters);
+        }
     }
 
     // figure out the instanciated generic parameters if any
     mdTypeDef mdType;
-    ClassID parentClassId; //useful if we need parent type
+    ClassID parentClassId; // useful if we need parent type
     ULONG32 numGenericTypeArgs = 0;
 
     HRESULT hr = pInfo->GetClassIDInfo2(classId, nullptr, &mdType, &parentClassId, 0, &numGenericTypeArgs, nullptr);
     if (FAILED(hr))
     {
         // this happens when the given classId is 0 so should not occur
+        if (isArray)
+        {
+            typeName += arraySuffix;
+        }
+
         return std::make_pair(std::move(ns), std::move(typeName));
     }
 
     // nothing else to do if not a generic
     if (FAILED(hr) || (numGenericTypeArgs == 0))
     {
+        if (isArray)
+        {
+            typeName += arraySuffix;
+        }
+
         return std::make_pair(std::move(ns), std::move(typeName));
     }
 
@@ -705,12 +852,26 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(
     {
         // why would it fail?
         assert(SUCCEEDED(hr));
+
+        if (isArray)
+        {
+            typeName += arraySuffix;
+        }
+
         return std::make_pair(std::move(ns), std::move(typeName));
     }
 
     // concat the generic parameter types
     auto genericParameters = FormatGenericParameters(pInfo, numGenericTypeArgs, genericTypeArgs.get(), isEncoded);
-    return std::make_pair(std::move(ns), std::move(typeName + genericParameters));
+
+    if (isArray)
+    {
+        return std::make_pair(std::move(ns), std::move(typeName + genericParameters + arraySuffix));
+    }
+    else
+    {
+        return std::make_pair(std::move(ns), std::move(typeName + genericParameters));
+    }
 }
 
 std::pair<std::string, mdTypeDef> FrameStore::GetMethodNameFromMetadata(IMetaDataImport2* pMetadataImport, mdMethodDef mdTokenFunc)

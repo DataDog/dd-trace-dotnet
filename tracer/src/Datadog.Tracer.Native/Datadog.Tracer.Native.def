@@ -16,3 +16,4 @@ EXPORTS
     InstrumentProbes
     GetProbesStatuses
     DisableTracerCLRProfiler
+    RegisterIastAspects

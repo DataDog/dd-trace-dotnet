@@ -25,17 +25,13 @@ public class DiffPaneModelFormatter : IValueFormatter
             var sb = new StringBuilder(Environment.NewLine);
 
             // used to right-align line numbers
-            int highestLinePositionDigitCount = diffModel.Lines
-                                                         .Where(line => line.Position is not null && line.Type is ChangeType.Deleted or ChangeType.Inserted or ChangeType.Modified)
-                                                         .Max(line => (int)line.Position!)
-                                                         .ToString()
-                                                         .Length;
+            int highestLinePositionDigitCount = diffModel.Lines.Count.ToString().Length;
 
             for (var i = 0; i < diffModel.Lines.Count; i++)
             {
                 var line = diffModel.Lines[i];
 
-                if (line.Position is not null && line.Type is ChangeType.Deleted or ChangeType.Inserted or ChangeType.Modified)
+                if (line.Type is ChangeType.Deleted or ChangeType.Inserted or ChangeType.Modified)
                 {
                     var changeTypeIndicator = line.Type switch
                                               {
@@ -45,7 +41,8 @@ public class DiffPaneModelFormatter : IValueFormatter
                                                   _ => null
                                               };
 
-                    sb.AppendFormat("{0}{1," + highestLinePositionDigitCount + "}:{2}", changeTypeIndicator, (int)line.Position!, line.Text);
+                    // Do not rely on `line.Position` since it is null for deleted lines
+                    sb.AppendFormat("{0}{1," + highestLinePositionDigitCount + "}:{2}" + Environment.NewLine, changeTypeIndicator, i + 1, line.Text);
                 }
             }
 

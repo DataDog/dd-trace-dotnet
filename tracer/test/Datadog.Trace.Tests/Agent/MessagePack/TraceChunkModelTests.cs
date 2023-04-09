@@ -466,6 +466,23 @@ public class TraceChunkModelTests
         traceChunk.HashSetInitialized.Should().BeFalse();
     }
 
+    [Theory]
+    [InlineData(SamplingPriorityValues.UserReject)]
+    [InlineData(SamplingPriorityValues.UserKeep)]
+    [InlineData(SamplingPriorityValues.AutoReject)]
+    [InlineData(SamplingPriorityValues.AutoKeep)]
+    public void Override_SamplingPriority_WhenPresent(int samplingPriority)
+    {
+        var spans = new[]
+                    {
+                        CreateSpan(traceId: 1, spanId: 10, parentId: 5),
+                    };
+
+        var traceChunk = new TraceChunkModel(new ArraySegment<Span>(spans), samplingPriority);
+
+        traceChunk.SamplingPriority.Should().Be(samplingPriority);
+    }
+
     private static TraceChunkModel CreateTraceChunk(IEnumerable<Span> spans, Span root)
     {
         var spansArray = new ArraySegment<Span>(spans.ToArray());

@@ -19,6 +19,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.ServiceFabric;
@@ -67,6 +68,14 @@ namespace Datadog.Trace.ClrProfiler
         }
 
         /// <summary>
+        /// Gets a value indicating the version of the native Datadog profiler. This method
+        /// is rewritten by the profiler.
+        /// </summary>
+        /// <returns>In a managed-only context, where the profiler is not attached, <c>None</c>,
+        /// otherwise the version of the Datadog native tracer library.</returns>
+        public static string GetNativeTracerVersion() => "None";
+
+        /// <summary>
         /// Initializes global instrumentation values.
         /// </summary>
         public static void Initialize()
@@ -76,6 +85,8 @@ namespace Datadog.Trace.ClrProfiler
                 // Initialize() was already called before
                 return;
             }
+
+            TracerDebugger.WaitForDebugger();
 
             Log.Debug("Initialization started.");
 
@@ -110,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error initializing TraceAttribute instrumentation");
             }
 
             InitializeNoNativeParts();
@@ -122,11 +133,11 @@ namespace Datadog.Trace.ClrProfiler
                 var payload = InstrumentationDefinitions.GetAllDefinitions();
                 NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
 
-                Log.Information<int>("The profiler has been initialized with {count} definitions.", payload.Definitions.Length);
+                Log.Information<int>("The profiler has been initialized with {Count} definitions.", payload.Definitions.Length);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error sending CallTarget integration definitions to native library");
             }
 
             try
@@ -144,11 +155,11 @@ namespace Datadog.Trace.ClrProfiler
                 var payload = InstrumentationDefinitions.GetDerivedDefinitions();
                 NativeMethods.AddDerivedInstrumentations(payload.DefinitionsId, payload.Definitions);
 
-                Log.Information<int>("The profiler has been initialized with {count} derived definitions.", payload.Definitions.Length);
+                Log.Information<int>("The profiler has been initialized with {Count} derived definitions.", payload.Definitions.Length);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error sending CallTarget derived integration definitions to native library");
             }
 
             try
@@ -157,11 +168,11 @@ namespace Datadog.Trace.ClrProfiler
                 var payload = InstrumentationDefinitions.GetInterfaceDefinitions();
                 NativeMethods.AddInterfaceInstrumentations(payload.DefinitionsId, payload.Definitions);
 
-                Log.Information<int>("The profiler has been initialized with {count} interface definitions.", payload.Definitions.Length);
+                Log.Information<int>("The profiler has been initialized with {Count} interface definitions.", payload.Definitions.Length);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error sending CallTarget interface integration definitions to native library");
             }
 
             if (tracer is null)
@@ -176,7 +187,7 @@ namespace Datadog.Trace.ClrProfiler
                 }
                 catch (Exception e)
                 {
-                    Log.Error(e, e.Message);
+                    Log.Error(e, "Failed to initialize Remote Configuration Management.");
                 }
 
                 try
@@ -185,11 +196,43 @@ namespace Datadog.Trace.ClrProfiler
                     var traceMethodsConfiguration = tracer.Settings.TraceMethods;
                     var payload = InstrumentationDefinitions.GetTraceMethodDefinitions();
                     NativeMethods.InitializeTraceMethods(payload.DefinitionsId, payload.AssemblyName, payload.TypeName, traceMethodsConfiguration);
-                    Log.Information("TraceMethods instrumentation enabled with Assembly={AssemblyName}, Type={TypeName}, and Configuration={}.", payload.AssemblyName, payload.TypeName, traceMethodsConfiguration);
+                    Log.Information("TraceMethods instrumentation enabled with Assembly={AssemblyName}, Type={TypeName}, and Configuration={Configuration}.", payload.AssemblyName, payload.TypeName, traceMethodsConfiguration);
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, ex.Message);
+                    Log.Error(ex, "Error initializing TraceMethods instrumentation");
+                }
+            }
+
+            if (!Iast.Iast.Instance.Settings.Enabled)
+            {
+                Log.Debug("Skipping Iast initialization because Iast is disabled");
+            }
+            else
+            {
+                try
+                {
+                    int defs = 0, derived = 0;
+                    Log.Debug("Adding CallTarget IAST integration definitions to native library.");
+                    var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.Iast);
+                    NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                    defs = payload.Definitions.Length;
+
+                    Log.Debug("Adding CallTarget IAST derived integration definitions to native library.");
+                    payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.Iast);
+                    NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                    derived = payload.Definitions.Length;
+
+                    Log.Information<int, int>("{Defs} IAST definitions and {Derived} IAST derived definitions added to the profiler.", defs, derived);
+
+                    Log.Debug("Registering IAST Callsite Dataflow Aspects into native library.");
+                    var aspects = NativeMethods.RegisterIastAspects(AspectDefinitions.Aspects);
+                    Log.Information<int>("{Aspects} IAST Callsite Dataflow Aspects added to the profiler.", aspects);
+                }
+                catch (Exception ex)
+                {
+                    Iast.Iast.Instance.Settings.Enabled = false;
+                    Log.Error(ex, "DDIAST-0001-01: IAST could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
                 }
             }
 
@@ -226,21 +269,25 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
+            TracerDebugger.WaitForDebugger();
             Log.Debug("Initialization of non native parts started.");
 
             try
             {
                 var asm = typeof(Instrumentation).Assembly;
+                // intentionally using string interpolation, as this is only called once, and avoids array allocation
+#pragma warning disable DDLOG004 // Message templates should be constant
 #if NET5_0_OR_GREATER
                 // Can't use asm.CodeBase or asm.GlobalAssemblyCache in .NET 5+
                 Log.Information($"[Assembly metadata] Location: {asm.Location}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
 #else
                 Log.Information($"[Assembly metadata] Location: {asm.Location}, CodeBase: {asm.CodeBase}, GAC: {asm.GlobalAssemblyCache}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
 #endif
+#pragma warning restore DDLOG004 // Message templates should be constant
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error printing assembly metadata");
             }
 
             try
@@ -257,7 +304,7 @@ namespace Datadog.Trace.ClrProfiler
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error initializing CIVisibility");
             }
 
             try
@@ -267,7 +314,7 @@ namespace Datadog.Trace.ClrProfiler
             }
             catch (Exception ex)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(ex, "Error initializing Security");
             }
 
 #if !NETFRAMEWORK
@@ -356,7 +403,8 @@ namespace Datadog.Trace.ClrProfiler
 
         private static void InitRemoteConfigurationManagement(Tracer tracer)
         {
-            var serviceName = tracer.Settings.ServiceName ?? tracer.DefaultServiceName;
+            // Service Name must be lowercase, otherwise the agent will not be able to find the service
+            var serviceName = TraceUtil.NormalizeTag(tracer.Settings.ServiceName ?? tracer.DefaultServiceName);
             var discoveryService = tracer.TracerManager.DiscoveryService;
 
             Task.Run(
@@ -370,7 +418,7 @@ namespace Datadog.Trace.ClrProfiler
                         var rcmSettings = RemoteConfigurationSettings.FromDefaultSource();
                         var rcmApi = RemoteConfigurationApiFactory.Create(tracer.Settings.Exporter, rcmSettings, discoveryService);
 
-                        var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, tracer.Settings.Environment, tracer.Settings.ServiceVersion);
+                        var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, tracer.Settings, tracer.TracerManager.GitMetadataTagsProvider);
                         // see comment above
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmFeaturesProduct);
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmDataProduct);
@@ -390,9 +438,9 @@ namespace Datadog.Trace.ClrProfiler
                 });
         }
 
-        internal static async Task<bool> WaitForDiscoveryService(IDiscoveryService discoveryService)
+        private static async Task<bool> WaitForDiscoveryService(IDiscoveryService discoveryService)
         {
-            var tc = new TaskCompletionSource<bool>();
+            var tc = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             // Stop waiting if we're shutting down
             LifetimeManager.Instance.AddShutdownTask(() => tc.TrySetResult(false));
 

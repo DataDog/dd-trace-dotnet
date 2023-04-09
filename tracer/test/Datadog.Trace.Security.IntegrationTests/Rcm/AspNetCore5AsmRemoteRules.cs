@@ -5,15 +5,10 @@
 
 #if NETCOREAPP3_0_OR_GREATER
 
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
-using System.Net;
-using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Security.IntegrationTests.Rcm;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -22,8 +17,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
     public class AspNetCore5AsmRemoteRules : RcmBase
     {
-        public AspNetCore5AsmRemoteRules(ITestOutputHelper outputHelper)
-            : base(outputHelper, testName: nameof(AspNetCore5AsmRemoteRules))
+        public AspNetCore5AsmRemoteRules(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmRemoteRules))
         {
         }
 
@@ -32,18 +27,17 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         public async Task TestNewRemoteRules()
         {
             var url = "/Health/?[$slice]=value";
-            var agent = await RunOnSelfHosted(true);
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
+            await TryStartApp();
+            var agent = Fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
             var spans1 = await SendRequestsAsync(agent, url);
-
-            await agent.SetupRcmAndWait(Output, new[] { (GetRules("2.22.222"), "1") }, "ASM_DD");
-            await logEntryWatcher.WaitForLogEntry(WafUpdateRule(), LogEntryWatcherTimeout);
+            var acknowledgedId = nameof(TestNewRemoteRules);
+            await agent.SetupRcmAndWait(Output, new[] { (GetRules("2.22.222"), testid: acknowledgedId) }, "ASM_DD", appliedServiceNames: new[] { acknowledgedId });
             var spans2 = await SendRequestsAsync(agent, url);
 
-            await agent.SetupRcmAndWait(Output, new[] { (GetRules("3.33.333"), "2") }, "ASM_DD");
-            await logEntryWatcher.WaitForLogEntry(WafUpdateRule(), LogEntryWatcherTimeout);
+            var acknowledgedId2 = nameof(TestNewRemoteRules) + 2;
+            await agent.SetupRcmAndWait(Output, new[] { (GetRules("3.33.333"), "2") }, "ASM_DD", appliedServiceNames: new[] { acknowledgedId2 });
             var spans3 = await SendRequestsAsync(agent, url);
 
             var spans = new List<MockSpan>();
@@ -51,8 +45,10 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             spans.AddRange(spans2);
             spans.AddRange(spans3);
 
-            await VerifySpans(spans.ToImmutableList(), settings, true);
+            await VerifySpans(spans.ToImmutableList(), settings);
         }
+
+        protected override string GetTestName() => Prefix + nameof(AspNetCore5AsmRemoteRules);
 
         private string GetRules(string version)
         {

@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsMongoDB();
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsMongoDb();
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.MongoDB), MemberType = typeof(PackageVersions))]
@@ -65,6 +65,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.AddSimpleScrubber("out.host: mongo_arm64", "out.host: mongo");
                 // In some package versions, aggregate queries have an ID, others don't
                 settings.AddSimpleScrubber("\"$group\" : { \"_id\" : null, \"n\"", "\"$group\" : { \"_id\" : 1, \"n\"");
+                // In 2.19, The explain query includes { "$expr" : true }, whereas in earlier versions it doesn't
+                settings.AddSimpleScrubber("{ \"$expr\" : true }", "{ }");
 
                 // The mongodb driver sends periodic monitors
                 var adminSpans = spans

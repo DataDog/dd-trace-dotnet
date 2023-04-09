@@ -31,6 +31,7 @@ name: profiler pipeline
 
 env:
   DD_TRACE_DEBUG: 1
+  NugetPackageDirectory: ./packages
 
 jobs:
 
@@ -88,12 +89,12 @@ jobs:
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v3
 
-      - uses: actions/setup-dotnet@v2
+      - uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
             3.1.x
             6.0.100
-            7.0.100
+            7.0.101
 
       - name: Download profiler artifact
         uses: actions/download-artifact@v3
@@ -152,9 +153,14 @@ jobs:
       matrix:
         framework:
           - net60
+          - net70
         scenario:
           - Allocations
           - Contention
+          - LiveHeap
+        exclude:
+          - framework: net60
+            scenario: LiveHeap
     services:
       dd-agent:
         image: 'datadog/agent:latest'
@@ -169,6 +175,12 @@ jobs:
     steps:
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v3
+
+      - uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: |
+            6.0.100
+            7.0.101
 
       - name: Download profiler artifact
         uses: actions/download-artifact@v3
@@ -201,7 +213,7 @@ jobs:
       - name: Build sample applications
         run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64 -p:CheckEolTargetFramework=false
 
-      - name: Execute PiComputation benchmark
+      - name: Execute CLR events benchmark
         run: |
           cd profiler/build
           ./run.sh  ${{ matrix.scenario }} ${{ matrix.framework }}
@@ -227,6 +239,11 @@ jobs:
       - name: Install libasan
         run: sudo apt-get install -y libasan6
 
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: |
+            6.0.100
+            7.0.101
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v3
 
@@ -234,7 +251,6 @@ jobs:
         run: |
           CXX=clang++ CC=clang cmake -S . -B __build -DRUN_ASAN=ON
           cmake --build __build --config Release --target all-profiler
-
       - name: Restore sample applications
         run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release" /p:CheckEolTargetFramework=false
 
@@ -246,7 +262,6 @@ jobs:
           sudo mkdir -p /var/log/datadog/dotnet
           sudo chmod a+rwx /var/log/datadog/dotnet
           ASAN_OPTIONS="detect_leaks=0" ./profiler/_build/bin/Datadog.Profiler.Native.Tests/Datadog.Profiler.Native.Tests
-
       - name: Prepare environment to run the application
         run: |
           #
@@ -254,10 +269,13 @@ jobs:
           #
           tests_output_dir="$(realpath .)/test_output"
           echo "DD_TESTING_OUPUT_DIR=$tests_output_dir" >> $GITHUB_ENV
-          echo "DD_PROFILING_LOG_DIR=$tests_output_dir/logs" >> $GITHUB_ENV
-          echo "DD_PROFILING_OUTPUT_DIR=$tests_output_dir/pprofs" >> $GITHUB_ENV
+          echo "DD_TRACE_LOG_DIRECTORY=$tests_output_dir/logs" >> $GITHUB_ENV
+          echo "DD_INTERNAL_PROFILING_OUTPUT_DIR=$tests_output_dir/pprofs" >> $GITHUB_ENV
+          echo "DD_PROFILING_ENABLED=1" >> $GITHUB_ENV
+          echo "DD_PROFILING_EXCEPTION_ENABLED=1" >> $GITHUB_ENV
+          echo "DD_PROFILING_ALLOCATION_ENABLED=1" >> $GITHUB_ENV
+          echo "DD_PROFILING_CONTENTION_ENABLED=1" >> $GITHUB_ENV
           echo "DD_TRACE_DEBUG=1" >> $GITHUB_ENV
-
       - name: Run Computer01 for 2min
         timeout-minutes: 4
         run: |
@@ -276,7 +294,6 @@ jobs:
           path: |
             ${{ env.DD_TESTING_OUPUT_DIR }}
           retention-days: 1
-
   build_linux_ubsan:
     name: Build Linux Profiler UBSAN
     runs-on: ubuntu-latest
@@ -287,6 +304,12 @@ jobs:
       - name: Install libubsan
         run: sudo apt-get install -y libubsan1
 
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: |
+            6.0.100
+            7.0.101
+
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v3
 
@@ -294,7 +317,6 @@ jobs:
         run: |
           CXX=clang++ CC=clang cmake -S . -B __build -DRUN_UBSAN=ON
           cmake --build __build --config Release --target all-profiler
-
       - name: Restore sample applications
         run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release" /p:CheckEolTargetFramework=false
 
@@ -306,7 +328,6 @@ jobs:
           sudo mkdir -p /var/log/datadog/dotnet
           sudo chmod a+rwx /var/log/datadog/dotnet
           UBSAN_OPTIONS=print_stacktrace=1 ./profiler/_build/bin/Datadog.Profiler.Native.Tests/Datadog.Profiler.Native.Tests
-
       - name: Prepare environment to run the application
         run: |
           #
@@ -314,10 +335,13 @@ jobs:
           #
           tests_output_dir="$(realpath .)/test_output"
           echo "DD_TESTING_OUPUT_DIR=$tests_output_dir" >> $GITHUB_ENV
-          echo "DD_PROFILING_LOG_DIR=$tests_output_dir/logs" >> $GITHUB_ENV
-          echo "DD_PROFILING_OUTPUT_DIR=$tests_output_dir/pprofs" >> $GITHUB_ENV
+          echo "DD_TRACE_LOG_DIRECTORY=$tests_output_dir/logs" >> $GITHUB_ENV
+          echo "DD_INTERNAL_PROFILING_OUTPUT_DIR=$tests_output_dir/pprofs" >> $GITHUB_ENV
+          echo "DD_PROFILING_ENABLED=1" >> $GITHUB_ENV
+          echo "DD_PROFILING_EXCEPTION_ENABLED=1" >> $GITHUB_ENV
+          echo "DD_PROFILING_ALLOCATION_ENABLED=1" >> $GITHUB_ENV
+          echo "DD_PROFILING_CONTENTION_ENABLED=1" >> $GITHUB_ENV
           echo "DD_TRACE_DEBUG=1" >> $GITHUB_ENV
-
       - name: Run Computer01 for 2min
         timeout-minutes: 4
         if: '${{ always() }}'
@@ -350,12 +374,12 @@ jobs:
 
     steps:
     
-      - uses: actions/setup-dotnet@v2
+      - uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
             3.1.x
             6.0.100
-            7.0.100
+            7.0.101
         
       - name: Support longpaths
         run: git config --system core.longpaths true
@@ -411,7 +435,7 @@ jobs:
           dotnet-version: |
             3.1.x
             6.0.100
-            7.0.100
+            7.0.101
     
       - name: Support longpaths
         run: git config --system core.longpaths true
@@ -494,12 +518,12 @@ jobs:
           - Exceptions
     steps:
     
-      - uses: actions/setup-dotnet@v2
+      - uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
             3.1.x
             6.0.100
-            7.0.100
+            7.0.101
     
       - name: Install Datadog agent
         continue-on-error: false
@@ -548,8 +572,7 @@ jobs:
 
       - name: Execute PiComputation benchmark
         env:
-          DD_PROFILING_LOG_DIR: '${{ github.workspace }}/tests_output_dir/${{ matrix.framework }}'
-          DD_TRACE_LOG_DIRECTORY: '${{ github.workspace }}/tests_output_dir/${{ matrix.framework }}' # for the loader
+          DD_TRACE_LOG_DIRECTORY: '${{ github.workspace }}/tests_output_dir/${{ matrix.framework }}'
         run: |
           cd profiler\build
           .\run.cmd  ${{ matrix.scenario }} ${{ matrix.framework }}
@@ -576,16 +599,21 @@ jobs:
       matrix:
         framework:
           - net60
+          - net70
         scenario:
           - Allocations
           - Contention
+          - LiveHeap
+        exclude:
+          - framework: net60
+            scenario: LiveHeap
     steps:
 
-      - uses: actions/setup-dotnet@v2
+      - uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
             6.0.100
-            7.0.100
+            7.0.101
 
       - name: Install Datadog agent
         continue-on-error: false
@@ -634,8 +662,7 @@ jobs:
 
       - name: Execute Clr Events benchmark
         env:
-          DD_PROFILING_LOG_DIR: '${{ github.workspace }}/tests_output_dir/${{ matrix.framework }}'
-          DD_TRACE_LOG_DIRECTORY: '${{ github.workspace }}/tests_output_dir/${{ matrix.framework }}' # for the loader
+          DD_TRACE_LOG_DIRECTORY: '${{ github.workspace }}/tests_output_dir/${{ matrix.framework }}'
         run: |
           cd profiler\build
           .\run.cmd  ${{ matrix.scenario }} ${{ matrix.framework }}
@@ -691,21 +718,19 @@ jobs:
           - Release
 
     steps:
-    
+
       - uses: actions/setup-dotnet@v2
         with:
           dotnet-version: |
             3.1.x
             6.0.100
-            7.0.100
+            7.0.101
     
       - name: Install Datadog agent
         continue-on-error: false
         shell: pwsh
-        run: >
-          curl.exe --output datadog-agent-7-latest.amd64.msi --url
-          https://s3.amazonaws.com/ddagent-windows-stable/datadog-agent-7-latest.amd64.msi
-
+        run: |
+          curl.exe --output datadog-agent-7-latest.amd64.msi --url https://s3.amazonaws.com/ddagent-windows-stable/datadog-agent-7-latest.amd64.msi
           Start-Process -Wait msiexec -ArgumentList '/qn /i datadog-agent-7-latest.amd64.msi APIKEY=${{ secrets.DD_API_KEY }} SITE="datadoghq.com"'
         env:
           DD_INSIDE_CI: true
@@ -718,6 +743,16 @@ jobs:
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v3
 
+      - uses: nuget/setup-nuget@v1
+        with:
+          nuget-version: '5.x'
+
+      - name: Restore nuget packages
+        run: |
+           nuget restore profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.vcxproj -PackagesDirectory ./packages
+           nuget restore profiler\src\ProfilerEngine\Datadog.Profiler.Native\Datadog.Profiler.Native.vcxproj -PackagesDirectory ./packages
+           nuget restore profiler\test\Datadog.Profiler.Native.Tests\Datadog.Profiler.Native.Tests.vcxproj -PackagesDirectory ./packages
+
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.1
 
@@ -729,14 +764,12 @@ jobs:
           dotnet-version: |
             3.1.x
             6.0.100
-            7.0.100
-
+            7.0.101
       - name: Build Monitoring home
         run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader --build-configuration ${{matrix.configuration}} --target-platform ${{matrix.platform}}
 
       - name: Restore sample applications
         run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="${{matrix.configuration}}" /p:CheckEolTargetFramework=false
-
       - name: Build sample applications
         run: dotnet build -c ${{matrix.configuration}} profiler/src/Demos/Datadog.Demos.sln -p:Platform=${{matrix.platform}} -p:CheckEolTargetFramework=false
 
@@ -749,14 +782,16 @@ jobs:
           $tests_output=$(Join-Path -Path $(Resolve-Path .) -ChildPath tests_output)
           echo "DD_TESTING_OUPUT_DIR=$tests_output" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "DD_TRACE_DEBUG=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-          echo "DD_PROFILING_LOG_DIR=$(Join-Path -Path $tests_output -ChildPath logs)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-          echo "DD_PROFILING_OUTPUT_DIR=$(Join-Path -Path $tests_output -ChildPath pprofs)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DD_TRACE_LOG_DIRECTORY=$(Join-Path -Path $tests_output -ChildPath logs)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DD_INTERNAL_PROFILING_OUTPUT_DIR=$(Join-Path -Path $tests_output -ChildPath pprofs)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "DD_TRACE_ENABLED=0" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DD_PROFILING_ENABLED=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DD_PROFILING_EXCEPTION_ENABLED=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DD_PROFILING_ALLOCATION_ENABLED=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DD_PROFILING_CONTENTION_ENABLED=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "COR_ENABLE_PROFILING=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "COR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "COR_PROFILER_PATH=$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home/win-${{ matrix.platform }}/Datadog.Trace.ClrProfiler.Native.dll)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-          echo "DD_DOTNET_PROFILER_HOME=$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-
       - name: Run Computer01 for 2min
         shell: cmd
         run: >
@@ -789,19 +824,16 @@ jobs:
           && cmake ../ \
           && cmake --build . --parallel $(nproc)  \
           && sudo make install
-
       - name: Install clang-tidy
         run: |
           sudo apt-get update
           sudo apt-get -y install clang-tidy
-
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v3
       - name: Prepare environment to run the application
         run: |
           mkdir analyzers_results
           echo "CI_ANALYSIS_RESULTS_FOLDER=$(realpath .)/analyzers_results" >> $GITHUB_ENV
-
       - name: Build profiler
         run: |
           cmake -DRUN_ANALYSIS=1 -S . -B __build
@@ -822,7 +854,6 @@ jobs:
         run: |
           [ `find ${CI_ANALYSIS_RESULTS_FOLDER} -name "cppcheck-results.xml" | wc -l` -ne 0 ] || (echo "Folder $CI_ANALYSIS_RESULTS_FOLDER does not contains CppCheck result file(s)" && exit 1)
           [ `find ${CI_ANALYSIS_RESULTS_FOLDER} -name "clang-tidy-results.txt" | wc -l` -ne 0 ] || (echo "Folder $CI_ANALYSIS_RESULTS_FOLDER does not contains clang-tidy result file(s)" && exit 1)
-
           errors=$(grep -HFin ' error: ' $CI_ANALYSIS_RESULTS_FOLDER/cppcheck-results.xml || true)
           if [ ! -z "$errors" ]
           then
@@ -830,7 +861,6 @@ jobs:
               echo "CppCheck result file contain errors (see above)"
               exit 1
           fi
-
           errors=$(grep -HFin ' error: ' $CI_ANALYSIS_RESULTS_FOLDER/clang-tidy-results.txt || true)
           if [ ! -z "$errors" ]
           then
@@ -862,10 +892,10 @@ jobs:
       - name: Install CppCheck
         shell: pwsh
         run: |
-          choco install cppcheck -y
+          choco install cppcheck -y --version 2.9
           refreshenv
           echo "C:\Program Files\Cppcheck" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
-
+      
       - name: Support longpaths
         run: git config --system core.longpaths true
 
@@ -882,9 +912,18 @@ jobs:
           $cppcheck_results=$(Join-Path -Path $(Resolve-Path .) -ChildPath analyzers_results)
           echo "CI_ANALYSIS_RESULTS_FOLDER=$cppcheck_results" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
+      - uses: nuget/setup-nuget@v1
+        with:
+          nuget-version: '5.x'
+
+      - name: Restore nuget packages
+        run: |
+           nuget restore profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.vcxproj -PackagesDirectory ./packages
+           nuget restore profiler\src\ProfilerEngine\Datadog.Profiler.Native\Datadog.Profiler.Native.vcxproj -PackagesDirectory ./packages
+           nuget restore profiler\test\Datadog.Profiler.Native.Tests\Datadog.Profiler.Native.Tests.vcxproj -PackagesDirectory ./packages
+
       - name: Run CppCheck
         run: msbuild -target:RunCppCheck -p:Configuration=Release -p:Platform=${{ matrix.platform }} profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Datadog.Profiler.Native.Windows.WithTests.proj
-
       - name: Run clang-tidy
         run: msbuild -target:RunClangTidy -p:Configuration=Release -p:Platform=${{ matrix.platform }} profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Datadog.Profiler.Native.Windows.WithTests.proj -fl -flp:logfile="$env:CI_ANALYSIS_RESULTS_FOLDER\clang-tidy-results.txt;verbosity=minimal"
 
@@ -895,22 +934,18 @@ jobs:
           {
             throw "No cppcheck result file(s) was/were found in " + $env:CI_ANALYSIS_RESULTS_FOLDER
           }
-
           if ((Get-ChildItem -Path $env:CI_ANALYSIS_RESULTS_FOLDER -Recurse -File "clang-tidy-results.txt" | Measure-Object).Count -eq 0)
           {
             throw "No clang-tidy result file(s) was/were found in " + $env:CI_ANALYSIS_RESULTS_FOLDER
           }
-
           # /!\ "cppcheck-results-" prefix is the same as the one defined in the
           # src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj file.
-
           $Errors=Get-ChildItem -Path $env:CI_ANALYSIS_RESULTS_FOLDER -Recurse -File "cppcheck-results-*.txt" | Select-String -Pattern ' error: '
           if (![string]::IsNullOrEmpty($Errors))
           {
             Write-Output $Errors
             throw "CppCheck found error(s) in the source files (see above)"
           }
-
           $Errors=Get-ChildItem -Path $env:CI_ANALYSIS_RESULTS_FOLDER -Recurse -File "clang-tidy-results.txt" | Select-String -Pattern ' error:'
           if (![string]::IsNullOrEmpty($Errors))
           {
@@ -928,46 +963,3 @@ jobs:
             ${{ env.CI_ANALYSIS_RESULTS_FOLDER }}
           retention-days: 7
 
-  throughput_linux:
-    name: Throughput tests Linux
-    runs-on: [self-hosted, throughput, profiler]
-    needs: [build_windows, build_linux_release_x64]
-    steps:
-      - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v3
-         
-      - name: Download profiler artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: monitoring-home.Linux.Release.x64
-          path: monitoring-home-linux
-          
-      - name: Run throughput tests
-        shell: bash
-        run: |
-          cd profiler/build/crank
-          chmod +x ./run.sh
-          ./run.sh "linux"
-
-  throughput_windows:
-    name: Throughput tests Windows
-    runs-on: [self-hosted, throughput, profiler]
-    needs: [build_windows, build_linux_release_x64]
-    steps:
-      - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v3
-
-      - name: Download profiler artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: monitoring-home.Windows.Release
-          path: monitoring-home-windows
-                   
-      - name: Run throughput tests
-        shell: bash
-        run: |
-          cd profiler/build/crank
-          chmod +x ./run.sh
-          ./run.sh "windows"
-          
-    

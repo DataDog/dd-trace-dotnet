@@ -23,7 +23,7 @@ namespace Datadog.Trace.Propagators
 
         public static IEnumerable<TPropagator> GetPropagators<TPropagator>(string[] headerStyles)
         {
-            if (headerStyles == null)
+            if (headerStyles is null or { Length: 0 })
             {
                 yield break;
             }

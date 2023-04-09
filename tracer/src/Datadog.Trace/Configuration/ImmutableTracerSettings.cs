@@ -3,10 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Util;
@@ -38,44 +41,27 @@ namespace Datadog.Trace.Configuration
         public ImmutableTracerSettings(TracerSettings settings)
         {
             // DD_ENV has precedence over DD_TAGS
-            if (!string.IsNullOrWhiteSpace(settings.Environment))
-            {
-                Environment = settings.Environment.Trim();
-            }
-            else
-            {
-                var env = settings.GlobalTags.GetValueOrDefault(Tags.Env);
-
-                if (!string.IsNullOrWhiteSpace(env))
-                {
-                    Environment = env.Trim();
-                }
-            }
+            Environment = GetExplicitSettingOrTag(settings.Environment, settings.GlobalTags, Tags.Env);
 
             // DD_VERSION has precedence over DD_TAGS
-            if (!string.IsNullOrWhiteSpace(settings.ServiceVersion))
-            {
-                ServiceVersion = settings.ServiceVersion.Trim();
-            }
-            else
-            {
-                var version = settings.GlobalTags.GetValueOrDefault(Tags.Version);
+            ServiceVersion = GetExplicitSettingOrTag(settings.ServiceVersion, settings.GlobalTags, Tags.Version);
 
-                if (!string.IsNullOrWhiteSpace(version))
-                {
-                    ServiceVersion = version.Trim();
-                }
-            }
+            // DD_GIT_COMMIT_SHA has precedence over DD_TAGS
+            GitCommitSha = GetExplicitSettingOrTag(settings.GitCommitSha, settings.GlobalTags, CommonTags.GitCommit);
 
-            // create dictionary copy without "env" or "version",
-            // these value are used for "Environment" and "ServiceVersion"
-            // or overriden with DD_ENV and DD_VERSION
+            // DD_GIT_REPOSITORY_URL has precedence over DD_TAGS
+            GitRepositoryUrl = GetExplicitSettingOrTag(settings.GitRepositoryUrl, settings.GlobalTags, CommonTags.GitRepository);
+
+            // create dictionary copy without "env", "version", "git.commit.sha" or "git.repository.url" tags
+            // these value are used for "Environment" and "ServiceVersion", "GitCommitSha" and "GitRepositoryUrl" properties
+            // or overriden with DD_ENV, DD_VERSION, DD_GIT_COMMIT_SHA and DD_GIT_REPOSITORY_URL respectively
             var globalTags = settings.GlobalTags
-                                     .Where(kvp => kvp.Key is not (Tags.Env or Tags.Version))
+                                     .Where(kvp => kvp.Key is not (Tags.Env or Tags.Version or CommonTags.GitCommit or CommonTags.GitRepository))
                                      .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
             GlobalTags = new ReadOnlyDictionary<string, string>(globalTags);
 
+            GitMetadataEnabled = settings.GitMetadataEnabled;
             ServiceName = settings.ServiceName;
             TraceEnabled = settings.TraceEnabled;
             Exporter = new ImmutableExporterSettings(settings.Exporter);
@@ -130,28 +116,63 @@ namespace Datadog.Trace.Configuration
             ObfuscationQueryStringRegex = settings.ObfuscationQueryStringRegex;
             QueryStringReportingEnabled = settings.QueryStringReportingEnabled;
             ObfuscationQueryStringRegexTimeout = settings.ObfuscationQueryStringRegexTimeout;
+            QueryStringReportingSize = settings.QueryStringReportingSize;
 
             IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
             AzureAppServiceMetadata = settings.AzureAppServiceMetadata;
+
+            static string? GetExplicitSettingOrTag(string? explicitSetting, IDictionary<string, string> globalTags, string tag)
+            {
+                if (!string.IsNullOrWhiteSpace(explicitSetting))
+                {
+                    return explicitSetting!.Trim();
+                }
+                else
+                {
+                    var version = globalTags.GetValueOrDefault(tag);
+                    return string.IsNullOrWhiteSpace(version) ? null : version.Trim();
+                }
+            }
+
+            DbmPropagationMode = settings.DbmPropagationMode;
         }
 
         /// <summary>
         /// Gets the default environment name applied to all spans.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.Environment"/>
-        public string Environment { get; }
+        public string? Environment { get; }
 
         /// <summary>
         /// Gets the service name applied to top-level spans and used to build derived service names.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ServiceName"/>
-        public string ServiceName { get; }
+        public string? ServiceName { get; }
 
         /// <summary>
         /// Gets the version tag applied to all spans.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ServiceVersion"/>
-        public string ServiceVersion { get; }
+        public string? ServiceVersion { get; }
+
+        /// <summary>
+        /// Gets the application's git repository url.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GitRepositoryUrl"/>
+        internal string? GitRepositoryUrl { get; }
+
+        /// <summary>
+        /// Gets the application's git commit hash.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GitCommitSha"/>
+        internal string? GitCommitSha { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether we should tag every telemetry event with git metadata.
+        /// Defaul value is true (enabled).
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GitMetadataEnabled"/>
+        internal bool GitMetadataEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether tracing is enabled.
@@ -194,13 +215,13 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating custom sampling rules.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
-        public string CustomSamplingRules { get; }
+        public string? CustomSamplingRules { get; }
 
         /// <summary>
         /// Gets a value indicating the span sampling rules.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.SpanSamplingRules"/>
-        internal string SpanSamplingRules { get; }
+        internal string? SpanSamplingRules { get; }
 
         /// <summary>
         /// Gets a value indicating a global rate for sampling.
@@ -233,7 +254,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
         /// </summary>
-        internal string IpHeader { get; }
+        internal string? IpHeader { get; }
 
         /// <summary>
         /// Gets a value indicating whether the ip header should be collected. The default is false.
@@ -338,6 +359,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal double ObfuscationQueryStringRegexTimeout { get; }
 
+        /// <summary>
+        /// Gets a value limiting the size of the querystring to report and obfuscate
+        /// Default value is 5000, 0 means that we don't limit the size.
+        /// </summary>
+        internal int QueryStringReportingSize { get; }
+
         internal ImmutableDirectLogSubmissionSettings LogSubmissionSettings { get; }
 
         /// <summary>
@@ -398,9 +425,14 @@ namespace Datadog.Trace.Configuration
         internal bool IsRunningInAzureAppService { get; }
 
         /// <summary>
-        /// Gets the AAS settings
+        /// Gets a value indicating whether the tracer should propagate service data in db queries
         /// </summary>
-        internal ImmutableAzureAppServiceSettings AzureAppServiceMetadata { get; }
+        internal DbmPropagationLevel DbmPropagationMode { get; }
+
+        /// <summary>
+        /// Gets the AAS settings. Guaranteed not <c>null</c> when <see cref="IsRunningInAzureAppService"/> is not <c>null</c>
+        /// </summary>
+        internal ImmutableAzureAppServiceSettings? AzureAppServiceMetadata { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

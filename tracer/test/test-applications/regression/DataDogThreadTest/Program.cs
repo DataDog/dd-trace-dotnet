@@ -1,11 +1,11 @@
-using Datadog.Trace.Configuration;
 using log4net;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using log4net.Core;
-using Tracer = Datadog.Trace.Tracer;
+using Samples;
+using System.Reflection;
 
 namespace DataDogThreadTest
 {
@@ -22,11 +22,10 @@ namespace DataDogThreadTest
                 InMemoryLog4NetLogger.Setup();
                 var logger = LogManager.GetLogger(typeof(Program));
 
-                var ddTraceSettings = TracerSettings.FromDefaultSources();
-                ddTraceSettings.LogsInjectionEnabled = true;
-                ddTraceSettings.TraceEnabled = true;
-                Tracer.Configure(ddTraceSettings);
-                var tracer = Tracer.Instance;
+                if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DD_LOGS_INJECTION")))
+                {
+                    throw new Exception("DD_LOGS_INJECTION must be set and it wasn't.");
+                }
 
                 var totalIterations = 10_000;
                 var threadRepresentation = Enumerable.Range(0, 10).ToArray();
@@ -50,17 +49,17 @@ namespace DataDogThreadTest
                                         var i = 0;
                                         while (i++ < totalIterations)
                                         {
-                                            using (var outerScope = tracer.StartActive("thread-test"))
+                                            using (var outerScope = SampleHelpers.CreateScope("thread-test"))
                                             {
-                                                var outerTraceId = outerScope.Span.TraceId;
-                                                var outerSpanId = outerScope.Span.SpanId;
+                                                var outerTraceId = SampleHelpers.GetTraceId(outerScope);
+                                                var outerSpanId = SampleHelpers.GetSpanId(outerScope);
 
                                                 logger.Info($"TraceId: {outerTraceId}, SpanId: {outerSpanId}");
 
-                                                using (var innerScope = tracer.StartActive("nest-thread-test"))
+                                                using (var innerScope = SampleHelpers.CreateScope("nest-thread-test"))
                                                 {
-                                                    var innerTraceId = innerScope.Span.TraceId;
-                                                    var innerSpanId = innerScope.Span.SpanId;
+                                                    var innerTraceId = SampleHelpers.GetTraceId(innerScope);
+                                                    var innerSpanId = SampleHelpers.GetSpanId(innerScope);
 
                                                     if (outerTraceId != innerTraceId)
                                                     {

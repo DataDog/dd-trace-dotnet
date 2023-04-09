@@ -74,10 +74,24 @@ namespace Datadog.Trace.TestHelpers
             return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux);
         }
 
+        public static bool IsOsx()
+        {
+            return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX);
+        }
+
         public static string GetPlatform()
         {
             return RuntimeInformation.ProcessArchitecture.ToString();
         }
+
+        public static string GetTestTargetPlatform()
+        {
+            var requested = Environment.GetEnvironmentVariable("TargetPlatform");
+            return string.IsNullOrEmpty(requested) ? GetPlatform() : requested;
+        }
+
+        public static bool IsTestTarget64BitProcess()
+            => GetTestTargetPlatform() != "X86";
 
         public static string GetBuildConfiguration()
         {

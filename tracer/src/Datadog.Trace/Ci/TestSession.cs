@@ -7,12 +7,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci;
@@ -30,7 +29,7 @@ public sealed class TestSession
     private TestSession(string? command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables)
     {
         // First we make sure that CI Visibility is initialized.
-        CIVisibility.Initialize();
+        CIVisibility.InitializeFromManualInstrumentation();
 
         var environment = CIEnvironmentValues.Instance;
 
@@ -38,7 +37,7 @@ public sealed class TestSession
         WorkingDirectory = workingDirectory ?? Environment.CurrentDirectory;
         Framework = framework;
 
-        WorkingDirectory = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(WorkingDirectory, false);
+        WorkingDirectory = environment.MakeRelativePathFromSourceRoot(WorkingDirectory, false);
 
         var tags = new TestSessionSpanTags
         {
@@ -75,7 +74,7 @@ public sealed class TestSession
         }
 
         Current = this;
-        CIVisibility.Log.Debug("### Test Session Created: {command}", command);
+        CIVisibility.Log.Debug("### Test Session Created: {Command}", command);
 
         if (startDate is null)
         {
@@ -263,9 +262,50 @@ public sealed class TestSession
     /// <param name="duration">Duration of the test module</param>
     public void Close(TestStatus status, TimeSpan? duration)
     {
+        if (InternalClose(status, duration))
+        {
+            CIVisibility.Log.Debug("### Test Session Flushing after close: {Command}", Command);
+            CIVisibility.Flush();
+        }
+    }
+
+    /// <summary>
+    /// Close test module
+    /// </summary>
+    /// <param name="status">Test session status</param>
+    /// <returns>Task instance</returns>
+    public Task CloseAsync(TestStatus status)
+    {
+        return CloseAsync(status, null);
+    }
+
+    /// <summary>
+    /// Close test module
+    /// </summary>
+    /// <param name="status">Test session status</param>
+    /// <param name="duration">Duration of the test module</param>
+    /// <returns>Task instance</returns>
+    public Task CloseAsync(TestStatus status, TimeSpan? duration)
+    {
+        if (InternalClose(status, duration))
+        {
+            CIVisibility.Log.Debug("### Test Session Flushing after close: {Command}", Command);
+            return CIVisibility.FlushAsync();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Close test module
+    /// </summary>
+    /// <param name="status">Test session status</param>
+    /// <param name="duration">Duration of the test module</param>
+    internal bool InternalClose(TestStatus status, TimeSpan? duration)
+    {
         if (Interlocked.Exchange(ref _finished, 1) == 1)
         {
-            return;
+            return false;
         }
 
         var span = _span;
@@ -298,8 +338,8 @@ public sealed class TestSession
         }
 
         Current = null;
-        CIVisibility.Log.Debug("### Test Session Closed: {command}", Command);
-        CIVisibility.FlushSpans();
+        CIVisibility.Log.Debug("### Test Session Closed: {Command} | {Status}", Command, Tags.Status);
+        return true;
     }
 
     /// <summary>

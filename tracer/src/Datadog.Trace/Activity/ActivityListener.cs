@@ -107,7 +107,7 @@ namespace Datadog.Trace.Activity
 
             // Initialize
             var diagnosticSourceAssemblyName = diagnosticListenerType.Assembly.GetName();
-            Log.Information("DiagnosticSource: {diagnosticSourceAssemblyNameFullName}", diagnosticSourceAssemblyName.FullName);
+            Log.Information("DiagnosticSource: {DiagnosticSourceAssemblyNameFullName}", diagnosticSourceAssemblyName.FullName);
 
             var activityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource", throwOnError: false);
             var version = diagnosticSourceAssemblyName.Version;
@@ -138,7 +138,7 @@ namespace Datadog.Trace.Activity
                 return;
             }
 
-            Log.Information("An activity listener was found but version {version} is not supported.", version?.ToString() ?? "(null)");
+            Log.Information("An activity listener was found but version {Version} is not supported.", version?.ToString() ?? "(null)");
 
             static void CreateCurrentActivityDelegates(Type activityType)
             {
@@ -158,8 +158,9 @@ namespace Datadog.Trace.Activity
 
             static void ChangeActivityDefaultFormat(Type activityType)
             {
-                // We change the default ID format to W3C (so traceid and spanid gets populated)
-                if (Activator.CreateInstance(activityType, string.Empty).TryDuckCast<IActivityFormat>(out var activityFormat))
+                // Instantiate an (unused) Activity object so we can use DuckTyping to update the static property Activity.DefaultIdFormat, changing the default ID format to W3C (so traceid and spanid gets populated).
+                // Note: We're specifically passing in a non-empty string parameter to the Activity constructor because the constructor may throw an exception if the string is null or empty.
+                if (Activator.CreateInstance(activityType, "operationName").TryDuckCast<IActivityFormat>(out var activityFormat))
                 {
                     activityFormat.DefaultIdFormat = ActivityIdFormat.W3C;
                 }
@@ -196,7 +197,7 @@ namespace Datadog.Trace.Activity
             var onSampleUsingParentIdMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnSampleUsingParentId", BindingFlags.Static | BindingFlags.Public)!;
             var onShouldListenToMethodInfo = typeof(ActivityListenerHandler).GetMethod("OnShouldListenTo", BindingFlags.Static | BindingFlags.Public)!;
 
-            Log.Information("Activity listener: {activityListenerType}", activityListenerType!.AssemblyQualifiedName ?? "(null)");
+            Log.Information("Activity listener: {ActivityListenerType}", activityListenerType!.AssemblyQualifiedName ?? "(null)");
 
             // Create the ActivityListener instance
             var activityListener = Activator.CreateInstance(activityListenerType);
@@ -226,7 +227,7 @@ namespace Datadog.Trace.Activity
 
         private static void CreateDiagnosticSourceListenerInstance(Type diagnosticListenerType)
         {
-            Log.Information("DiagnosticListener listener: {diagnosticListenerType}", diagnosticListenerType.AssemblyQualifiedName ?? "(null)");
+            Log.Information("DiagnosticListener listener: {DiagnosticListenerType}", diagnosticListenerType.AssemblyQualifiedName ?? "(null)");
 
             var observerDiagnosticListenerType = typeof(IObserver<>).MakeGenericType(diagnosticListenerType);
 

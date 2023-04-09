@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <string>
 #include "IFrameStore.h"
+#include "IDebugInfoStore.h"
 
 #include "shared/src/native-src/com_ptr.h"
 
@@ -29,11 +30,13 @@ private:
     };
 
 public:
-    FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration);
+    FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* pDebugInfoStore);
 
 public :
-    std::tuple<bool, std::string_view, std::string_view> GetFrame(uintptr_t instructionPointer) override;
+    std::pair<bool, FrameInfoView> GetFrame(uintptr_t instructionPointer) override;
     bool GetTypeName(ClassID classId, std::string& name) override;
+    bool GetTypeName(ClassID classId, std::string_view& name) override;
+
 
 private:
     bool GetFunctionInfo(
@@ -51,17 +54,19 @@ private:
         ULONG32 genericParametersCount,
         ClassID* genericParameters
         );
-    bool GetTypeDesc(
+    bool BuildTypeDesc(
         IMetaDataImport2* pMetadataImport,
         ClassID classId,
         ModuleID moduleId,
         mdTypeDef mdTokenType,
         TypeDesc& typeDesc,
+        bool isArray,
+        const char* arraySuffix,
         bool isEncoded
         );
-    bool GetTypeDesc(ClassID classId, TypeDesc& typeDesc, bool isEncoded);
-    bool GetCachedTypeDesc(ClassID classId, TypeDesc& typeDesc);
-    std::pair <std::string_view, std::string_view> GetManagedFrame(FunctionID functionId);
+    bool GetTypeDesc(ClassID classId, TypeDesc*& typeDesc, bool isEncoded);
+    bool GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc, bool isEncoded);
+    FrameInfoView GetManagedFrame(FunctionID functionId);
     std::pair <std::string_view, std::string_view> GetNativeFrame(uintptr_t instructionPointer);
 
 public:   // global helpers
@@ -70,7 +75,12 @@ public:   // global helpers
 private:  // global helpers
     static void FixTrailingGeneric(WCHAR* name);
     static std::string GetTypeNameFromMetadata(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType);
-    static std::pair<std::string, std::string> GetTypeWithNamespace(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType);
+    static std::pair<std::string, std::string> GetTypeWithNamespace(
+        IMetaDataImport2* pMetadata,
+        mdTypeDef mdTokenType,
+        bool isArray,
+        const char* arraySuffix
+        );
     static std::string FormatGenericTypeParameters(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType, bool isEncoded);
     static std::string FormatGenericParameters(
         ICorProfilerInfo4* pInfo,
@@ -83,6 +93,8 @@ private:  // global helpers
         ModuleID moduleId,
         ClassID classId,
         mdTypeDef mdTokenType,
+        bool isArray,
+        const char* arraySuffix,
         bool isEncoded
         );
     static std::pair<std::string, mdTypeDef> GetMethodNameFromMetadata(
@@ -93,14 +105,32 @@ private:  // global helpers
     static void ConcatUnknownGenericType(std::stringstream& builder, bool isEncoded);
 
 private:
+    struct FrameInfo
+    {
+    public:
+        std::string ModuleName;
+        std::string Frame;
+        std::string_view Filename;
+        std::uint32_t StartLine;
+
+        operator FrameInfoView() const
+        {
+            return {ModuleName, Frame, Filename, StartLine};
+        }
+    };
+
     ICorProfilerInfo4* _pCorProfilerInfo;
+    IDebugInfoStore* _pDebugInfoStore;
 
     std::mutex _methodsLock;
-    std::mutex _typesLock;
     std::mutex _nativeLock;
-    // caches functions                      V-- module    V-- full frame
-    std::unordered_map<FunctionID, std::pair<std::string, std::string>> _methods;
-    std::unordered_map<ClassID, TypeDesc> _types;
+
+    // caches functions
+    std::unordered_map<FunctionID, FrameInfo> _methods;
+    std::mutex _typesLock;
+    std::unordered_map<ClassID, TypeDesc> _types;  // for allocations/exceptions
+    std::mutex _encodedTypesLock;
+    std::unordered_map<ClassID, TypeDesc> _encodedTypes;  // for frames
     std::unordered_map<std::string, std::string> _framePerNativeModule;
 
     bool _resolveNativeFrames;

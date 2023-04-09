@@ -2,11 +2,12 @@
   "profiles": {
     "Datadog.Trace.Tools.Runner": {
       "commandName": "Project",
-      "commandLineArgs": "ci run --tracer-home c:\\github\\DataDog\\dd-trace-dotnet\\tracer\\bin\\dd-tracer-home -- dotnet test C:\\github\\DataDog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.DuckTyping.Tests\\Datadog.Trace.DuckTyping.Tests.csproj --collect \"Code Coverage\" -o ./bin/Debug/nt01",
+      "commandLineArgs": "ci run --tracer-home /Users/tony.redondo/repos/github/Datadog/dd-trace-dotnet/shared/bin/monitoring-home -- dotnet test -f net7.0 test/Npgsql.Tests",
+      "workingDirectory": "/tmp/github/npgsql",
+      "nativeDebugging": true,
       "environmentVariables": {
-        "DD_CIVISIBILITY_CODE_COVERAGE_ENABLED": "1"
+        "DD_ENV" : "ci"
       }
-      // "commandLineArgs": "apply-aot c:\\github\\DataDog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.DuckTyping.Tests\\bin\\Debug\\netcoreapp3.0 c:\\github\\DataDog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.DuckTyping.Tests\\bin\\Debug\\netcoreapp3.0\\out"
     }
   }
 }

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Sink
@@ -14,21 +15,23 @@ namespace Datadog.Trace.Debugger.Sink
 
         private readonly BoundedConcurrentQueue<string> _queue;
         private readonly int _batchSize;
+        private readonly SnapshotSlicer _snapshotSlicer;
 
-        private SnapshotSink(int batchSize)
+        private SnapshotSink(int batchSize, SnapshotSlicer snapshotSlicer)
         {
+            _snapshotSlicer = snapshotSlicer;
             _batchSize = batchSize;
             _queue = new BoundedConcurrentQueue<string>(DefaultQueueLimit);
         }
 
-        public static SnapshotSink Create(DebuggerSettings settings)
+        public static SnapshotSink Create(DebuggerSettings settings, SnapshotSlicer snapshotSlicer)
         {
-            return new SnapshotSink(settings.UploadBatchSize);
+            return new SnapshotSink(settings.UploadBatchSize, snapshotSlicer);
         }
 
-        public void Add(string snapshot)
+        public void Add(string probeId, string snapshot)
         {
-            _queue.TryEnqueue(snapshot);
+            _queue.TryEnqueue(_snapshotSlicer.SliceIfNeeded(probeId, snapshot));
         }
 
         public List<string> GetSnapshots()

@@ -19,6 +19,7 @@ namespace datadog::shared::nativeloader
     class IDynamicDispatcher
     {
     public:
+        virtual ~IDynamicDispatcher() = default;
         virtual void LoadConfiguration(fs::path&& configFilePath) = 0;
         virtual HRESULT LoadClassFactory(REFIID riid) = 0;
         virtual HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) = 0;
@@ -40,13 +41,13 @@ namespace datadog::shared::nativeloader
 
     public:
         DynamicDispatcherImpl();
-        virtual void LoadConfiguration(fs::path&& configFilePath) override;
-        virtual HRESULT LoadClassFactory(REFIID riid) override;
-        virtual HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) override;
-        virtual HRESULT STDMETHODCALLTYPE DllCanUnloadNow() override;
-        virtual IDynamicInstance* GetContinuousProfilerInstance() override;
-        virtual IDynamicInstance* GetTracerInstance() override;
-        virtual IDynamicInstance* GetCustomInstance() override;
+        void LoadConfiguration(fs::path&& configFilePath) override;
+        HRESULT LoadClassFactory(REFIID riid) override;
+        HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) override;
+        HRESULT STDMETHODCALLTYPE DllCanUnloadNow() override;
+        IDynamicInstance* GetContinuousProfilerInstance() override;
+        IDynamicInstance* GetTracerInstance() override;
+        IDynamicInstance* GetCustomInstance() override;
     };
 
 } // namespace datadog::shared::nativeloader

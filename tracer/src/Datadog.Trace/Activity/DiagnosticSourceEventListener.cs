@@ -18,7 +18,7 @@ namespace Datadog.Trace.Activity
 {
     internal class DiagnosticSourceEventListener : IObserver<KeyValuePair<string, object>>
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DiagnosticObserverListener));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DiagnosticSourceEventListener));
         private static readonly Action<string, KeyValuePair<string, object>, object?> OnNextActivityDelegate;
         private readonly string _sourceName;
 
@@ -86,7 +86,10 @@ namespace Datadog.Trace.Activity
                     return;
                 }
 
-                if (activity.Instance != null && activity.OperationName.Length != dotIndex && string.Compare(activity.OperationName, 0, value.Key, 0, dotIndex, StringComparison.Ordinal) != 0)
+                if (activity.Instance is not null
+                    && activity.OperationName is not null
+                    && activity.OperationName.Length != dotIndex
+                    && string.Compare(activity.OperationName, 0, value.Key, 0, dotIndex, StringComparison.Ordinal) != 0)
                 {
                     // Activity is not associated with the event we received.
                     // clearing the Activity variable.
@@ -104,7 +107,7 @@ namespace Datadog.Trace.Activity
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error handling DiagnosticSourceEventListener event with {sourceName}", sourceName);
+                Log.Error(ex, "Error handling DiagnosticSourceEventListener event with {SourceName}", sourceName);
             }
         }
 

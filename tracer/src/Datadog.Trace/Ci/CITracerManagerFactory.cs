@@ -11,7 +11,6 @@ using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Sampling;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
@@ -22,7 +21,6 @@ namespace Datadog.Trace.Ci
 {
     internal class CITracerManagerFactory : TracerManagerFactory
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CITracerManagerFactory>();
         private readonly CIVisibilitySettings _settings;
         private readonly IDiscoveryService _discoveryService;
         private readonly bool _enabledEventPlatformProxy;
@@ -45,9 +43,15 @@ namespace Datadog.Trace.Ci
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
             DataStreamsManager dataStreamsManager,
-            string defaultServiceName)
+            string defaultServiceName,
+            IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
-            return new CITracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName);
+            return new CITracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider);
+        }
+
+        protected override IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings)
+        {
+            return new CIGitMetadataTagsProvider();
         }
 
         protected override ITraceSampler GetSampler(ImmutableTracerSettings settings)

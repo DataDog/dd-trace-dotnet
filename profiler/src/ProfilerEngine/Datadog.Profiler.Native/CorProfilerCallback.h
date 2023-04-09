@@ -15,6 +15,7 @@
 #include "IAppDomainStore.h"
 #include "IClrLifetime.h"
 #include "IConfiguration.h"
+#include "IDebugInfoStore.h"
 #include "IExporter.h"
 #include "IFrameStore.h"
 #include "IMetricsSender.h"
@@ -23,8 +24,13 @@
 #include "SamplesCollector.h"
 #include "GarbageCollectionProvider.h"
 #include "StopTheWorldGCProvider.h"
+#include "LiveObjectsProvider.h"
 #include "IRuntimeInfo.h"
 #include "IEnabledProfilers.h"
+#include "MetricsRegistry.h"
+#include "ProxyMetric.h"
+#include "IAllocationsRecorder.h"
+
 #include "shared/src/native-src/string.h"
 
 #include <atomic>
@@ -57,11 +63,11 @@ public:
 
     // use STDMETHODCALLTYPE macro to match the CLR declaration.
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
-    ULONG STDMETHODCALLTYPE AddRef(void) override;
-    ULONG STDMETHODCALLTYPE Release(void) override;
-    ULONG STDMETHODCALLTYPE GetRefCount(void) const;
+    ULONG STDMETHODCALLTYPE AddRef() override;
+    ULONG STDMETHODCALLTYPE Release() override;
+    ULONG STDMETHODCALLTYPE GetRefCount() const;
     HRESULT STDMETHODCALLTYPE Initialize(IUnknown* pICorProfilerInfoUnk) override;
-    HRESULT STDMETHODCALLTYPE Shutdown(void) override;
+    HRESULT STDMETHODCALLTYPE Shutdown() override;
     HRESULT STDMETHODCALLTYPE AppDomainCreationStarted(AppDomainID appDomainId) override;
     HRESULT STDMETHODCALLTYPE AppDomainCreationFinished(AppDomainID appDomainId, HRESULT hrStatus) override;
     HRESULT STDMETHODCALLTYPE AppDomainShutdownStarted(AppDomainID appDomainId) override;
@@ -89,21 +95,21 @@ public:
     HRESULT STDMETHODCALLTYPE ThreadCreated(ThreadID threadId) override;
     HRESULT STDMETHODCALLTYPE ThreadDestroyed(ThreadID threadId) override;
     HRESULT STDMETHODCALLTYPE ThreadAssignedToOSThread(ThreadID managedThreadId, DWORD osThreadId) override;
-    HRESULT STDMETHODCALLTYPE RemotingClientInvocationStarted(void) override;
+    HRESULT STDMETHODCALLTYPE RemotingClientInvocationStarted() override;
     HRESULT STDMETHODCALLTYPE RemotingClientSendingMessage(GUID* pCookie, BOOL fIsAsync) override;
     HRESULT STDMETHODCALLTYPE RemotingClientReceivingReply(GUID* pCookie, BOOL fIsAsync) override;
-    HRESULT STDMETHODCALLTYPE RemotingClientInvocationFinished(void) override;
+    HRESULT STDMETHODCALLTYPE RemotingClientInvocationFinished() override;
     HRESULT STDMETHODCALLTYPE RemotingServerReceivingMessage(GUID* pCookie, BOOL fIsAsync) override;
-    HRESULT STDMETHODCALLTYPE RemotingServerInvocationStarted(void) override;
-    HRESULT STDMETHODCALLTYPE RemotingServerInvocationReturned(void) override;
+    HRESULT STDMETHODCALLTYPE RemotingServerInvocationStarted() override;
+    HRESULT STDMETHODCALLTYPE RemotingServerInvocationReturned() override;
     HRESULT STDMETHODCALLTYPE RemotingServerSendingReply(GUID* pCookie, BOOL fIsAsync) override;
     HRESULT STDMETHODCALLTYPE UnmanagedToManagedTransition(FunctionID functionId, COR_PRF_TRANSITION_REASON reason) override;
     HRESULT STDMETHODCALLTYPE ManagedToUnmanagedTransition(FunctionID functionId, COR_PRF_TRANSITION_REASON reason) override;
     HRESULT STDMETHODCALLTYPE RuntimeSuspendStarted(COR_PRF_SUSPEND_REASON suspendReason) override;
-    HRESULT STDMETHODCALLTYPE RuntimeSuspendFinished(void) override;
-    HRESULT STDMETHODCALLTYPE RuntimeSuspendAborted(void) override;
-    HRESULT STDMETHODCALLTYPE RuntimeResumeStarted(void) override;
-    HRESULT STDMETHODCALLTYPE RuntimeResumeFinished(void) override;
+    HRESULT STDMETHODCALLTYPE RuntimeSuspendFinished() override;
+    HRESULT STDMETHODCALLTYPE RuntimeSuspendAborted() override;
+    HRESULT STDMETHODCALLTYPE RuntimeResumeStarted() override;
+    HRESULT STDMETHODCALLTYPE RuntimeResumeFinished() override;
     HRESULT STDMETHODCALLTYPE RuntimeThreadSuspended(ThreadID threadId) override;
     HRESULT STDMETHODCALLTYPE RuntimeThreadResumed(ThreadID threadId) override;
     HRESULT STDMETHODCALLTYPE MovedReferences(ULONG cMovedObjectIDRanges, ObjectID oldObjectIDRangeStart[], ObjectID newObjectIDRangeStart[], ULONG cObjectIDRangeLength[]) override;
@@ -113,33 +119,33 @@ public:
     HRESULT STDMETHODCALLTYPE RootReferences(ULONG cRootRefs, ObjectID rootRefIds[]) override;
     HRESULT STDMETHODCALLTYPE ExceptionThrown(ObjectID thrownObjectId) override;
     HRESULT STDMETHODCALLTYPE ExceptionSearchFunctionEnter(FunctionID functionId) override;
-    HRESULT STDMETHODCALLTYPE ExceptionSearchFunctionLeave(void) override;
+    HRESULT STDMETHODCALLTYPE ExceptionSearchFunctionLeave() override;
     HRESULT STDMETHODCALLTYPE ExceptionSearchFilterEnter(FunctionID functionId) override;
-    HRESULT STDMETHODCALLTYPE ExceptionSearchFilterLeave(void) override;
+    HRESULT STDMETHODCALLTYPE ExceptionSearchFilterLeave() override;
     HRESULT STDMETHODCALLTYPE ExceptionSearchCatcherFound(FunctionID functionId) override;
     HRESULT STDMETHODCALLTYPE ExceptionOSHandlerEnter(UINT_PTR __unused) override;
     HRESULT STDMETHODCALLTYPE ExceptionOSHandlerLeave(UINT_PTR __unused) override;
     HRESULT STDMETHODCALLTYPE ExceptionUnwindFunctionEnter(FunctionID functionId) override;
-    HRESULT STDMETHODCALLTYPE ExceptionUnwindFunctionLeave(void) override;
+    HRESULT STDMETHODCALLTYPE ExceptionUnwindFunctionLeave() override;
     HRESULT STDMETHODCALLTYPE ExceptionUnwindFinallyEnter(FunctionID functionId) override;
-    HRESULT STDMETHODCALLTYPE ExceptionUnwindFinallyLeave(void) override;
+    HRESULT STDMETHODCALLTYPE ExceptionUnwindFinallyLeave() override;
     HRESULT STDMETHODCALLTYPE ExceptionCatcherEnter(FunctionID functionId, ObjectID objectId) override;
-    HRESULT STDMETHODCALLTYPE ExceptionCatcherLeave(void) override;
+    HRESULT STDMETHODCALLTYPE ExceptionCatcherLeave() override;
     HRESULT STDMETHODCALLTYPE COMClassicVTableCreated(ClassID wrappedClassId, REFGUID implementedIID, void* pVTable, ULONG cSlots) override;
     HRESULT STDMETHODCALLTYPE COMClassicVTableDestroyed(ClassID wrappedClassId, REFGUID implementedIID, void* pVTable) override;
-    HRESULT STDMETHODCALLTYPE ExceptionCLRCatcherFound(void) override;
-    HRESULT STDMETHODCALLTYPE ExceptionCLRCatcherExecute(void) override;
+    HRESULT STDMETHODCALLTYPE ExceptionCLRCatcherFound() override;
+    HRESULT STDMETHODCALLTYPE ExceptionCLRCatcherExecute() override;
     HRESULT STDMETHODCALLTYPE ThreadNameChanged(ThreadID threadId, ULONG cchName, WCHAR name[]) override;
     HRESULT STDMETHODCALLTYPE GarbageCollectionStarted(int cGenerations, BOOL generationCollected[], COR_PRF_GC_REASON reason) override;
     HRESULT STDMETHODCALLTYPE SurvivingReferences(ULONG cSurvivingObjectIDRanges, ObjectID objectIDRangeStart[], ULONG cObjectIDRangeLength[]) override;
-    HRESULT STDMETHODCALLTYPE GarbageCollectionFinished(void) override;
+    HRESULT STDMETHODCALLTYPE GarbageCollectionFinished() override;
     HRESULT STDMETHODCALLTYPE FinalizeableObjectQueued(DWORD finalizerFlags, ObjectID objectID) override;
     HRESULT STDMETHODCALLTYPE RootReferences2(ULONG cRootRefs, ObjectID rootRefIds[], COR_PRF_GC_ROOT_KIND rootKinds[], COR_PRF_GC_ROOT_FLAGS rootFlags[], UINT_PTR rootIds[]) override;
     HRESULT STDMETHODCALLTYPE HandleCreated(GCHandleID handleId, ObjectID initialObjectId) override;
     HRESULT STDMETHODCALLTYPE HandleDestroyed(GCHandleID handleId) override;
     HRESULT STDMETHODCALLTYPE InitializeForAttach(IUnknown* pCorProfilerInfoUnk, void* pvClientData, UINT cbClientData) override;
-    HRESULT STDMETHODCALLTYPE ProfilerAttachComplete(void) override;
-    HRESULT STDMETHODCALLTYPE ProfilerDetachSucceeded(void) override;
+    HRESULT STDMETHODCALLTYPE ProfilerAttachComplete() override;
+    HRESULT STDMETHODCALLTYPE ProfilerDetachSucceeded() override;
     HRESULT STDMETHODCALLTYPE ReJITCompilationStarted(FunctionID functionId, ReJITID rejitId, BOOL fIsSafeToBlock) override;
     HRESULT STDMETHODCALLTYPE GetReJITParameters(ModuleID moduleId, mdMethodDef methodId, ICorProfilerFunctionControl* pFunctionControl) override;
     HRESULT STDMETHODCALLTYPE ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId, HRESULT hrStatus, BOOL fIsSafeToBlock) override;
@@ -194,6 +200,8 @@ private :
     std::atomic<ULONG> _refCount{0};
     ICorProfilerInfo5* _pCorProfilerInfo = nullptr;
     ICorProfilerInfo12* _pCorProfilerInfoEvents = nullptr;
+    ICorProfilerInfo13* _pCorProfilerInfoLiveHeap = nullptr;
+
     std::unique_ptr<ClrEventsParser> _pClrEventsParser = nullptr;
     EVENTPIPE_SESSION _session{0};
     inline static bool _isNet46OrGreater = false;
@@ -215,6 +223,7 @@ private :
     SamplesCollector* _pSamplesCollector = nullptr;
     StopTheWorldGCProvider* _pStopTheWorldProvider = nullptr;
     GarbageCollectionProvider* _pGarbageCollectionProvider = nullptr;
+    LiveObjectsProvider* _pLiveObjectsProvider = nullptr;
 
     std::vector<std::unique_ptr<IService>> _services;
 
@@ -224,6 +233,12 @@ private :
     std::unique_ptr<IFrameStore> _pFrameStore = nullptr;
     std::unique_ptr<IRuntimeInfo> _pRuntimeInfo = nullptr;
     std::unique_ptr<IEnabledProfilers> _pEnabledProfilers = nullptr;
+    std::unique_ptr<IAllocationsRecorder> _pAllocationsRecorder = nullptr;
+    std::unique_ptr<IDebugInfoStore> _pDebugInfoStore = nullptr;
+
+    MetricsRegistry _metricsRegistry;
+    std::shared_ptr<ProxyMetric> _managedThreadsMetric;
+    std::shared_ptr<ProxyMetric> _managedThreadsWithContextMetric;
 
 private:
     static void ConfigureDebugLog();
@@ -231,6 +246,7 @@ private:
     static void InspectProcessorInfo();
     static void InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor, COR_PRF_RUNTIME_TYPE& runtimeType);
     static const char* SysInfoProcessorArchitectureToStr(WORD wProcArch);
+    static void PrintEnvironmentVariables();
 
     void DisposeInternal();
     bool InitializeServices();

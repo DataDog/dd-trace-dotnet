@@ -114,7 +114,7 @@ TEST(ConfigurationTest, CheckDefaultLogDirectoryWhenVariableIsNotSet)
     auto configuration = Configuration{};
     auto expectedValue =
 #ifdef _WINDOWS
-        WStr("C:\\ProgramData\\Datadog-APM\\logs\\DotNet");
+        WStr("C:\\ProgramData\\Datadog .NET Tracer\\logs");
 #else
         WStr("/var/log/datadog/dotnet");
 #endif
@@ -603,4 +603,64 @@ TEST(ConfigurationTest, CheckGarbageCollectionProfilingIsDisabledIfEnvVarSetToFa
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::GCProfilingEnabled, WStr("0"));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.IsGarbageCollectionProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckHeapProfilingIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckHeapProfilingIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapProfilingEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapProfilingEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckHeapProfilingIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapProfilingEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckBacktrace2IsUsedByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.UseBacktrace2(), true);
+}
+
+TEST(ConfigurationTest, CheckBacktrace2IsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::UseBacktrace2, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.UseBacktrace2(), false);
+}
+
+TEST(ConfigurationTest, CheckBacktrace2IsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::UseBacktrace2, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.UseBacktrace2(), true);
+}
+
+TEST(ConfigurationTest, CheckDebugInfoIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsDebugInfoEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckDebugInfoIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DebugInfoEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsDebugInfoEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckDebugInfoIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::DebugInfoEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsDebugInfoEnabled(), false);
 }

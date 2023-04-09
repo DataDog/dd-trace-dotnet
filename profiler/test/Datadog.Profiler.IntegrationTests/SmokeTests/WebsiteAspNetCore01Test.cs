@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using Datadog.Profiler.IntegrationTests.Helpers;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.SmokeTests
@@ -20,6 +22,15 @@ namespace Datadog.Profiler.SmokeTests
         public void CheckSmoke(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, _output);
+            runner.RunAndCheck();
+        }
+
+        [Trait("Category", "LinuxOnly")]
+        [TestAppFact("Samples.Website-AspNetCore01")]
+        public void CheckSmokeForOldWayToStackWalk(string appName, string framework, string appAssembly)
+        {
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, _output);
+            runner.EnvironmentHelper.CustomEnvironmentVariables[EnvironmentVariables.UseBacktrace2] = "0";
             runner.RunAndCheck();
         }
     }

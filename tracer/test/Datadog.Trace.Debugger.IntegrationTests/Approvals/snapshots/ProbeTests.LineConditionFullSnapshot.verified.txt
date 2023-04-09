@@ -1,0 +1,63 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "26": {
+              "arguments": {
+                "arg": {
+                  "type": "Double",
+                  "value": "1"
+                },
+                "this": {
+                  "type": "LineConditionFullSnapshot",
+                  "value": "LineConditionFullSnapshot"
+                }
+              },
+              "locals": {
+                "local": {
+                  "type": "Double",
+                  "value": "3"
+                }
+              },
+              "staticFields": {
+                "Json": {
+                  "type": "String",
+                  "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"local\"},\r\n      {\"ref\": \"arg\"}\r\n    ]\r\n}"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "LineConditionFullSnapshot.cs",
+            "lines": [
+              26
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.ExpressionTests.LineConditionFullSnapshot",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

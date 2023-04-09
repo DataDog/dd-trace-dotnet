@@ -89,7 +89,7 @@
     <ClInclude Include="StackSamplerLoopManager.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
-    <ClInclude Include="StackSnapshotResultReusableBuffer.h">
+    <ClInclude Include="StackSnapshotResultBuffer.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
     <ClInclude Include="ThreadCpuInfo.h">
@@ -287,6 +287,41 @@
     <ClInclude Include="GCBaseRawSample.h">
       <Filter>GarbageCollections</Filter>
     </ClInclude>
+    <ClInclude Include="IBatchedSamplesProvider.h" />
+    <ClInclude Include="ISampledAllocationsListener.h" />
+    <ClInclude Include="LiveObjectsProvider.h">
+      <Filter>Allocations</Filter>
+    </ClInclude>
+    <ClInclude Include="LiveObjectInfo.h">
+      <Filter>Allocations</Filter>
+    </ClInclude>
+    <ClInclude Include="MetricsRegistry.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="MetricBase.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="MeanMaxMetric.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="ProxyMetric.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="CounterMetric.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="SumMetric.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="SumMetric.h">
+      <Filter>Metrics</Filter>
+    </ClInclude>
+    <ClInclude Include="AllocationsRecorder.h">
+      <Filter>Allocations</Filter>
+    </ClInclude>
+    <ClInclude Include="IAllocationsRecorder.h">
+      <Filter>Allocations</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -328,7 +363,7 @@
     <ClCompile Include="StackSamplerLoopManager.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
-    <ClCompile Include="StackSnapshotResultReusableBuffer.cpp">
+    <ClCompile Include="StackSnapshotResultBuffer.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
     <ClCompile Include="ThreadCpuInfo.cpp">
@@ -420,6 +455,33 @@
     </ClCompile>
     <ClCompile Include="GarbageCollectionProvider.cpp">
       <Filter>GarbageCollections</Filter>
+    </ClCompile>
+    <ClCompile Include="LiveObjectInfo.cpp">
+      <Filter>Allocations</Filter>
+    </ClCompile>
+    <ClCompile Include="LiveObjectsProvider.cpp">
+      <Filter>Allocations</Filter>
+    </ClCompile>
+    <ClCompile Include="RawGarbageCollectionSample.cpp">
+      <Filter>GarbageCollections</Filter>
+    </ClCompile>
+    <ClCompile Include="MetricsRegistry.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="MeanMaxMetric.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="ProxyMetric.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="CounterMetric.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="SumMetric.cpp">
+      <Filter>Metrics</Filter>
+    </ClCompile>
+    <ClCompile Include="AllocationsRecorder.cpp">
+      <Filter>Allocations</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

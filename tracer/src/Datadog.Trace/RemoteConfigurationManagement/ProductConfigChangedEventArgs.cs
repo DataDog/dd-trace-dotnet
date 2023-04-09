@@ -6,40 +6,34 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using System.Linq;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal class ProductConfigChangedEventArgs : EventArgs
     {
-        private readonly IEnumerable<NamedRawFile> _configContents;
-
-        private Dictionary<string, ApplyDetails> applyStates = new();
+        private readonly Dictionary<string, ApplyDetails> _applyStates = new();
 
         public ProductConfigChangedEventArgs(IEnumerable<NamedRawFile> configContents)
         {
-            _configContents = configContents;
+            ConfigContents = configContents;
         }
+
+        public IEnumerable<NamedRawFile> ConfigContents { get; }
 
         public IEnumerable<NamedTypedFile<T>> GetDeserializedConfigurations<T>()
         {
-            foreach (var configContent in _configContents)
-            {
-                using var stream = new MemoryStream(configContent.RawFile);
-                using var streamReader = new StreamReader(stream);
-                using var jsonReader = new JsonTextReader(streamReader);
-                yield return new NamedTypedFile<T>(configContent.Name, JsonSerializer.CreateDefault().Deserialize<T>(jsonReader));
-            }
+            return ConfigContents.Select(configContent => configContent.Deserialize<T>());
         }
 
         public IEnumerable<NamedTypedFile<string>> GetConfigurationAsString()
         {
-            foreach (var configContent in _configContents)
+            foreach (var configContent in ConfigContents)
             {
                 using var stream = new MemoryStream(configContent.RawFile);
                 using var streamReader = new StreamReader(stream);
                 var contents = streamReader.ReadToEnd();
-                yield return new NamedTypedFile<string>(configContent.Name, contents);
+                yield return new NamedTypedFile<string>(configContent.Path.Path, contents);
             }
         }
 
@@ -70,20 +64,20 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public IEnumerable<ApplyDetails> GetResults()
         {
-            return applyStates.Values;
+            return _applyStates.Values;
         }
 
         private void GetOrCreateApplyDetails(string filename, Func<ApplyDetails, ApplyDetails> update)
         {
             ApplyDetails applyDetails = default;
-            if (!applyStates.TryGetValue(filename, out applyDetails))
+            if (!_applyStates.TryGetValue(filename, out applyDetails))
             {
                 applyDetails = new ApplyDetails() { Filename = filename };
             }
 
             applyDetails = update(applyDetails);
 
-            applyStates[filename] = applyDetails;
+            _applyStates[filename] = applyDetails;
         }
     }
 }

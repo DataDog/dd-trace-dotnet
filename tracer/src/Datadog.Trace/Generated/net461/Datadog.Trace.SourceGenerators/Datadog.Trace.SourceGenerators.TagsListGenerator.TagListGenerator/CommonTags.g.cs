@@ -12,6 +12,8 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] SamplingLimitDecisionBytes = new byte[] { 95, 100, 100, 46, 108, 105, 109, 105, 116, 95, 112, 115, 114 };
         // TracesKeepRateBytes = System.Text.Encoding.UTF8.GetBytes("_dd.tracer_kr");
         private static readonly byte[] TracesKeepRateBytes = new byte[] { 95, 100, 100, 46, 116, 114, 97, 99, 101, 114, 95, 107, 114 };
+        // SamplingAgentDecisionBytes = System.Text.Encoding.UTF8.GetBytes("_dd.agent_psr");
+        private static readonly byte[] SamplingAgentDecisionBytes = new byte[] { 95, 100, 100, 46, 97, 103, 101, 110, 116, 95, 112, 115, 114 };
 
         public override double? GetMetric(string key)
         {
@@ -19,6 +21,7 @@ namespace Datadog.Trace.Tagging
             {
                 "_dd.limit_psr" => SamplingLimitDecision,
                 "_dd.tracer_kr" => TracesKeepRate,
+                "_dd.agent_psr" => SamplingAgentDecision,
                 _ => base.GetMetric(key),
             };
         }
@@ -32,6 +35,9 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "_dd.tracer_kr": 
                     TracesKeepRate = value;
+                    break;
+                case "_dd.agent_psr": 
+                    SamplingAgentDecision = value;
                     break;
                 default: 
                     base.SetMetric(key, value);
@@ -51,6 +57,11 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<double>("_dd.tracer_kr", TracesKeepRate.Value, TracesKeepRateBytes));
             }
 
+            if (SamplingAgentDecision is not null)
+            {
+                processor.Process(new TagItem<double>("_dd.agent_psr", SamplingAgentDecision.Value, SamplingAgentDecisionBytes));
+            }
+
             base.EnumerateMetrics(ref processor);
         }
 
@@ -67,6 +78,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("_dd.tracer_kr (metric):")
                   .Append(TracesKeepRate.Value)
+                  .Append(',');
+            }
+
+            if (SamplingAgentDecision is not null)
+            {
+                sb.Append("_dd.agent_psr (metric):")
+                  .Append(SamplingAgentDecision.Value)
                   .Append(',');
             }
 

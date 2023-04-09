@@ -4,10 +4,12 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.AppSec
 {
-    internal class BlockException : Exception
+    internal class BlockException : CallTargetBubbleUpException
     {
         internal BlockException()
         {
@@ -28,7 +30,14 @@ namespace Datadog.Trace.AppSec
         {
         }
 
-        // can give a significant performance boost, this exception is currently caught and logged by the host web server
-        public override string ToString() => "BlockException";
+        public BlockException(IResult result, bool reported = false)
+        {
+            Result = result;
+            Reported = reported;
+        }
+
+        public IResult Result { get; }
+
+        public bool Reported { get; }
     }
 }

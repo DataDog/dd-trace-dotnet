@@ -5,7 +5,6 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
@@ -27,14 +26,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 public static class NUnitWorkItemWorkItemCompleteIntegration
 {
     /// <summary>
-    /// OnMethodEnd callback
+    /// OnMethodBegin callback
     /// </summary>
     /// <typeparam name="TTarget">Type of the target</typeparam>
     /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-    /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-    /// <param name="state">Calltarget state value</param>
-    /// <returns>Return value of the method</returns>
-    internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
+    /// <returns>Calltarget state value</returns>
+    internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         where TTarget : IWorkItem
     {
         var item = instance.Test;
@@ -46,8 +43,16 @@ public static class NUnitWorkItemWorkItemCompleteIntegration
             case "TestFixture" when NUnitIntegration.GetTestSuiteFrom(item) is { } suite:
                 suite.Close();
                 break;
+            case "TestMethod" when instance.Result.ResultState.Status == TestStatus.Failed && item.Method?.MethodInfo is not null:
+                if (NUnitIntegration.CreateTest(item) is { } test)
+                {
+                    test.SetErrorInfo("Exception", instance.Result.Message, instance.Result.StackTrace);
+                    test.Close(Ci.TestStatus.Fail, TimeSpan.Zero);
+                }
+
+                break;
         }
 
-        return CallTargetReturn.GetDefault();
+        return CallTargetState.GetDefault();
     }
 }

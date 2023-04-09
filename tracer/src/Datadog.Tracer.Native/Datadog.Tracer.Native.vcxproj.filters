@@ -44,8 +44,27 @@
     <ClCompile Include="debugger_environment_variables_util.cpp">
       <Filter>Debugger</Filter>
     </ClCompile>
-    <ClCompile Include="probes_tracker.cpp">
+    <ClCompile Include="debugger_probes_tracker.cpp">
       <Filter>Debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\iast_util.cpp" />
+    <ClCompile Include="iast\aspect.cpp" />
+    <ClCompile Include="iast\dataflow_il_analysis.cpp" />
+    <ClCompile Include="iast\dataflow_il_rewriter.cpp" />
+    <ClCompile Include="iast\aspect_filter.cpp" />
+    <ClCompile Include="iast\signature_info.cpp" />
+    <ClCompile Include="iast\method_info.cpp" />
+    <ClCompile Include="iast\module_info.cpp" />
+    <ClCompile Include="iast\signature_types.cpp" />
+    <ClCompile Include="iast\dataflow_aspects.cpp" />
+    <ClCompile Include="iast\dataflow.cpp" />
+    <ClCompile Include="iast\string_literal_aspect_filter.cpp" />
+    <ClCompile Include="iast\string_optimization_aspect_filter.cpp" />
+    <ClCompile Include="..\..\..\shared\src\native-lib\fmt\src\format.cc">
+      <Filter>fmt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\shared\src\native-lib\fmt\src\posix.cc">
+      <Filter>fmt</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -114,9 +133,26 @@
     <ClInclude Include="debugger_environment_variables_util.h">
       <Filter>Debugger</Filter>
     </ClInclude>
-    <ClInclude Include="probes_tracker.h">
+    <ClInclude Include="debugger_probes_tracker.h">
       <Filter>Debugger</Filter>
     </ClInclude>
+    <ClInclude Include="iast\dataflow.h" />
+    <ClInclude Include="iast\iast_util.h" />
+    <ClInclude Include="iast\aspect.h" />
+    <ClInclude Include="iast\iast_constants.h" />
+    <ClInclude Include="iast\method_info.h" />
+    <ClInclude Include="iast\signature_info.h" />
+    <ClInclude Include="iast\signature_types.h" />
+    <ClInclude Include="iast\module_info.h" />
+    <ClInclude Include="iast\app_domain_info.h" />
+    <ClInclude Include="iast\dataflow_aspects.h" />
+    <ClInclude Include="iast\aspect_filter_factory.h" />
+    <ClInclude Include="iast\aspect_filter.h" />
+    <ClInclude Include="iast\string_literal_aspect_filter.h" />
+    <ClInclude Include="iast\string_optimization_aspect_filter.h" />
+    <ClInclude Include="iast\dataflow_il_rewriter.h" />
+    <ClInclude Include="iast\dataflow_il_analysis.h" />
+    <ClInclude Include="Synchronized.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -127,6 +163,9 @@
     </Filter>
     <Filter Include="shared">
       <UniqueIdentifier>{b31bbb47-af39-4840-88e2-eaba1bf73d34}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="fmt">
+      <UniqueIdentifier>{ce905be0-cb16-4827-83d3-4e2cdd17437f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

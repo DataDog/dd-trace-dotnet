@@ -31,7 +31,22 @@ EnabledProfilers::EnabledProfilers(IConfiguration* pConfiguration, bool isListen
 
         if (pConfiguration->IsContentionProfilingEnabled())
         {
-            _enabledProfilers |= RuntimeProfiler::Contention;
+            _enabledProfilers |= RuntimeProfiler::LockContention;
+        }
+
+        if (pConfiguration->IsGarbageCollectionProfilingEnabled())
+        {
+            _enabledProfilers |= RuntimeProfiler::GC;
+        }
+
+        // TODO: we also need to check if .NET version is >= 7
+        // --> pass .NET version to the constructor
+        if (pConfiguration->IsHeapProfilingEnabled())
+        {
+            _enabledProfilers |= RuntimeProfiler::Heap;
+
+            // heap profiling requires allocations profiling
+            _enabledProfilers |= RuntimeProfiler::Allocations;
         }
 
         // TODO: add new CLR event driven profilers

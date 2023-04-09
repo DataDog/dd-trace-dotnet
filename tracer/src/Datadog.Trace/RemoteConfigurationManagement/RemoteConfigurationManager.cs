@@ -6,19 +6,21 @@
 #nullable enable
 
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
@@ -32,6 +34,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private readonly RcmClientTracer _rcmTracer;
         private readonly IDiscoveryService _discoveryService;
         private readonly IRemoteConfigurationApi _remoteConfigurationApi;
+        private readonly IGitMetadataTagsProvider _gitMetadataTagsProvider;
         private readonly TimeSpan _pollInterval;
 
         private readonly CancellationTokenSource _cancellationSource;
@@ -45,18 +48,21 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private bool _isPollingStarted;
         private bool _isRcmEnabled;
         private string? _backendClientState;
+        private bool _gitMetadataAddedToRequestTags;
 
         private RemoteConfigurationManager(
             IDiscoveryService discoveryService,
             IRemoteConfigurationApi remoteConfigurationApi,
             string id,
             RcmClientTracer rcmTracer,
-            TimeSpan pollInterval)
+            TimeSpan pollInterval,
+            IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
             _discoveryService = discoveryService;
             _remoteConfigurationApi = remoteConfigurationApi;
             _rcmTracer = rcmTracer;
             _pollInterval = pollInterval;
+            _gitMetadataTagsProvider = gitMetadataTagsProvider;
             _id = id;
 
             _rootVersion = 1;
@@ -69,22 +75,18 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public static RemoteConfigurationManager? Instance { get; private set; }
 
-        public static RemoteConfigurationManager Create(
-            IDiscoveryService discoveryService,
-            IRemoteConfigurationApi remoteConfigurationApi,
-            RemoteConfigurationSettings settings,
-            string serviceName,
-            string? environment,
-            string? serviceVersion)
+        public static RemoteConfigurationManager Create(IDiscoveryService discoveryService, IRemoteConfigurationApi remoteConfigurationApi, RemoteConfigurationSettings settings, string serviceName, ImmutableTracerSettings tracerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
+            var tags = GetTags(settings, tracerSettings);
             lock (LockObject)
             {
                 Instance ??= new RemoteConfigurationManager(
                     discoveryService,
                     remoteConfigurationApi,
                     id: settings.Id,
-                    rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, environment, serviceVersion),
-                    pollInterval: settings.PollInterval);
+                    rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, TraceUtil.NormalizeTag(tracerSettings.Environment), tracerSettings.ServiceVersion, tags),
+                    pollInterval: settings.PollInterval,
+                    gitMetadataTagsProvider);
             }
 
             while (_initializationQueue.TryDequeue(out var action))
@@ -93,6 +95,37 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
 
             return Instance;
+        }
+
+        private static List<string> GetTags(RemoteConfigurationSettings rcmSettings, ImmutableTracerSettings tracerSettings)
+        {
+            var tags = tracerSettings.GlobalTags?.Select(pair => pair.Key + ":" + pair.Value).ToList() ?? new List<string>();
+
+            var environment = TraceUtil.NormalizeTag(tracerSettings.Environment);
+            if (!string.IsNullOrEmpty(environment))
+            {
+                tags.Add($"env:{environment}");
+            }
+
+            var serviceVersion = tracerSettings.ServiceVersion;
+            if (!string.IsNullOrEmpty(serviceVersion))
+            {
+                tags.Add($"version:{serviceVersion}");
+            }
+
+            var tracerVersion = rcmSettings.TracerVersion;
+            if (!string.IsNullOrEmpty(tracerVersion))
+            {
+                tags.Add($"tracer_version:{tracerVersion}");
+            }
+
+            var hostName = PlatformHelpers.HostMetadata.Instance?.Hostname;
+            if (!string.IsNullOrEmpty(hostName))
+            {
+                tags.Add($"host_name:{hostName}");
+            }
+
+            return tags;
         }
 
         public static void CallbackWithInitializedInstance(Action<RemoteConfigurationManager> action)
@@ -221,13 +254,44 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
             var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, _lastPollError != null, _lastPollError, _backendClientState);
             var rcmClient = new RcmClient(_id, products.Keys, _rcmTracer, rcmState, capabilitiesArray);
+            EnrichTagsWithGitMetadata(rcmClient.ClientTracer.Tags);
             var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
 
             return rcmRequest;
         }
 
+        private void EnrichTagsWithGitMetadata(List<string> tags)
+        {
+            if (_gitMetadataAddedToRequestTags)
+            {
+                return;
+            }
+
+            if (!_gitMetadataTagsProvider.TryExtractGitMetadata(out var gitMetadata))
+            {
+                // no git metadata found, we can try again later.
+                return;
+            }
+
+            if (gitMetadata != GitMetadata.Empty)
+            {
+                tags.Add($"{CommonTags.GitCommit}:{gitMetadata.CommitSha}");
+                tags.Add($"{CommonTags.GitRepository}:{gitMetadata.RepositoryUrl}");
+            }
+
+            _gitMetadataAddedToRequestTags = true;
+        }
+
         private void ProcessResponse(GetRcmResponse response, IDictionary<string, Product> products)
         {
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                string description = response.TargetFiles.Count > 0 ?
+                                        "with the following paths: " + string.Join(",", response.TargetFiles.Select(t => t.Path)) :
+                                        "that is empty.";
+                Log.Debug("Received Remote Configuration response {ResponseDescription}.", description);
+            }
+
             var actualConfigPath =
                 response
                    .ClientConfigs
@@ -245,16 +309,36 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 try
                 {
                     var configurations = productGroup.ToList();
-
                     product.AssignConfigs(configurations);
                 }
                 catch (Exception e)
                 {
-                    Log.Warning($"Failed to apply remote configurations {e.Message}");
+                    Log.Warning(e, "Failed to apply remote configurations for product {Product}", product?.Name);
                 }
             }
 
-            UnapplyRemovedConfigurations();
+            foreach (var product in products.Values)
+            {
+                try
+                {
+                    var removedConfigurations = GetRemovedConfigurations(product);
+
+                    if (removedConfigurations is null)
+                    {
+                        continue;
+                    }
+
+                    product.RemoveConfigs(removedConfigurations);
+                    foreach (var removedConfiguration in removedConfigurations)
+                    {
+                        product.AppliedConfigurations.Remove(removedConfiguration.Path.Path);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Log.Warning(e, "Failed to remove remote configurations");
+                }
+            }
 
             IEnumerable<RemoteConfiguration> GetChangedConfigurations()
             {
@@ -283,31 +367,22 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 }
             }
 
-            void UnapplyRemovedConfigurations()
+            List<RemoteConfigurationCache>? GetRemovedConfigurations(Product product)
             {
-                List<string>? remove = null;
+                List<RemoteConfigurationCache>? removed = null;
 
-                foreach (var product in products.Values)
+                foreach (var appliedConfiguration in product.AppliedConfigurations)
                 {
-                    foreach (var appliedConfiguration in product.AppliedConfigurations)
+                    if (actualConfigPath.ContainsKey(appliedConfiguration.Key))
                     {
-                        if (!actualConfigPath.ContainsKey(appliedConfiguration.Key))
-                        {
-                            remove ??= new List<string>();
-                            remove.Add(appliedConfiguration.Key);
-                        }
+                        continue;
                     }
 
-                    if (remove is not null)
-                    {
-                        foreach (var key in remove)
-                        {
-                            product.AppliedConfigurations.Remove(key);
-                        }
-
-                        remove.Clear();
-                    }
+                    removed ??= new List<RemoteConfigurationCache>();
+                    removed.Add(appliedConfiguration.Value);
                 }
+
+                return removed;
             }
         }
 

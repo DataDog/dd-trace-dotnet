@@ -1,0 +1,58 @@
+{
+  "dsl": "len(ref String) > 2 || count(ref CollectionLocal) > 2 || hasAny(filter(ref CollectionLocal {@it > 4}) { @it == hello})",
+  "and": [
+    {
+      "gt": [
+        {
+          "len": [
+            {
+              "ref": "String"
+            }
+          ]
+        },
+        2
+      ]
+    },
+    {
+      "or": [
+        {
+          "gt": [
+            {
+              "count": [
+                {
+                  "ref": "CollectionLocal"
+                }
+              ]
+            },
+            2
+          ]
+        },
+        {
+          "hasAny": [
+            {
+              "filter": [
+                {
+                  "ref": "CollectionLocal"
+                },
+                {
+                  "gt": [
+                    {
+                      "len": "@it"
+                    },
+                    4
+                  ]
+                }
+              ]
+            },
+            {
+              "eq": [
+                "@it",
+                "hello"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -7,17 +7,22 @@ using System;
 using System.Text;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Ci.Agent.MessagePack;
 using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Ci.Coverage.Models;
+using Datadog.Trace.Ci.Coverage.Models.Tests;
 using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.Payloads
 {
     internal class CICodeCoveragePayload : MultipartPayload
     {
+        private readonly IFormatterResolver _formatterResolver;
+
         public CICodeCoveragePayload(CIVisibilitySettings settings, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver formatterResolver = null)
             : base(settings, maxItemsPerPayload, maxBytesPerPayload, formatterResolver)
         {
+            _formatterResolver = formatterResolver ?? CIFormatterResolver.Instance;
+
             // We call reset here to add the dummy event
             Reset();
         }
@@ -26,25 +31,18 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 
         public override string EventPlatformPath => "api/v2/citestcov";
 
-        public override bool HasEvents
-        {
-            get
-            {
-                // The List will always have at least 1 item due the backend limitation.
-                // By comparing > 1 will avoid sending an empty payload each second.
-                return Count > 1;
-            }
-        }
-
         public override bool CanProcessEvent(IEvent @event)
         {
-            return @event is CoveragePayload;
+            return @event is TestCoverage;
         }
 
-        protected override MultipartFormItem CreateMultipartFormItem(ArraySegment<byte> eventInBytes)
+        protected override MultipartFormItem CreateMultipartFormItem(EventsBuffer<IEvent> eventsBuffer)
         {
-            var index = Count + 1;
-            return new MultipartFormItem($"coverage{index}", MimeTypes.MsgPack, $"filecoverage{index}.msgpack", eventInBytes);
+            var totalEvents = eventsBuffer.Count;
+            var index = Count;
+            var eventInBytes = MessagePackSerializer.Serialize(new CoveragePayload(eventsBuffer), _formatterResolver);
+            CIVisibility.Log.Debug<int, int>("CICodeCoveragePayload: Serialized {Count} test code coverage as a single multipart item with {Size} bytes.", eventsBuffer.Count, eventInBytes.Length);
+            return new MultipartFormItem($"coverage{index}", MimeTypes.MsgPack, $"filecoverage{index}.msgpack", new ArraySegment<byte>(eventInBytes));
         }
 
         public override void Reset()
@@ -60,6 +58,16 @@ namespace Datadog.Trace.Ci.Agent.Payloads
                     MimeTypes.Json,
                     "fileevent.json",
                     new ArraySegment<byte>(Encoding.UTF8.GetBytes("{\"dummy\": true}"))));
+        }
+
+        internal readonly struct CoveragePayload
+        {
+            public readonly EventsBuffer<IEvent> TestCoverageData;
+
+            public CoveragePayload(EventsBuffer<IEvent> testCoverageData)
+            {
+                TestCoverageData = testCoverageData;
+            }
         }
     }
 }

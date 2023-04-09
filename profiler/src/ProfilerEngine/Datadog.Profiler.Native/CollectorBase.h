@@ -95,6 +95,38 @@ public:
         return TransformRawSamples(FetchRawSamples());
     }
 
+    std::shared_ptr<Sample> TransformRawSample(const TRawSample& rawSample)
+    {
+        auto runtimeId = _pRuntimeIdStore->GetId(rawSample.AppDomainId);
+
+        auto sample = std::make_shared<Sample>(rawSample.Timestamp, runtimeId == nullptr ? std::string_view() : std::string_view(runtimeId), rawSample.Stack.size());
+        if (rawSample.LocalRootSpanId != 0 && rawSample.SpanId != 0)
+        {
+            sample->AddNumericLabel(NumericLabel{Sample::LocalRootSpanIdLabel, rawSample.LocalRootSpanId});
+            sample->AddNumericLabel(NumericLabel{Sample::SpanIdLabel, rawSample.SpanId});
+        }
+
+        // compute thread/appdomain details
+        SetAppDomainDetails(rawSample, sample);
+        SetThreadDetails(rawSample, sample);
+
+        // compute symbols for frames
+        SetStack(rawSample, sample);
+
+        // add timestamp
+        if (_isTimestampsAsLabelEnabled)
+        {
+            // All timestamps give the time when "something" ends and the associated duration
+            // happened in the past
+            sample->AddNumericLabel(NumericLabel{Sample::EndTimestampLabel, sample->GetTimeStamp()});
+        }
+
+        // allow inherited classes to add values and specific labels
+        rawSample.OnTransform(sample, _valueOffset);
+
+        return sample;
+    }
+
 protected:
     uint64_t GetCurrentTimestamp()
     {
@@ -122,38 +154,7 @@ private:
         return samples;
     }
 
-    std::shared_ptr<Sample> TransformRawSample(const TRawSample& rawSample)
-    {
-        auto runtimeId = _pRuntimeIdStore->GetId(rawSample.AppDomainId);
-
-        auto sample = std::make_shared<Sample>(rawSample.Timestamp, runtimeId == nullptr ? std::string_view() : std::string_view(runtimeId), rawSample.Stack.size());
-        if (rawSample.LocalRootSpanId != 0 && rawSample.SpanId != 0)
-        {
-            sample->AddLabel(Label{Sample::LocalRootSpanIdLabel, std::to_string(rawSample.LocalRootSpanId)});
-            sample->AddLabel(Label{Sample::SpanIdLabel, std::to_string(rawSample.SpanId)});
-        }
-
-        // compute thread/appdomain details
-        SetAppDomainDetails(rawSample, sample);
-        SetThreadDetails(rawSample, sample);
-
-        // compute symbols for frames
-        SetStack(rawSample, sample);
-
-        // add timestamp
-        if (_isTimestampsAsLabelEnabled)
-        {
-            // All timestamps give the time when "something" ends and the associated duration
-            // happened in the past
-            sample->AddLabel(Label{Sample::EndTimestampLabel, std::to_string(sample->GetTimeStamp())});
-        }
-
-        // allow inherited classes to add values and specific labels
-        rawSample.OnTransform(sample, _valueOffset);
-
-        return sample;
-    }
-
+private:
     void SetAppDomainDetails(const TRawSample& rawSample, std::shared_ptr<Sample>& sample)
     {
         ProcessID pid;
@@ -163,7 +164,7 @@ private:
         if (rawSample.AppDomainId == 0)
         {
             sample->SetAppDomainName("CLR");
-            sample->SetPid(std::to_string(OpSysTools::GetProcId()));
+            sample->SetPid(OpSysTools::GetProcId());
 
             return;
         }
@@ -171,13 +172,13 @@ private:
         if (!_pAppDomainStore->GetInfo(rawSample.AppDomainId, pid, appDomainName))
         {
             sample->SetAppDomainName("");
-            sample->SetPid("0");
+            sample->SetPid(OpSysTools::GetProcId());
 
             return;
         }
 
         sample->SetAppDomainName(std::move(appDomainName));
-        sample->SetPid(std::to_string(pid));
+        sample->SetPid(pid);
     }
 
     void SetThreadDetails(const TRawSample& rawSample, std::shared_ptr<Sample>& sample)
@@ -215,11 +216,11 @@ private:
         // Deal with fake stack frames like for garbage collections since the Stack will be empty
         for (auto const& instructionPointer : rawSample.Stack)
         {
-            auto [isResolved, moduleName, frame] = _pFrameStore->GetFrame(instructionPointer);
+            auto [isResolved, frame] = _pFrameStore->GetFrame(instructionPointer);
 
             if (isResolved)
             {
-                sample->AddFrame(moduleName, frame);
+                sample->AddFrame(frame);
             }
         }
     }

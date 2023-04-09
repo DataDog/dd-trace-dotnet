@@ -29,7 +29,8 @@ const shared::WSTRING env_vars_to_display[]{environment::tracing_enabled,
                                     environment::ci_visibility_enabled,
                                     environment::azure_app_services,
                                     environment::azure_app_services_app_pool_id,
-                                    environment::azure_app_services_cli_telemetry_profile_value};
+                                    environment::azure_app_services_cli_telemetry_profile_value,
+                                    environment::iast_enabled};
 
 const shared::WSTRING skip_assembly_prefixes[]{
     WStr("Microsoft.AI"),
@@ -58,6 +59,14 @@ const shared::WSTRING include_assemblies[]{
     WStr("System.Diagnostics.Process"),
 };
 
+// Note that this list should be kept in sync with the values in shared/src/Datadog.Trace.ClrProfiler.Native/util.h
+const shared::WSTRING default_exclude_assemblies[]{
+    WStr("dd-trace"),
+    WStr("dd-trace.exe"),
+    WStr("aspnet_state.exe"),
+    WStr("sqlservr.exe"),
+};
+
 const shared::WSTRING skip_traceattribute_assembly_prefixes[]{
     WStr("System."), WStr("Microsoft."), WStr("Datadog.")};
 
@@ -75,7 +84,7 @@ const shared::WSTRING system_private_corelib_assemblyName = WStr("System.Private
 const shared::WSTRING datadog_trace_clrprofiler_managed_loader_assemblyName = WStr("Datadog.Trace.ClrProfiler.Managed.Loader");
 
 const shared::WSTRING managed_profiler_full_assembly_version =
-    WStr("Datadog.Trace, Version=2.21.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
+    WStr("Datadog.Trace, Version=2.28.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
 const shared::WSTRING managed_profiler_name = WStr("Datadog.Trace");
 
@@ -93,8 +102,11 @@ const shared::WSTRING debugger_windows_nativemethods_type = WStr("Datadog.Trace.
 const shared::WSTRING calltarget_modification_action = WStr("CallTargetModification");
 
 const shared::WSTRING distributed_tracer_type_name = WStr("Datadog.Trace.ClrProfiler.DistributedTracer");
+const shared::WSTRING calltargetbubbleexception_tracer_type_name = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetBubbleUpException");
 const shared::WSTRING distributed_tracer_interface_name = WStr("Datadog.Trace.ClrProfiler.IDistributedTracer");
 const shared::WSTRING distributed_tracer_target_method_name = WStr("__GetInstanceForProfiler__");
+
+const shared::WSTRING instrumentation_type_name = WStr("Datadog.Trace.ClrProfiler.Instrumentation");
 
 #ifdef _WIN32
 const shared::WSTRING native_dll_filename = WStr("DATADOG.TRACER.NATIVE.DLL");
@@ -115,7 +127,7 @@ const AssemblyProperty managed_profiler_assembly_property = AssemblyProperty(
                   49,  105, 236, 40,  21,  176, 12, 238, 238, 204, 141, 90,  27,  244, 61,  182, 125, 41,  97,  163,
                   233, 190, 161, 57,  127, 4,   62, 192, 116, 145, 112, 150, 73,  37,  47,  85,  101, 183, 86,  197},
     160, 32772, 1)
-        .WithVersion(2, 21, 0, 0);
+        .WithVersion(2, 28, 0, 0);
 
 } // namespace trace
 

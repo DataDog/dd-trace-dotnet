@@ -173,35 +173,78 @@ namespace Datadog.Trace
         public string? SessionId { get; set; }
     }
 }
-namespace Datadog.Trace.Ci.Coverage.Attributes
+namespace Datadog.Trace.AppSec
 {
-    public class AvoidCoverageAttribute : System.Attribute
+    public static class EventTrackingSdk
     {
-        public AvoidCoverageAttribute() { }
-    }
-    public class CoveredAssemblyAttribute : System.Attribute
-    {
-        public CoveredAssemblyAttribute() { }
-    }
-}
-namespace Datadog.Trace.Ci.Coverage.Metadata
-{
-    public abstract class ModuleCoverageMetadata
-    {
-        protected readonly int[][] Metadata;
-        protected ModuleCoverageMetadata() { }
+        public static void TrackCustomEvent(string eventName) { }
+        public static void TrackCustomEvent(string eventName, System.Collections.Generic.IDictionary<string, string> metadata) { }
+        public static void TrackUserLoginFailureEvent(string userId, bool exists) { }
+        public static void TrackUserLoginFailureEvent(string userId, bool exists, System.Collections.Generic.IDictionary<string, string> metadata) { }
+        public static void TrackUserLoginSuccessEvent(string userId) { }
+        public static void TrackUserLoginSuccessEvent(string userId, System.Collections.Generic.IDictionary<string, string> metadata) { }
     }
 }
 namespace Datadog.Trace.Ci
 {
+    public readonly struct BenchmarkDiscreteStats
+    {
+        public readonly double Kurtosis;
+        public readonly double Max;
+        public readonly double Mean;
+        public readonly double Median;
+        public readonly double Min;
+        public readonly int N;
+        public readonly double P90;
+        public readonly double P95;
+        public readonly double P99;
+        public readonly double Skewness;
+        public readonly double StandardDeviation;
+        public readonly double StandardError;
+        public BenchmarkDiscreteStats(int n, double max, double min, double mean, double median, double standardDeviation, double standardError, double kurtosis, double skewness, double p99, double p95, double p90) { }
+        public static Datadog.Trace.Ci.BenchmarkDiscreteStats GetFrom(double[] values) { }
+    }
+    public struct BenchmarkHostInfo
+    {
+        public double? ChronometerFrequencyHertz;
+        public double? ChronometerResolution;
+        public int? LogicalCoreCount;
+        public string? OsVersion;
+        public int? PhysicalCoreCount;
+        public int? ProcessorCount;
+        public double? ProcessorMaxFrequencyHertz;
+        public string? ProcessorName;
+        public string? RuntimeVersion;
+    }
+    public struct BenchmarkJobInfo
+    {
+        public string? Description;
+        public string? Platform;
+        public string? RuntimeMoniker;
+        public string? RuntimeName;
+    }
+    public enum BenchmarkMeasureType
+    {
+        Duration = 0,
+        RunTime = 1,
+        MeanHeapAllocations = 2,
+        TotalHeapAllocations = 3,
+        ApplicationLaunch = 4,
+        GarbageCollectorGen0 = 5,
+        GarbageCollectorGen1 = 6,
+        GarbageCollectorGen2 = 7,
+        MemoryTotalOperations = 8,
+    }
     public sealed class Test
     {
         public string? Name { get; }
         public System.DateTimeOffset StartTime { get; }
         public Datadog.Trace.Ci.TestSuite Suite { get; }
+        public void AddBenchmarkData(Datadog.Trace.Ci.BenchmarkMeasureType measureType, string info, in Datadog.Trace.Ci.BenchmarkDiscreteStats statistics) { }
         public void Close(Datadog.Trace.Ci.TestStatus status) { }
         public void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration) { }
         public void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration, string? skipReason) { }
+        public void SetBenchmarkMetadata(in Datadog.Trace.Ci.BenchmarkHostInfo hostInfo, in Datadog.Trace.Ci.BenchmarkJobInfo jobInfo) { }
         public void SetErrorInfo(System.Exception exception) { }
         public void SetErrorInfo(string type, string message, string? callStack) { }
         public void SetParameters(Datadog.Trace.Ci.TestParameters parameters) { }
@@ -217,6 +260,8 @@ namespace Datadog.Trace.Ci
         public System.DateTimeOffset StartTime { get; }
         public void Close() { }
         public void Close(System.TimeSpan? duration) { }
+        public System.Threading.Tasks.Task CloseAsync() { }
+        public System.Threading.Tasks.Task CloseAsync(System.TimeSpan? duration) { }
         public Datadog.Trace.Ci.TestSuite GetOrCreateSuite(string name) { }
         public Datadog.Trace.Ci.TestSuite GetOrCreateSuite(string name, System.DateTimeOffset? startDate) { }
         public void SetErrorInfo(System.Exception exception) { }
@@ -241,6 +286,8 @@ namespace Datadog.Trace.Ci
         public string? WorkingDirectory { get; }
         public void Close(Datadog.Trace.Ci.TestStatus status) { }
         public void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration) { }
+        public System.Threading.Tasks.Task CloseAsync(Datadog.Trace.Ci.TestStatus status) { }
+        public System.Threading.Tasks.Task CloseAsync(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration) { }
         public Datadog.Trace.Ci.TestModule CreateModule(string name) { }
         public Datadog.Trace.Ci.TestModule CreateModule(string name, string framework, string frameworkVersion) { }
         public Datadog.Trace.Ci.TestModule CreateModule(string name, string framework, string frameworkVersion, System.DateTimeOffset startDate) { }
@@ -275,6 +322,27 @@ namespace Datadog.Trace.Ci
         public void SetTag(string key, string? value) { }
     }
 }
+namespace Datadog.Trace.Ci.Coverage.Attributes
+{
+    public class AvoidCoverageAttribute : System.Attribute
+    {
+        public AvoidCoverageAttribute() { }
+    }
+    public class CoveredAssemblyAttribute : System.Attribute
+    {
+        public CoveredAssemblyAttribute() { }
+    }
+}
+namespace Datadog.Trace.Ci.Coverage.Metadata
+{
+    public abstract class ModuleCoverageMetadata
+    {
+        protected readonly long[] Metadata;
+        protected readonly int[] SequencePoints;
+        protected readonly long TotalInstructions;
+        protected ModuleCoverageMetadata() { }
+    }
+}
 namespace Datadog.Trace.ClrProfiler
 {
     public sealed class InstrumentationLoader
@@ -289,33 +357,33 @@ namespace Datadog.Trace.Configuration
         public CompositeConfigurationSource() { }
         public void Add(Datadog.Trace.Configuration.IConfigurationSource source) { }
         public bool? GetBool(string key) { }
-        public System.Collections.Generic.IDictionary<string, string> GetDictionary(string key) { }
-        public System.Collections.Generic.IDictionary<string, string> GetDictionary(string key, bool allowOptionalMappings) { }
+        public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key) { }
+        public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings) { }
         public double? GetDouble(string key) { }
         public int? GetInt32(string key) { }
-        public string GetString(string key) { }
+        public string? GetString(string key) { }
         public void Insert(int index, Datadog.Trace.Configuration.IConfigurationSource item) { }
     }
     public class EnvironmentConfigurationSource : Datadog.Trace.Configuration.StringConfigurationSource
     {
         public EnvironmentConfigurationSource() { }
-        public override string GetString(string key) { }
+        public override string? GetString(string key) { }
     }
     public class ExporterSettings
     {
         public const string DefaultAgentHost = "localhost";
         public const int DefaultAgentPort = 8126;
         public ExporterSettings() { }
-        public ExporterSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
+        public ExporterSettings(Datadog.Trace.Configuration.IConfigurationSource? source) { }
         public System.Uri AgentUri { get; set; }
         public int DogStatsdPort { get; set; }
-        public string MetricsPipeName { get; set; }
-        public string MetricsUnixDomainSocketPath { get; set; }
+        public string? MetricsPipeName { get; set; }
+        public string? MetricsUnixDomainSocketPath { get; set; }
         public bool PartialFlushEnabled { get; set; }
         public int PartialFlushMinSpans { get; set; }
-        public string TracesPipeName { get; set; }
+        public string? TracesPipeName { get; set; }
         public int TracesPipeTimeoutMs { get; set; }
-        public string TracesUnixDomainSocketPath { get; set; }
+        public string? TracesUnixDomainSocketPath { get; set; }
     }
     public class GlobalSettings
     {
@@ -327,11 +395,11 @@ namespace Datadog.Trace.Configuration
     public interface IConfigurationSource
     {
         bool? GetBool(string key);
-        System.Collections.Generic.IDictionary<string, string> GetDictionary(string key);
-        System.Collections.Generic.IDictionary<string, string> GetDictionary(string key, bool allowOptionalMappings);
+        System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key);
+        System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings);
         double? GetDouble(string key);
         int? GetInt32(string key);
-        string GetString(string key);
+        string? GetString(string key);
     }
     public class ImmutableExporterSettings
     {
@@ -339,13 +407,13 @@ namespace Datadog.Trace.Configuration
         public ImmutableExporterSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
         public System.Uri AgentUri { get; }
         public int DogStatsdPort { get; }
-        public string MetricsPipeName { get; }
-        public string MetricsUnixDomainSocketPath { get; }
+        public string? MetricsPipeName { get; }
+        public string? MetricsUnixDomainSocketPath { get; }
         public bool PartialFlushEnabled { get; }
         public int PartialFlushMinSpans { get; }
-        public string TracesPipeName { get; }
+        public string? TracesPipeName { get; }
         public int TracesPipeTimeoutMs { get; }
-        public string TracesUnixDomainSocketPath { get; }
+        public string? TracesUnixDomainSocketPath { get; }
     }
     public class ImmutableIntegrationSettings
     {
@@ -365,8 +433,8 @@ namespace Datadog.Trace.Configuration
         [System.Obsolete("App Analytics has been replaced by Tracing without Limits. For more information s" +
             "ee https://docs.datadoghq.com/tracing/legacy_app_analytics/")]
         public bool AnalyticsEnabled { get; }
-        public string CustomSamplingRules { get; }
-        public string Environment { get; }
+        public string? CustomSamplingRules { get; }
+        public string? Environment { get; }
         public Datadog.Trace.Configuration.ImmutableExporterSettings Exporter { get; }
         public double? GlobalSamplingRate { get; }
         public System.Collections.Generic.IReadOnlyDictionary<string, string> GlobalTags { get; }
@@ -376,8 +444,8 @@ namespace Datadog.Trace.Configuration
         public bool KafkaCreateConsumerScopeEnabled { get; }
         public bool LogsInjectionEnabled { get; }
         public int MaxTracesSubmittedPerSecond { get; }
-        public string ServiceName { get; }
-        public string ServiceVersion { get; }
+        public string? ServiceName { get; }
+        public string? ServiceVersion { get; }
         public bool StartupDiagnosticLogEnabled { get; }
         public bool StatsComputationEnabled { get; }
         public bool TraceEnabled { get; }
@@ -386,7 +454,7 @@ namespace Datadog.Trace.Configuration
     }
     public class IntegrationSettings
     {
-        public IntegrationSettings(string integrationName, Datadog.Trace.Configuration.IConfigurationSource source) { }
+        public IntegrationSettings(string integrationName, Datadog.Trace.Configuration.IConfigurationSource? source) { }
         public bool? AnalyticsEnabled { get; set; }
         public double AnalyticsSampleRate { get; set; }
         public bool? Enabled { get; set; }
@@ -400,40 +468,40 @@ namespace Datadog.Trace.Configuration
     public class JsonConfigurationSource : Datadog.Trace.Configuration.IConfigurationSource
     {
         public JsonConfigurationSource(string json) { }
-        public System.Collections.Generic.IDictionary<string, string> GetDictionary(string key) { }
-        public System.Collections.Generic.IDictionary<string, string> GetDictionary(string key, bool allowOptionalMappings) { }
-        public T GetValue<T>(string key) { }
+        public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key) { }
+        public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings) { }
+        public T? GetValue<T>(string key) { }
         public static Datadog.Trace.Configuration.JsonConfigurationSource FromFile(string filename) { }
     }
     public class NameValueConfigurationSource : Datadog.Trace.Configuration.StringConfigurationSource
     {
         public NameValueConfigurationSource(System.Collections.Specialized.NameValueCollection nameValueCollection) { }
-        public override string GetString(string key) { }
+        public override string? GetString(string key) { }
     }
     public abstract class StringConfigurationSource : Datadog.Trace.Configuration.IConfigurationSource
     {
         protected StringConfigurationSource() { }
         public virtual bool? GetBool(string key) { }
-        public System.Collections.Generic.IDictionary<string, string> GetDictionary(string key) { }
-        public System.Collections.Generic.IDictionary<string, string> GetDictionary(string key, bool allowOptionalMappings) { }
+        public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key) { }
+        public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings) { }
         public double? GetDouble(string key) { }
         public virtual int? GetInt32(string key) { }
-        public abstract string GetString(string key);
-        public static System.Collections.Generic.IDictionary<string, string> ParseCustomKeyValues(string data) { }
-        public static System.Collections.Generic.IDictionary<string, string> ParseCustomKeyValues(string data, bool allowOptionalMappings) { }
+        public abstract string? GetString(string key);
+        public static System.Collections.Generic.IDictionary<string, string>? ParseCustomKeyValues(string? data) { }
+        public static System.Collections.Generic.IDictionary<string, string>? ParseCustomKeyValues(string? data, bool allowOptionalMappings) { }
     }
     public class TracerSettings
     {
         public TracerSettings() { }
-        public TracerSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
+        public TracerSettings(Datadog.Trace.Configuration.IConfigurationSource? source) { }
         public TracerSettings(bool useDefaultSources) { }
         [System.Obsolete("App Analytics has been replaced by Tracing without Limits. For more information s" +
             "ee https://docs.datadoghq.com/tracing/legacy_app_analytics/")]
         public bool AnalyticsEnabled { get; set; }
-        public string CustomSamplingRules { get; set; }
+        public string? CustomSamplingRules { get; set; }
         public bool DiagnosticSourceEnabled { get; set; }
         public System.Collections.Generic.HashSet<string> DisabledIntegrationNames { get; set; }
-        public string Environment { get; set; }
+        public string? Environment { get; set; }
         public Datadog.Trace.Configuration.ExporterSettings Exporter { get; set; }
         public double? GlobalSamplingRate { get; set; }
         public System.Collections.Generic.IDictionary<string, string> GlobalTags { get; set; }
@@ -443,8 +511,8 @@ namespace Datadog.Trace.Configuration
         public bool KafkaCreateConsumerScopeEnabled { get; set; }
         public bool LogsInjectionEnabled { get; set; }
         public int MaxTracesSubmittedPerSecond { get; set; }
-        public string ServiceName { get; set; }
-        public string ServiceVersion { get; set; }
+        public string? ServiceName { get; set; }
+        public string? ServiceVersion { get; set; }
         public bool StartupDiagnosticLogEnabled { get; set; }
         public bool StatsComputationEnabled { get; set; }
         public bool TraceEnabled { get; set; }

@@ -2,7 +2,7 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.Profiler.Native.Linux" VERSION 2.21.0)
+project("Datadog.Profiler.Native.Linux" VERSION 2.28.0)
 
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
@@ -24,11 +24,11 @@ if (IS_ALPINE)
 endif()
 
 if (RUN_ASAN)
-    add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer)
+    add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer -DDD_SANITIZERS)
 endif()
 
 if (RUN_UBSAN)
-    add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all)
+    add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all -DDD_SANITIZERS)
 endif()
 
 if(ISLINUX)
@@ -107,11 +107,14 @@ if (NOT RUN_ASAN AND NOT RUN_UBSAN)
     target_link_libraries(${PROFILER_STATIC_LIB_NAME} -Wl,--no-undefined)
 endif()
 
+target_compile_definitions(${PROFILER_STATIC_LIB_NAME} PUBLIC "-D_GLIBCXX_USE_CXX11_ABI=0")
+
 target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     fmt-lib
     libunwind-lib
     libdatadog-lib
     coreclr
+    PPDB
     spdlog-headers
     -static-libgcc
     -static-libstdc++
@@ -120,7 +123,7 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -ldl
 )
 
-add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt-lib libdatadog-lib libunwind-lib coreclr spdlog-headers)
+add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt-lib libdatadog-lib libunwind-lib coreclr spdlog-headers PPDB)
 
 # ******************************************************
 # Define shared target

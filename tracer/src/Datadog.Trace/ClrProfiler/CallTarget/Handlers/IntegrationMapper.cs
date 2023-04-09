@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -23,6 +24,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntegrationMapper));
         private static readonly MethodInfo UnwrapReturnValueMethodInfo = typeof(IntegrationMapper).GetMethod(nameof(IntegrationMapper.UnwrapReturnValue), BindingFlags.NonPublic | BindingFlags.Static);
+        private static readonly MethodInfo UnwrapTaskReturnValueMethodInfo = typeof(IntegrationMapper).GetMethod(nameof(IntegrationMapper.UnwrapTaskReturnValue), BindingFlags.NonPublic | BindingFlags.Static);
         private static readonly MethodInfo ConvertTypeMethodInfo = typeof(IntegrationMapper).GetMethod(nameof(IntegrationMapper.ConvertType), BindingFlags.NonPublic | BindingFlags.Static);
 
         internal static DynamicMethod CreateBeginMethodDelegate(Type integrationType, Type targetType, Type[] argumentsTypes)
@@ -40,11 +42,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              *
              */
 
-            Log.Debug($"Creating BeginMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
+            Log.Debug("Creating BeginMethod Dynamic Method for '{IntegrationType}' integration. [Target={TargetType}]", integrationType.FullName, targetType.FullName);
             MethodInfo onMethodBeginMethodInfo = integrationType.GetMethod(BeginMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (onMethodBeginMethodInfo is null)
             {
-                Log.Debug($"'{BeginMethodName}' method was not found in integration type: '{integrationType.FullName}'.");
+                Log.Debug("'{BeginMethodName}' method was not found in integration type: '{IntegrationType}'.", BeginMethodName, integrationType.FullName);
                 return null;
             }
 
@@ -184,7 +186,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             ilWriter.EmitCall(OpCodes.Call, onMethodBeginMethodInfo, null);
             ilWriter.Emit(OpCodes.Ret);
 
-            Log.Debug($"Created BeginMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
+            Log.Debug("Created BeginMethod Dynamic Method for '{IntegrationType}' integration. [Target={TargetType}]", integrationType.FullName, targetType.FullName);
             return callMethod;
         }
 
@@ -203,11 +205,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              *
              */
 
-            Log.Debug($"Creating SlowBeginMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
+            Log.Debug("Creating SlowBeginMethod Dynamic Method for '{IntegrationType}' integration. [Target={TargetType}]", integrationType.FullName, targetType.FullName);
             MethodInfo onMethodBeginMethodInfo = integrationType.GetMethod(BeginMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (onMethodBeginMethodInfo is null)
             {
-                Log.Debug($"'{BeginMethodName}' method was not found in integration type: '{integrationType.FullName}'.");
+                Log.Debug("'{BeginMethodName}' method was not found in integration type: '{IntegrationType}'.", BeginMethodName, integrationType.FullName);
                 return null;
             }
 
@@ -302,7 +304,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             ilWriter.EmitCall(OpCodes.Call, onMethodBeginMethodInfo, null);
             ilWriter.Emit(OpCodes.Ret);
 
-            Log.Debug($"Created SlowBeginMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
+            Log.Debug("Created SlowBeginMethod Dynamic Method for '{IntegrationType}' integration. [Target={TargetType}]", integrationType.FullName, targetType.FullName);
             return callMethod;
         }
 
@@ -316,12 +318,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              *      - CallTargetReturn OnMethodEnd<TTarget>(Exception exception, in CallTargetState state);
              */
 
-            Log.Debug($"Creating EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
+            Log.Debug("Creating EndMethod Dynamic Method for '{IntegrationType}' integration. [Target={TargetType}]", integrationType.FullName, targetType.FullName);
             MethodInfo onMethodEndMethodInfo = GetOnMethodEndMethodInfo(integrationType, "CallTargetReturn");
 
             if (onMethodEndMethodInfo is null)
             {
-                Log.Debug($"'{EndMethodName}' method was not found in integration type: '{integrationType.FullName}'.");
+                Log.Debug("'{EndMethodName}' method was not found in integration type: '{IntegrationType}'.", EndMethodName, integrationType.FullName);
                 return null;
             }
 
@@ -413,7 +415,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
             ilWriter.Emit(OpCodes.Ret);
 
-            Log.Debug($"Created EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
+            Log.Debug("Created EndMethod Dynamic Method for '{IntegrationType}' integration. [Target={TargetType}]", integrationType.FullName, targetType.FullName);
             return callMethod;
         }
 
@@ -430,12 +432,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              *
              */
 
-            Log.Debug($"Creating EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
+            Log.Debug("Creating EndMethod Dynamic Method for '{IntegrationType}' integration. [Target={TargetType}, ReturnType={ReturnType}]", integrationType.FullName, targetType.FullName, returnType.FullName);
             MethodInfo onMethodEndMethodInfo = GetOnMethodEndMethodInfo(integrationType, "CallTargetReturn`1");
 
             if (onMethodEndMethodInfo is null)
             {
-                Log.Debug($"'{EndMethodName}' method was not found in integration type: '{integrationType.FullName}'.");
+                Log.Debug("'{EndMethodName}' method was not found in integration type: '{IntegrationType}'.", EndMethodName, integrationType.FullName);
                 return null;
             }
 
@@ -566,7 +568,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
             ilWriter.Emit(OpCodes.Ret);
 
-            Log.Debug($"Created EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
+            Log.Debug("Created EndMethod Dynamic Method for '{IntegrationType}' integration. [Target={TargetType}, ReturnType={ReturnType}]", integrationType.FullName, targetType.FullName, returnType.FullName);
             return callMethod;
         }
 
@@ -581,22 +583,38 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              *      - TReturn OnAsyncMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, in CallTargetState state);
              *      - [Type] OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, in CallTargetState state);
              *
+             * Or as a Task<> return
+             *      - async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
+             *      - async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, CallTargetState state);
+             *      - async Task<[Type]> OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, CallTargetState state);
+             *
              *      In case the continuation is for a Task/ValueTask, the returnValue type will be an object and the value null.
              *      In case the continuation is for a Task<T>/ValueTask<T>, the returnValue type will be T with the instance value after the task completes.
-             *
+             *      [Type] represents a type that we can reference directly, instead of using generics.
              */
 
-            Log.Debug($"Creating AsyncEndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
+            Log.Debug("Creating AsyncEndMethod Dynamic Method for '{IntegrationType}' integration. [Target={TargetType}, ReturnType={ReturnType}]", integrationType.FullName, targetType.FullName, returnType.FullName);
             MethodInfo onAsyncMethodEndMethodInfo = integrationType.GetMethod(EndAsyncMethodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (onAsyncMethodEndMethodInfo is null)
             {
-                Log.Debug($"'{EndAsyncMethodName}' method was not found in integration type: '{integrationType.FullName}'.");
+                Log.Debug("'{EndAsyncMethodName}' method was not found in integration type: '{IntegrationType}'.", EndAsyncMethodName, integrationType.FullName);
                 return default;
             }
 
+            bool isTaskReturn = false;
+            Type dynMethodReturnType = returnType;
             if (!onAsyncMethodEndMethodInfo.ReturnType.IsGenericParameter && onAsyncMethodEndMethodInfo.ReturnType != returnType)
             {
-                ThrowHelper.ThrowArgumentException($"The return type of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is not {returnType}");
+                if (onAsyncMethodEndMethodInfo.ReturnType.GetGenericTypeDefinition() == typeof(Task<>) ||
+                    onAsyncMethodEndMethodInfo.ReturnType == typeof(Task))
+                {
+                    dynMethodReturnType = typeof(Task<>).MakeGenericType(returnType);
+                    isTaskReturn = true;
+                }
+                else
+                {
+                    ThrowHelper.ThrowArgumentException($"The return type of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is not {returnType}");
+                }
             }
 
             Type[] genericArgumentsTypes = onAsyncMethodEndMethodInfo.GetGenericArguments();
@@ -675,7 +693,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
             DynamicMethod callMethod = new DynamicMethod(
                      $"{onAsyncMethodEndMethodInfo.DeclaringType.Name}.{onAsyncMethodEndMethodInfo.Name}.{targetType.Name}.{returnType.Name}",
-                     returnType,
+                     dynMethodReturnType,
                      new Type[] { targetType, returnType, typeof(Exception), typeof(CallTargetState).MakeByRefType() },
                      onAsyncMethodEndMethodInfo.Module,
                      true);
@@ -717,13 +735,31 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             // Unwrap return value proxy
             if (returnValueProxyType != null)
             {
-                MethodInfo unwrapReturnValue = UnwrapReturnValueMethodInfo.MakeGenericMethod(returnValueProxyType, returnType);
+                MethodInfo unwrapReturnValue;
+                if (isTaskReturn)
+                {
+                    if (preserveContext)
+                    {
+                        ilWriter.Emit(OpCodes.Ldc_I4_1);
+                    }
+                    else
+                    {
+                        ilWriter.Emit(OpCodes.Ldc_I4_0);
+                    }
+
+                    unwrapReturnValue = UnwrapTaskReturnValueMethodInfo.MakeGenericMethod(returnValueProxyType, returnType);
+                }
+                else
+                {
+                    unwrapReturnValue = UnwrapReturnValueMethodInfo.MakeGenericMethod(returnValueProxyType, returnType);
+                }
+
                 ilWriter.EmitCall(OpCodes.Call, unwrapReturnValue, null);
             }
 
             ilWriter.Emit(OpCodes.Ret);
 
-            Log.Debug($"Created AsyncEndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}, ReturnType={returnType.FullName}]");
+            Log.Debug("Created AsyncEndMethod Dynamic Method for '{IntegrationType}' integration. [Target={TargetType}, ReturnType={ReturnType}]", integrationType.FullName, targetType.FullName, returnType.FullName);
             return new CreateAsyncEndMethodResult(callMethod, preserveContext);
         }
 
@@ -768,6 +804,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             where TFrom : IDuckType
         {
             return (TTo)returnValue.Instance;
+        }
+
+        private static async Task<TTo> UnwrapTaskReturnValue<TFrom, TTo>(Task<TFrom> returnValue, bool preserveContext)
+            where TFrom : IDuckType
+        {
+            return (TTo)(await returnValue.ConfigureAwait(preserveContext)).Instance;
         }
 
         private static void WriteIntValue(ILGenerator il, int value)

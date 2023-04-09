@@ -70,6 +70,9 @@ StackSamplerLoop::StackSamplerLoop(
     _cpuThreadsThreshold{pConfiguration->CpuThreadsThreshold()},
     _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()}
 {
+    _nbCores = OsSpecificApi::GetProcessorCount();
+    Log::Info("Processor cores = ", _nbCores);
+
     _samplingPeriod = _pConfiguration->CpuWallTimeSamplingRate();
     Log::Info("CPU and wall time sampling period = ", _samplingPeriod.count() / 1000000, " ms");
     Log::Info("Wall time sampled threads = ", _walltimeThreadsThreshold);
@@ -230,10 +233,10 @@ void StackSamplerLoop::WalltimeProfilingIteration()
 
 }
 
-void StackSamplerLoop::CpuProfilingIteration(void)
+void StackSamplerLoop::CpuProfilingIteration()
 {
+    uint32_t sampledThreads = 0;
     int32_t managedThreadsCount = _pManagedThreadList->Count();
-    // TODO: as an optimization, don't scan more threads than nb logical cores
     int32_t sampledThreadsCount = (std::min)(managedThreadsCount, _cpuThreadsThreshold);
 
     for (int32_t i = 0; i < sampledThreadsCount && !_shutdownRequested; i++)
@@ -258,14 +261,35 @@ void StackSamplerLoop::CpuProfilingIteration(void)
 
             if (isRunning)
             {
-                _targetThread->SetCpuConsumptionMilliseconds(currentConsumption);
                 uint64_t cpuForSample = currentConsumption - lastConsumption;
 
                 // we don't collect a sample for this thread is no CPU was consumed since the last check
                 if (cpuForSample > 0)
                 {
+                    int64_t lastCpuTimestamp = _targetThread->GetCpuTimestamp();
                     int64_t thisSampleTimestampNanosecs = OpSysTools::GetHighPrecisionTimestamp();
+
+                    // detect overlapping CPU usage
+                    if ((int64_t)(lastCpuTimestamp + cpuForSample * 1000000) > thisSampleTimestampNanosecs)
+                    {
+                        int64_t cpuOverlap = (lastCpuTimestamp + cpuForSample * 1000000 - thisSampleTimestampNanosecs) / 1000000;
+#ifndef NDEBUG
+                        // TODO: uncomment when debugging this issue
+                        // Log::Warn("Overlapping CPU samples off ", cpuOverlap, " ms (", currentConsumption, " - ", lastConsumption, ")");
+#endif
+                        // ensure that we don't overlap
+                        // -> only the largest possibly CPU consumption is accounted = diff between the 2 timestamps
+                        cpuForSample = (thisSampleTimestampNanosecs - lastCpuTimestamp - 1000) / 1000000; // removing 1 microsecond to be sure
+                    }
+                    _targetThread->SetCpuConsumptionMilliseconds(currentConsumption, thisSampleTimestampNanosecs);
                     CollectOneThreadStackSample(_targetThread, thisSampleTimestampNanosecs, cpuForSample, PROFILING_TYPE::CpuTime);
+
+                    // don't scan more threads than nb logical cores
+                    sampledThreads++;
+                    if (sampledThreads >= _nbCores)
+                    {
+                        break;
+                    }
                 }
             }
             _targetThread.reset();

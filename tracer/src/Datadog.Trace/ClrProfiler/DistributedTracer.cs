@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler
                 {
                     var parentTracer = parent.DuckCast<IAutomaticTracer>();
 
-                    Log.Information("Building manual tracer, connected to {assembly}", parent.GetType().Assembly);
+                    Log.Information("Building manual tracer, connected to {Assembly}", parent.GetType().Assembly);
 
                     Instance = new ManualTracer(parentTracer);
                 }

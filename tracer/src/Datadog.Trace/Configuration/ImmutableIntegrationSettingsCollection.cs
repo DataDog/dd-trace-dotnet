@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
 
@@ -13,7 +15,7 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public class ImmutableIntegrationSettingsCollection
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<IntegrationSettingsCollection>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ImmutableIntegrationSettingsCollection>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImmutableIntegrationSettingsCollection"/> class.

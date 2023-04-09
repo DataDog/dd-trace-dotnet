@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -19,6 +20,7 @@ using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.Sampling;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
+using Datadog.Trace.Util;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner
@@ -33,22 +35,22 @@ namespace Datadog.Trace.Tools.Runner
 
             if (!string.IsNullOrWhiteSpace(options.Environment))
             {
-                envVars["DD_ENV"] = options.Environment;
+                envVars[ConfigurationKeys.Environment] = options.Environment;
             }
 
             if (!string.IsNullOrWhiteSpace(options.Service))
             {
-                envVars["DD_SERVICE"] = options.Service;
+                envVars[ConfigurationKeys.ServiceName] = options.Service;
             }
 
             if (!string.IsNullOrWhiteSpace(options.Version))
             {
-                envVars["DD_VERSION"] = options.Version;
+                envVars[ConfigurationKeys.ServiceVersion] = options.Version;
             }
 
             if (!string.IsNullOrWhiteSpace(options.AgentUrl))
             {
-                envVars["DD_TRACE_AGENT_URL"] = options.AgentUrl;
+                envVars[ConfigurationKeys.AgentUri] = options.AgentUrl;
             }
 
             return envVars;
@@ -96,6 +98,33 @@ namespace Datadog.Trace.Tools.Runner
             return envVars;
         }
 
+        public static void SetCommonTracerSettingsToCurrentProcess(CommonTracerSettings options)
+        {
+            // Settings back DD_ENV to use it in the current process (eg for CIVisibility's TestSession)
+            if (!string.IsNullOrWhiteSpace(options.Environment))
+            {
+                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Environment, options.Environment);
+            }
+
+            // Settings back DD_SERVICE to use it in the current process (eg for CIVisibility's TestSession)
+            if (!string.IsNullOrWhiteSpace(options.Service))
+            {
+                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.ServiceName, options.Service);
+            }
+
+            // Settings back DD_VERSION to use it in the current process (eg for CIVisibility's TestSession)
+            if (!string.IsNullOrWhiteSpace(options.Version))
+            {
+                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.ServiceVersion, options.Version);
+            }
+
+            // Settings back DD_TRACE_AGENT_URL to use it in the current process (eg for CIVisibility's TestSession)
+            if (!string.IsNullOrWhiteSpace(options.AgentUrl))
+            {
+                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.AgentUri, options.AgentUrl);
+            }
+        }
+
         public static string DirectoryExists(string name, params string[] paths)
         {
             string folderName = null;
@@ -126,6 +155,23 @@ namespace Datadog.Trace.Tools.Runner
                 if (!File.Exists(filePath))
                 {
                     WriteError($"Error: The file '{filePath}' can't be found.");
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteError($"Error: The file '{filePath}' check thrown an exception: {ex}");
+            }
+
+            return filePath;
+        }
+
+        public static string FileExistsOrNull(string filePath)
+        {
+            try
+            {
+                if (!File.Exists(filePath))
+                {
+                    return null;
                 }
             }
             catch (Exception ex)
@@ -237,7 +283,7 @@ namespace Datadog.Trace.Tools.Runner
             return defaultValue;
         }
 
-        public static async Task<AgentConfiguration> CheckAgentConnectionAsync(string agentUrl)
+        public static async Task<(AgentConfiguration Configuration, DiscoveryService DiscoveryService)> CheckAgentConnectionAsync(string agentUrl)
         {
             var env = new NameValueCollection();
             if (!string.IsNullOrWhiteSpace(agentUrl))
@@ -275,7 +321,7 @@ namespace Datadog.Trace.Tools.Runner
             {
                 var configuration = await tcs.Task.ConfigureAwait(false);
                 await discoveryService.DisposeAsync().ConfigureAwait(false);
-                return configuration;
+                return (configuration, discoveryService);
             }
         }
 
@@ -347,20 +393,14 @@ namespace Datadog.Trace.Tools.Runner
             string tracerMsBuild = FileExists(Path.Combine(tracerHome, "netstandard2.0", "Datadog.Trace.MSBuild.dll"));
             string tracerProfiler32 = string.Empty;
             string tracerProfiler64 = string.Empty;
+            string tracerProfilerArm64 = null;
             string ldPreload = string.Empty;
 
             if (platform == Platform.Windows)
             {
-                if (RuntimeInformation.OSArchitecture == Architecture.X64 || RuntimeInformation.OSArchitecture == Architecture.X86)
-                {
-                    tracerProfiler32 = FileExists(Path.Combine(tracerHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll"));
-                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll"));
-                }
-                else
-                {
-                    WriteError($"Error: Windows {RuntimeInformation.OSArchitecture} architecture is not supported.");
-                    return null;
-                }
+                tracerProfiler32 = FileExists(Path.Combine(tracerHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll"));
+                tracerProfiler64 = FileExists(Path.Combine(tracerHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll"));
+                tracerProfilerArm64 = FileExistsOrNull(Path.Combine(tracerHome, "win-ARM64EC", "Datadog.Trace.ClrProfiler.Native.dll"));
             }
             else if (platform == Platform.Linux)
             {
@@ -373,6 +413,7 @@ namespace Datadog.Trace.Tools.Runner
                 else if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
                 {
                     tracerProfiler64 = FileExists(Path.Combine(tracerHome, "linux-arm64", "Datadog.Trace.ClrProfiler.Native.so"));
+                    tracerProfilerArm64 = tracerProfiler64;
                     ldPreload = FileExists(Path.Combine(tracerHome, "linux-arm64", "Datadog.Linux.ApiWrapper.x64.so"));
                 }
                 else
@@ -384,6 +425,7 @@ namespace Datadog.Trace.Tools.Runner
             else if (platform == Platform.MacOS)
             {
                 tracerProfiler64 = FileExists(Path.Combine(tracerHome, "osx", "Datadog.Trace.ClrProfiler.Native.dylib"));
+                tracerProfilerArm64 = tracerProfiler64;
             }
 
             var envVars = new Dictionary<string, string>
@@ -405,7 +447,115 @@ namespace Datadog.Trace.Tools.Runner
                 envVars["LD_PRELOAD"] = ldPreload;
             }
 
+            if (!string.IsNullOrEmpty(tracerProfilerArm64))
+            {
+                envVars["CORECLR_PROFILER_PATH_ARM64"] = tracerProfilerArm64;
+                envVars["COR_PROFILER_PATH_ARM64"] = tracerProfilerArm64;
+            }
+
             return envVars;
+        }
+
+        /// <summary>
+        /// Convert the arguments array to a string
+        /// </summary>
+        /// <remarks>
+        /// This code is taken from https://source.dot.net/#System.Private.CoreLib/src/libraries/System.Private.CoreLib/src/System/PasteArguments.cs,624678ba1465e776
+        /// </remarks>
+        /// <param name="args">Arguments array</param>
+        /// <returns>String of arguments</returns>
+        public static string GetArgumentsAsString(IEnumerable<string> args)
+        {
+            const char Quote = '\"';
+            const char Backslash = '\\';
+            var stringBuilder = StringBuilderCache.Acquire(100);
+
+            foreach (var argument in args)
+            {
+                if (stringBuilder.Length != 0)
+                {
+                    stringBuilder.Append(' ');
+                }
+
+                // Parsing rules for non-argv[0] arguments:
+                //   - Backslash is a normal character except followed by a quote.
+                //   - 2N backslashes followed by a quote ==> N literal backslashes followed by unescaped quote
+                //   - 2N+1 backslashes followed by a quote ==> N literal backslashes followed by a literal quote
+                //   - Parsing stops at first whitespace outside of quoted region.
+                //   - (post 2008 rule): A closing quote followed by another quote ==> literal quote, and parsing remains in quoting mode.
+                if (argument.Length != 0 && ContainsNoWhitespaceOrQuotes(argument))
+                {
+                    // Simple case - no quoting or changes needed.
+                    stringBuilder.Append(argument);
+                }
+                else
+                {
+                    stringBuilder.Append(Quote);
+                    int idx = 0;
+                    while (idx < argument.Length)
+                    {
+                        char c = argument[idx++];
+                        if (c == Backslash)
+                        {
+                            int numBackSlash = 1;
+                            while (idx < argument.Length && argument[idx] == Backslash)
+                            {
+                                idx++;
+                                numBackSlash++;
+                            }
+
+                            if (idx == argument.Length)
+                            {
+                                // We'll emit an end quote after this so must double the number of backslashes.
+                                stringBuilder.Append(Backslash, numBackSlash * 2);
+                            }
+                            else if (argument[idx] == Quote)
+                            {
+                                // Backslashes will be followed by a quote. Must double the number of backslashes.
+                                stringBuilder.Append(Backslash, (numBackSlash * 2) + 1);
+                                stringBuilder.Append(Quote);
+                                idx++;
+                            }
+                            else
+                            {
+                                // Backslash will not be followed by a quote, so emit as normal characters.
+                                stringBuilder.Append(Backslash, numBackSlash);
+                            }
+
+                            continue;
+                        }
+
+                        if (c == Quote)
+                        {
+                            // Escape the quote so it appears as a literal. This also guarantees that we won't end up generating a closing quote followed
+                            // by another quote (which parses differently pre-2008 vs. post-2008.)
+                            stringBuilder.Append(Backslash);
+                            stringBuilder.Append(Quote);
+                            continue;
+                        }
+
+                        stringBuilder.Append(c);
+                    }
+
+                    stringBuilder.Append(Quote);
+                }
+            }
+
+            return StringBuilderCache.GetStringAndRelease(stringBuilder);
+
+            static bool ContainsNoWhitespaceOrQuotes(string s)
+            {
+                for (int i = 0; i < s.Length; i++)
+                {
+                    char c = s[i];
+                    if (char.IsWhiteSpace(c) || c == Quote)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
         }
     }
 }

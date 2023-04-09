@@ -28,6 +28,7 @@ partial class Build : NukeBuild
                        GenerateIntegrationTestsLinuxMatrices();
                        GenerateExplorationTestMatrices();
                        GenerateSmokeTestsMatrices();
+                       GenerateIntegrationTestsDebuggerArm64Matrices();
                    });
 
             void GenerateConditionVariables()
@@ -35,10 +36,11 @@ partial class Build : NukeBuild
                 GenerateConditionVariableBasedOnGitChange("isTracerChanged", new[] { "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation", "tracer/src/Datadog.Tracer.Native" }, new string[] {  });
                 GenerateConditionVariableBasedOnGitChange("isDebuggerChanged", new[]
                 {
-                    "tracer/src/Datadog.Trace/Debugger/Instrumentation", 
+                    "tracer/src/Datadog.Trace/Debugger",
                     "tracer/src/Datadog.Tracer.Native", 
                     "tracer/test/Datadog.Trace.Debugger.IntegrationTests",
                     "tracer/test/test-applications/debugger",
+                    "tracer/build/_build/Build.Steps.Debugger.cs"
                 }, new string[] { });
                 GenerateConditionVariableBasedOnGitChange("isProfilerChanged", new[] { "profiler/src" }, new string[] { });
 
@@ -47,7 +49,13 @@ partial class Build : NukeBuild
                     const string baseBranch = "origin/master";
                     bool isChanged;
                     var forceExplorationTestsWithVariableName = $"force_exploration_tests_with_{variableName}";
-                    if (bool.Parse(Environment.GetEnvironmentVariable(forceExplorationTestsWithVariableName) ?? "false"))
+
+                    if (Environment.GetEnvironmentVariable("BUILD_REASON") == "Schedule" && bool.Parse(Environment.GetEnvironmentVariable("isMainBranch") ?? "false"))
+                    {
+                        Logger.Info("Running scheduled build on master, forcing all tests to run regardless of whether there has been a change.");
+                        isChanged = true;
+                    }
+                    else if (bool.Parse(Environment.GetEnvironmentVariable(forceExplorationTestsWithVariableName) ?? "false"))
                     {
                         Logger.Info($"{forceExplorationTestsWithVariableName} was set - forcing exploration tests");
                         isChanged = true;
@@ -75,15 +83,16 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsWindowsMatrices()
             {
-                GenerateIntegrationTestsWindowsMatrix(TestingFrameworks, "integration_tests_windows_matrix");
-                GenerateIntegrationTestsWindowsMatrix(TestingFrameworksDebugger, "integration_tests_windows_debugger_matrix");
+                GenerateIntegrationTestsWindowsMatrix();
+                GenerateIntegrationTestsDebuggerWindowsMatrix();
                 GenerateIntegrationTestsWindowsIISMatrix(TargetFramework.NET462);
                 GenerateIntegrationTestsWindowsMsiMatrix(TargetFramework.NET462);
                 GenerateIntegrationTestsWindowsAzureFunctionsMatrix();
             }
 
-            void GenerateIntegrationTestsWindowsMatrix(TargetFramework[] targetFrameworks, string matrixName)
+            void GenerateIntegrationTestsWindowsMatrix()
             {
+                var targetFrameworks = TestingFrameworks;
                 var targetPlatforms = new[] { "x86", "x64" };
                 var matrix = new Dictionary<string, object>();
 
@@ -91,13 +100,51 @@ partial class Build : NukeBuild
                 {
                     foreach (var targetPlatform in targetPlatforms)
                     {
-                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform });
+                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, });
                     }
                 }
 
-                Logger.Info(matrixName);
                 Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
-                AzurePipelines.Instance.SetVariable(matrixName, JsonConvert.SerializeObject(matrix, Formatting.None));
+                AzurePipelines.Instance.SetVariable("integration_tests_windows_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+            }            
+            
+            void GenerateIntegrationTestsDebuggerWindowsMatrix()
+            {
+                var targetFrameworks = TestingFrameworksDebugger;
+                var targetPlatforms = new[] { "x86", "x64" };
+                var debugTypes = new[] { "portable", "full" };
+                var optimizations = new[] { "true", "false" };
+                var matrix = new Dictionary<string, object>();
+
+                foreach (var framework in targetFrameworks)
+                {
+                    foreach (var targetPlatform in targetPlatforms)
+                    {
+                        if (targetPlatform == "x86" && (framework.Equals(TargetFramework.NETCOREAPP3_1) || framework.Equals(TargetFramework.NET6_0)))
+                        {
+                            // fails on CI with error "apphost.exe" not found.
+                            continue;
+                        }
+
+                        foreach (var debugType in debugTypes)
+                        {
+                            foreach (var optimize in optimizations)
+                            {
+                                matrix.Add($"{targetPlatform}_{framework}_{debugType}_{optimize}", 
+                                           new
+                                           {
+                                               framework = framework, 
+                                               targetPlatform = targetPlatform,
+                                               debugType = debugType,
+                                               optimize = optimize,
+                                           });
+                            }
+                        }
+                    }
+                }
+
+                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                AzurePipelines.Instance.SetVariable("integration_tests_windows_debugger_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }            
             
             void GenerateIntegrationTestsWindowsAzureFunctionsMatrix()
@@ -113,6 +160,7 @@ partial class Build : NukeBuild
                 {
                     // new {framework = TargetFramework.NETCOREAPP3_1, runtimeInstall = v3Install, runtimeUninstall = v3Uninstall },
                     new {framework = TargetFramework.NET6_0, runtimeInstall = v4Install, runtimeUninstall = v4Uninstall },
+                    new {framework = TargetFramework.NET7_0, runtimeInstall = v4Install, runtimeUninstall = v4Uninstall },
                 };
 
                 var matrix = new Dictionary<string, object>();
@@ -166,13 +214,15 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsLinuxMatrices()
             {
-                GenerateIntegrationTestsLinuxMatrix(TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 }), "integration_tests_linux_matrix");
-                GenerateIntegrationTestsLinuxMatrix(TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462 }), "integration_tests_linux_debugger_matrix");
+                GenerateIntegrationTestsLinuxMatrix();
+                GenerateIntegrationTestsDebuggerLinuxMatrix();
             }
 
-            void GenerateIntegrationTestsLinuxMatrix(IEnumerable<TargetFramework> targetFrameworks, string matrixName)
+            void GenerateIntegrationTestsLinuxMatrix()
             {
                 var baseImages = new[] { "centos7", "alpine" };
+                var targetFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 });
+
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
@@ -183,9 +233,36 @@ partial class Build : NukeBuild
                     }
                 }
 
-                Logger.Info(matrixName);
                 Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
-                AzurePipelines.Instance.SetVariable(matrixName, JsonConvert.SerializeObject(matrix, Formatting.None));
+                AzurePipelines.Instance.SetVariable("integration_tests_linux_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+            }
+
+            void GenerateIntegrationTestsDebuggerLinuxMatrix()
+            {
+                var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462 });
+                var baseImages = new[] { "centos7", "alpine" };
+                var optimizations = new[] { "true", "false" };
+
+                var matrix = new Dictionary<string, object>();
+                foreach (var framework in targetFrameworks)
+                {
+                    foreach (var baseImage in baseImages)
+                    {
+                        foreach (var optimize in optimizations)
+                        {
+                            matrix.Add($"{baseImage}_{framework}_{optimize}", 
+                                       new
+                                       {
+                                           publishTargetFramework = framework, 
+                                           baseImage = baseImage,
+                                           optimize = optimize,
+                                       });
+                        }
+                    }
+                }
+
+                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                AzurePipelines.Instance.SetVariable("integration_tests_linux_debugger_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
             void GenerateExplorationTestMatrices()
@@ -916,6 +993,34 @@ partial class Build : NukeBuild
                     publishFramework.Replace("netcoreapp", string.Empty)
                                     .Replace("net", string.Empty);
             }
+
+            void GenerateIntegrationTestsDebuggerArm64Matrices()
+            {
+                var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1,  });
+                var baseImages = new[] { "debian" };
+                var optimizations = new[] { "true", "false" };
+
+                var matrix = new Dictionary<string, object>();
+                foreach (var framework in targetFrameworks)
+                {
+                    foreach (var baseImage in baseImages)
+                    {
+                        foreach (var optimize in optimizations)
+                        {
+                            matrix.Add($"{baseImage}_{framework}_{optimize}",
+                                       new
+                                       {
+                                           publishTargetFramework = framework,
+                                           baseImage = baseImage,
+                                           optimize = optimize,
+                                       });
+                        }
+                    }
+                }
+
+                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                AzurePipelines.Instance.SetVariable("integration_tests_arm64_debugger_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+            }
         };
 
     Target GenerateNoopStages
@@ -1039,8 +1144,25 @@ partial class Build : NukeBuild
                    else
                    {
                        var matrix = job.Strategy.Matrix;
-                       foreach (var product in CartesianProduct(matrix.Values))
+                       var excludedConfigurations = matrix.SingleOrDefault(kv => kv.Key == "exclude").Value;
+
+                       List<List<string>> exclusions = new();
+
+                       if (excludedConfigurations != null)
                        {
+                           foreach (Dictionary<object, object> exc in excludedConfigurations)
+                           {
+                               exclusions.Add(exc.Values.Cast<string>().ToList());
+                           }
+                       }
+
+                       foreach (var product in CartesianProduct(matrix.Where(kv => kv.Key != "exclude").Select(kv => kv.Value)))
+                       {
+                           if (exclusions.Any(l => l.All(e => product.Contains(e))))
+                           {
+                               continue;
+                           }
+
                            yield return $"{jobName} ({string.Join(", ", product)})";
                        }
                    }
@@ -1111,7 +1233,7 @@ partial class Build : NukeBuild
 
         public class StrategyDefinition
         {
-            public Dictionary<string, List<string>> Matrix { get; set; }
+            public Dictionary<string, List<object>> Matrix { get; set; }
         }
     }
 }

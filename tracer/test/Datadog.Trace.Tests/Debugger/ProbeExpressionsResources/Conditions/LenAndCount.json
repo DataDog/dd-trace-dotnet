@@ -1,0 +1,29 @@
+{
+  "dsl": "len(ref String) > 2 || count(ref CollectionLocal) > 2",
+  "and": [
+    {
+      "gt": [
+        {
+          "len": [
+            {
+              "ref": "String"
+            }
+          ]
+        },
+        2
+      ]
+    },
+    {
+      "gt": [
+        {
+          "count": [
+            {
+              "ref": "CollectionLocal"
+            }
+          ]
+        },
+        2
+      ]
+    }
+  ]
+}

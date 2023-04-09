@@ -33,6 +33,42 @@ namespace Datadog.Trace.AppSec.Waf
             }
         }
 
+        public long IntValue
+        {
+            get
+            {
+                Initialize();
+                return innerObj.IntValue;
+            }
+        }
+
+        public ulong UintValue
+        {
+            get
+            {
+                Initialize();
+                return innerObj.UintValue;
+            }
+        }
+
+        public nint InnerPtr
+        {
+            get
+            {
+                Initialize();
+                return innerObj.Array;
+            }
+        }
+
+        public DdwafObjectStruct InnerStruct
+        {
+            get
+            {
+                Initialize();
+                return innerObj;
+            }
+        }
+
         public IntPtr RawPtr => ptr;
 
         public void Dispose()

@@ -120,6 +120,6 @@
       "version": "2"
     },
     "message": ".ctor()",
-    "service": "Probes"
+    "service": "probes"
   }
 ]

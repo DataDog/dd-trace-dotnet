@@ -51,7 +51,7 @@ public class TaintedObjectsTests
     {
         TaintedObjects taintedObjects = new();
         var taintedString = string.Empty;
-        taintedObjects.TaintInputString(taintedString, null);
+        taintedObjects.TaintInputString(taintedString, new Source(12, "name", "value"));
         var tainted2 = taintedObjects.Get(taintedString);
         Assert.Null(tainted2);
     }
@@ -60,7 +60,7 @@ public class TaintedObjectsTests
     public void GivenATaintedString_WhenPutNull_NoException()
     {
         TaintedObjects taintedObjects = new();
-        taintedObjects.TaintInputString(null, null);
+        taintedObjects.TaintInputString(null, new Source(12, "name", "value"));
         var tainted2 = taintedObjects.Get(null);
         Assert.Null(tainted2);
     }
@@ -72,7 +72,7 @@ public class TaintedObjectsTests
         var guid = new Guid();
         var tainted1 = guid.ToString();
         var tainted2 = guid.ToString();
-        taintedObjects.TaintInputString(tainted1, null);
+        taintedObjects.TaintInputString(tainted1, new Source(12, "name", "value"));
         Assert.Equal(tainted1, taintedObjects.Get(tainted1).Value);
         Assert.Null(taintedObjects.Get(tainted2));
     }

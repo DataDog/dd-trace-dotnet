@@ -5,9 +5,11 @@ public static class Projects
     public const string DatadogTraceAspNet = "Datadog.Trace.AspNet";
     public const string DatadogTraceBundle = "Datadog.Trace.Bundle";
     public const string DatadogTraceMsBuild = "Datadog.Trace.MSBuild";
+    public const string DatadogTraceBenchmarkDotNet = "Datadog.Trace.BenchmarkDotNet";
     public const string DatadogTraceOpenTracing = "Datadog.Trace.OpenTracing";
     public const string ClrProfilerNative = "Datadog.Tracer.Native";
     public const string NativeLoader = "Datadog.Trace.ClrProfiler.Native";
+    public const string NativeLoaderNativeTests = "Datadog.Trace.ClrProfiler.Native.Tests";
 
     public const string BenchmarksTrace = "Benchmarks.Trace";
 
@@ -27,12 +29,15 @@ public static class Projects
     public const string DebuggerSamples = "Samples.Probes";
     public const string DebuggerSamplesTestRuns = "Samples.Probes.TestRuns";
 
+    public const string RazorPages = "Samples.AspNetCoreRazorPages";
 }
 
 public static class FileNames
 {
     public const string NativeLoader = "Datadog.Trace.ClrProfiler.Native";
+    public const string NativeLoaderTests = "Datadog.Trace.ClrProfiler.Native.Tests";
     public const string NativeTracer = "Datadog.Tracer.Native";
+    public const string NativeTracerTests = "Datadog.Tracer.Native.Tests";
     public const string NativeProfiler = "Datadog.Profiler.Native";
     public const string ProfilerLinuxApiWrapper = "Datadog.Linux.ApiWrapper.x64.so";
     public const string AppSecLinuxWaf = "libddwaf.so";

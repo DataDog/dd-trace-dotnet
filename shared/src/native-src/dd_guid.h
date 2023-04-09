@@ -87,7 +87,7 @@ namespace details
         return make_guid_helper(str + (N == (long_guid_form_length + 1) ? 1 : 0));
     }
 
-    GUID make_guid(const std::string& str)
+    inline GUID make_guid(const std::string& str)
     {
         size_t currentLength = str.length();
 

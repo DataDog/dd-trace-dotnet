@@ -99,6 +99,7 @@ namespace Datadog.Trace.Tests.Propagators
         public void Extract_IHeadersCollection()
         {
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+
             headers.Setup(h => h.GetValues("x-b3-traceid"))
                    .Returns(new[] { "000000000000000000000000075bcd15" });
             headers.Setup(h => h.GetValues("x-b3-spanid"))
@@ -111,12 +112,15 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.GetValues("x-b3-traceid"), Times.Once());
             headers.Verify(h => h.GetValues("x-b3-spanid"), Times.Once());
             headers.Verify(h => h.GetValues("x-b3-sampled"), Times.Once());
+
             result.Should()
                   .BeEquivalentTo(
                        new SpanContextMock
                        {
                            TraceId = 123456789,
                            SpanId = 987654321,
+                           RawTraceId = "000000000000000000000000075bcd15",
+                           RawSpanId = "000000003ade68b1",
                            Origin = null,
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
                        });
@@ -146,6 +150,8 @@ namespace Datadog.Trace.Tests.Propagators
                        {
                            TraceId = 123456789,
                            SpanId = 987654321,
+                           RawTraceId = "000000000000000000000000075bcd15",
+                           RawSpanId = "000000003ade68b1",
                            Origin = null,
                            SamplingPriority = SamplingPriorityValues.AutoKeep,
                        });
