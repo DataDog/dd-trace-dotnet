@@ -18,16 +18,8 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
 
     public bool HasAnySubscription => _subscriptions.Count > 0;
 
-    public ICollection<string> ProductKeys
-    {
-        get
-        {
-            lock (_syncRoot)
-            {
-                return _subscriptions.SelectMany(s => s.ProductKeys).ToList();
-            }
-        }
-    }
+    // this list shouldn't be recalculated everytime we access it as it is used by RemoteConfigurationManager to build an rcm request every x seconds
+    public ICollection<string> ProductKeys { get; private set; } = new List<string>();
 
     public void SubscribeToChanges(ISubscription subscription)
     {
@@ -37,6 +29,23 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
             {
                 _subscriptions.Add(subscription);
             }
+
+            RefreshProductKeys();
+        }
+    }
+
+    public void Replace(ISubscription oldSubscription, ISubscription newSubscription)
+    {
+        lock (_syncRoot)
+        {
+            _subscriptions.Remove(oldSubscription);
+
+            if (!_subscriptions.Contains(newSubscription))
+            {
+                _subscriptions.Add(newSubscription);
+            }
+
+            RefreshProductKeys();
         }
     }
 
@@ -45,6 +54,7 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
         lock (_syncRoot)
         {
             _subscriptions.Remove(subscription);
+            RefreshProductKeys();
         }
     }
 
@@ -63,9 +73,8 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
 
         foreach (var subscription in subscriptions)
         {
-            var configByProduct =
-                configByProducts.Where(c => subscription.ProductKeys.Contains(c.Key))
-                    .ToDictionary(c => c.Key, c => c.Value);
+            var configByProduct = configByProducts.Where(c => subscription.ProductKeys.Contains(c.Key))
+                                                  .ToDictionary(c => c.Key, c => c.Value);
 
             if (configByProduct.Count == 0 && removedConfigsByProduct?.Count == 0)
             {
@@ -84,4 +93,6 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
 
         return results;
     }
+
+    private void RefreshProductKeys() => ProductKeys = _subscriptions.SelectMany(s => s.ProductKeys).Distinct().ToList();
 }

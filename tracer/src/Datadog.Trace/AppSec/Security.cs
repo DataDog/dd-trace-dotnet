@@ -34,13 +34,7 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
         private readonly SecuritySettings _settings;
-        private readonly IReadOnlyDictionary<string, IAsmConfigUpdater> _productConfigUpdaters = new Dictionary<string, IAsmConfigUpdater>
-        {
-            { RcmProducts.AsmFeatures, new AsmFeaturesProduct() },
-            { RcmProducts.Asm, new AsmProduct() },
-            { RcmProducts.AsmDd, new AsmDdProduct() },
-            { RcmProducts.AsmData, new AsmDataProduct() }
-        };
+        private readonly IReadOnlyDictionary<string, IAsmConfigUpdater> _productConfigUpdaters = new Dictionary<string, IAsmConfigUpdater> { { RcmProducts.AsmFeatures, new AsmFeaturesProduct() }, { RcmProducts.Asm, new AsmProduct() }, { RcmProducts.AsmDd, new AsmDdProduct() }, { RcmProducts.AsmData, new AsmDataProduct() } };
 
         private readonly ConfigurationStatus _configurationStatus;
         private readonly bool _noLocalRules;
@@ -145,7 +139,9 @@ namespace Datadog.Trace.AppSec
         {
             if (_rcmSubscription is not null)
             {
-                _rcmSubscription.AddProductKeys(productNames);
+                var newSubscription = new Subscription(UpdateFromRcm, _rcmSubscription.ProductKeys.Union(productNames).ToArray());
+                _rcmSubscriptionManager.Replace(_rcmSubscription, newSubscription);
+                _rcmSubscription = newSubscription;
             }
             else
             {
@@ -457,7 +453,22 @@ namespace Datadog.Trace.AppSec
         {
             if (Enabled)
             {
-                _rcmSubscription?.RemoveProductKeys(RcmProducts.AsmData, RcmProducts.Asm);
+                if (_rcmSubscription != null)
+                {
+                    var newKeys = _rcmSubscription.ProductKeys.Except(new[] { RcmProducts.AsmData, RcmProducts.Asm }).ToArray();
+                    if (newKeys.Length > 0)
+                    {
+                        var newSubscription = new Subscription(UpdateFromRcm, newKeys);
+                        _rcmSubscriptionManager.Replace(_rcmSubscription, newSubscription);
+                        _rcmSubscription = newSubscription;
+                    }
+                    else
+                    {
+                        _rcmSubscriptionManager.Unsubscribe(_rcmSubscription);
+                        _rcmSubscription = null;
+                    }
+                }
+
                 RemoveAppsecSpecificInstrumentations();
                 Enabled = false;
                 Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
@@ -482,7 +493,11 @@ namespace Datadog.Trace.AppSec
 
         private void RunShutdown()
         {
-            _rcmSubscriptionManager.Unsubscribe(_rcmSubscription);
+            if (_rcmSubscription != null)
+            {
+                _rcmSubscriptionManager.Unsubscribe(_rcmSubscription);
+            }
+
             Dispose();
         }
     }

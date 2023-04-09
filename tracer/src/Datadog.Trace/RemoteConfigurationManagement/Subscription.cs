@@ -12,24 +12,16 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal class Subscription : ISubscription
     {
+        private readonly HashSet<string> _productKeys;
+
         public Subscription(Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, List<ApplyDetails>> callback, params string[] productKeys)
         {
-            ProductKeys = new HashSet<string>(productKeys);
+            _productKeys = new HashSet<string>(productKeys);
             Invoke = callback;
         }
 
-        public HashSet<string> ProductKeys { get; }
+        public IReadOnlyCollection<string> ProductKeys => _productKeys;
 
         public Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, List<ApplyDetails>> Invoke { get; }
-
-        public void AddProductKeys(params string[] newProductKeys)
-        {
-            ProductKeys.UnionWith(newProductKeys);
-        }
-
-        public void RemoveProductKeys(params string[] productKeys)
-        {
-            ProductKeys.ExceptWith(productKeys);
-        }
     }
 }

@@ -104,6 +104,19 @@ public class LiveDebuggerTests
             }
         }
 
+        public void Replace(ISubscription oldSubscription, ISubscription newSubscription)
+        {
+            foreach (var productKey in oldSubscription.ProductKeys)
+            {
+                ProductKeys.Remove(productKey);
+            }
+
+            foreach (var productKey in newSubscription.ProductKeys)
+            {
+                ProductKeys.Add(productKey);
+            }
+        }
+
         public void Unsubscribe(ISubscription subscription)
         {
             foreach (var productKey in subscription.ProductKeys)

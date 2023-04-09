@@ -3,10 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
+#nullable enable
 using System.Collections.Generic;
-using System.Linq;
-using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.RemoteConfigurationManagement;
 
@@ -17,6 +15,8 @@ internal interface IRcmSubscriptionManager
     ICollection<string> ProductKeys { get; }
 
     void SubscribeToChanges(ISubscription subscription);
+
+    void Replace(ISubscription oldSubscription, ISubscription newSubscription);
 
     void Unsubscribe(ISubscription subscription);
 

@@ -12,12 +12,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal interface ISubscription
     {
-        public HashSet<string> ProductKeys { get; }
+        public IReadOnlyCollection<string> ProductKeys { get; }
 
         Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, List<ApplyDetails>> Invoke { get; }
-
-        void AddProductKeys(params string[] newProductKeys);
-
-        void RemoveProductKeys(params string[] productKeys);
     }
 }
