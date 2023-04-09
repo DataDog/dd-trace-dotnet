@@ -7,9 +7,9 @@
     "debugger": {
       "snapshot": {
         "duration": "ScrubbedValue",
-        "errors": [
+        "evaluationErrors": [
           {
-            "expression": "Convert(stringArg, IConvertible).ToDouble(value(System.Globalization.NumberFormatInfo)))",
+            "expr": "Convert(stringArg, IConvertible).ToDouble(value(System.Globalization.NumberFormatInfo)))",
             "message": "ScrubbedValue"
           }
         ],

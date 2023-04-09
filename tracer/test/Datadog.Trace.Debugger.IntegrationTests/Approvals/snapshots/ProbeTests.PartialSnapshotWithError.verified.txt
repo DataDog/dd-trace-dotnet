@@ -7,9 +7,9 @@
     "debugger": {
       "snapshot": {
         "duration": "ScrubbedValue",
-        "errors": [
+        "evaluationErrors": [
           {
-            "expression": "this.undefined",
+            "expr": "this.undefined",
             "message": "ScrubbedValue"
           }
         ],
