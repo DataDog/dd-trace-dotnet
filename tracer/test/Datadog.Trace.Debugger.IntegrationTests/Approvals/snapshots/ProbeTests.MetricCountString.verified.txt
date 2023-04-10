@@ -9,7 +9,7 @@
         "duration": "ScrubbedValue",
         "evaluationErrors": [
           {
-            "expr": "this.undefined",
+            "expr": "Convert(stringArg, IConvertible).ToDouble(value(System.Globalization.NumberFormatInfo)))",
             "message": "ScrubbedValue"
           }
         ],
@@ -19,7 +19,7 @@
           "id": "ScrubbedValue",
           "location": {
             "method": "Method",
-            "type": "Samples.Probes.TestRuns.ExpressionTests.PartialSnapshotWithError"
+            "type": "Samples.Probes.TestRuns.SmokeTests.MetricCountString"
           }
         },
         "timestamp": "ScrubbedValue"
@@ -27,7 +27,7 @@
     },
     "logger": {
       "method": "Method",
-      "name": "Samples.Probes.TestRuns.ExpressionTests.PartialSnapshotWithError",
+      "name": "Samples.Probes.TestRuns.SmokeTests.MetricCountString",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"

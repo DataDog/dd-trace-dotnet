@@ -3,23 +3,23 @@ using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    public class MetricCountNonNumeric : IRun
+    public class MetricWithStringLenExpression : IRun
     {
-        private const string Json = @"{""ref"": ""stringArg""}";
+        private const string Json = @"{""len"": {""ref"": ""stringArg""}}";
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
-            Method("qwerty");
+            Method("answer");
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [MetricMethodProbeTestData(
             metricJson: Json,
             metricKind: Const.Count,
-            metricName: nameof(MetricCountNonNumeric),
+            metricName: nameof(MetricWithStringLenExpression),
             captureSnapshot: false,
-            expectedNumberOfSnapshots: 1, // error message
+            expectedNumberOfSnapshots: 0,
             evaluateAt: Const.Exit,
             returnTypeName: "System.String",
             parametersTypeName: new[] { "System.String" })]
