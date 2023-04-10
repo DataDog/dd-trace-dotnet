@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
+using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using ICSharpCode.Decompiler.Util;
@@ -52,8 +53,13 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
             _output.WriteLine($"{agentType} -> Got request at {args.Value.Request.RawUrl}");
         };
 
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+
         using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
         {
+            stopwatch.Stop();
+            _output.WriteLine($"Process run in {stopwatch.ElapsedMilliseconds()}");
             var payloads = await agent.WaitForDataStreamsPoints(8, 1000 * 60);
             var points = PayloadsToPoints(payloads);
             points.Should().HaveCount(8);
