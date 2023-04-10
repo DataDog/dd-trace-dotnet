@@ -112,11 +112,9 @@ internal class DataStreamsWriter : IDataStreamsWriter
     {
         if (!_processExit.TrySetResult(true))
         {
-            Console.WriteLine("Failed TrySetResult call");
             return;
         }
 
-        Console.WriteLine("FlushAndCloseAsync");
         // request a final flush - as the _processExit flag is now set
         // this ensures we will definitely flush all the stats
         // (and sets the mutex if it isn't already set)
@@ -130,11 +128,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
         if (completedTask != _processTask)
         {
-            Console.WriteLine("Could not flush all data streams stats before process exit");
             Log.Error("Could not flush all data streams stats before process exit");
         }
-
-        Console.WriteLine("The final flush was OK!");
     }
 
     private void RequestFlush()
@@ -165,8 +160,9 @@ internal class DataStreamsWriter : IDataStreamsWriter
             wasDataWritten = _aggregator.Serialize(gzip, flushTimeNs);
         }
 
-        Console.WriteLine($"About to send the data. wasDataWritten={wasDataWritten}, flushAll={_processExit.Task.IsCompleted}");
-        if (wasDataWritten && (Volatile.Read(ref _isSupported) == SupportState.Supported))
+        var isSupported = Volatile.Read(ref _isSupported);
+        Console.WriteLine($"About to send the data. wasDataWritten={wasDataWritten}, flushAll={_processExit.Task.IsCompleted}, isSupported={isSupported}");
+        if (wasDataWritten && isSupported == SupportState.Supported)
         {
             Console.WriteLine("All checks passed, flushing");
             // This flushes on the same thread as the processing loop
@@ -203,7 +199,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 var flushRequested = Interlocked.CompareExchange(ref _flushRequested, 0, 1);
                 if (flushRequested == 1)
                 {
-                    Console.WriteLine("flushRequested == 1, sending data");
                     await WriteToApiAsync().ConfigureAwait(false);
                     FlushComplete?.Invoke(this, EventArgs.Empty);
                 }
@@ -236,7 +231,9 @@ internal class DataStreamsWriter : IDataStreamsWriter
         var isSupported = string.IsNullOrEmpty(config.DataStreamsMonitoringEndpoint)
                               ? SupportState.Unsupported
                               : SupportState.Supported;
+
         var wasSupported = Volatile.Read(ref _isSupported);
+        Console.WriteLine($"HandleConfigUpdate, isSupported={isSupported}, wasSupported={wasSupported}, endpoint={config.DataStreamsMonitoringEndpoint}");
 
         if (isSupported != wasSupported)
         {
