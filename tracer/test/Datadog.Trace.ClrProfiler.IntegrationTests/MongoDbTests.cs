@@ -39,6 +39,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
+                "v1" => span.IsMongoDbV1(),
                 _ => span.IsMongoDbV0(),
             };
 

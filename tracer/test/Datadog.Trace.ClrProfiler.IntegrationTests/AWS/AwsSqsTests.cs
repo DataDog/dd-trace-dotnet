@@ -34,6 +34,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
+                "v1" => span.IsAwsSqsV1(),
                 _ => span.IsAwsSqsV0(),
             };
 

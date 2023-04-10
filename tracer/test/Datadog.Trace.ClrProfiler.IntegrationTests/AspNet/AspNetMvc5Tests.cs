@@ -167,6 +167,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
+                "v1" => span.Name switch
+                    {
+                        "aspnet.request" => span.IsAspNetV1(),
+                        "aspnet-mvc.request" => span.IsAspNetMvcV1(),
+                        _ => Result.DefaultSuccess,
+                    },
                 _ => span.Name switch
                     {
                         "aspnet.request" => span.IsAspNetV0(),

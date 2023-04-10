@@ -20,40 +20,42 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public class OpenTelemetrySdkTests : TracingIntegrationTest
     {
-        private readonly string customServiceName = "CustomServiceName";
+        private static readonly string CustomServiceName = "CustomServiceName";
+        private static readonly HashSet<string> Resources = new HashSet<string>
+        {
+            "service.instance.id",
+            "service.name",
+            "service.version",
+        };
+
+        private static readonly HashSet<string> ExcludeTags = new HashSet<string>
+        {
+            "attribute-string",
+            "attribute-int",
+            "attribute-bool",
+            "attribute-double",
+            "attribute-stringArray",
+            "attribute-stringArrayEmpty",
+            "attribute-intArray",
+            "attribute-intArrayEmpty",
+            "attribute-boolArray",
+            "attribute-boolArrayEmpty",
+            "attribute-doubleArray",
+            "attribute-doubleArrayEmpty",
+        };
 
         public OpenTelemetrySdkTests(ITestOutputHelper output)
             : base("OpenTelemetrySdk", output)
         {
-            SetServiceName(customServiceName);
+            SetServiceName(CustomServiceName);
             SetServiceVersion(string.Empty);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                _ => span.IsOpenTelemetryV0(
-                    resources: new HashSet<string>
-                    {
-                        "service.instance.id",
-                        "service.name",
-                        "service.version"
-                    },
-                    excludeTags: new HashSet<string>
-                    {
-                        "attribute-string",
-                        "attribute-int",
-                        "attribute-bool",
-                        "attribute-double",
-                        "attribute-stringArray",
-                        "attribute-stringArrayEmpty",
-                        "attribute-intArray",
-                        "attribute-intArrayEmpty",
-                        "attribute-boolArray",
-                        "attribute-boolArrayEmpty",
-                        "attribute-doubleArray",
-                        "attribute-doubleArrayEmpty",
-                    }),
+                "v1" => span.IsOpenTelemetryV1(Resources, ExcludeTags),
+                _ => span.IsOpenTelemetryV0(Resources, ExcludeTags),
             };
 
         [SkippableTheory]
@@ -75,13 +77,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 spans.Count.Should().Be(expectedSpanCount);
 
                 var otelSpans = spans.Where(s => s.Service == "MyServiceName");
-                var activitySourceSpans = spans.Where(s => s.Service == customServiceName);
+                var activitySourceSpans = spans.Where(s => s.Service == CustomServiceName);
 
                 otelSpans.Count().Should().Be(expectedSpanCount - 1);
                 activitySourceSpans.Count().Should().Be(1);
 
                 ValidateIntegrationSpans(otelSpans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
-                ValidateIntegrationSpans(activitySourceSpans, metadataSchemaVersion: "v0", expectedServiceName: customServiceName, isExternalSpan: false);
+                ValidateIntegrationSpans(activitySourceSpans, metadataSchemaVersion: "v0", expectedServiceName: CustomServiceName, isExternalSpan: false);
 
                 // there's a bug in < 1.2.0 where they get the span parenting wrong
                 // so use a separate snapshot

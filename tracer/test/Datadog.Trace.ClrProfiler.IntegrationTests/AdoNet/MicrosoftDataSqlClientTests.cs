@@ -30,6 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
+                "v1" => span.IsSqlClientV1(),
                 _ => span.IsSqlClientV0(),
             };
 

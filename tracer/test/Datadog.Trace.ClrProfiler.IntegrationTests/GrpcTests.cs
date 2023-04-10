@@ -184,6 +184,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public abstract class GrpcTestsBase : TracingIntegrationTest
     {
         private const string MetadataHeaders = "server-value1,server-value2:servermeta,client-value1,client-value2:clientmeta";
+        private static readonly HashSet<string> ExcludeTags = new HashSet<string>
+        {
+            "clientmeta",
+            "grpc.request.metadata.client-value1",
+            "servermeta",
+            "grpc.response.metadata.server-value1"
+        };
+
         private static readonly Regex GrpcCoreCreatedRegex = new(@"\@\d{10}\.\d{9}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex GrpcCoreFileLineRegex = new(@"""file_line""\:\d+,", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private readonly bool _usesAspNetCore;
@@ -225,13 +233,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                _ => span.IsGrpcV0(excludeTags: new HashSet<string>
-                {
-                    "clientmeta",
-                    "grpc.request.metadata.client-value1",
-                    "servermeta",
-                    "grpc.response.metadata.server-value1"
-                }),
+                "v1" => span.IsGrpcV1(ExcludeTags),
+                _ => span.IsGrpcV0(ExcludeTags),
             };
 
         protected async Task RunSubmitTraces(

@@ -19,6 +19,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public class NetActivitySdkTests : TracingIntegrationTest
     {
+        private static readonly HashSet<string> Resources = new HashSet<string>
+        {
+            "service.instance.id",
+            "service.name",
+            "service.version",
+        };
+
+        private static readonly HashSet<string> ExcludeTags = new HashSet<string>
+        {
+            "attribute-string",
+            "attribute-int",
+            "attribute-bool",
+            "attribute-double",
+            "attribute-stringArray",
+            "attribute-stringArrayEmpty",
+            "attribute-intArray",
+            "attribute-intArrayEmpty",
+            "attribute-boolArray",
+            "attribute-boolArrayEmpty",
+            "attribute-doubleArray",
+            "attribute-doubleArrayEmpty",
+            "set-string",
+        };
+
         public NetActivitySdkTests(ITestOutputHelper output)
             : base("NetActivitySdk", output)
         {
@@ -28,29 +52,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                _ => span.IsOpenTelemetryV0(
-                    resources: new HashSet<string>
-                    {
-                        "service.instance.id",
-                        "service.name",
-                        "service.version"
-                    },
-                    excludeTags: new HashSet<string>
-                    {
-                        "attribute-string",
-                        "attribute-int",
-                        "attribute-bool",
-                        "attribute-double",
-                        "attribute-stringArray",
-                        "attribute-stringArrayEmpty",
-                        "attribute-intArray",
-                        "attribute-intArrayEmpty",
-                        "attribute-boolArray",
-                        "attribute-boolArrayEmpty",
-                        "attribute-doubleArray",
-                        "attribute-doubleArrayEmpty",
-                        "set-string"
-                    }),
+                "v1" => span.IsOpenTelemetryV1(Resources, ExcludeTags),
+                _ => span.IsOpenTelemetryV0(Resources, ExcludeTags),
             };
 
         [SkippableFact]

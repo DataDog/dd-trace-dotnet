@@ -31,6 +31,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         protected const string HeaderName3 = "Server";
         protected const string HeaderValue3 = "Kestrel";
 
+        private static readonly HashSet<string> ExcludeTags = new HashSet<string>
+        {
+            "datadog-header-tag",
+            "http.request.headers.sample_correlation_identifier",
+            "http.response.headers.sample_correlation_identifier",
+            "http.response.headers.server",
+        };
+
         private readonly bool _enableRouteTemplateResourceNames;
 
         protected AspNetCoreMvcTestBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableRouteTemplateResourceNames)
@@ -76,15 +84,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
+                "v1" => span.Name switch
+                    {
+                        "aspnet_core.request" => span.IsAspNetCoreV1(ExcludeTags),
+                        "aspnet_core_mvc.request" => span.IsAspNetCoreMvcV1(),
+                        _ => Result.DefaultSuccess
+                    },
                 _ => span.Name switch
                     {
-                        "aspnet_core.request" => span.IsAspNetCoreV0(excludeTags: new HashSet<string>
-                            {
-                                "datadog-header-tag",
-                                "http.request.headers.sample_correlation_identifier",
-                                "http.response.headers.sample_correlation_identifier",
-                                "http.response.headers.server",
-                            }),
+                        "aspnet_core.request" => span.IsAspNetCoreV0(ExcludeTags),
                         "aspnet_core_mvc.request" => span.IsAspNetCoreMvcV0(),
                         _ => Result.DefaultSuccess
                     },

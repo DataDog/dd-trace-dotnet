@@ -53,6 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
+                "v1" => span.IsHttpMessageHandlerV1(),
                 _ => span.IsHttpMessageHandlerV0(),
             };
 
