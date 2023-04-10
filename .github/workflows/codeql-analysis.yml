@@ -5,6 +5,7 @@ on:
   push:
     branches: [ master, hotfix/**/* ]
   pull_request:
+    branches: [ master, hotfix/**/* ]
 
 env:
   DD_ENV: ci
