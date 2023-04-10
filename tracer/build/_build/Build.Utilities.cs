@@ -192,8 +192,8 @@ partial class Build
         .Description("Regenerate documentation from our code models")
         .Executes(() =>
         {
-            var rulesFilePath = TestsDirectory / "Datadog.Trace.TestHelpers" / "SpanMetadataRules.cs";
-            var rulesOutput = RootDirectory / "docs" / "span_metadata.md";
+            var rulesFilePath = TestsDirectory / "Datadog.Trace.TestHelpers" / "SpanMetadataV0Rules.cs";
+            var rulesOutput = RootDirectory / "docs" / "span_attribute_schema" / "v0.md";
 
             var generator = new SpanDocumentationGenerator(rulesFilePath, rulesOutput);
             generator.Run();

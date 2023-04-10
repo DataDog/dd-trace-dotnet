@@ -1,14 +1,15 @@
-// <copyright file="SpanMetadataRules.cs" company="Datadog">
+// <copyright file="SpanMetadataV0Rules.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System.Collections.Generic;
+using static Datadog.Trace.TestHelpers.SpanMetadataRulesHelpers;
 
 namespace Datadog.Trace.TestHelpers
 {
 #pragma warning disable SA1601 // Partial elements should be documented
-    public static partial class SpanMetadataRules
+    public static class SpanMetadataV0Rules
     {
         public static Result IsAdoNet(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
