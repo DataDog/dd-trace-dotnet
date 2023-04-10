@@ -112,9 +112,11 @@ internal class DataStreamsWriter : IDataStreamsWriter
     {
         if (!_processExit.TrySetResult(true))
         {
+            Console.WriteLine("Failed TrySetResult call");
             return;
         }
 
+        Console.WriteLine("FlushAndCloseAsync");
         // request a final flush - as the _processExit flag is now set
         // this ensures we will definitely flush all the stats
         // (and sets the mutex if it isn't already set)
@@ -128,8 +130,11 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
         if (completedTask != _processTask)
         {
+            Console.WriteLine("Could not flush all data streams stats before process exit");
             Log.Error("Could not flush all data streams stats before process exit");
         }
+
+        Console.WriteLine("The final flush was OK!");
     }
 
     private void RequestFlush()
@@ -194,6 +199,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 var flushRequested = Interlocked.CompareExchange(ref _flushRequested, 0, 1);
                 if (flushRequested == 1)
                 {
+                    Console.WriteLine("flushRequested == 1, sending data");
                     await WriteToApiAsync().ConfigureAwait(false);
                     FlushComplete?.Invoke(this, EventArgs.Empty);
                 }
