@@ -12,10 +12,11 @@ internal static class SpanExtensions
     /// </summary>
     /// <param name="span">The span instance</param>
     /// <param name="manager">The <see cref="DataStreamsManager"/> to use</param>
+    /// <param name="checkpointKind">The type of checkpoint we're setting</param>
     /// <param name="edgeTags">The edge tags for this checkpoint. NOTE: These MUST be sorted alphabetically</param>
-    internal static void SetDataStreamsCheckpoint(this Span span, DataStreamsManager manager, string[] edgeTags)
+    internal static void SetDataStreamsCheckpoint(this Span span, DataStreamsManager manager, CheckpointKind checkpointKind, string[] edgeTags)
     {
-       span.Context.SetCheckpoint(manager, edgeTags);
+       span.Context.SetCheckpoint(manager, checkpointKind, edgeTags);
        var hash = span.Context.PathwayContext?.Hash.Value ?? 0;
        if (hash != 0)
        {

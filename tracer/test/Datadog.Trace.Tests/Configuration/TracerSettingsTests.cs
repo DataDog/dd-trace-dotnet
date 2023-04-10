@@ -137,6 +137,20 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
+        public void Constructor_HandlesNullSource()
+        {
+            var tracerSettings = new TracerSettings(null);
+            tracerSettings.Should().NotBeNull();
+        }
+
+        [Fact]
+        public void Constructor_HandlesEmptyource()
+        {
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()));
+            tracerSettings.Should().NotBeNull();
+        }
+
+        [Fact]
         public void SetClientHttpCodes()
         {
             SetAndValidateStatusCodes((s, c) => s.SetHttpClientErrorStatusCodes(c), s => s.HttpClientErrorStatusCodes);

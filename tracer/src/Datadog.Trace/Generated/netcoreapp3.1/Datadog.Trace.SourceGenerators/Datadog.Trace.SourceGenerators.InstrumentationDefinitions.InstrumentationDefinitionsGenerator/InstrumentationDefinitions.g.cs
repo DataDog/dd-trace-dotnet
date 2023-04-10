@@ -152,7 +152,9 @@ namespace Datadog.Trace.ClrProfiler
                 // HotChocolate
                new ("HotChocolate.Execution", "HotChocolate.Execution.Processing.MutationExecutor", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<HotChocolate.Execution.IExecutionResult>", "HotChocolate.Execution.Processing.IOperationContext" }, 11, 0, 0, 11, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"),
                new ("HotChocolate.Execution", "HotChocolate.Execution.Processing.QueryExecutor", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<HotChocolate.Execution.IExecutionResult>", "HotChocolate.Execution.Processing.IOperationContext" }, 11, 0, 0, 12, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"),
+               new ("HotChocolate.Execution", "HotChocolate.Execution.Processing.QueryExecutor", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<HotChocolate.Execution.IQueryResult>", "HotChocolate.Execution.Processing.OperationContext" }, 13, 0, 0, 13, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtraV13"),
                new ("HotChocolate.Execution", "HotChocolate.Execution.RequestExecutor", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<HotChocolate.Execution.IExecutionResult>", "HotChocolate.Execution.IQueryRequest", "System.Threading.CancellationToken" }, 11, 0, 0, 12, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegration"),
+               new ("HotChocolate.Execution", "HotChocolate.Execution.RequestExecutor", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<HotChocolate.Execution.IExecutionResult>", "HotChocolate.Execution.IQueryRequest", "System.Threading.CancellationToken" }, 13, 0, 0, 13, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationV13"),
 
                 // HttpMessageHandler
                new ("System.Net.Http", "System.Net.Http.CurlHandler", "SendAsync",  new[] { "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", "System.Net.Http.HttpRequestMessage", "System.Threading.CancellationToken" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHandler.CurlHandlerIntegration"),
@@ -683,7 +685,9 @@ namespace Datadog.Trace.ClrProfiler
                     => Datadog.Trace.Configuration.IntegrationId.HashAlgorithm,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtraV13"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationV13"
                     => Datadog.Trace.Configuration.IntegrationId.HotChocolate,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHandler.CurlHandlerIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler.HttpClientHandlerSyncIntegration"

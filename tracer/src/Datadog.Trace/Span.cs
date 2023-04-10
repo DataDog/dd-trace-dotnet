@@ -5,7 +5,6 @@
 
 using System;
 using System.Globalization;
-using System.Security.Cryptography;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;

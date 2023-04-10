@@ -30,8 +30,8 @@ partial class Build : NukeBuild
     [Parameter("Configuration to build - Default is 'Release'")]
     readonly Configuration BuildConfiguration = Configuration.Release;
 
-    [Parameter("Platform to build - x86 or x64. Default is x64")]
-    readonly MSBuildTargetPlatform TargetPlatform = MSBuildTargetPlatform.x64;
+    [Parameter("Platform to build - x86, x64, ARM64. Defaults to the current platform.")]
+    readonly MSBuildTargetPlatform TargetPlatform = GetDefaultTargetPlatform();
 
     [Parameter("The TargetFramework to execute when running or building a sample app, or linux integration tests")]
     readonly TargetFramework Framework;

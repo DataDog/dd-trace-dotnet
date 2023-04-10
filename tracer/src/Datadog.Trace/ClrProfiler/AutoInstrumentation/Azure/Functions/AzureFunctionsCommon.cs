@@ -34,7 +34,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
-                if (tracer.Settings.AzureAppServiceMetadata.IsIsolatedFunctionsApp
+                // Ignoring null because guaranteed running in AAS
+                if (tracer.Settings.AzureAppServiceMetadata!.IsIsolatedFunctionsApp
                     && tracer.InternalActiveScope is null)
                 {
                     // in a "timer" trigger, or similar. Context won't be propagated to child, so no
@@ -111,7 +112,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 var functionName = instanceParam.FunctionDescriptor.ShortName;
 
-                if (tracer.Settings.AzureAppServiceMetadata.IsIsolatedFunctionsApp
+                // Ignoring null because guaranteed running in AAS
+                if (tracer.Settings.AzureAppServiceMetadata!.IsIsolatedFunctionsApp
                  && tracer.InternalActiveScope is { } activeScope)
                 {
                     // We don't want to create a new scope here when running isolated functions,
