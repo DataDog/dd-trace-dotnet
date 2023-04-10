@@ -165,8 +165,10 @@ internal class DataStreamsWriter : IDataStreamsWriter
             wasDataWritten = _aggregator.Serialize(gzip, flushTimeNs);
         }
 
+        Console.WriteLine($"About to send the data. wasDataWritten={wasDataWritten}, flushAll={_processExit.Task.IsCompleted}");
         if (wasDataWritten && (Volatile.Read(ref _isSupported) == SupportState.Supported))
         {
+            Console.WriteLine("All checks passed, flushing");
             // This flushes on the same thread as the processing loop
             var data = new ArraySegment<byte>(_serializationBuffer.GetBuffer(), offset: 0, (int)_serializationBuffer.Length);
 
@@ -175,10 +177,12 @@ internal class DataStreamsWriter : IDataStreamsWriter
             var dropCount = Interlocked.Exchange(ref _pointsDropped, 0);
             if (success)
             {
+                Console.WriteLine("SendAsync - OK");
                 Log.Debug("Flushed {Count}bytes to data streams intake. {Dropped} points were dropped since last flush", data.Count, dropCount);
             }
             else
             {
+                Console.WriteLine("SendAsync - FAIL");
                 Log.Warning("Error flushing {Count}bytes to data streams intake. {Dropped} points were dropped since last flush", data.Count, dropCount);
             }
         }
