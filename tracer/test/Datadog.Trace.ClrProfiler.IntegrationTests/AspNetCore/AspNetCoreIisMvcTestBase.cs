@@ -52,12 +52,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             { "/handled-exception", 500 },
         };
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.Type switch
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
             {
-                "aspnet_core.request" => span.IsAspNetCore(),
-                "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(),
-                _ => Result.DefaultSuccess,
+                _ => span.Type switch
+                {
+                    "aspnet_core.request" => span.IsAspNetCore(),
+                    "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(),
+                    _ => Result.DefaultSuccess,
+                }
             };
 
         protected string GetTestName(string testName)

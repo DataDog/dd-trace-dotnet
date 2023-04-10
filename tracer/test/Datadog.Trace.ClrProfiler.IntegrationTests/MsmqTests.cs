@@ -22,7 +22,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsMsmq();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                _ => span.IsMsmq(),
+            };
 
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
@@ -62,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var spans = agent.WaitForSpans(totalTransactions);
             Assert.True(spans.Count >= totalTransactions, $"Expecting at least {totalTransactions} spans, only received {spans.Count}");
             var msmqSpans = spans.Where(span => string.Equals(span.GetTag("component"), "msmq", StringComparison.OrdinalIgnoreCase));
-            ValidateIntegrationSpans(msmqSpans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+            ValidateIntegrationSpans(msmqSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             foreach (var span in msmqSpans)
             {

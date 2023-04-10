@@ -222,14 +222,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], httpClientType, metadataSchemaVersion };
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.IsGrpc(excludeTags: new HashSet<string>
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
             {
-                "clientmeta",
-                "grpc.request.metadata.client-value1",
-                "servermeta",
-                "grpc.response.metadata.server-value1"
-            });
+                _ => span.IsGrpc(excludeTags: new HashSet<string>
+                {
+                    "clientmeta",
+                    "grpc.request.metadata.client-value1",
+                    "servermeta",
+                    "grpc.response.metadata.server-value1"
+                }),
+            };
 
         protected async Task RunSubmitTraces(
             string packageVersion,
@@ -333,8 +336,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     var grpcClientSpans = spans.Where(IsGrpcClientSpan);
                     var grpcServerSpans = spans.Where(IsGrpcServerSpan);
 
-                    ValidateIntegrationSpans(grpcServerSpans, expectedServiceName: EnvironmentHelper.FullSampleName, isExternalSpan: false);
-                    ValidateIntegrationSpans(grpcClientSpans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                    ValidateIntegrationSpans(grpcServerSpans, metadataSchemaVersion, expectedServiceName: EnvironmentHelper.FullSampleName, isExternalSpan: false);
+                    ValidateIntegrationSpans(grpcClientSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                     await VerifyHelper.VerifySpans(spans, settings)
                                     .UseTypeName(EnvironmentHelper.SampleName)

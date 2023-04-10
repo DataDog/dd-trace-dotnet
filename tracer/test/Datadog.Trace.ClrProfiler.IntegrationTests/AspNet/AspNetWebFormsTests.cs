@@ -33,12 +33,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.Name switch
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
             {
-                "aspnet.request" => span.IsAspNet(),
-                "aspnet-mvc.request" => span.IsAspNetMvc(),
-                _ => Result.DefaultSuccess,
+                _ => span.Name switch
+                    {
+                        "aspnet.request" => span.IsAspNet(),
+                        "aspnet-mvc.request" => span.IsAspNetMvc(),
+                        _ => Result.DefaultSuccess,
+                    },
             };
 
         [SkippableTheory]
@@ -87,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                    .ToList();
 
             Assert.True(allSpans.Count > 0, "Expected there to be spans.");
-            ValidateIntegrationSpans(allSpans, expectedServiceName: "sample", isExternalSpan: false);
+            ValidateIntegrationSpans(allSpans, metadataSchemaVersion: "v0", expectedServiceName: "sample", isExternalSpan: false);
 
             var elasticSpans = allSpans
                              .Where(s => s.Type == "elasticsearch")

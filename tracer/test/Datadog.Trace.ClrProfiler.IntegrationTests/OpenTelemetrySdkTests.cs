@@ -29,29 +29,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion(string.Empty);
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.IsOpenTelemetry(
-                resources: new HashSet<string>
-                {
-                    "service.instance.id",
-                    "service.name",
-                    "service.version"
-                },
-                excludeTags: new HashSet<string>
-                {
-                    "attribute-string",
-                    "attribute-int",
-                    "attribute-bool",
-                    "attribute-double",
-                    "attribute-stringArray",
-                    "attribute-stringArrayEmpty",
-                    "attribute-intArray",
-                    "attribute-intArrayEmpty",
-                    "attribute-boolArray",
-                    "attribute-boolArrayEmpty",
-                    "attribute-doubleArray",
-                    "attribute-doubleArrayEmpty",
-                });
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                _ => span.IsOpenTelemetry(
+                    resources: new HashSet<string>
+                    {
+                        "service.instance.id",
+                        "service.name",
+                        "service.version"
+                    },
+                    excludeTags: new HashSet<string>
+                    {
+                        "attribute-string",
+                        "attribute-int",
+                        "attribute-bool",
+                        "attribute-double",
+                        "attribute-stringArray",
+                        "attribute-stringArrayEmpty",
+                        "attribute-intArray",
+                        "attribute-intArrayEmpty",
+                        "attribute-boolArray",
+                        "attribute-boolArrayEmpty",
+                        "attribute-doubleArray",
+                        "attribute-doubleArrayEmpty",
+                    }),
+            };
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
@@ -77,8 +80,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 otelSpans.Count().Should().Be(expectedSpanCount - 1);
                 activitySourceSpans.Count().Should().Be(1);
 
-                ValidateIntegrationSpans(otelSpans, expectedServiceName: "MyServiceName", isExternalSpan: false);
-                ValidateIntegrationSpans(activitySourceSpans, expectedServiceName: customServiceName, isExternalSpan: false);
+                ValidateIntegrationSpans(otelSpans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
+                ValidateIntegrationSpans(activitySourceSpans, metadataSchemaVersion: "v0", expectedServiceName: customServiceName, isExternalSpan: false);
 
                 // there's a bug in < 1.2.0 where they get the span parenting wrong
                 // so use a separate snapshot
@@ -111,7 +114,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 using var s = new AssertionScope();
                 spans.Count.Should().Be(expectedSpanCount);
-                ValidateIntegrationSpans(spans, expectedServiceName: "MyServiceName", isExternalSpan: false);
+                ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
 
                 // there's a bug in < 1.2.0 where they get the span parenting wrong
                 // so use a separate snapshot

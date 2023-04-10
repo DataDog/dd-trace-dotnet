@@ -55,7 +55,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsWcf();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                _ => span.IsWcf(),
+            };
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
@@ -92,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // so we can wait on the exact number of spans we expect.
                 agent.SpanFilters.Add(s => !s.Resource.Contains("schemas.xmlsoap.org") && !s.Resource.Contains("www.w3.org"));
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                ValidateIntegrationSpans(spans, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
+                ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.Wcf", isExternalSpan: false);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings(binding, enableNewWcfInstrumentation, enableWcfObfuscation);
 

@@ -34,7 +34,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], metadataSchemaVersion };
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsRabbitMQ();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                _ => span.IsRabbitMQ(),
+            };
 
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
@@ -65,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var rabbitmqSpans = spans.Where(span => string.Equals(span.GetTag("component"), "RabbitMQ", StringComparison.OrdinalIgnoreCase));
 
-                ValidateIntegrationSpans(rabbitmqSpans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                ValidateIntegrationSpans(rabbitmqSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
                 var settings = VerifyHelper.GetSpanVerifierSettings();
 
                 // We generate a new queue name for the "default" queue with each run

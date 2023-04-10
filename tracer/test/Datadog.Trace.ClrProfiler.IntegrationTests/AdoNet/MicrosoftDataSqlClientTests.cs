@@ -27,7 +27,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], metadataSchemaVersion };
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsSqlClient();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                _ => span.IsSqlClient(),
+            };
 
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
@@ -78,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             int actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
 
             Assert.Equal(expectedSpanCount, actualSpanCount);
-            ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
             telemetry.AssertIntegrationEnabled(IntegrationId.SqlClient);
         }
 

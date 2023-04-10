@@ -26,7 +26,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], metadataSchemaVersion };
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsNpgsql();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                _ => span.IsNpgsql(),
+            };
 
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
@@ -63,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             // Assert.Equal(expectedSpanCount, spans.Count); // Assert an exact match once we can correctly instrument the generic constraint case
             Assert.Equal(expectedSpanCount, actualSpanCount);
-            ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
             telemetry.AssertIntegrationEnabled(IntegrationId.Npgsql);
         }
 

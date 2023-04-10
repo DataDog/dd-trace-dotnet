@@ -73,18 +73,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             Fixture.SetOutput(null);
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.Name switch
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
             {
-                "aspnet_core.request" => span.IsAspNetCore(excludeTags: new HashSet<string>
+                _ => span.Name switch
                     {
-                        "datadog-header-tag",
-                        "http.request.headers.sample_correlation_identifier",
-                        "http.response.headers.sample_correlation_identifier",
-                        "http.response.headers.server",
-                    }),
-                "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(),
-                _ => Result.DefaultSuccess
+                        "aspnet_core.request" => span.IsAspNetCore(excludeTags: new HashSet<string>
+                        {
+                            "datadog-header-tag",
+                            "http.request.headers.sample_correlation_identifier",
+                            "http.response.headers.sample_correlation_identifier",
+                            "http.response.headers.server",
+                        }),
+                        "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(),
+                        _ => Result.DefaultSuccess
+                    },
             };
 
         protected virtual string GetTestName(string testName)

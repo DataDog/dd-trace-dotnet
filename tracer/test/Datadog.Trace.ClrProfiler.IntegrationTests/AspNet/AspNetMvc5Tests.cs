@@ -164,12 +164,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected virtual string ExpectedServiceName => "sample";
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.Name switch
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
             {
-                "aspnet.request" => span.IsAspNet(),
-                "aspnet-mvc.request" => span.IsAspNetMvc(),
-                _ => Result.DefaultSuccess,
+                _ => span.Name switch
+                    {
+                        "aspnet.request" => span.IsAspNet(),
+                        "aspnet-mvc.request" => span.IsAspNetMvc(),
+                        _ => Result.DefaultSuccess,
+                    },
             };
 
         [SkippableTheory]
@@ -188,7 +191,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             // Append virtual directory to the actual request
             var spans = await GetWebServerSpans(_iisFixture.VirtualApplicationPath + path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode);
-            ValidateIntegrationSpans(spans, expectedServiceName: ExpectedServiceName, isExternalSpan: false);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: ExpectedServiceName, isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);

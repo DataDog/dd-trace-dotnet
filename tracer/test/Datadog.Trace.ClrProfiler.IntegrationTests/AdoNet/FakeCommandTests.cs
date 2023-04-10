@@ -19,7 +19,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsAdoNet();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                _ => span.IsAdoNet(),
+            };
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
@@ -55,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             int actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
 
             Assert.Equal(expectedSpanCount, actualSpanCount);
-            ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             foreach (var span in spans)
             {

@@ -111,12 +111,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
               { "/graphql/GetAllFoo", 200 }, // Slug in route template
         };
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.Name switch
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
             {
-                "aspnet.request" => span.IsAspNet(),
-                "aspnet-mvc.request" => span.IsAspNetMvc(),
-                _ => Result.DefaultSuccess,
+                _ => span.Name switch
+                    {
+                        "aspnet.request" => span.IsAspNet(),
+                        "aspnet-mvc.request" => span.IsAspNetMvc(),
+                        _ => Result.DefaultSuccess,
+                    },
             };
 
         [SkippableTheory]
@@ -134,7 +137,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode);
-            ValidateIntegrationSpans(spans, expectedServiceName: "sample", isExternalSpan: false);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: "sample", isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
@@ -181,7 +184,7 @@ Expect: 100-continue
                 minDateTime: testStart,
                 returnAllOperations: true);
 
-            ValidateIntegrationSpans(spans, expectedServiceName: "sample", isExternalSpan: false);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: "sample", isExternalSpan: false);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 

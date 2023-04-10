@@ -37,7 +37,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], metadataSchemaVersion };
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsCosmosDb();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                _ => span.IsCosmosDb(),
+            };
 
         [SkippableTheory(Skip = "Cosmos emulator is too flaky at the moment")]
         [MemberData(nameof(GetEnabledConfig))]
@@ -69,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var dbTags = 0;
                 var containerTags = 0;
-                ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 foreach (var span in spans)
                 {

@@ -19,7 +19,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsSqlite();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                _ => span.IsSqlite(),
+            };
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
@@ -69,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
 
             Assert.Equal(expectedSpanCount, spans.Count);
-            ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
             telemetry.AssertIntegrationEnabled(IntegrationId.Sqlite);
         }
     }

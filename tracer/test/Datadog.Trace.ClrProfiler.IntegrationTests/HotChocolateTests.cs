@@ -86,7 +86,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Fixture.SetOutput(null);
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsHotChocolate();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                _ => span.IsHotChocolate(),
+            };
 
         protected async Task RunSubmitsTraces(string packageVersion = "", bool usingWebsockets = false)
         {
@@ -102,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var spans = Fixture.Agent.WaitForSpans(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
 
             var graphQLSpans = spans.Where(span => span.Type == "graphql");
-            ValidateIntegrationSpans(graphQLSpans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+            ValidateIntegrationSpans(graphQLSpans, metadataSchemaVersion: "v0", expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 

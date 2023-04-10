@@ -204,7 +204,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Fixture.SetOutput(null);
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsGraphQL();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                _ => span.IsGraphQL(),
+            };
 
         protected async Task RunSubmitsTraces(string testName = "SubmitsTraces", string packageVersion = "", bool usingWebsockets = false)
         {
@@ -220,7 +224,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var spans = Fixture.Agent.WaitForSpans(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
 
             var graphQLSpans = spans.Where(span => span.Type == "graphql");
-            ValidateIntegrationSpans(graphQLSpans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+            ValidateIntegrationSpans(graphQLSpans, _metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 

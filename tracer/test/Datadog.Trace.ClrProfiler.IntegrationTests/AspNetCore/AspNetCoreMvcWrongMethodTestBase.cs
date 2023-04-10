@@ -30,12 +30,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             EnableDebugMode();
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.Type switch
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
             {
-                "aspnet_core.request" => span.IsAspNetCore(),
-                "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(),
-                _ => Result.DefaultSuccess,
+                _ => span.Type switch
+                    {
+                        "aspnet_core.request" => span.IsAspNetCore(),
+                        "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(),
+                        _ => Result.DefaultSuccess,
+                    },
             };
 
         public async Task TestIncorrectMethod(string path)
@@ -43,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             await fixture.TryStartApp(this);
 
             var spans = await fixture.WaitForSpans(path, true);
-            ValidateIntegrationSpans(spans, expectedServiceName: EnvironmentHelper.FullSampleName, isExternalSpan: false);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: EnvironmentHelper.FullSampleName, isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath);

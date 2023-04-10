@@ -47,7 +47,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], metadataSchemaVersion };
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsKafka();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                _ => span.IsKafka(),
+            };
 
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
@@ -70,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // We use HaveCountGreaterOrEqualTo because _both_ consumers may handle the message
             // Due to manual/autocommit behaviour
             allSpans.Should().HaveCountGreaterOrEqualTo(TotalExpectedSpanCount);
-            ValidateIntegrationSpans(allSpans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+            ValidateIntegrationSpans(allSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             var allProducerSpans = allSpans.Where(x => x.Name == "kafka.produce").ToList();
             var successfulProducerSpans = allProducerSpans.Where(x => x.Error == 0).ToList();

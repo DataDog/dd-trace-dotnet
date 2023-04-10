@@ -29,7 +29,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsProcess();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                _ => span.IsProcess(),
+            };
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
@@ -73,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-            ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(StackRegex, string.Empty);

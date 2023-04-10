@@ -28,7 +28,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], metadataSchemaVersion };
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsSqlite();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                _ => span.IsSqlite(),
+            };
 
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
@@ -60,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
 
             Assert.Equal(expectedSpanCount, spans.Count);
-            ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             telemetry.AssertIntegrationEnabled(IntegrationId.Sqlite);
         }

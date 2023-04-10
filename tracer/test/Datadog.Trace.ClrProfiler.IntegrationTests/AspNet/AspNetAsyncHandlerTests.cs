@@ -41,12 +41,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNet
             _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.Name switch
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
             {
-                "aspnet.request" => span.IsAspNet(),
-                "aspnet-mvc.request" => span.IsAspNetMvc(),
-                _ => Result.DefaultSuccess,
+                _ => span.Name switch
+                    {
+                        "aspnet.request" => span.IsAspNet(),
+                        "aspnet-mvc.request" => span.IsAspNetMvc(),
+                        _ => Result.DefaultSuccess,
+                    },
             };
 
         [SkippableFact]
