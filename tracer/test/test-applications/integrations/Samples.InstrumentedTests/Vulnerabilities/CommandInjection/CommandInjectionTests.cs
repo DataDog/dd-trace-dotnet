@@ -33,7 +33,7 @@ public class CommandInjectionTests : InstrumentationTestsBase
         AssertLocation(nameof(CommandInjectionTests));
     }
 
-    // Process? Start(ProcessStartInfo startInfo)
+    // Tests for method Process? Start(ProcessStartInfo startInfo)
 
     [Fact]
     public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable()
@@ -69,7 +69,7 @@ public class CommandInjectionTests : InstrumentationTestsBase
         Assert.Throws<InvalidOperationException>(() => Process.Start(new ProcessStartInfo(null) { UseShellExecute = false }));
     }
 
-    // Start(string fileName, string arguments, string userName, SecureString password, string domain)
+    // Tests for method Start(string fileName, string arguments, string userName, SecureString password, string domain)
 
 #pragma warning disable CA1416 // this overload is only supported on Windows
 #if NET5_0_OR_GREATER
@@ -156,7 +156,7 @@ public class CommandInjectionTests : InstrumentationTestsBase
 
 #pragma warning restore CA1416 // this overload is only supported on Windows
 
-    // Process Start()
+    // Tests for method Process Start()
 
     [Fact]
     public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable7()
@@ -234,7 +234,7 @@ public class CommandInjectionTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 
-    // Process Start(string fileName)
+    // Tests for method Process Start(string fileName)
 
     [Fact]
     public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable13()
@@ -256,7 +256,7 @@ public class CommandInjectionTests : InstrumentationTestsBase
         Assert.Throws<InvalidOperationException>(() => Process.Start((string)null));
     }
 
-    // Process Start(string fileName, string arguments)
+    // Tests for method Process Start(string fileName, string arguments)
 
     [Fact]
     public void GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable14()
