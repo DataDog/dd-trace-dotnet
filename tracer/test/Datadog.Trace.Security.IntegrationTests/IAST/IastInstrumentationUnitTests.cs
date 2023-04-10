@@ -174,6 +174,11 @@ public class IastInstrumentationUnitTests : TestHelper
             string arguments = string.Empty;
 #if NET462
             arguments = @" /Framework:"".NETFramework,Version=v4.6.2"" ";
+#else
+            if (EnvironmentTools.IsLinux())
+            {
+                arguments += " --TestCaseFilter:\"Category!=LinuxUnsupported\"";
+            }
 #endif
             SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests"));
             ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);

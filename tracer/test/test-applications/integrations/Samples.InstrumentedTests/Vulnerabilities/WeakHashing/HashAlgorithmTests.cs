@@ -15,6 +15,13 @@ public class HashAlgorithmTests : InstrumentationTestsBase
     private readonly Mock<HashAlgorithm> hashMock = new Mock<HashAlgorithm>();
 
     [Fact]
+    public void GivenAHashAlgorithm_WhenComputeHash_ThenLocationIsCorrect()
+    {
+        MD5.Create().ComputeHash(new byte[] { });
+        AssertLocation(nameof(HashAlgorithmTests));
+    }
+
+    [Fact]
     public void GivenAHashAlgorithm_WhenComputeHash_NotVulnerable()
     {
         hashMock.Object.ComputeHash(new byte[] { 3, 5 });
