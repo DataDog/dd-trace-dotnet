@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                _ => span.IsSqlite(),
+                _ => span.IsSqliteV0(),
             };
 
         [SkippableTheory]

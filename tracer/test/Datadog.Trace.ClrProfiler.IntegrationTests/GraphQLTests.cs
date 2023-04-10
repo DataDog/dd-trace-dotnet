@@ -207,7 +207,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                _ => span.IsGraphQL(),
+                _ => span.IsGraphQLV0(),
             };
 
         protected async Task RunSubmitsTraces(string testName = "SubmitsTraces", string packageVersion = "", bool usingWebsockets = false)

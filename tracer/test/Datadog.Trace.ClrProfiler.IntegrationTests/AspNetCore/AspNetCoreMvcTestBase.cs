@@ -78,14 +78,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             {
                 _ => span.Name switch
                     {
-                        "aspnet_core.request" => span.IsAspNetCore(excludeTags: new HashSet<string>
-                        {
-                            "datadog-header-tag",
-                            "http.request.headers.sample_correlation_identifier",
-                            "http.response.headers.sample_correlation_identifier",
-                            "http.response.headers.server",
-                        }),
-                        "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(),
+                        "aspnet_core.request" => span.IsAspNetCoreV0(excludeTags: new HashSet<string>
+                            {
+                                "datadog-header-tag",
+                                "http.request.headers.sample_correlation_identifier",
+                                "http.response.headers.sample_correlation_identifier",
+                                "http.response.headers.server",
+                            }),
+                        "aspnet_core_mvc.request" => span.IsAspNetCoreMvcV0(),
                         _ => Result.DefaultSuccess
                     },
             };

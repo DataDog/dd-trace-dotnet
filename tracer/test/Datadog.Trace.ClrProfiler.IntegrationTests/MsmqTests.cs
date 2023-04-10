@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                _ => span.IsMsmq(),
+                _ => span.IsMsmqV0(),
             };
 
         [Trait("Category", "EndToEnd")]

@@ -89,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                _ => span.IsHotChocolate(),
+                _ => span.IsHotChocolateV0(),
             };
 
         protected async Task RunSubmitsTraces(string packageVersion = "", bool usingWebsockets = false)

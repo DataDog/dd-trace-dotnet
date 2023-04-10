@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                _ => span.IsMySql(),
+                _ => span.IsMySqlV0(),
             };
 
         [SkippableTheory]

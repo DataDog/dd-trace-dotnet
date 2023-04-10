@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                _ => span.IsAerospike(),
+                _ => span.IsAerospikeV0(),
             };
 
         [SkippableTheory]

@@ -192,11 +192,15 @@ partial class Build
         .Description("Regenerate documentation from our code models")
         .Executes(() =>
         {
-            var rulesFilePath = TestsDirectory / "Datadog.Trace.TestHelpers" / "SpanMetadataV0Rules.cs";
-            var rulesOutput = RootDirectory / "docs" / "span_attribute_schema" / "v0.md";
+            var schemaVersions = new[] { "v0", "v1" };
+            foreach (var schemaVersion in schemaVersions)
+            {
+                var rulesFilePath = TestsDirectory / "Datadog.Trace.TestHelpers" / $"SpanMetadata{schemaVersion.ToUpper()}Rules.cs";
+                var rulesOutput = RootDirectory / "docs" / "span_attribute_schema" / $"{schemaVersion}.md";
 
-            var generator = new SpanDocumentationGenerator(rulesFilePath, rulesOutput);
-            generator.Run();
+                var generator = new SpanDocumentationGenerator(rulesFilePath, rulesOutput);
+                generator.Run();
+            }
         });
 
     Target UpdateVendoredCode => _ => _

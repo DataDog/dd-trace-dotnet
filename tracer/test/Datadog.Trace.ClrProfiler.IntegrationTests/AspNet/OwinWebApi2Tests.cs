@@ -114,7 +114,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 _ => span.Name switch
                     {
-                        "aspnet-webapi.request" => span.IsAspNetWebApi2(),
+                        "aspnet-webapi.request" => span.IsAspNetWebApi2V0(),
                         _ => Result.DefaultSuccess,
                     },
             };

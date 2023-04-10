@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                _ => span.IsWcf(),
+                _ => span.IsWcfV0(),
             };
 
         [SkippableTheory]

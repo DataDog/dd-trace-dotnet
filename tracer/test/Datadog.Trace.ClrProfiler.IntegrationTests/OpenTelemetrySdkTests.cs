@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                _ => span.IsOpenTelemetry(
+                _ => span.IsOpenTelemetryV0(
                     resources: new HashSet<string>
                     {
                         "service.instance.id",

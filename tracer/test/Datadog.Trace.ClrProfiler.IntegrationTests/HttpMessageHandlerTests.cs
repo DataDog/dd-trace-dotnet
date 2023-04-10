@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                _ => span.IsHttpMessageHandler(),
+                _ => span.IsHttpMessageHandlerV0(),
             };
 
         [SkippableTheory]

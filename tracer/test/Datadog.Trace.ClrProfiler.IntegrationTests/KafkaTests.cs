@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                _ => span.IsKafka(),
+                _ => span.IsKafkaV0(),
             };
 
         [SkippableTheory]

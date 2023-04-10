@@ -57,8 +57,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             {
                 _ => span.Type switch
                 {
-                    "aspnet_core.request" => span.IsAspNetCore(),
-                    "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(),
+                    "aspnet_core.request" => span.IsAspNetCoreV0(),
+                    "aspnet_core_mvc.request" => span.IsAspNetCoreMvcV0(),
                     _ => Result.DefaultSuccess,
                 }
             };
