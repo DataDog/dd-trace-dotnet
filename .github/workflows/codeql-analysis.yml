@@ -48,6 +48,28 @@ jobs:
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
 
+    - name: filter-sarif cpp
+      uses: advanced-security/filter-sarif@v1
+      with:
+        patterns: |
+          -**/src/Demos/**
+          -**/test/test-applications/**
+          -**/test/samples/**
+          -**/Web.config
+        input: ../results/cpp.sarif
+        output: ../results/cpp.sarif
+
+    - name: filter-sarif csharp
+      uses: advanced-security/filter-sarif@v1
+      with:
+        patterns: |
+          -**/src/Demos/**
+          -**/test/test-applications/**
+          -**/test/samples/**
+          -**/Web.config
+        input: ../results/csharp.sarif
+        output: ../results/csharp.sarif
+
     - name: Upload sarif file
       run: |
         datadog-ci sarif upload ../results/cpp.sarif --service dd-trace-dotnet
@@ -92,6 +114,28 @@ jobs:
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
+
+    - name: filter-sarif cpp
+      uses: advanced-security/filter-sarif@v1
+      with:
+        patterns: |
+          -**/src/Demos/**
+          -**/test/test-applications/**
+          -**/test/samples/**
+          -**/Web.config
+        input: ../results/cpp.sarif
+        output: ../results/cpp.sarif
+
+    - name: filter-sarif csharp
+      uses: advanced-security/filter-sarif@v1
+      with:
+        patterns: |
+          -**/src/Demos/**
+          -**/test/test-applications/**
+          -**/test/samples/**
+          -**/Web.config
+        input: ../results/csharp.sarif
+        output: ../results/csharp.sarif
 
     - name: Upload sarif file
       run: |
