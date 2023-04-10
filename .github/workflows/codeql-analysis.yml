@@ -1,6 +1,5 @@
 name: "CodeQL"
 
-#on: [push]
 on:
   push:
     branches: [ master, hotfix/**/* ]
