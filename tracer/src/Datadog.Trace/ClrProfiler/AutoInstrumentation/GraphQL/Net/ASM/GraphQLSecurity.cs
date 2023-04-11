@@ -6,8 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM;
@@ -77,11 +79,13 @@ internal sealed class GraphQLSecurity
         if (asmEnabled)
         {
             var allResolvers = GraphQLSecurity.PopScope(scope);
-            var securityCoordinator = new SecurityCoordinator(security, null, scope.Span);
             var args = new Dictionary<string, object> { { "graphql.server.all_resolvers", allResolvers } };
 #if NETFRAMEWORK
+            var securityCoordinator = new SecurityCoordinator(security, HttpContext.Current, scope.Span);
             securityCoordinator.CheckAndBlock(args);
 #else
+            var context = CoreHttpContextStore.Instance.Get();
+            var securityCoordinator = new SecurityCoordinator(security, context, scope.Span);
             var result = securityCoordinator.RunWaf(args);
             securityCoordinator.CheckAndBlock(result);
 #endif
@@ -95,7 +99,7 @@ internal sealed class GraphQLSecurity
         return resolvers;
     }
 
-    public static void RegisterResolver<TContext, TNode>(TContext context, TNode node)
+    public static void RegisterResolver<TContext, TNode>(TContext context, TNode node, bool v5V7 = false)
         where TContext : IExecutionContext
         where TNode : IExecutionNode
     {
@@ -114,16 +118,35 @@ internal sealed class GraphQLSecurity
         {
             try
             {
-                if (arg.TryDuckCast<GraphQLArgumentProxy>(out var argument))
+                var name = string.Empty;
+                object value = null;
+
+                if (v5V7 && arg.TryDuckCast<GraphQLArgumentProxy>(out var argumentV5V7))
                 {
-                    var name = argument.Name.StringValue;
-                    var value = GetArgumentValue(context, argument.Value);
-                    resolverArguments.Add(name, value);
+                    name = argumentV5V7.Name.StringValue;
+                    value = GetArgumentValue(context, argumentV5V7.Value);
+                }
+                else if (!v5V7 && arg.TryDuckCast<ArgumentProxy>(out var argument))
+                {
+                    name = argument.NameNode.Name;
+
+                    // if Value is VariableReference
+                    if (argument.Value.TryDuckCast<VariableReferenceProxy>(out var variableRef))
+                    {
+                        value = GetVariableValue(context, variableRef.Name);
+                    }
+                    else if (argument.Value.TryDuckCast<GraphQLValueProxy>(out var argValue))
+                    {
+                        value = argValue.Value;
+                    }
                 }
                 else
                 {
                     // An unknown type of Argument is in the AST
+                    break;
                 }
+
+                resolverArguments.Add(name, value);
             }
             catch
             {
