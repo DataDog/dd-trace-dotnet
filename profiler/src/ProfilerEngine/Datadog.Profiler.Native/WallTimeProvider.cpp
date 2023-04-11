@@ -25,6 +25,6 @@ WallTimeProvider::WallTimeProvider(
     IConfiguration* pConfiguration
     )
     :
-    CollectorBase<RawWallTimeSample>("WallTimeProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
+    CollectorBase<RawWallTimeSample>("WallTimeProvider", valueOffset, SampleTypeDefinitions.size(), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
 {
 }

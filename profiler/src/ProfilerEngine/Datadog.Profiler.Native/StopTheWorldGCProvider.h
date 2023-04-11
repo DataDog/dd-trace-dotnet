@@ -4,7 +4,6 @@
 #pragma once
 
 #include "CollectorBase.h"
-#include "GroupSampler.h"
 #include "IGCSuspensionsListener.h"
 #include "RawStopTheWorldSample.h"
 

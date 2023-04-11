@@ -9,6 +9,7 @@
 #include "IManagedThreadList.h"
 #include "IRuntimeIdStore.h"
 #include "IThreadsCpuManager.h"
+#include "IUpscaleProvider.h"
 #include "OsSpecificApi.h"
 #include "Sample.h"
 
@@ -31,10 +32,10 @@ ContentionProvider::ContentionProvider(
     IConfiguration* pConfiguration,
     MetricsRegistry& metricsRegistry)
     :
-    CollectorBase<RawContentionSample>("ContentionProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
+    CollectorBase<RawContentionSample>("ContentionProvider", valueOffset, SampleTypeDefinitions.size(), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
     _pCorProfilerInfo{pCorProfilerInfo},
     _pManagedThreadList{pManagedThreadList},
-    _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval()),
+    _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval(), false),
     _contentionDurationThreshold{pConfiguration->ContentionDurationThreshold()},
     _sampleLimit{pConfiguration->ContentionSampleLimit()},
     _pConfiguration{pConfiguration}
@@ -77,9 +78,13 @@ void ContentionProvider::OnContention(double contentionDurationNs)
 
     auto bucket = GetBucket(contentionDurationNs);
 
-    if (!_sampler.Sample(bucket))
     {
-        return;
+        std::lock_guard lock(_contentionsLock);
+
+        if (!_sampler.Sample(bucket))
+        {
+            return;
+        }
     }
 
     std::shared_ptr<ManagedThreadInfo> threadInfo;
@@ -111,4 +116,9 @@ void ContentionProvider::OnContention(double contentionDurationNs)
     Add(std::move(rawSample));
     _sampledLockContentionsCountMetric->Incr();
     _sampledLockContentionsDurationMetric->Add(contentionDurationNs);
+}
+
+UpscalingInfo ContentionProvider::GetInfo()
+{
+    return {GetValueOffsets(), RawContentionSample::BucketLabelName, _sampler.GetGroups()};
 }
