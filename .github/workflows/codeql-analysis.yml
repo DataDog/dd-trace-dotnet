@@ -3,6 +3,12 @@ name: "CodeQL"
 on:
   push:
     branches: [ master, hotfix/**/* ]
+  pull_request:
+    branches: [ master, hotfix/**/* ]
+
+env:
+  DD_ENV: ci
+  DD_SERVICE: dd-trace-dotnet
 
 jobs:
   profiler:
@@ -21,9 +27,13 @@ jobs:
       with:
         dotnet-version: '7.0.101'
 
+    - name: Download datadog-ci
+      run: |
+        npm install -g @datadog/datadog-ci
+
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v1
+      uses: github/codeql-action/init@v2
       with:
         languages: csharp, cpp
         # If you wish to specify custom queries, you can do so here or in a config file.
@@ -37,8 +47,36 @@ jobs:
         ./tracer/build.sh BuildProfilerHome BuildNativeLoader
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v1
-      
+      uses: github/codeql-action/analyze@v2
+
+    - name: filter-sarif cpp
+      uses: advanced-security/filter-sarif@v1
+      with:
+        patterns: |
+          -**/src/Demos/**
+          -**/test/test-applications/**
+          -**/test/samples/**
+          -**/Web.config
+        input: ../results/cpp.sarif
+        output: ../results/cpp.sarif
+
+    - name: filter-sarif csharp
+      uses: advanced-security/filter-sarif@v1
+      with:
+        patterns: |
+          -**/src/Demos/**
+          -**/test/test-applications/**
+          -**/test/samples/**
+          -**/Web.config
+        input: ../results/csharp.sarif
+        output: ../results/csharp.sarif
+
+    - name: Upload sarif file
+      run: |
+        datadog-ci sarif upload ../results/cpp.sarif --service dd-trace-dotnet
+        datadog-ci sarif upload ../results/csharp.sarif --service dd-trace-dotnet
+      env:
+        DD_API_KEY: '${{ secrets.DD_STAGING_API_KEY }}'
 
   tracer:
     name: Analyze Tracer
@@ -56,9 +94,13 @@ jobs:
       with:
         dotnet-version: '7.0.101'
 
+    - name: Download datadog-ci
+      run: |
+        npm install -g @datadog/datadog-ci
+
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v1
+      uses: github/codeql-action/init@v2
       with:
         languages: csharp, cpp
         # If you wish to specify custom queries, you can do so here or in a config file.
@@ -72,4 +114,33 @@ jobs:
         ./tracer/build.sh BuildTracerHome
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v1
+      uses: github/codeql-action/analyze@v2
+
+    - name: filter-sarif cpp
+      uses: advanced-security/filter-sarif@v1
+      with:
+        patterns: |
+          -**/src/Demos/**
+          -**/test/test-applications/**
+          -**/test/samples/**
+          -**/Web.config
+        input: ../results/cpp.sarif
+        output: ../results/cpp.sarif
+
+    - name: filter-sarif csharp
+      uses: advanced-security/filter-sarif@v1
+      with:
+        patterns: |
+          -**/src/Demos/**
+          -**/test/test-applications/**
+          -**/test/samples/**
+          -**/Web.config
+        input: ../results/csharp.sarif
+        output: ../results/csharp.sarif
+
+    - name: Upload sarif file
+      run: |
+        datadog-ci sarif upload ../results/cpp.sarif --service dd-trace-dotnet
+        datadog-ci sarif upload ../results/csharp.sarif --service dd-trace-dotnet
+      env:
+        DD_API_KEY: '${{ secrets.DD_STAGING_API_KEY }}'

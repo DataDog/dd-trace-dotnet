@@ -76,11 +76,6 @@ internal static class DebuggerTestHelper
         return probes.Aggregate(0, (accuNumOfSnapshots, next) => accuNumOfSnapshots + next.ExpectedNumberOfSnapshots);
     }
 
-    internal static bool ContainsMetricProbe(ProbeAttributeBase[] probeData)
-    {
-        return probeData.Any(IsMetricProbe);
-    }
-
     internal static bool IsMetricProbe(ProbeAttributeBase probeAttr)
     {
         return probeAttr is MetricMethodProbeTestDataAttribute or MetricLineProbeTestDataAttribute;
@@ -250,13 +245,25 @@ internal static class DebuggerTestHelper
 
     private static LogProbe WithTemplate(this LogProbe snapshot, ProbeAttributeBase att)
     {
-        if (att == null || string.IsNullOrEmpty(att.TemplateJson))
+        if (att == null || (string.IsNullOrEmpty(att.TemplateJson) && string.IsNullOrEmpty(att.TemplateStr)))
         {
             return snapshot.WithDefaultTemplate();
         }
 
-        snapshot.Segments = new SnapshotSegment[] { new(null, null, att.TemplateStr), new(string.Empty, att.TemplateJson, null) };
-        snapshot.EvaluateAt = ParseEnum<EvaluateAt>(att.EvaluateAt);
+        var segments = new List<SnapshotSegment>();
+
+        if (att.TemplateStr != null)
+        {
+            segments.Add(new SnapshotSegment(null, null, att.TemplateStr));
+        }
+
+        if (att.TemplateJson != null)
+        {
+            segments.Add(new SnapshotSegment(string.Empty, att.TemplateJson, null));
+        }
+
+        snapshot.Segments = segments.ToArray();
+        snapshot.EvaluateAt = ParseEnum<EvaluateAt>(att.EvaluateAt ?? "Exit");
         return snapshot;
     }
 

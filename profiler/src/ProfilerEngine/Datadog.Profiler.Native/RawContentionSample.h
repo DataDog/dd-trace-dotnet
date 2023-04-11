@@ -8,7 +8,7 @@
 
 class RawContentionSample : public RawSample
 {
-private:
+public:
     inline static const std::string BucketLabelName = "Duration bucket";
 
 public:

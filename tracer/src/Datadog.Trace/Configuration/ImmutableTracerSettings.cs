@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -119,11 +121,11 @@ namespace Datadog.Trace.Configuration
             IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
             AzureAppServiceMetadata = settings.AzureAppServiceMetadata;
 
-            static string GetExplicitSettingOrTag(string explicitSetting, IDictionary<string, string> globalTags, string tag)
+            static string? GetExplicitSettingOrTag(string? explicitSetting, IDictionary<string, string> globalTags, string tag)
             {
                 if (!string.IsNullOrWhiteSpace(explicitSetting))
                 {
-                    return explicitSetting.Trim();
+                    return explicitSetting!.Trim();
                 }
                 else
                 {
@@ -139,31 +141,31 @@ namespace Datadog.Trace.Configuration
         /// Gets the default environment name applied to all spans.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.Environment"/>
-        public string Environment { get; }
+        public string? Environment { get; }
 
         /// <summary>
         /// Gets the service name applied to top-level spans and used to build derived service names.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ServiceName"/>
-        public string ServiceName { get; }
+        public string? ServiceName { get; }
 
         /// <summary>
         /// Gets the version tag applied to all spans.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ServiceVersion"/>
-        public string ServiceVersion { get; }
+        public string? ServiceVersion { get; }
 
         /// <summary>
         /// Gets the application's git repository url.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GitRepositoryUrl"/>
-        internal string GitRepositoryUrl { get; }
+        internal string? GitRepositoryUrl { get; }
 
         /// <summary>
         /// Gets the application's git commit hash.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GitCommitSha"/>
-        internal string GitCommitSha { get; }
+        internal string? GitCommitSha { get; }
 
         /// <summary>
         /// Gets a value indicating whether we should tag every telemetry event with git metadata.
@@ -213,13 +215,13 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating custom sampling rules.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
-        public string CustomSamplingRules { get; }
+        public string? CustomSamplingRules { get; }
 
         /// <summary>
         /// Gets a value indicating the span sampling rules.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.SpanSamplingRules"/>
-        internal string SpanSamplingRules { get; }
+        internal string? SpanSamplingRules { get; }
 
         /// <summary>
         /// Gets a value indicating a global rate for sampling.
@@ -252,7 +254,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
         /// </summary>
-        internal string IpHeader { get; }
+        internal string? IpHeader { get; }
 
         /// <summary>
         /// Gets a value indicating whether the ip header should be collected. The default is false.
@@ -428,9 +430,9 @@ namespace Datadog.Trace.Configuration
         internal DbmPropagationLevel DbmPropagationMode { get; }
 
         /// <summary>
-        /// Gets the AAS settings
+        /// Gets the AAS settings. Guaranteed not <c>null</c> when <see cref="IsRunningInAzureAppService"/> is not <c>null</c>
         /// </summary>
-        internal ImmutableAzureAppServiceSettings AzureAppServiceMetadata { get; }
+        internal ImmutableAzureAppServiceSettings? AzureAppServiceMetadata { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

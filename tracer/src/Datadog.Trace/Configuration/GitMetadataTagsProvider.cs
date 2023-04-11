@@ -54,10 +54,10 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
 
             // Get the tag from configuration. These may originate from the DD_GIT_REPOSITORY_URL and DD_GIT_COMMIT_SHA environment variables,
             // but if those were not available, they may have been extracted from the DD_TAGS environment variable.
-            if (string.IsNullOrWhiteSpace(_immutableTracerSettings.GitCommitSha) == false &&
-                string.IsNullOrWhiteSpace(_immutableTracerSettings.GitRepositoryUrl) == false)
+            if (!string.IsNullOrWhiteSpace(_immutableTracerSettings.GitCommitSha) &&
+                !string.IsNullOrWhiteSpace(_immutableTracerSettings.GitRepositoryUrl))
             {
-                gitMetadata = _cachedGitTags = new GitMetadata(_immutableTracerSettings.GitCommitSha, _immutableTracerSettings.GitRepositoryUrl);
+                gitMetadata = _cachedGitTags = new GitMetadata(_immutableTracerSettings.GitCommitSha!, _immutableTracerSettings.GitRepositoryUrl!);
                 return true;
             }
 

@@ -129,10 +129,10 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             var exceptionCounts = exceptionSamples.GroupBy(s => s.Type)
                 .ToDictionary(g => g.Key, g => g.Sum(s => s.Count));
 
-            // Check that fewer than 500 System.Exception were seen
-            // The limit was set to 100, but the sampling algorithm seems to keep more exceptions,
-            // so we just check that we are in the right order of magnitude.
-            exceptionCounts.Should().ContainKey("System.Exception").WhichValue.Should().BeLessThan(500);
+            // We throw 1000 System.Exception exceptions per thread and we have 4 threads.
+            // The profiler samples the exception but also upscale the values after.
+            // So we just check that we are in the right order of magnitude.
+            exceptionCounts.Should().ContainKey("System.Exception").WhichValue.Should().BeCloseTo(4000, 10);
 
             // System.InvalidOperationException is seen only once, so it should be sampled
             // despite the sampler being saturated by the 4000 System.Exception
