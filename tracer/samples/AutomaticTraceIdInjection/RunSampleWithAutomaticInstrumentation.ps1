@@ -1,15 +1,15 @@
 param(
-    [Parameter(Mandatory=$False)]
+    [Parameter(Mandatory = $false)]
     [System.String]
     [ValidateSet("Log4Net", "MicrosoftExtensions", "NLog40", "NLog45", "NLog46", "Serilog")]
     $LoggingLibrary = "Log4Net",
 
-    [Parameter(Mandatory=$False)]
+    [Parameter(Mandatory = $false)]
     [System.String]
-    [ValidateSet("net7.0", "netcoreapp2.1", "net45","netcoreapp3.1")]
+    [ValidateSet("net7.0", "netcoreapp2.1", "net45", "netcoreapp3.1")]
     $Framework = "net7.0",
 
-    [Parameter(Mandatory=$False)]
+    [Parameter(Mandatory = $false)]
     [System.String]
     $AppDirectory
 )
@@ -39,8 +39,7 @@ function BuildAndRunSample {
 }
 
 function Get-ApplicationDirectory {
-    if ([System.String]::IsNullOrWhiteSpace($AppDirectory))
-    {
+    if ([System.String]::IsNullOrWhiteSpace($AppDirectory)) {
         return Join-Path $PSScriptRoot $LoggingLibrary"Example" "bin\Debug\" $Framework
     }
 
