@@ -64,6 +64,11 @@ Set-EnvironmentVariableForProcess -name "DD_VERSION" -value "1.0.0"
 # If you are running into issues, uncomment the below to enable debug logs
 # Set-EnvironmentVariableForProcess -name "DD_TRACE_DEBUG" -value "true"
 
+## If you want to enable Agentless logging uncomment THESE 2 lines and set your api key
+## If you are not using Agentless logging, the agent must be configured to retrieve your logs
+# Set-EnvironmentVariableForProcess -name "DD_API_KEY" -value "YOUR_API_KEY"
+# Set-EnvironmentVariableForProcess -name "D_LOGS_DIRECT_SUBMISSION_INTEGRATIONS" -value "LOGGING_LIBRARY_HERE"
+
 if ($IsWindows) {
     Write-Host "Using Windows configuration"
     $AppDirectory = Get-ApplicationDirectory
