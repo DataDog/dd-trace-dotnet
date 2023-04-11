@@ -1029,33 +1029,11 @@ partial class Build
             DotnetBuild(regressionLibs, framework: Framework, noRestore: false);
         });
 
-    Target CompileFrameworkReproductions => _ => _
-        .Unlisted()
-        .Description("Builds .NET Framework projects (non SDK-based projects)")
-        .After(CompileRegressionDependencyLibs)
-        .After(CompileDependencyLibs)
-        .Requires(() => IsWin)
-        .Executes(() =>
-        {
-            // We have to use the full MSBuild here, as dotnet msbuild doesn't copy the EDMX assets for embedding correctly
-            // seems similar to https://github.com/dotnet/sdk/issues/8360
-            MSBuild(s => s
-                .SetTargetPath(MsBuildProject)
-                .SetMSBuildPath()
-                .DisableRestore()
-                .EnableNoDependencies()
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatformAnyCPU()
-                .SetTargets("BuildFrameworkReproductions")
-                .SetMaxCpuCount(null));
-        });
-
     Target CompileIntegrationTests => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
         .After(CompileManagedTestHelpers)
         .After(CompileRegressionSamples)
-        .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
         .After(BuildRunnerTool)
         .Requires(() => Framework)
@@ -1080,8 +1058,6 @@ partial class Build
     Target CompileSamplesWindows => _ => _
         .Unlisted()
         .DependsOn(HackForMissingMsBuildLocation)
-        .After(CompileDependencyLibs)
-        .After(CompileFrameworkReproductions)
         .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
         .Executes(() =>
@@ -1171,9 +1147,8 @@ partial class Build
                 DotNetBuild(config => config
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatformAnyCPU()
-                    .EnableNoDependencies()
-                    .SetProperty("BuildInParallel", "true")
                     .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                     .CombineWith(projects, (s, project) => s
                         // we have to build this one for all frameworks (because of reasons)
                         .When(!project.Name.Contains("MultiDomainHost"), x => x.SetFramework(Framework))
@@ -1200,7 +1175,6 @@ partial class Build
         .Unlisted()
         .After(CompileManagedTestHelpers)
         .After(CompileRegressionSamples)
-        .After(CompileFrameworkReproductions)
         .Executes(() =>
         {
             var aspnetFolder = TestsDirectory / "test-applications" / "aspnet";
@@ -1230,7 +1204,6 @@ partial class Build
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
         .After(CompileSamplesWindows)
-        .After(CompileFrameworkReproductions)
         .After(BuildWindowsIntegrationTests)
         .Requires(() => IsWin)
         .Requires(() => Framework)
@@ -1296,7 +1269,6 @@ partial class Build
 
     Target CompileAzureFunctionsSamplesWindows => _ => _
         .Unlisted()
-        .DependsOn(HackForMissingMsBuildLocation)
         .After(CompileFrameworkReproductions)
         .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
@@ -1367,7 +1339,6 @@ partial class Build
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
         .After(CompileRegressionSamples)
-        .After(CompileFrameworkReproductions)
         .After(BuildNativeLoader)
         .Requires(() => IsWin)
         .Requires(() => Framework)
@@ -1408,7 +1379,6 @@ partial class Build
     Target RunWindowsTracerIisIntegrationTests => _ => _
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
-        .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
@@ -1418,7 +1388,6 @@ partial class Build
     Target RunWindowsSecurityIisIntegrationTests => _ => _
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
-        .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
@@ -1458,7 +1427,6 @@ partial class Build
     Target RunWindowsMsiIntegrationTests => _ => _
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
-        .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)

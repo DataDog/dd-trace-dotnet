@@ -7,7 +7,6 @@
   <ItemGroup>
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
-    <FrameworkReproduction Include="test\test-applications\regression\StackExchange.Redis.AssemblyConflict.LegacyProject\StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
   </ItemGroup>
 
   <!--  Used by CompileNativeSrcWindows-->
@@ -20,13 +19,6 @@
   <!--  Used by CompileNativeTestsWindows-->
   <Target Name="BuildCppTests">
     <MSBuild Targets="Build" Projects="@(CppTestProject)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <!--  Used by CompileFrameworkReproductions-->
-  <Target Name="BuildFrameworkReproductions">
-    <MSBuild Targets="Build" Projects="@(FrameworkReproduction)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
