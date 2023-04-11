@@ -1,7 +1,15 @@
-// <copyright file="DirectoryTests.cs" company="Datadog">
+// <copyright file="FileTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Security.AccessControl;
+using System.Text;
+using System.Threading;
+using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
@@ -11,12 +19,9 @@ public class FileTests : InstrumentationTestsBase
     protected string notTaintedValue = "j:\nott\\inted";
     protected string taintedPathValue = "j:\\p\\ath";
 
-    [TestInitialize]
-    public void Init()
+    public FileTests()
     {
-        CaptureVulnerabilities(VulnerabilityType.PATH_TRAVERSAL);
-        var context = ContextHolder.Current;
-        context.TaintedObjects.Add(context, "param2", taintedPathValue, VulnerabilityOriginType.PATH_VARIABLE);
+        AddTainted(taintedPathValue);
     }
 
     [Fact]
@@ -32,7 +37,7 @@ public class FileTests : InstrumentationTestsBase
         ExecuteAction(() => { File.WriteAllText(taintedPathValue, notTaintedValue, Encoding.UTF8); });
         AssertVulnerable();
     }
-#if !NET35 && !NET461
+#if !NETFRAMEWORK
     [Fact]
     public void GivenAFile_WhenWriteAllTextAsyncTaintedString_VulnerabilityIsLogged()
     {
@@ -47,7 +52,7 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 #endif
-#if !NET35
+
     [Fact]
     public void GivenAFile_WhenWriteAllLinesTaintedString_VulnerabilityIsLogged()
     {
@@ -61,7 +66,7 @@ public class FileTests : InstrumentationTestsBase
         ExecuteAction(() => { File.WriteAllLines(taintedPathValue, new List<String>()); });
         AssertVulnerable();
     }
-#if !NET461
+#if !NETFRAMEWORK
     [Fact]
     public void GivenAFile_WhenWriteAllLinesAsyncTaintedString_VulnerabilityIsLogged2()
     {
@@ -76,7 +81,7 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 #endif
-#endif
+
     [Fact]
     public void GivenAFile_WhenWriteAllLinesTaintedString_VulnerabilityIsLogged3()
     {
@@ -97,7 +102,7 @@ public class FileTests : InstrumentationTestsBase
         ExecuteAction(() => { File.WriteAllBytes(taintedPathValue, new byte[] { 6 }); });
         AssertVulnerable();
     }
-#if !NET35 && !NET461
+#if !NETFRAMEWORK
     [Fact]
     public void GivenAFile_WhenWriteAllBytesAsyncTaintedString_VulnerabilityIsLogged()
     {
@@ -183,7 +188,7 @@ public class FileTests : InstrumentationTestsBase
     }
 #endif
 
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenAFile_WhenReadAllTextTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { File.ReadAllText(taintedPathValue); });
@@ -204,7 +209,7 @@ public class FileTests : InstrumentationTestsBase
         ExecuteAction(() => { File.ReadAllText(taintedPathValue, Encoding.UTF8); });
         AssertVulnerable();
     }
-#if !NET35 && !NET461
+#if !NETFRAMEWORK
     [Fact]
     public void GivenAFile_WhenReadAllTextAsyncTaintedString_VulnerabilityIsLogged()
     {
@@ -255,7 +260,7 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-#if !NET35 && !NET461
+#if !NETFRAMEWORK
     [Fact]
     public void GivenAFile_WhenReadAllLinesTaintedString_VulnerabilityIsLogged3()
     {
@@ -291,7 +296,7 @@ public class FileTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 
-#if !NET461 && !NET35
+#if !NETFRAMEWORK
     [Fact]
     public void GivenAFile_WhenReadAllBytesAsyncTaintedString_VulnerabilityIsLogged()
     {
@@ -391,7 +396,7 @@ public class FileTests : InstrumentationTestsBase
         ExecuteAction(() => { File.Move(notTaintedValue, taintedPathValue); });
         AssertVulnerable();
     }
-#if !NET35 && !NET461 && !NETCORE21
+#if NETCOREAPP3_0_OR_GREATER
     [Fact]
     public void GivenAFile_WhenMoveTaintedString_VulnerabilityIsLogged3()
     {
@@ -407,7 +412,7 @@ public class FileTests : InstrumentationTestsBase
     }
 #endif
 
-#if !NETCORE31 && !NETCORE21 && !NET50 && !NET60
+#if NETFRAMEWORK
     [Fact]
     public void GivenAFile_WhenCreateTaintedString_VulnerabilityIsLogged()
     {
@@ -515,12 +520,10 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenAFile_WhenCreatingFromIncorrectString_ExceptionIsThrown()
     {
-        File.WriteAllText(null, null);
+        Assert.Throws<ArgumentNullException>(() => File.WriteAllText(null, null));
         AssertVulnerable();
     }
 
@@ -554,6 +557,4 @@ public class FileTests : InstrumentationTestsBase
             }
 #endif
     }
-}
-
 }

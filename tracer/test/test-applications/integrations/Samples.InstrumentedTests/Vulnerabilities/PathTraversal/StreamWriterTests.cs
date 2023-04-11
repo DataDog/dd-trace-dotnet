@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Text;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
@@ -71,20 +73,16 @@ public class StreamWriterTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenAStreamWriter_WhenCreatingFromNullString_ExceptionIsThrown()
     {
-        new StreamWriter((string)null);
+        Assert.Throws<ArgumentNullException>(() => new StreamWriter((string)null));
     }
 
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenAStreamWriter_WhenCreatingFromBadIndex_ExceptionIsThrown()
     {
-        new StreamWriter(taintedValue, true, Encoding.UTF8, -4);
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StreamWriter(taintedValue, true, Encoding.UTF8, -4));
     }
 
     void ExecuteAction(Action c)

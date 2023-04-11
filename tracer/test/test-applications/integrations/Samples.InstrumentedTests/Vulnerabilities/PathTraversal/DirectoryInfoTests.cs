@@ -3,17 +3,29 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.IO;
+using System.Security.AccessControl;
+using Xunit;
+
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
 public class DirectoryInfoTests : InstrumentationTestsBase
 {
+    protected string notTaintedValue = "c:\\nottaintedDir";
+    protected string taintedPathValue = "c:\\pat\"\0h";
+    protected string taintedSubFolderValue = "pa\"\0th";
 
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
-    [TestCategory(testCategory)]
+    public DirectoryInfoTests()
+    {
+        AddTainted(taintedPathValue);
+        AddTainted(taintedSubFolderValue);
+    }
+
+    [Fact]
     public void GivenADirectoryInfo_WhenCreatingFromInvalidCharsString_ExceptionIsThrown()
     {
-        new DirectoryInfo(taintedPathValue);
+        Assert.Throws<ArgumentException>(() => new DirectoryInfo(taintedPathValue));
         AssertVulnerable();
     }
 
@@ -24,28 +36,23 @@ public class DirectoryInfoTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenADirectoryInfo_WhenCreatingFromIncorrectString_ExceptionIsThrown()
     {
-        new DirectoryInfo("");
+        Assert.Throws<ArgumentException>(() => new DirectoryInfo(""));
     }
 
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenADirectoryInfo_WhenCreatingFromIncorrectString_ExceptionIsThrown2()
     {
+        Assert.Throws<ArgumentNullException>(() => new DirectoryInfo(null).MoveTo(null));
         new DirectoryInfo(null);
     }
 
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenADirectoryInfo_WhenMoveToNullString_ArgumentNullException()
     {
-        new DirectoryInfo(notTaintedValue).MoveTo(null);
+        Assert.Throws<ArgumentNullException>(() => new DirectoryInfo(notTaintedValue).MoveTo(null));
     }
 
     [Fact]
@@ -55,16 +62,14 @@ public class DirectoryInfoTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenADirectoryInfo_WhenCreateSubdirectoryNullString_ArgumentNullException()
     {
-        new DirectoryInfo(notTaintedValue).CreateSubdirectory(null);
+        Assert.Throws<ArgumentException>(() => new DirectoryInfo(notTaintedValue).CreateSubdirectory(null));
         AssertVulnerable();
     }
 
-#if !NETCORE31 && !NETCORE21 && !NET50 && !NET60
+#if NETFRAMEWORK
     [Fact]
     public void GivenADirectoryInfo_WhenCreateSubdirectoryTaintedStringDirectorySecurity_VulnerabilityIsLogged()
     {
@@ -101,7 +106,7 @@ public class DirectoryInfoTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-#if !NET461 && !NET35
+#if !NETFRAMEWORK
     [Fact]
     public void GivenADirectoryInfo_WhenEnumerateDirectoriesTaintedStringSearchOption_VulnerabilityIsLogged2()
     {
@@ -124,7 +129,7 @@ public class DirectoryInfoTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-#if !NET461 && !NET35
+#if !NETFRAMEWORK
     [Fact]
     public void GivenADirectoryInfo_WhenEnumerateFilesTaintedStringSearchOption_VulnerabilityIsLogged2()
     {
@@ -147,7 +152,7 @@ public class DirectoryInfoTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-#if !NET461 && !NET35
+#if !NETFRAMEWORK
     [Fact]
     public void GivenADirectoryInfo_WhenEnumerateFileSystemInfosTaintedStringSearchOption_VulnerabilityIsLogged2()
     {
@@ -171,7 +176,7 @@ public class DirectoryInfoTests : InstrumentationTestsBase
     }
 
 
-#if !NET461 && !NET35
+#if !NETFRAMEWORK
     [Fact]
     public void GivenADirectoryInfo_WhenGetDirectoriesTaintedStringSearchOption_VulnerabilityIsLogged2()
     {
@@ -194,7 +199,7 @@ public class DirectoryInfoTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-#if !NET461 && !NET35
+#if !NETFRAMEWORK
     [Fact]
     public void GivenADirectoryInfo_WhenGetFilesTaintedStringSearchOption_VulnerabilityIsLogged2()
     {
@@ -218,7 +223,7 @@ public class DirectoryInfoTests : InstrumentationTestsBase
     }
 #endif
 
-#if !NET35 && !NET461
+#if !NETFRAMEWORK
     [Fact]
     public void GivenADirectoryInfo_WhenGetFileSystemInfosTaintedStringSearchOption_VulnerabilityIsLogged3()
     {

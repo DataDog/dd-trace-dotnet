@@ -3,21 +3,22 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.IO;
+using Xunit;
+
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
-public class FileTests : InstrumentationTestsBase
+public class FileStreamAspectTests : InstrumentationTestsBase
 {
     protected string taintedValue = "tainted";
     protected string notTaintedValue = "c:\\nottainte9d";
     protected string taintedPathValue = "c:\\path";
 
-    [TestInitialize]
-    public void Init()
+    public FileStreamAspectTests()
     {
-        CaptureVulnerabilities(VulnerabilityType.PATH_TRAVERSAL);
-        var context = ContextHolder.Current;
-        context.TaintedObjects.Add(context, "param1", taintedValue, VulnerabilityOriginType.PATH_VARIABLE);
-        context.TaintedObjects.Add(context, "param2", taintedPathValue, VulnerabilityOriginType.PATH_VARIABLE);
+        AddTainted(taintedPathValue);
+        AddTainted(taintedValue);
     }
 
     [Fact]
@@ -62,21 +63,17 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenAFileStream_WhenCreatingFromTaintedString_ExceptionIsThrown()
     {
-        ExecuteAction(() => { new FileStream(null, FileMode.Open, FileAccess.Read, FileShare.Read, 1, true); });
+        Assert.Throws<ArgumentNullException>(() => new FileStream(null, FileMode.Open, FileAccess.Read, FileShare.Read, 1, true));
         AssertVulnerable();
     }
 
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenAFileStream_WhenCreatingFromTaintedString_ExceptionIsThrown2()
     {
-        ExecuteAction(() => { new FileStream(notTaintedValue, FileMode.Open, FileAccess.Read, FileShare.Read, -1, true); });
+        Assert.Throws<ArgumentOutOfRangeException>(() => new FileStream(notTaintedValue, FileMode.Open, FileAccess.Read, FileShare.Read, -1, true));
         AssertVulnerable();
     }
 

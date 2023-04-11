@@ -1,19 +1,25 @@
-// <copyright file="DirectoryTests.cs" company="Datadog">
+// <copyright file="StreamReaderTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.IO;
+using System.Text;
+using Xunit;
+
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
-public class FileTests : InstrumentationTestsBase
+public class StreamReaderTests : InstrumentationTestsBase
 {
-    [TestInitialize]
-    public void Init()
+    protected string taintedValue = "tainted";
+    protected string notTaintedValue = "c:\\nottainted2";
+    protected string taintedPathValue = "c:\\path";
+
+    public StreamReaderTests()
     {
-        CaptureVulnerabilities(VulnerabilityType.PATH_TRAVERSAL);
-        var context = ContextHolder.Current;
-        context.TaintedObjects.Add(context, "param1", taintedValue, VulnerabilityOriginType.PATH_VARIABLE);
-        context.TaintedObjects.Add(context, "param2", taintedPathValue, VulnerabilityOriginType.PATH_VARIABLE);
+        AddTainted(taintedPathValue);
+        AddTainted(taintedValue);
     }
 
     [Fact]
@@ -72,20 +78,16 @@ public class FileTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenAStreamReader_WhenCreatingFromNullString_ExceptionIsThrown()
     {
-        new StreamReader((string)null);
+        Assert.Throws<ArgumentNullException>(() => new StreamReader((string)null));
     }
 
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentOutOfRangeException))]
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenAStreamReader_WhenCreatingFromBadIndex_ExceptionIsThrown()
     {
-        new StreamReader(taintedValue, Encoding.UTF8, true, -4);
+        Assert.Throws<ArgumentOutOfRangeException>(() => new StreamReader(taintedValue, Encoding.UTF8, true, -4));
     }
 
     void ExecuteAction(Action c)

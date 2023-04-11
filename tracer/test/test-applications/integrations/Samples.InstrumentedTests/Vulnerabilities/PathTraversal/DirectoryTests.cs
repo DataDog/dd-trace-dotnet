@@ -3,22 +3,33 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.IO;
+using System.Security.AccessControl;
+using Xunit;
+
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
 public class DirectoryTests : InstrumentationTestsBase
 {
+    protected string notTaintedValue = "z:";
+    protected string taintedPathValue = "c:\\pat\"\0h";
+    protected string taintedpattern = "*.password";
 
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
+    public DirectoryTests()
+    {
+        AddTainted(taintedPathValue);
+        AddTainted(taintedpattern);
+    }
 
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenADirectoryInfo_WhenCreatingFromInvalidCharsString_ExceptionIsThrown()
     {
-        Directory.CreateDirectory(taintedPathValue);
+        Assert.Throws<ArgumentException>(() => Directory.CreateDirectory(taintedPathValue));
         AssertVulnerable();
     }
 
-#if !NETCORE31 && !NETCORE21 && !NET50 && !NET60
+#if NETFRAMEWORK
     [Fact]
     public void GivenADirectoryInfo_WhenCreatingFromTaintedStringDirectorySecurity_VulnerabilityIsLogged()
     {
@@ -33,20 +44,16 @@ public class DirectoryTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenADirectoryInfo_WhenCreatingFromIncorrectString_ExceptionIsThrown()
     {
-        Directory.CreateDirectory("");
+        Assert.Throws<ArgumentException>(() => Directory.CreateDirectory(""));
     }
 
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenADirectoryInfo_WhenCreatingFromIncorrectString_ExceptionIsThrown2()
     {
-        Directory.CreateDirectory(null);
+        Assert.Throws<ArgumentException>(() => Directory.CreateDirectory(null));
     }
 
     [Fact]
@@ -97,7 +104,7 @@ public class DirectoryTests : InstrumentationTestsBase
         ExecuteAction(() => { Directory.EnumerateDirectories(notTaintedValue, taintedpattern, SearchOption.AllDirectories); });
         AssertVulnerable();
     }
-#if !NET461
+#if !NETFRAMEWORK
 
     [Fact]
     public void GivenADirectoryInfo_WhenEnumerateDirectoriesTaintedStringPathEnumerationOptions_VulnerabilityIsLogged()
@@ -148,7 +155,7 @@ public class DirectoryTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-#if !NET461
+#if !NETFRAMEWORK
     [Fact]
     public void GivenADirectoryInfo_WhenEnumerateFilesTaintedStringEnumerationOptions_VulnerabilityIsLogged()
     {
@@ -199,7 +206,7 @@ public class DirectoryTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-#if !NET461
+#if !NETFRAMEWORK
     [Fact]
     public void GivenADirectoryInfo_WhenEnumerateFileSystemEntriesTaintedStringPathEnumerationOptions_VulnerabilityIsLogged()
     {
@@ -250,7 +257,7 @@ public class DirectoryTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-#if !NET461 && !NET35
+#if !NETFRAMEWORK
     [Fact]
     public void GivenADirectoryInfo_WhenGetDirectoriesTaintedStringPathEnumerationOptions_VulnerabilityIsLogged()
     {
@@ -308,7 +315,7 @@ public class DirectoryTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-#if !NET461 && !NET35
+#if !NETFRAMEWORK
     [Fact]
     public void GivenADirectoryInfo_WhenGetFilesTaintedStringPathEnumerationOptions_VulnerabilityIsLogged()
     {
@@ -344,7 +351,7 @@ public class DirectoryTests : InstrumentationTestsBase
         ExecuteAction(() => { Directory.GetFileSystemEntries(notTaintedValue, taintedpattern); });
         AssertVulnerable();
     }
-#if !NET35
+
     [Fact]
     public void GivenADirectoryInfo_WhenGetFileSystemEntriesTaintedStringPathSearchOption_VulnerabilityIsLogged()
     {
@@ -358,9 +365,9 @@ public class DirectoryTests : InstrumentationTestsBase
         ExecuteAction(() => { Directory.GetFileSystemEntries(notTaintedValue, taintedpattern, SearchOption.AllDirectories); });
         AssertVulnerable();
     }
-#endif
 
-#if !NET461 && !NET35
+
+#if !NETFRAMEWORK
     [Fact]
     public void GivenADirectoryInfo_WhenGetFileSystemEntriesTaintedStringPathEnumerationOptions_VulnerabilityIsLogged()
     {
@@ -376,7 +383,7 @@ public class DirectoryTests : InstrumentationTestsBase
     }
 #endif
 
-#if !NETCORE31 && !NETCORE21 && !NET50 && !NET60
+#if NETFRAMEWORK
     [Fact]
     public void GivenADirectoryInfo_WhenSetAccessControlTaintedString_VulnerabilityIsLogged()
     {

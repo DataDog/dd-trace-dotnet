@@ -1,21 +1,22 @@
-// <copyright file="DirectoryTests.cs" company="Datadog">
+// <copyright file="FileInfoTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.IO;
+using Xunit;
+
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
-public class FileTests : InstrumentationTestsBase
+public class FileInfoTests : InstrumentationTestsBase
 {
     protected string notTaintedValue = "c:\\nottainted2";
     protected string taintedPathValue = "c:\\path";
 
-    [TestInitialize]
-    public void Init()
+    public FileInfoTests()
     {
-        CaptureVulnerabilities(VulnerabilityType.PATH_TRAVERSAL);
-        var context = ContextHolder.Current;
-        context.TaintedObjects.Add(context, "param2", taintedPathValue, VulnerabilityOriginType.PATH_VARIABLE);
+        AddTainted(taintedPathValue);
     }
 
     [Fact]
@@ -25,20 +26,16 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenAFileInfo_WhenCreatingFromIncorrectString_ExceptionIsThrown()
     {
-        new FileInfo("");
+        Assert.Throws<ArgumentException>(() => new FileInfo(""));
     }
 
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenAFileInfo_WhenCreatingFromIncorrectString_ExceptionIsThrown2()
     {
-        new FileInfo(null);
+        Assert.Throws<ArgumentNullException>(() => new FileInfo(null));
     }
 
     [Fact]
@@ -55,12 +52,10 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenAFileInfo_WhenCopyToNullString_ArgumentNullException()
     {
-        new FileInfo(notTaintedValue).CopyTo(null, true);
+        Assert.Throws<ArgumentNullException>(() => new FileInfo(notTaintedValue).CopyTo(null, true));
         AssertVulnerable();
     }
 
@@ -70,7 +65,7 @@ public class FileTests : InstrumentationTestsBase
         ExecuteAction(() => { new FileInfo(notTaintedValue).MoveTo(taintedPathValue); });
         AssertVulnerable();
     }
-#if !NET35 && !NET461 && !NETCORE21
+#if NETCOREAPP3_0_OR_GREATER
     [Fact]
     public void GivenAFileInfo_WhenMoveToTaintedString_VulnerabilityIsLogged2()
     {
@@ -78,12 +73,10 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 #endif
-    [TestMethod]
-    [ExpectedException(typeof(FileNotFoundException))]
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenAFileInfo_WhenMoveToNoExistingFile_FileNotFoundException()
     {
-        new FileInfo(notTaintedValue).MoveTo(taintedPathValue);
+        Assert.Throws<FileNotFoundException>(() => new FileInfo(notTaintedValue).MoveTo(taintedPathValue));
     }
 
     [Fact]
@@ -107,12 +100,10 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-    [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
-    [TestCategory(testCategory)]
+    [Fact]
     public void GivenAFileInfo_WhenReplaceNullString_ArgumentNullException()
     {
-        new FileInfo(notTaintedValue).Replace(null, taintedPathValue, true);
+        Assert.Throws<ArgumentNullException>(() => new FileInfo(notTaintedValue).Replace(null, taintedPathValue, true));
     }
 
     void ExecuteAction(Action c)
