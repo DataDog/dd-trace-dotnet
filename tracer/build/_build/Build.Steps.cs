@@ -213,23 +213,12 @@ partial class Build
         .Unlisted()
         .Executes(() =>
         {
-            if (IsWin)
-            {
-                NuGetTasks.NuGetRestore(s => s
-                    .SetTargetPath(BuildSolution)
-                    .SetVerbosity(NuGetVerbosity.Normal)
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
-                        o.SetPackagesDirectory(NugetPackageDirectory)));
-            }
-            else
-            {
-                DotNetRestore(s => s
-                    .SetProjectFile(BuildSolution)
-                    .SetVerbosity(DotNetVerbosity.Normal)
-                    .SetProperty("configuration", BuildConfiguration.ToString())
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
-                        o.SetPackageDirectory(NugetPackageDirectory)));
-            }
+            DotNetRestore(s => s
+                .SetProjectFile(BuildSolution)
+                .SetVerbosity(DotNetVerbosity.Normal)
+                .SetProperty("configuration", BuildConfiguration.ToString())
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
+                    o.SetPackageDirectory(NugetPackageDirectory)));
         });
 
     Target CompileNativeSrcWindows => _ => _
