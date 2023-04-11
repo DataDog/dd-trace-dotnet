@@ -19,8 +19,8 @@
   </ItemGroup>
 
   <ItemGroup Condition="$(ApiVersion) &gt;= 7.0.0">
-    <PackageReference Include="GraphQL.Server.All" Version="$(ApiVersion)" />
-    <PackageReference Include="GraphQL.NewtonsoftJson" Version="$(ApiVersion)" />
+    <PackageReference Include="GraphQL.Server.All" Version="7.0.0" />
+    <PackageReference Include="GraphQL.NewtonsoftJson" Version="7.0.0" />
   </ItemGroup>
 
   <!-- Files shared with Samples.GraphQL4 -->
