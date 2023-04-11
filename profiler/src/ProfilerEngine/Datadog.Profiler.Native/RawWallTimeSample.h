@@ -8,14 +8,32 @@
 
 #include "RawSample.h"
 
-
 class RawWallTimeSample : public RawSample
 {
 public:
+    RawWallTimeSample() = default;
+
+    RawWallTimeSample(RawWallTimeSample&& other) noexcept
+        :
+        RawSample(std::move(other)),
+        Duration(other.Duration)
+    {
+    }
+
+    RawWallTimeSample& operator=(RawWallTimeSample&& other) noexcept
+    {
+        if (this != &other)
+        {
+            RawSample::operator=(std::move(other));
+            Duration = other.Duration;
+        }
+        return *this;
+    }
+
     inline void OnTransform(std::shared_ptr<Sample>& sample, uint32_t valueOffset) const override
     {
         sample->AddValue(Duration, valueOffset);
     }
 
-    std::uint64_t  Duration;  // in nanoseconds
+    std::uint64_t Duration; // in nanoseconds
 };
