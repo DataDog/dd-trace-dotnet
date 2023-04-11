@@ -23,6 +23,7 @@ public class InstrumentationTestsBase
     private static readonly Type _taintedObjectType = Type.GetType("Datadog.Trace.Iast.TaintedObject, Datadog.Trace");
     private static readonly Type _iastRequestContextType = Type.GetType("Datadog.Trace.Iast.IastRequestContext, Datadog.Trace");
     private static readonly Type _scopeType = Type.GetType("Datadog.Trace.Scope, Datadog.Trace");
+    private static readonly Type _locationType = Type.GetType("Datadog.Trace.Iast.Location, Datadog.Trace");
     private static readonly Type _spanType = Type.GetType("Datadog.Trace.Span, Datadog.Trace");
     private static readonly Type _arrayBuilderType = Type.GetType("Datadog.Trace.Util.ArrayBuilder`1, Datadog.Trace");
     private static readonly Type _arrayBuilderOfSpanType = _arrayBuilderType.MakeGenericType(new Type[] { _spanType });
@@ -46,18 +47,20 @@ public class InstrumentationTestsBase
     private static MethodInfo _vulnerabilitiesProperty = _vulnerabilityBatchType.GetProperty("Vulnerabilities", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _vulnerabilityTypeProperty = _vulnerabilityType.GetProperty("Type", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _evidenceProperty = _vulnerabilityType.GetProperty("Evidence", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _locationProperty = _vulnerabilityType.GetProperty("Location", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _pathProperty = _locationType.GetProperty("Path", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _getTaintedObjectsMethod = _taintedObjectsType.GetMethod("Get", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _taintInputStringMethod = _taintedObjectsType.GetMethod("TaintInputString", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _taintMethod = _taintedObjectsType.GetMethod("Taint", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _enableIastInRequestMethod = _traceContextType.GetMethod("EnableIastInRequest", BindingFlags.Instance | BindingFlags.NonPublic);
     private static MethodInfo _getArrayMethod = _arrayBuilderOfSpanType.GetMethod("GetArray");
-    private static MethodInfo _spanGetTagMethod = _spanType.GetMethod("GetTag", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _taintedObjectsField = _iastRequestContextType.GetField("_taintedObjects", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _spansField = _traceContextType.GetField("_spans", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _vulnerabilityBatchField = _iastRequestContextType.GetField("_vulnerabilityBatch", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _evidenceValueField = _evidenceType.GetField("_value", BindingFlags.NonPublic | BindingFlags.Instance);
     
     protected static string WeakHashVulnerabilityType = "WEAK_HASH";
+    protected static string commandInjectionType = "COMMAND_INJECTION";
 
     public InstrumentationTestsBase()
     {
@@ -124,7 +127,7 @@ public class InstrumentationTestsBase
         vulnerabilityList.Count.Should().Be(vulnerabilities);
     }
 
-    protected void AssertVulnerable(string expectedType, string expectedEvidence = "", bool evidenceTainted = false)
+    protected void AssertVulnerable(string expectedType, string expectedEvidence = "", bool evidenceTainted = true)
     {
         var vulnerabilityList = GetGeneratedVulnerabilities();
         vulnerabilityList.Count.Should().Be(1);
@@ -148,6 +151,14 @@ public class InstrumentationTestsBase
     protected void AssertNotVulnerable()
     {
         AssertVulnerable(0);
+    }
+
+    protected void AssertLocation(string location)
+    {
+        var vulnerability = GetGeneratedVulnerabilities()[0];
+        var locationProperty = _locationProperty.Invoke(vulnerability, Array.Empty<object>());
+        var path = _pathProperty.Invoke(locationProperty, Array.Empty<object>());
+        path.ToString().Should().Contain(location);
     }
 
     private List<object> GetGeneratedVulnerabilities()

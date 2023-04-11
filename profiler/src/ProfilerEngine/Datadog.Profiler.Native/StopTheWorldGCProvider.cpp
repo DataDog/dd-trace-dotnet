@@ -2,7 +2,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "StopTheWorldGCProvider.h"
+
 #include "COMHelpers.h"
+#include "GarbageCollectionProvider.h"
 #include "HResultConverter.h"
 #include "IAppDomainStore.h"
 #include "IFrameStore.h"
@@ -23,7 +25,7 @@ StopTheWorldGCProvider::StopTheWorldGCProvider(
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration)
     :
-    CollectorBase<RawStopTheWorldSample>("StopTheWorldGCProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
+    CollectorBase<RawStopTheWorldSample>("StopTheWorldGCProvider", valueOffset, GarbageCollectionProvider::SampleTypeDefinitions.size(), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
 {
 }
 

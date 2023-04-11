@@ -341,6 +341,15 @@ bool CorProfilerCallback::InitializeServices()
         _pAllocationsRecorder.get()
         );
 
+    if (_pContentionProvider != nullptr)
+    {
+        _pExporter->RegisterUpscaleProvider(_pContentionProvider);
+    }
+    if (_pExceptionsProvider != nullptr)
+    {
+        _pExporter->RegisterUpscaleProvider(_pExceptionsProvider);
+    }
+
     _pSamplesCollector = RegisterService<SamplesCollector>(
         _pConfiguration.get(),
         _pThreadsCpuManager,

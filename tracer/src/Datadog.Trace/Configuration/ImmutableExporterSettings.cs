@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -64,7 +65,7 @@ namespace Datadog.Trace.Configuration
         /// Default is <c>null</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TracesPipeName"/>
-        public string TracesPipeName { get; }
+        public string? TracesPipeName { get; }
 
         /// <summary>
         /// Gets the timeout in milliseconds for the windows named pipe requests.
@@ -78,7 +79,7 @@ namespace Datadog.Trace.Configuration
         /// Default is <c>null</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.MetricsPipeName"/>
-        public string MetricsPipeName { get; }
+        public string? MetricsPipeName { get; }
 
         /// <summary>
         /// Gets the port where the DogStatsd server is listening for connections.
@@ -101,13 +102,13 @@ namespace Datadog.Trace.Configuration
         /// Gets the unix domain socket path where the Tracer can connect to the Agent.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TracesUnixDomainSocketPath"/>
-        public string TracesUnixDomainSocketPath { get; }
+        public string? TracesUnixDomainSocketPath { get; }
 
         /// <summary>
         /// Gets the unix domain socket path where the Tracer can send stats.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.MetricsUnixDomainSocketPath"/>
-        public string MetricsUnixDomainSocketPath { get; }
+        public string? MetricsUnixDomainSocketPath { get; }
 
         /// <summary>
         /// Gets the transport used to send traces to the Agent.

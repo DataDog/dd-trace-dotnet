@@ -30,7 +30,7 @@ ExceptionsProvider::ExceptionsProvider(
     IRuntimeIdStore* pRuntimeIdStore,
     MetricsRegistry& metricsRegistry)
     :
-    CollectorBase<RawExceptionSample>("ExceptionsProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
+    CollectorBase<RawExceptionSample>("ExceptionsProvider", valueOffset, SampleTypeDefinitions.size(), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),
@@ -40,7 +40,7 @@ ExceptionsProvider::ExceptionsProvider(
     _mscorlibModuleId(0),
     _exceptionClassId(0),
     _loggedMscorlibError(false),
-    _sampler(pConfiguration->ExceptionSampleLimit(), pConfiguration->GetUploadInterval()),
+    _sampler(pConfiguration->ExceptionSampleLimit(), pConfiguration->GetUploadInterval(), true),
     _pConfiguration(pConfiguration)
 {
     _exceptionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_exceptions");
@@ -100,7 +100,6 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     INVOKE(_pCorProfilerInfo->GetClassFromObject(thrownObjectId, &classId))
 
     std::string name;
-
     if (!GetExceptionType(classId, name))
     {
         return false;
@@ -175,7 +174,6 @@ bool ExceptionsProvider::GetExceptionType(ClassID classId, std::string& exceptio
         std::lock_guard lock(_exceptionTypesLock);
 
         const auto type = _exceptionTypes.find(classId);
-
         if (type != _exceptionTypes.end())
         {
             exceptionType = type->second;
@@ -194,6 +192,11 @@ bool ExceptionsProvider::GetExceptionType(ClassID classId, std::string& exceptio
     }
 
     return true;
+}
+
+UpscalingInfo ExceptionsProvider::GetInfo()
+{
+    return {GetValueOffsets(), Sample::ExceptionTypeLabel, _sampler.GetGroups()};
 }
 
 bool ExceptionsProvider::LoadExceptionMetadata()

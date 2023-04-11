@@ -21,7 +21,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0" })]
         public void ShouldGetContentionSamples(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioContention);
@@ -37,7 +37,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 2);
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0" })]
         public void ShouldContentionProfilerBeDisabledByDefault(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioContention);
@@ -52,7 +52,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             Assert.Equal(0, SamplesHelper.GetSamplesCount(runner.Environment.PprofDir));
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0" })]
         public void ExplicitlyDisableContentionProfiler(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioContention);

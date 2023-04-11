@@ -24,13 +24,15 @@ internal static class StackWalker
         "Oracle.DataAccess",
         "Oracle.ManagedDataAccess",
         "System.Data",
+        "System",
         "System.Data.Common",
         "System.Security.Cryptography",
         "System.Security.Cryptography.Algorithms",
         "System.Security.Cryptography.Csp",
         "System.Security.Cryptography.Primitives",
         "System.Data.SqlClient",
-        "System.Data.SQLite"
+        "System.Data.SQLite",
+        "System.Diagnostics.Process"
     };
 
     private const int DefaultSkipFrames = 2;

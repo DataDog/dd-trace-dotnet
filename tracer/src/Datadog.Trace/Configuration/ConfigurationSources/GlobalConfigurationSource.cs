@@ -3,7 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
 namespace Datadog.Trace.Configuration;
@@ -44,14 +47,14 @@ internal class GlobalConfigurationSource
         return configurationSource;
     }
 
-    internal static bool TryLoadJsonConfigurationFile(IConfigurationSource configurationSource, string baseDirectory, out IConfigurationSource jsonConfigurationSource)
+    internal static bool TryLoadJsonConfigurationFile(IConfigurationSource configurationSource, string? baseDirectory, [NotNullWhen(true)] out IConfigurationSource? jsonConfigurationSource)
     {
         try
         {
             // if environment variable is not set, look for default file name in the current directory
             var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
                                         configurationSource.GetString("DD_DOTNET_TRACER_CONFIG_FILE") ??
-                                        Path.Combine(baseDirectory ?? GetCurrentDirectory(), "datadog.json");
+                                        Path.Combine(baseDirectory ?? GetCurrentDirectory() ?? Directory.GetCurrentDirectory(), "datadog.json");
 
             if (string.Equals(Path.GetExtension(configurationFileName), ".JSON", StringComparison.OrdinalIgnoreCase) &&
                 File.Exists(configurationFileName))
@@ -79,7 +82,7 @@ internal class GlobalConfigurationSource
         Instance = CreateDefaultConfigurationSource();
     }
 
-    private static string GetCurrentDirectory()
+    private static string? GetCurrentDirectory()
     {
         return AppDomain.CurrentDomain.BaseDirectory;
     }

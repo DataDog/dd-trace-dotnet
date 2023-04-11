@@ -65,24 +65,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces(string packageVersion)
             => await RunSubmitsTraces(packageVersion: packageVersion);
-
-        [SkippableTheory]
-        [MemberData(nameof(TestData))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTracesWebsockets(string packageVersion)
-        {
-            // Remove the websockets tests on version 4
-            // Because websockets have some issues on that specific version
-            // Run tests on GraphQL 5 by default
-            if (!string.IsNullOrEmpty(packageVersion)
-             && new Version(packageVersion).Major == 4)
-            {
-                return;
-            }
-
-            await RunSubmitsTraces("SubmitsTracesWebsockets", packageVersion, true);
-        }
     }
 #endif
 
