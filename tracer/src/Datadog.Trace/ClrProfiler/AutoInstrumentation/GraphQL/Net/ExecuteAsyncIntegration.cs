@@ -5,6 +5,7 @@
 
 using System;
 using System.ComponentModel;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
@@ -74,6 +75,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             {
                 return executionResult;
             }
+
+            // Run the WAF scan
+            GraphQLSecurity.RunSecurity(scope);
 
             try
             {
