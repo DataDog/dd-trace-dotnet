@@ -75,7 +75,7 @@ internal sealed class GraphQLSecurity
     public static void RunSecurity(Scope scope)
     {
         var security = Security.Instance;
-        var asmEnabled = true; // security.Settings.Enabled;
+        var asmEnabled = security.Settings.Enabled;
         if (asmEnabled)
         {
             var allResolvers = GraphQLSecurity.PopScope(scope);
@@ -84,8 +84,7 @@ internal sealed class GraphQLSecurity
             var securityCoordinator = new SecurityCoordinator(security, HttpContext.Current, scope.Span);
             securityCoordinator.CheckAndBlock(args);
 #else
-            var context = CoreHttpContextStore.Instance.Get();
-            var securityCoordinator = new SecurityCoordinator(security, context, scope.Span);
+            var securityCoordinator = new SecurityCoordinator(security, CoreHttpContextStore.Instance.Get(), scope.Span);
             var result = securityCoordinator.RunWaf(args);
             securityCoordinator.CheckAndBlock(result);
 #endif
