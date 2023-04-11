@@ -14,8 +14,8 @@ namespace Log4NetExample
             var logRepository = LogManager.GetRepository(typeof(Program).Assembly);
             // Uncomment this line if you want to debug your log4net setup
             // log4net.Util.LogLog.InternalDebugging = true;
-
-            XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
+            var configFilePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "log4net.config");
+            XmlConfigurator.Configure(logRepository, new FileInfo(configFilePath));
             try
             {
                 LogicalThreadContext.Properties["order-number"] = 1024;
