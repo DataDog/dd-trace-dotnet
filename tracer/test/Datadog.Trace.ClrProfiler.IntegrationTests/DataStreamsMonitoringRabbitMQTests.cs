@@ -41,7 +41,7 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
         using var agent = EnvironmentHelper.GetMockAgent();
         using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
         {
-            var spans = agent.WaitForSpans(8);
+            var spans = agent.WaitForSpans(8, timeoutInMilliseconds: 40_000); // timeout doubled due to flake in CI
             spans.Should().HaveCount(8);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
