@@ -231,13 +231,13 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Gets the trace id as a hexadecimal string of length 32,
-        /// padded with zeros to the left.
+        /// padded with zeros to the left if needed.
         /// </summary>
         internal string RawTraceId => _rawTraceId ??= HexString.ToHexString(TraceId128);
 
         /// <summary>
         /// Gets the span id as a hexadecimal string of length 16,
-        /// padded with zeros to the left.
+        /// padded with zeros to the left if needed.
         /// </summary>
         internal string RawSpanId => _rawSpanId ??= HexString.ToHexString(SpanId);
 
