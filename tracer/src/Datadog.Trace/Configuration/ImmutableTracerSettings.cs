@@ -11,6 +11,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration.Schema;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Util;
@@ -140,6 +141,7 @@ namespace Datadog.Trace.Configuration
             }
 
             DbmPropagationMode = settings.DbmPropagationMode;
+            Telemetry = settings.Telemetry;
         }
 
         /// <summary>
@@ -456,6 +458,8 @@ namespace Datadog.Trace.Configuration
         /// Gets the metadata schema version
         /// </summary>
         internal SchemaVersion MetadataSchemaVersion { get; }
+
+        internal IConfigurationTelemetry Telemetry { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources
