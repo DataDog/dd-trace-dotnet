@@ -20,6 +20,103 @@
 
 
 
+
+## [Release 2.28.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.28.0)
+
+## Summary
+
+Fixes a native memory leak when using the Continuous Profiler. This leak was introduced in `2.26.0`. If you are using the Continuous Profiler with `2.26.0` or `2.27.0`, please upgrade to `2.28.0`.
+
+Also the tracer now supports
+- HotChocolate 13
+- [Data Streams Monitoring](https://docs.datadoghq.com/data_streams/) for RabbitMQ
+
+## Changes
+
+### Tracer
+* [Tracer] Fix ActivityContext not being honored (#3796)
+* [Tracer] DataStreamMonitoring - RabbitMQ support (#3917)
+* [Tracer] Add `db.redis.database_index` to redis spans (#3941)
+* [Tracer] Fix duplicate logging issue with DirectLogSubmission and Serilog (#3952)
+* [Tracer] Reset the sampling mechanism tag during W3C tracecontext extraction (#3959)
+* [Tracer] Upgrade HotChocolate to Version 13 (#3966)
+* [Tracer] Fix AAS direct log submission log correlation (#3972)
+* [Tracer] Make the querystring length in http.url configurable (#3980)
+* [Tracer] Add nullable annotations to settings (#4009)
+
+### CI Visibility
+* [CI Visibility] Fix BenchmarkDotNet random value in job description (#3960)
+* [CI Visibility] - Refactor and changes to improve debugging and to help the datadog logger to extract env-vars. (#3990)
+
+### ASM
+* [ASM] Taint StringBuilder.Append() and AppendLine() Methods (#3931)
+* [ASM] Take into account if block exception is a child  (#3944)
+* [ASM] Command injection vulnerability detection (#3954)
+* [ASM] Remove weak hashing redundant tests (#3962)
+* [IAST] Add updated source names. (#3988)
+
+### Continuous Profiler
+* [Profiler] Keep track of sampled/real exception/lock contention count per type/bucket (#3838)
+* [Profiler] Avoid adding temporary runtime id names in cache (#3958)
+* [Profiler] Don't read ExitTime if the process hasn't exited (#3992)
+* [Profiler] Bump libdatadog version to 2.1.0 (#3993)
+* [Profiler] Fix bug when thread name is set to null or "" (#4005)
+* [Profiler] Fix native memory leaks (#4020)
+
+### Debugger
+* [Dynamic Instrumentation] Implemented the Span Probes (#3955)
+* [Dynamic Instrumentation] Evaluation error on metric probe (#4001)
+
+### Build / Test
+* [Samples] Add sample to demonstrate instrumentation of an ASP.NET application inside a Windows container (#3798)
+* [CI] Monitor retries and retry AgentMalFunctionTests on NamedPipes (#3887)
+* Swap Samples.DatabaseHelper to use Samples.Shared (#3915)
+* Swap Samples.LargePayload to use SampleHelpers (#3921)
+* Swap DatadogThreadTest to use SampleHelpers (#3922)
+* Swap DogStatsD.RaceCondition to not use Datadog.Trace (#3925)
+* Limit the concurrency in xunit (#3930)
+* Swap to SampleHelpers for LogsInjectionHelper (#3936)
+* Fix TimeIt jobs and replace it with TimeItSharp (#3942)
+* [Tracer] Fix flaky test graphql (#3945)
+* Setup python 3.9 for system tests (#3948)
+* Docker Base Images. Fix snapshot generation and fix draft releases (#3950)
+* Convert RabbitMQ tests to snapshot tests (#3951)
+* Capture full memory dumps instead of minidumps (#3963)
+* Upgrade C++ toolset to v143 (#3964)
+* Split `ZipMonitoringHomeLinux` task (#3967)
+* Downgrade AWS dotnet7 image (#3969)
+* Update the AspNetCoreTestFixture to let aspnetcore pick a port (#3971)
+* Revert "Downgrade AWS dotnet7 image" (#3977)
+* Temporarily remove python install from system tests (#3979)
+* Disable Microsoft.Data.Sqlite tests on .NET Core 2.1 (#3981)
+* Enable CI Visibility static analysis. (#3984)
+* Disable code coverage except for scheduled builds on master (#3987)
+* Reduce test flakiness in `ProbeTests.MethodProbeTest` (#3995)
+* Increase log level in AspNetCore2 security sample app (#3997)
+* Improve support of rolling log files in tests (#3998)
+* Attempt to fix the DataStreams test (#4002)
+* Try fix SetDotnetPath (#4003)
+* Fix exploration tests typo (#4006)
+* Remove the GraphQL4 websocket tests (#4010)
+* Start the PipeServer synchronously (#4011)
+* [Tracer] Set GraphQL7 Sample fixed packages version (#4022)
+* [Tracer] Fix test: remove WebSockets tests on GraphQL version 4 (#3999)
+* [Tracer] Add support for Metrics to span metadata (#3968)
+* [Tracer] Adds MySql and NpgSql snapshot tests and files (#3867)
+
+### Miscellaneous
+* Replace FMT x86 and x64 builds to a single source folder (#3943)
+* Windows ARM64 support (#3953)
+* [Test Package Versions Bump] Updating package versions (#3957)
+* Remove validation on IIS site names (#3961)
+* Add a "block list" to profiled processes in native profilers (#3965)
+* [Test Package Versions Bump] Updating package versions (#3978)
+* Bump DatadogTestLogger version up to 0.0.37 (#3985)
+* Fix the log level and remove redundant info (#3991)
+
+
+[Changes since 2.27.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.27.0...v2.28.0)
+
 ## [Release 2.27.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.27.0)
 
 ## Summary
