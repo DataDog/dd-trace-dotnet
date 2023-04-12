@@ -20,7 +20,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// Contains Tracer settings.
     /// </summary>
-    public class ImmutableTracerSettings
+    public record ImmutableTracerSettings
     {
         private readonly DomainMetadata _domainMetadata;
         private readonly ConcurrentDictionary<string, string> _serviceNameCache = new();
@@ -294,7 +294,7 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether runtime metrics
         /// are enabled and sent to DogStatsd.
         /// </summary>
-        internal bool RuntimeMetricsEnabled { get; }
+        internal bool RuntimeMetricsEnabled { get; init; }
 
         /// <summary>
         /// Gets a value indicating the time interval (in seconds) for sending stats
@@ -408,7 +408,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether data streams monitoring is enabled or not.
         /// </summary>
-        internal bool IsDataStreamsMonitoringEnabled { get; }
+        internal bool IsDataStreamsMonitoringEnabled { get; init; }
 
         /// <summary>
         /// Gets the maximum length of an outgoing propagation header's value ("x-datadog-tags")

@@ -450,6 +450,7 @@ namespace Datadog.Trace.ClrProfiler
             Task.Run(
                 async () =>
                 {
+                    FakeRcm.Initialize();
                     // TODO: LiveDebugger should be initialized in TracerManagerFactory so it can respond
                     // to changes in ExporterSettings etc.
 

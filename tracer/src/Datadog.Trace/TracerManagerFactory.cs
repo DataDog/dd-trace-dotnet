@@ -56,7 +56,7 @@ namespace Datadog.Trace
                 sampler: null,
                 scopeManager: previous?.ScopeManager, // no configuration, so can always use the same one
                 statsd: null,
-                runtimeMetrics: null,
+                runtimeMetrics: previous?.RuntimeMetrics,
                 logSubmissionManager: previous?.DirectLogSubmission,
                 telemetry: null,
                 discoveryService: null,
@@ -118,6 +118,10 @@ namespace Datadog.Trace
             if (runtimeMetricsEnabled)
             {
                 runtimeMetrics ??= new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService);
+            }
+            else
+            {
+                runtimeMetrics = null;
             }
 
             var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings);
