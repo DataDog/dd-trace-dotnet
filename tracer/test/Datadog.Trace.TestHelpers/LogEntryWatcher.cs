@@ -60,13 +60,20 @@ public class LogEntryWatcher : IDisposable
         Interlocked.Exchange(ref _activeReader, null)?.Dispose();
     }
 
-    public Task WaitForLogEntry(string logEntry, TimeSpan? timeout = null) => WaitForLogEntries(new[] { logEntry }, timeout);
+    public async Task<string> WaitForLogEntry(string logEntry, TimeSpan? timeout = null)
+    {
+        var logs = await WaitForLogEntries(new[] { logEntry }, timeout);
+        return logs.Single();
+    }
 
-    public async Task WaitForLogEntries(string[] logEntries, TimeSpan? timeout = null)
+    public async Task<string[]> WaitForLogEntries(string[] logEntries, TimeSpan? timeout = null)
     {
         using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(20));
 
         var i = 0;
+
+        var foundLogs = new string[logEntries.Length];
+
         while (logEntries.Length > i && !cancellationSource.IsCancellationRequested)
         {
             if (_activeReader == null)
@@ -84,6 +91,7 @@ public class LogEntryWatcher : IDisposable
             {
                 if (line.Contains(logEntries[i]))
                 {
+                    foundLogs[i] = line;
                     i++;
                 }
             }
@@ -104,6 +112,8 @@ public class LogEntryWatcher : IDisposable
         {
             throw new InvalidOperationException(_readers.IsEmpty ? $"Log file was not found for path: {_fileWatcher.Path} with file pattern {_fileWatcher.Filter}" : $"Log entry was not found {logEntries[i]} in {_fileWatcher.Path} with filter {_fileWatcher.Filter}. Cancellation token reached: {cancellationSource.IsCancellationRequested}");
         }
+
+        return foundLogs;
     }
 
     private StreamReader OpenStream(string filePath)

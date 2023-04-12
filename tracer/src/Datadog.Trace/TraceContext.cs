@@ -41,7 +41,7 @@ namespace Datadog.Trace
             // TODO: Environment, ServiceVersion, GitCommitSha, and GitRepositoryUrl are stored on the TraceContext
             // even though they likely won't change for the lifetime of the process. We should consider moving them
             // elsewhere to reduce the memory usage.
-            if (settings is not null)
+            if (settings != null)
             {
                 // these could be set from DD_ENV/DD_VERSION or from DD_TAGS
                 Environment = settings.EnvironmentInternal;
