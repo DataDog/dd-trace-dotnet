@@ -1034,7 +1034,7 @@ stages:
 
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
+  dependsOn: [build_windows_tracer, build_windows_samples, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -1077,7 +1077,7 @@ stages:
       displayName: 'Initialize LocalDB'
       workingDirectory: $(Build.Repository.LocalPath)
 
-    - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --code-coverage $(runCodeCoverage)
+    - script: tracer\build.cmd RunWindowsIntegrationTests RunWindowsRegressionTests -Framework $(framework) --code-coverage $(runCodeCoverage)
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1172,7 +1172,7 @@ stages:
 
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
+  dependsOn: [build_windows_tracer, build_windows_samples, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -1200,8 +1200,9 @@ stages:
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
+    - template: steps/restore-samples.yml
 
-    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage $(runCodeCoverage)
+    - script: tracer\build.cmd RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage $(runCodeCoverage)
       displayName: RunWindowsIisTracerIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1232,7 +1233,7 @@ stages:
 
 - stage: integration_tests_windows_iis_security
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
+  dependsOn: [build_windows_tracer, build_windows_samples, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -1260,8 +1261,9 @@ stages:
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
+    - template: steps/restore-samples.yml
 
-    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsSecurityIisIntegrationTests -Framework $(framework) --code-coverage $(runCodeCoverage)
+    - script: tracer\build.cmd RunWindowsSecurityIisIntegrationTests -Framework $(framework) --code-coverage $(runCodeCoverage)
       displayName: RunWindowsIisSecurityIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1291,7 +1293,7 @@ stages:
       displayName: Check logs for errors
 
 - stage: integration_tests_azure_functions
-  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
+  dependsOn: [build_windows_tracer, build_windows_samples, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -1315,6 +1317,7 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
+    - template: steps/restore-samples.yml
 
     - script: |
         $(runtimeInstall)
