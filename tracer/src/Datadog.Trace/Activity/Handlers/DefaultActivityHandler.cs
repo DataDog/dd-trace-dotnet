@@ -35,7 +35,7 @@ namespace Datadog.Trace.Activity.Handlers
             where T : IActivity
         {
             Tracer.Instance.TracerManager.Telemetry.IntegrationRunning(IntegrationId);
-            var activeSpan = (Span?)Tracer.Instance.ActiveScope?.Span;
+            var activeSpan = Tracer.Instance.ActiveScope?.Span as Span;
 
             // Propagate Trace and Parent Span ids
             SpanContext? parent = null;
@@ -51,42 +51,45 @@ namespace Datadog.Trace.Activity.Handlers
 
             if (activity is IW3CActivity w3cActivity)
             {
-                if (w3cActivity.TraceId is { } activityTraceId && w3cActivity.SpanId is { } activitySpanId)
+                var activityTraceId = w3cActivity.TraceId;
+                var activitySpanId = w3cActivity.SpanId;
+
+                if (activityTraceId != null! && activitySpanId != null!)
                 {
                     activityKey = activityTraceId + activitySpanId;
                 }
 
                 // If the user has specified a parent context, get the parent Datadog SpanContext
-                if (w3cActivity.ParentSpanId != null!
-                    && w3cActivity.ParentId is { } parentId)
+                if (w3cActivity is { ParentSpanId: { } parentSpanId, ParentId: { } parentId })
                 {
-                    // we know that we have a parent context, but we use TraceId+ParentSpanId for the mapping
+                    // We know that we have a parent context, but we use TraceId+ParentSpanId for the mapping.
                     // This is a result of an issue with OTel v1.0.1 (unsure if OTel or us tbh) where the
-                    // ".ParentId" matched for the Trace+Span IDs but not for the flags portion
-                    // Doing a lookup on just the TraceId+ParentSpanId seems to be more resilient
-                    if (w3cActivity.TraceId is { } && w3cActivity.ParentSpanId is { } parentSpanId)
+                    // ".ParentId" matched for the Trace+Span IDs but not for the flags portion.
+                    // Doing a lookup on just the TraceId+ParentSpanId seems to be more resilient.
+                    if (activityTraceId != null!)
                     {
-                        if (ActivityMappingById.TryGetValue(w3cActivity.TraceId + w3cActivity.ParentSpanId, out ActivityMapping mapping))
+                        if (ActivityMappingById.TryGetValue(activityTraceId + parentSpanId, out ActivityMapping mapping))
                         {
                             parent = mapping.Scope.Span.Context;
                         }
                         else
                         {
                             // create a new parent span context for the ActivityContext
-#if NETCOREAPP
-                            _ = HexString.TryParseUInt64(w3cActivity.TraceId.AsSpan(16), out var newActivityTraceId);
-                            _ = HexString.TryParseUInt64(w3cActivity.ParentSpanId, out var newActivitySpanId);
-#else
-                            _ = HexString.TryParseUInt64(w3cActivity.TraceId.Substring(16), out var newActivityTraceId);
-                            _ = HexString.TryParseUInt64(w3cActivity.ParentSpanId, out var newActivitySpanId);
-#endif
-                            parent = Tracer.Instance.CreateSpanContext(SpanContext.None, traceId: newActivityTraceId, spanId: newActivitySpanId, rawTraceId: w3cActivity.TraceId, rawSpanId: w3cActivity.ParentSpanId);
+                            _ = HexString.TryParseTraceId(activityTraceId, out var newActivityTraceId);
+                            _ = HexString.TryParseUInt64(parentSpanId, out var newActivitySpanId);
+
+                            parent = Tracer.Instance.CreateSpanContext(
+                                SpanContext.None,
+                                traceId: newActivityTraceId,
+                                spanId: newActivitySpanId,
+                                rawTraceId: activityTraceId,
+                                rawSpanId: parentSpanId);
                         }
                     }
                     else
                     {
                         // we have a ParentSpanId/ParentId, but no TraceId/SpanId, so default to use the ParentId for lookup
-                        if (ActivityMappingById.TryGetValue(w3cActivity.ParentId, out ActivityMapping mapping))
+                        if (ActivityMappingById.TryGetValue(parentId, out ActivityMapping mapping))
                         {
                             parent = mapping.Scope.Span.Context;
                         }
@@ -117,7 +120,7 @@ namespace Datadog.Trace.Activity.Handlers
 
                 // if there's an existing Activity we try to use its TraceId and SpanId,
                 // but if Activity.IdFormat is not ActivityIdFormat.W3C, they may be null or unparsable
-                if (w3cActivity is { TraceId: { } activityTraceId, SpanId: { } activitySpanId })
+                if (activityTraceId != null! && activitySpanId != null!)
                 {
                     if (traceId == TraceId.Zero)
                     {
