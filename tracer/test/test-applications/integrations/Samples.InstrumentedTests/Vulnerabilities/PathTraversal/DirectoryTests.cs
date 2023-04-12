@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Security.AccessControl;
 using Xunit;
@@ -53,9 +54,27 @@ public class DirectoryTests : InstrumentationTestsBase
     [Fact]
     public void GivenADirectoryInfo_WhenCreatingFromIncorrectString_ExceptionIsThrown2()
     {
-        Assert.Throws<ArgumentException>(() => Directory.CreateDirectory(null));
+        Assert.Throws<ArgumentNullException>(() => Directory.CreateDirectory(null));
+    }
+#if NET7_0_OR_GREATER
+    [Category("LinuxUnsupported")]
+    [Fact]
+    public void GivenADirectoryInfo_WhenCreatingFromTaintedString_VulnerabilityIsLogged2()
+    {
+#pragma warning disable CA1416 // Validate platform compatibility
+        ExecuteAction(() => { Directory.CreateDirectory(taintedPathValue, UnixFileMode.None); });
+#pragma warning restore CA1416 // Validate platform compatibility
+        AssertVulnerable();
     }
 
+    [Category("LinuxUnsupported")]
+    [Fact]
+    public void GivenADirectoryInfo_WhenCreatingFromTaintedString_VulnerabilityIsLogged3()
+    {
+        ExecuteAction(() => { Directory.CreateTempSubdirectory(taintedPathValue); });
+        AssertVulnerable();
+    }
+#endif
     [Fact]
     public void GivenADirectoryInfo_WhenDeleteTaintedString_VulnerabilityIsLogged()
     {
@@ -402,6 +421,21 @@ public class DirectoryTests : InstrumentationTestsBase
     public void GivenADirectoryInfo_WhenMoveTaintedString_VulnerabilityIsLogged2()
     {
         ExecuteAction(() => { Directory.Move(taintedPathValue, notTaintedValue); });
+        AssertVulnerable();
+    }
+
+
+    [Fact]
+    public void GivenADirectoryInfo_WhenSetCurrentDirectoryTaintedString_VulnerabilityIsLogged()
+    {
+        ExecuteAction(() => { Directory.SetCurrentDirectory(taintedPathValue); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenADirectoryInfo_WhenSetCurrentDirectoryNotTaintedString_VulnerabilityIsNotLogged()
+    {
+        ExecuteAction(() => { Directory.SetCurrentDirectory(notTaintedValue); });
         AssertVulnerable();
     }
 

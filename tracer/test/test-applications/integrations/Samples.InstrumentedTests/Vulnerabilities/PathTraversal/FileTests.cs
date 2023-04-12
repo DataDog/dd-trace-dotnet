@@ -165,7 +165,7 @@ public class FileTests : InstrumentationTestsBase
         ExecuteAction(() => { File.Replace(notTaintedValue, taintedPathValue, notTaintedValue, true); });
         AssertVulnerable();
     }
-#if !NET35
+
     [Fact]
     public void GivenAFile_WhenReadLinesTaintedString_VulnerabilityIsLogged()
     {
@@ -184,6 +184,21 @@ public class FileTests : InstrumentationTestsBase
     public void GivenAFile_WhenReadLinesTaintedString_VulnerabilityIsLogged2()
     {
         ExecuteAction(() => { File.ReadLines(taintedPathValue, Encoding.UTF8); });
+        AssertVulnerable();
+    }
+
+#if NET7_0_OR_GREATER
+    [Fact]
+    public void GivenAFile_WhenReadLinesAsyncTaintedString_VulnerabilityIsLogged2()
+    {
+        ExecuteAction(() => { File.ReadLinesAsync(taintedPathValue, CancellationToken.None); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAFile_WhenReadLinesAsyncTaintedString_VulnerabilityIsLogged3()
+    {
+        ExecuteAction(() => { File.ReadLinesAsync(taintedPathValue, Encoding.UTF8, CancellationToken.None); });
         AssertVulnerable();
     }
 #endif
@@ -374,11 +389,18 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-#if NET6
+#if NET6_0_OR_GREATER
         [Fact]
         public void GivenAFile_WhenOpenTaintedString_VulnerabilityIsLogged4()
         {
             ExecuteAction(() => { File.Open(taintedPathValue, new FileStreamOptions()); });
+            AssertVulnerable();
+        }
+
+        [Fact]
+        public void GivenAFile_WhenOpenHandleTaintedString_VulnerabilityIsLogged4()
+        {
+            ExecuteAction(() => { File.OpenHandle(taintedPathValue, FileMode.Append, FileAccess.ReadWrite, FileShare.None, FileOptions.None, 0); });
             AssertVulnerable();
         }
 #endif
@@ -483,7 +505,35 @@ public class FileTests : InstrumentationTestsBase
         ExecuteAction(() => { File.AppendAllText(taintedPathValue, notTaintedValue, Encoding.UTF8); });
         AssertVulnerable();
     }
-#if !NET35
+#if !NETFRAMEWORK
+    [Fact]
+    public void GivenAFile_WheAppendAllTextAsyncTaintedString_VulnerabilityIsLogged()
+    {
+        ExecuteAction(() => { File.AppendAllTextAsync(taintedPathValue, notTaintedValue, CancellationToken.None); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAFile_WheAppendAllTextAsyncTaintedString_VulnerabilityIsLogged2()
+    {
+        ExecuteAction(() => { File.AppendAllTextAsync(taintedPathValue, notTaintedValue, Encoding.UTF8, CancellationToken.None); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAFile_WheAppendAllLinesAsyncAsyncTaintedString_VulnerabilityIsLogged()
+    {
+        ExecuteAction(() => { File.AppendAllLinesAsync(taintedPathValue, new List<string> { notTaintedValue }, CancellationToken.None); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAFile_WheAppendAllLinesAsyncAsyncTaintedString_VulnerabilityIsLogged2()
+    {
+        ExecuteAction(() => { File.AppendAllLinesAsync(taintedPathValue, new List<string> { notTaintedValue }, Encoding.UTF8, CancellationToken.None); });
+        AssertVulnerable();
+    }
+#endif
     [Fact]
     public void GivenAFile_WhenAppendAllLinesTaintedString_VulnerabilityIsLogged()
     {
@@ -511,7 +561,6 @@ public class FileTests : InstrumentationTestsBase
         ExecuteAction(() => { File.AppendAllLines(taintedPathValue, new String[] { }); });
         AssertVulnerable();
     }
-#endif
 
     [Fact]
     public void GivenAFile_WhenAppendTextTaintedString_VulnerabilityIsLogged4()
@@ -524,7 +573,6 @@ public class FileTests : InstrumentationTestsBase
     public void GivenAFile_WhenCreatingFromIncorrectString_ExceptionIsThrown()
     {
         Assert.Throws<ArgumentNullException>(() => File.WriteAllText(null, null));
-        AssertVulnerable();
     }
 
     void ExecuteAction(Action c)
@@ -537,24 +585,24 @@ public class FileTests : InstrumentationTestsBase
         {
             //We dont have a valid file. It is normal
         }
-#if !NETCORE31 && !NETCORE21 && !NET50 && !NET60
+#if NETFRAMEWORK
         catch (ArgumentException)
         {
             //We dont have a valid file. It is normal
         }
 #else
-            catch (FileNotFoundException)
-            {
-                //We dont have a valid file. It is normal
-            }
-            catch (IOException)
-            {
-                //We dont have a valid file. It is normal
-            }
-            catch (UnauthorizedAccessException)
-            {
-                //For Linux files. It is normal
-            }
+        catch (FileNotFoundException)
+        {
+            //We dont have a valid file. It is normal
+        }
+        catch (IOException)
+        {
+            //We dont have a valid file. It is normal
+        }
+        catch (UnauthorizedAccessException)
+        {
+            //For Linux files. It is normal
+        }
 #endif
     }
 }

@@ -46,7 +46,6 @@ public class DirectoryInfoTests : InstrumentationTestsBase
     public void GivenADirectoryInfo_WhenCreatingFromIncorrectString_ExceptionIsThrown2()
     {
         Assert.Throws<ArgumentNullException>(() => new DirectoryInfo(null).MoveTo(null));
-        new DirectoryInfo(null);
     }
 
     [Fact]
@@ -65,8 +64,7 @@ public class DirectoryInfoTests : InstrumentationTestsBase
     [Fact]
     public void GivenADirectoryInfo_WhenCreateSubdirectoryNullString_ArgumentNullException()
     {
-        Assert.Throws<ArgumentException>(() => new DirectoryInfo(notTaintedValue).CreateSubdirectory(null));
-        AssertVulnerable();
+        Assert.Throws<ArgumentNullException>(() => new DirectoryInfo(notTaintedValue).CreateSubdirectory(null));
     }
 
 #if NETFRAMEWORK

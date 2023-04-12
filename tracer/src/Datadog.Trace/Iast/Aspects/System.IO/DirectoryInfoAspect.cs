@@ -1,0 +1,50 @@
+// <copyright file="DirectoryInfoAspect.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#nullable enable
+
+using Datadog.Trace.Iast.Dataflow;
+
+namespace Datadog.Trace.Iast.Aspects;
+
+/// <summary> DirectoryInfoAspect class aspects </summary>
+[AspectClass("mscorlib,System.IO.FileSystem,System.Runtime", AspectType.Sink, VulnerabilityType.PathTraversal)]
+[global::System.ComponentModel.Browsable(false)]
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public partial class DirectoryInfoAspect
+{
+    /// <summary>
+    /// Launches a path traversal vulnerability if the file is tainted
+    /// </summary>
+    /// <param name="path">the path or file</param>
+    /// <returns>the path parameter</returns>
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::.ctor(System.String)")]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::CreateSubdirectory(System.String)")]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::CreateSubdirectory(System.String,System.Security.AccessControl.DirectorySecurity)", 1)]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::MoveTo(System.String)")]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::GetFileSystemInfos(System.String)")]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::GetFileSystemInfos(System.String,System.IO.SearchOption)", 1)]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::GetFileSystemInfos(System.String,System.IO.EnumerationOptions)", 1)]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::GetFiles(System.String)")]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::GetFiles(System.String,System.IO.SearchOption)", 1)]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::GetFiles(System.String,System.IO.EnumerationOptions)", 1)]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::GetDirectories(System.String)")]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::GetDirectories(System.String,System.IO.SearchOption)", 1)]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::GetDirectories(System.String,System.IO.EnumerationOptions)", 1)]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::EnumerateFileSystemInfos(System.String)")]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::EnumerateFileSystemInfos(System.String,System.IO.SearchOption)", 1)]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::EnumerateFileSystemInfos(System.String,System.IO.EnumerationOptions)", 1)]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::EnumerateFiles(System.String)")]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::EnumerateFiles(System.String,System.IO.SearchOption)", 1)]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::EnumerateFiles(System.String,System.IO.EnumerationOptions)", 1)]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::EnumerateDirectories(System.String)")]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::EnumerateDirectories(System.String,System.IO.SearchOption)", 1)]
+    [AspectMethodInsertBefore("System.IO.DirectoryInfo::EnumerateDirectories(System.String,System.IO.EnumerationOptions)", 1)]
+    public static string Init(string path)
+    {
+        IastModule.OnPathTraversal(path);
+        return path;
+    }
+}

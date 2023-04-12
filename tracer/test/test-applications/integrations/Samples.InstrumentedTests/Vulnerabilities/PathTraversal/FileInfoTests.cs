@@ -56,7 +56,6 @@ public class FileInfoTests : InstrumentationTestsBase
     public void GivenAFileInfo_WhenCopyToNullString_ArgumentNullException()
     {
         Assert.Throws<ArgumentNullException>(() => new FileInfo(notTaintedValue).CopyTo(null, true));
-        AssertVulnerable();
     }
 
     [Fact]

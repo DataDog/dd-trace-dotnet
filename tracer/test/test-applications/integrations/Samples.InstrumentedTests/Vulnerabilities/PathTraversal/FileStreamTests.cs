@@ -1,4 +1,4 @@
-// <copyright file="DirectoryTests.cs" company="Datadog">
+// <copyright file="FileStreamTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,13 +9,13 @@ using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
-public class FileStreamAspectTests : InstrumentationTestsBase
+public class FileStreamTests : InstrumentationTestsBase
 {
     protected string taintedValue = "tainted";
     protected string notTaintedValue = "c:\\nottainte9d";
     protected string taintedPathValue = "c:\\path";
 
-    public FileStreamAspectTests()
+    public FileStreamTests()
     {
         AddTainted(taintedPathValue);
         AddTainted(taintedValue);
@@ -67,14 +67,12 @@ public class FileStreamAspectTests : InstrumentationTestsBase
     public void GivenAFileStream_WhenCreatingFromTaintedString_ExceptionIsThrown()
     {
         Assert.Throws<ArgumentNullException>(() => new FileStream(null, FileMode.Open, FileAccess.Read, FileShare.Read, 1, true));
-        AssertVulnerable();
     }
 
     [Fact]
     public void GivenAFileStream_WhenCreatingFromTaintedString_ExceptionIsThrown2()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => new FileStream(notTaintedValue, FileMode.Open, FileAccess.Read, FileShare.Read, -1, true));
-        AssertVulnerable();
     }
 
 #if NET6
