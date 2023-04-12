@@ -110,25 +110,26 @@ partial class Build
                .Executes(() =>
                 {
                     // Create a copy of the "full solution"
-                    var sln = ProjectModelTasks.CreateSolution(
-                        fileName: RootDirectory / "Datadog.Trace.Build.g.sln",
-                        solutions: new[] { Solution },
-                        folderNameProvider: x => x?.Name,
-                        randomizeProjectIds: false);
+                    var sln = ProjectModelTasks.ParseSolution(Solution);
 
                     // Remove the test-application projects
                     sln.AllProjects
-                                .Where(IsTestApplication)
-                                .ForEach(x =>
-                             {
-                                 Logger.Info($"Removing project '{x.Name}'");
-                                 sln.RemoveProject(x);
-                             });
+                       .Where(IsTestApplication)
+                       .ForEach(x =>
+                        {
+                            Logger.Info($"Removing project '{x.Name}'");
+                            sln.RemoveProject(x);
+                        });
                     
-                    // Remove the _build project 
-                    sln.RemoveProject(Solution.GetProject("_build"));
+                    // Remove the _build project
+                    sln.RemoveProject(sln.GetProject("_build"));
+                    
+                    // Remove the native projects
+                    sln.AllProjects
+                       .Where(x => Path.GetExtension(x.Path) == ".vcxproj")
+                       .ForEach(x => sln.RemoveProject(x));
 
-                    sln.Save();
+                    sln.SaveAs(BuildSolution);
 
                     bool IsTestApplication(Project x)
                     {
@@ -213,7 +214,7 @@ partial class Build
 
     Target GeneratePackageVersions => _ => _
        .Description("Regenerate the PackageVersions props and .cs files")
-       .DependsOn(Clean, Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedTracer)
+       .DependsOn(Clean, CreateRequiredDirectories, CompileManagedSrc, PublishManagedTracer)
        .Executes(async () =>
        {
            var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
