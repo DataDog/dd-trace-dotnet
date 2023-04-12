@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Configuration
 {
@@ -15,6 +16,9 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public class EnvironmentConfigurationSource : StringConfigurationSource
     {
+        /// <inheritdoc />
+        internal override ConfigurationOrigins Origin { get; } = ConfigurationOrigins.EnvVars;
+
         /// <inheritdoc />
         public override string? GetString(string key)
         {

@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Specialized;
+using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Configuration
 {
@@ -23,9 +24,17 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="nameValueCollection">The collection that will be wrapped by this configuration source.</param>
         public NameValueConfigurationSource(NameValueCollection nameValueCollection)
+            : this(nameValueCollection, ConfigurationOrigins.Code)
+        {
+        }
+
+        internal NameValueConfigurationSource(NameValueCollection nameValueCollection, ConfigurationOrigins origin)
         {
             _nameValueCollection = nameValueCollection;
+            Origin = origin;
         }
+
+        internal override ConfigurationOrigins Origin { get; }
 
         /// <inheritdoc />
         public override string? GetString(string key)

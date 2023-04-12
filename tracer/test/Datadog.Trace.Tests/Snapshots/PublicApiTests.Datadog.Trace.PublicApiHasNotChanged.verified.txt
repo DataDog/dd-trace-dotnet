@@ -308,6 +308,7 @@ namespace Datadog.Trace.Configuration
         public virtual int? GetInt32(string key) { }
         public abstract string? GetString(string key);
         public static System.Collections.Generic.IDictionary<string, string>? ParseCustomKeyValues(string? data) { }
+        [return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull("data")]
         public static System.Collections.Generic.IDictionary<string, string>? ParseCustomKeyValues(string? data, bool allowOptionalMappings) { }
     }
     public class TracerSettings
