@@ -138,7 +138,17 @@ namespace Datadog.Trace.Activity.Handlers
             {
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug("DefaultActivityHandler.ActivityStarted: [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
+                    Log.Debug(
+                        "DefaultActivityHandler.ActivityStarted: [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]",
+                        new object[]
+                        {
+                            sourceName,
+                            activity.Id,
+                            activity.RootId,
+                            activity.OperationName!,
+                            activity.StartTimeUtc,
+                            activity.Duration
+                        });
                 }
 
                 // We check if we have to ignore the activity by the operation name value
@@ -157,9 +167,17 @@ namespace Datadog.Trace.Activity.Handlers
 
             static Scope CreateScopeFromActivity(T activity, SpanContext? parent, TraceId traceId, ulong spanId, string? rawTraceId, string? rawSpanId)
             {
-                var span = Tracer.Instance.StartSpan(activity.OperationName, parent: parent, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
+                var span = Tracer.Instance.StartSpan(
+                    activity.OperationName,
+                    parent: parent,
+                    startTime: activity.StartTimeUtc,
+                    traceId: traceId,
+                    spanId: spanId,
+                    rawTraceId: rawTraceId,
+                    rawSpanId: rawSpanId);
+
                 Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-                return Tracer.Instance.ActivateSpan(span, false);
+                return Tracer.Instance.ActivateSpan(span, finishOnClose: false);
             }
         }
 
