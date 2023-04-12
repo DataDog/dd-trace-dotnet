@@ -3,101 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Coordinator;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM;
 
-internal sealed class GraphQLSecurity
+internal abstract class GraphQLSecurity
 {
-    private static GraphQLSecurity _instance;
-
-    private Dictionary<IScope, Dictionary<string, List<Dictionary<string, object>>>> scopeResolvers;
-
-    private GraphQLSecurity()
-    {
-        scopeResolvers = new();
-    }
-
-    private Dictionary<string, List<Dictionary<string, object>>> GetScopeResolvers(IScope scope)
-    {
-        if (!scopeResolvers.TryGetValue(scope, out var resolvers))
-        {
-            resolvers = new();
-            scopeResolvers.Add(scope, resolvers);
-        }
-
-        return resolvers;
-    }
-
-    private void RemoveScopeResolvers(IScope scope)
-    {
-        scopeResolvers.Remove(scope);
-    }
-
-    public static GraphQLSecurity GetInstance()
-    {
-        if (_instance == null)
-        {
-            _instance = new GraphQLSecurity();
-        }
-
-        return _instance;
-    }
-
-    private static void RegisterResolverCall(IScope scope, string resolverName, Dictionary<string, object> arguments)
-    {
-        var resolvers = GraphQLSecurity.GetInstance().GetScopeResolvers(scope);
-
-        if (!resolvers.TryGetValue(resolverName, out var resolverCalls))
-        {
-            resolverCalls = new List<Dictionary<string, object>>();
-        }
-
-        try
-        {
-            resolvers.Add(resolverName, resolverCalls);
-        }
-        catch (ArgumentException)
-        {
-        }
-
-        // Add the current resolver call with arguments
-        resolverCalls.Add(arguments);
-    }
-
-    public static void RunSecurity(Scope scope)
-    {
-        var security = Security.Instance;
-        var asmEnabled = security.Settings.Enabled;
-        if (asmEnabled)
-        {
-            var allResolvers = GraphQLSecurity.PopScope(scope);
-            var args = new Dictionary<string, object> { { "graphql.server.all_resolvers", allResolvers } };
-#if NETFRAMEWORK
-            var securityCoordinator = new SecurityCoordinator(security, HttpContext.Current, scope.Span);
-            securityCoordinator.CheckAndBlock(args);
-#else
-            var securityCoordinator = new SecurityCoordinator(security, CoreHttpContextStore.Instance.Get(), scope.Span);
-            var result = securityCoordinator.RunWaf(args);
-            securityCoordinator.CheckAndBlock(result);
-#endif
-        }
-    }
-
-    public static Dictionary<string, List<Dictionary<string, object>>> PopScope(IScope scope)
-    {
-        var resolvers = GraphQLSecurity.GetInstance().GetScopeResolvers(scope);
-        GraphQLSecurity.GetInstance().RemoveScopeResolvers(scope);
-        return resolvers;
-    }
-
     public static void RegisterResolver<TContext, TNode>(TContext context, TNode node, bool v5V7 = false)
         where TContext : IExecutionContext
         where TNode : IExecutionNode
@@ -117,7 +30,7 @@ internal sealed class GraphQLSecurity
         {
             try
             {
-                var name = string.Empty;
+                string name;
                 object value = null;
 
                 if (v5V7 && arg.TryDuckCast<GraphQLArgumentProxy>(out var argumentV5V7))
@@ -127,7 +40,7 @@ internal sealed class GraphQLSecurity
                 }
                 else if (!v5V7)
                 {
-                    object toDuckValue = null;
+                    object toDuckValue;
 
                     // For the version 3 and 4 of GraphQL
                     if (arg.TryDuckCast<ArgumentProxy>(out var argumentV4))
@@ -172,7 +85,7 @@ internal sealed class GraphQLSecurity
             }
         }
 
-        RegisterResolverCall(scope, resolverName, resolverArguments);
+        GraphQLSecurityCommon.RegisterResolverCall(scope, resolverName, resolverArguments);
     }
 
     private static object GetArgumentValue<TContext>(TContext context, object arg)
@@ -195,8 +108,8 @@ internal sealed class GraphQLSecurity
                 ASTNodeKindProxy.FloatValue => float.Parse(arg.DuckCast<GraphQLValueProxy>().Value.ToString()),
                 ASTNodeKindProxy.BooleanValue => bool.Parse(arg.DuckCast<GraphQLValueProxy>().Value.ToString()),
                 ASTNodeKindProxy.EnumValue => arg.DuckCast<GraphQLValueNameProxy>().Name.StringValue,
-                ASTNodeKindProxy.ListValue => arg.DuckCast<GraphQLValueListProxy>().Values.Select(x => GetArgumentValue<TContext>(context, x)).ToList(),
-                ASTNodeKindProxy.ObjectValue => arg.DuckCast<GraphQLValueObjectProxy>().Fields!.Select(x => GetArgumentValue<TContext>(context, x)).ToList(),
+                ASTNodeKindProxy.ListValue => arg.DuckCast<GraphQLValueListProxy>().Values.Select(x => GetArgumentValue(context, x)).ToList(),
+                ASTNodeKindProxy.ObjectValue => arg.DuckCast<GraphQLValueObjectProxy>().Fields!.Select(x => GetArgumentValue(context, x)).ToList(),
 
                 _ => null
             };

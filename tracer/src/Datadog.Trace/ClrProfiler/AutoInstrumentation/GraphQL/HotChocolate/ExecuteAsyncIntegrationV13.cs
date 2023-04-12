@@ -7,6 +7,7 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ASM;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
@@ -40,6 +41,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         internal static CallTargetState OnMethodBegin<TTarget, TQueyRequest>(TTarget instance, TQueyRequest request, in CancellationToken token)
             where TQueyRequest : IQueryRequest
         {
+            // ASM
+            HotChocolateSecurity.ScanQuery(request.Query);
+
             return new CallTargetState(scope: HotChocolateCommon.CreateScopeFromExecuteAsync(Tracer.Instance, request));
         }
 
