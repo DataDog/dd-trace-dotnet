@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 
@@ -74,8 +75,8 @@ internal sealed class GraphQLSecurityCommon
         var allResolvers = PopScope(scope);
         var args = new Dictionary<string, object> { { "graphql.server.all_resolvers", allResolvers } };
 #if NETFRAMEWORK
-            var securityCoordinator = new SecurityCoordinator(security, HttpContext.Current, scope.Span);
-            securityCoordinator.CheckAndBlock(args);
+        var securityCoordinator = new SecurityCoordinator(security, HttpContext.Current, scope.Span);
+        securityCoordinator.CheckAndBlock(args);
 #else
         var securityCoordinator = new SecurityCoordinator(security, CoreHttpContextStore.Instance.Get(), scope.Span);
         var result = securityCoordinator.RunWaf(args);
