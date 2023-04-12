@@ -403,7 +403,13 @@ void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
 
     // TODO: add timestamps when available
 
-    auto result = ddog_prof_Profile_add(profile, ffiSample);
+    auto add_res = ddog_prof_Profile_add(profile, ffiSample);
+    if (add_res.tag == DDOG_PROF_PROFILE_ADD_RESULT_ERR) {
+        on_leave{ddog_Error_drop(&add_res.err);};
+        auto errorMessage = ddog_Error_message(&add_res.err);
+        Log::Warn("Failed to add add a profile: ", std::string_view(errorMessage.ptr, errorMessage.len));
+        return;
+    }
     profileInfoScope.profileInfo.samplesCount++;
 }
 
