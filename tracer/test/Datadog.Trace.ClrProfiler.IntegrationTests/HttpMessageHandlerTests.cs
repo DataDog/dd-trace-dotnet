@@ -32,10 +32,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         internal static IEnumerable<InstrumentationOptions> InstrumentationOptionsValues =>
             new List<InstrumentationOptions>
             {
-                new InstrumentationOptions(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: false),
-                new InstrumentationOptions(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: true),
-                new InstrumentationOptions(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: false),
-                new InstrumentationOptions(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: true),
+                new(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: false),
+                new(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: true),
+                new(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: false),
+                new(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: true),
             };
 
         public static IEnumerable<object[]> IntegrationConfig() =>
@@ -81,6 +81,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             ConfigureInstrumentation(instrumentation, socketsHandlerEnabled);
             SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING", queryStringCaptureEnabled ? "true" : "false");
             SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED", traceId128Enabled ? "true" : "false");
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
 
             if (queryStringSize.HasValue)
             {
@@ -97,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            // metadata schema version
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-http-client" : EnvironmentHelper.FullSampleName;
 
