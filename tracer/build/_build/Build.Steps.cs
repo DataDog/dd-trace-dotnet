@@ -1062,7 +1062,14 @@ partial class Build
             var aspnetProjects = aspnetFolder.GlobFiles("**/*.csproj");
             var securityAspnetProjects = securityAspnetFolder.GlobFiles("**/*.csproj");
 
+            var allProjects = aspnetProjects.Concat(securityAspnetProjects);
             var publishProfile = aspnetFolder / "PublishProfiles" / "FolderProfile.pubxml";
+
+            NuGetTasks.NuGetRestore(
+                s => s
+                    .SetVerbosity(NuGetVerbosity.Normal)
+                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackagesDirectory(NugetPackageDirectory))
+                    .CombineWith(allProjects, (c, project) => c.SetTargetPath(project)));
 
             MSBuild(x => x
                 .SetMSBuildPath()
