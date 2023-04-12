@@ -914,7 +914,6 @@ partial class Build
     Target CompileRegressionSamples => _ => _
         .Unlisted()
         .DependsOn(HackForMissingMsBuildLocation)
-        .Requires(() => Framework)
         .Executes(() =>
         {
             var regressionLibs = Solution.GetProject(Projects.DataDogThreadTest).Directory.Parent
@@ -929,7 +928,7 @@ partial class Build
                         _ when path.Contains("MismatchedTracerVersions") => false,
                         _ when path.Contains("dependency-libs") => false,
                         _ when !string.IsNullOrWhiteSpace(SampleName) => path.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-                        (_, { } targets) => targets.Contains(Framework),
+                        // (_, { } targets) => targets.Contains(Framework),
                         _ => true,
                     };
                 });
@@ -943,7 +942,6 @@ partial class Build
         .Unlisted()
         .DependsOn(HackForMissingMsBuildLocation)
         .Requires(() => MonitoringHomeDirectory != null)
-        .Requires(() => Framework)
         .Executes(() =>
         {
             if (TestAllPackageVersions)
@@ -1022,23 +1020,21 @@ partial class Build
                         _ when exclude.Contains(project.Path) => false,
                         _ when !string.IsNullOrWhiteSpace(SampleName) => project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase),
                         (_, _, DockerDependencyType.All) => false, // can't use docker on Windows
-                        (_, { } targets, _) => targets.Contains(Framework),
-                        _ => true,
-                    }
-                );
-    
-                // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
-                DotNetBuild(config => config
-                    .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatformAnyCPU()
-                    .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                        // (_, { } targets, _) => targets.Contains(Framework),
+                    _ => true,
+                }
+            );
+
+            // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
+            DotNetBuild(config => config
+                .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
+                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                     .CombineWith(projects, (s, project) => s
                         // we have to build this one for all frameworks (because of reasons)
-                        .When(!project.Name.Contains("MultiDomainHost"), x => x.SetFramework(Framework))
-                        .SetProjectFile(project)));
-    
-                var projectsToPublish = includeIntegration
+                        // .When(!project.Name.Contains("MultiDomainHost"), x => x.SetFramework(Framework))
+                    .SetProjectFile(project)));var projectsToPublish = includeIntegration
                    .Select(x => Solution.GetProject(x))
                    .Where(x => x.Name switch
                     {
