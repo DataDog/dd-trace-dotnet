@@ -208,19 +208,6 @@ partial class Build
             EnsureExistingDirectory(SymbolsDirectory);
         });
 
-    Target Restore => _ => _
-        .After(Clean)
-        .Unlisted()
-        .Executes(() =>
-        {
-            DotNetRestore(s => s
-                .SetProjectFile(BuildSolution)
-                .SetVerbosity(DotNetVerbosity.Normal)
-                .SetProperty("configuration", BuildConfiguration.ToString())
-                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
-                    o.SetPackageDirectory(NugetPackageDirectory)));
-        });
-
     Target CompileNativeSrcWindows => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
@@ -343,22 +330,17 @@ partial class Build
         .Unlisted()
         .Description("Compiles the managed code in the src directory")
         .After(CreateRequiredDirectories)
-        .After(Restore)
         .Executes(() =>
         {
-            var include = TracerDirectory.GlobFiles(
-                "src/**/*.csproj"
-            );
-
-            var exclude = TracerDirectory.GlobFiles(
-                "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
-                "src/Datadog.Trace.Tools.Runner/*.csproj",
-                "src/**/Datadog.InstrumentedAssembly*.csproj"
-            );
-
-            var toBuild = include.Except(exclude);
-
-            DotnetBuild(toBuild, noDependencies: false);
+            DotNetBuild(s => s
+                            .SetConfiguration(BuildConfiguration)
+                            // .SetTargetPlatformAnyCPU() // This fails to build for some reason
+                            .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                            .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+                            .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+                            .SetNoWarnDotNetCore3()
+                            .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")) //nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
+                           .SetProjectFile(BuildSolution));
         });
 
 
@@ -837,41 +819,9 @@ partial class Build
             CompressZip(MonitoringHomeDirectory, OsxTracerHomeZip, fileMode: FileMode.Create);
         });
 
-    Target CompileInstrumentationVerificationLibrary => _ => _
-        .Unlisted()
-        .After(Restore, CompileManagedSrc)
-        .Executes(() =>
-        {
-            DotnetBuild(TracerDirectory.GlobFiles("src/**/Datadog.InstrumentedAssembly*.csproj"), noDependencies: false);
-        });
-
-    Target CompileManagedTestHelpers => _ => _
-        .Unlisted()
-        .After(Restore)
-        .After(CompileManagedSrc)
-        .DependsOn(CompileInstrumentationVerificationLibrary)
-        .Executes(() =>
-        {
-            //we need to build in this exact order
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj"));
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj"));
-        });
-
-    Target CompileManagedUnitTests => _ => _
-        .Unlisted()
-        .After(Restore)
-        .After(CompileManagedSrc)
-        .After(BuildRunnerTool)
-        .DependsOn(CopyNativeFilesForAppSecUnitTests)
-        .DependsOn(CompileManagedTestHelpers)
-        .Executes(() =>
-        {
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*.Tests.csproj"));
-        });
-
     Target RunManagedUnitTests => _ => _
         .Unlisted()
-        .After(CompileManagedUnitTests)
+        .After(CompileManagedSrc, CopyNativeFilesForAppSecUnitTests)
         .Executes(() =>
         {
             EnsureExistingDirectory(TestLogsDirectory);
@@ -961,20 +911,6 @@ partial class Build
         .DependsOn(RunProfilerNativeUnitTestsWindows)
         .DependsOn(RunProfilerNativeUnitTestsLinux);
 
-    Target CompileDependencyLibs => _ => _
-        .Unlisted()
-        .After(Restore)
-        .After(CompileManagedSrc)
-        .Executes(() =>
-        {
-            var projects = TracerDirectory.GlobFiles(
-                "test/test-applications/integrations/dependency-libs/**/*.csproj",
-                "test/test-applications/integrations/**/*.vbproj"
-            );
-
-            DotnetBuild(projects, noDependencies: false);
-        });
-
     Target CompileRegressionSamples => _ => _
         .Unlisted()
         .DependsOn(HackForMissingMsBuildLocation)
@@ -1001,32 +937,6 @@ partial class Build
             // Allow restore here, otherwise things go wonky with runtime identifiers
             // in some target frameworks. No, I don't know why
             DotnetBuild(regressionLibs, framework: Framework, noRestore: false, noDependencies: false);
-        });
-
-    Target CompileIntegrationTests => _ => _
-        .Unlisted()
-        .After(CompileManagedSrc)
-        .After(CompileManagedTestHelpers)
-        .After(CompileRegressionSamples)
-        .After(PublishIisSamples)
-        .After(BuildRunnerTool)
-        .Requires(() => Framework)
-        .Requires(() => MonitoringHomeDirectory != null)
-        .Executes(() =>
-        {
-            if (!Framework.ToString().StartsWith("net46"))
-            {
-                // we need to build RazorPages before integration tests for .net46x
-                DotnetBuild(Solution.GetProject(Projects.RazorPages), framework: Framework);
-            }
-
-            var projects = TracerDirectory
-                    .GlobFiles("test/*.IntegrationTests/*.IntegrationTests.csproj")
-                    .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests))
-                    .Where(project => Solution.GetProject(project).GetTargetFrameworks().Contains(Framework))
-                ;
-
-            DotnetBuild(projects, framework: Framework);
         });
 
     Target CompileSamplesWindows => _ => _
@@ -1147,7 +1057,6 @@ partial class Build
 
     Target PublishIisSamples => _ => _
         .Unlisted()
-        .After(CompileManagedTestHelpers)
         .After(CompileRegressionSamples)
         .Executes(() =>
         {
@@ -1176,9 +1085,8 @@ partial class Build
     Target RunWindowsIntegrationTests => _ => _
         .Unlisted()
         .After(BuildTracerHome)
-        .After(CompileIntegrationTests)
+        .After(CompileManagedSrc)
         .After(CompileSamplesWindows)
-        .After(BuildWindowsIntegrationTests)
         .Requires(() => IsWin)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
@@ -1269,7 +1177,7 @@ partial class Build
     Target RunWindowsAzureFunctionsTests => _ => _
         .Unlisted()
         .After(BuildTracerHome)
-        .After(CompileIntegrationTests)
+        .After(CompileManagedSrc)
         .After(CompileAzureFunctionsSamplesWindows)
         .After(BuildWindowsIntegrationTests)
         .Requires(() => IsWin)
@@ -1311,7 +1219,7 @@ partial class Build
     Target RunWindowsRegressionTests => _ => _
         .Unlisted()
         .After(BuildTracerHome)
-        .After(CompileIntegrationTests)
+        .After(CompileManagedSrc)
         .After(CompileRegressionSamples)
         .After(BuildNativeLoader)
         .Requires(() => IsWin)
@@ -1352,7 +1260,7 @@ partial class Build
 
     Target RunWindowsTracerIisIntegrationTests => _ => _
         .After(BuildTracerHome)
-        .After(CompileIntegrationTests)
+        .After(CompileManagedSrc)
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
@@ -1361,7 +1269,7 @@ partial class Build
 
     Target RunWindowsSecurityIisIntegrationTests => _ => _
         .After(BuildTracerHome)
-        .After(CompileIntegrationTests)
+        .After(CompileManagedSrc)
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
@@ -1400,7 +1308,7 @@ partial class Build
 
     Target RunWindowsMsiIntegrationTests => _ => _
         .After(BuildTracerHome)
-        .After(CompileIntegrationTests)
+        .After(CompileManagedSrc)
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
@@ -1448,8 +1356,6 @@ partial class Build
         .Unlisted()
         .DependsOn(HackForMissingMsBuildLocation)
         .After(CompileManagedSrc)
-        .After(CompileDependencyLibs)
-        .After(CompileManagedTestHelpers)
         .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
         .Executes(() =>
@@ -1584,8 +1490,6 @@ partial class Build
         .Unlisted()
         .DependsOn(HackForMissingMsBuildLocation)
         .After(CompileManagedSrc)
-        .After(CompileDependencyLibs)
-        .After(CompileManagedTestHelpers)
         .After(CompileSamplesLinuxOrOsx)
         .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
@@ -1626,8 +1530,6 @@ partial class Build
     Target CompileLinuxOrOsxIntegrationTests => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
-        .After(CompileDependencyLibs)
-        .After(CompileManagedTestHelpers)
         .After(CompileSamplesLinuxOrOsx)
         .After(CompileMultiApiPackageVersionSamples)
         .After(BuildRunnerTool)
@@ -1840,7 +1742,6 @@ partial class Build
 
     Target BuildToolArtifactTests => _ => _
          .Description("Builds the tool artifacts tests")
-         .After(CompileManagedTestHelpers)
          .After(InstallDdTraceTool)
          .Executes(() =>
           {

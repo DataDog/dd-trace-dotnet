@@ -44,7 +44,6 @@ partial class Build
     Target CompileDebuggerIntegrationTests => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
-        .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileDebuggerIntegrationTestsDependencies)
         .DependsOn(CompileDebuggerIntegrationTestsSamples)
         .Requires(() => Framework)

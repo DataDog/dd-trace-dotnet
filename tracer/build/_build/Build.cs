@@ -89,7 +89,7 @@ partial class Build : NukeBuild
 
     Target Info => _ => _
                        .Description("Describes the current configuration")
-                       .Before(Clean, Restore, BuildTracerHome)
+                       .Before(Clean, BuildTracerHome)
                        .Executes(() =>
                         {
                             Logger.Information($"Configuration: {BuildConfiguration}");
@@ -150,7 +150,6 @@ partial class Build : NukeBuild
         .Description("Builds the native and managed src, and publishes the tracer home directory")
         .After(Clean)
         .DependsOn(CreateRequiredDirectories)
-        .DependsOn(Restore)
         .DependsOn(CompileManagedSrc)
         .DependsOn(PublishManagedTracer)
         .DependsOn(CompileNativeSrc)
@@ -185,7 +184,6 @@ partial class Build : NukeBuild
         .After(Clean, BuildTracerHome, BuildProfilerHome)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(BuildRunnerTool)
-        .DependsOn(CompileManagedUnitTests)
         .DependsOn(RunManagedUnitTests);
 
     Target BuildAndRunNativeUnitTests => _ => _
@@ -199,28 +197,20 @@ partial class Build : NukeBuild
         .Unlisted()
         .Requires(() => IsWin)
         .Description("Builds the integration tests for Windows")
-        .DependsOn(CompileDependencyLibs)
-        .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileSamplesWindows)
-        .DependsOn(CompileIntegrationTests)
         .DependsOn(BuildRunnerTool);
 
     Target BuildAspNetIntegrationTests => _ => _
         .Unlisted()
         .Requires(() => IsWin)
         .Description("Builds the ASP.NET integration tests for Windows")
-        .DependsOn(CompileDependencyLibs)
-        .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(PublishIisSamples)
-        .DependsOn(CompileIntegrationTests);
+        .DependsOn(PublishIisSamples);
 
     Target BuildWindowsRegressionTests => _ => _
         .Unlisted()
         .Requires(() => IsWin)
         .Description("Builds the regression tests for Windows")
-        .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileRegressionSamples)
-        .DependsOn(CompileIntegrationTests);
+        .DependsOn(CompileRegressionSamples);
 
     Target BuildAndRunWindowsIntegrationTests => _ => _
         .Requires(() => IsWin)
@@ -237,17 +227,13 @@ partial class Build : NukeBuild
     Target BuildAndRunWindowsAzureFunctionsTests => _ => _
         .Requires(() => IsWin)
         .Description("Builds and runs the Windows Azure Functions tests")
-        .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileAzureFunctionsSamplesWindows)
         .DependsOn(BuildRunnerTool)
-        .DependsOn(CompileIntegrationTests)
         .DependsOn(RunWindowsAzureFunctionsTests);
 
     Target BuildLinuxIntegrationTests => _ => _
         .Requires(() => !IsWin)
         .Description("Builds the linux integration tests")
-        .DependsOn(CompileDependencyLibs)
-        .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileSamplesLinuxOrOsx)
         .DependsOn(CompileMultiApiPackageVersionSamples)
         .DependsOn(CompileLinuxOrOsxIntegrationTests)
@@ -263,8 +249,6 @@ partial class Build : NukeBuild
     Target BuildOsxIntegrationTests => _ => _
         .Requires(() => IsOsx)
         .Description("Builds the osx integration tests")
-        .DependsOn(CompileDependencyLibs)
-        .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileSamplesLinuxOrOsx)
         .DependsOn(CompileMultiApiPackageVersionSamples)
         .DependsOn(CompileLinuxOrOsxIntegrationTests)
@@ -279,7 +263,6 @@ partial class Build : NukeBuild
     
     Target BuildAndRunToolArtifactTests => _ => _
        .Description("Builds and runs the tool artifacts tests")
-       .DependsOn(CompileManagedTestHelpers)
        .DependsOn(InstallDdTraceTool)
        .DependsOn(BuildToolArtifactTests)
        .DependsOn(RunToolArtifactTests);
@@ -318,7 +301,6 @@ partial class Build : NukeBuild
 
     Target BuildRunnerTool => _ => _
         .Unlisted()
-        .DependsOn(CompileInstrumentationVerificationLibrary)
         .After(CreateBundleHome, ExtractDebugInfoLinux)
         .Executes(() =>
         {
