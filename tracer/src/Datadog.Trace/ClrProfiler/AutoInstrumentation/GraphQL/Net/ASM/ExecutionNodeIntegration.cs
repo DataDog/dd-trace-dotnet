@@ -9,7 +9,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM
 {
     /// <summary>
     /// GraphQL.Execution.ExecuteNodeAsyncIntegration calltarget instrumentation

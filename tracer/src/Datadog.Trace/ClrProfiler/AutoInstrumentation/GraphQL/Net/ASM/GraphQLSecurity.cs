@@ -107,7 +107,7 @@ internal sealed class GraphQLSecurity
 
         // If no name is specified, it's not a resolver
         // If no arguments are provided, nothing to scan for the WAF
-        if (string.IsNullOrEmpty(resolverName) || node.Field.Arguments is null)
+        if (string.IsNullOrEmpty(resolverName) || node.Field.Arguments is null || !node.Field.Arguments.Any())
         {
             return;
         }
@@ -125,16 +125,35 @@ internal sealed class GraphQLSecurity
                     name = argumentV5V7.Name.StringValue;
                     value = GetArgumentValue(context, argumentV5V7.Value);
                 }
-                else if (!v5V7 && arg.TryDuckCast<ArgumentProxy>(out var argument))
+                else if (!v5V7)
                 {
-                    name = argument.NameNode.Name;
+                    object toDuckValue = null;
+
+                    // For the version 3 and 4 of GraphQL
+                    if (arg.TryDuckCast<ArgumentProxy>(out var argumentV4))
+                    {
+                        name = argumentV4.NameNode.Name;
+                        toDuckValue = argumentV4.Value;
+                    }
+
+                    // For the version 2 of GraphQL
+                    else if (arg.TryDuckCast<ArgumentProxyV2>(out var argumentV2))
+                    {
+                        name = argumentV2.NamedNode.Name;
+                        toDuckValue = argumentV2.Value;
+                    }
+                    else
+                    {
+                        // Failed to cast as argument
+                        break;
+                    }
 
                     // if Value is VariableReference
-                    if (argument.Value.TryDuckCast<VariableReferenceProxy>(out var variableRef))
+                    if (toDuckValue.TryDuckCast<VariableReferenceProxy>(out var variableRef))
                     {
                         value = GetVariableValue(context, variableRef.Name);
                     }
-                    else if (argument.Value.TryDuckCast<GraphQLValueProxy>(out var argValue))
+                    else if (toDuckValue.TryDuckCast<GraphQLValueProxy>(out var argValue))
                     {
                         value = argValue.Value;
                     }
