@@ -17,9 +17,7 @@ namespace Datadog.Trace.Configuration
 
         public ServiceNames(IDictionary<string, string> mappings, string metadataSchemaVersion)
         {
-            _unifyServiceNames = string.Equals(metadataSchemaVersion, "v1", StringComparison.OrdinalIgnoreCase)
-                                    ? true
-                                    : false;
+            _unifyServiceNames = metadataSchemaVersion == "v0" ? false : true;
             if (mappings?.Count > 0)
             {
                 _mappings = new Dictionary<string, string>(mappings);

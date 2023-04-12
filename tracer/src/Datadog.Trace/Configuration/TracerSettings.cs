@@ -116,7 +116,7 @@ namespace Datadog.Trace.Configuration
             var headerTagsNormalizationFixEnabled = source.GetBool(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled) ?? true;
             // Filter out tags with empty keys or empty values, and trim whitespaces
             HeaderTags = InitializeHeaderTags(inputHeaderTags, headerTagsNormalizationFixEnabled);
-            MetadataSchemaVersion = source.GetString(ConfigurationKeys.MetadataSchemaVersion) ?? "v0";
+            MetadataSchemaVersion = ParseMetadataSchemaVersion(source.GetString(ConfigurationKeys.MetadataSchemaVersion));
 
             var serviceNameMappings = source.GetDictionary(ConfigurationKeys.ServiceNameMappings)
                                             ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
@@ -706,6 +706,13 @@ namespace Datadog.Trace.Configuration
 
             return headerTags;
         }
+
+        private static string ParseMetadataSchemaVersion(string? value) =>
+            value switch
+            {
+                "v1" or "V1" => "v1",
+                _ => "v0",
+            };
 
         internal static string[] TrimSplitString(string? textValues, char[] separators)
         {
