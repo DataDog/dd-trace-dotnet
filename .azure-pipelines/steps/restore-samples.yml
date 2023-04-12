@@ -1,0 +1,13 @@
+parameters:
+  - name: 'artifact'
+    type: 'string'
+    default: 'build-windows-samples'
+
+steps:
+- task: DownloadPipelineArtifact@2
+  displayName: Download samples
+  inputs:
+    artifact: ${{ parameters.artifact }}
+    patterns: "**/@(bin|obj|packages)/**"
+    path: $(System.DefaultWorkingDirectory)
+  retryCountOnTaskFailure: 5
