@@ -169,10 +169,9 @@ namespace Datadog.Trace.Tests.Telemetry
             using var scope = new AssertionScope();
             data[ConfigTelemetryData.AasConfigurationError].Should().BeOfType<bool>().Subject.Should().BeTrue();
             data[ConfigTelemetryData.CloudHosting].Should().Be("Azure");
-            // TODO: Don't we want to collect these anyway? If so, need to update AzureAppServices behaviour
-            data[ConfigTelemetryData.AasAppType].Should().BeNull();
-            data[ConfigTelemetryData.AasFunctionsRuntimeVersion].Should().BeNull();
-            data[ConfigTelemetryData.AasSiteExtensionVersion].Should().BeNull();
+            data[ConfigTelemetryData.AasAppType].Should().Be("function");
+            data[ConfigTelemetryData.AasFunctionsRuntimeVersion].Should().Be("~3");
+            data[ConfigTelemetryData.AasSiteExtensionVersion].Should().Be("1.5.0");
         }
 
         [Fact]
