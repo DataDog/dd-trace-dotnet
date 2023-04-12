@@ -537,6 +537,7 @@ bool LibddprofExporter::Export()
             scope.profileInfo.profile = nullptr;
             scope.profileInfo.samplesCount = 0;
         }
+        auto profileAutoDelete = ProfileAutoDelete{profile};
 
         const auto& applicationInfo = _applicationStore->GetApplicationInfo(std::string(runtimeId));
 
@@ -548,7 +549,6 @@ bool LibddprofExporter::Export()
 
         AddUpscalingRules(profile, upscalingInfos);
 
-        auto profileAutoDelete = ProfileAutoDelete{profile};
         auto serializedProfile = SerializedProfile{profile};
         if (!serializedProfile.IsValid())
         {
@@ -578,6 +578,13 @@ bool LibddprofExporter::Export()
         additionalTags.Add("number_of_cpu_cores", std::to_string(OsSpecificApi::GetProcessorCount()));
 
         auto* request = CreateRequest(serializedProfile, exporter, additionalTags);
+        // use on_leave here, in case Send throws an exception.
+        // So we will be able to free the memory
+        on_leave
+        {
+            ddog_prof_Exporter_drop(exporter);
+            ddog_prof_Exporter_Request_drop(&request);
+        };
 
         if (request != nullptr)
         {
@@ -589,7 +596,6 @@ bool LibddprofExporter::Export()
             Log::Error("Unable to create a request to send the profile.");
         }
 
-        ddog_prof_Exporter_drop(exporter);
     }
 
     return exported;
@@ -731,7 +737,7 @@ ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile c
     return result.ok;
 }
 
-bool LibddprofExporter::Send(ddog_prof_Exporter_Request* request, ddog_prof_Exporter* exporter)
+bool LibddprofExporter::Send(ddog_prof_Exporter_Request*& request, ddog_prof_Exporter* exporter)
 {
     assert(request != nullptr);
 
