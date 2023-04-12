@@ -14,9 +14,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     public class SqlCommand20Tests : TracingIntegrationTest
     {
-        private const string ServiceName = "Samples.SqlServer.NetFramework20";
-
         public SqlCommand20Tests(ITestOutputHelper output)
+
         : base("SqlServer.NetFramework20", output)
         {
             SetServiceVersion("1.0.0");
@@ -62,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-{dbType}" : ServiceName;
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-{dbType}" : EnvironmentHelper.FullSampleName;
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();

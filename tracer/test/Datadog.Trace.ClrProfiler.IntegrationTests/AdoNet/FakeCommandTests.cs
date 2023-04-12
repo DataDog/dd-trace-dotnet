@@ -13,8 +13,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     public class FakeCommandTests : TracingIntegrationTest
     {
-        private const string ServiceName = "Samples.FakeDbCommand";
-
         public FakeCommandTests(ITestOutputHelper output)
             : base("FakeDbCommand", output)
         {
@@ -48,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-{dbType}" : ServiceName;
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-{dbType}" : EnvironmentHelper.FullSampleName;
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();

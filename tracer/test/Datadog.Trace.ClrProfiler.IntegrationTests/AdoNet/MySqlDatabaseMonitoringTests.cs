@@ -20,8 +20,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
     [UsesVerify]
     public class MySqlDatabaseMonitoringTests : TracingIntegrationTest
     {
-        private const string ServiceName = "Samples.MySql";
-
         public MySqlDatabaseMonitoringTests(ITestOutputHelper output)
             : base("MySql", output)
         {

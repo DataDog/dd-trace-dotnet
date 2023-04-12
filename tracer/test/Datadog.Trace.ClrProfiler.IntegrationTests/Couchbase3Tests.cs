@@ -21,8 +21,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [Trait("RequiresDockerDependency", "true")]
     public class Couchbase3Tests : TracingIntegrationTest
     {
-        private const string ServiceName = "Samples.Couchbase3";
-
         public Couchbase3Tests(ITestOutputHelper output)
             : base("Couchbase3", output)
         {
@@ -44,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-couchbase" : ServiceName;
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-couchbase" : EnvironmentHelper.FullSampleName;
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())

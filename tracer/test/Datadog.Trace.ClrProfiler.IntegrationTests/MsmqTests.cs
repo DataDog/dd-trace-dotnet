@@ -16,8 +16,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class MsmqTests : TracingIntegrationTest
     {
-        private const string ServiceName = "Samples.Msmq";
-
         public MsmqTests(ITestOutputHelper output)
             : base("Msmq", output)
         {
@@ -55,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-msmq" : ServiceName;
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-msmq" : EnvironmentHelper.FullSampleName;
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();

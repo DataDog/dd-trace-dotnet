@@ -279,9 +279,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var totalExpectedSpans = (requestCount * spansPerRequest);
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            var serviceName = $"Samples.{EnvironmentHelper.SampleName}";
             var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{serviceName}-grpc-client" : serviceName;
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-grpc-client" : EnvironmentHelper.FullSampleName;
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
@@ -334,7 +333,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     var grpcClientSpans = spans.Where(IsGrpcClientSpan);
                     var grpcServerSpans = spans.Where(IsGrpcServerSpan);
 
-                    ValidateIntegrationSpans(grpcServerSpans, expectedServiceName: serviceName, isExternalSpan: false);
+                    ValidateIntegrationSpans(grpcServerSpans, expectedServiceName: EnvironmentHelper.FullSampleName, isExternalSpan: false);
                     ValidateIntegrationSpans(grpcClientSpans, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                     await VerifyHelper.VerifySpans(spans, settings)

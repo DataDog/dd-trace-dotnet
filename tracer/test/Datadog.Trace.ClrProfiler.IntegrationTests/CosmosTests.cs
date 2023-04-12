@@ -18,7 +18,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class CosmosTests : TracingIntegrationTest
     {
         private const string ExpectedOperationName = "cosmosdb.query";
-        private const string ServiceName = "Samples.CosmosDb";
 
         public CosmosTests(ITestOutputHelper output)
             : base("CosmosDb", output)
@@ -52,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-cosmosdb" : ServiceName;
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-cosmosdb" : EnvironmentHelper.FullSampleName;
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())

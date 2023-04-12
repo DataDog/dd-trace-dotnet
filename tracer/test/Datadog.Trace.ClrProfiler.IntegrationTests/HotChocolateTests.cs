@@ -92,9 +92,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetInstrumentationVerification();
 
-            var serviceName = $"Samples.{EnvironmentHelper.SampleName}";
             var isExternalSpan = _metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{serviceName}-graphql" : serviceName;
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-graphql" : EnvironmentHelper.FullSampleName;
 
             await Fixture.TryStartApp(this);
             var testStart = DateTime.UtcNow;

@@ -33,7 +33,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                                  + ExpectedTombstoneProducerSpans
                                                  + ExpectedErrorProducerSpans;
 
-        private const string ServiceName = "Samples.Kafka";
         private const string ErrorProducerResourceName = "Produce Topic INVALID-TOPIC";
 
         public KafkaTests(ITestOutputHelper output)
@@ -60,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-kafka" : ServiceName;
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-kafka" : EnvironmentHelper.FullSampleName;
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();

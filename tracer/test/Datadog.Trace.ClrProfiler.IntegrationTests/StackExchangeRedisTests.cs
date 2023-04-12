@@ -23,8 +23,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public class StackExchangeRedisTests : TracingIntegrationTest
     {
-        private const string ServiceName = "Samples.StackExchange.Redis";
-
         public StackExchangeRedisTests(ITestOutputHelper output)
             : base("StackExchange.Redis", output)
         {
@@ -59,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-redis" : ServiceName;
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-redis" : EnvironmentHelper.FullSampleName;
 
             using var a = new AssertionScope();
             using var telemetry = this.ConfigureTelemetry();

@@ -21,8 +21,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
     [UsesVerify]
     public class AwsSqsTests : TracingIntegrationTest
     {
-        private const string ServiceName = "Samples.AWS.SQS";
-
         public AwsSqsTests(ITestOutputHelper output)
             : base("AWS.SQS", output)
         {
@@ -42,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-aws-sqs" : ServiceName;
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-aws-sqs" : EnvironmentHelper.FullSampleName;
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())

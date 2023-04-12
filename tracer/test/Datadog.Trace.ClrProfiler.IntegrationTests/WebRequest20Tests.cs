@@ -16,8 +16,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class WebRequest20Tests : TracingIntegrationTest
     {
-        private const string ServiceName = "Samples.WebRequest.NetFramework20";
-
         public WebRequest20Tests(ITestOutputHelper output)
             : base("WebRequest.NetFramework20", output)
         {
@@ -77,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-http-client" : ServiceName;
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-http-client" : EnvironmentHelper.FullSampleName;
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())

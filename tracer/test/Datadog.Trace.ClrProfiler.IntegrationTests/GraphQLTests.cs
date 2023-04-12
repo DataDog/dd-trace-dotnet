@@ -208,9 +208,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected async Task RunSubmitsTraces(string testName = "SubmitsTraces", string packageVersion = "", bool usingWebsockets = false)
         {
-            var serviceName = $"Samples.{EnvironmentHelper.SampleName}";
             var isExternalSpan = _metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{serviceName}-graphql" : serviceName;
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-graphql" : EnvironmentHelper.FullSampleName;
 
             SetInstrumentationVerification();
 
