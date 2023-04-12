@@ -33,7 +33,7 @@ namespace Datadog.Trace.AppSec
             Rules = source.GetString(ConfigurationKeys.AppSec.Rules);
             CustomIpHeader = source.GetString(ConfigurationKeys.AppSec.CustomIpHeader);
             var extraHeaders = source.GetString(ConfigurationKeys.AppSec.ExtraHeaders);
-            ExtraHeaders = !string.IsNullOrEmpty(extraHeaders) ? extraHeaders.Split(',') : Array.Empty<string>();
+            ExtraHeaders = !string.IsNullOrEmpty(extraHeaders) ? extraHeaders!.Split(',') : Array.Empty<string>();
             KeepTraces = source.GetBool(ConfigurationKeys.AppSec.KeepTraces) ?? true;
 
             // empty or junk values to default to 100, any number is valid, with zero or less meaning limit off
@@ -48,7 +48,7 @@ namespace Datadog.Trace.AppSec
             else
             {
                 // Default timeout of 100 ms, only extreme conditions should cause timeout
-                var wafTimeout = ParseWafTimeout(wafTimeoutString);
+                var wafTimeout = ParseWafTimeout(wafTimeoutString!);
                 if (wafTimeout <= 0)
                 {
                     Log.Warning("Ignoring '{WafTimeoutKey}' of '{WafTimeoutString}' because it was zero or less", ConfigurationKeys.AppSec.WafTimeout, wafTimeoutString);
@@ -59,10 +59,10 @@ namespace Datadog.Trace.AppSec
             }
 
             var obfuscationParameterKeyRegex = source.GetString(ConfigurationKeys.AppSec.ObfuscationParameterKeyRegex);
-            ObfuscationParameterKeyRegex = string.IsNullOrWhiteSpace(obfuscationParameterKeyRegex) ? SecurityConstants.ObfuscationParameterKeyRegexDefault : obfuscationParameterKeyRegex;
+            ObfuscationParameterKeyRegex = string.IsNullOrWhiteSpace(obfuscationParameterKeyRegex) ? SecurityConstants.ObfuscationParameterKeyRegexDefault : obfuscationParameterKeyRegex!;
 
             var obfuscationParameterValueRegex = source.GetString(ConfigurationKeys.AppSec.ObfuscationParameterValueRegex);
-            ObfuscationParameterValueRegex = string.IsNullOrWhiteSpace(obfuscationParameterValueRegex) ? SecurityConstants.ObfuscationParameterValueRegexDefault : obfuscationParameterValueRegex;
+            ObfuscationParameterValueRegex = string.IsNullOrWhiteSpace(obfuscationParameterValueRegex) ? SecurityConstants.ObfuscationParameterValueRegexDefault : obfuscationParameterValueRegex!;
         }
 
         public bool Enabled

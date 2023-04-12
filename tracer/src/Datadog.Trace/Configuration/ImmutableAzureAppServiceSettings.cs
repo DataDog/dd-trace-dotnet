@@ -205,7 +205,7 @@ namespace Datadog.Trace.Configuration
                 var websiteOwner = source.GetString(ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey);
                 if (!string.IsNullOrWhiteSpace(websiteOwner))
                 {
-                    var plusSplit = websiteOwner.Split('+');
+                    var plusSplit = websiteOwner!.Split('+');
                     if (plusSplit.Length > 0 && !string.IsNullOrWhiteSpace(plusSplit[0]))
                     {
                         return plusSplit[0];
