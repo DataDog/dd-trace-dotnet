@@ -396,6 +396,7 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .IsOptional("db.name")
                 .IsPresent("out.host")
+                .IsOptional("_dd.dbm_trace_injected")
                 .Matches("db.type", "sql-server")
                 .Matches("component", "SqlClient")
                 .Matches("span.kind", "client"));

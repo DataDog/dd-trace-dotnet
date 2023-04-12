@@ -10,8 +10,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -30,8 +30,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -50,8 +50,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -70,8 +70,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -90,8 +90,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -110,8 +110,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -130,8 +130,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -150,8 +150,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -170,8 +170,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -190,8 +190,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -210,8 +210,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -230,8 +230,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -250,8 +250,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -270,8 +270,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -290,8 +290,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -310,8 +310,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -330,8 +330,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -350,8 +350,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -370,8 +370,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -390,8 +390,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -410,8 +410,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -430,8 +430,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -450,8 +450,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -470,8 +470,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -490,8 +490,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -510,8 +510,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -530,8 +530,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -550,8 +550,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -570,8 +570,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -590,8 +590,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -610,8 +610,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -630,8 +630,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -650,8 +650,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -670,8 +670,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -690,8 +690,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -710,8 +710,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -730,8 +730,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -750,8 +750,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -770,8 +770,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -790,8 +790,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -810,8 +810,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -830,8 +830,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -850,8 +850,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -870,8 +870,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -890,8 +890,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -910,8 +910,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -930,8 +930,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -950,8 +950,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -970,8 +970,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -990,8 +990,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1010,8 +1010,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1030,8 +1030,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1050,8 +1050,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1070,8 +1070,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1090,8 +1090,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1110,8 +1110,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1130,8 +1130,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1150,8 +1150,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1170,8 +1170,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1190,8 +1190,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1210,8 +1210,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1230,8 +1230,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1250,8 +1250,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1270,8 +1270,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1290,8 +1290,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1310,8 +1310,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1330,8 +1330,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1350,8 +1350,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1370,8 +1370,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1390,8 +1390,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1410,8 +1410,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1430,8 +1430,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1450,8 +1450,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1470,8 +1470,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1490,8 +1490,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1510,8 +1510,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1530,8 +1530,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1550,8 +1550,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1570,8 +1570,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1590,8 +1590,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1610,8 +1610,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1630,8 +1630,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1650,8 +1650,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1670,8 +1670,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1690,8 +1690,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1710,8 +1710,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1730,8 +1730,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1750,8 +1750,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1770,8 +1770,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1790,8 +1790,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1810,8 +1810,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1830,8 +1830,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1850,8 +1850,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1870,8 +1870,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1890,8 +1890,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1910,8 +1910,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1930,8 +1930,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1950,8 +1950,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1970,8 +1970,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1990,8 +1990,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2010,8 +2010,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2030,8 +2030,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2050,8 +2050,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2070,8 +2070,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2090,8 +2090,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2110,8 +2110,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2130,8 +2130,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2150,8 +2150,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2170,8 +2170,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2190,8 +2190,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2210,8 +2210,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2230,8 +2230,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2250,8 +2250,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2270,8 +2270,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2290,8 +2290,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2310,8 +2310,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2330,8 +2330,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2350,8 +2350,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2370,8 +2370,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2390,8 +2390,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2410,8 +2410,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2430,8 +2430,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2450,8 +2450,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2470,8 +2470,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2490,8 +2490,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2510,8 +2510,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2530,8 +2530,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2550,8 +2550,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2570,8 +2570,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2590,8 +2590,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2610,8 +2610,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2630,8 +2630,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2650,8 +2650,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2670,8 +2670,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2690,8 +2690,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2710,8 +2710,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2730,8 +2730,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2750,8 +2750,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2770,8 +2770,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2790,8 +2790,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2810,8 +2810,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2830,8 +2830,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2850,8 +2850,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2870,8 +2870,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2890,8 +2890,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2910,8 +2910,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2930,8 +2930,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2950,8 +2950,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2970,8 +2970,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -2990,8 +2990,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -3010,8 +3010,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -3030,8 +3030,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -3050,8 +3050,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -3070,8 +3070,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -3090,8 +3090,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -3110,8 +3110,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -3130,8 +3130,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -3150,8 +3150,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -3170,8 +3170,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -3190,8 +3190,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -3210,8 +3210,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -3230,8 +3230,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -3250,8 +3250,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -3270,8 +3270,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -3290,8 +3290,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -3310,8 +3310,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -3330,8 +3330,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -3350,8 +3350,8 @@
     Tags: {
       component: SqlClient,
       db.type: sql-server,
-      env: testing,
-      out.host: sqlsever,
+      env: integration_tests,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client
     },
