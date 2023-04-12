@@ -34,11 +34,12 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
         public DirectLogSubmissionSettings(IConfigurationSource? source)
         {
-            DirectLogSubmissionHost = source?.GetString(ConfigurationKeys.DirectLogSubmission.Host)
+            source ??= NullConfigurationSource.Instance;
+            DirectLogSubmissionHost = source.GetString(ConfigurationKeys.DirectLogSubmission.Host)
                                    ?? HostMetadata.Instance.Hostname;
-            DirectLogSubmissionSource = source?.GetString(ConfigurationKeys.DirectLogSubmission.Source) ?? DefaultSource;
+            DirectLogSubmissionSource = source.GetString(ConfigurationKeys.DirectLogSubmission.Source) ?? DefaultSource;
 
-            var overriddenSubmissionUrl = source?.GetString(ConfigurationKeys.DirectLogSubmission.Url);
+            var overriddenSubmissionUrl = source.GetString(ConfigurationKeys.DirectLogSubmission.Url);
             if (!string.IsNullOrEmpty(overriddenSubmissionUrl))
             {
                 // if they provide a url, use it
@@ -47,7 +48,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             else
             {
                 // They didn't provide a URL, use the default (With DD_SITE if provided)
-                var specificSite = source?.GetString(ConfigurationKeys.Site);
+                var specificSite = source.GetString(ConfigurationKeys.Site);
                 var ddSite = string.IsNullOrEmpty(specificSite)
                                  ? DefaultSite
                                  : specificSite;
@@ -56,12 +57,12 @@ namespace Datadog.Trace.Logging.DirectSubmission
             }
 
             DirectLogSubmissionMinimumLevel = DirectSubmissionLogLevelExtensions.Parse(
-                source?.GetString(ConfigurationKeys.DirectLogSubmission.MinimumLevel), DefaultMinimumLevel);
+                source.GetString(ConfigurationKeys.DirectLogSubmission.MinimumLevel), DefaultMinimumLevel);
 
-            var globalTags = source?.GetDictionary(ConfigurationKeys.DirectLogSubmission.GlobalTags)
-                          ?? source?.GetDictionary(ConfigurationKeys.GlobalTags)
+            var globalTags = source.GetDictionary(ConfigurationKeys.DirectLogSubmission.GlobalTags)
+                          ?? source.GetDictionary(ConfigurationKeys.GlobalTags)
                              // backwards compatibility for names used in the past
-                          ?? source?.GetDictionary("DD_TRACE_GLOBAL_TAGS");
+                          ?? source.GetDictionary("DD_TRACE_GLOBAL_TAGS");
 
             DirectLogSubmissionGlobalTags = globalTags?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                                                        .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim())

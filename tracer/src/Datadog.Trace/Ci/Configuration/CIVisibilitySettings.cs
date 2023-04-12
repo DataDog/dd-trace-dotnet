@@ -16,38 +16,38 @@ namespace Datadog.Trace.Ci.Configuration
 
         public CIVisibilitySettings(IConfigurationSource source)
         {
-            Enabled = source?.GetBool(ConfigurationKeys.CIVisibility.Enabled) ?? false;
-            Agentless = source?.GetBool(ConfigurationKeys.CIVisibility.AgentlessEnabled) ?? false;
-            Logs = source?.GetBool(ConfigurationKeys.CIVisibility.Logs) ?? false;
-            ApiKey = source?.GetString(ConfigurationKeys.ApiKey);
-            ApplicationKey = source?.GetString(ConfigurationKeys.ApplicationKey);
-            Site = source?.GetString(ConfigurationKeys.Site) ?? "datadoghq.com";
-            AgentlessUrl = source?.GetString(ConfigurationKeys.CIVisibility.AgentlessUrl);
+            Enabled = source.GetBool(ConfigurationKeys.CIVisibility.Enabled) ?? false;
+            Agentless = source.GetBool(ConfigurationKeys.CIVisibility.AgentlessEnabled) ?? false;
+            Logs = source.GetBool(ConfigurationKeys.CIVisibility.Logs) ?? false;
+            ApiKey = source.GetString(ConfigurationKeys.ApiKey);
+            ApplicationKey = source.GetString(ConfigurationKeys.ApplicationKey);
+            Site = source.GetString(ConfigurationKeys.Site) ?? "datadoghq.com";
+            AgentlessUrl = source.GetString(ConfigurationKeys.CIVisibility.AgentlessUrl);
 
             // By default intake payloads has a 5MB limit
             MaximumAgentlessPayloadSize = 5 * 1024 * 1024;
 
-            ProxyHttps = source?.GetString(ConfigurationKeys.Proxy.ProxyHttps);
-            var proxyNoProxy = source?.GetString(ConfigurationKeys.Proxy.ProxyNoProxy) ?? string.Empty;
+            ProxyHttps = source.GetString(ConfigurationKeys.Proxy.ProxyHttps);
+            var proxyNoProxy = source.GetString(ConfigurationKeys.Proxy.ProxyNoProxy) ?? string.Empty;
             ProxyNoProxy = proxyNoProxy.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
             // Intelligent Test Runner
-            IntelligentTestRunnerEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.IntelligentTestRunnerEnabled) ?? true;
+            IntelligentTestRunnerEnabled = source.GetBool(ConfigurationKeys.CIVisibility.IntelligentTestRunnerEnabled) ?? true;
 
             // Tests skipping
-            TestsSkippingEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.TestsSkippingEnabled);
+            TestsSkippingEnabled = source.GetBool(ConfigurationKeys.CIVisibility.TestsSkippingEnabled);
 
             // Code coverage
-            CodeCoverageEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.CodeCoverage);
-            CodeCoverageSnkFilePath = source?.GetString(ConfigurationKeys.CIVisibility.CodeCoverageSnkFile);
-            CodeCoveragePath = source?.GetString(ConfigurationKeys.CIVisibility.CodeCoveragePath);
-            CodeCoverageEnableJitOptimizations = source?.GetBool(ConfigurationKeys.CIVisibility.CodeCoverageEnableJitOptimizations) ?? true;
+            CodeCoverageEnabled = source.GetBool(ConfigurationKeys.CIVisibility.CodeCoverage);
+            CodeCoverageSnkFilePath = source.GetString(ConfigurationKeys.CIVisibility.CodeCoverageSnkFile);
+            CodeCoveragePath = source.GetString(ConfigurationKeys.CIVisibility.CodeCoveragePath);
+            CodeCoverageEnableJitOptimizations = source.GetBool(ConfigurationKeys.CIVisibility.CodeCoverageEnableJitOptimizations) ?? true;
 
             // Git upload
-            GitUploadEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.GitUploadEnabled);
+            GitUploadEnabled = source.GetBool(ConfigurationKeys.CIVisibility.GitUploadEnabled);
 
             // Force evp proxy
-            ForceAgentsEvpProxy = source?.GetBool(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy) ?? false;
+            ForceAgentsEvpProxy = source.GetBool(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy) ?? false;
         }
 
         /// <summary>

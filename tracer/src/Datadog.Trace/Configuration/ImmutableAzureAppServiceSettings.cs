@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -37,64 +39,79 @@ namespace Datadog.Trace.Configuration
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        public ImmutableAzureAppServiceSettings(IConfigurationSource source)
+        public ImmutableAzureAppServiceSettings(IConfigurationSource? source)
         {
             try
             {
-                var apiKey = source?.GetString(Configuration.ConfigurationKeys.ApiKey);
-                if (apiKey == null)
+                source ??= NullConfigurationSource.Instance;
+                var apiKey = source.GetString(Configuration.ConfigurationKeys.ApiKey);
+                if (apiKey is null)
                 {
                     Log.Error("The Azure Site Extension will not work if you have not configured DD_API_KEY.");
-                    IsUnsafeToTrace = true;
+                }
+                else
+                {
+                    // Azure App Services Basis
+                    SubscriptionId = GetSubscriptionId(source);
+                    ResourceGroup = source.GetString(ConfigurationKeys.AzureAppService.ResourceGroupKey);
+                    SiteName = source.GetString(ConfigurationKeys.AzureAppService.SiteNameKey);
+                    ResourceId = CompileResourceId();
+
+                    InstanceId = source.GetString(ConfigurationKeys.AzureAppService.InstanceIdKey) ?? "unknown";
+                    InstanceName = source.GetString(ConfigurationKeys.AzureAppService.InstanceNameKey) ?? "unknown";
+                    OperatingSystem = source.GetString(ConfigurationKeys.AzureAppService.OperatingSystemKey) ?? "unknown";
+                    SiteExtensionVersion = source.GetString(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey) ?? "unknown";
+
+                    FunctionsWorkerRuntime = source.GetString(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey);
+                    FunctionsExtensionVersion = source.GetString(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey);
+
+                    if (FunctionsWorkerRuntime is not null || FunctionsExtensionVersion is not null)
+                    {
+                        AzureContext = AzureContext.AzureFunctions;
+                    }
+
+                    switch (AzureContext)
+                    {
+                        case AzureContext.AzureFunctions:
+                            SiteKind = "functionapp";
+                            SiteType = "function";
+                            IsFunctionsApp = true;
+                            IsIsolatedFunctionsApp = FunctionsWorkerRuntime?.EndsWith("-isolated", StringComparison.OrdinalIgnoreCase) == true;
+                            PlatformStrategy.ShouldSkipClientSpan = ShouldSkipClientSpanWithinFunctions;
+                            break;
+                        case AzureContext.AzureAppService:
+                            SiteKind = "app";
+                            SiteType = "app";
+                            IsFunctionsApp = false;
+                            break;
+                        default:
+                            SiteKind = "unknown";
+                            SiteType = "unknown";
+                            break;
+                    }
+
+                    Runtime = FrameworkDescription.Instance.Name;
+
+                    DebugModeEnabled = source.GetString(Configuration.ConfigurationKeys.DebugEnabled)?.ToBoolean() ?? false;
+                    CustomTracingEnabled = source.GetString(ConfigurationKeys.AzureAppService.AasEnableCustomTracing)?.ToBoolean() ?? false;
+                    NeedsDogStatsD = source.GetString(ConfigurationKeys.AzureAppService.AasEnableCustomMetrics)?.ToBoolean() ?? false;
                     return;
                 }
-
-                // Azure App Services Basis
-                SubscriptionId = GetSubscriptionId(source);
-                ResourceGroup = source?.GetString(ConfigurationKeys.AzureAppService.ResourceGroupKey);
-                SiteName = source?.GetString(ConfigurationKeys.AzureAppService.SiteNameKey);
-                ResourceId = CompileResourceId();
-
-                InstanceId = source?.GetString(ConfigurationKeys.AzureAppService.InstanceIdKey) ?? "unknown";
-                InstanceName = source?.GetString(ConfigurationKeys.AzureAppService.InstanceNameKey) ?? "unknown";
-                OperatingSystem = source?.GetString(ConfigurationKeys.AzureAppService.OperatingSystemKey) ?? "unknown";
-                SiteExtensionVersion = source?.GetString(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey) ?? "unknown";
-
-                FunctionsWorkerRuntime = source?.GetString(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey);
-                FunctionsExtensionVersion = source?.GetString(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey);
-
-                if (FunctionsWorkerRuntime is not null || FunctionsExtensionVersion is not null)
-                {
-                    AzureContext = AzureContext.AzureFunctions;
-                }
-
-                switch (AzureContext)
-                {
-                    case AzureContext.AzureFunctions:
-                        SiteKind = "functionapp";
-                        SiteType = "function";
-                        IsFunctionsApp = true;
-                        IsIsolatedFunctionsApp = FunctionsWorkerRuntime?.EndsWith("-isolated", StringComparison.OrdinalIgnoreCase) == true;
-                        PlatformStrategy.ShouldSkipClientSpan = ShouldSkipClientSpanWithinFunctions;
-                        break;
-                    case AzureContext.AzureAppService:
-                        SiteKind = "app";
-                        SiteType = "app";
-                        IsFunctionsApp = false;
-                        break;
-                }
-
-                Runtime = FrameworkDescription.Instance.Name;
-
-                DebugModeEnabled = source?.GetString(Configuration.ConfigurationKeys.DebugEnabled)?.ToBoolean() ?? false;
-                CustomTracingEnabled = source?.GetString(ConfigurationKeys.AzureAppService.AasEnableCustomTracing)?.ToBoolean() ?? false;
-                NeedsDogStatsD = source?.GetString(ConfigurationKeys.AzureAppService.AasEnableCustomMetrics)?.ToBoolean() ?? false;
             }
             catch (Exception ex)
             {
-                IsUnsafeToTrace = true;
                 Log.Error(ex, "Unable to initialize AzureAppServices metadata.");
             }
+
+            IsUnsafeToTrace = true;
+            // Set non-nullable properties
+            Runtime = FrameworkDescription.Instance.Name;
+            SiteType ??= "unknown";
+            SiteKind ??= "unknown";
+            InstanceId ??= "unknown";
+            InstanceName ??= "unknown";
+            OperatingSystem ??= "unknown";
+            SiteExtensionVersion ??= "unknown";
         }
 
         public bool DebugModeEnabled { get; }
@@ -111,21 +128,21 @@ namespace Datadog.Trace.Configuration
 
         public string SiteKind { get; }
 
-        public string SubscriptionId { get; }
+        public string? SubscriptionId { get; }
 
-        public string ResourceGroup { get; }
+        public string? ResourceGroup { get; }
 
-        public string SiteName { get; }
+        public string? SiteName { get; }
 
-        public string ResourceId { get; }
+        public string? ResourceId { get; }
 
         public AzureContext AzureContext { get; private set; } = AzureContext.AzureAppService;
 
         public bool IsFunctionsApp { get; private set; }
 
-        public string FunctionsExtensionVersion { get; }
+        public string? FunctionsExtensionVersion { get; }
 
-        public string FunctionsWorkerRuntime { get; }
+        public string? FunctionsWorkerRuntime { get; }
 
         public bool IsIsolatedFunctionsApp { get; }
 
@@ -143,9 +160,9 @@ namespace Datadog.Trace.Configuration
             return scope == null;
         }
 
-        private string CompileResourceId()
+        private string? CompileResourceId()
         {
-            string resourceId = null;
+            string? resourceId = null;
 
             try
             {
@@ -181,11 +198,11 @@ namespace Datadog.Trace.Configuration
             return resourceId;
         }
 
-        private string GetSubscriptionId(IConfigurationSource source)
+        private string? GetSubscriptionId(IConfigurationSource source)
         {
             try
             {
-                var websiteOwner = source?.GetString(ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey);
+                var websiteOwner = source.GetString(ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey);
                 if (!string.IsNullOrWhiteSpace(websiteOwner))
                 {
                     var plusSplit = websiteOwner.Split('+');
