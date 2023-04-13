@@ -380,6 +380,47 @@ stages:
       displayName: Upload linux tracer symbols
       artifact: linux-tracer-symbols-$(baseImage)
 
+- stage: build_linux_samples
+  dependsOn: [generate_variables, merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
+  - job: build
+    timeoutInMinutes: 60 #default value
+    dependsOn: []
+    strategy:
+      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_matrix']]
+
+    variables:
+      TestAllPackageVersions: true
+      IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+      
+      # when we build samples separately, we could run this step and the docker-compose one below in //
+      # (currently the docker-compose step relies on serverless samples)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(baseImage)
+        command: "CompileSamplesLinuxOrOsx CompileMultiApiPackageVersionSamples --framework $(publishTargetFramework)"
+
+    - publish: $(monitoringHome)
+      displayName: Uploading linux tracer home artifact
+      artifact: linux-tracer-samples-$(baseImage)-$(publishTargetFramework)
+
 - stage: build_linux_profiler
   dependsOn: [merge_commit_id]
   variables:

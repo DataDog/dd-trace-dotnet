@@ -1333,11 +1333,12 @@ partial class Build
         .Unlisted()
         .DependsOn(HackForMissingMsBuildLocation)
         .After(CompileManagedSrc)
-        .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
         .Executes(() =>
         {
-            MakeGrpcToolsExecutable();
+            // build the dependency library projects for all libraries (easiest!)
+            var depsProjects = TracerDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/*/*.*proj");
+            DotnetBuild(depsProjects, noRestore: false, noDependencies: false);
 
             // There's nothing specifically linux-y here, it's just that we only build a subset of projects
             // for testing on linux.
@@ -1414,14 +1415,19 @@ partial class Build
                 .Select(x => x.path)
                 .ToArray();
 
-            // do the build and publish separately to avoid dependency issues
+            // have to do the restore separately first, as we need to make the grpc tools executable
+            DotNetRestore(x => x
+                .SetNoWarnDotNetCore3()
+                .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+                .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                .CombineWith(projectsToBuild, (c, project) => c
+                    .SetProjectFile(project)));
 
-            DotnetBuild(projectsToBuild, framework: Framework, noRestore: false);
+            MakeGrpcToolsExecutable();
 
             DotNetPublish(x => x
                     .EnableNoRestore()
-                    .EnableNoBuild()
-                    .EnableNoDependencies()
                     .SetConfiguration(BuildConfiguration)
                     .SetFramework(Framework)
                     .SetNoWarnDotNetCore3()
@@ -1468,7 +1474,6 @@ partial class Build
         .DependsOn(HackForMissingMsBuildLocation)
         .After(CompileManagedSrc)
         .After(CompileSamplesLinuxOrOsx)
-        .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
         .Executes(() =>
         {
@@ -1486,7 +1491,6 @@ partial class Build
                     .SetTargetPath(MsBuildProject)
                     .SetTargets(target)
                     .SetConfiguration(BuildConfiguration)
-                    .EnableNoDependencies()
                     .SetProperty("TargetFramework", Framework.ToString())
                     .SetProperty("BuildInParallel", "true")
                     .SetProperty("CheckEolTargetFramework", "false")
