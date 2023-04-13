@@ -438,6 +438,8 @@ namespace Datadog.Trace.ClrProfiler
                 });
         }
 
+        // /!\ This method is called by reflection in the SampleHelpers
+        // If you remove it then you need to provide an alternative way to wait for the discovery service
         private static async Task<bool> WaitForDiscoveryService(IDiscoveryService discoveryService)
         {
             var tc = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
