@@ -45,13 +45,13 @@ namespace Datadog.Trace.Telemetry
         public static TelemetrySettings FromDefaultSources()
             => FromSource(GlobalConfigurationSource.Instance, IsAgentAvailable);
 
-        public static TelemetrySettings FromSource(IConfigurationSource? source, Func<bool?> isAgentAvailable)
+        public static TelemetrySettings FromSource(IConfigurationSource source, Func<bool?> isAgentAvailable)
         {
             string? configurationError = null;
 
-            var apiKey = source?.GetString(ConfigurationKeys.ApiKey);
-            var agentlessExplicitlyEnabled = source?.GetBool(ConfigurationKeys.Telemetry.AgentlessEnabled);
-            var agentProxyEnabled = source?.GetBool(ConfigurationKeys.Telemetry.AgentProxyEnabled)
+            var apiKey = source.GetString(ConfigurationKeys.ApiKey);
+            var agentlessExplicitlyEnabled = source.GetBool(ConfigurationKeys.Telemetry.AgentlessEnabled);
+            var agentProxyEnabled = source.GetBool(ConfigurationKeys.Telemetry.AgentProxyEnabled)
                                  ?? isAgentAvailable()
                                  ?? true;
 
@@ -75,7 +75,7 @@ namespace Datadog.Trace.Telemetry
             }
 
             // enabled by default if we have any transports
-            var telemetryEnabled = source?.GetBool(ConfigurationKeys.Telemetry.Enabled)
+            var telemetryEnabled = source.GetBool(ConfigurationKeys.Telemetry.Enabled)
                                 ?? (agentlessEnabled || agentProxyEnabled);
 
             AgentlessSettings? agentless = null;
@@ -84,7 +84,7 @@ namespace Datadog.Trace.Telemetry
                 // We have an API key, so try to send directly to intake
                 Uri agentlessUri;
 
-                var requestedTelemetryUri = source?.GetString(ConfigurationKeys.Telemetry.Uri);
+                var requestedTelemetryUri = source.GetString(ConfigurationKeys.Telemetry.Uri);
                 if (!string.IsNullOrEmpty(requestedTelemetryUri)
                  && Uri.TryCreate(requestedTelemetryUri, UriKind.Absolute, out var telemetryUri))
                 {
@@ -102,7 +102,7 @@ namespace Datadog.Trace.Telemetry
                     }
 
                     // use the default intake. Use DD_SITE if provided, otherwise use default
-                    var siteFromEnv = source?.GetString(ConfigurationKeys.Site);
+                    var siteFromEnv = source.GetString(ConfigurationKeys.Site);
                     var ddSite = string.IsNullOrEmpty(siteFromEnv) ? "datadoghq.com" : siteFromEnv;
                     agentlessUri = new Uri($"{TelemetryConstants.TelemetryIntakePrefix}.{ddSite}/");
                 }
@@ -110,7 +110,7 @@ namespace Datadog.Trace.Telemetry
                 agentless = new AgentlessSettings(agentlessUri, apiKey!);
             }
 
-            var rawInterval = source?.GetInt32(ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds);
+            var rawInterval = source.GetInt32(ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds);
             var heartbeatInterval = rawInterval is { } interval and > 0 and <= 3600 ? interval : 60;
 
             return new TelemetrySettings(telemetryEnabled, configurationError, agentless, agentProxyEnabled, TimeSpan.FromSeconds(heartbeatInterval));
