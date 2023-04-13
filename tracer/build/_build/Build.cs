@@ -227,7 +227,6 @@ partial class Build : NukeBuild
     Target BuildAndRunWindowsAzureFunctionsTests => _ => _
         .Requires(() => IsWin)
         .Description("Builds and runs the Windows Azure Functions tests")
-        .DependsOn(CompileAzureFunctionsSamplesWindows)
         .DependsOn(BuildRunnerTool)
         .DependsOn(RunWindowsAzureFunctionsTests);
 

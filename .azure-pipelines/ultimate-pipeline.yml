@@ -1332,7 +1332,7 @@ stages:
       workingDirectory: $(Pipeline.Workspace)
       retryCountOnTaskFailure: 5
 
-    - script: tracer\build.cmd BuildAndRunWindowsAzureFunctionsTests -Framework $(framework) --code-coverage $(runCodeCoverage)
+    - script: tracer\build.cmd RunWindowsAzureFunctionsTests -Framework $(framework) --code-coverage $(runCodeCoverage)
       displayName: Run Azure Functions tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
