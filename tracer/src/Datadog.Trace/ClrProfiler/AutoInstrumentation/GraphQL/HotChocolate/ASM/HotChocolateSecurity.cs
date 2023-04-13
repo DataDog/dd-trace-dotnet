@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ASM.AST;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ASM;
@@ -35,14 +36,14 @@ internal abstract class HotChocolateSecurity
 
     private static void DepthSearchOperationNode(object obj, IDictionary<string, object> variables)
     {
-        if (!obj.TryDuckCast<SyntaxNodeProxy>(out var node))
+        if (!obj.TryDuckCast<SyntaxNode>(out var node))
         {
             return;
         }
 
         switch (node.Kind)
         {
-            case SyntaxKindProxy.OperationDefinition when obj.TryDuckCast<SelectionsNodeProxy>(out var opNode):
+            case SyntaxKindProxy.OperationDefinition when obj.TryDuckCast<SelectionsNode>(out var opNode):
             {
                 foreach (var selectionSetSelection in opNode.SelectionSet.Selections)
                 {
@@ -52,7 +53,7 @@ internal abstract class HotChocolateSecurity
                 break;
             }
 
-            case SyntaxKindProxy.Field when obj.TryDuckCast<FieldNodeProxy>(out var fieldNode):
+            case SyntaxKindProxy.Field when obj.TryDuckCast<FieldNode>(out var fieldNode):
             {
                 if (fieldNode.Arguments.Any())
                 {
@@ -83,7 +84,7 @@ internal abstract class HotChocolateSecurity
                         DepthSearchOperationNode(n, variables);
                     }
                 }
-                else if (obj.TryDuckCast<SelectionsNodeProxy>(out var unknownSelectionNode))
+                else if (obj.TryDuckCast<SelectionsNode>(out var unknownSelectionNode))
                 {
                     DepthSearchOperationNode(unknownSelectionNode.SelectionSet, variables);
                 }
@@ -95,7 +96,7 @@ internal abstract class HotChocolateSecurity
 
     private static string GetName(object node)
     {
-        if (node.TryDuckCast<NamedNodeProxy>(out var namedNode))
+        if (node.TryDuckCast<NamedNode>(out var namedNode))
         {
             return namedNode.Name.Value;
         }
@@ -103,7 +104,7 @@ internal abstract class HotChocolateSecurity
         return string.Empty;
     }
 
-    private static string GetFieldNodeName(FieldNodeProxy fieldNode, object node)
+    private static string GetFieldNodeName(FieldNode fieldNode, object node)
     {
         if (!string.IsNullOrEmpty(fieldNode.Alias.Value))
         {
@@ -115,22 +116,22 @@ internal abstract class HotChocolateSecurity
 
     private static object GetArgumentValue(object obj, IDictionary<string, object> variables)
     {
-        if (obj is null || !obj.TryDuckCast<SyntaxNodeProxy>(out var node))
+        if (obj is null || !obj.TryDuckCast<SyntaxNode>(out var node))
         {
             return null;
         }
 
         var value = node.Kind switch
         {
-            SyntaxKindProxy.Argument => GetArgumentValue(obj.DuckCast<ValueNodeProxy>().Value, variables),
+            SyntaxKindProxy.Argument => GetArgumentValue(obj.DuckCast<ValueNode>().Value, variables),
             SyntaxKindProxy.Variable => GetVariableValue(GetName(obj), variables),
-            SyntaxKindProxy.StringValue or SyntaxKindProxy.EnumValue => obj.DuckCast<ValueNodeProxy>().Value.ToString(),
-            SyntaxKindProxy.IntValue => int.Parse(obj.DuckCast<ValueNodeProxy>().Value.ToString() ?? string.Empty),
-            SyntaxKindProxy.BooleanValue => bool.Parse(obj.DuckCast<ValueNodeProxy>().Value.ToString() ?? string.Empty),
-            SyntaxKindProxy.FloatValue => float.Parse(obj.DuckCast<ValueNodeProxy>().Value.ToString() ?? string.Empty, CultureInfo.InvariantCulture.NumberFormat),
-            SyntaxKindProxy.ListValue => (obj.DuckCast<ItemsNodeProxy>().Items ?? Array.Empty<object>()).Select(x => GetArgumentValue(x, variables)).ToList(),
-            SyntaxKindProxy.ObjectValue => obj.DuckCast<ObjectValueNodeProxy>().Fields.ToDictionary(GetName, x => GetArgumentValue(x, variables)),
-            SyntaxKindProxy.ObjectField => GetArgumentValue(obj.DuckCast<ValueNodeProxy>().Value, variables),
+            SyntaxKindProxy.StringValue or SyntaxKindProxy.EnumValue => obj.DuckCast<ValueNode>().Value.ToString(),
+            SyntaxKindProxy.IntValue => int.Parse(obj.DuckCast<ValueNode>().Value.ToString() ?? string.Empty),
+            SyntaxKindProxy.BooleanValue => bool.Parse(obj.DuckCast<ValueNode>().Value.ToString() ?? string.Empty),
+            SyntaxKindProxy.FloatValue => float.Parse(obj.DuckCast<ValueNode>().Value.ToString() ?? string.Empty, CultureInfo.InvariantCulture.NumberFormat),
+            SyntaxKindProxy.ListValue => (obj.DuckCast<ItemsNode>().Items ?? Array.Empty<object>()).Select(x => GetArgumentValue(x, variables)).ToList(),
+            SyntaxKindProxy.ObjectValue => obj.DuckCast<ObjectValueNode>().Fields.ToDictionary(GetName, x => GetArgumentValue(x, variables)),
+            SyntaxKindProxy.ObjectField => GetArgumentValue(obj.DuckCast<ValueNode>().Value, variables),
 
             _ => null
         };

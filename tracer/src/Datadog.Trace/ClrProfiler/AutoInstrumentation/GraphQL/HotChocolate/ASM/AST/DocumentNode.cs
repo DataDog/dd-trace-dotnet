@@ -6,7 +6,7 @@
 using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ASM
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ASM.AST
 {
     /// <summary>
     /// HotChocolate.Language.DocumentNode interface for ducktyping
