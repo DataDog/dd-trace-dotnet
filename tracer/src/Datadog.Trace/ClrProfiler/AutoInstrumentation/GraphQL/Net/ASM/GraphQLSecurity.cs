@@ -16,6 +16,11 @@ internal abstract class GraphQLSecurity
         where TNode : IExecutionNode
     {
         var scope = Tracer.Instance.ActiveScope;
+        if (scope is null)
+        {
+            return;
+        }
+
         var resolverName = node.Name;
 
         // If no name is specified, it's not a resolver
