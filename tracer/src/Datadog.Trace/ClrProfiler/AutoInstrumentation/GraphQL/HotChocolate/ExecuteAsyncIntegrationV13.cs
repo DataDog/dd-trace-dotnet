@@ -41,10 +41,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         internal static CallTargetState OnMethodBegin<TTarget, TQueyRequest>(TTarget instance, TQueyRequest request, in CancellationToken token)
             where TQueyRequest : IQueryRequest
         {
-            // ASM
-            HotChocolateSecurity.ScanQuery(request.Query);
+            var scope = HotChocolateCommon.CreateScopeFromExecuteAsync(Tracer.Instance, request);
 
-            return new CallTargetState(scope: HotChocolateCommon.CreateScopeFromExecuteAsync(Tracer.Instance, request));
+            // ASM
+            HotChocolateSecurity.ScanQuery(request);
+            GraphQLSecurityCommon.RunSecurity(scope);
+
+            return new CallTargetState(scope: scope);
         }
 
         /// <summary>
