@@ -7,10 +7,10 @@
 
   <ItemGroup>
     <PackageReference Include="Datadog.Trace.Bundle" Version="2.29.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.18" />
-    <PackageReference Include="NetEscapades.Extensions.Logging.RollingFile" Version="2.5.0-beta01" />
-    <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
-    <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
+    <PackageReference Include="NetEscapades.Extensions.Logging.RollingFile" Version="2.5.0" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
