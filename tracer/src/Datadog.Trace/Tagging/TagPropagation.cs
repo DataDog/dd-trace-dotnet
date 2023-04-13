@@ -57,8 +57,12 @@ internal static class TagPropagation
     /// </returns>
     public static TraceTagCollection ParseHeader(string? propagationHeader)
     {
-        var maxLength = Tracer.Instance?.Settings?.OutgoingTagPropagationHeaderMaxLength ??
-                        OutgoingTagPropagationHeaderMaxLength;
+        // Get the global tracer instance (like Tracer.Instance),
+        // but don't initialize it if it's not already initialized
+        var tracer = Tracer.GetGlobalInstance(initializeIfNeeded: false);
+
+        // try to get the setting from the global tracer, or use the default value
+        var maxLength = tracer?.Settings?.OutgoingTagPropagationHeaderMaxLength ?? OutgoingTagPropagationHeaderMaxLength;
 
         return ParseHeader(propagationHeader, maxLength);
     }
