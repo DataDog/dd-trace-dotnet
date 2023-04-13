@@ -718,7 +718,7 @@ partial class Build
 
             if (sanitizer is SanitizerKind.Asan)
             {
-                envVars["ASAN_OPTIONS"] = "detect_leaks=0";
+                envVars["ASAN_OPTIONS"] = "detect_leaks=1";
             }
             else if (sanitizer is SanitizerKind.Ubsan)
             {
