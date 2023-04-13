@@ -53,6 +53,12 @@ namespace Datadog.Trace.Security.IntegrationTests
             // adding these header so we can later assert it was collected properly
             _httpClient.DefaultRequestHeaders.Add(XffHeader, MainIp);
             _httpClient.DefaultRequestHeaders.Add("user-agent", "Mistake Not...");
+
+#if NETCOREAPP2_1
+            // Keep-alive is causing some weird failures on aspnetcore 2.1
+            _httpClient.DefaultRequestHeaders.ConnectionClose = true;
+#endif
+
             _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings { ContractResolver = new OrderedContractResolver() };
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_WAF_TIMEOUT", 10_000_000.ToString());
         }
