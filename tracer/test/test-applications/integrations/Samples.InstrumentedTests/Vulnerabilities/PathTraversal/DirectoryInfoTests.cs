@@ -5,7 +5,9 @@
 
 using System;
 using System.IO;
+#if NETFRAMEWORK
 using System.Security.AccessControl;
+#endif
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
@@ -21,6 +23,15 @@ public class DirectoryInfoTests : InstrumentationTestsBase
         AddTainted(taintedPathValue);
         AddTainted(taintedSubFolderValue);
     }
+
+    [Fact]
+    public void GivenADirectoryInfo_WhenCreatingFromTaintedString_LocationIsCorrect()
+    {
+        ExecuteAction(() => { new DirectoryInfo(taintedPathValue); });
+        AssertLocation(nameof(DirectoryInfoTests));
+    }
+
+    // Cover System.IO.DirectoryInfo::.ctor(System.String)
 
     [Fact]
     public void GivenADirectoryInfo_WhenCreatingFromInvalidCharsString_ExceptionIsThrown()
@@ -41,6 +52,8 @@ public class DirectoryInfoTests : InstrumentationTestsBase
     {
         Assert.Throws<ArgumentException>(() => new DirectoryInfo(""));
     }
+
+    // Cover System.IO.DirectoryInfo::MoveTo(System.String)
 
     [Fact]
     public void GivenADirectoryInfo_WhenCreatingFromIncorrectString_ExceptionIsThrown2()
@@ -68,34 +81,52 @@ public class DirectoryInfoTests : InstrumentationTestsBase
     }
 
 #if NETFRAMEWORK
+
+    // Cover System.IO.DirectoryInfo::CreateSubdirectory(System.String,System.Security.AccessControl.DirectorySecurity)"
+
     [Fact]
     public void GivenADirectoryInfo_WhenCreateSubdirectoryTaintedStringDirectorySecurity_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { new DirectoryInfo(notTaintedValue).CreateSubdirectory(taintedSubFolderValue, new DirectorySecurity()); });
         AssertVulnerable();
     }
+#endif
+
+    // Cover System.IO.DirectoryInfo::CreateSubdirectory(System.String)
 
     [Fact]
-    public void GivenADirectoryInfo_WhenCreateSubdirectoryTaintedString_VulnerabilityIsLogged()
+    public void GivenADirectoryInfo_WhenCreateSubdirectoryTaintedString_VulnerabilityIsLogged2()
     {
         ExecuteAction(() => { new DirectoryInfo(notTaintedValue).CreateSubdirectory(taintedSubFolderValue); });
         AssertVulnerable();
     }
-#else
-        [Fact]
-        public void GivenADirectoryInfo_WhenCreateSubdirectoryTaintedString_VulnerabilityIsLogged()
-        {
-            ExecuteAction(() => { new DirectoryInfo(".").CreateSubdirectory(taintedSubFolderValue); });
-            AssertVulnerable();
-        }
-#endif
-#if !NET35
+
+    [Fact]
+    public void GivenADirectoryInfo_WhenCreateSubdirectoryTaintedString_VulnerabilityIsLogged3()
+    {
+        ExecuteAction(() => { new DirectoryInfo(".").CreateSubdirectory(taintedSubFolderValue); });
+        AssertVulnerable();
+    }    
+
+    // Cover System.IO.DirectoryInfo::EnumerateDirectories(System.String)
+
     [Fact]
     public void GivenADirectoryInfo_WhenEnumerateDirectoriesTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { new DirectoryInfo(notTaintedValue).EnumerateDirectories(taintedSubFolderValue); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.DirectoryInfo::EnumerateFiles(System.String)
+
+    [Fact]
+    public void GivenADirectoryInfo_WhenEnumerateFilesTaintedString_VulnerabilityIsLogged()
+    {
+        ExecuteAction(() => { new DirectoryInfo(notTaintedValue).EnumerateFiles(taintedSubFolderValue); });
+        AssertVulnerable();
+    }
+
+    // Cover System.IO.DirectoryInfo::EnumerateDirectories(System.String,System.IO.SearchOption)
 
     [Fact]
     public void GivenADirectoryInfo_WhenEnumerateDirectoriesTaintedStringSearchOption_VulnerabilityIsLogged()
@@ -104,21 +135,7 @@ public class DirectoryInfoTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-#if !NETFRAMEWORK
-    [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateDirectoriesTaintedStringSearchOption_VulnerabilityIsLogged2()
-    {
-        ExecuteAction(() => { new DirectoryInfo(notTaintedValue).EnumerateDirectories(taintedSubFolderValue, new EnumerationOptions()); });
-        AssertVulnerable();
-    }
-#endif
-
-    [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateFilesTaintedString_VulnerabilityIsLogged()
-    {
-        ExecuteAction(() => { new DirectoryInfo(notTaintedValue).EnumerateFiles(taintedSubFolderValue); });
-        AssertVulnerable();
-    }
+    // Cover System.IO.DirectoryInfo::EnumerateFiles(System.String,System.IO.SearchOption)
 
     [Fact]
     public void GivenADirectoryInfo_WhenEnumerateFilesTaintedStringSearchOption_VulnerabilityIsLogged()
@@ -128,6 +145,18 @@ public class DirectoryInfoTests : InstrumentationTestsBase
     }
 
 #if !NETFRAMEWORK
+
+    // Cover System.IO.DirectoryInfo::EnumerateDirectories(System.String,System.IO.EnumerationOptions)
+
+    [Fact]
+    public void GivenADirectoryInfo_WhenEnumerateDirectoriesTaintedStringSearchOption_VulnerabilityIsLogged2()
+    {
+        ExecuteAction(() => { new DirectoryInfo(notTaintedValue).EnumerateDirectories(taintedSubFolderValue, new EnumerationOptions()); });
+        AssertVulnerable();
+    }
+
+    // Cover System.IO.DirectoryInfo::EnumerateFiles(System.String,System.IO.EnumerationOptions)  
+
     [Fact]
     public void GivenADirectoryInfo_WhenEnumerateFilesTaintedStringSearchOption_VulnerabilityIsLogged2()
     {
@@ -136,6 +165,8 @@ public class DirectoryInfoTests : InstrumentationTestsBase
     }
 #endif
 
+    // Cover System.IO.DirectoryInfo::EnumerateFileSystemInfos(System.String)
+
     [Fact]
     public void GivenADirectoryInfo_WhenEnumerateFileSystemInfosTaintedString_VulnerabilityIsLogged()
     {
@@ -143,12 +174,16 @@ public class DirectoryInfoTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    // Cover System.IO.DirectoryInfo::EnumerateFileSystemInfos(System.String,System.IO.SearchOption)
+
     [Fact]
     public void GivenADirectoryInfo_WhenEnumerateFileSystemInfosTaintedStringSearchOption_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { new DirectoryInfo(notTaintedValue).EnumerateFileSystemInfos(taintedSubFolderValue, SearchOption.AllDirectories); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.DirectoryInfo::EnumerateFileSystemInfos(System.String,System.IO.EnumerationOptions)
 
 #if !NETFRAMEWORK
     [Fact]
@@ -158,13 +193,17 @@ public class DirectoryInfoTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 #endif
-#endif
+
+    // Cover System.IO.DirectoryInfo::GetDirectories(System.String)
+
     [Fact]
     public void GivenADirectoryInfo_WhenGetDirectoriesTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { new DirectoryInfo(notTaintedValue).GetDirectories(taintedSubFolderValue); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.DirectoryInfo::GetDirectories(System.String,System.IO.SearchOption)
 
     [Fact]
     public void GivenADirectoryInfo_WhenGetDirectoriesTaintedStringSearchOption_VulnerabilityIsLogged()
@@ -173,6 +212,7 @@ public class DirectoryInfoTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    // Cover System.IO.DirectoryInfo::GetDirectories(System.String,System.IO.EnumerationOptions)
 
 #if !NETFRAMEWORK
     [Fact]
@@ -183,6 +223,8 @@ public class DirectoryInfoTests : InstrumentationTestsBase
     }
 #endif
 
+    // Cover System.IO.DirectoryInfo::GetFiles(System.String)
+
     [Fact]
     public void GivenADirectoryInfo_WhenGetFilesTaintedString_VulnerabilityIsLogged()
     {
@@ -190,12 +232,16 @@ public class DirectoryInfoTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    // Cover System.IO.DirectoryInfo::GetFiles(System.String,System.IO.SearchOption)
+
     [Fact]
     public void GivenADirectoryInfo_WhenGetFilesTaintedStringSearchOption_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { new DirectoryInfo(notTaintedValue).GetFiles(taintedSubFolderValue, SearchOption.AllDirectories); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.DirectoryInfo::GetFiles(System.String,System.IO.EnumerationOptions)
 
 #if !NETFRAMEWORK
     [Fact]
@@ -206,20 +252,25 @@ public class DirectoryInfoTests : InstrumentationTestsBase
     }
 #endif
 
+    // Cover System.IO.DirectoryInfo::GetFileSystemInfos(System.String)
+
     [Fact]
     public void GivenADirectoryInfo_WhenGetFileSystemInfosTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { new DirectoryInfo(notTaintedValue).GetFileSystemInfos(taintedSubFolderValue); });
         AssertVulnerable();
     }
-#if !NET35
+
+    // Cover System.IO.DirectoryInfo::GetFileSystemInfos(System.String,System.IO.SearchOption)
+
     [Fact]
     public void GivenADirectoryInfo_WhenGetFileSystemInfosTaintedStringSearchOption_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { new DirectoryInfo(notTaintedValue).GetFileSystemInfos(taintedSubFolderValue, SearchOption.AllDirectories); });
         AssertVulnerable();
     }
-#endif
+
+    // Cover System.IO.DirectoryInfo::GetFileSystemInfos(System.String,System.IO.EnumerationOptions)
 
 #if !NETFRAMEWORK
     [Fact]

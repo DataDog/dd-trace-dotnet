@@ -24,362 +24,434 @@ public class DirectoryTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenCreatingFromInvalidCharsString_ExceptionIsThrown()
+    public void GivenADirectory_WhenCreatingFromTaintedString_LocationIsCorrect()
+    {
+        ExecuteAction(() => { Directory.CreateDirectory(taintedPathValue); });
+        AssertLocation(nameof(DirectoryTests));
+    }
+
+    // Cover System.IO.Directory::CreateDirectory(System.String)
+
+    [Fact]
+    public void GivenADirectory_WhenCreatingFromInvalidCharsString_ExceptionIsThrown()
     {
         Assert.Throws<ArgumentException>(() => Directory.CreateDirectory(taintedPathValue));
         AssertVulnerable();
     }
 
 #if NETFRAMEWORK
+
+    // Cover System.IO.Directory::CreateDirectory(System.String,System.Security.AccessControl.DirectorySecurity)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenCreatingFromTaintedStringDirectorySecurity_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenCreatingFromTaintedStringDirectorySecurity_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.CreateDirectory(taintedPathValue, new DirectorySecurity()); });
         AssertVulnerable();
     }
 #endif
     [Fact]
-    public void GivenADirectoryInfo_WhenCreatingFromTaintedString_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenCreatingFromTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.CreateDirectory(taintedPathValue); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenCreatingFromIncorrectString_ExceptionIsThrown()
+    public void GivenADirectory_WhenCreatingFromIncorrectString_ExceptionIsThrown()
     {
         Assert.Throws<ArgumentException>(() => Directory.CreateDirectory(""));
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenCreatingFromIncorrectString_ExceptionIsThrown2()
+    public void GivenADirectory_WhenCreatingFromIncorrectString_ExceptionIsThrown2()
     {
         Assert.Throws<ArgumentNullException>(() => Directory.CreateDirectory(null));
     }
+
+    // Cover System.IO.Directory CreateDirectory(System.String, System.IO.UnixFileMode)
+
 #if NET7_0_OR_GREATER
-    [Category("LinuxUnsupported")]
     [Fact]
-    public void GivenADirectoryInfo_WhenCreatingFromTaintedString_VulnerabilityIsLogged2()
+    public void GivenADirectory_WhenCreatingFromTaintedString_VulnerabilityIsLogged2()
     {
 #pragma warning disable CA1416 // Validate platform compatibility
-        ExecuteAction(() => { Directory.CreateDirectory(taintedPathValue, UnixFileMode.None); });
+        ExecuteAction(() => {Directory.CreateDirectory(taintedPathValue, UnixFileMode.None); });
 #pragma warning restore CA1416 // Validate platform compatibility
         AssertVulnerable();
     }
 
-    [Category("LinuxUnsupported")]
+    // Cover System.IO.Directory CreateTempSubdirectory(System.String)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenCreatingFromTaintedString_VulnerabilityIsLogged3()
+    public void GivenADirectory_WhenCreatingFromTaintedString_VulnerabilityIsLogged3()
     {
         ExecuteAction(() => { Directory.CreateTempSubdirectory(taintedPathValue); });
         AssertVulnerable();
     }
 #endif
+
+    // Cover System.IO.Directory::Delete(System.String)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenDeleteTaintedString_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenDeleteTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.Delete(taintedPathValue); });
         AssertVulnerable();
     }
 
+    // Cover System.IO.Directory::Delete(System.String,System.Boolean)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenDeleteTaintedStringAndBool_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenDeleteTaintedStringAndBool_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.Delete(taintedPathValue, true); });
         AssertVulnerable();
     }
-#if !NET35
+
+    // Cover System.IO.Directory::EnumerateDirectories(System.String)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateDirectoriesTaintedString_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenEnumerateDirectoriesTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.EnumerateDirectories(taintedPathValue); });
         AssertVulnerable();
     }
 
+    // Cover System.IO.Directory::EnumerateDirectories(System.String,System.String)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateDirectoriesTaintedStringPath_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenEnumerateDirectoriesTaintedStringPath_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.EnumerateDirectories(taintedPathValue, "*"); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateDirectoriesTaintedStringPattern_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenEnumerateDirectoriesTaintedStringPattern_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.EnumerateDirectories(notTaintedValue, taintedpattern); });
         AssertVulnerable();
     }
 
+    // Cover System.IO.Directory::GetFileSystemEntries(System.String,System.String,System.IO.SearchOption)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateDirectoriesTaintedStringPathSearchOption_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenEnumerateDirectoriesTaintedStringPathSearchOption_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.EnumerateDirectories(taintedPathValue, "*", SearchOption.AllDirectories); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateDirectoriesTaintedStringPatternSearchOption_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenEnumerateDirectoriesTaintedStringPatternSearchOption_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.EnumerateDirectories(notTaintedValue, taintedpattern, SearchOption.AllDirectories); });
         AssertVulnerable();
     }
 #if !NETFRAMEWORK
 
+    // Cover System.IO.Directory::EnumerateDirectories(System.String,System.String,System.IO.EnumerationOptions)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateDirectoriesTaintedStringPathEnumerationOptions_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenEnumerateDirectoriesTaintedStringPathEnumerationOptions_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.EnumerateDirectories(taintedPathValue, "*", new EnumerationOptions()); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateDirectoriesTaintedStringPatternEnumerationOptions_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenEnumerateDirectoriesTaintedStringPatternEnumerationOptions_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.EnumerateDirectories(notTaintedValue, taintedpattern, new EnumerationOptions()); });
         AssertVulnerable();
     }
 #endif
+
+    // Cover System.IO.Directory::EnumerateFiles(System.String)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateFilesTaintedStringPath_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenEnumerateFilesTaintedStringPath_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.EnumerateFiles(taintedPathValue); });
         AssertVulnerable();
     }
 
+    // Cover System.IO.Directory::EnumerateFiles(System.String,System.String)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateFilesTaintedStringPathPattern_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenEnumerateFilesTaintedStringPathPattern_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.EnumerateFiles(taintedPathValue, "*"); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateFilesTaintedStringPattern_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenEnumerateFilesTaintedStringPattern_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.EnumerateFiles(notTaintedValue, taintedpattern); });
         AssertVulnerable();
     }
 
+    // Cover System.IO.Directory::EnumerateFiles(System.String,System.String,System.IO.SearchOption)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateFilesTaintedStringPathSearchOption_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenEnumerateFilesTaintedStringPathSearchOption_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.EnumerateFiles(taintedPathValue, "*", SearchOption.AllDirectories); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateFilesTaintedStringPatternSearchOption_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenEnumerateFilesTaintedStringPatternSearchOption_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.EnumerateFiles(notTaintedValue, taintedpattern, SearchOption.AllDirectories); });
         AssertVulnerable();
     }
 
 #if !NETFRAMEWORK
+
+    // Cover System.IO.Directory::EnumerateFiles(System.String,System.String,System.IO.EnumerationOptions)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateFilesTaintedStringEnumerationOptions_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenEnumerateFilesTaintedStringEnumerationOptions_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.EnumerateFiles(taintedPathValue, "*", new EnumerationOptions()); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateFilesTaintedStringEnumerationOptions_VulnerabilityIsLogged2()
+    public void GivenADirectory_WhenEnumerateFilesTaintedStringEnumerationOptions_VulnerabilityIsLogged2()
     {
         ExecuteAction(() => { Directory.EnumerateFiles(notTaintedValue, taintedpattern, new EnumerationOptions()); });
         AssertVulnerable();
     }
 #endif
 
+    // Cover System.IO.Directory::EnumerateFileSystemEntries(System.String,System.String)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateFileSystemEntriesTaintedStringPathPattern_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenEnumerateFileSystemEntriesTaintedStringPathPattern_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.EnumerateFileSystemEntries(taintedPathValue, "*"); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateFileSystemEntriesTaintedStringPath_VulnerabilityIsLogged()
-    {
-        ExecuteAction(() => { Directory.EnumerateFileSystemEntries(taintedPathValue); });
-        AssertVulnerable();
-    }
-
-    [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateFileSystemEntriesTaintedStringPattern_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenEnumerateFileSystemEntriesTaintedStringPattern_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.EnumerateFileSystemEntries(notTaintedValue, taintedpattern); });
         AssertVulnerable();
     }
 
+    // Cover System.IO.Directory::EnumerateFileSystemEntries(System.String)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateFileSystemEntriesTaintedStringPathSearchOption_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenEnumerateFileSystemEntriesTaintedStringPath_VulnerabilityIsLogged()
+    {
+        ExecuteAction(() => { Directory.EnumerateFileSystemEntries(taintedPathValue); });
+        AssertVulnerable();
+    }
+
+    // Cover System.IO.Directory::EnumerateFileSystemEntries(System.String,System.String,System.IO.SearchOption)
+
+    [Fact]
+    public void GivenADirectory_WhenEnumerateFileSystemEntriesTaintedStringPathSearchOption_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.EnumerateFileSystemEntries(taintedPathValue, "*", SearchOption.AllDirectories); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateFileSystemEntriesTaintedStringPatternSearchOption_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenEnumerateFileSystemEntriesTaintedStringPatternSearchOption_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.EnumerateFileSystemEntries(notTaintedValue, taintedpattern, SearchOption.AllDirectories); });
         AssertVulnerable();
     }
 
 #if !NETFRAMEWORK
+
+    // Cover System.IO.Directory::EnumerateFileSystemEntries(System.String,System.String,System.IO.EnumerationOptions)
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateFileSystemEntriesTaintedStringPathEnumerationOptions_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenEnumerateFileSystemEntriesTaintedStringPathEnumerationOptions_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.EnumerateFileSystemEntries(taintedPathValue, "*", new EnumerationOptions()); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenEnumerateFileSystemEntriesTaintedStringPatternEnumerationOptions_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenEnumerateFileSystemEntriesTaintedStringPatternEnumerationOptions_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.EnumerateFileSystemEntries(notTaintedValue, taintedpattern, new EnumerationOptions()); });
         AssertVulnerable();
     }
 #endif
-#endif
+
+    // Cover System.IO.Directory::GetDirectories(System.String)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenGetDirectoriesTaintedStringPath_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetDirectoriesTaintedStringPath_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetDirectories(taintedPathValue); });
         AssertVulnerable();
     }
 
+    // Cover System.IO.Directory::GetDirectories(System.String,System.String)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenGetDirectoriesTaintedStringPathPattern_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetDirectoriesTaintedStringPathPattern_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetDirectories(taintedPathValue, "*"); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenGetDirectoriesTaintedStringPattern_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetDirectoriesTaintedStringPattern_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetDirectories(notTaintedValue, taintedpattern); });
         AssertVulnerable();
     }
 
+    // Cover System.IO.Directory::GetDirectories(System.String,System.String,System.IO.SearchOption)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenGetDirectoriesTaintedStringPathSearchOption_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetDirectoriesTaintedStringPathSearchOption_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetDirectories(taintedPathValue, "*", SearchOption.AllDirectories); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenGetDirectoriesTaintedStringPatternSearchOption_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetDirectoriesTaintedStringPatternSearchOption_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetDirectories(notTaintedValue, taintedpattern, SearchOption.AllDirectories); });
         AssertVulnerable();
     }
 
 #if !NETFRAMEWORK
+
+    // Cover System.IO.Directory::GetDirectories(System.String,System.String,System.IO.EnumerationOptions)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenGetDirectoriesTaintedStringPathEnumerationOptions_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetDirectoriesTaintedStringPathEnumerationOptions_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetDirectories(taintedPathValue, "*", new EnumerationOptions()); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenGetDirectoriesTaintedStringPatternEnumerationOptions_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetDirectoriesTaintedStringPatternEnumerationOptions_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetDirectories(notTaintedValue, taintedpattern, new EnumerationOptions()); });
         AssertVulnerable();
     }
 #endif
 
+    // Cover System.IO.Directory::GetDirectoryRoot(System.String)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenGetDirectoryRootTaintedStringPath_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetDirectoryRootTaintedStringPath_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetDirectoryRoot(taintedPathValue); });
         AssertVulnerable();
     }
 
+    // Cover System.IO.Directory::GetFiles(System.String)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenGetFilesTaintedStringPathPattern_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetFilesTaintedStringPathPattern_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetFiles(taintedPathValue); });
         AssertVulnerable();
     }
 
+    // Cover System.IO.Directory::GetFiles(System.String,System.String)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenGetFilesTaintedStringPath_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetFilesTaintedStringPath_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetFiles(taintedPathValue, "*"); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenGetFilesTaintedStringPattern_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetFilesTaintedStringPattern_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetFiles(notTaintedValue, taintedpattern); });
         AssertVulnerable();
     }
 
+    // Cover System.IO.Directory::GetFiles(System.String,System.String,System.IO.SearchOption)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenGetFilesTaintedStringPathSearchOption_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetFilesTaintedStringPathSearchOption_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetFiles(taintedPathValue, "*", SearchOption.AllDirectories); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenGetFilesTaintedStringPatternSearchOption_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetFilesTaintedStringPatternSearchOption_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetFiles(notTaintedValue, taintedpattern, SearchOption.AllDirectories); });
         AssertVulnerable();
     }
 
 #if !NETFRAMEWORK
+
+    // Cover System.IO.Directory::GetFiles(System.String,System.String,System.IO.EnumerationOptions)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenGetFilesTaintedStringPathEnumerationOptions_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetFilesTaintedStringPathEnumerationOptions_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetFiles(taintedPathValue, "*", new EnumerationOptions()); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenGetFilesTaintedStringPatternEnumerationOptions_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetFilesTaintedStringPatternEnumerationOptions_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetFiles(notTaintedValue, taintedpattern, new EnumerationOptions()); });
         AssertVulnerable();
     }
 #endif
 
+    // Cover System.IO.Directory::GetFileSystemEntries(System.String)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenGetFileSystemEntriesTaintedStringPath_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetFileSystemEntriesTaintedStringPath_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetFileSystemEntries(taintedPathValue); });
         AssertVulnerable();
     }
 
+    // Cover System.IO.Directory::GetFileSystemEntries(System.String,System.String)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenGetFileSystemEntriesTaintedStringPathPattern_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetFileSystemEntriesTaintedStringPathPattern_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetFileSystemEntries(taintedPathValue, "*"); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenGetFileSystemEntriesTaintedStringPattern_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetFileSystemEntriesTaintedStringPattern_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetFileSystemEntries(notTaintedValue, taintedpattern); });
         AssertVulnerable();
     }
 
+    // Cover System.IO.Directory::EnumerateDirectories(System.String,System.String,System.IO.SearchOption)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenGetFileSystemEntriesTaintedStringPathSearchOption_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetFileSystemEntriesTaintedStringPathSearchOption_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetFileSystemEntries(taintedPathValue, "*", SearchOption.AllDirectories); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenGetFileSystemEntriesTaintedStringPatternSearchOption_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetFileSystemEntriesTaintedStringPatternSearchOption_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetFileSystemEntries(notTaintedValue, taintedpattern, SearchOption.AllDirectories); });
         AssertVulnerable();
@@ -387,15 +459,18 @@ public class DirectoryTests : InstrumentationTestsBase
 
 
 #if !NETFRAMEWORK
+
+    // Cover System.IO.Directory::GetFileSystemEntries(System.String,System.String,System.IO.EnumerationOptions)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenGetFileSystemEntriesTaintedStringPathEnumerationOptions_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetFileSystemEntriesTaintedStringPathEnumerationOptions_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetFileSystemEntries(taintedPathValue, "*", new EnumerationOptions()); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenGetFileSystemEntriesTaintedStringPatternEnumerationOptions_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenGetFileSystemEntriesTaintedStringPatternEnumerationOptions_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.GetFileSystemEntries(notTaintedValue, taintedpattern, new EnumerationOptions()); });
         AssertVulnerable();
@@ -403,40 +478,47 @@ public class DirectoryTests : InstrumentationTestsBase
 #endif
 
 #if NETFRAMEWORK
+
+    // Cover System.IO.Directory::SetAccessControl(System.String,System.Security.AccessControl.DirectorySecurity)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenSetAccessControlTaintedString_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenSetAccessControlTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.SetAccessControl(taintedPathValue, new DirectorySecurity()); });
         AssertVulnerable();
     }
 #endif
+
+    // Cover System.IO.Directory::Move(System.String,System.String)
+
     [Fact]
-    public void GivenADirectoryInfo_WhenMoveTaintedString_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenMoveTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.Move(notTaintedValue, taintedPathValue); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenMoveTaintedString_VulnerabilityIsLogged2()
+    public void GivenADirectory_WhenMoveTaintedString_VulnerabilityIsLogged2()
     {
         ExecuteAction(() => { Directory.Move(taintedPathValue, notTaintedValue); });
         AssertVulnerable();
     }
 
+    // Cover System.IO.Directory::SetCurrentDirectory(System.String)
 
     [Fact]
-    public void GivenADirectoryInfo_WhenSetCurrentDirectoryTaintedString_VulnerabilityIsLogged()
+    public void GivenADirectory_WhenSetCurrentDirectoryTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { Directory.SetCurrentDirectory(taintedPathValue); });
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryInfo_WhenSetCurrentDirectoryNotTaintedString_VulnerabilityIsNotLogged()
+    public void GivenADirectory_WhenSetCurrentDirectoryNotTaintedString_VulnerabilityIsNotLogged()
     {
         ExecuteAction(() => { Directory.SetCurrentDirectory(notTaintedValue); });
-        AssertVulnerable();
+        AssertNotVulnerable();
     }
 
     void ExecuteAction(Action c)
@@ -450,6 +532,10 @@ public class DirectoryTests : InstrumentationTestsBase
             //We dont have a valid file. It is normal
         }
         catch (IOException)
+        {
+            //We dont have a valid file. It is normal
+        }
+        catch (PlatformNotSupportedException)
         {
             //We dont have a valid file. It is normal
         }

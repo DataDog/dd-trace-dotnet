@@ -23,54 +23,21 @@ public class StreamReaderTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void GivenAStreamReader_WhenCreatingFromTaintedString_LocationIsCorrect()
+    {
+        ExecuteAction(() => { new StreamReader(taintedValue); });
+        AssertLocation(nameof(StreamReaderTests));
+    }
+
+    // Cover System.IO.StreamReader::.ctor(System.String)
+
+    [Fact]
     public void GivenAStreamReader_WhenCreatingFromTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { new StreamReader(taintedValue); });
         AssertVulnerable();
     }
 
-    [Fact]
-    public void GivenAStreamReader_WhenCreatingFromTaintedString_VulnerabilityIsLogged2()
-    {
-        ExecuteAction(() => { new StreamReader(taintedValue, true); });
-        AssertVulnerable();
-    }
-
-    [Fact]
-    public void GivenAStreamReader_WhenCreatingFromTaintedString_VulnerabilityIsLogged3()
-    {
-        ExecuteAction(() => { new StreamReader(taintedValue, Encoding.UTF8); });
-        AssertVulnerable();
-    }
-
-    [Fact]
-    public void GivenAStreamReader_WhenCreatingFromTaintedString_VulnerabilityIsLogged4()
-    {
-        ExecuteAction(() => { new StreamReader(taintedValue, Encoding.UTF8, true); });
-        AssertVulnerable();
-    }
-
-    [Fact]
-    public void GivenAStreamReader_WhenCreatingFromTaintedString_VulnerabilityIsLogged5()
-    {
-        ExecuteAction(() => { new StreamReader(taintedValue, Encoding.UTF8, true, 4); });
-        AssertVulnerable();
-    }
-#if NET60
-        [Fact]
-        public void GivenAStreamReader_WhenCreatingFromTaintedString_VulnerabilityIsLogged6()
-        {
-            ExecuteAction(() => { new StreamReader(taintedValue, new FileStreamOptions()); });
-            AssertVulnerable();
-        }
-
-        [Fact]
-        public void GivenAStreamReader_WhenCreatingFromTaintedString_VulnerabilityIsLogged7()
-        {
-            ExecuteAction(() => { new StreamReader(taintedValue, Encoding.UTF8, true, new FileStreamOptions()); });
-            AssertVulnerable();
-        }
-#endif
     [Fact]
     public void GivenAStreamReader_WhenCreatingFromtaintedString_VulnerabilityIsNotLogged()
     {
@@ -84,11 +51,104 @@ public class StreamReaderTests : InstrumentationTestsBase
         Assert.Throws<ArgumentNullException>(() => new StreamReader((string)null));
     }
 
+    // Cover System.IO.StreamReader::.ctor(System.String,System.Boolean)
+
+    [Fact]
+    public void GivenAStreamReader_WhenCreatingFromTaintedString_VulnerabilityIsLogged2()
+    {
+        ExecuteAction(() => { new StreamReader(taintedValue, true); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAStreamReader_WhenCreatingFromtaintedString_VulnerabilityIsNotLogged2()
+    {
+        ExecuteAction(() => { new StreamReader(notTaintedValue, true); });
+        AssertNotVulnerable();
+    }
+
+    // Cover System.IO.StreamReader::.ctor(System.String,System.Text.Encoding)
+
+    [Fact]
+    public void GivenAStreamReader_WhenCreatingFromTaintedString_VulnerabilityIsLogged3()
+    {
+        ExecuteAction(() => { new StreamReader(taintedValue, Encoding.UTF8); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAStreamReader_WhenCreatingFromtaintedString_VulnerabilityIsNotLogged3()
+    {
+        ExecuteAction(() => { new StreamReader(notTaintedValue, Encoding.UTF8); });
+        AssertNotVulnerable();
+    }
+
+    // Cover System.IO.StreamReader::.ctor(System.String,System.Text.Encoding,System.Boolean)
+
+    [Fact]
+    public void GivenAStreamReader_WhenCreatingFromTaintedString_VulnerabilityIsLogged4()
+    {
+        ExecuteAction(() => { new StreamReader(taintedValue, Encoding.UTF8, true); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAStreamReader_WhenCreatingFromtaintedString_VulnerabilityIsNotLogged4()
+    {
+        ExecuteAction(() => { new StreamReader(notTaintedValue, Encoding.UTF8, true); });
+        AssertNotVulnerable();
+    }
+
+    // Cover System.IO.StreamReader::.ctor(System.String,System.Text.Encoding,System.Boolean,System.Int32)
+
+    [Fact]
+    public void GivenAStreamReader_WhenCreatingFromTaintedString_VulnerabilityIsLogged5()
+    {
+        ExecuteAction(() => { new StreamReader(taintedValue, Encoding.UTF8, true, 4); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAStreamReader_WhenCreatingFromtaintedString_VulnerabilityIsNotLogged5()
+    {
+        ExecuteAction(() => { new StreamReader(notTaintedValue, Encoding.UTF8, true, 10); });
+        AssertNotVulnerable();
+    }
+
     [Fact]
     public void GivenAStreamReader_WhenCreatingFromBadIndex_ExceptionIsThrown()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => new StreamReader(taintedValue, Encoding.UTF8, true, -4));
     }
+
+#if NET6_0_OR_GREATER
+
+    // Cover System.IO.StreamReader::.ctor(System.String,System.IO.FileStreamOptions)
+
+    [Fact]
+    public void GivenAStreamReader_WhenCreatingFromTaintedString_VulnerabilityIsLogged6()
+    {
+        ExecuteAction(() => { new StreamReader(taintedValue, new FileStreamOptions()); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAStreamReader_WhenCreatingFromtaintedString_VulnerabilityIsNotLogged6()
+    {
+        ExecuteAction(() => { new StreamReader(notTaintedValue, new FileStreamOptions()); });
+        AssertNotVulnerable();
+    }
+
+    // Cover System.IO.StreamReader::.ctor(System.String,System.Text.Encoding,System.Boolean,System.IO.FileStreamOptions)
+
+    [Fact]
+    public void GivenAStreamReader_WhenCreatingFromTaintedString_VulnerabilityIsLogged7()
+    {
+        ExecuteAction(() => { new StreamReader(taintedValue, Encoding.UTF8, true, new FileStreamOptions()); });
+        AssertVulnerable();
+    }
+
+#endif
 
     void ExecuteAction(Action c)
     {

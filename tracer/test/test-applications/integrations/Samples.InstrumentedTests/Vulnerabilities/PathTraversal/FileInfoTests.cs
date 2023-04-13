@@ -20,6 +20,15 @@ public class FileInfoTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void GivenAFileInfo_WhenCreatingFromTaintedString_LocationIsCorrect()
+    {
+        new FileInfo(taintedPathValue);
+        AssertLocation(nameof(FileInfoTests));
+    }
+
+    // Cover System.IO.FileInfo::.ctor(System.String)
+
+    [Fact]
     public void GivenAFileInfo_WhenCreatingFromTaintedString_VulnerabilityIsLogged()
     {
         new FileInfo(taintedPathValue);
@@ -38,12 +47,16 @@ public class FileInfoTests : InstrumentationTestsBase
         Assert.Throws<ArgumentNullException>(() => new FileInfo(null));
     }
 
+    // Cover System.IO.FileInfo::CopyTo(System.String)
+
     [Fact]
     public void GivenAFileInfo_WhenCopyToTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { new FileInfo(notTaintedValue).CopyTo(taintedPathValue); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.FileInfo::CopyTo(System.String,System.Boolean)
 
     [Fact]
     public void GivenAFileInfo_WhenCopyToTaintedString_VulnerabilityIsLogged2()
@@ -58,13 +71,25 @@ public class FileInfoTests : InstrumentationTestsBase
         Assert.Throws<ArgumentNullException>(() => new FileInfo(notTaintedValue).CopyTo(null, true));
     }
 
+    // Cover System.IO.FileInfo::MoveTo(System.String)
+
     [Fact]
     public void GivenAFileInfo_WhenMoveToTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { new FileInfo(notTaintedValue).MoveTo(taintedPathValue); });
         AssertVulnerable();
     }
+
+    [Fact]
+    public void GivenAFileInfo_WhenMoveToNoExistingFile_FileNotFoundException()
+    {
+        Assert.Throws<FileNotFoundException>(() => new FileInfo(notTaintedValue).MoveTo(taintedPathValue));
+    }
+
 #if NETCOREAPP3_0_OR_GREATER
+
+    // Cover System.IO.FileInfo::MoveTo(System.String,System.Boolean)
+
     [Fact]
     public void GivenAFileInfo_WhenMoveToTaintedString_VulnerabilityIsLogged2()
     {
@@ -72,11 +97,8 @@ public class FileInfoTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 #endif
-    [Fact]
-    public void GivenAFileInfo_WhenMoveToNoExistingFile_FileNotFoundException()
-    {
-        Assert.Throws<FileNotFoundException>(() => new FileInfo(notTaintedValue).MoveTo(taintedPathValue));
-    }
+
+    // Cover System.IO.FileInfo::Replace(System.String,System.String)
 
     [Fact]
     public void GivenAFileInfo_WhenReplaceTaintedString_VulnerabilityIsLogged()
@@ -91,6 +113,8 @@ public class FileInfoTests : InstrumentationTestsBase
         ExecuteAction(() => { new FileInfo(notTaintedValue).Replace("dummy", taintedPathValue); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.FileInfo::Replace(System.String,System.String,System.Boolean)
 
     [Fact]
     public void GivenAFileInfo_WhenReplaceTaintedString_VulnerabilityIsLogged3()

@@ -6,9 +6,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+#if NETFRAMEWORK
 using System.Security.AccessControl;
-using System.Text;
+#else
 using System.Threading;
+#endif
+using System.Text;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
@@ -25,6 +28,15 @@ public class FileTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void GivenAFileStream_WhenCreatingFromTaintedString_LocationIsCorrect()
+    {
+        ExecuteAction(() => { File.WriteAllText(taintedPathValue, notTaintedValue); });
+        AssertLocation(nameof(FileTests));
+    }
+
+    // Cover System.IO.File::WriteAllText(System.String,System.String)
+
+    [Fact]
     public void GivenAFile_WhenWriteAllTextTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { File.WriteAllText(taintedPathValue, notTaintedValue); });
@@ -37,6 +49,9 @@ public class FileTests : InstrumentationTestsBase
         ExecuteAction(() => { File.WriteAllText(taintedPathValue, notTaintedValue, Encoding.UTF8); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.File::WriteAllTextAsync(System.String,System.String,System.Threading.CancellationToken)
+
 #if !NETFRAMEWORK
     [Fact]
     public void GivenAFile_WhenWriteAllTextAsyncTaintedString_VulnerabilityIsLogged()
@@ -44,6 +59,8 @@ public class FileTests : InstrumentationTestsBase
         ExecuteAction(() => { File.WriteAllTextAsync(taintedPathValue, notTaintedValue, CancellationToken.None); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.File::WriteAllTextAsync(System.String,System.String,System.Text.Encoding,System.Threading.CancellationToken)
 
     [Fact]
     public void GivenAFile_WheWriteAllTextAsyncTaintedString_VulnerabilityIsLogged3()
@@ -60,19 +77,43 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    // Cover System.IO.File::WriteAllLines(System.String, System.String[])
+
+    [Fact]
+    public void GivenAFile_WhenWriteAllLinesTaintedString_VulnerabilityIsLogged4()
+    {
+        ExecuteAction(() => { File.WriteAllLines(taintedPathValue, new String[] { }); });
+        AssertVulnerable();
+    }
+
+    // Cover System.IO.File::WriteAllLines(System.String,System.Collections.Generic.IEnumerable`1<System.String>)
+
     [Fact]
     public void GivenAFile_WhenWriteAllLinesTaintedString_VulnerabilityIsLogged2()
     {
         ExecuteAction(() => { File.WriteAllLines(taintedPathValue, new List<String>()); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.File::WriteAllLines(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Text.Encoding)
+    [Fact]
+    public void GivenAFile_WhenWriteAllLinesTaintedString_VulnerabilityIsLogged5()
+    {
+        ExecuteAction(() => { File.WriteAllLines(taintedPathValue, new List<String>(), Encoding.UTF8); });
+        AssertVulnerable();
+    }
+
 #if !NETFRAMEWORK
+
+    // Cover System.IO.File::WriteAllLinesAsync(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Threading.CancellationToken)
     [Fact]
     public void GivenAFile_WhenWriteAllLinesAsyncTaintedString_VulnerabilityIsLogged2()
     {
         ExecuteAction(() => { File.WriteAllLinesAsync(taintedPathValue, new List<String>(), CancellationToken.None); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.File::WriteAllLinesAsync(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Text.Encoding,System.Threading.CancellationToken)
 
     [Fact]
     public void GivenAFile_WhenWriteAllLinesAsyncTaintedString_VulnerabilityIsLogged3()
@@ -82,6 +123,8 @@ public class FileTests : InstrumentationTestsBase
     }
 #endif
 
+    // Cover System.IO.File::WriteAllLines(System.String,System.String[],System.Text.Encoding)
+
     [Fact]
     public void GivenAFile_WhenWriteAllLinesTaintedString_VulnerabilityIsLogged3()
     {
@@ -89,12 +132,7 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-    [Fact]
-    public void GivenAFile_WhenWriteAllLinesTaintedString_VulnerabilityIsLogged4()
-    {
-        ExecuteAction(() => { File.WriteAllLines(taintedPathValue, new String[] { }); });
-        AssertVulnerable();
-    }
+    // System.IO.File::WriteAllBytes(System.String,System.Byte[])
 
     [Fact]
     public void GivenAFile_WhenWriteAllBytesTaintedString_VulnerabilityIsLogged()
@@ -102,7 +140,11 @@ public class FileTests : InstrumentationTestsBase
         ExecuteAction(() => { File.WriteAllBytes(taintedPathValue, new byte[] { 6 }); });
         AssertVulnerable();
     }
+
 #if !NETFRAMEWORK
+
+    // Cover System.IO.File::WriteAllBytesAsync(System.String, System.Byte[], System.Threading.CancellationToken)
+
     [Fact]
     public void GivenAFile_WhenWriteAllBytesAsyncTaintedString_VulnerabilityIsLogged()
     {
@@ -117,12 +159,17 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 #endif
+
+    // Cover System.IO.File::SetAttributes(System.String,System.IO.FileAttributes)
+
     [Fact]
     public void GivenAFile_WhenSetAttributesTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { File.SetAttributes(taintedPathValue, FileAttributes.ReadOnly); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.File::Replace(System.String,System.String,System.String)
 
     [Fact]
     public void GivenAFile_WhenReplaceTaintedString_VulnerabilityIsLogged()
@@ -145,6 +192,8 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    // Cover System.IO.File::Replace(System.String,System.String,System.String,System.Boolean)
+
     [Fact]
     public void GivenAFile_WhenReplaceTaintedString_VulnerabilityIsLogged3()
     {
@@ -166,6 +215,8 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    // Cover System.IO.File::ReadLines(System.String)
+
     [Fact]
     public void GivenAFile_WhenReadLinesTaintedString_VulnerabilityIsLogged()
     {
@@ -180,6 +231,8 @@ public class FileTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 
+    // System.IO.File::ReadLines(System.String,System.Text.Encoding)
+
     [Fact]
     public void GivenAFile_WhenReadLinesTaintedString_VulnerabilityIsLogged2()
     {
@@ -188,12 +241,17 @@ public class FileTests : InstrumentationTestsBase
     }
 
 #if NET7_0_OR_GREATER
+
+    // Cover System.IO.File::ReadLinesAsync(System.String, System.Threading.CancellationToken)
+
     [Fact]
     public void GivenAFile_WhenReadLinesAsyncTaintedString_VulnerabilityIsLogged2()
     {
         ExecuteAction(() => { File.ReadLinesAsync(taintedPathValue, CancellationToken.None); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.File::ReadLinesAsync(System.String, System.Text.Encoding, System.Threading.CancellationToken)
 
     [Fact]
     public void GivenAFile_WhenReadLinesAsyncTaintedString_VulnerabilityIsLogged3()
@@ -202,6 +260,8 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 #endif
+
+    // Cover System.IO.File::ReadAllText(System.String)
 
     [Fact]
     public void GivenAFile_WhenReadAllTextTaintedString_VulnerabilityIsLogged()
@@ -217,6 +277,7 @@ public class FileTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 
+    // Cover System.IO.File::ReadAllText(System.String,System.Text.Encoding)
 
     [Fact]
     public void GivenAFile_WhenReadAllTextTaintedString_VulnerabilityIsLogged2()
@@ -225,17 +286,13 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 #if !NETFRAMEWORK
+
+    // Cover "System.IO.File::ReadAllTextAsync(System.String,System.Threading.CancellationToken)"
+
     [Fact]
     public void GivenAFile_WhenReadAllTextAsyncTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { File.ReadAllTextAsync(taintedPathValue, CancellationToken.None); });
-        AssertVulnerable();
-    }
-
-    [Fact]
-    public void GivenAFile_WhenReadAllTextAsyncTaintedString_VulnerabilityIsLogged2()
-    {
-        ExecuteAction(() => { File.ReadAllTextAsync(taintedPathValue, Encoding.UTF8, CancellationToken.None); });
         AssertVulnerable();
     }
 
@@ -246,6 +303,15 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    // Cover "System.IO.File::ReadAllTextAsync(System.String,System.Text.Encoding,System.Threading.CancellationToken)"
+
+    [Fact]
+    public void GivenAFile_WhenReadAllTextAsyncTaintedString_VulnerabilityIsLogged2()
+    {
+        ExecuteAction(() => { File.ReadAllTextAsync(taintedPathValue, Encoding.UTF8, CancellationToken.None); });
+        AssertVulnerable();
+    }
+
     [Fact]
     public void GivenAFile_WhenReadAllTextAsyncTaintedString_VulnerabilityIsLogged4()
     {
@@ -253,6 +319,9 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 #endif
+
+    // Cover AspectMethodInsertBefore("System.IO.File::ReadAllLines(System.String)
+
     [Fact]
     public void GivenAFile_WhenReadAllLinesTaintedString_VulnerabilityIsLogged()
     {
@@ -267,6 +336,7 @@ public class FileTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 
+    // Cover "System.IO.File::ReadAllLines(System.String,System.Text.Encoding)
 
     [Fact]
     public void GivenAFile_WhenReadAllLinesTaintedString_VulnerabilityIsLogged2()
@@ -276,12 +346,17 @@ public class FileTests : InstrumentationTestsBase
     }
 
 #if !NETFRAMEWORK
+
+    // Cover System.IO.File::ReadAllLinesAsync(System.String,System.Threading.CancellationToken)
+
     [Fact]
     public void GivenAFile_WhenReadAllLinesTaintedString_VulnerabilityIsLogged3()
     {
         ExecuteAction(() => { File.ReadAllLinesAsync(taintedPathValue, CancellationToken.None); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.File::ReadAllLinesAsync(System.String,System.Text.Encoding,System.Threading.CancellationToken)
 
     [Fact]
     public void GivenAFile_WhenReadAllLinesTaintedString_VulnerabilityIsLogged4()
@@ -297,6 +372,9 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 #endif
+
+    // Cover System.IO.File::ReadAllBytes(System.String)
+
     [Fact]
     public void GivenAFile_WhenReadAllBytesTaintedString_VulnerabilityIsLogged()
     {
@@ -312,6 +390,9 @@ public class FileTests : InstrumentationTestsBase
     }
 
 #if !NETFRAMEWORK
+
+    // Cover System.IO.File::ReadAllBytesAsync(System.String,System.Threading.CancellationToken)
+
     [Fact]
     public void GivenAFile_WhenReadAllBytesAsyncTaintedString_VulnerabilityIsLogged()
     {
@@ -333,12 +414,17 @@ public class FileTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 #endif
+
+    // Cover System.IO.File::OpenWrite(System.String)
+
     [Fact]
     public void GivenAFile_WhenOpenWriteTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { File.OpenWrite(taintedPathValue); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.File::CreateText(System.String)
 
     [Fact]
     public void GivenAFile_WhenCreateTextTaintedString_VulnerabilityIsLogged()
@@ -347,12 +433,16 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    // Cover System.IO.File::OpenText(System.String)
+
     [Fact]
     public void GivenAFile_WhenOpenTextTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { File.OpenText(taintedPathValue); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.File::OpenRead(System.String)
 
     [Fact]
     public void GivenAFile_WhenOpenReadTaintedString_VulnerabilityIsLogged()
@@ -361,12 +451,16 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    // Cover System.IO.File::Delete(System.String)
+
     [Fact]
     public void GivenAFile_WhenDeleteTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { File.Delete(taintedPathValue); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.File::Open(System.String,System.IO.FileMode,System.IO.FileAccess,System.IO.FileShare)
 
     [Fact]
     public void GivenAFile_WhenOpenTaintedString_VulnerabilityIsLogged()
@@ -375,12 +469,16 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    // Cover System.IO.File::Open(System.String,System.IO.FileMode,System.IO.FileAccess)
+
     [Fact]
     public void GivenAFile_WhenOpenTaintedString_VulnerabilityIsLogged2()
     {
         ExecuteAction(() => { File.Open(taintedPathValue, FileMode.Open, FileAccess.Read); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.File::Open(System.String,System.IO.FileMode)
 
     [Fact]
     public void GivenAFile_WhenOpenTaintedString_VulnerabilityIsLogged3()
@@ -390,20 +488,27 @@ public class FileTests : InstrumentationTestsBase
     }
 
 #if NET6_0_OR_GREATER
-        [Fact]
-        public void GivenAFile_WhenOpenTaintedString_VulnerabilityIsLogged4()
-        {
-            ExecuteAction(() => { File.Open(taintedPathValue, new FileStreamOptions()); });
-            AssertVulnerable();
-        }
 
-        [Fact]
-        public void GivenAFile_WhenOpenHandleTaintedString_VulnerabilityIsLogged4()
-        {
-            ExecuteAction(() => { File.OpenHandle(taintedPathValue, FileMode.Append, FileAccess.ReadWrite, FileShare.None, FileOptions.None, 0); });
-            AssertVulnerable();
-        }
+    // Cover System.IO.File::Open(System.String,System.IO.FileStreamOptions)
+
+    [Fact]
+    public void GivenAFile_WhenOpenTaintedString_VulnerabilityIsLogged4()
+    {
+        ExecuteAction(() => { File.Open(taintedPathValue, new FileStreamOptions()); });
+        AssertVulnerable();
+    }
+
+    // Cover System.IO.File::OpenHandle(System.String,System.IO.FileMode,System.IO.FileAccess,System.IO.FileShare,System.IO.FileOptions,System.Int64)
+
+    [Fact]
+    public void GivenAFile_WhenOpenHandleTaintedString_VulnerabilityIsLogged4()
+    {
+        ExecuteAction(() => { File.OpenHandle(taintedPathValue, FileMode.Append, FileAccess.ReadWrite, FileShare.None, FileOptions.None, 0); });
+        AssertVulnerable();
+    }
 #endif
+
+    // Cover System.IO.File::Move(System.String,System.String)
 
     [Fact]
     public void GivenAFile_WhenMoveTaintedString_VulnerabilityIsLogged()
@@ -419,6 +524,9 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 #if NETCOREAPP3_0_OR_GREATER
+
+    // Cover System.IO.File::Move(System.String,System.String,System.Boolean)
+
     [Fact]
     public void GivenAFile_WhenMoveTaintedString_VulnerabilityIsLogged3()
     {
@@ -435,6 +543,8 @@ public class FileTests : InstrumentationTestsBase
 #endif
 
 #if NETFRAMEWORK
+    // Cover System.IO.File::Create(System.String,System.Int32,System.IO.FileOptions,System.Security.AccessControl.FileSecurity)
+
     [Fact]
     public void GivenAFile_WhenCreateTaintedString_VulnerabilityIsLogged()
     {
@@ -443,12 +553,16 @@ public class FileTests : InstrumentationTestsBase
     }
 #endif
 
+    // Cover System.IO.File::Create(System.String,System.Int32,System.IO.FileOptions)
+
     [Fact]
     public void GivenAFile_WhenCreateTaintedString_VulnerabilityIsLogged2()
     {
         ExecuteAction(() => { File.Create(taintedPathValue, 5, FileOptions.SequentialScan); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.File::Create(System.String,System.Int32)
 
     [Fact]
     public void GivenAFile_WhenCreateTaintedString_VulnerabilityIsLogged3()
@@ -457,12 +571,16 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    // Cover System.IO.File::Create(System.String)
+
     [Fact]
     public void GivenAFile_WhenCreateTaintedString_VulnerabilityIsLogged4()
     {
         ExecuteAction(() => { File.Create(taintedPathValue); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.File::Copy(System.String,System.String)
 
     [Fact]
     public void GivenAFile_WhenCopyTaintedString_VulnerabilityIsLogged()
@@ -478,6 +596,8 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    // Cover System.IO.File::Copy(System.String,System.String,System.Boolean)
+
     [Fact]
     public void GivenAFile_WhenCopyTaintedString_VulnerabilityIsLogged2()
     {
@@ -492,12 +612,16 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    // Cover System.IO.File::AppendAllText(System.String,System.String)
+
     [Fact]
     public void GivenAFile_WhenAppendAllTextTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { File.AppendAllText(taintedPathValue, notTaintedValue); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.File::AppendAllText(System.String,System.String,System.Text.Encoding)
 
     [Fact]
     public void GivenAFile_WheAppendAllTextTaintedString_VulnerabilityIsLogged3()
@@ -506,12 +630,17 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 #if !NETFRAMEWORK
+
+    // Cover System.IO.File::AppendAllTextAsync(System.String, System.String, System.Threading.CancellationToken)
+
     [Fact]
     public void GivenAFile_WheAppendAllTextAsyncTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { File.AppendAllTextAsync(taintedPathValue, notTaintedValue, CancellationToken.None); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.File::AppendAllTextAsync(System.String, System.String, System.Text.Encoding, System.Threading.CancellationToken)
 
     [Fact]
     public void GivenAFile_WheAppendAllTextAsyncTaintedString_VulnerabilityIsLogged2()
@@ -520,12 +649,16 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    // Cover System.IO.File::AppendAllLinesAsync(System.String, System.Collections.Generic.IEnumerable`1[System.String], System.Threading.CancellationToken)
+
     [Fact]
     public void GivenAFile_WheAppendAllLinesAsyncAsyncTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { File.AppendAllLinesAsync(taintedPathValue, new List<string> { notTaintedValue }, CancellationToken.None); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.File::AppendAllLinesAsync(System.String, System.Collections.Generic.IEnumerable`1[System.String], System.Text.Encoding, System.Threading.CancellationToken)
 
     [Fact]
     public void GivenAFile_WheAppendAllLinesAsyncAsyncTaintedString_VulnerabilityIsLogged2()
@@ -534,17 +667,13 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 #endif
+
+    // Cover System.IO.File::AppendAllLines(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Text.Encoding)
+
     [Fact]
     public void GivenAFile_WhenAppendAllLinesTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { File.AppendAllLines(taintedPathValue, new List<String>(), Encoding.UTF8); });
-        AssertVulnerable();
-    }
-
-    [Fact]
-    public void GivenAFile_WhenAppendAllLinesTaintedString_VulnerabilityIsLogged2()
-    {
-        ExecuteAction(() => { File.AppendAllLines(taintedPathValue, new List<String>()); });
         AssertVulnerable();
     }
 
@@ -555,6 +684,15 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    // Cover System.IO.File::AppendAllLines(System.String,System.Collections.Generic.IEnumerable`1<System.String>)
+
+    [Fact]
+    public void GivenAFile_WhenAppendAllLinesTaintedString_VulnerabilityIsLogged2()
+    {
+        ExecuteAction(() => { File.AppendAllLines(taintedPathValue, new List<String>()); });
+        AssertVulnerable();
+    }
+
     [Fact]
     public void GivenAFile_WhenAppendAllLinesTaintedString_VulnerabilityIsLogged4()
     {
@@ -562,12 +700,16 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    // Cover System.IO.File::AppendText(System.String)
+
     [Fact]
     public void GivenAFile_WhenAppendTextTaintedString_VulnerabilityIsLogged4()
     {
         ExecuteAction(() => { File.AppendText(taintedPathValue); });
         AssertVulnerable();
     }
+
+    // Cover System.IO.File::WriteAllText(System.String,System.String,System.Text.Encoding)
 
     [Fact]
     public void GivenAFile_WhenCreatingFromIncorrectString_ExceptionIsThrown()
@@ -585,12 +727,10 @@ public class FileTests : InstrumentationTestsBase
         {
             //We dont have a valid file. It is normal
         }
-#if NETFRAMEWORK
         catch (ArgumentException)
         {
             //We dont have a valid file. It is normal
         }
-#else
         catch (FileNotFoundException)
         {
             //We dont have a valid file. It is normal
@@ -603,6 +743,5 @@ public class FileTests : InstrumentationTestsBase
         {
             //For Linux files. It is normal
         }
-#endif
     }
 }
