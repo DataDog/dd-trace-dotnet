@@ -139,7 +139,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
                 Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
 
-                var traceTags = TagPropagation.ParseHeader(propagatedTags, outgoingHeaderMaxLength: 512);
+                var traceTags = TagPropagation.ParseHeader(propagatedTags, TagPropagation.OutgoingTagPropagationHeaderMaxLength);
                 var traceIdUpperTagFromHeader = traceTags.GetTag(Tags.Propagated.TraceIdUpper);
                 var traceIdUpperTagFromSpan = firstSpan.GetTag(Tags.Propagated.TraceIdUpper);
 
