@@ -6,12 +6,17 @@ param(
 
     [Parameter(Mandatory = $false)]
     [System.String]
-    [ValidateSet("net7.0", "netcoreapp2.1", "net45", "netcoreapp3.1")]
-    $Framework = "net7.0",
+    [ValidateSet("net7.0", "net462")]
+    $Framework = "net462",
 
     [Parameter(Mandatory = $false)]
     [System.String]
-    $AppDirectory
+    [ValidateSet("x86", "x64")]
+    $Runtime = "x86",
+
+    [Parameter(Mandatory = $false)]
+    [System.String]
+    $AppDirectory # we'll use the default directory (here) if none is supplied
 )
 
 function Test-DotNetCLI {
@@ -35,7 +40,7 @@ function BuildAndRunSample {
 
     Write-Host "Project path is $Project"
     dotnet build --configuration Debug $Project
-    dotnet run --project $Project
+    dotnet run --project $Project --framework $Framework --arch $Runtime
 }
 
 function Get-ApplicationDirectory {
@@ -73,22 +78,27 @@ if ($IsWindows) {
     Write-Host "Using Windows configuration"
     $AppDirectory = Get-ApplicationDirectory
 
-    # Configure the tracer
-    # For reference: https://github.com/DataDog/dd-trace-dotnet/blob/master/docs/Datadog.Trace.Bundle/README.md#configure-the-tracer
+    # Depending on the OS and process architecture, the path to the profiler will vary
+    # To see the possible paths: https://github.com/DataDog/dd-trace-dotnet/blob/master/docs/Datadog.Trace.Bundle/README.md#configure-the-tracer
+    $ClrProfilerPath = ""
+    if ($Runtime -eq "x86") {
+        $ClrProfilerPath = Join-Path $AppDirectory "datadog\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
+    }
+    else {
+        $ClrProfilerPath = Join-Path $AppDirectory "datadog\win-x64\Datadog.Trace.ClrProfiler.Native.dll"
+    }
 
-    if ($Framework -like "net4*") {
+    if ($Framework -eq "net462") {
         # Use the .NET Framework specific variables
         Set-EnvironmentVariableForProcess -name "COR_ENABLE_PROFILING" -value "1"
-        Set-EnvironmentVariableForProcess -name "COR_PROFILER" -value "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
-        $ClrPath = Join-Path $AppDirectory "datadog\win-x64\Datadog.Trace.ClrProfiler.Native.dll"
-        Set-EnvironmentVariableForProcess -name "COR_PROFILER_PATH" -value $ClrPath
+        Set-EnvironmentVariableForProcess -name "COR_PROFILER" -value "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"       
+        Set-EnvironmentVariableForProcess -name "COR_PROFILER_PATH" -value $ClrProfilerPath
     }
     else {
         # Use the .NET Core specific variables
         Set-EnvironmentVariableForProcess -name "CORECLR_ENABLE_PROFILING" -value "1"
         Set-EnvironmentVariableForProcess -name "CORECLR_PROFILER" -value "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
-        $CoreClrPath = Join-Path $AppDirectory "datadog\win-x64\Datadog.Trace.ClrProfiler.Native.dll"
-        Set-EnvironmentVariableForProcess -name "CORECLR_PROFILER_PATH" -value $CoreClrPath
+        Set-EnvironmentVariableForProcess -name "CORECLR_PROFILER_PATH" -value $ClrProfilerPath
     }
     
     # dotnet tracer home example: "..\Log4NetExample\bing\Debug\net7.0\datadog"
@@ -102,15 +112,23 @@ if ($IsLinux) {
     Write-Host "Using Linux configuration"
     $AppDirectory = Get-ApplicationDirectory
 
+    $ClrProfilerPath = ""
+    if ($Runtime -eq "x86") {
+        Write-Error "x86 process architectures on Linux are not supported - only x64 process architectures are"
+        Return 1
+    }
+    else {
+        $ClrProfilerPath = Join-Path $AppDirectory "/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
+        # if Alpine Linux x64
+        # $ClrProfilerPath = Join-Path $AppDirectory "/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so"
+        # if Linux ARM64
+        # $ClrProfilerPath = Join-Path $AppDirectory "/datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
+    }
+
     # Depending on 32-bit vs 64-bit the path to the profiler will change
     Set-EnvironmentVariableForProcess -name "CORECLR_ENABLE_PROFILING" -value "1"
     Set-EnvironmentVariableForProcess -name "CORECLR_PROFILER" -value "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
-    $CoreClrPath = Join-Path $AppDirectory "/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
-    # if Alpine Linux x64
-    # $CoreClrPath = Join-Path $AppDirectory "/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so"
-    # if Linux ARM64
-    # $CoreClrPath = Join-Path $AppDirectory "/datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
-    Set-EnvironmentVariableForProcess -name "CORECLR_PROFILER_PATH" -value $CoreClrPath
+    Set-EnvironmentVariableForProcess -name "CORECLR_PROFILER_PATH" -value $ClrProfilerPath
 
     $DotNetTracerHome = Join-PAth $AppDirectory "datadog"
     Set-EnvironmentVariableForProcess -name "DD_DOTNET_TRACER_HOME" -value $DotNetTracerHome
