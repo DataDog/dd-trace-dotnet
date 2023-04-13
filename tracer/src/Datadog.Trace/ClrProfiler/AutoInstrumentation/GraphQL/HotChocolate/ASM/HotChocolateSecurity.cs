@@ -30,7 +30,14 @@ internal abstract class HotChocolateSecurity
         // Get root node of the document and do a depth search of resolvers
         foreach (var node in document.Document.Definitions)
         {
-            DepthSearchOperationNode(node, request.VariableValues);
+            try
+            {
+                DepthSearchOperationNode(node, request.VariableValues);
+            }
+            catch
+            {
+                // Failed to search for resolvers with arguments
+            }
         }
     }
 
@@ -55,19 +62,26 @@ internal abstract class HotChocolateSecurity
 
             case SyntaxKindProxy.Field when obj.TryDuckCast<FieldNode>(out var fieldNode):
             {
-                if (fieldNode.Arguments.Any())
+                try
                 {
-                    var resolverName = GetFieldNodeName(fieldNode, obj);
-                    var resolverArguments = new Dictionary<string, object>();
-
-                    foreach (var argument in fieldNode.Arguments)
+                    if (fieldNode.Arguments.Any())
                     {
-                        var name = GetName(argument);
-                        var value = GetArgumentValue(argument, variables);
-                        resolverArguments.Add(name, value);
-                    }
+                        var resolverName = GetFieldNodeName(fieldNode, obj);
+                        var resolverArguments = new Dictionary<string, object>();
 
-                    GraphQLSecurityCommon.RegisterResolverCall(Tracer.Instance.ActiveScope, resolverName, resolverArguments);
+                        foreach (var argument in fieldNode.Arguments)
+                        {
+                            var name = GetName(argument);
+                            var value = GetArgumentValue(argument, variables);
+                            resolverArguments.Add(name, value);
+                        }
+
+                        GraphQLSecurityCommon.RegisterResolverCall(Tracer.Instance.ActiveScope, resolverName, resolverArguments);
+                    }
+                }
+                catch
+                {
+                    // Failed to get argument value and register the resolver
                 }
 
                 DepthSearchOperationNode(fieldNode.SelectionSet, variables);
