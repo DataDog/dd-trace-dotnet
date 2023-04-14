@@ -230,12 +230,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], httpClientType, metadataSchemaVersion };
 
-        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsGrpcV1(ExcludeTags),
-                _ => span.IsGrpcV0(ExcludeTags),
-            };
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsGrpc(metadataSchemaVersion, ExcludeTags);
 
         protected async Task RunSubmitTraces(
             string packageVersion,

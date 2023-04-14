@@ -49,12 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsOpenTelemetryV1(Resources, ExcludeTags),
-                _ => span.IsOpenTelemetryV0(Resources, ExcludeTags),
-            };
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsOpenTelemetry(metadataSchemaVersion, Resources, ExcludeTags);
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]

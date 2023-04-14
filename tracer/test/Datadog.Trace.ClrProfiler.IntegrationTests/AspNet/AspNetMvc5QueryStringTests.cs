@@ -60,20 +60,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static TheoryData<string, int> Data => new() { { "/?authentic1=val1&token=a0b21ce2-006f-4cc6-95d5-d7b550698482&key2=val2", 200 }, };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
+            span.Name switch
             {
-                "v1" => span.Name switch
-                    {
-                        "aspnet.request" => span.IsAspNetV1(),
-                        "aspnet-mvc.request" => span.IsAspNetMvcV1(),
-                        _ => Result.DefaultSuccess,
-                    },
-                _ => span.Name switch
-                    {
-                        "aspnet.request" => span.IsAspNetV0(),
-                        "aspnet-mvc.request" => span.IsAspNetMvcV0(),
-                        _ => Result.DefaultSuccess,
-                    },
+                "aspnet.request" => span.IsAspNet(metadataSchemaVersion),
+                "aspnet-mvc.request" => span.IsAspNetMvc(metadataSchemaVersion),
+                _ => Result.DefaultSuccess,
             };
 
         [SkippableTheory]

@@ -31,20 +31,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
+            span.Name switch
             {
-                "v1" => span.Type switch
-                    {
-                        "aspnet_core.request" => span.IsAspNetCoreV1(),
-                        "aspnet_core_mvc.request" => span.IsAspNetCoreMvcV1(),
-                        _ => Result.DefaultSuccess,
-                    },
-                _ => span.Type switch
-                    {
-                        "aspnet_core.request" => span.IsAspNetCoreV0(),
-                        "aspnet_core_mvc.request" => span.IsAspNetCoreMvcV0(),
-                        _ => Result.DefaultSuccess,
-                    },
+                "aspnet_core.request" => span.IsAspNetCore(metadataSchemaVersion),
+                "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(metadataSchemaVersion),
+                _ => Result.DefaultSuccess,
             };
 
         public async Task TestIncorrectMethod(string path)

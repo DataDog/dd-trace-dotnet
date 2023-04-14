@@ -9,7 +9,7 @@ using static Datadog.Trace.TestHelpers.SpanMetadataRulesHelpers;
 namespace Datadog.Trace.TestHelpers
 {
 #pragma warning disable SA1601 // Partial elements should be documented
-    public static class SpanMetadataV0Rules
+    internal static class SpanMetadataV0Rules
     {
         public static Result IsAdoNetV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s

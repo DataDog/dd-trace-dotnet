@@ -110,18 +110,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
+            span.Name switch
             {
-                "v1" => span.Name switch
-                    {
-                        "aspnet-webapi.request" => span.IsAspNetWebApi2V1(),
-                        _ => Result.DefaultSuccess,
-                    },
-                _ => span.Name switch
-                    {
-                        "aspnet-webapi.request" => span.IsAspNetWebApi2V0(),
-                        _ => Result.DefaultSuccess,
-                    },
+                "aspnet-webapi.request" => span.IsAspNetWebApi2(metadataSchemaVersion),
+                _ => Result.DefaultSuccess,
             };
 
         [SkippableTheory]

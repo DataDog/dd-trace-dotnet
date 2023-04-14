@@ -50,12 +50,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             from metadataSchemaVersion in new[] { "v0", "v1" }
             select new object[] { instrumentationOptions, socketHandlerEnabled, queryStringEnabled, queryStringSizeAndExpectation.Key,  queryStringSizeAndExpectation.Value, metadataSchemaVersion };
 
-        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsHttpMessageHandlerV1(),
-                _ => span.IsHttpMessageHandlerV0(),
-            };
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsHttpMessageHandler(metadataSchemaVersion);
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]

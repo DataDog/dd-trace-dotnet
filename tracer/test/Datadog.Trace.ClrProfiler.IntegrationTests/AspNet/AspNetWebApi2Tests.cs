@@ -182,22 +182,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
+            span.Name switch
             {
-                "v1" => span.Name switch
-                    {
-                        "aspnet.request" => span.IsAspNetV1(),
-                        "aspnet-mvc.request" => span.IsAspNetMvcV1(),
-                        "aspnet-webapi.request" => span.IsAspNetWebApi2V1(),
-                        _ => Result.DefaultSuccess,
-                    },
-                _ => span.Name switch
-                    {
-                        "aspnet.request" => span.IsAspNetV0(),
-                        "aspnet-mvc.request" => span.IsAspNetMvcV0(),
-                        "aspnet-webapi.request" => span.IsAspNetWebApi2V0(),
-                        _ => Result.DefaultSuccess,
-                    },
+                "aspnet.request" => span.IsAspNet(metadataSchemaVersion),
+                "aspnet-mvc.request" => span.IsAspNetMvc(metadataSchemaVersion),
+                "aspnet-webapi.request" => span.IsAspNetWebApi2(metadataSchemaVersion),
+                _ => Result.DefaultSuccess,
             };
 
         [SkippableTheory]

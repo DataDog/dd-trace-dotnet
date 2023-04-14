@@ -19,12 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAdoNetV1(),
-                _ => span.IsAdoNetV0(),
-            };
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsAdoNet(metadataSchemaVersion);
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]

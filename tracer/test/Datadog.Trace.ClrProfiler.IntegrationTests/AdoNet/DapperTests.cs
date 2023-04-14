@@ -19,12 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         }
 
         // Assert Npgsql because the Dapper application uses Postgres for the actual client
-        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsNpgsqlV1(),
-                _ => span.IsNpgsqlV0(),
-            };
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsNpgsql(metadataSchemaVersion);
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]

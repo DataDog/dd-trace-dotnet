@@ -29,12 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsProcessV1(),
-                _ => span.IsProcessV0(),
-            };
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsProcess(metadataSchemaVersion);
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
