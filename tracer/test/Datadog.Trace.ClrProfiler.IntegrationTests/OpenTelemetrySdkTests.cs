@@ -77,8 +77,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 otelSpans.Count().Should().Be(expectedSpanCount - 1);
                 activitySourceSpans.Count().Should().Be(1);
 
-                ValidateIntegrationSpans(otelSpans, expectedServiceName: "MyServiceName");
-                ValidateIntegrationSpans(activitySourceSpans, expectedServiceName: customServiceName);
+                ValidateIntegrationSpans(otelSpans, expectedServiceName: "MyServiceName", isExternalSpan: false);
+                ValidateIntegrationSpans(activitySourceSpans, expectedServiceName: customServiceName, isExternalSpan: false);
 
                 // there's a bug in < 1.2.0 where they get the span parenting wrong
                 // so use a separate snapshot
@@ -111,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 using var s = new AssertionScope();
                 spans.Count.Should().Be(expectedSpanCount);
-                ValidateIntegrationSpans(spans, expectedServiceName: "MyServiceName");
+                ValidateIntegrationSpans(spans, expectedServiceName: "MyServiceName", isExternalSpan: false);
 
                 // there's a bug in < 1.2.0 where they get the span parenting wrong
                 // so use a separate snapshot

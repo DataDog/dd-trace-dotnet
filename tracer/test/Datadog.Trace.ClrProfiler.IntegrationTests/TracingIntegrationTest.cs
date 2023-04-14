@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public abstract Result ValidateIntegrationSpan(MockSpan span);
 
-        public void ValidateIntegrationSpans(IEnumerable<MockSpan> spans, string expectedServiceName, bool isExternalSpan = true)
+        public void ValidateIntegrationSpans(IEnumerable<MockSpan> spans, string expectedServiceName, bool isExternalSpan)
         {
             foreach (var span in spans)
             {

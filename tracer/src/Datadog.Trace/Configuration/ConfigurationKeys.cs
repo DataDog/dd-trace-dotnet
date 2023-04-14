@@ -405,6 +405,14 @@ namespace Datadog.Trace.Configuration
         public const string DbmPropagationMode = "DD_DBM_PROPAGATION_MODE";
 
         /// <summary>
+        /// Configuration key for setting the schema version for service naming and span attributes
+        /// Accepted values are: "v1", "v0"
+        /// Default value is "v0"
+        /// </summary>
+        /// <seealso cref="TracerSettings.MetadataSchemaVersion"/>
+        public const string MetadataSchemaVersion = "DD_TRACE_SPAN_ATTRIBUTE_SCHEMA";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility

@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var myServiceNameSpans = spans.Where(s => s.Service == "MyServiceName");
 
-                ValidateIntegrationSpans(myServiceNameSpans, expectedServiceName: "MyServiceName");
+                ValidateIntegrationSpans(myServiceNameSpans, expectedServiceName: "MyServiceName", isExternalSpan: false);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 await VerifyHelper.VerifySpans(spans, settings)
