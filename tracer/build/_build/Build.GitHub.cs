@@ -1357,31 +1357,6 @@ partial class Build
 
         if (!string.IsNullOrEmpty(commitSha))
         {
-            var foundSha = false;
-            var maxCommitsBack = 20;
-            // basic verification, to ensure that the provided commitsha is actually on this branch
-            for (var i = 0; i < maxCommitsBack; i++)
-            {
-                var sha = GitTasks.Git($"log {TargetBranch}~{i} -1 --pretty=%H")
-                        .FirstOrDefault(x => x.Type == OutputType.Std)
-                        .Text;
-
-                if (string.Equals(commitSha, sha, StringComparison.OrdinalIgnoreCase))
-                {
-                    // OK, this SHA is definitely on this branch
-                    foundSha = true;
-                    break;
-                }
-            }
-
-            if (!foundSha)
-            {
-                Logger.Error($"Error: The commit {commitSha} could not be found in the last {maxCommitsBack} of the branch {TargetBranch}" +
-                                $"Ensure that the commit sha you have provided is correct, and you are running the create_release action from the correct branch");
-                throw new Exception($"The commit {commitSha} could not found in the latest {maxCommitsBack} of target branch {TargetBranch}");
-            }
-
-
             Logger.Info($"Finding build for commit sha: {commitSha}");
             var build = builds
                 .FirstOrDefault(b => string.Equals(b.SourceVersion, commitSha, StringComparison.OrdinalIgnoreCase));
