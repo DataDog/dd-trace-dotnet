@@ -606,7 +606,10 @@ namespace Datadog.Trace.Propagators
                 false => SamplingPriorityValues.AutoReject,
             };
 
-            var traceTags = TagPropagation.ParseHeader(traceState.PropagatedTags);
+            // to avoid accessing tracer settings here, use the default value for outgoingHeaderMaxLength for now,
+            // and it will be set to the configured value later in Tracer.CreateSpanContext()
+            var traceTags = TagPropagation.ParseHeader(traceState.PropagatedTags, TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+
             if (traceParent.Sampled && traceState.SamplingPriority <= 0)
             {
                 traceTags.SetTag(Tags.Propagated.DecisionMaker, "-0");

@@ -15,8 +15,6 @@ namespace Datadog.Trace.Tagging
 {
     internal class TraceTagCollection
     {
-        private readonly int _outgoingHeaderMaxLength;
-
         private List<KeyValuePair<string, string>>? _tags;
         private string? _cachedPropagationHeader;
 
@@ -25,10 +23,12 @@ namespace Datadog.Trace.Tagging
             List<KeyValuePair<string, string>>? tags = null,
             string? cachedPropagationHeader = null)
         {
-            _outgoingHeaderMaxLength = outgoingHeaderMaxLength;
+            OutgoingHeaderMaxLength = outgoingHeaderMaxLength;
             _tags = tags;
             _cachedPropagationHeader = cachedPropagationHeader;
         }
+
+        public int OutgoingHeaderMaxLength { get; set; }
 
         /// <summary>
         /// Gets the number of elements contained in the <see cref="TraceTagCollection"/>.
@@ -239,7 +239,7 @@ namespace Datadog.Trace.Tagging
         /// <returns>A string that can be used for horizontal propagation using the "x-datadog-tags" header.</returns>
         public string ToPropagationHeader()
         {
-            return _cachedPropagationHeader ??= TagPropagation.ToHeader(this, _outgoingHeaderMaxLength);
+            return _cachedPropagationHeader ??= TagPropagation.ToHeader(this, OutgoingHeaderMaxLength);
         }
 
         public KeyValuePair<string, string>[] ToArray()

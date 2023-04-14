@@ -82,7 +82,12 @@ namespace Datadog.Trace.Propagators
             var origin = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.Origin);
             var propagatedTraceTags = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.PropagatedTags);
 
-            var traceTags = TagPropagation.ParseHeader(propagatedTraceTags);
+            // to avoid accessing tracer settings here, use the default value for outgoingHeaderMaxLength for now,
+            // and it will be set to the configured value later in Tracer.CreateSpanContext()
+            var traceTags = TagPropagation.ParseHeader(propagatedTraceTags, TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+
+            // reconstruct 128-bit trace id from the lower 64 bits in "x-datadog-traceid"
+            // and the upper 64 bits in "_dd.p.tid"
             var traceId = GetFullTraceId((ulong)traceIdLower, traceTags);
 
             spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin)
