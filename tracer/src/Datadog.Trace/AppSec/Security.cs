@@ -388,6 +388,11 @@ namespace Datadog.Trace.AppSec
         /// <summary> Frees resources </summary>
         public void Dispose() => _waf?.Dispose();
 
+        internal void SetDebugEnabled(bool enabled)
+        {
+            _wafLibraryInvoker?.SetupLogging(enabled);
+        }
+
         private void SetRemoteConfigCapabilites()
         {
             var rcm = RcmSubscriptionManager.Instance;

@@ -9,6 +9,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
@@ -76,6 +77,7 @@ namespace Datadog.Trace.Configuration
             GlobalSamplingRate = settings.GlobalSamplingRate;
             Integrations = new ImmutableIntegrationSettingsCollection(settings.Integrations, settings.DisabledIntegrationNames);
             HeaderTags = new ReadOnlyDictionary<string, string>(settings.HeaderTags);
+            HeaderTagsNormalizationFixEnabled = settings.HeaderTagsNormalizationFixEnabled;
             GrpcTags = new ReadOnlyDictionary<string, string>(settings.GrpcTags);
             IpHeader = settings.IpHeader;
             IpHeaderEnabled = settings.IpHeaderEnabled;
@@ -221,19 +223,19 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating custom sampling rules.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
-        public string? CustomSamplingRules { get; }
+        public string? CustomSamplingRules { get; init; }
 
         /// <summary>
         /// Gets a value indicating the span sampling rules.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.SpanSamplingRules"/>
-        internal string? SpanSamplingRules { get; }
+        internal string? SpanSamplingRules { get; init; }
 
         /// <summary>
         /// Gets a value indicating a global rate for sampling.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GlobalSamplingRate"/>
-        public double? GlobalSamplingRate { get; }
+        public double? GlobalSamplingRate { get; init; }
 
         /// <summary>
         /// Gets a collection of <see cref="Integrations"/> keyed by integration name.
@@ -249,13 +251,15 @@ namespace Datadog.Trace.Configuration
         /// Gets the map of header keys to tag names, which are applied to the root <see cref="Span"/>
         /// of incoming and outgoing requests.
         /// </summary>
-        public IReadOnlyDictionary<string, string> HeaderTags { get; }
+        public IReadOnlyDictionary<string, string> HeaderTags { get; init; }
 
         /// <summary>
         /// Gets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>
         /// of incoming and outgoing GRPC requests.
         /// </summary>
         public IReadOnlyDictionary<string, string> GrpcTags { get; }
+
+        internal bool HeaderTagsNormalizationFixEnabled { get; set; }
 
         /// <summary>
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
@@ -322,7 +326,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets configuration values for changing service names based on configuration
         /// </summary>
-        internal IDictionary<string, string>? ServiceNameMappings { get; }
+        internal IDictionary<string, string>? ServiceNameMappings { get; init; }
 
         /// <summary>
         /// Gets a value indicating the size in bytes of the trace buffer

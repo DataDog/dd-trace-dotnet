@@ -483,6 +483,8 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public IDictionary<string, string> HeaderTags { get; set; }
 
+        internal bool HeaderTagsNormalizationFixEnabled { get; set; }
+
         /// <summary>
         /// Gets or sets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
         /// </summary>
@@ -766,8 +768,31 @@ namespace Datadog.Trace.Configuration
             return new ImmutableTracerSettings(this);
         }
 
-        private static IDictionary<string, string> InitializeHeaderTags(IDictionary<string, string> configurationDictionary, bool headerTagsNormalizationFixEnabled)
+        internal static ServiceNames? InitializeServiceNames(IConfigurationSource source, string key)
         {
+            var mappings = source.GetDictionary(ConfigurationKeys.ServiceNameMappings);
+
+            if (mappings == null)
+            {
+                return null;
+            }
+
+            var serviceNameMappings = mappings
+                .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+
+            return new ServiceNames(serviceNameMappings);
+        }
+
+        internal static IDictionary<string, string>? InitializeHeaderTags(IConfigurationSource source, string key, bool headerTagsNormalizationFixEnabled)
+        {
+            var configurationDictionary = source.GetDictionary(ConfigurationKeys.GrpcTags, allowOptionalMappings: true);
+
+            if (configurationDictionary == null)
+            {
+                return null;
+            }
+
             var headerTags = new Dictionary<string, string>();
 
             foreach (var kvp in configurationDictionary)

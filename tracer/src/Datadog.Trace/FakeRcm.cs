@@ -4,9 +4,12 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace
@@ -16,11 +19,11 @@ namespace Datadog.Trace
         private static FakeRcm _instance;
 
         private readonly FileSystemWatcher _watcher;
-        private readonly Action<RcmSettings> _configurationChanged;
+        private readonly Action<IConfigurationSource> _configurationChanged;
 
         private int _pendingUpdate = 0;
 
-        public FakeRcm(Action<RcmSettings> configurationChanged)
+        public FakeRcm(Action<IConfigurationSource> configurationChanged)
         {
             const string path = @"C:\temp\rcm.json";
 
@@ -38,17 +41,34 @@ namespace Datadog.Trace
             _instance = new(OnConfigurationChanged);
         }
 
-        private static void OnConfigurationChanged(RcmSettings settings)
+        private static void OnConfigurationChanged(IConfigurationSource settings)
         {
-            Console.WriteLine($"Applying new configuration: {settings}");
-
             var oldSettings = Tracer.Instance.Settings;
+
+            var headerTags = TracerSettings.InitializeHeaderTags(settings, "TraceHeaderTags", oldSettings.HeaderTagsNormalizationFixEnabled);
+            var serviceNameMappings = TracerSettings.InitializeServiceNames(settings, "TraceServiceMapping");
 
             var newSettings = oldSettings with
             {
-                RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled ?? oldSettings.RuntimeMetricsEnabled,
-                IsDataStreamsMonitoringEnabled = settings.DataStreamsEnabled ?? oldSettings.IsDataStreamsMonitoringEnabled
+                RuntimeMetricsEnabled = settings.GetBool("RuntimeMetricsEnabled") ?? oldSettings.RuntimeMetricsEnabled,
+                IsDataStreamsMonitoringEnabled = settings.GetBool("DataStreamsEnabled") ?? oldSettings.IsDataStreamsMonitoringEnabled,
+                CustomSamplingRules = settings.GetString("CustomSamplingRules") ?? oldSettings.CustomSamplingRules,
+                GlobalSamplingRate = settings.GetDouble("TraceSampleRate") ?? oldSettings.GlobalSamplingRate,
+                SpanSamplingRules = settings.GetString("SpanSamplingRules") ?? oldSettings.SpanSamplingRules,
+                HeaderTags = (headerTags as IReadOnlyDictionary<string, string>) ?? oldSettings.HeaderTags,
+                ServiceNameMappings = serviceNameMappings ?? oldSettings.ServiceNameMappings
             };
+
+            // TODO: Log injection
+
+            var debugLogsEnabled = settings.GetBool("DebugLogsEnabled");
+
+            if (debugLogsEnabled != null && debugLogsEnabled.Value != GlobalSettings.Instance.DebugEnabled)
+            {
+                GlobalSettings.SetDebugEnabled(debugLogsEnabled.Value);
+                Security.Instance.SetDebugEnabled(debugLogsEnabled.Value);
+                // TODO: notify the native tracer and continuous profiler
+            }
 
             TracerManager.ReplaceGlobalManager(newSettings, TracerManagerFactory.Instance);
         }
@@ -65,8 +85,10 @@ namespace Datadog.Trace
                 Thread.Sleep(500);
 
                 var fileContent = File.ReadAllText(e.FullPath);
-                var settings = JsonConvert.DeserializeObject<RcmSettings>(fileContent);
-                _configurationChanged(settings);
+
+                Console.WriteLine($"Applying new configuration: {fileContent}");
+
+                _configurationChanged(new JsonConfigurationSource(fileContent));
 
                 Volatile.Write(ref _pendingUpdate, 0);
             });
