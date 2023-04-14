@@ -1,7 +1,245 @@
+# C# Log Collection and Connecting Logs and Traces
+
+The following samples demonstrate the C# Log Collection feature along with connecting logs to traces automatically.
+
+For additional documentation on these features and how to enable them in your environments, refer to:
+
+- [C# File-tail Log Collection](https://docs.datadoghq.com/logs/log_collection/csharp/?tab=serilog#file-tail-logging-with-the-datadog-agent)
+- [C# Agentless Log Collection](https://docs.datadoghq.com/logs/log_collection/csharp/?tab=serilog#agentless-logging-with-apm)
+- [C# Connecting Logs to Traces](https://docs.datadoghq.com/tracing/other_telemetry/connect_logs_and_traces/dotnet/?tab=serilog)
+
+> If there is a logging layout that you would like to see documented here, please feel free to reach out with an issue or contribution!
+
+## Prerequisites
+
+- Powershell 7+ to run `BuildAndRunSample.ps1`
+- `dotnet` command line tool is installed
+- Either or both:
+  - .NET 7.0
+  - .NET Framework 4.6.2 (Windows only)
+- [Datadog Agent](https://docs.datadoghq.com/agent/) is installed
+  - Note that this is **not** a requirement for the Agentless Log Collection
+- Windows (32-bit and/or 64-bit) AND/OR 64-bit Linux
+
+The `BuildAndRunSample.ps1` script will set the necessary environment variables for the given sample automatically.
+However, there may be some additional setup required to try out each of the features.
+
+All samples rely on the [Datadog.Trace.Bundle](https://www.nuget.org/packages/Datadog.Trace.Bundle#readme-body-tab) NuGet package for automatic and manual instrumentation.
+
+### File-tail Log Collection
+
+> Further documentation and setup information about File-tail Log Collection can be found [here](https://docs.datadoghq.com/logs/log_collection/csharp/?tab=serilog#file-tail-logging-with-the-datadog-agent)
+
+File-tail log collection requires the following:
+
+- [Configured the Datadog Agent](https://docs.datadoghq.com/logs/log_collection/csharp/?tab=serilog#configure-the-datadog-agent) for logs collection which covers:
+  - Enabling [log collection](https://docs.datadoghq.com/agent/logs/?tab=tailfiles#activate-log-collection) for the agent
+  - Configuring [custom log collection](https://docs.datadoghq.com/agent/logs/?tab=tailfiles#custom-log-collection) for the agent
+- The `path:` value will change based on which sample is being run. In general log files are output in the same directory as the built project
+  - This should be an *absolute* path to the log file
+  - Example *relative* output location of log file for the Log4Net's sample: `\Log4NetExample\bin\Debug\net462\win-x86\log-log4net-jsonFile-allProperties.log`
+
+### Agentless Log Collection
+
+> Further documentation and setup information about Agentless Log Collection can be found [here](https://docs.datadoghq.com/logs/log_collection/csharp/?tab=serilog#agentless-logging-with-apm)
+
+Agentless logging requires two additional parameters to be passed into the script:
+
+- The `-Agentless` switch and
+- Your Datadog `-ApiKey`
+
+### Connecting Logs to Traces
+
+> Further documentation and setup information about Connecting Logs and Traces can be found [here](https://docs.datadoghq.com/tracing/other_telemetry/connect_logs_and_traces/dotnet/?tab=serilog)
+
+The provided samples automatically take care of all necessary requirements for connecting traces to logs besides the initial [Prerequisites](#prerequisites).
+
+## Runing the Samples
+
+A sample is provided for each of the logging libraries that the .NET Tracer supports: `Serilog`, `Log4Net`, `NLog`, and `Microsoft.Extensions.Logging`.
+
+If you are running into issues using the `-EnableDebug` switch will enable the .NET Tracer Debug logs, which may help identifying configuration issues.
+
+> Assumed that the active working directory is `samples\AutomaticTraceIdInjection\`
+
+The script provides several parameters to run different samples:
+
+- `-LoggingLibrary` (string) to specify which sample to build and run e.g. `Log4Net`
+  - Exclude the `*Example` portion of the project name
+- `-Framework` (string) either `net7.0` or `net462`
+- `-Runtime` (string) either `x86` or `x64`
+  - For Linux only `x64` is supported
+- `-Agentless` (switch) to specify whether to enable agentless logging
+- `-ApiKey` (string) your Datadog API key - only required when `-Agentless` is specified
+- `-EnableDebug` (switch) to enable .NET Tracer debug logs for debugging configuration issues
+
+Note: the operating system will be determined automatically by the script.
+
+Example command to run the `Log4Net` example:
+
+```powershell
+pwsh BuildAndRunSample.ps1 -LoggingLibrary Log4Net -Framework net7.0 -Runtime x86
+```
+
+### Serilog
+
+Located within the [SerilogExample](SerilogExample) directory.
+
+#### Serilog Configuration
+
+Refer to the [Program.cs](SerilogExample/Program.cs) file to see how Serilog is configured.
+Layouts configured in the sample that produce three log files in the same directory that the project is built to:
+
+- `CompactJsonFormatter` that requires no additional configuration in code
+  - `log-Serilog-compactJsonFile-allProperties.log`
+- `JsonFormatter` that requires no additional configuration in code
+  - `log-Serilog-jsonFile-allProperties.log`
+- A simple `MessageTemplate` (non-JSON) that requires additional configuration in code to emit the necessary properties
+  - `log-Serilog-textFile.log`
+
+#### Serilog Expected Output
+
+This sample will create three log messages along with a single trace.
+
+- A log message before the trace
+- A trace `"SerilogExample - Main()"`
+- A log message during the trace
+- A log message after the trace
+
+When logs are connected to traces the `"SerilogExample - Main()"` trace will have a log message connected to it that was logged during the the trace.
+#### Running the Serilog Sample
+
+> Running with file-tail log collection on Windows x86 .NET 7.0 (this requires that the agent is configured to point to one of the above log files)
+
+```powershell
+pwsh BuildAndRunSample.ps1 -LoggingLibrary Serilog -Framework net7.0 -Runtime x86
+```
+
+> Running with Agentless logging on x64 Windows .NET Framework 4.6.2
+
+```powershell
+pwsh BuildAndRunSample.ps1 -LoggingLibrary Serilog -Framework net462 -Runtime x64 -Agentless -ApiKey YOUR_API_KEY_HERE
+```
+
+> Running with Agentless logging on x64 .NET 7.0
+
+```powershell
+pwsh BuildAndRunSample.ps1 -LoggingLibrary Serilog -Framework net7.0 -Runtime x64 -Agentless -ApiKey YOUR_API_KEY_HERE
+```
+
+### Log4Net
+
+Located within the [Log4NetExample](Log4NetExample) directory.
+
+#### Log4Net Configuration
+
+Refer to the `log4net.config` to see the specific logging configuration(s) being used.
+Layouts configured in the sample that produce three log files in the same directory that the project is built to:
+
+- JSON format all properties: `SerializedLayout` (from the `log4net.Ext.Json` NuGet package)
+  - `log-log4net-jsonFile-allProperties.log`
+- JSON format with specific properties
+  - `log-log4net-jsonFile-explicitProperties.log`
+- Raw format: `PatternLayout` (requires a custom Datadog Log Pipeline for processing)
+  - `log-log4net-textFile.log`
+
+#### Running the Log4Net Sample
+
+> Running with file-tail log collection on Windows x86 .NET 7.0 (this requires that the agent is configured to point to one of the above log files)
+
+```powershell
+pwsh BuildAndRunSample.ps1 -LoggingLibrary Log4Net -Framework net7.0 -Runtime x86
+```
+
+> Running with Agentless logging on x64 Windows .NET Framework 4.6.2
+
+```powershell
+pwsh BuildAndRunSample.ps1 -LoggingLibrary Log4Net -Framework net462 -Runtime x64 -Agentless -ApiKey YOUR_API_KEY_HERE
+```
+
+> Running with Agentless logging on x64 .NET 7.0
+
+```powershell
+pwsh BuildAndRunSample.ps1 -LoggingLibrary Log4Net -Framework net7.0 -Runtime x64 -Agentless -ApiKey YOUR_API_KEY_HERE
+```
+
+#### Log4Net Expected Output
+
+The Log4Net sample will create three log messages and one trace:
+
+- A log message before the trace
+- A trace `"Log4NetExample - Main()"`
+- A log message during the trace
+- A log message after the trace
+
+When logs are connected to traces the `"Log4NetExample - Main()"` trace will have a log message connected to it that was logged during the the trace.
+
+### NLog
+
+Several samples, each for a specific version of NLog are provided:
+
+- NLog v4.0 within the [NLog40Example](NLog40Example) directory
+  - Note that NLog v4.0's sample only supports .NET Framework 4.6.2
+- NLog v4.5 within the [NLog45Example](NLog45Example) directory
+- NLog v4.6 within the [NLog46Example](NLog46Example) directory
+
+#### Configuration
+
+Refer to the `NLog.config` within each `NLog` example project to see the specific logging configuration(s) being used.
+Example for `NLog46`: layouts configured in the sample produce three log files in the same directory that the project is built to:
+
+- JSON format all properties without needing to extract Datadog properties (`includeMdlc="true"`)
+  - `log-NLog46-jsonFile-includeMdlc-true.log`
+- JSON format while needing to specify the Datadog properties to extract (`includeMdlc="false"`)
+  - `log-NLog46-jsonFile-includeMdlc-false.log`
+- Custom format - Datadog properties must be extracted indicuallay using `${mdlc:item=String}`
+  - `log-NLog46-textFile.log`
+
+#### Running the NLog Samples
+
+> Running with file-tail log collection on Windows x86 .NET Framework 4.6.2 (this requires that the agent is configured to point to one of the above log files)
+
+```powershell
+pwsh BuildAndRunSample.ps1 -LoggingLibrary NLog40 -Framework net462 -Runtime x86
+```
+
+> Running with Agentless logging on x64 Windows .NET 7.0
+
+```powershell
+pwsh BuildAndRunSample.ps1 -LoggingLibrary NLog45 -Framework net7.0 -Runtime x64 -Agentless -ApiKey YOUR_API_KEY_HERE
+```
+
+> Running with Agentless logging on x64 .NET 7.0
+
+```powershell
+pwsh BuildAndRunSample.ps1 -LoggingLibrary NLog46 -Framework net7.0 -Runtime x64 -Agentless -ApiKey YOUR_API_KEY_HERE
+```
+
+#### NLog Expected Output
+
+The Log4Net sample will create three log messages and one trace:
+
+- A log message before the trace
+- A trace `"NLog46Example - Main()"`
+- A log message during the trace
+- A log message after the trace
+
+When logs are connected to traces the `"NLog46Example - Main()"` trace will have a log message connected to it that was logged during the the trace.
+
+### Microsoft.Extensions.Logging
+
+Located within the [MicrosoftExtensionsExample](MicrosoftExtensionsExample) directory.
+
+#### Microsoft.Extensions.Logging Configuration
+
+#### Running the Microsoft.Extensions.Logging Sample
+
+#### Expected Output for Microsoft.Extensions.Logging Sample
+
 # Automatic Trace ID injection
 Follow the official documentation steps to set up [C# log collection](https://docs.datadoghq.com/logs/log_collection/csharp/) and [automatic trace ID injection](https://docs.datadoghq.com/tracing/connect_logs_and_traces/?tab=net), then run these samples to see the feature in action!
 
-If there is a logging layout that you would like to see documented here, please feel free to reach out with an issue or contribution!
+> If there is a logging layout that you would like to see documented here, please feel free to reach out with an issue or contribution!
 
 # Samples
 You can run the samples by using `RunSampleWithAutomaticInstrumentation.sh`. 
