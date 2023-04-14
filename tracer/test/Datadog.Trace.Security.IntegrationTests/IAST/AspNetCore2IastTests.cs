@@ -185,6 +185,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             : base("AspNetCore2", outputHelper, "/shutdown", testName: testName)
         {
             Fixture = fixture;
+            fixture.SetOutput(outputHelper);
             IastEnabled = enableIast;
             IsIastDeduplicationEnabled = isIastDeduplicationEnabled;
             VulnerabilitiesPerRequest = vulnerabilitiesPerRequest;
