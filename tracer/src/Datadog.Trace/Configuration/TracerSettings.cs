@@ -118,11 +118,9 @@ namespace Datadog.Trace.Configuration
             HeaderTags = InitializeHeaderTags(inputHeaderTags, headerTagsNormalizationFixEnabled);
             MetadataSchemaVersion = ParseMetadataSchemaVersion(source.GetString(ConfigurationKeys.MetadataSchemaVersion));
 
-            var serviceNameMappings = source.GetDictionary(ConfigurationKeys.ServiceNameMappings)
+            ServiceNameMappings = source.GetDictionary(ConfigurationKeys.ServiceNameMappings)
                                             ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                                             ?.ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
-
-            ServiceNameMappings = new ServiceNames(serviceNameMappings, MetadataSchemaVersion);
 
             TracerMetricsEnabled = source.GetBool(ConfigurationKeys.TracerMetricsEnabled) ??
                                    // default value
@@ -544,9 +542,9 @@ namespace Datadog.Trace.Configuration
         internal bool[] HttpClientErrorStatusCodes { get; set; }
 
         /// <summary>
-        /// Gets configuration values for changing service names based on configuration
+        /// Gets or sets configuration values for changing service names based on configuration
         /// </summary>
-        internal ServiceNames ServiceNameMappings { get; }
+        internal IDictionary<string, string>? ServiceNameMappings { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating the size in bytes of the trace buffer
@@ -662,7 +660,7 @@ namespace Datadog.Trace.Configuration
         /// as the <see cref="KeyValuePair{TKey, TValue}.Key"/>) to replacement service names as <see cref="KeyValuePair{TKey, TValue}.Value"/>).</param>
         public void SetServiceNameMappings(IEnumerable<KeyValuePair<string, string>> mappings)
         {
-            ServiceNameMappings.SetServiceNameMappings(mappings);
+            ServiceNameMappings = mappings.ToDictionary(x => x.Key, x => x.Value);
         }
 
         /// <summary>

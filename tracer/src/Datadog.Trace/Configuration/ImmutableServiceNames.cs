@@ -1,4 +1,4 @@
-// <copyright file="ServiceNames.cs" company="Datadog">
+// <copyright file="ImmutableServiceNames.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,13 +9,13 @@ using System.Linq;
 
 namespace Datadog.Trace.Configuration
 {
-    internal class ServiceNames
+    internal class ImmutableServiceNames
     {
         private readonly object _lock = new object();
         private Dictionary<string, string> _mappings = null;
         private bool _unifyServiceNames;
 
-        public ServiceNames(IDictionary<string, string> mappings, string metadataSchemaVersion)
+        public ImmutableServiceNames(IDictionary<string, string> mappings, string metadataSchemaVersion)
         {
             _unifyServiceNames = metadataSchemaVersion == "v0" ? false : true;
             if (mappings?.Count > 0)
@@ -49,14 +49,6 @@ namespace Datadog.Trace.Configuration
 
             name = null;
             return false;
-        }
-
-        public void SetServiceNameMappings(IEnumerable<KeyValuePair<string, string>> mappings)
-        {
-            lock (_lock)
-            {
-                _mappings = mappings.ToDictionary(x => x.Key, x => x.Value);
-            }
         }
     }
 }
