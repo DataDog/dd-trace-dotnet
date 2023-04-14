@@ -10,7 +10,7 @@ using Datadog.Trace.Iast.Dataflow;
 namespace Datadog.Trace.Iast.Aspects;
 
 /// <summary> DirectoryAspect class aspects </summary>
-[AspectClass("mscorlib,System.Private.CoreLib", AspectType.Sink, VulnerabilityType.PathTraversal)]
+[AspectClass("mscorlib,System.IO.FileSystem,System.Runtime", AspectType.Sink, VulnerabilityType.PathTraversal)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public partial class DirectoryAspect
@@ -23,42 +23,55 @@ public partial class DirectoryAspect
     [AspectMethodInsertBefore("System.IO.Directory::CreateDirectory(System.String)")]
 
 #if NET6_0_OR_GREATER
-    [AspectMethodInsertBefore("System.IO.DirectoryInfo CreateDirectory(System.String, System.IO.UnixFileMode)")]
-    [AspectMethodInsertBefore("System.IO.DirectoryInfo CreateTempSubdirectory(System.String)")]
+    [AspectMethodInsertBefore("System.IO.Directory::CreateDirectory(System.String,System.IO.UnixFileMode)", 1)]
+    [AspectMethodInsertBefore("System.IO.Directory::CreateTempSubdirectory(System.String)")]
 #endif
     [AspectMethodInsertBefore("System.IO.Directory::Delete(System.String)")]
     [AspectMethodInsertBefore("System.IO.Directory::Delete(System.String,System.Boolean)", 1)]
-    [AspectMethodInsertBefore("System.IO.Directory::EnumerateDirectories(System.String)")]
-    [AspectMethodInsertBefore("System.IO.Directory::EnumerateDirectories(System.String,System.String,System.IO.EnumerationOptions)", new int[] { 1, 2 })]
-    [AspectMethodInsertBefore("System.IO.Directory::EnumerateFiles(System.String)")]
-    [AspectMethodInsertBefore("System.IO.Directory::EnumerateFileSystemEntries(System.String)")]
     [AspectMethodInsertBefore("System.IO.Directory::GetDirectories(System.String)")]
     [AspectMethodInsertBefore("System.IO.Directory::GetDirectories(System.String,System.String)", new int[] { 0, 1 })]
     [AspectMethodInsertBefore("System.IO.Directory::GetDirectories(System.String,System.String,System.IO.SearchOption)", new int[] { 1, 2 })]
+#if !NETFRAMEWORK
+    [AspectMethodInsertBefore("System.IO.Directory::GetDirectories(System.String,System.String,System.IO.EnumerationOptions)", new int[] { 1, 2 })]
+#endif
     [AspectMethodInsertBefore("System.IO.Directory::GetDirectoryRoot(System.String)")]
     [AspectMethodInsertBefore("System.IO.Directory::GetFiles(System.String)")]
     [AspectMethodInsertBefore("System.IO.Directory::GetFiles(System.String,System.String)", new int[] { 0, 1 })]
     [AspectMethodInsertBefore("System.IO.Directory::GetFiles(System.String,System.String,System.IO.SearchOption)", new int[] { 1, 2 })]
+#if !NETFRAMEWORK
+    [AspectMethodInsertBefore("System.IO.Directory::GetFiles(System.String,System.String,System.IO.EnumerationOptions)", new int[] { 1, 2 })]
+#endif
     [AspectMethodInsertBefore("System.IO.Directory::GetFileSystemEntries(System.String)")]
     [AspectMethodInsertBefore("System.IO.Directory::GetFileSystemEntries(System.String,System.String)", new int[] { 0, 1 })]
-    [AspectMethodInsertBefore("System.IO.Directory::GetParent(System.String)")]
-    [AspectMethodInsertBefore("System.IO.Directory::Move(System.String,System.String)", new int[] { 0, 1 })]
-    [AspectMethodInsertBefore("System.IO.Directory::CreateDirectory(System.String,System.Security.AccessControl.DirectorySecurity)", 1)]
-    [AspectMethodInsertBefore("System.IO.Directory::SetAccessControl(System.String,System.Security.AccessControl.DirectorySecurity)", 1)]
     [AspectMethodInsertBefore("System.IO.Directory::GetFileSystemEntries(System.String,System.String,System.IO.SearchOption)", new int[] { 1, 2 })]
+#if !NETFRAMEWORK
+    [AspectMethodInsertBefore("System.IO.Directory::GetFileSystemEntries(System.String,System.String,System.IO.EnumerationOptions)", new int[] { 1, 2 })]
+#endif
+    [AspectMethodInsertBefore("System.IO.Directory::Move(System.String,System.String)", new int[] { 0, 1 })]
+#if NETFRAMEWORK
+    [AspectMethodInsertBefore("System.IO.Directory::CreateDirectory(System.String,System.Security.AccessControl.DirectorySecurity)", 1)]
+#endif
+    [AspectMethodInsertBefore("System.IO.Directory::SetAccessControl(System.String,System.Security.AccessControl.DirectorySecurity)", 1)]
+    [AspectMethodInsertBefore("System.IO.Directory::EnumerateDirectories(System.String)")]
+#if !NETFRAMEWORK
+    [AspectMethodInsertBefore("System.IO.Directory::EnumerateDirectories(System.String,System.String,System.IO.EnumerationOptions)", new int[] { 1, 2 })]
+#endif
     [AspectMethodInsertBefore("System.IO.Directory::EnumerateDirectories(System.String,System.String)", new int[] { 0, 1 })]
     [AspectMethodInsertBefore("System.IO.Directory::EnumerateDirectories(System.String,System.String,System.IO.SearchOption)", new int[] { 1, 2 })]
+    [AspectMethodInsertBefore("System.IO.Directory::EnumerateFiles(System.String)")]
+#if !NETFRAMEWORK
+    [AspectMethodInsertBefore("System.IO.Directory::EnumerateFiles(System.String,System.String,System.IO.EnumerationOptions)", new int[] { 1, 2 })]
+#endif
     [AspectMethodInsertBefore("System.IO.Directory::EnumerateFiles(System.String,System.String)", new int[] { 0, 1 })]
     [AspectMethodInsertBefore("System.IO.Directory::EnumerateFiles(System.String,System.String,System.IO.SearchOption)", new int[] { 1, 2 })]
+    [AspectMethodInsertBefore("System.IO.Directory::EnumerateFileSystemEntries(System.String)")]
     [AspectMethodInsertBefore("System.IO.Directory::EnumerateFileSystemEntries(System.String,System.String)", new int[] { 0, 1 })]
     [AspectMethodInsertBefore("System.IO.Directory::EnumerateFileSystemEntries(System.String,System.String,System.IO.SearchOption)", new int[] { 1, 2 })]
-    [AspectMethodInsertBefore("System.IO.Directory::EnumerateFiles(System.String,System.String,System.IO.EnumerationOptions)", new int[] { 1, 2 })]
+#if !NETFRAMEWORK
     [AspectMethodInsertBefore("System.IO.Directory::EnumerateFileSystemEntries(System.String,System.String,System.IO.EnumerationOptions)", new int[] { 1, 2 })]
-    [AspectMethodInsertBefore("System.IO.Directory::GetDirectories(System.String,System.String,System.IO.EnumerationOptions)", new int[] { 1, 2 })]
-    [AspectMethodInsertBefore("System.IO.Directory::GetFiles(System.String,System.String,System.IO.EnumerationOptions)", new int[] { 1, 2 })]
-    [AspectMethodInsertBefore("System.IO.Directory::GetFileSystemEntries(System.String,System.String,System.IO.EnumerationOptions)", new int[] { 1, 2 })]
+#endif
     [AspectMethodInsertBefore("System.IO.Directory::SetCurrentDirectory(System.String)")]
-    public static string Init(string path)
+    public static string ReviewPath(string path)
     {
         IastModule.OnPathTraversal(path);
         return path;

@@ -22,27 +22,41 @@ public partial class DirectoryInfoAspect
     /// <returns>the path parameter</returns>
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::.ctor(System.String)")]
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::CreateSubdirectory(System.String)")]
+#if NETFRAMEWORK
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::CreateSubdirectory(System.String,System.Security.AccessControl.DirectorySecurity)", 1)]
+#endif
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::MoveTo(System.String)")]
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::GetFileSystemInfos(System.String)")]
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::GetFileSystemInfos(System.String,System.IO.SearchOption)", 1)]
+#if !NETFRAMEWORK
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::GetFileSystemInfos(System.String,System.IO.EnumerationOptions)", 1)]
+#endif
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::GetFiles(System.String)")]
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::GetFiles(System.String,System.IO.SearchOption)", 1)]
+#if !NETFRAMEWORK
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::GetFiles(System.String,System.IO.EnumerationOptions)", 1)]
+#endif
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::GetDirectories(System.String)")]
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::GetDirectories(System.String,System.IO.SearchOption)", 1)]
+#if !NETFRAMEWORK
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::GetDirectories(System.String,System.IO.EnumerationOptions)", 1)]
+#endif
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::EnumerateFileSystemInfos(System.String)")]
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::EnumerateFileSystemInfos(System.String,System.IO.SearchOption)", 1)]
+#if !NETFRAMEWORK
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::EnumerateFileSystemInfos(System.String,System.IO.EnumerationOptions)", 1)]
+#endif
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::EnumerateFiles(System.String)")]
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::EnumerateFiles(System.String,System.IO.SearchOption)", 1)]
+#if !NETFRAMEWORK
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::EnumerateFiles(System.String,System.IO.EnumerationOptions)", 1)]
+#endif
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::EnumerateDirectories(System.String)")]
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::EnumerateDirectories(System.String,System.IO.SearchOption)", 1)]
+#if !NETFRAMEWORK
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::EnumerateDirectories(System.String,System.IO.EnumerationOptions)", 1)]
-    public static string Init(string path)
+#endif
+    public static string ReviewPath(string path)
     {
         IastModule.OnPathTraversal(path);
         return path;
