@@ -72,7 +72,7 @@ namespace Datadog.Trace.TestHelpers
 
                 helper.Drain();
 
-                if (helper.Process.ExitCode != -2 || helper.StandardOutput.Contains("Dump count reached"))
+                if (helper.StandardOutput.Contains("Dump count reached") || !helper.StandardOutput.Contains("Dump count not reached"))
                 {
                     _output.Report($"procdump for process {pid} exited with code {helper.Process.ExitCode}");
 
