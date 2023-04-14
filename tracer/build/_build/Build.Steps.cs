@@ -330,6 +330,7 @@ partial class Build
         .Unlisted()
         .Description("Compiles the managed code in the src directory")
         .After(CreateRequiredDirectories)
+        .After(Clean)
         .Executes(() =>
         {
             DotNetBuild(s => s
@@ -536,9 +537,6 @@ partial class Build
                 .CombineWith(targetFrameworks, (p, framework) => p
                     .SetFramework(framework)
                     .SetOutput(MonitoringHomeDirectory / framework)));
-
-            Directory.EnumerateFiles(MonitoringHomeDirectory, "*.*", SearchOption.AllDirectories)
-                .ForEach(x => Logger.Info(x));
         });
 
     Target PublishNativeSymbolsWindows => _ => _
