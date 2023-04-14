@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ASM.AST;
 using Datadog.Trace.DuckTyping;
 
@@ -17,6 +18,12 @@ internal abstract class HotChocolateSecurity
     public static void ScanQuery(IQueryRequest request)
     {
         if (Tracer.Instance.ActiveScope is null)
+        {
+            return;
+        }
+
+        // Don't run if ASM isn't enabled
+        if (!Security.Instance.Settings.Enabled)
         {
             return;
         }
