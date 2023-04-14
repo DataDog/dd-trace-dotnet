@@ -51,8 +51,6 @@ namespace Datadog.Trace.TestHelpers
                 SetCorFlags(executable, agent.Output, !EnvironmentTools.IsTestTarget64BitProcess());
             }
 
-            MemoryDumpHelper.MonitorCrashes(executable);
-
             var startInfo = new ProcessStartInfo(executable, $"{arguments ?? string.Empty}");
 
             environmentHelper.SetEnvironmentVariables(
@@ -73,7 +71,14 @@ namespace Datadog.Trace.TestHelpers
                 startInfo.WorkingDirectory = workingDirectory;
             }
 
-            return Process.Start(startInfo);
+            var process = Process.Start(startInfo);
+
+            if (process != null)
+            {
+                MemoryDumpHelper.MonitorCrashes(process.Id);
+            }
+
+            return process;
         }
 
         private static void SetCorFlags(string executable, ITestOutputHelper output, bool require32Bit)

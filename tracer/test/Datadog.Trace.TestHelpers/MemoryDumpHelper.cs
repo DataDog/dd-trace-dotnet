@@ -49,14 +49,16 @@ namespace Datadog.Trace.TestHelpers
             _path = Path.Combine(unpackedDirectory, "procdump.exe");
         }
 
-        public static void MonitorCrashes(string exe)
+        public static void MonitorCrashes(int pid)
         {
-#if !NETFRAMEWORK
-            return;
-#else
+            if (!EnvironmentTools.IsWindows())
+            {
+                return;
+            }
+
             _ = Task.Run(() =>
             {
-                var args = $"-ma -accepteula -e -w {Path.GetFileName(exe)} -o {Path.GetTempPath()}";
+                var args = $"-ma -accepteula -e {pid} {Path.GetTempPath()}";
 
                 using var dumpToolProcess = Process.Start(new ProcessStartInfo(_path, args)
                 {
@@ -64,37 +66,20 @@ namespace Datadog.Trace.TestHelpers
                     CreateNoWindow = true,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
-                })!;
+                });
 
-                dumpToolProcess.ErrorDataReceived += (_, e) =>
+                using var helper = new ProcessHelper(dumpToolProcess);
+
+                helper.Drain();
+
+                if (helper.Process.ExitCode != -2 || helper.StandardOutput.Contains("Dump count reached"))
                 {
-                    _output?.Report($"[dump][stderr] {e.Data}");
-                };
+                    _output.Report($"procdump for process {pid} exited with code {helper.Process.ExitCode}");
 
-                dumpToolProcess.OutputDataReceived += (_, e) =>
-                {
-                    _output?.Report($"[dump][stdout] {e.Data}");
-                };
-
-                dumpToolProcess.BeginErrorReadLine();
-                dumpToolProcess.BeginOutputReadLine();
-
-                _output.Report($"[dump] Procdump with pid {dumpToolProcess.Id} monitors process {Path.GetFileName(exe)}");
-
-                dumpToolProcess.WaitForExit();
-
-                _output.Report($"[dump] Procdump with pid {dumpToolProcess.Id} has exited");
-
-                if (dumpToolProcess.ExitCode == -2)
-                {
-                    // No dump was captured but there was no error, the process probably didn't crash
-                    return;
+                    _output.Report($"[dump][stdout] {helper.StandardOutput}");
+                    _output.Report($"[dump][stderr] {helper.ErrorOutput}");
                 }
-
-                // _output?.Report($"[dump][stdout] {helper.StandardOutput}");
-                // _output?.Report($"[dump][stderr] {helper.ErrorOutput}");
             });
-#endif
         }
 
         public static bool CaptureMemoryDump(Process process)
