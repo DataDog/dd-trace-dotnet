@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM;
@@ -17,6 +18,12 @@ internal abstract class GraphQLSecurity
     {
         var scope = Tracer.Instance.ActiveScope;
         if (scope is null)
+        {
+            return;
+        }
+
+        // Don't run if ASM isn't enabled
+        if (!Security.Instance.Settings.Enabled)
         {
             return;
         }
@@ -109,9 +116,9 @@ internal abstract class GraphQLSecurity
             {
                 ASTNodeKindProxy.Variable => GetVariableValue(context, arg.DuckCast<GraphQLVariableProxy>().Name.StringValue),
                 ASTNodeKindProxy.StringValue => arg.DuckCast<GraphQLValueProxy>().Value.ToString(),
-                ASTNodeKindProxy.IntValue => int.Parse(arg.DuckCast<GraphQLValueProxy>().Value.ToString()),
-                ASTNodeKindProxy.FloatValue => float.Parse(arg.DuckCast<GraphQLValueProxy>().Value.ToString()),
-                ASTNodeKindProxy.BooleanValue => bool.Parse(arg.DuckCast<GraphQLValueProxy>().Value.ToString()),
+                ASTNodeKindProxy.IntValue => int.Parse(arg.DuckCast<GraphQLValueProxy>().Value.ToString() ?? string.Empty),
+                ASTNodeKindProxy.FloatValue => float.Parse(arg.DuckCast<GraphQLValueProxy>().Value.ToString() ?? string.Empty),
+                ASTNodeKindProxy.BooleanValue => bool.Parse(arg.DuckCast<GraphQLValueProxy>().Value.ToString() ?? string.Empty),
                 ASTNodeKindProxy.EnumValue => arg.DuckCast<GraphQLValueNameProxy>().Name.StringValue,
                 ASTNodeKindProxy.ListValue => arg.DuckCast<GraphQLValueListProxy>().Values.Select(x => GetArgumentValue(context, x)).ToList(),
                 ASTNodeKindProxy.ObjectValue => arg.DuckCast<GraphQLValueObjectProxy>().Fields!.Select(x => GetArgumentValue(context, x)).ToList(),
