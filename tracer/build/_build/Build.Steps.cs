@@ -536,6 +536,9 @@ partial class Build
                 .CombineWith(targetFrameworks, (p, framework) => p
                     .SetFramework(framework)
                     .SetOutput(MonitoringHomeDirectory / framework)));
+
+            Directory.EnumerateFiles(MonitoringHomeDirectory, "*.*", SearchOption.AllDirectories)
+                .ForEach(x => Logger.Info(x));
         });
 
     Target PublishNativeSymbolsWindows => _ => _
