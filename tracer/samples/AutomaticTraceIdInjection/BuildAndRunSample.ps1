@@ -16,7 +16,19 @@ param(
 
     [Parameter(Mandatory = $false)]
     [System.String]
-    $AppDirectory # we'll use the default directory (here) if none is supplied
+    $AppDirectory, # we'll use the default directory (here) if none is supplied
+
+    [Parameter(Mandatory = $false)]
+    [switch]
+    $Agentless,
+
+    [Parameter(Mandatory = $false)]
+    [System.String]
+    $ApiKey,
+
+    [Parameter(Mandatory = $false)]
+    [switch]
+    $EnableDebug
 )
 
 function Test-DotNetCLI {
@@ -39,7 +51,8 @@ function BuildAndRunSample {
     $Project = Join-Path $PSScriptRoot $LoggingLibrary"Example"
 
     Write-Host "Project path is $Project"
-    dotnet build --configuration Debug $Project
+    dotnet restore $Project
+    dotnet build --configuration Debug $Project --framework $Framework
     dotnet run --project $Project --framework $Framework --arch $Runtime
 }
 
@@ -66,13 +79,30 @@ Set-EnvironmentVariableForProcess -name "DD_ENV" -value "steven.bouwkamp"
 Set-EnvironmentVariableForProcess -name "DD_SERVICE" -value "LogsInjectiongSamples"
 Set-EnvironmentVariableForProcess -name "DD_VERSION" -value "1.0.0"
 
-# If you are running into issues, uncomment the below to enable debug logs
-# Set-EnvironmentVariableForProcess -name "DD_TRACE_DEBUG" -value "true"
+# If you are running into issues, pass in the -EnableDebug switch to get Debug Logs
+
+if ($EnableDebug) {
+    Set-EnvironmentVariableForProcess -name "DD_TRACE_DEBUG" -value "true"
+}
 
 ## If you want to enable Agentless logging uncomment THESE 2 lines and set your api key
 ## If you are not using Agentless logging, the agent must be configured to retrieve your logs
-# Set-EnvironmentVariableForProcess -name "DD_API_KEY" -value "YOUR_API_KEY"
-# Set-EnvironmentVariableForProcess -name "D_LOGS_DIRECT_SUBMISSION_INTEGRATIONS" -value "LOGGING_LIBRARY_HERE"
+if ($Agentless) {
+    if ($ApiKey -eq "") {
+        Write-Error "For enabling Agentless logging please supply your API key with the -ApiKey parameter"
+        return 1
+    }
+    Set-EnvironmentVariableForProcess -name "DD_API_KEY" -value $ApiKey
+
+    if ($LoggingLibrary -like "NLog*"){
+        Set-EnvironmentVariableForProcess -name "DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS" -value "NLog"
+    }
+    else {
+        Set-EnvironmentVariableForProcess -name "DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS" -value $LoggingLibrary
+    }
+}
+
+# Set-EnvironmentVariableForProcess -name "DD_SITE" -value "datadoghq.com"
 
 if ($IsWindows) {
     Write-Host "Using Windows configuration"
