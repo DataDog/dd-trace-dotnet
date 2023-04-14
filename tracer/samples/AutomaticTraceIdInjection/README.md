@@ -217,10 +217,10 @@ pwsh BuildAndRunSample.ps1 -LoggingLibrary NLog46 -Framework net7.0 -Runtime x64
 
 #### NLog Expected Output
 
-The Log4Net sample will create three log messages and one trace:
+The NLog sample will create three log messages and one trace:
 
 - A log message before the trace
-- A trace `"NLog46Example - Main()"`
+- A trace `"NLog46Example - Main()"` (name changes based on the version of the NLog sample run)
 - A log message during the trace
 - A log message after the trace
 
@@ -234,7 +234,38 @@ Located within the [MicrosoftExtensionsExample](MicrosoftExtensionsExample) dire
 
 #### Running the Microsoft.Extensions.Logging Sample
 
+> Note that this sample runs in a loop and needs to be terminated by the user (e.g. `Ctrl` + `c`)
+
+> Running with file-tail log collection on Windows x86 .NET Framework 4.6.2 (this requires that the agent is configured to point to one of the above log files)
+
+```powershell
+pwsh BuildAndRunSample.ps1 -LoggingLibrary MicrosoftExtensions -Framework net462 -Runtime x86
+```
+
+> Running with Agentless logging on x64 Windows .NET 7.0
+
+```powershell
+pwsh BuildAndRunSample.ps1 -LoggingLibrary MicrosoftExtensions -Framework net7.0 -Runtime x64 -Agentless -ApiKey YOUR_API_KEY_HERE
+```
+
+> Running with Agentless logging on x64 .NET 7.0
+
+```powershell
+pwsh BuildAndRunSample.ps1 -LoggingLibrary MicrosoftExtensions -Framework net7.0 -Runtime x64 -Agentless -ApiKey YOUR_API_KEY_HERE
+```
+
 #### Expected Output for Microsoft.Extensions.Logging Sample
+
+The MicrosoftExtensions sample will create *at least*: four log messages and one trace with two spans:
+
+- A log message before the trace
+- A trace `"MicrosoftExtensions - Main()"`
+- A log message during the trace
+- A child span within `"MicrosoftExtensions - Main()"` called `"Microsoft.Extensions.Example - Worker.ExecuteAsync()"`
+- A log message during the child span
+- A log message after the trace
+
+When logs are connected to traces the `"MicrosoftExtensions - Main()"` span along with the child span will have a log message connected to them that was logged when the span was active.
 
 # Automatic Trace ID injection
 Follow the official documentation steps to set up [C# log collection](https://docs.datadoghq.com/logs/log_collection/csharp/) and [automatic trace ID injection](https://docs.datadoghq.com/tracing/connect_logs_and_traces/?tab=net), then run these samples to see the feature in action!
