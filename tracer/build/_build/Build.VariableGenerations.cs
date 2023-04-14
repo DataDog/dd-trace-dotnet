@@ -37,12 +37,12 @@ partial class Build : NukeBuild
                 GenerateConditionVariableBasedOnGitChange("isDebuggerChanged", new[]
                 {
                     "tracer/src/Datadog.Trace/Debugger",
-                    "tracer/src/Datadog.Tracer.Native", 
+                    "tracer/src/Datadog.Tracer.Native",
                     "tracer/test/Datadog.Trace.Debugger.IntegrationTests",
                     "tracer/test/test-applications/debugger",
                     "tracer/build/_build/Build.Steps.Debugger.cs"
                 }, new string[] { });
-                GenerateConditionVariableBasedOnGitChange("isProfilerChanged", new[] { "profiler/src" }, new string[] { });
+                GenerateConditionVariableBasedOnGitChange("isProfilerChanged", new[] { "profiler/src", "profiler/test" }, new string[] { });
 
                 void GenerateConditionVariableBasedOnGitChange(string variableName, string[] filters, string[] exclusionFilters)
                 {
@@ -106,8 +106,8 @@ partial class Build : NukeBuild
 
                 Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                 AzurePipelines.Instance.SetVariable("integration_tests_windows_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
-            }            
-            
+            }
+
             void GenerateIntegrationTestsDebuggerWindowsMatrix()
             {
                 var targetFrameworks = TestingFrameworksDebugger;
@@ -130,10 +130,10 @@ partial class Build : NukeBuild
                         {
                             foreach (var optimize in optimizations)
                             {
-                                matrix.Add($"{targetPlatform}_{framework}_{debugType}_{optimize}", 
+                                matrix.Add($"{targetPlatform}_{framework}_{debugType}_{optimize}",
                                            new
                                            {
-                                               framework = framework, 
+                                               framework = framework,
                                                targetPlatform = targetPlatform,
                                                debugType = debugType,
                                                optimize = optimize,
@@ -145,8 +145,8 @@ partial class Build : NukeBuild
 
                 Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                 AzurePipelines.Instance.SetVariable("integration_tests_windows_debugger_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
-            }            
-            
+            }
+
             void GenerateIntegrationTestsWindowsAzureFunctionsMatrix()
             {
                 // TODO: test on both x86 and x64?
@@ -250,10 +250,10 @@ partial class Build : NukeBuild
                     {
                         foreach (var optimize in optimizations)
                         {
-                            matrix.Add($"{baseImage}_{framework}_{optimize}", 
+                            matrix.Add($"{baseImage}_{framework}_{optimize}",
                                        new
                                        {
-                                           publishTargetFramework = framework, 
+                                           publishTargetFramework = framework,
                                            baseImage = baseImage,
                                            optimize = optimize,
                                        });
@@ -353,7 +353,7 @@ partial class Build : NukeBuild
                 GenerateLinuxNuGetSmokeTestsMatrix();
                 GenerateLinuxNuGetSmokeTestsArm64Matrix();
                 GenerateWindowsNuGetSmokeTestsMatrix();
-                
+
                 // dotnet tool smoke tests
                 GenerateWindowsDotnetToolSmokeTestsMatrix();
                 GenerateLinuxDotnetToolSmokeTestsMatrix();
@@ -363,7 +363,7 @@ partial class Build : NukeBuild
 
                 // msi smoke tests
                 GenerateWindowsMsiSmokeTestsMatrix();
-                
+
                 // tracer home smoke tests
                 GenerateWindowsTracerHomeSmokeTestsMatrix();
 
@@ -688,7 +688,7 @@ partial class Build : NukeBuild
                             });
                     }
                 }
-                
+
                 void GenerateLinuxDotnetToolSmokeTestsMatrix()
                 {
                     var matrix = new Dictionary<string, object>();
@@ -854,14 +854,14 @@ partial class Build : NukeBuild
                             });
                     }
                 }
-                
+
                 void GenerateWindowsMsiSmokeTestsMatrix()
                 {
                     var dockerName = "mcr.microsoft.com/dotnet/aspnet";
 
-                    var platforms = new(MSBuildTargetPlatform platform, bool enable32Bit)[] { 
-                        (MSBuildTargetPlatform.x64, false), 
-                        (MSBuildTargetPlatform.x64, true), 
+                    var platforms = new(MSBuildTargetPlatform platform, bool enable32Bit)[] {
+                        (MSBuildTargetPlatform.x64, false),
+                        (MSBuildTargetPlatform.x64, true),
                         (MSBuildTargetPlatform.x86, true)
                     };
                     var runtimeImages = new (string publishFramework, string runtimeTag)[]
@@ -923,7 +923,7 @@ partial class Build : NukeBuild
                     Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetVariable("tracer_home_installer_windows_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
-                
+
                 void GenerateWindowsNuGetSmokeTestsMatrix()
                 {
                     var dockerName = "mcr.microsoft.com/dotnet/aspnet";
