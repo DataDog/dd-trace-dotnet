@@ -417,7 +417,7 @@ stages:
         baseImage: $(baseImage)
         command: "CompileSamplesLinuxOrOsx CompileMultiApiPackageVersionSamples --framework $(publishTargetFramework)"
 
-    - publish: $(monitoringHome)
+    - publish: $(System.DefaultWorkingDirectory)
       displayName: Uploading linux tracer home artifact
       artifact: linux-tracer-samples-$(baseImage)-$(publishTargetFramework)
 
@@ -1572,7 +1572,7 @@ stages:
 
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_linux, generate_variables, merge_commit_id]
+  dependsOn: [package_linux, build_linux_samples, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -1602,15 +1602,9 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
-
-    # when we build samples separately, we could run this step and the docker-compose one below in //
-    # (currently the docker-compose step relies on serverless samples)
-    - template: steps/run-in-docker.yml
+    - template: steps/restore-samples.yml
       parameters:
-        build: true
-        baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
-        apikey: $(DD_LOGGER_DD_API_KEY)
+        artifact: linux-tracer-samples-$(baseImage)-$(publishTargetFramework)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home
