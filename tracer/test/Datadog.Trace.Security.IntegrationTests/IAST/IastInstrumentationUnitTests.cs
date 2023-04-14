@@ -4,10 +4,12 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -21,7 +23,8 @@ public class IastInstrumentationUnitTests : TestHelper
 {
     private List<Type> _instrumentedTypes = new List<Type>()
     {
-        typeof(string), typeof(StringBuilder)
+        typeof(string), typeof(StringBuilder), typeof(object), typeof(char[]), typeof(object[]), typeof(IEnumerable),
+        typeof(string[]), typeof(HashAlgorithm), typeof(SymmetricAlgorithm)
     };
 
     public IastInstrumentationUnitTests(ITestOutputHelper output)
@@ -60,7 +63,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestStringBuilderConstructorMethodsAspectCover()
     {
-        TestMethodOverloads(typeof(StringBuilder), ".ctor", null);
+        TestMethodOverloads(typeof(StringBuilder), ".ctor", null, true);
     }
 
     [SkippableFact]
@@ -171,6 +174,22 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    public void TestAllStringAspectsHaveACorrespondingMethod()
+    {
+        CheckAllAspectHaveACorrespondingMethod(typeof(string));
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestAllStringBuilderAspectsHaveACorrespondingMethod()
+    {
+        CheckAllAspectHaveACorrespondingMethod(typeof(StringBuilder));
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     public void TestDirectoryClassMethodsAspectCover()
     {
         // load System.Io assembly
@@ -193,7 +212,12 @@ public class IastInstrumentationUnitTests : TestHelper
             "System.DateTime GetLastAccessTime(System.String)",
             "System.DateTime GetLastAccessTimeUtc(System.String)",
             "System.IO.FileSystemInfo CreateSymbolicLink(System.String, System.String)",
-            "System.IO.FileSystemInfo ResolveLinkTarget(System.String, Boolean)"
+            "System.IO.FileSystemInfo ResolveLinkTarget(System.String, Boolean)",
+            "System.IO.DirectoryInfo GetParent(System.String)",
+#if NETFRAMEWORK
+            "System.Security.AccessControl.DirectorySecurity GetAccessControl(System.String)",
+            "System.Security.AccessControl.DirectorySecurity GetAccessControl(System.String, System.Security.AccessControl.AccessControlSections)"
+#endif
         };
         TestMethodOverloads(typeof(Directory), null, overloadsToExclude, true);
     }
@@ -206,12 +230,12 @@ public class IastInstrumentationUnitTests : TestHelper
         var overloadsToExclude = new List<string>()
         {
             "Boolean Exists(System.String)",
-            "Void SetCreationTime(System.String, System.DateTime)",
-            "Void SetCreationTimeUtc(System.String, System.DateTime)",
+            "void SetCreationTime(System.String, System.DateTime)",
+            "void SetCreationTimeUtc(System.String, System.DateTime)",
             "System.DateTime GetCreationTime(System.String)",
             "System.DateTime GetCreationTimeUtc(System.String)",
-            "Void SetLastAccessTime(System.String, System.DateTime)",
-            "Void SetLastAccessTimeUtc(System.String, System.DateTime)",
+            "void SetLastAccessTime(System.String, System.DateTime)",
+            "void SetLastAccessTimeUtc(System.String, System.DateTime)",
             "System.DateTime GetLastAccessTime(System.String)",
             "System.DateTime GetLastAccessTimeUtc(System.String)",
             "void SetLastWriteTime(System.String, System.DateTime)",
@@ -219,14 +243,31 @@ public class IastInstrumentationUnitTests : TestHelper
             "System.DateTime GetLastWriteTime(System.String)",
             "System.DateTime GetLastWriteTimeUtc(System.String)",
             "System.IO.FileAttributes GetAttributes(System.String)",
-            "Void Encrypt(System.String)",
-            "Void Decrypt(System.String)",
+            "void Encrypt(System.String)",
+            "void Decrypt(System.String)",
             "System.IO.FileSystemInfo CreateSymbolicLink(System.String, System.String)",
             "System.IO.FileSystemInfo ResolveLinkTarget(System.String, Boolean)",
             "System.IO.UnixFileMode GetUnixFileMode(System.String)",
-            "void SetUnixFileMode(System.String, System.IO.UnixFileMode)"
+            "void SetUnixFileMode(System.String, System.IO.UnixFileMode)",
+#if NETFRAMEWORK
+            "System.Security.AccessControl.FileSecurity GetAccessControl(System.String)",
+            "System.Security.AccessControl.FileSecurity GetAccessControl(System.String, System.Security.AccessControl.AccessControlSections)",
+            "void SetAccessControl(System.String, System.Security.AccessControl.FileSecurity)"
+#endif
+#if NETCOREAPP3_0
+            "System.IO.File Move(System.String, System.String, Boolean)"
+#endif
         };
         TestMethodOverloads(typeof(File), null, overloadsToExclude, true);
+
+        var aspectsToExclude = new List<string>()
+        {
+#if NET6_0
+            "System.IO.File::ReadLinesAsync(System.String, System.Threading.CancellationToken)"
+#endif
+        };
+
+        CheckAllAspectHaveACorrespondingMethod(typeof(File), aspectsToExclude);
     }
 
     [SkippableFact]
@@ -234,14 +275,12 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestDirectoryInfoClassMethodsAspectCover()
     {
-        // load System.Io assembly
-        _ = new System.IO.FileInfo("dummy");
-
         var overloadsToExclude = new List<string>()
         {
             "void CreateAsSymbolicLink(System.String)"
         };
         TestMethodOverloads(typeof(DirectoryInfo), null, overloadsToExclude, true);
+        CheckAllAspectHaveACorrespondingMethod(typeof(DirectoryInfo));
     }
 
     [SkippableFact]
@@ -251,9 +290,13 @@ public class IastInstrumentationUnitTests : TestHelper
     {
         var overloadsToExclude = new List<string>()
         {
-            "Void CreateAsSymbolicLink(System.String)"
+            "void CreateAsSymbolicLink(System.String)",
+#if NETCOREAPP3_0
+            "void MoveTo(System.String, Boolean)"
+#endif
         };
         TestMethodOverloads(typeof(FileInfo), null, overloadsToExclude, true);
+        CheckAllAspectHaveACorrespondingMethod(typeof(FileInfo));
     }
 
     [SkippableFact]
@@ -263,6 +306,7 @@ public class IastInstrumentationUnitTests : TestHelper
     {
         var overloadsToExclude = new List<string>() { };
         TestMethodOverloads(typeof(FileStream), ".ctor", overloadsToExclude);
+        CheckAllAspectHaveACorrespondingMethod(typeof(FileStream));
     }
 
     [SkippableFact]
@@ -272,6 +316,7 @@ public class IastInstrumentationUnitTests : TestHelper
     {
         var overloadsToExclude = new List<string>() { };
         TestMethodOverloads(typeof(StreamReader), ".ctor", overloadsToExclude);
+        CheckAllAspectHaveACorrespondingMethod(typeof(StreamReader));
     }
 
     [SkippableFact]
@@ -281,6 +326,7 @@ public class IastInstrumentationUnitTests : TestHelper
     {
         var overloadsToExclude = new List<string>() { "void .ctor(System.IO.Stream)", "void .ctor(System.IO.Stream, System.Text.Encoding)" };
         TestMethodOverloads(typeof(StreamWriter), ".ctor", overloadsToExclude);
+        CheckAllAspectHaveACorrespondingMethod(typeof(StreamWriter));
     }
 
     [SkippableFact]
@@ -325,7 +371,8 @@ public class IastInstrumentationUnitTests : TestHelper
 
         return signature.Replace(" ", string.Empty).Replace("[T]", string.Empty).Replace("<!!0>", string.Empty)
             .Replace("[", "<").Replace("]", ">").Replace(",...", string.Empty).Replace("(Char", "(System.Char").Replace(",Int32", ",System.Int32")
-            .Replace(",Byte", ",System.Byte").Replace(",Boolean", ",System.Boolean").Replace(",Char", ",System.Char").Replace("(Int32", "(System.Int32");
+            .Replace(",Byte", ",System.Byte").Replace(",Boolean", ",System.Boolean").Replace(",Char", ",System.Char").Replace("(Int32", "(System.Int32")
+            .Replace(",Int64", ",System.Int64");
     }
 
     private bool MethodShouldBeChecked(MethodBase method)
@@ -354,13 +401,15 @@ public class IastInstrumentationUnitTests : TestHelper
         var aspects = ClrProfiler.AspectDefinitions.Aspects.ToList();
         List<MethodBase> typeMethods = new();
         typeMethods.AddRange(string.IsNullOrEmpty(methodToCheck) ?
-            typeToCheck?.GetMethods().Where(x => x.IsPublic && !x.IsVirtual && !((x.IsStatic || excludeParameterlessMethods) && x.GetParameters().Count() == 0)) :
+            typeToCheck?.GetMethods().Where(x => x.IsPublic && !x.IsVirtual) :
             typeToCheck?.GetMethods().Where(x => x.Name == methodToCheck));
+
         if (methodToCheck == ".ctor" || string.IsNullOrEmpty(methodToCheck))
         {
             typeMethods.AddRange(typeToCheck.GetConstructors().Where(x => x.IsPublic));
         }
 
+        typeMethods = typeMethods.Where(x => !((x.IsStatic || excludeParameterlessMethods) && x.GetParameters().Count() == 0)).ToList();
         typeMethods.Should().NotBeNull();
         typeMethods.Should().HaveCountGreaterThan(0);
 
@@ -369,8 +418,35 @@ public class IastInstrumentationUnitTests : TestHelper
             var methodSignature = NormalizeName(method.ToString());
             if (MethodShouldBeChecked(method) && overloadsToExcludeNormalized?.Contains(methodSignature) != true)
             {
-                var isCovered = aspects.Any(x => NormalizeName(x).Contains(methodSignature));
+                var isCovered = aspects.Any(x => NormalizeName(x).Contains(methodSignature) && x.Contains(typeToCheck.FullName));
                 isCovered.Should().BeTrue(method.ToString() + " is not covered");
+            }
+        }
+    }
+
+    private void CheckAllAspectHaveACorrespondingMethod(Type typeToCheck, List<string> aspectsToExclude = null)
+    {
+        var aspectsToExcludeNormalized = aspectsToExclude?.Select(NormalizeName).ToList();
+
+        foreach (var aspect in ClrProfiler.AspectDefinitions.Aspects)
+        {
+            if (aspectsToExcludeNormalized?.FirstOrDefault(x => NormalizeName(x).Contains(x)) is null)
+            {
+                var index = aspect.IndexOf("::");
+                if (index > 0)
+                {
+                    var index2 = aspect.IndexOf("\"");
+                    var aspectType = aspect.Substring(index2 + 1, index - index2 - 1);
+                    List<MethodBase> typeMethods = new();
+                    typeMethods.AddRange(typeToCheck.GetMethods().Where(x => x.IsPublic).ToList());
+                    typeMethods.AddRange(typeToCheck.GetConstructors().Where(x => x.IsPublic).ToList());
+
+                    if (typeToCheck.FullName == aspectType)
+                    {
+                        var correspondingMethod = typeMethods.FirstOrDefault(x => NormalizeName(aspect).Contains(NormalizeName(x.ToString())));
+                        correspondingMethod.Should().NotBeNull(aspect + " is not used");
+                    }
+                }
             }
         }
     }
