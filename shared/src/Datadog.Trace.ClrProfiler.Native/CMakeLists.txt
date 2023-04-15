@@ -169,7 +169,6 @@ if (ISMACOS)
     target_link_libraries("Datadog.Trace.ClrProfiler.Native.static"
         ${CMAKE_DL_LIBS}
         coreclr
-        fmt-lib
         spdlog-headers
     )
 elseif(ISLINUX)
@@ -178,12 +177,11 @@ elseif(ISLINUX)
         -static-libstdc++
         ${CMAKE_DL_LIBS}
         coreclr
-        fmt-lib
         spdlog-headers
     )
 endif()
 
-add_dependencies("Datadog.Trace.ClrProfiler.Native.static" fmt-lib coreclr spdlog-headers)
+add_dependencies("Datadog.Trace.ClrProfiler.Native.static" coreclr spdlog-headers)
 
 # ******************************************************
 # Define shared target
