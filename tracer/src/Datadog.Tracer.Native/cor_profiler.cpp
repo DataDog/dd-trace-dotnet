@@ -440,7 +440,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         {
             Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version, " matched profiler version v",
                          expected_version);
-            managed_profiler_loaded_app_domains.insert({assembly_info.app_domain_id, assembly_metadata.version});
+            managed_profiler_loaded_app_domains.insert(assembly_info.app_domain_id);
 
             if (runtime_information_.is_desktop() && corlib_module_loaded)
             {
