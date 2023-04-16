@@ -111,6 +111,11 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
     std::vector<trace::TypeSignature> methodArguments = caller->method_signature.GetMethodArguments();
     std::vector<trace::TypeSignature> traceAnnotationArguments;
+
+    // DO NOT move the definition of these buffers into an inner scope. It will cause memory corruption since they are referenced in a TypeSignature that is used later in this function.
+    COR_SIGNATURE runtimeMethodHandleBuffer[10];
+    COR_SIGNATURE runtimeTypeHandleBuffer[10];
+
     int numArgs = caller->method_signature.NumberOfArguments();
     auto metaEmit = module_metadata.metadata_emit;
     auto metaImport = module_metadata.metadata_import;
@@ -307,9 +312,6 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     }
     else
     {
-        COR_SIGNATURE runtimeMethodHandleBuffer[10];
-        COR_SIGNATURE runtimeTypeHandleBuffer[10];
-
         // Load the methodDef token to produce a RuntimeMethodHandle on the stack
         reWriterWrapper.LoadToken(caller->id);
 
