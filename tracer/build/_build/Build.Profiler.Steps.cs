@@ -245,6 +245,8 @@ partial class Build
         finally
         {
             CopyDumpsTo(ProfilerBuildDataDirectory);
+            // A crashed occured on linux and the memory dump copy failed due a lack of permission.
+            Chmod.Value.Invoke("-R 777 " + ProfilerBuildDataDirectory);
         }
     }
 
