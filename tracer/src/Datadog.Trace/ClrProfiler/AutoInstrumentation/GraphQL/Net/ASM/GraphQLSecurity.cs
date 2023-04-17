@@ -22,8 +22,8 @@ internal abstract class GraphQLSecurity
             return;
         }
 
-        // Don't run if ASM isn't enabled
-        if (!Security.Instance.Settings.Enabled)
+        // Don't run if ASM isn't enabled and a WebSocket
+        if (!GraphQLSecurityCommon.IsEnabled())
         {
             return;
         }
