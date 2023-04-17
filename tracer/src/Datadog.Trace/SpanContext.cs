@@ -357,8 +357,13 @@ namespace Datadog.Trace
 
                 case Keys.PropagatedTags:
                 case HttpHeaderNames.PropagatedTags:
+                    // try to get max length from tracer settings, but do NOT access Tracer.Instance
+                    var headerMaxLength = TraceContext?.Tracer?.Settings?.OutgoingTagPropagationHeaderMaxLength;
+
                     // return the value from TraceContext if available
-                    value = TraceContext?.Tags.ToPropagationHeader() ?? PropagatedTags?.ToPropagationHeader();
+                    var propagatedTags = TraceContext?.Tags ?? PropagatedTags;
+                    value = propagatedTags?.ToPropagationHeader(headerMaxLength);
+
                     return true;
 
                 case Keys.AdditionalW3CTraceState:
