@@ -364,6 +364,14 @@ namespace Datadog.Trace.Ci
             {
                 SetupBuddyEnvironment(gitInfo);
             }
+            else if (EnvironmentHelpers.GetEnvironmentVariable(Constants.CodefreshBuildId) != null)
+            {
+                SetupCodefreshEnvironment(gitInfo);
+                VariablesToBypass = new Dictionary<string, string>();
+                SetEnvironmentVariablesIfNotEmpty(
+                    VariablesToBypass,
+                    Constants.CodefreshBuildId);
+            }
             else
             {
                 Branch = gitInfo.Branch;
@@ -1014,6 +1022,29 @@ namespace Datadog.Trace.Ci
             WorkspacePath = gitInfo.SourceRoot;
         }
 
+        private void SetupCodefreshEnvironment(GitInfo gitInfo)
+        {
+            IsCI = true;
+            Provider = "codefresh";
+            PipelineId = EnvironmentHelpers.GetEnvironmentVariable(Constants.CodefreshBuildId);
+            PipelineName = EnvironmentHelpers.GetEnvironmentVariable(Constants.CodefreshPipelineName);
+            PipelineUrl = EnvironmentHelpers.GetEnvironmentVariable(Constants.CodefreshBuildUrl);
+            JobName = EnvironmentHelpers.GetEnvironmentVariable(Constants.CodefreshStepName);
+            Branch = EnvironmentHelpers.GetEnvironmentVariable(Constants.CodefreshBranch) ?? gitInfo.Branch;
+
+            Commit = gitInfo.Commit;
+            Repository = gitInfo.Repository;
+            Message = gitInfo.Message;
+            AuthorName = gitInfo.AuthorName;
+            AuthorEmail = gitInfo.AuthorEmail;
+            AuthorDate = gitInfo.AuthorDate;
+            CommitterName = gitInfo.CommitterName;
+            CommitterEmail = gitInfo.CommitterEmail;
+            CommitterDate = gitInfo.CommitterDate;
+            SourceRoot = gitInfo.SourceRoot;
+            WorkspacePath = gitInfo.SourceRoot;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void CleanBranchAndTag()
         {
@@ -1268,6 +1299,13 @@ namespace Datadog.Trace.Ci
             public const string BuddyExecutionRevisionMessage = "BUDDY_EXECUTION_REVISION_MESSAGE";
             public const string BuddyExecutionRevisionCommitterName = "BUDDY_EXECUTION_REVISION_COMMITTER_NAME";
             public const string BuddyExecutionRevisionCommitterEmail = "BUDDY_EXECUTION_REVISION_COMMITTER_EMAIL";
+
+            // Codefresh CI Environment variables
+            public const string CodefreshBuildId = "CF_BUILD_ID";
+            public const string CodefreshPipelineName = "CF_PIPELINE_NAME";
+            public const string CodefreshBuildUrl = "CF_BUILD_URL";
+            public const string CodefreshStepName = "CF_STEP_NAME";
+            public const string CodefreshBranch = "CF_BRANCH";
 
             // Datadog Custom CI Environment variables
             public const string DDGitBranch = "DD_GIT_BRANCH";
