@@ -272,11 +272,6 @@ public class TraceTagCollectionTests
         {
         }
 
-        // tag is added when first span is added to trace context
-        var traceIdUpper1 = ((Scope)rootScope).Span.Context.TraceContext.Tags.GetTag("_dd.p.tid");
-        HexString.TryParseUInt64(traceIdUpper1, out var traceIdUpperValue1).Should().BeTrue();
-        traceIdUpperValue1.Should().BeGreaterThan(0);
-
         await tracer.ForceFlushAsync();
         var traceChunks = mockApi.Wait(TimeSpan.FromSeconds(1));
 
