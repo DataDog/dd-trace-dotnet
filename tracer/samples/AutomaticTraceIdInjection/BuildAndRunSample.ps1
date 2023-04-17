@@ -1,3 +1,27 @@
+<#
+.SYNOPSIS
+    A script that allows the user to run C# sample applications to demonstrate
+    the setup and usage of Datadog's .NET Tracer log collection and log trace ID injection.
+.PARAMETER LoggingLibrary
+    What sample to run based on the logging library: "Log4Net", "Serilog", "NLog40", "NLog45", "NLog46", or "MicrosoftExtensions"
+.PARAMETER Framework
+    What .NET Framework should be used to build/run - either "net462" or "net7.0"
+.PARAMETER Runtime
+    What runtime should be built/run - either "x86" or "x64".
+.PARAMETER AppDirectory
+    The application directory - defaults to the location of this script and need not be set
+    by the user unless samples are moved around.
+.PARAMETER Agentless
+    Switch to enable agentless logging instead of file-tail logging
+.PARAMETER ApiKey
+    The Datadog API key (only required when -Agentless is set)
+.PARAMETER EnableDebug
+    Switch to enable debug mode to get .NET Tracer's debug logs.
+.EXAMPLE
+    pwsh BuildAndRunSample.ps1 -LoggingLibrary Serilog -Framework net7.0 -Runtime x64 -Agentless -ApiKey YOUR_API_KEY_HERE
+#>
+
+[CmdletBinding()]
 param(
     [Parameter(Mandatory = $false)]
     [System.String]
@@ -16,7 +40,7 @@ param(
 
     [Parameter(Mandatory = $false)]
     [System.String]
-    $AppDirectory, # we'll use the default directory (here) if none is supplied
+    $AppDirectory, # only necessary if the script is removed from its current directory layout
 
     [Parameter(Mandatory = $false)]
     [switch]
@@ -31,6 +55,10 @@ param(
     $EnableDebug
 )
 
+<#
+.DESCRIPTION
+    Checks to ensure that the dotnet command line too is accessible.
+#>
 function Test-DotNetCLI {
     try {
         dotnet --version
@@ -41,12 +69,20 @@ function Test-DotNetCLI {
     }
 }
 
+<#
+.DESCRIPTION
+    Sets an environment variable to the specified value for the process.
+#>
 function Set-EnvironmentVariableForProcess {
     param([string]$name, [string]$value)
     Write-Host "Setting $name to $value"
     [System.Environment]::SetEnvironmentVariable($name, $value, [System.EnvironmentVariableTarget]::Process)
 }
 
+<#
+.DESCRIPTION
+    Builds and runs the desired sample project.
+#>
 function BuildAndRunSample {
     $Project = Join-Path $PSScriptRoot $LoggingLibrary"Example"
 
@@ -56,7 +92,12 @@ function BuildAndRunSample {
     dotnet run --project $Project --framework $Framework --arch $Runtime
 }
 
+<#
+.DESCRIPTION
+    If necessary, sets the application directory that will be used to find the datadog profiler.
+#>
 function Get-ApplicationDirectory {
+
     if ([System.String]::IsNullOrWhiteSpace($AppDirectory)) {
         return Join-Path $PSScriptRoot $LoggingLibrary"Example" "bin\Debug\" $Framework
     }
