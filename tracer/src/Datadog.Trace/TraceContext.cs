@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ContinuousProfiler;
@@ -56,6 +57,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the collection of trace-level tags.
         /// </summary>
+        [NotNull]
         public TraceTagCollection Tags { get; }
 
         /// <summary>
