@@ -19,7 +19,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         private readonly AspNetCoreTestFixture fixture;
 
         public AspNetCoreBare(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base("AspNetCoreBare", outputHelper, "/shutdown")
+            : base("AspNetCoreBare", outputHelper)
         {
             this.fixture = fixture;
             this.fixture.SetOutput(outputHelper);

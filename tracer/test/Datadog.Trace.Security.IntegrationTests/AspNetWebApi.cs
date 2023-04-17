@@ -58,12 +58,13 @@ namespace Datadog.Trace.Security.IntegrationTests
         private readonly string _testName;
 
         public AspNetWebApi(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
-            : base("WebApi", output, "/api/home/shutdown", @"test\test-applications\security\aspnet")
+            : base("WebApi", output, @"test\test-applications\security\aspnet")
         {
             SetSecurity(enableSecurity);
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
 
             _iisFixture = iisFixture;
+            _iisFixture.ShutdownPath = "/api/home/shutdown";
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = "Security." + nameof(AspNetWebApi)
                      + (classicMode ? ".Classic" : ".Integrated")

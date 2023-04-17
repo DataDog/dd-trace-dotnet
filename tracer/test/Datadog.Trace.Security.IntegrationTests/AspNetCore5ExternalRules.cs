@@ -15,7 +15,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetCore5ExternalRules : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
         public AspNetCore5ExternalRules(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5ExternalRules))
+            : base("AspNetCore5", outputHelper, testName: nameof(AspNetCore5ExternalRules))
         {
             Fixture = fixture;
             Fixture.SetOutput(outputHelper);

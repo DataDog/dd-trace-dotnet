@@ -64,12 +64,13 @@ public abstract class AspNetMvc5AsmBlockingActions : RcmBaseFramework, IClassFix
     private readonly string _testName;
 
     public AspNetMvc5AsmBlockingActions(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
-        : base("AspNetMvc5", output, "/home/shutdown", @"test\test-applications\security\aspnet")
+        : base("AspNetMvc5", output, @"test\test-applications\security\aspnet")
     {
         SetSecurity(enableSecurity);
         SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
 
         _iisFixture = iisFixture;
+        _iisFixture.ShutdownPath = "/home/shutdown";
         _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
         _testName = "Security." + nameof(AspNetMvc5AsmBlockingActions)
                                 + (classicMode ? ".Classic" : ".Integrated")

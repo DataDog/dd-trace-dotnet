@@ -65,11 +65,12 @@ public abstract class AspNetMvc5AsmRulesToggle : RcmBaseFramework, IClassFixture
     private readonly string _testName;
 
     public AspNetMvc5AsmRulesToggle(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
-        : base("AspNetMvc5", output, "/home/shutdown", @"test\test-applications\security\aspnet")
+        : base("AspNetMvc5", output, @"test\test-applications\security\aspnet")
     {
         SetSecurity(enableSecurity);
 
         _iisFixture = iisFixture;
+        _iisFixture.ShutdownPath = "/home/shutdown";
         _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
         _testName = "Security." + nameof(AspNetMvc5AsmRulesToggle)
                                 + (classicMode ? ".Classic" : ".Integrated")

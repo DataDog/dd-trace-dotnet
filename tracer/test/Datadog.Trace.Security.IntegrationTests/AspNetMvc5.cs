@@ -58,12 +58,13 @@ namespace Datadog.Trace.Security.IntegrationTests
         private readonly string _testName;
 
         public AspNetMvc5(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
-            : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
+            : base(nameof(AspNetMvc5), output, @"test\test-applications\security\aspnet")
         {
             SetSecurity(enableSecurity);
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
 
             _iisFixture = iisFixture;
+            _iisFixture.ShutdownPath = "/home/shutdown";
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = "Security." + nameof(AspNetMvc5)
                      + (classicMode ? ".Classic" : ".Integrated")
