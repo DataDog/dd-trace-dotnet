@@ -15,7 +15,7 @@ internal sealed class GraphQLSecurityCommon
 {
     private static GraphQLSecurityCommon _instance;
 
-    private readonly Dictionary<IScope, Dictionary<string, List<Dictionary<string, object>>>> _scopeResolvers;
+    private readonly Dictionary<IScope, Dictionary<string, object>> _scopeResolvers;
 
     private GraphQLSecurityCommon()
     {
@@ -27,7 +27,7 @@ internal sealed class GraphQLSecurityCommon
         return _instance ??= new GraphQLSecurityCommon();
     }
 
-    private Dictionary<string, List<Dictionary<string, object>>> GetScopeResolvers(IScope scope)
+    private Dictionary<string, object> GetScopeResolvers(IScope scope)
     {
         if (!_scopeResolvers.TryGetValue(scope, out var resolvers))
         {
@@ -49,7 +49,7 @@ internal sealed class GraphQLSecurityCommon
 
         if (!resolvers.TryGetValue(resolverName, out var resolverCalls))
         {
-            resolverCalls = new List<Dictionary<string, object>>();
+            resolverCalls = new List<object>();
         }
 
         try
@@ -61,7 +61,7 @@ internal sealed class GraphQLSecurityCommon
         }
 
         // Add the current resolver call with arguments
-        resolverCalls.Add(arguments);
+        ((List<object>)resolverCalls).Add(arguments);
     }
 
     public static void RunSecurity(Scope scope)
@@ -73,6 +73,7 @@ internal sealed class GraphQLSecurityCommon
 
         var security = Security.Instance;
         var allResolvers = PopScope(scope);
+
         var args = new Dictionary<string, object> { { "graphql.server.all_resolvers", allResolvers } };
 #if NETFRAMEWORK
         var httpContext = HttpContext.Current;
@@ -86,7 +87,7 @@ internal sealed class GraphQLSecurityCommon
 #endif
     }
 
-    private static Dictionary<string, List<Dictionary<string, object>>> PopScope(IScope scope)
+    private static Dictionary<string, object> PopScope(IScope scope)
     {
         var resolvers = GetInstance().GetScopeResolvers(scope);
         GetInstance().RemoveScopeResolvers(scope);
