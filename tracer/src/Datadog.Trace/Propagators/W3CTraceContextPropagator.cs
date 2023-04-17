@@ -813,7 +813,10 @@ namespace Datadog.Trace.Propagators
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Next(KeyValuePair<string, string> tag)
             {
-                if (tag.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
+                // do not propagate "t.tid" tag in W3C headers,
+                // the full 128-bit trace id is propagated in the traceparent header
+                if (tag.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal) &&
+                    !tag.Key.Equals(Tags.Propagated.TraceIdUpper, StringComparison.Ordinal))
                 {
 #if NETCOREAPP
                     var key = tag.Key.AsSpan(start: 6);
