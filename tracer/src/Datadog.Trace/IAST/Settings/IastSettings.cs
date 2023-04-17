@@ -19,17 +19,17 @@ internal class IastSettings
 
     public IastSettings(IConfigurationSource source)
     {
-        WeakCipherAlgorithms = source?.GetString(ConfigurationKeys.Iast.WeakCipherAlgorithms) ?? WeakCipherAlgorithmsDefault;
+        WeakCipherAlgorithms = source.GetString(ConfigurationKeys.Iast.WeakCipherAlgorithms) ?? WeakCipherAlgorithmsDefault;
         WeakCipherAlgorithmsArray = WeakCipherAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
-        WeakHashAlgorithms = source?.GetString(ConfigurationKeys.Iast.WeakHashAlgorithms) ?? WeakHashAlgorithmsDefault;
+        WeakHashAlgorithms = source.GetString(ConfigurationKeys.Iast.WeakHashAlgorithms) ?? WeakHashAlgorithmsDefault;
         WeakHashAlgorithmsArray = WeakHashAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
-        Enabled = (source?.GetBool(ConfigurationKeys.Iast.Enabled) ?? false);
-        DeduplicationEnabled = source?.GetBool(ConfigurationKeys.Iast.IsIastDeduplicationEnabled) ?? true;
-        RequestSampling = source?.GetInt32(ConfigurationKeys.Iast.RequestSampling) is { } requestSampling and > 0 and <= 100
+        Enabled = (source.GetBool(ConfigurationKeys.Iast.Enabled) ?? false);
+        DeduplicationEnabled = source.GetBool(ConfigurationKeys.Iast.IsIastDeduplicationEnabled) ?? true;
+        RequestSampling = source.GetInt32(ConfigurationKeys.Iast.RequestSampling) is { } requestSampling and > 0 and <= 100
             ? requestSampling : RequestSamplingDefault;
-        MaxConcurrentRequests = source?.GetInt32(ConfigurationKeys.Iast.MaxConcurrentRequests) is { } concurrentRequests and > 0
+        MaxConcurrentRequests = source.GetInt32(ConfigurationKeys.Iast.MaxConcurrentRequests) is { } concurrentRequests and > 0
             ? concurrentRequests : MaxConcurrentRequestDefault;
-        VulnerabilitiesPerRequest = source?.GetInt32(ConfigurationKeys.Iast.VulnerabilitiesPerRequest) is { } vulnerabilities and > 0
+        VulnerabilitiesPerRequest = source.GetInt32(ConfigurationKeys.Iast.VulnerabilitiesPerRequest) is { } vulnerabilities and > 0
             ? vulnerabilities : VulnerabilitiesPerRequestDefault;
     }
 

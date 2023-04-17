@@ -116,12 +116,13 @@ namespace Datadog.Trace.Configuration
             var headerTagsNormalizationFixEnabled = source.GetBool(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled) ?? true;
             // Filter out tags with empty keys or empty values, and trim whitespaces
             HeaderTags = InitializeHeaderTags(inputHeaderTags, headerTagsNormalizationFixEnabled);
+            MetadataSchemaVersion = ParseMetadataSchemaVersion(source.GetString(ConfigurationKeys.MetadataSchemaVersion));
 
             var serviceNameMappings = source.GetDictionary(ConfigurationKeys.ServiceNameMappings)
                                             ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                                             ?.ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
-            ServiceNameMappings = new ServiceNames(serviceNameMappings);
+            ServiceNameMappings = new ServiceNames(serviceNameMappings, MetadataSchemaVersion);
 
             TracerMetricsEnabled = source.GetBool(ConfigurationKeys.TracerMetricsEnabled) ??
                                    // default value
@@ -610,6 +611,11 @@ namespace Datadog.Trace.Configuration
         internal ImmutableAzureAppServiceSettings? AzureAppServiceMetadata { get; set; }
 
         /// <summary>
+        /// Gets or sets the metadata schema version
+        /// </summary>
+        internal string MetadataSchemaVersion { get; set; }
+
+        /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
         /// returned by <see cref="GlobalConfigurationSource.Instance"/>.
         /// </summary>
@@ -700,6 +706,13 @@ namespace Datadog.Trace.Configuration
 
             return headerTags;
         }
+
+        private static string ParseMetadataSchemaVersion(string? value) =>
+            value switch
+            {
+                "v1" or "V1" => "v1",
+                _ => "v0",
+            };
 
         internal static string[] TrimSplitString(string? textValues, char[] separators)
         {

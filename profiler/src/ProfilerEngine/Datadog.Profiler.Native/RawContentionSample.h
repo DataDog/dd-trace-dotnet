@@ -12,6 +12,27 @@ public:
     inline static const std::string BucketLabelName = "Duration bucket";
 
 public:
+    RawContentionSample() = default;
+
+    RawContentionSample(RawContentionSample&& other) noexcept
+        :
+        RawSample(std::move(other)),
+        ContentionDuration(other.ContentionDuration),
+        Bucket(std::move(other.Bucket))
+    {
+    }
+
+    RawContentionSample& operator=(RawContentionSample&& other) noexcept
+    {
+        if (this != &other)
+        {
+            RawSample::operator=(std::move(other));
+            ContentionDuration = other.ContentionDuration;
+            Bucket = std::move(other.Bucket);
+        }
+        return *this;
+    }
+
     void OnTransform(std::shared_ptr<Sample>& sample, uint32_t valueOffset) const override
     {
         uint32_t contentionCountIndex = valueOffset;
