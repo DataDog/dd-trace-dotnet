@@ -66,19 +66,21 @@ internal sealed class GraphQLSecurityCommon
 
     public static void RunSecurity(Scope scope)
     {
-        var security = Security.Instance;
-        if (!security.Settings.Enabled)
+        if (!IsEnabled())
         {
             return;
         }
 
+        var security = Security.Instance;
         var allResolvers = PopScope(scope);
         var args = new Dictionary<string, object> { { "graphql.server.all_resolvers", allResolvers } };
 #if NETFRAMEWORK
-        var securityCoordinator = new SecurityCoordinator(security, HttpContext.Current, scope.Span);
+        var httpContext = HttpContext.Current;
+        var securityCoordinator = new SecurityCoordinator(security, httpContext, scope.Span);
         securityCoordinator.CheckAndBlock(args);
 #else
-        var securityCoordinator = new SecurityCoordinator(security, CoreHttpContextStore.Instance.Get(), scope.Span);
+        var httpContext = CoreHttpContextStore.Instance.Get();
+        var securityCoordinator = new SecurityCoordinator(security, httpContext, scope.Span);
         var result = securityCoordinator.RunWaf(args);
         securityCoordinator.CheckAndBlock(result);
 #endif
@@ -89,5 +91,17 @@ internal sealed class GraphQLSecurityCommon
         var resolvers = GetInstance().GetScopeResolvers(scope);
         GetInstance().RemoveScopeResolvers(scope);
         return resolvers;
+    }
+
+    public static bool IsEnabled()
+    {
+#if NETFRAMEWORK
+        var httpContext = HttpContext.Current;
+        var isWebsocket = httpContext.IsWebSocketRequest;
+#else
+        var httpContext = CoreHttpContextStore.Instance.Get();
+        var isWebsocket = httpContext.WebSockets.IsWebSocketRequest;
+#endif
+        return Security.Instance.Settings.Enabled && !isWebsocket;
     }
 }
