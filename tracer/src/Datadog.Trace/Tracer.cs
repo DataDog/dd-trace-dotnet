@@ -256,11 +256,6 @@ namespace Datadog.Trace
             instance?.TracerManager.Start();
         }
 
-        internal static Tracer GetGlobalInstance(bool initializeIfNeeded)
-        {
-            return initializeIfNeeded ? Instance : _instance;
-        }
-
         /// <inheritdoc cref="ITracer" />
         IScope ITracer.StartActive(string operationName) => StartActive(operationName);
 
