@@ -11,9 +11,8 @@ namespace Datadog.Trace.Configuration
 {
     internal class ServiceNames
     {
-        private readonly object _lock = new object();
-        private Dictionary<string, string> _mappings = null;
-        private bool _unifyServiceNames;
+        private readonly Dictionary<string, string> _mappings = null;
+        private readonly bool _unifyServiceNames;
 
         public ServiceNames(IDictionary<string, string> mappings, string metadataSchemaVersion)
         {
@@ -49,14 +48,6 @@ namespace Datadog.Trace.Configuration
 
             name = null;
             return false;
-        }
-
-        public void SetServiceNameMappings(IEnumerable<KeyValuePair<string, string>> mappings)
-        {
-            lock (_lock)
-            {
-                _mappings = mappings.ToDictionary(x => x.Key, x => x.Value);
-            }
         }
     }
 }
