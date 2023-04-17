@@ -21,6 +21,45 @@
 
 
 
+
+## [Release 2.29.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.29.0)
+
+## Summary
+
+Fixes the following issues:
+- Fixes BadImageFormatException that occurred when trace annotations were used in conjunction with DD_TRACE_DEBUG
+- Fixes possible memory leaks
+
+## Changes
+
+### Tracer
+* [Tracer] Attribute Schema configuration: new configuration and v1 service naming (#4019)
+
+### Continuous Profiler
+* [Profiler] Compare fixed and Poisson threshold allocation sampling/upscaling (#4016)
+* [Profiler/Improvement] Make `RawSample` classes move-only (#4024)
+* [Profiler] Free the error structure on profile_add (#4025)
+* [Profiler] Fix possible memory leak (#4029)
+* [Profiler] Run Profiler Unit tests ASAN with leak detection enabled (#4034)
+* [Profiler] Make sure we catch tests that crashed in CI (#4037)
+* [Profiler] Fix missing CPU samples (#4046)
+
+### Fixes
+* Add more nullable annotations to settings objects (#4028)
+
+### Build / Test
+* Capture the sample output in IAST tests (#4021)
+* Fix IAST tests (#4027)
+
+### Miscellaneous
+* Add WaitForDiscoveryService test helper (#4023)
+* Bump DatadogTestLogger version to 0.0.38 (#4030)
+* Fix the tracer solution for OSX (#4039)
+* Fix BadImageFormatException that occurred when trace annotations were used in conjunction with DD_TRACE_DEBUG (#4045)
+
+
+[Changes since 2.28.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.28.0...v2.29.0)
+
 ## [Release 2.28.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.28.0)
 
 ## Summary
