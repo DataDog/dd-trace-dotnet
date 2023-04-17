@@ -28,7 +28,7 @@ namespace Datadog.Trace.Propagators
             carrierSetter.Set(carrier, HttpHeaderNames.TraceId, context.TraceId128.Lower.ToString(invariantCulture));
             carrierSetter.Set(carrier, HttpHeaderNames.ParentId, context.SpanId.ToString(invariantCulture));
 
-            if (context.Origin != null)
+            if (!string.IsNullOrEmpty(context.Origin))
             {
                 carrierSetter.Set(carrier, HttpHeaderNames.Origin, context.Origin);
             }
@@ -53,24 +53,24 @@ namespace Datadog.Trace.Propagators
 
             if (propagatedTags == null && context.TraceId128.Upper > 0)
             {
-                // try to get setting from the tracer, but do NOT access Tracer.Instance here
-                var headerMaxLength = context.TraceContext?.Tracer?.Settings?.OutgoingTagPropagationHeaderMaxLength ??
-                                      TagPropagation.OutgoingTagPropagationHeaderMaxLength;
-
                 // we need to add the "_dd.p.tid" propagated tag, so initialize the collection if we don't have one
-                propagatedTags = new TraceTagCollection(headerMaxLength);
+                propagatedTags = new TraceTagCollection();
             }
 
-            // we need to call this even if the trace id is 64-bit,
-            // because we may need to replace or remove the tag if it's present
-            // (e.g. a bug in an upstream tracer)
-            propagatedTags?.FixTraceIdTag(context.TraceId128);
-
-            var propagatedTagsHeader = propagatedTags?.ToPropagationHeader();
-
-            if (!string.IsNullOrEmpty(propagatedTagsHeader))
+            if (propagatedTags != null)
             {
-                carrierSetter.Set(carrier, HttpHeaderNames.PropagatedTags, propagatedTagsHeader!);
+                // we need to call this even if the trace id is 64-bit or 128-bit,
+                // because we may need to add, replace, or remove the tag
+                propagatedTags.FixTraceIdTag(context.TraceId128);
+
+                // try to get max length from tracer settings, but do NOT access Tracer.Instance
+                var headerMaxLength = context.TraceContext?.Tracer?.Settings?.OutgoingTagPropagationHeaderMaxLength;
+                var propagatedTagsHeader = propagatedTags.ToPropagationHeader(headerMaxLength);
+
+                if (!string.IsNullOrEmpty(propagatedTagsHeader))
+                {
+                    carrierSetter.Set(carrier, HttpHeaderNames.PropagatedTags, propagatedTagsHeader!);
+                }
             }
         }
 
