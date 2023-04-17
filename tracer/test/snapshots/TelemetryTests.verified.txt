@@ -15,7 +15,8 @@
       runtime-id: Guid_2,
       span.kind: internal,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -63,7 +64,8 @@
       runtime-id: Guid_2,
       span.kind: internal,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
