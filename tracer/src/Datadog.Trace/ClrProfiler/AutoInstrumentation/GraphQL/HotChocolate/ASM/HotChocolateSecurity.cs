@@ -22,8 +22,8 @@ internal abstract class HotChocolateSecurity
             return;
         }
 
-        // Don't run if ASM isn't enabled
-        if (!Security.Instance.Settings.Enabled)
+        // Don't run if ASM isn't enabled or a WebSocket
+        if (!GraphQLSecurityCommon.IsEnabled())
         {
             return;
         }
