@@ -45,7 +45,7 @@ public:
     bool Export() override;
     void Add(std::shared_ptr<Sample> const& sample) override;
     void SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint) override;
-    void RegisterUpscaleProvider(IUpscaleProvider* provider);
+    void RegisterUpscaleProvider(IUpscaleProvider* provider) override;
 
 private:
     class SerializedProfile
@@ -132,7 +132,9 @@ private:
     void ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int idx);
     void SaveMetricsToDisk(const std::string& content) const;
 
-    static bool Send(ddog_prof_Exporter_Request* request, ddog_prof_Exporter* exporter) ;
+    // we *must* pass the reference to the pointer
+    // the Send function in rust takes the ownership, free the memory and set the pointer to null (avoid double free)
+    static bool Send(ddog_prof_Exporter_Request*& request, ddog_prof_Exporter* exporter) ;
     static void AddUpscalingRules(ddog_prof_Profile* profile, std::vector<UpscalingInfo> const& upscalingInfos);
     static fs::path CreatePprofOutputPath(IConfiguration* configuration);
 

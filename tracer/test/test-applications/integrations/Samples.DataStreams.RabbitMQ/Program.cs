@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using System.Threading.Tasks;
 using RabbitMQ.Client;
 
 namespace Samples.DataStreams.RabbitMQ
@@ -12,8 +13,10 @@ namespace Samples.DataStreams.RabbitMQ
         private static readonly string Message = nameof(Message);
         private static readonly string Host = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
         
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
+            await SampleHelpers.WaitForDiscoveryService();
+
             var factory = new ConnectionFactory() { HostName = Host };
             using var connection = factory.CreateConnection();
             using var model = connection.CreateModel();

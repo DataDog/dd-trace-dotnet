@@ -22,29 +22,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public static System.Collections.Generic.IEnumerable<object[]> GetCouchbase()
-        {
-            foreach (var item in PackageVersions.Couchbase)
-            {
-                yield return item.ToArray();
-            }
-        }
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.Couchbase
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
 
         public override Result ValidateIntegrationSpan(MockSpan span) => span.IsCouchbase();
 
         [SkippableTheory]
-        [MemberData(nameof(GetCouchbase))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitTraces(string packageVersion)
+        public void SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-couchbase" : EnvironmentHelper.FullSampleName;
+
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(13, 500);
                 Assert.True(spans.Count >= 13, $"Expecting at least 13 spans, only received {spans.Count}");
-                ValidateIntegrationSpans(spans, expectedServiceName: "Samples.Couchbase-couchbase");
+                ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var expected = new List<string>
                 {

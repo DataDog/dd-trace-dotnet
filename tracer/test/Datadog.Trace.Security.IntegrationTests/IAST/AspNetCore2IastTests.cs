@@ -185,6 +185,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             : base("AspNetCore2", outputHelper, "/shutdown", testName: testName)
         {
             Fixture = fixture;
+            fixture.SetOutput(outputHelper);
             IastEnabled = enableIast;
             IsIastDeduplicationEnabled = isIastDeduplicationEnabled;
             VulnerabilitiesPerRequest = vulnerabilitiesPerRequest;
@@ -221,7 +222,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         protected async Task TestWeakHashing(string filename, MockTracerAgent agent)
         {
             var url = "/Iast/WeakHashing";
-            var spans = await SendRequestsAsync(agent, new string[] { url });
+            var spans = await SendRequestsAsync(agent, expectedSpansPerRequest: 2, url);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddIastScrubbing();
