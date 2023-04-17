@@ -122,7 +122,7 @@ namespace Datadog.Trace
         {
             // if 128-bit trace ids are enabled, also use full uint64 for span id,
             // otherwise keep using the legacy so-called uint63s.
-            var useAllBits = (traceContext?.Tracer ?? Tracer.Instance)?.Settings?.TraceId128BitGenerationEnabled ?? false;
+            var useAllBits = traceContext?.Tracer?.Settings?.TraceId128BitGenerationEnabled ?? false;
 
             SpanId = spanId > 0 ? spanId : RandomIdGenerator.Shared.NextSpanId(useAllBits);
             Parent = parent;
@@ -143,11 +143,8 @@ namespace Datadog.Trace
 
         private SpanContext(TraceId traceId, string serviceName)
         {
-            // if trace id was not provided, generate a new one using the global settings
-            var useAllBits = Tracer.Instance?.Settings?.TraceId128BitGenerationEnabled ?? false;
-
             TraceId128 = traceId == Trace.TraceId.Zero
-                          ? RandomIdGenerator.Shared.NextTraceId(useAllBits)
+                          ? RandomIdGenerator.Shared.NextTraceId(useAllBits: false)
                           : traceId;
 
             ServiceName = serviceName;
