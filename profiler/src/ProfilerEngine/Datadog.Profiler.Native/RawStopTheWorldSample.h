@@ -10,6 +10,11 @@
 class RawStopTheWorldSample : public GCBaseRawSample
 {
 public:
+    RawStopTheWorldSample() = default;
+
+    RawStopTheWorldSample(RawStopTheWorldSample&& other) = default;
+    RawStopTheWorldSample& operator=(RawStopTheWorldSample&& other) noexcept = default;
+
     // Duration is the suspension time so default sample value
     void DoAdditionalTransform(std::shared_ptr<Sample> sample, uint32_t valueOffset) const override
     {

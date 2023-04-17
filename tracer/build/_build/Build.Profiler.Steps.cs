@@ -231,6 +231,7 @@ partial class Build
                                 .SetNoWarnDotNetCore3()
                                 .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                                 .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+                                .EnableCrashDumps()
                                 .SetFilter(filter)
                                 .SetProcessLogOutput(true)
                                 .SetProcessEnvironmentVariable("DD_TESTING_OUPUT_DIR", ProfilerBuildDataDirectory)
@@ -718,7 +719,7 @@ partial class Build
 
             if (sanitizer is SanitizerKind.Asan)
             {
-                envVars["ASAN_OPTIONS"] = "detect_leaks=0";
+                envVars["ASAN_OPTIONS"] = "detect_leaks=1";
             }
             else if (sanitizer is SanitizerKind.Ubsan)
             {

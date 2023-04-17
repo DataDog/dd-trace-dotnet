@@ -123,6 +123,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                     return ("dotnet", $"{applicationPath} {arguments}");
                 }
 
+                // By default catchsegv/libsegfault.so reports only SIGSEGV signal.
+                // This environment variable allows us to catch and report signals that may crash the application.
+                Environment.CustomEnvironmentVariables.Add("SEGFAULT_SIGNALS", "all");
+
                 // catchsegv is a tool that catches the segmentation fault and displays useful information: callstack, registers...
                 return ("catchsegv", $"dotnet {applicationPath} {arguments}");
             }

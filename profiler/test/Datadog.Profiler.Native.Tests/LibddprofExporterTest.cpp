@@ -81,6 +81,7 @@ TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
     // Add samples to only one application
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
     auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
+
     auto sample1 = CreateSample(firstRid,
                                 callstack1,
                                 labels1,

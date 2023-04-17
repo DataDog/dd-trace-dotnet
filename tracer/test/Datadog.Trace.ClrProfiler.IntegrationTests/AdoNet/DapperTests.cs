@@ -29,14 +29,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "EndToEnd")]
         public void SubmitsTracesV1() => RunTest("v1");
 
-        [SkippableFact]
-        [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesWithNetStandardV0() => RunTest("v0");
-
-        [SkippableFact]
-        [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesWithNetStandardV1() => RunTest("v1");
-
         private void RunTest(string metadataSchemaVersion)
         {
             const int expectedSpanCount = 17;
