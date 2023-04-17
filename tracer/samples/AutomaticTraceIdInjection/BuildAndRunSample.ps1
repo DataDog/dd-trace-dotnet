@@ -97,6 +97,9 @@ if ($Agentless) {
     if ($LoggingLibrary -like "NLog*"){
         Set-EnvironmentVariableForProcess -name "DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS" -value "NLog"
     }
+    elseif ($LoggingLibrary -eq "MicrosoftExtensions") {
+        Set-EnvironmentVariableForProcess -name "DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS" -value "ILogger"
+    }
     else {
         Set-EnvironmentVariableForProcess -name "DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS" -value $LoggingLibrary
     }

@@ -14,17 +14,22 @@ For additional documentation on these features and how to enable them in your en
 
 - Powershell 7+ to run `BuildAndRunSample.ps1`
 - `dotnet` command line tool is installed
-- Either or both:
-  - .NET 7.0
-  - .NET Framework 4.6.2 (Windows only)
+- .NET 7.0 AND/OR .NET Framework 4.6.2
 - [Datadog Agent](https://docs.datadoghq.com/agent/) is installed
   - Note that this is **not** a requirement for the Agentless Log Collection
-- Windows (32-bit and/or 64-bit) AND/OR 64-bit Linux
+- Any of the following operating systems:
+  - Windows 32-bit
+  - Windows 64-bit
+  - Linux 64-bit
+- Windows (32-bit AND/OR 64-bit) AND/OR 64-bit Linux
 
 The `BuildAndRunSample.ps1` script will set the necessary environment variables for the given sample automatically.
 However, there may be some additional setup required to try out each of the features.
 
-All samples rely on the [Datadog.Trace.Bundle](https://www.nuget.org/packages/Datadog.Trace.Bundle#readme-body-tab) NuGet package for automatic and manual instrumentation.
+All samples use the [Datadog.Trace.Bundle](https://www.nuget.org/packages/Datadog.Trace.Bundle#readme-body-tab) NuGet package for automatic and manual instrumentation.
+**However**, you can setup a project to use the [Datadog.Trace](https://www.nuget.org/packages/Datadog.Trace) NuGet package for manual instrumentation and configure automatic instrumentation separately.
+
+Please refer to our [README](https://github.com/DataDog/dd-trace-dotnet/blob/master/docs/Datadog.Trace.Bundle/README.md#should-i-install-this-package) on when to use `Datadog.Trace` versus `Datadog.Trace.Bundle` and our [official documentation](https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=containers) on ways to install the Datadog Tracer.
 
 ### File-tail Log Collection
 
@@ -54,7 +59,7 @@ Agentless logging requires two additional parameters to be passed into the scrip
 
 The provided samples automatically take care of all necessary requirements for connecting traces to logs besides the initial [Prerequisites](#prerequisites).
 
-## Runing the Samples
+## Running the Samples
 
 A sample is provided for each of the logging libraries that the .NET Tracer supports: `Serilog`, `Log4Net`, `NLog`, and `Microsoft.Extensions.Logging`.
 
@@ -107,6 +112,7 @@ This sample will create three log messages along with a single trace.
 - A log message after the trace
 
 When logs are connected to traces the `"SerilogExample - Main()"` trace will have a log message connected to it that was logged during the the trace.
+
 #### Running the Serilog Sample
 
 > Running with file-tail log collection on Windows x86 .NET 7.0 (this requires that the agent is configured to point to one of the above log files)
@@ -230,7 +236,16 @@ When logs are connected to traces the `"NLog46Example - Main()"` trace will have
 
 Located within the [MicrosoftExtensionsExample](MicrosoftExtensionsExample) directory.
 
+Note that `Microsoft.Extensions.Logging` doesn't have an official logger that can write to a file and operates slightly different compared to the other samples.
+
 #### Microsoft.Extensions.Logging Configuration
+
+The `Microsoft.Extensions.Logging` sample is configured in two ways within its `Program.cs` file:
+
+- For .NET 7.0 configuration it utilizes the `NetEscapades.Extensions.Logging.RollingFile` NuGet to write to a rolling JSON-formatted log file
+- For .NET Framework 4.6.2 it utilizes `Serilog` to write to a JSON-formatted log file.
+
+What isn't shown in this sample is how to manually inject Trace IDs within the logs - for this please refer to our official documentation on that [here](https://docs.datadoghq.com/tracing/other_telemetry/connect_logs_and_traces/dotnet/?tab=microsoftextensionslogging#manual-injection).
 
 #### Running the Microsoft.Extensions.Logging Sample
 
