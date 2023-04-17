@@ -44,6 +44,14 @@ public class FileTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void GivenAFile_WhenCreatingFromIncorrectString_ExceptionIsThrown()
+    {
+        Assert.Throws<ArgumentNullException>(() => File.WriteAllText(null, null));
+    }
+
+    // Cover System.IO.File::WriteAllText(System.String,System.String,System.Text.Encoding)
+
+    [Fact]
     public void GivenAFile_WheWriteAllTextTaintedString_VulnerabilityIsLogged3()
     {
         ExecuteAction(() => { File.WriteAllText(taintedPathValue, notTaintedValue, Encoding.UTF8); });
@@ -347,7 +355,7 @@ public class FileTests : InstrumentationTestsBase
 
 #if !NETFRAMEWORK
 
-    // Cover System.IO.File::ReadAllLinesAsync(System.String,System.Threading.CancellationToken)
+    // Cover System.IO.Filein(System.String,System.Threading.CancellationToken)
 
     [Fact]
     public void GivenAFile_WhenReadAllLinesTaintedString_VulnerabilityIsLogged3()
@@ -707,14 +715,6 @@ public class FileTests : InstrumentationTestsBase
     {
         ExecuteAction(() => { File.AppendText(taintedPathValue); });
         AssertVulnerable();
-    }
-
-    // Cover System.IO.File::WriteAllText(System.String,System.String,System.Text.Encoding)
-
-    [Fact]
-    public void GivenAFile_WhenCreatingFromIncorrectString_ExceptionIsThrown()
-    {
-        Assert.Throws<ArgumentNullException>(() => File.WriteAllText(null, null));
     }
 
     void ExecuteAction(Action c)

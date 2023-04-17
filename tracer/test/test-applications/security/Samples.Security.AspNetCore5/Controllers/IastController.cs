@@ -90,5 +90,27 @@ namespace Samples.Security.AspNetCore5.Controllers
                 return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
             }
         }
+
+        [HttpGet("GetFileContent")]
+        [Route("GetFileContent")]
+        public IActionResult GetFileContent(string file)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(file))
+                {
+                    var result = System.IO.File.ReadAllText(file);
+                    return Content($"file content: " + result);
+                }
+                else
+                {
+                    return BadRequest($"No file was provided");
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "File could not be opened");
+            }
+        }
     }
 }
