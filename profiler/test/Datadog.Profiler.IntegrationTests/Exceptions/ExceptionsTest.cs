@@ -132,7 +132,8 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             // We throw 1000 System.Exception exceptions per thread and we have 4 threads.
             // The profiler samples the exception but also upscale the values after.
             // So we just check that we are in the right order of magnitude.
-            exceptionCounts.Should().ContainKey("System.Exception").WhichValue.Should().BeCloseTo(4000, 10);
+            // Note: with timestamps, upscaling will round down due to the lack of aggregation
+            exceptionCounts.Should().ContainKey("System.Exception").WhichValue.Should().BeCloseTo(4000, 300);
 
             // System.InvalidOperationException is seen only once, so it should be sampled
             // despite the sampler being saturated by the 4000 System.Exception
