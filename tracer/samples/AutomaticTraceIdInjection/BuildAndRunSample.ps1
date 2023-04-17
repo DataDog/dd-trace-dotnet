@@ -75,8 +75,8 @@ Write-Host "Using $LoggingLibrary sample with target framework: $Framework"
 ## Configure logs injection by setting up Unified Service Tagging
 ## cf https://docs.datadoghq.com/tracing/other_telemetry/connect_logs_and_traces/dotnet/?tab=serilog
 Set-EnvironmentVariableForProcess -name "DD_LOGS_INJECTION" -value "true"
-Set-EnvironmentVariableForProcess -name "DD_ENV" -value "steven.bouwkamp"
-Set-EnvironmentVariableForProcess -name "DD_SERVICE" -value "LogsInjectiongSamples"
+Set-EnvironmentVariableForProcess -name "DD_ENV" -value "dev"
+Set-EnvironmentVariableForProcess -name "DD_SERVICE" -value "LogsInjectionSamples"
 Set-EnvironmentVariableForProcess -name "DD_VERSION" -value "1.0.0"
 
 # If you are running into issues, pass in the -EnableDebug switch to get Debug Logs
