@@ -45,8 +45,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestStringBuilderAppendLineMethodsAspectCover()
     {
-        var overloadsToExclude = new List<string>() { "System.Text.StringBuilder AppendLine()", "System.Text.StringBuilder AppendLine(AppendInterpolatedStringHandler ByRef)", "System.Text.StringBuilder AppendLine(System.IFormatProvider, AppendInterpolatedStringHandler ByRef)" };
-        TestMethodOverloads(typeof(StringBuilder), "AppendLine", overloadsToExclude);
+        TestMethodOverloads(typeof(StringBuilder), "AppendLine", null, true);
     }
 
     [SkippableFact]
@@ -54,8 +53,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestStringBuilderAppendMethodsAspectCover()
     {
-        var overloadsToExclude = new List<string>() { "System.Text.StringBuilder Append(AppendInterpolatedStringHandler ByRef)", "System.Text.StringBuilder Append(System.IFormatProvider, AppendInterpolatedStringHandler ByRef)" };
-        TestMethodOverloads(typeof(StringBuilder), "Append", overloadsToExclude);
+        TestMethodOverloads(typeof(StringBuilder), "Append");
     }
 
     [SkippableFact]
@@ -71,7 +69,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestJoinMethodsAspectCover()
     {
-        TestMethodOverloads(typeof(string), "Join", null);
+        TestMethodOverloads(typeof(string), "Join");
     }
 
     [SkippableFact]
@@ -79,7 +77,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestToUpperMethodsAspectCover()
     {
-        TestMethodOverloads(typeof(string), "ToUpper", null);
+        TestMethodOverloads(typeof(string), "ToUpper");
     }
 
     [SkippableFact]
@@ -87,7 +85,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestToUpperInvariantMethodsAspectCover()
     {
-        TestMethodOverloads(typeof(string), "ToUpperInvariant", null);
+        TestMethodOverloads(typeof(string), "ToUpperInvariant");
     }
 
     [SkippableFact]
@@ -95,7 +93,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestToLowerArrayMethodsAspectCover()
     {
-        TestMethodOverloads(typeof(string), "ToLower", null);
+        TestMethodOverloads(typeof(string), "ToLower");
     }
 
     [SkippableFact]
@@ -103,7 +101,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestToLowerInvariantMethodsAspectCover()
     {
-        TestMethodOverloads(typeof(string), "ToLowerInvariant", null);
+        TestMethodOverloads(typeof(string), "ToLowerInvariant");
     }
 
     [SkippableFact]
@@ -111,7 +109,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestInsertMethodsAspectCover()
     {
-        TestMethodOverloads(typeof(string), "Insert", null);
+        TestMethodOverloads(typeof(string), "Insert");
     }
 
     [SkippableFact]
@@ -119,7 +117,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestRemoveMethodsAspectCover()
     {
-        TestMethodOverloads(typeof(string), "Remove", null);
+        TestMethodOverloads(typeof(string), "Remove");
     }
 
     [SkippableFact]
@@ -127,7 +125,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestToCharArrayMethodsAspectCover()
     {
-        TestMethodOverloads(typeof(string), "ToCharArray", null);
+        TestMethodOverloads(typeof(string), "ToCharArray");
     }
 
     [SkippableFact]
@@ -135,7 +133,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestTrimStartMethodsAspectCover()
     {
-        TestMethodOverloads(typeof(string), "TrimStart", null);
+        TestMethodOverloads(typeof(string), "TrimStart");
     }
 
     [SkippableFact]
@@ -143,7 +141,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestTrimEndMethodsAspectCover()
     {
-        TestMethodOverloads(typeof(string), "TrimEnd", null);
+        TestMethodOverloads(typeof(string), "TrimEnd");
     }
 
     [SkippableFact]
@@ -151,7 +149,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestTrimMethodsAspectCover()
     {
-        TestMethodOverloads(typeof(string), "Trim", null);
+        TestMethodOverloads(typeof(string), "Trim");
     }
 
     [SkippableFact]
@@ -159,7 +157,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestSubstringMethodsAspectCover()
     {
-        TestMethodOverloads(typeof(string), "Substring", null);
+        TestMethodOverloads(typeof(string), "Substring");
     }
 
     [SkippableFact]
@@ -324,8 +322,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestStreamWriterClassMethodsAspectCover()
     {
-        var overloadsToExclude = new List<string>() { "void .ctor(System.IO.Stream)", "void .ctor(System.IO.Stream, System.Text.Encoding)" };
-        TestMethodOverloads(typeof(StreamWriter), ".ctor", overloadsToExclude);
+        TestMethodOverloads(typeof(StreamWriter), ".ctor");
         CheckAllAspectHaveACorrespondingMethod(typeof(StreamWriter));
     }
 
@@ -370,9 +367,7 @@ public class IastInstrumentationUnitTests : TestHelper
         }
 
         return signature.Replace(" ", string.Empty).Replace("[T]", string.Empty).Replace("<!!0>", string.Empty)
-            .Replace("[", "<").Replace("]", ">").Replace(",...", string.Empty).Replace("(Char", "(System.Char").Replace(",Int32", ",System.Int32")
-            .Replace(",Byte", ",System.Byte").Replace(",Boolean", ",System.Boolean").Replace(",Char", ",System.Char").Replace("(Int32", "(System.Int32")
-            .Replace(",Int64", ",System.Int64");
+            .Replace("[", "<").Replace("]", ">").Replace(",...", string.Empty).Replace("System.", string.Empty);
     }
 
     private bool MethodShouldBeChecked(MethodBase method)
@@ -395,7 +390,7 @@ public class IastInstrumentationUnitTests : TestHelper
         return false;
     }
 
-    private void TestMethodOverloads(Type typeToCheck, string methodToCheck, List<string> overloadsToExclude, bool excludeParameterlessMethods = false)
+    private void TestMethodOverloads(Type typeToCheck, string methodToCheck, List<string> overloadsToExclude = null, bool excludeParameterlessMethods = false)
     {
         var overloadsToExcludeNormalized = overloadsToExclude?.Select(NormalizeName).ToList();
         var aspects = ClrProfiler.AspectDefinitions.Aspects.ToList();
