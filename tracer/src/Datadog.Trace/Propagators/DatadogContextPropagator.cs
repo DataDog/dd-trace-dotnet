@@ -49,7 +49,17 @@ namespace Datadog.Trace.Propagators
                 carrierSetter.Set(carrier, HttpHeaderNames.SamplingPriority, samplingPriorityString);
             }
 
-            var propagatedTags = GetPropagatedTags(context);
+            var propagatedTags = context.TraceContext?.Tags ?? context.PropagatedTags;
+
+            if (propagatedTags == null && context.TraceId128.Upper > 0)
+            {
+                // try to get setting from the tracer, but do NOT access Tracer.Instance here
+                var headerMaxLength = context.TraceContext?.Tracer?.Settings?.OutgoingTagPropagationHeaderMaxLength ??
+                                      TagPropagation.OutgoingTagPropagationHeaderMaxLength;
+
+                // we need to add the "_dd.p.tid" propagated tag, so initialize the collection if we don't have one
+                propagatedTags = new TraceTagCollection(headerMaxLength);
+            }
 
             // we need to call this even if the trace id is 64-bit,
             // because we may need to replace or remove the tag if it's present
@@ -96,33 +106,6 @@ namespace Datadog.Trace.Propagators
                           };
 
             return true;
-        }
-
-        private static TraceTagCollection? GetPropagatedTags(SpanContext context)
-        {
-            // prioritize the trace context's tags in a local context,
-            // the SpanContext's tags are only used in a propagated context
-            var propagatedTags = context.TraceContext?.Tags ?? context.PropagatedTags;
-
-            if (propagatedTags != null)
-            {
-                return propagatedTags;
-            }
-
-            if (context.TraceId128.Upper == 0)
-            {
-                // if the trace id is 64-bit, we won't add any tag so we don't need to initialize a new collection
-                return null;
-            }
-
-            var maxHeaderLength = Tracer.Instance?.Settings?.OutgoingTagPropagationHeaderMaxLength ??
-                                  TagPropagation.OutgoingTagPropagationHeaderMaxLength;
-
-            // if there is no tag collection, it means there was no trace context,
-            // so this is a propagated context (or a test), so initialize
-            // the span context's tag collection
-            context.PropagatedTags = new TraceTagCollection(maxHeaderLength);
-            return context.PropagatedTags;
         }
 
         // combine the lower 64 bits from "x-datadog-trace-id" with the
