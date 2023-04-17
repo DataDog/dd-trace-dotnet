@@ -18,7 +18,6 @@ namespace Datadog.Trace.Tests.Propagators
     public class W3CTraceContextPropagatorTests
     {
         private static readonly TraceTagCollection PropagatedTagsCollection = new(
-            TagPropagation.OutgoingTagPropagationHeaderMaxLength,
             new List<KeyValuePair<string, string>>
             {
                 new("_dd.p.dm", "-4"),
@@ -26,7 +25,7 @@ namespace Datadog.Trace.Tests.Propagators
             },
             cachedPropagationHeader: null);
 
-        private static readonly TraceTagCollection EmptyPropagatedTags = new(TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+        private static readonly TraceTagCollection EmptyPropagatedTags = new();
 
         private static readonly SpanContextPropagator W3CPropagator;
 
@@ -82,7 +81,7 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData(SamplingPriorityValues.AutoKeep, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key1=value1", "dd=s:1;o:rum;t.dm:-4;t.usr.id:12345,key1=value1")]
         public void CreateTraceStateHeader(int? samplingPriority, string origin, string tags, string additionalState, string expected)
         {
-            var propagatedTags = TagPropagation.ParseHeader(tags, 100);
+            var propagatedTags = TagPropagation.ParseHeader(tags);
 
             var traceContext = new TraceContext(tracer: null, propagatedTags)
             {
@@ -692,7 +691,6 @@ namespace Datadog.Trace.Tests.Propagators
                            SamplingPriority = 1,
                            Origin = null,
                            PropagatedTags = new(
-                               TagPropagation.OutgoingTagPropagationHeaderMaxLength,
                                new List<KeyValuePair<string, string>>
                                {
                                    new("_dd.p.dm", "-0"),
@@ -734,7 +732,6 @@ namespace Datadog.Trace.Tests.Propagators
                            SamplingPriority = 1,
                            Origin = null,
                            PropagatedTags = new(
-                               TagPropagation.OutgoingTagPropagationHeaderMaxLength,
                                new List<KeyValuePair<string, string>>
                                {
                                    new("_dd.p.dm", "-0"),

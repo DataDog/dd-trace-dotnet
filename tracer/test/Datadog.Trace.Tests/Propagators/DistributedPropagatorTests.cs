@@ -41,7 +41,6 @@ public class DistributedPropagatorTests
     };
 
     private static readonly TraceTagCollection PropagatedTagsCollection = new(
-        TagPropagation.OutgoingTagPropagationHeaderMaxLength,
         new List<KeyValuePair<string, string>>
         {
             new("_dd.p.key1", "value1"),
@@ -49,7 +48,7 @@ public class DistributedPropagatorTests
         },
         PropagatedTagsString);
 
-    private static readonly TraceTagCollection EmptyPropagatedTags = new(TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+    private static readonly TraceTagCollection EmptyPropagatedTags = new();
 
     static DistributedPropagatorTests()
     {
@@ -132,7 +131,7 @@ public class DistributedPropagatorTests
     [Fact]
     public void SpanContextRoundTrip()
     {
-        var propagatedTags = new TraceTagCollection(100);
+        var propagatedTags = new TraceTagCollection();
         propagatedTags.SetTag("_dd.p.key1", "value1");
         propagatedTags.SetTag("_dd.p.key2", "value2");
 

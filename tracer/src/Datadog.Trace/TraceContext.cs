@@ -44,7 +44,7 @@ namespace Datadog.Trace
             }
 
             Tracer = tracer;
-            Tags = tags ?? new TraceTagCollection(settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+            Tags = tags ?? new TraceTagCollection();
         }
 
         public Span RootSpan { get; private set; }

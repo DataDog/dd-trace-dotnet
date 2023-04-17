@@ -62,7 +62,7 @@ public class TraceTagCollectionTests
     [Fact]
     public void ThrowsOnNullKey()
     {
-        var tags = new TraceTagCollection(MaxHeaderLength);
+        var tags = new TraceTagCollection();
 
         tags.Invoking(t => t.SetTag(null!, "value"))
             .Should()
@@ -72,8 +72,8 @@ public class TraceTagCollectionTests
     [Fact]
     public void ToPropagationHeaderValue_Empty()
     {
-        var tags = new TraceTagCollection(MaxHeaderLength);
-        var header = tags.ToPropagationHeader();
+        var tags = new TraceTagCollection();
+        var header = tags.ToPropagationHeader(MaxHeaderLength);
         header.Should().Be(string.Empty);
     }
 
@@ -81,32 +81,32 @@ public class TraceTagCollectionTests
     [MemberData(nameof(SerializeData))]
     public void ToPropagationHeaderValue(KeyValuePair<string, string>[] pairs, string expectedHeader)
     {
-        var traceTags = new TraceTagCollection(MaxHeaderLength);
+        var traceTags = new TraceTagCollection();
 
         foreach (var pair in pairs)
         {
             traceTags.SetTag(pair.Key, pair.Value);
         }
 
-        var headerValue = traceTags.ToPropagationHeader();
+        var headerValue = traceTags.ToPropagationHeader(MaxHeaderLength);
         headerValue.Should().Be(expectedHeader);
     }
 
     [Fact]
     public void NewCollectionIsEmpty()
     {
-        var tags = new TraceTagCollection(MaxHeaderLength);
+        var tags = new TraceTagCollection();
         tags.Count.Should().Be(0);
         tags.ToArray().Should().BeEmpty();
 
-        var header = tags.ToPropagationHeader();
+        var header = tags.ToPropagationHeader(MaxHeaderLength);
         header.Should().BeEmpty();
     }
 
     [Fact]
     public void SetTag()
     {
-        var tags = new TraceTagCollection(MaxHeaderLength);
+        var tags = new TraceTagCollection();
         tags.Count.Should().Be(0);
 
         // distributed tag is set...
@@ -116,7 +116,7 @@ public class TraceTagCollectionTests
         tags.Count.Should().Be(1);
 
         // ...and added to the header
-        var header = tags.ToPropagationHeader();
+        var header = tags.ToPropagationHeader(MaxHeaderLength);
         header.Should().Be("_dd.p.key1=value1");
 
         // non-distributed tag is set...
@@ -126,40 +126,40 @@ public class TraceTagCollectionTests
         tags.Count.Should().Be(2);
 
         // ...but not added to the header
-        header = tags.ToPropagationHeader();
+        header = tags.ToPropagationHeader(MaxHeaderLength);
         header.Should().Be("_dd.p.key1=value1");
     }
 
     [Fact]
     public void SetTag_MultipleTimes()
     {
-        var tags = new TraceTagCollection(MaxHeaderLength);
+        var tags = new TraceTagCollection();
         tags.Count.Should().Be(0);
 
         tags.SetTag("_dd.p.key1", "value1").Should().BeTrue();
         tags.Count.Should().Be(1);
 
-        var header1 = tags.ToPropagationHeader();
+        var header1 = tags.ToPropagationHeader(MaxHeaderLength);
         header1.Should().Be("_dd.p.key1=value1");
 
         // no-op
         tags.SetTag("_dd.p.key1", "value1").Should().BeFalse();
         tags.Count.Should().Be(1);
         tags.GetTag("_dd.p.key1").Should().Be("value1");
-        tags.ToPropagationHeader().Should().BeSameAs(header1); // returns cached instance
+        tags.ToPropagationHeader(MaxHeaderLength).Should().BeSameAs(header1); // returns cached instance
 
         // update tag value
         tags.SetTag("_dd.p.key1", "value2").Should().BeTrue();
         tags.Count.Should().Be(1);
 
         tags.GetTag("_dd.p.key1").Should().Be("value2");
-        tags.ToPropagationHeader().Should().Be("_dd.p.key1=value2");
+        tags.ToPropagationHeader(MaxHeaderLength).Should().Be("_dd.p.key1=value2");
     }
 
     [Fact]
     public void TryAddTag()
     {
-        var tags = new TraceTagCollection(MaxHeaderLength);
+        var tags = new TraceTagCollection();
         tags.Count.Should().Be(0);
 
         // add new tag
@@ -171,17 +171,17 @@ public class TraceTagCollectionTests
         tags.Count.Should().Be(1);
 
         tags.GetTag("_dd.p.key1").Should().Be("value1");
-        tags.ToPropagationHeader().Should().Be("_dd.p.key1=value1");
+        tags.ToPropagationHeader(MaxHeaderLength).Should().Be("_dd.p.key1=value1");
     }
 
     [Fact]
     public void RemoveTag()
     {
-        var tags = new TraceTagCollection(MaxHeaderLength);
+        var tags = new TraceTagCollection();
         tags.TryAddTag("_dd.p.key1", "value1");
         tags.TryAddTag("_dd.p.key2", "value2");
         tags.Count.Should().Be(2);
-        tags.ToPropagationHeader().Should().Be("_dd.p.key1=value1,_dd.p.key2=value2");
+        tags.ToPropagationHeader(MaxHeaderLength).Should().Be("_dd.p.key1=value1,_dd.p.key2=value2");
 
         // tag not found
         tags.RemoveTag("wrong").Should().BeFalse();
@@ -193,7 +193,7 @@ public class TraceTagCollectionTests
         tags.RemoveTag("_dd.p.key1").Should().BeFalse();
         tags.GetTag("_dd.p.key1").Should().BeNull();
         tags.Count.Should().Be(1);
-        tags.ToPropagationHeader().Should().Be("_dd.p.key2=value2");
+        tags.ToPropagationHeader(MaxHeaderLength).Should().Be("_dd.p.key2=value2");
 
         // remove last tag
         tags.GetTag("_dd.p.key2").Should().Be("value2");
@@ -201,7 +201,7 @@ public class TraceTagCollectionTests
         tags.RemoveTag("_dd.p.key2").Should().BeFalse();
         tags.GetTag("_dd.p.key2").Should().BeNull();
         tags.Count.Should().Be(0);
-        tags.ToPropagationHeader().Should().Be(string.Empty);
+        tags.ToPropagationHeader(MaxHeaderLength).Should().Be(string.Empty);
     }
 
     [Theory]
@@ -221,7 +221,7 @@ public class TraceTagCollectionTests
             origin: "rum");
 
         // create empty collection and add the tag (if value is not null)
-        context.PropagatedTags = new TraceTagCollection(TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+        context.PropagatedTags = new TraceTagCollection();
         context.PropagatedTags.SetTag(Tags.Propagated.TraceIdUpper, tagValue);
 
         // call FixTraceIdTag()
@@ -249,7 +249,7 @@ public class TraceTagCollectionTests
             origin: "rum");
 
         // create empty collection and add the tag (if value is not null)
-        context.PropagatedTags = new TraceTagCollection(TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+        context.PropagatedTags = new TraceTagCollection();
         context.PropagatedTags.SetTag(Tags.Propagated.TraceIdUpper, tagValue);
 
         // call FixTraceIdTag()

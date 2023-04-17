@@ -137,7 +137,7 @@ namespace Datadog.Trace.Tests
             const string origin = "origin";
             const string additionalW3CTraceState = "key3=value3,key4=value4";
 
-            var propagatedTags = new TraceTagCollection(100);
+            var propagatedTags = new TraceTagCollection();
             propagatedTags.SetTag("_dd.p.key1", "value1");
             propagatedTags.SetTag("_dd.p.key2", "value2");
 

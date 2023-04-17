@@ -363,19 +363,10 @@ namespace Datadog.Trace
 
                 if (traceContext == null)
                 {
-                    var propagatedTags = parentSpanContext.PropagatedTags;
-
-                    // to avoid accessing tracer settings, the TraceTagCollection was created with the default value
-                    // for OutgoingTagPropagationHeaderMaxLength, so try to update the value now
-                    if (propagatedTags != null && Settings != null)
-                    {
-                        propagatedTags.OutgoingHeaderMaxLength = Settings.OutgoingTagPropagationHeaderMaxLength;
-                    }
-
                     // If parent is SpanContext but its TraceContext is null, then it was extracted from
                     // propagation headers. Create a new TraceContext (this will start a new trace) and initialize
                     // it with the propagated values (sampling priority, origin, tags, W3C trace state, etc).
-                    traceContext = new TraceContext(this, propagatedTags);
+                    traceContext = new TraceContext(this, parentSpanContext.PropagatedTags);
 
                     var samplingPriority = parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority();
                     traceContext.SetSamplingPriority(samplingPriority);

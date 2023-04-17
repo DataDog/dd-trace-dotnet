@@ -19,7 +19,6 @@ namespace Datadog.Trace.Tests.Propagators
         private const string PropagatedTagsString = "_dd.p.key1=value1,_dd.p.key2=value2";
 
         private static readonly TraceTagCollection PropagatedTagsCollection = new(
-            TagPropagation.OutgoingTagPropagationHeaderMaxLength,
             new List<KeyValuePair<string, string>>
             {
                 new("_dd.p.key1", "value1"),
@@ -27,7 +26,7 @@ namespace Datadog.Trace.Tests.Propagators
             },
             PropagatedTagsString);
 
-        private static readonly TraceTagCollection EmptyPropagatedTags = new(TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+        private static readonly TraceTagCollection EmptyPropagatedTags = new();
 
         private static readonly SpanContextPropagator Propagator;
 

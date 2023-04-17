@@ -52,9 +52,7 @@ namespace Datadog.Trace.Propagators
             var propagatedTraceTags = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.PropagatedTags);
             var w3CTraceState = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.AdditionalW3CTraceState);
 
-            // to avoid accessing tracer settings here, use the default value for outgoingHeaderMaxLength for now,
-            // and it will be set to the configured value later in Tracer.CreateSpanContext()
-            var traceTags = TagPropagation.ParseHeader(propagatedTraceTags, TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+            var traceTags = TagPropagation.ParseHeader(propagatedTraceTags);
 
             if (traceId == TraceId.Zero)
             {
