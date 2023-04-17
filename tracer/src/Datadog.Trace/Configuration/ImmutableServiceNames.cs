@@ -11,9 +11,8 @@ namespace Datadog.Trace.Configuration
 {
     internal class ImmutableServiceNames
     {
-        private readonly object _lock = new object();
-        private Dictionary<string, string> _mappings = null;
-        private bool _unifyServiceNames;
+        private readonly Dictionary<string, string> _mappings = null;
+        private readonly bool _unifyServiceNames;
 
         public ImmutableServiceNames(IDictionary<string, string> mappings, string metadataSchemaVersion)
         {
