@@ -112,12 +112,6 @@ namespace Datadog.Trace
                         var samplingDecision = Tracer.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
                         SetSamplingPriority(samplingDecision);
                     }
-
-                    if (span.TraceId128.Upper > 0)
-                    {
-                        // this is a 128-bit trace id, so add the "_dd.p.tid" (Propagated Trace ID) trace tag
-                        Tags.FixTraceIdTag(span.TraceId128);
-                    }
                 }
 
                 _openSpans++;
