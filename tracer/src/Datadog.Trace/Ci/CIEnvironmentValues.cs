@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -72,6 +73,10 @@ namespace Datadog.Trace.Ci
         public string StageName { get; private set; }
 
         public string WorkspacePath { get; private set; }
+
+        public string NodeName { get; private set; }
+
+        public string[] NodeLabels { get; private set; }
 
         public CodeOwners CodeOwners { get; private set; }
 
@@ -191,6 +196,12 @@ namespace Datadog.Trace.Ci
             SetTagIfNotNullOrEmpty(span, CommonTags.CIPipelineUrl, PipelineUrl);
             SetTagIfNotNullOrEmpty(span, CommonTags.CIJobUrl, JobUrl);
             SetTagIfNotNullOrEmpty(span, CommonTags.CIJobName, JobName);
+            SetTagIfNotNullOrEmpty(span, CommonTags.CINodeName, NodeName);
+            if (NodeLabels is { } nodeLabels)
+            {
+                SetTagIfNotNullOrEmpty(span, CommonTags.CINodeLabels, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(nodeLabels));
+            }
+
             SetTagIfNotNullOrEmpty(span, CommonTags.StageName, StageName);
             SetTagIfNotNullOrEmpty(span, CommonTags.CIWorkspacePath, WorkspacePath);
             SetTagIfNotNullOrEmpty(span, CommonTags.GitRepository, Repository);
@@ -689,6 +700,10 @@ namespace Datadog.Trace.Ci
                     PipelineName = jobNameParts[0];
                 }
             }
+
+            // Node
+            NodeName = EnvironmentHelpers.GetEnvironmentVariable(Constants.JenkinsNodeName);
+            NodeLabels = EnvironmentHelpers.GetEnvironmentVariable(Constants.JenkinsNodeLabels)?.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
         }
 
         private void SetupGitlabEnvironment()
@@ -731,6 +746,13 @@ namespace Datadog.Trace.Ci
 
             // Clean pipeline url
             PipelineUrl = PipelineUrl?.Replace("/-/pipelines/", "/pipelines/");
+
+            // Node
+            NodeName = EnvironmentHelpers.GetEnvironmentVariable(Constants.GitlabRunnerId);
+            if (EnvironmentHelpers.GetEnvironmentVariable(Constants.GitlabRunnerTags) is { } runnerTags)
+            {
+                NodeLabels = Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<string[]>(runnerTags);
+            }
         }
 
         private void SetupAppveyorEnvironment()
@@ -912,6 +934,24 @@ namespace Datadog.Trace.Ci
             AuthorEmail = EnvironmentHelpers.GetEnvironmentVariable(Constants.BuildKiteBuildAuthorEmail);
             CommitterName = EnvironmentHelpers.GetEnvironmentVariable(Constants.BuildKiteBuildCreator);
             CommitterEmail = EnvironmentHelpers.GetEnvironmentVariable(Constants.BuildKiteBuildCreatorEmail);
+
+            // Node
+            NodeName = EnvironmentHelpers.GetEnvironmentVariable(Constants.BuildKiteAgentId);
+            var lstNodeLabels = new List<string>();
+            foreach (DictionaryEntry envvar in EnvironmentHelpers.GetEnvironmentVariables())
+            {
+                if (envvar.Key is string key && key.StartsWith(Constants.BuildKiteAgentMetadata, StringComparison.OrdinalIgnoreCase))
+                {
+                    var name = key.Replace(Constants.BuildKiteAgentMetadata, string.Empty)?.ToLowerInvariant();
+                    var value = envvar.Value?.ToString();
+                    lstNodeLabels.Add($"{name}:{value}");
+                }
+            }
+
+            if (lstNodeLabels.Count > 0)
+            {
+                NodeLabels = lstNodeLabels.ToArray();
+            }
         }
 
         private void SetupBitriseEnvironment()
@@ -1085,6 +1125,8 @@ namespace Datadog.Trace.Ci
             public const string JenkinsBuildNumber = "BUILD_NUMBER";
             public const string JenkinsBuildUrl = "BUILD_URL";
             public const string JenkinsJobName = "JOB_NAME";
+            public const string JenkinsNodeName = "NODE_NAME";
+            public const string JenkinsNodeLabels = "NODE_LABELS";
 
             // Gitlab Environment variables
             public const string GitlabCI = "GITLAB_CI";
@@ -1106,6 +1148,8 @@ namespace Datadog.Trace.Ci
             public const string GitlabCommitMessage = "CI_COMMIT_MESSAGE";
             public const string GitlabCommitAuthor = "CI_COMMIT_AUTHOR";
             public const string GitlabCommitTimestamp = "CI_COMMIT_TIMESTAMP";
+            public const string GitlabRunnerId = "CI_RUNNER_ID";
+            public const string GitlabRunnerTags = "CI_RUNNER_TAGS";
 
             // Appveyor CI Environment variables
             public const string Appveyor = "APPVEYOR";
@@ -1190,6 +1234,8 @@ namespace Datadog.Trace.Ci
             public const string BuildKiteBuildAuthorEmail = "BUILDKITE_BUILD_AUTHOR_EMAIL";
             public const string BuildKiteBuildCreator = "BUILDKITE_BUILD_CREATOR";
             public const string BuildKiteBuildCreatorEmail = "BUILDKITE_BUILD_CREATOR_EMAIL";
+            public const string BuildKiteAgentId = "BUILDKITE_AGENT_ID";
+            public const string BuildKiteAgentMetadata = "BUILDKITE_AGENT_META_DATA_";
 
             // Bitrise CI Environment variables
             public const string BitriseBuildSlug = "BITRISE_BUILD_SLUG";

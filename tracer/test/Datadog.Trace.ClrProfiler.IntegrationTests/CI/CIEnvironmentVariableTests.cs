@@ -103,6 +103,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         value = value.Replace(".000", string.Empty);
                     }
 
+                    if (spanDataItem.Key == CommonTags.CINodeLabels)
+                    {
+                        var labelsExpected = Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<string[]>(
+                            spanDataItem.Value);
+                        Array.Sort(labelsExpected);
+
+                        var labelsActual =
+                            Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<string[]>(value);
+                        Array.Sort(labelsActual);
+
+                        Assert.True(labelsExpected.SequenceEqual(labelsActual));
+                        continue;
+                    }
+
                     Assert.Equal(spanDataItem.Value, value);
                 }
 
