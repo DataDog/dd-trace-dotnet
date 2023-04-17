@@ -1678,15 +1678,9 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
-
-    # when we build samples separately, we could run this step and the docker-compose one below in //
-    # (currently the docker-compose step relies on serverless samples)
-    - template: steps/run-in-docker.yml
+    - template: steps/restore-samples.yml
       parameters:
-        build: true
-        baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+        artifact: linux-tracer-samples-$(baseImage)-$(publishTargetFramework)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home
