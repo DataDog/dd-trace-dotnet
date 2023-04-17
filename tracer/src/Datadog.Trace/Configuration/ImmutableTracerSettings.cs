@@ -87,7 +87,7 @@ namespace Datadog.Trace.Configuration
             HttpServerErrorStatusCodes = settings.HttpServerErrorStatusCodes;
             HttpClientErrorStatusCodes = settings.HttpClientErrorStatusCodes;
             MetadataSchemaVersion = settings.MetadataSchemaVersion;
-            ServiceNameMappings = new ImmutableServiceNames(settings.ServiceNameMappings, settings.MetadataSchemaVersion);
+            ServiceNameMappings = new ServiceNames(settings.ServiceNameMappings, settings.MetadataSchemaVersion);
             TraceBufferSize = settings.TraceBufferSize;
             TraceBatchInterval = settings.TraceBatchInterval;
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
@@ -317,7 +317,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets configuration values for changing service names based on configuration
         /// </summary>
-        internal ImmutableServiceNames ServiceNameMappings { get; }
+        internal ServiceNames ServiceNameMappings { get; }
 
         /// <summary>
         /// Gets a value indicating the size in bytes of the trace buffer
