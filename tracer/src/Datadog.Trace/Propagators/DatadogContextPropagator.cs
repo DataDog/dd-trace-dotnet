@@ -49,28 +49,11 @@ namespace Datadog.Trace.Propagators
                 carrierSetter.Set(carrier, HttpHeaderNames.SamplingPriority, samplingPriorityString);
             }
 
-            var propagatedTags = context.TraceContext?.Tags ?? context.PropagatedTags;
+            var propagatedTagsHeader = context.PrepareTagsHeaderForPropagation();
 
-            if (propagatedTags == null && context.TraceId128.Upper > 0)
+            if (!string.IsNullOrEmpty(propagatedTagsHeader))
             {
-                // we need to add the "_dd.p.tid" propagated tag, so initialize the collection if we don't have one
-                propagatedTags = new TraceTagCollection();
-            }
-
-            if (propagatedTags != null)
-            {
-                // we need to call this even if the trace id is 64-bit or 128-bit,
-                // because we may need to add, replace, or remove the tag
-                propagatedTags.FixTraceIdTag(context.TraceId128);
-
-                // try to get max length from tracer settings, but do NOT access Tracer.Instance
-                var headerMaxLength = context.TraceContext?.Tracer?.Settings?.OutgoingTagPropagationHeaderMaxLength;
-                var propagatedTagsHeader = propagatedTags.ToPropagationHeader(headerMaxLength);
-
-                if (!string.IsNullOrEmpty(propagatedTagsHeader))
-                {
-                    carrierSetter.Set(carrier, HttpHeaderNames.PropagatedTags, propagatedTagsHeader!);
-                }
+                carrierSetter.Set(carrier, HttpHeaderNames.PropagatedTags, propagatedTagsHeader!);
             }
         }
 

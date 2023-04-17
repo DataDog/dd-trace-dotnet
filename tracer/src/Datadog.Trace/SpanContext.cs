@@ -5,6 +5,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Datadog.Trace.Ci;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -354,13 +355,7 @@ namespace Datadog.Trace
 
                 case Keys.PropagatedTags:
                 case HttpHeaderNames.PropagatedTags:
-                    // try to get max length from tracer settings, but do NOT access Tracer.Instance
-                    var headerMaxLength = TraceContext?.Tracer?.Settings?.OutgoingTagPropagationHeaderMaxLength;
-
-                    // return the value from TraceContext if available
-                    var propagatedTags = TraceContext?.Tags ?? PropagatedTags;
-                    value = propagatedTags?.ToPropagationHeader(headerMaxLength);
-
+                    value = PrepareTagsHeaderForPropagation();
                     return true;
 
                 case Keys.AdditionalW3CTraceState:
@@ -388,6 +383,42 @@ namespace Datadog.Trace
                        // otherwise use the 64-bit trace id from ISpanContext
                        _ => (TraceId)context.TraceId
                    };
+        }
+
+        [return: MaybeNull]
+        internal TraceTagCollection PrepareTagsForPropagation()
+        {
+            TraceTagCollection propagatedTags;
+
+            // use the value from TraceContext if available
+            if (TraceContext != null)
+            {
+                propagatedTags = TraceContext.Tags;
+            }
+            else
+            {
+                if (TraceId128.Upper > 0 && PropagatedTags == null)
+                {
+                    // we need to add the "_dd.p.tid" propagated tag, so create a new collection if we don't have one
+                    PropagatedTags = new TraceTagCollection();
+                }
+
+                propagatedTags = PropagatedTags;
+            }
+
+            // add, replace, or remove the "_dd.p.tid" tag
+            propagatedTags?.FixTraceIdTag(TraceId128);
+            return propagatedTags;
+        }
+
+        [return: MaybeNull]
+        internal string PrepareTagsHeaderForPropagation()
+        {
+            // try to get max length from tracer settings, but do NOT access Tracer.Instance
+            var headerMaxLength = TraceContext?.Tracer?.Settings?.OutgoingTagPropagationHeaderMaxLength;
+
+            var propagatedTags = PrepareTagsForPropagation();
+            return propagatedTags?.ToPropagationHeader(headerMaxLength);
         }
 
         /// <summary>

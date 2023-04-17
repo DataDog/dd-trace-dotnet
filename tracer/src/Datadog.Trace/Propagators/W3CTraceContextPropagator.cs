@@ -151,26 +151,13 @@ namespace Datadog.Trace.Propagators
                     sb.Append("o:").Append(replacedOrigin).Append(TraceStateDatadogPairsSeparator);
                 }
 
-                var propagatedTags = context.TraceContext?.Tags ?? context.PropagatedTags;
+                // propagated tags ("t.<key>:<value>")
+                var propagatedTags = context.PrepareTagsForPropagation();
 
-                if (propagatedTags == null && context.TraceId128.Upper > 0)
+                if (propagatedTags?.Count > 0)
                 {
-                    // we need to add the "_dd.p.tid" propagated tag, so initialize the collection if we don't have one
-                    propagatedTags = new TraceTagCollection();
-                }
-
-                if (propagatedTags != null)
-                {
-                    // we need to call this even if the trace id is 64-bit or 128-bit,
-                    // because we may need to add, replace, or remove the tag
-                    propagatedTags.FixTraceIdTag(context.TraceId128);
-
-                    // propagated tags ("t.<key>:<value>")
-                    if (propagatedTags.Count > 0)
-                    {
-                        var traceTagAppender = new TraceTagAppender(sb);
-                        propagatedTags.Enumerate(ref traceTagAppender);
-                    }
+                    var traceTagAppender = new TraceTagAppender(sb);
+                    propagatedTags.Enumerate(ref traceTagAppender);
                 }
 
                 if (sb.Length == 3)
