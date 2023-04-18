@@ -1,4 +1,29 @@
-# C# Log Collection and Connecting Logs and Traces
+# C# Log Collection and Connecting Logs and Traces <!-- omit from toc -->
+
+- [Introduction](#introduction)
+- [Prerequisites](#prerequisites)
+  - [File-tail Log Collection](#file-tail-log-collection)
+  - [Agentless Log Collection](#agentless-log-collection)
+  - [Connecting Logs to Traces](#connecting-logs-to-traces)
+- [Running the Samples](#running-the-samples)
+  - [Serilog](#serilog)
+    - [Serilog Configuration](#serilog-configuration)
+    - [Serilog Expected Output](#serilog-expected-output)
+    - [Running the Serilog Sample](#running-the-serilog-sample)
+  - [Log4Net](#log4net)
+    - [Log4Net Configuration](#log4net-configuration)
+    - [Running the Log4Net Sample](#running-the-log4net-sample)
+    - [Log4Net Expected Output](#log4net-expected-output)
+  - [NLog](#nlog)
+    - [Configuration](#configuration)
+    - [Running the NLog Samples](#running-the-nlog-samples)
+    - [NLog Expected Output](#nlog-expected-output)
+  - [Microsoft.Extensions.Logging](#microsoftextensionslogging)
+    - [Microsoft.Extensions.Logging Configuration](#microsoftextensionslogging-configuration)
+    - [Running the Microsoft.Extensions.Logging Sample](#running-the-microsoftextensionslogging-sample)
+    - [Expected Output for Microsoft.Extensions.Logging Sample](#expected-output-for-microsoftextensionslogging-sample)
+
+## Introduction
 
 The following samples demonstrate the C# Log Collection feature along with connecting logs to traces automatically.
 
