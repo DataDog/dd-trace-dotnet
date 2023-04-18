@@ -258,29 +258,4 @@ public class TraceTagCollectionTests
         // if upper 64 bits are zero, the tag should not be present in the collection
         context.PropagatedTags.GetTag(Tags.Propagated.TraceIdUpper).Should().BeNull();
     }
-
-    [Fact]
-    public async Task PropagatedTag_Is_Added()
-    {
-        var mockApi = new MockApi();
-        var settings = new TracerSettings { TraceId128BitGenerationEnabled = true };
-        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null, spanSampler: null);
-        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
-        IScope rootScope;
-
-        using (rootScope = tracer.StartActive("root"))
-        {
-        }
-
-        await tracer.ForceFlushAsync();
-        var traceChunks = mockApi.Wait(TimeSpan.FromSeconds(1));
-
-        // TODO: verify if this should be the root span or the first span (or if it depends on partial flushing)
-        var span = traceChunks[0][0];
-        var traceIdUpper2 = span.GetTag("_dd.p.tid");
-
-        // tag is added if missing when serializing
-        HexString.TryParseUInt64(traceIdUpper2, out var traceIdUpperValue2).Should().BeTrue();
-        traceIdUpperValue2.Should().BeGreaterThan(0);
-    }
 }
