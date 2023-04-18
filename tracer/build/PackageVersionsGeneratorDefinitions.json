@@ -454,7 +454,7 @@
       "MinVersion": "2.0.0",
       "SkipAlpine": true
     }, {
-      "MaxVersionExclusive": "2.37.0",
+      "MaxVersionExclusive": "2.38.1",
       "SkipArm64": true
     }]
   },
@@ -473,7 +473,7 @@
       "MinVersion": "2.0.0",
       "SkipAlpine": true
     }, {
-      "MaxVersionExclusive": "2.37.0",
+      "MaxVersionExclusive": "2.38.1",
       "SkipArm64": true
     }]
   },

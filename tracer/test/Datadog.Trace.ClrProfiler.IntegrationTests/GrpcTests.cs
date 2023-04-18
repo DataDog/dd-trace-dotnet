@@ -470,12 +470,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected void GuardArm64(string packageVersion)
         {
-            var minVersion = new Version("2.37.0");
+            var minVersion = new Version("2.38.1");
 
             if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64
                 && (string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) < minVersion))
             {
-                throw new SkipException($"GRPC.Tools does not support ARM64 on version < {minVersion}");
+                throw new SkipException($"GRPC.Tools does not support ARM64 on version < 2.38.1, (corresponds to Grpc v2.38.1 and Grpc.AspNetCore v2.39.0)");
             }
         }
 
