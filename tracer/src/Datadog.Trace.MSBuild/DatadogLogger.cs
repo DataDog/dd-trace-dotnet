@@ -11,6 +11,7 @@ using System.IO;
 using System.Text;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
@@ -366,7 +367,18 @@ namespace Datadog.Trace.MSBuild
             {
                 _level = level;
                 _message = message;
-                _context = span is null ? null : new Context(span.TraceId128, span.Context.RawTraceId, span.SpanId, span.Context.Origin);
+
+                if (span is null)
+                {
+                    _context = null;
+                }
+                else
+                {
+                    var traceId = span.GetTraceIdStringForLogs();
+                    var spanId = span.SpanId.ToString(CultureInfo.InvariantCulture);
+
+                    _context = new Context(traceId, spanId, span.Context.Origin);
+                }
             }
 
             public override void Format(StringBuilder sb, LogFormatter formatter)
@@ -383,23 +395,14 @@ namespace Datadog.Trace.MSBuild
                     {
                         if (state is { } context)
                         {
+                            // encode all 128 bits of the trace id as a hex string, or
+                            // encode only the lower 64 bits of the trace ids as decimal (not hex)
                             writer.WritePropertyName("dd.trace_id");
-
-                            if (Tracer.Instance?.Settings?.TraceId128BitLoggingEnabled == true &&
-                                context.TraceId.Upper > 0)
-                            {
-                                // encode all 128 bits of the trace id as a hex string
-                                writer.WriteValue(context.RawTraceId);
-                            }
-                            else
-                            {
-                                // encode only the lower 64 bits of the trace ids as decimal (not hex)
-                                writer.WriteValue(context.TraceId.Lower.ToString(CultureInfo.InvariantCulture));
-                            }
+                            writer.WriteValue(context.TraceId);
 
                             // 64-bit span ids are always encoded as decimal (not hex)
                             writer.WritePropertyName("dd.span_id");
-                            writer.WriteValue(context.SpanId.ToString(CultureInfo.InvariantCulture));
+                            writer.WriteValue(context.SpanId);
 
                             writer.WritePropertyName("_dd.origin");
                             writer.WriteValue(context.Origin);
@@ -411,15 +414,13 @@ namespace Datadog.Trace.MSBuild
 
             private readonly struct Context
             {
-                public readonly TraceId TraceId;
-                public readonly string RawTraceId;
-                public readonly ulong SpanId;
+                public readonly string TraceId;
+                public readonly string SpanId;
                 public readonly string Origin;
 
-                public Context(TraceId traceId, string rawTraceId, ulong spanId, string origin)
+                public Context(string traceId, string spanId, string origin)
                 {
                     TraceId = traceId;
-                    RawTraceId = rawTraceId;
                     SpanId = spanId;
                     Origin = origin;
                 }

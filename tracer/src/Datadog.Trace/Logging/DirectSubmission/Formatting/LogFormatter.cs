@@ -346,19 +346,10 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                     service = span.ServiceName;
                 }
 
+                // encode all 128 bits of the trace id as a hex string, or
+                // encode only the lower 64 bits of the trace ids as decimal (not hex)
                 writer.WritePropertyName("dd.trace_id", escape: false);
-
-                if (Tracer.Instance?.Settings?.TraceId128BitLoggingEnabled == true &&
-                    span is Span { TraceId128.Upper: > 0 } s)
-                {
-                    // encode all 128 bits of the trace id as a hex string
-                    writer.WriteValue(s.Context.RawTraceId);
-                }
-                else
-                {
-                    // encode only the lower 64 bits of the trace ids as decimal (not hex)
-                    writer.WriteValue(span.TraceId.ToString(CultureInfo.InvariantCulture));
-                }
+                writer.WriteValue(span.GetTraceIdStringForLogs());
 
                 // 64-bit span ids are always encoded as decimal (not hex)
                 writer.WritePropertyName("dd.span_id", escape: false);
