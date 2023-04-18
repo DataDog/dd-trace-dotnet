@@ -45,9 +45,11 @@ namespace Datadog.Trace.Security.IntegrationTests
         private readonly JsonSerializerSettings _jsonSerializerSettingsOrderProperty;
         private int _httpPort;
 
-        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null)
-            : base(Prefix + sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
+        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null, bool changeDefaults = false)
+            : base(!changeDefaults ? Prefix + sampleName : sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
+            _testName = (!changeDefaults ? Prefix : string.Empty) + (testName ?? sampleName);
+            _httpClient = new HttpClient();
             _testName = Prefix + (testName ?? sampleName);
 
             _cookieContainer = new CookieContainer();

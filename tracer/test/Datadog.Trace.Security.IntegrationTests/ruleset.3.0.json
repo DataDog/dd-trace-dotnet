@@ -2220,6 +2220,9 @@
               },
               {
                 "address": "grpc.server.request.message"
+              },
+              {
+                "address": "graphql.server.all_resolvers"
               }
             ],
             "regex": "<script[^>]*>[\\s\\S]*?",
