@@ -153,16 +153,31 @@ std::string Logger::GetLogPath(const std::string& file_name_suffix)
 }
 
 template <class T>
-void WriteToStream(std::ostringstream& oss, T const& x)
+concept IsWstring = std::same_as<T, ::shared::WSTRING> ||
+                    // check if it's WCHAR[N] or WCHAR*
+                    std::same_as<std::remove_cvref_t<std::remove_pointer_t<std::decay_t<T>>>, WCHAR>;
+
+template <IsWstring T>
+void  WriteToStream(std::ostringstream& oss, T const& x)
 {
-    if constexpr (std::is_same<T, ::shared::WSTRING>::value)
+    if constexpr (std::is_same_v<T, ::shared::WSTRING>)
     {
         oss << ::shared::ToString(x);
     }
+    else if constexpr (std::is_array_v<T>)
+    {
+        oss << ::shared::ToString(x, std::extent_v<T>);
+    }
     else
     {
-        oss << x;
+        oss << ::shared::ToString(x, WStrLen(x));
     }
+}
+
+template <class T>
+void WriteToStream(std::ostringstream& oss, T const& x)
+{
+    oss << x;
 }
 
 template <typename... Args>

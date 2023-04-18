@@ -161,7 +161,7 @@
       <PreprocessorDefinitions>WIN32;X86;BIT86;_DEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
@@ -189,7 +189,7 @@
       <OmitFramePointers>true</OmitFramePointers>
       <PreprocessorDefinitions>WIN32;X86;BIT86;NDEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
@@ -213,7 +213,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <OmitFramePointers>false</OmitFramePointers>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>BIT64;AMD64;_DEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SHARED-LIB-INCLUDES);$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -240,7 +240,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
