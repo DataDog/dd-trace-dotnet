@@ -98,10 +98,10 @@ internal sealed class GraphQLSecurityCommon
     {
 #if NETFRAMEWORK
         var httpContext = HttpContext.Current;
-        var isWebsocket = httpContext.IsWebSocketRequest;
+        var isWebsocket = httpContext is not null && httpContext.IsWebSocketRequest;
 #else
         var httpContext = CoreHttpContextStore.Instance.Get();
-        var isWebsocket = httpContext.WebSockets.IsWebSocketRequest;
+        var isWebsocket = httpContext is not null && httpContext.WebSockets.IsWebSocketRequest;
 #endif
         return Security.Instance.Settings.Enabled && !isWebsocket;
     }
