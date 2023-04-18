@@ -6,7 +6,7 @@
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
-namespace Datadog.Trace.AppSec.RcmModels.Asm;
+namespace Datadog.Trace.AppSec.Rcm.Models.Asm;
 
 internal class Payload
 {

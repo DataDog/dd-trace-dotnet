@@ -11,12 +11,13 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.RcmModels.Asm;
+using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
+using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
@@ -87,15 +88,15 @@ public abstract class AspNetMvc5AsmRulesToggle : RcmBaseFramework, IClassFixture
         var url = $"/health";
         var agent = _iisFixture.Agent;
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        var acknowledgedId = nameof(TestGlobalRulesToggling) + Guid.NewGuid();
+        var fileId = nameof(TestGlobalRulesToggling) + Guid.NewGuid();
         var spans1 = await SendRequestsAsync(agent, url, null, 1, 1, null, userAgent: "acunetix-product");
 
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = null, OnMatch = new[] { "block" }, RulesTarget = JToken.Parse(@"[{'tags': {'confidence': '1'}}]") } } }, acknowledgedId) }, asmProduct, appliedServiceNames: new[] { acknowledgedId });
+        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = null, OnMatch = new[] { "block" }, RulesTarget = JToken.Parse(@"[{'tags': {'confidence': '1'}}]") } } }, asmProduct, fileId) });
         var spans2 = await SendRequestsAsync(agent, url, null, 1, 1, null, userAgent: "acunetix-product");
 
         // reset
-        acknowledgedId = nameof(TestGlobalRulesToggling) + Guid.NewGuid();
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = Array.Empty<RuleOverride>() }, acknowledgedId) }, asmProduct, appliedServiceNames: new[] { acknowledgedId });
+        fileId = nameof(TestGlobalRulesToggling) + Guid.NewGuid();
+        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = Array.Empty<RuleOverride>() }, asmProduct, fileId) });
         var spans3 = await SendRequestsAsync(agent, url, null, 1, 1, null, userAgent: "acunetix-product");
 
         var spans = new List<MockSpan>();
@@ -103,7 +104,7 @@ public abstract class AspNetMvc5AsmRulesToggle : RcmBaseFramework, IClassFixture
         spans.AddRange(spans2);
         spans.AddRange(spans3);
         await VerifySpans(spans.ToImmutableList(), settings);
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<AppSec.RcmModels.Asm.Action>() }, acknowledgedId) }, asmProduct, appliedServiceNames: new[] { acknowledgedId });
+        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Action>() }, asmProduct, fileId) });
     }
 
     protected override string GetTestName() => _testName;

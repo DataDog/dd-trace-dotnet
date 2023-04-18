@@ -418,14 +418,9 @@ namespace Datadog.Trace.ClrProfiler
                         var rcmSettings = RemoteConfigurationSettings.FromDefaultSource();
                         var rcmApi = RemoteConfigurationApiFactory.Create(tracer.Settings.Exporter, rcmSettings, discoveryService);
 
-                        var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, tracer.Settings, tracer.TracerManager.GitMetadataTagsProvider);
-                        // see comment above
-                        configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmFeaturesProduct);
-                        configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmDataProduct);
-                        configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmDDProduct); // This should be activated by Security only when Asm is active, but there is no visibility right now
-                        configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmProduct);
+                        var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, tracer.Settings, tracer.TracerManager.GitMetadataTagsProvider, RcmSubscriptionManager.Instance);
 
-                        var liveDebugger = LiveDebuggerFactory.Create(discoveryService, configurationManager, tracer.Settings, serviceName);
+                        var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, tracer.Settings, serviceName);
 
                         Log.Debug("Initializing Remote Configuration management.");
 

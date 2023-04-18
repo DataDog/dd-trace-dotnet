@@ -1155,6 +1155,7 @@ partial class Build
                     .SetTargetPlatformAnyCPU()
                     .SetFramework(Framework)
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
+                    .EnableCrashDumps()
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetTestTargetPlatform(TargetPlatform)
@@ -1280,6 +1281,7 @@ partial class Build
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatformAnyCPU()
                     .SetFramework(Framework)
+                    .EnableCrashDumps()
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "Category=Smoke&LoadFromGAC!=True&Category!=AzureFunctions")
@@ -2213,7 +2215,7 @@ partial class Build
     {
         if (Directory.Exists(TempDirectory))
         {
-            foreach (var dump in GlobFiles(TempDirectory, "coredump*"))
+            foreach (var dump in GlobFiles(TempDirectory, "coredump*", "*.dmp"))
             {
                 MoveFileToDirectory(dump, root / "dumps", FileExistsPolicy.Overwrite);
             }
