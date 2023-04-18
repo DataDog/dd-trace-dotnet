@@ -15,5 +15,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM;
 internal struct GraphQLValueObjectProxy
 {
     #nullable enable
-    public List<GraphQLValueProxy>? Fields;
+    public IEnumerable<object>? Fields;
 }
