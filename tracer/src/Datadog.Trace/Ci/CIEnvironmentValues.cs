@@ -759,7 +759,14 @@ namespace Datadog.Trace.Ci
             NodeName = EnvironmentHelpers.GetEnvironmentVariable(Constants.GitlabRunnerId);
             if (EnvironmentHelpers.GetEnvironmentVariable(Constants.GitlabRunnerTags) is { } runnerTags)
             {
-                NodeLabels = Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<string[]>(runnerTags);
+                try
+                {
+                    NodeLabels = Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<string[]>(runnerTags);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Error deserializing '{GitlabRunnerTags}' environment variable.", Constants.GitlabRunnerTags);
+                }
             }
         }
 
@@ -950,7 +957,7 @@ namespace Datadog.Trace.Ci
             {
                 if (envvar.Key is string key && key.StartsWith(Constants.BuildKiteAgentMetadata, StringComparison.OrdinalIgnoreCase))
                 {
-                    var name = key.Replace(Constants.BuildKiteAgentMetadata, string.Empty)?.ToLowerInvariant();
+                    var name = key.Substring(Constants.BuildKiteAgentMetadata.Length).ToLowerInvariant();
                     var value = envvar.Value?.ToString();
                     lstNodeLabels.Add($"{name}:{value}");
                 }
