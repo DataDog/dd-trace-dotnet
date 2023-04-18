@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tests.Sampling
             var settings = new TracerSettings { ServiceName = expectedService };
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
             using var scope = (Scope)tracer.StartActive("root");
-            scope.Span.Context.TraceContext.Environment = expectedEnv;
+            scope.Span.TraceContext.Environment = expectedEnv;
 
             // create sampling rule
             var rule = new DefaultSamplingRule();
@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tests.Sampling
             var firstScope = (Scope)tracer.StartActive("first");
             var firstSpan = firstScope.Span;
             firstSpan.ServiceName = configuredService;
-            firstSpan.Context.TraceContext.Environment = configuredEnv;
+            firstSpan.TraceContext.Environment = configuredEnv;
 
             var secondScope = (Scope)tracer.StartActive("second");
             var secondSpan = secondScope.Span;

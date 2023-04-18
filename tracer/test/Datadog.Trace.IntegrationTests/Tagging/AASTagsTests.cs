@@ -84,7 +84,7 @@ public class AASTagsTests
         {
             span1 = scope1.Span;
 
-            var traceContext = ((Scope)scope1).Span.Context.TraceContext;
+            var traceContext = ((Scope)scope1).Span.TraceContext;
 
             using (var scope11 = tracer.StartActive("1.1"))
             {

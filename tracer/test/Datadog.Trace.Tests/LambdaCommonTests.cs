@@ -42,7 +42,7 @@ namespace Datadog.Trace.Tests
             scope.Span.TraceId128.Should().BeGreaterThan(TraceId.Zero);
             ((ISpan)scope.Span).TraceId.Should().BeGreaterThan(0);
             scope.Span.SpanId.Should().BeGreaterThan(0);
-            scope.Span.Context.TraceContext.SamplingPriority.Should().Be(-1);
+            scope.Span.TraceContext.SamplingPriority.Should().Be(-1);
         }
 
         [Fact]
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tests
             scope.Span.TraceId128.Should().Be((TraceId)1234);
             ((ISpan)scope.Span).TraceId.Should().Be(1234);
             scope.Span.SpanId.Should().BeGreaterThan(0);
-            scope.Span.Context.TraceContext.SamplingPriority.Should().Be(-1);
+            scope.Span.TraceContext.SamplingPriority.Should().Be(-1);
         }
 
         [Fact]

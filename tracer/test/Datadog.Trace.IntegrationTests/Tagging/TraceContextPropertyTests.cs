@@ -39,7 +39,7 @@ public class TraceContextPropertyTests
     {
         using (var scope = CreateTrace(_tracer))
         {
-            scope.Span.Context.TraceContext.SetSamplingPriority(samplingPriority);
+            scope.Span.TraceContext.SetSamplingPriority(samplingPriority);
         }
 
         await _tracer.FlushAsync();
@@ -67,7 +67,7 @@ public class TraceContextPropertyTests
     {
         using (var scope = CreateTrace(_tracer))
         {
-            scope.Span.Context.TraceContext.Environment = before;
+            scope.Span.TraceContext.Environment = before;
         }
 
         await AssertTag("env", after);
@@ -83,7 +83,7 @@ public class TraceContextPropertyTests
     {
         using (var scope = CreateTrace(_tracer))
         {
-            scope.Span.Context.TraceContext.ServiceVersion = before;
+            scope.Span.TraceContext.ServiceVersion = before;
         }
 
         await AssertTag("version", after);
@@ -99,7 +99,7 @@ public class TraceContextPropertyTests
     {
         using (var scope = CreateTrace(_tracer))
         {
-            scope.Span.Context.TraceContext.Origin = before;
+            scope.Span.TraceContext.Origin = before;
         }
 
         await AssertTag("_dd.origin", after);

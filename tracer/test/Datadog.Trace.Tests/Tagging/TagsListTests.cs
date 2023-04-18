@@ -44,7 +44,7 @@ namespace Datadog.Trace.Tests.Tagging
             const int customTagCount = 15;
             SetupForSerializationTest(span, customTagCount);
 
-            span.Context.TraceContext.Environment.Should().Be("Overridden Environment");
+            span.TraceContext.Environment.Should().Be("Overridden Environment");
             span.GetTag(Tags.Env).Should().Be("Overridden Environment");
             span.GetMetric(Metrics.SamplingLimitDecision).Should().Be(0.75);
 
@@ -274,7 +274,7 @@ namespace Datadog.Trace.Tests.Tagging
             var tags = (CommonTags)span.Tags;
             tags.SamplingLimitDecision = 0.5;
 
-            span.Context.TraceContext.Environment = "Test";
+            span.TraceContext.Environment = "Test";
 
             // Override the properties
             span.SetTag(Tags.Env, "Overridden Environment");

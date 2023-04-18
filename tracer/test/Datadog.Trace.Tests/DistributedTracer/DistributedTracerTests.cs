@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tests.DistributedTracer
             distributedTracer.Verify(t => t.GetSpanContext(), Times.Exactly(2));
             scope.Span.TraceId128.Should().Be(spanContext.TraceId128);
             ((ISpan)scope.Span).TraceId.Should().Be(spanContext.TraceId);
-            scope.Span.Context.TraceContext.SamplingPriority.Should().Be(spanContext.SamplingPriority);
+            scope.Span.TraceContext.SamplingPriority.Should().Be(spanContext.SamplingPriority);
         }
 
         [Fact]
@@ -49,7 +49,7 @@ namespace Datadog.Trace.Tests.DistributedTracer
 
             using (var scope = (Scope)Tracer.Instance.StartActive("Test"))
             {
-                distributedTracer.Verify(t => t.SetSpanContext(scope.Span.Context), Times.Once);
+                distributedTracer.Verify(t => t.SetSpanContext(scope.Span.GetContext()), Times.Once);
             }
 
             distributedTracer.Verify(t => t.SetSpanContext(null), Times.Once);
