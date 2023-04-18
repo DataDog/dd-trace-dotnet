@@ -15,6 +15,7 @@ namespace Datadog.Trace.Telemetry
         public const string AgentTraceTransport = "agent_transport";
         public const string Debug = "debug";
         public const string NativeTracerVersion = "native_tracer_version";
+        public const string MetadataSchemaVersion = "span_attribute_schema";
         public const string AnalyticsEnabled = "analytics_enabled";
         public const string SampleRate = "sample_rate";
         public const string SamplingRules = "sampling_rules";

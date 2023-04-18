@@ -317,6 +317,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("native_tracer_version");
                     writer.WriteValue(Instrumentation.GetNativeTracerVersion());
 
+                    writer.WritePropertyName("span_attribute_schema");
+                    writer.WriteValue(instanceSettings.MetadataSchemaVersion);
+
                     writer.WritePropertyName("platform");
                     writer.WriteValue(FrameworkDescription.Instance.ProcessArchitecture);
 
