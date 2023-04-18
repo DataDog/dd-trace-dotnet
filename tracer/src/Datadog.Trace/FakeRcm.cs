@@ -55,11 +55,10 @@ namespace Datadog.Trace
                 CustomSamplingRules = settings.GetString("CustomSamplingRules") ?? oldSettings.CustomSamplingRules,
                 GlobalSamplingRate = settings.GetDouble("TraceSampleRate") ?? oldSettings.GlobalSamplingRate,
                 SpanSamplingRules = settings.GetString("SpanSamplingRules") ?? oldSettings.SpanSamplingRules,
+                LogsInjectionEnabled = settings.GetBool("LogsInjectionEnabled") ?? oldSettings.LogsInjectionEnabled,
                 HeaderTags = (headerTags as IReadOnlyDictionary<string, string>) ?? oldSettings.HeaderTags,
                 ServiceNameMappings = serviceNameMappings ?? oldSettings.ServiceNameMappings
             };
-
-            // TODO: Log injection
 
             var debugLogsEnabled = settings.GetBool("DebugLogsEnabled");
 
