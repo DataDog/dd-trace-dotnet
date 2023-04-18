@@ -958,6 +958,7 @@ stages:
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        enable_crash_dumps: true
 
     - task: PublishTestResults@2
       displayName: publish test results
