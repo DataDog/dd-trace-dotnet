@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -90,6 +91,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                   .DisableRequireUniquePrefix();
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.OpenTelemetry);
+                telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, "v0");
             }
         }
 
@@ -123,6 +125,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                   .DisableRequireUniquePrefix();
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.OpenTelemetry);
+                telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, "v0");
             }
         }
 
@@ -141,6 +144,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 using var s = new AssertionScope();
                 spans.Should().BeEmpty();
                 telemetry.AssertIntegrationDisabled(IntegrationId.OpenTelemetry);
+                telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, "v0");
             }
         }
 

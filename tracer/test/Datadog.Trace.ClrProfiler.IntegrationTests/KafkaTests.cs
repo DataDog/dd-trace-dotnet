@@ -8,6 +8,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -158,6 +159,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             telemetry.AssertIntegrationEnabled(IntegrationId.Kafka);
+            telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, metadataSchemaVersion);
         }
 
         private void VerifyProducerSpanProperties(List<MockSpan> producerSpans, string serviceName, string resourceName, int expectedCount)

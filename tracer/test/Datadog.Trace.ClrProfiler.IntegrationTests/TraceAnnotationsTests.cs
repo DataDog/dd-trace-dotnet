@@ -144,6 +144,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 telemetry?.AssertIntegrationEnabled(IntegrationId.TraceAnnotations);
                 telemetry?.AssertConfiguration(ConfigTelemetryData.TraceMethods);
+                telemetry?.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, "v0");
 
                 // Run snapshot verification
                 var settings = VerifyHelper.GetSpanVerifierSettings();

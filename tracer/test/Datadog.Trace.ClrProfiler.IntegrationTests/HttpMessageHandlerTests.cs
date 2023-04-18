@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -165,6 +166,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 using var scope = new AssertionScope();
                 telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+                telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, metadataSchemaVersion);
                 // ignore for now auto enabled for simplicity
                 telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: IsUsingSocketHandler(instrumentation), autoEnabled: null);
                 telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: IsUsingWinHttpHandler(instrumentation), autoEnabled: null);
@@ -205,6 +207,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 using var scope = new AssertionScope();
                 // ignore auto enabled for simplicity
                 telemetry.AssertIntegrationDisabled(IntegrationId.HttpMessageHandler);
+                telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, "v0");
                 telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: false, autoEnabled: null);
                 telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: false, autoEnabled: null);
                 telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: false, autoEnabled: null);

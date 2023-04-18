@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -91,6 +92,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.ServiceStackRedis);
+                telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, metadataSchemaVersion);
             }
         }
     }

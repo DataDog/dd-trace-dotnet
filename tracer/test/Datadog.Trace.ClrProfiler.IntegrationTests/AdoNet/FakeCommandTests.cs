@@ -5,6 +5,7 @@
 
 using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -63,6 +64,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
 
             telemetry.AssertIntegrationEnabled(IntegrationId.AdoNet);
+            telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, metadataSchemaVersion);
         }
     }
 }

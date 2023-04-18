@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -77,6 +78,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                   .UseFileName(nameof(NetActivitySdkTests));
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.OpenTelemetry);
+                telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, "v0");
             }
         }
     }

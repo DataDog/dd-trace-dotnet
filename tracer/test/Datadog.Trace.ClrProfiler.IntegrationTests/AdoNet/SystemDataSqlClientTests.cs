@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -70,6 +71,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             Assert.Equal(expectedSpanCount, spans.Count);
             ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
             telemetry.AssertIntegrationEnabled(IntegrationId.SqlClient);
+            telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, metadataSchemaVersion);
         }
 
         [SkippableFact]
@@ -91,6 +93,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             Assert.NotEmpty(spans);
             Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
             telemetry.AssertIntegrationDisabled(IntegrationId.SqlClient);
+            telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, "v0");
         }
     }
 }

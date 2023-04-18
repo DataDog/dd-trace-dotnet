@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -153,6 +154,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
                 ValidateSpans(spans, (span) => span.Resource, expected);
                 telemetry.AssertIntegrationEnabled(IntegrationId.ElasticsearchNet);
+                telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, metadataSchemaVersion);
             }
         }
 
@@ -170,6 +172,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Assert.Empty(spans);
             telemetry.AssertIntegrationDisabled(IntegrationId.ElasticsearchNet);
+            telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, "v0");
         }
     }
 }

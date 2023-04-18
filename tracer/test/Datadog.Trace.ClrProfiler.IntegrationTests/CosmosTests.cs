@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -91,6 +92,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 dbTags.Should().Be(10);
                 containerTags.Should().Be(4);
                 telemetry.AssertIntegrationEnabled(IntegrationId.CosmosDb);
+                telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, metadataSchemaVersion);
             }
         }
     }

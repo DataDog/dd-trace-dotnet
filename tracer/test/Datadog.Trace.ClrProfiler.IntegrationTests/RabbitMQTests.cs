@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions.Execution;
 using VerifyXunit;
@@ -89,6 +90,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             telemetry.AssertIntegrationEnabled(IntegrationId.RabbitMQ);
+            telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, metadataSchemaVersion);
         }
 
         private string GetPackageVersionSuffix(string packageVersion)

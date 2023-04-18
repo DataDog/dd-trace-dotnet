@@ -7,6 +7,7 @@
 using System;
 using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -117,6 +118,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             receiveCount.Should().Be(expectedReceiveCount);
             peekCount.Should().Be(expectedPeekCount);
             telemetry.AssertIntegrationEnabled(IntegrationId.Msmq);
+            telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, metadataSchemaVersion);
         }
     }
 }

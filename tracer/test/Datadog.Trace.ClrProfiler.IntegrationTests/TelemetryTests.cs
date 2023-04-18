@@ -59,6 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var data = telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
             telemetry.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
+            telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, "v0");
             AssertTelemetry(data);
             agent.Telemetry.Should().BeEmpty();
         }
@@ -85,6 +86,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var data = agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
             agent.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
+            agent.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, "v0");
             AssertTelemetry(data);
         }
 
@@ -158,6 +160,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var data = agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
                 agent.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
+                agent.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, "v0");
 
                 AssertTelemetry(data);
             }
@@ -183,6 +186,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             var data = agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+            agent.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, "v0");
 
             AssertTelemetry(data);
         }

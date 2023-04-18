@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using VerifyXunit;
@@ -58,6 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
             telemetry.AssertIntegrationDisabled(IntegrationId.Process);
+            telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, "v0");
         }
 
         private async Task RunTest(string metadataSchemaVersion)
@@ -91,6 +93,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             VerifyInstrumentation(process.Process);
 
             telemetry.AssertIntegrationEnabled(IntegrationId.Process);
+            telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, metadataSchemaVersion);
         }
     }
 }

@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -406,6 +407,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.Grpc);
+                telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, metadataSchemaVersion);
             }
             catch (ExitCodeException)
             {
@@ -446,6 +448,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                     Assert.Empty(spans);
                     telemetry.AssertIntegrationDisabled(IntegrationId.Grpc);
+                    telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, "v0");
                 }
             }
             catch (ExitCodeException)

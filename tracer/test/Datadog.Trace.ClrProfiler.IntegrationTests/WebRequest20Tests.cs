@@ -8,6 +8,7 @@ using System.Globalization;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -61,6 +62,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.Null(parentSpanId);
                 Assert.Equal("false", tracingEnabled);
                 telemetry.AssertIntegrationDisabled(IntegrationId.WebRequest);
+                telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, "v0");
                 VerifyInstrumentation(processResult.Process);
             }
         }
@@ -93,6 +95,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.WebRequest);
+                telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, metadataSchemaVersion);
             }
         }
     }

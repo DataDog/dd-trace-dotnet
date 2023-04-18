@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -69,6 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                   .UseFileName(nameof(AerospikeTests) + $".Schema{metadataSchemaVersion.ToUpper()}");
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.Aerospike);
+                telemetry.AssertConfiguration(ConfigTelemetryData.MetadataSchemaVersion, metadataSchemaVersion);
             }
         }
     }
