@@ -37,6 +37,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData(@"{""query"":""query Book{book(badArray: [\""hello world\"", true, 5, \""<script>test\""]){title author{name}}}""}")]
         [InlineData(@"{""query"":""query Book{book(badObject: { title: \""<script>test\"" }){title author{name}}}""}")]
         [InlineData(@"{""query"":""query Book{testAlias: book(name: \""<script>test\""){title author{name}}}""}")]
+        [InlineData(@"{""query"":""query Book($name: String!){book(name: $name){title author{name}}}"", ""variables"": { ""name"": ""<script>test""}}")]
         [Trait("RunOnWindows", "True")]
         public async Task TestQuerySecurity(string query)
         {

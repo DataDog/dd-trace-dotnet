@@ -122,6 +122,7 @@ internal abstract class GraphQLSecurity
                 ASTNodeKindProxy.EnumValue => arg.DuckCast<GraphQLValueNameProxy>().Name.StringValue,
                 ASTNodeKindProxy.ListValue => arg.DuckCast<GraphQLValueListProxy>().Values.Select(x => GetArgumentValue(context, x)).ToList(),
                 ASTNodeKindProxy.ObjectValue => arg.DuckCast<GraphQLValueObjectProxy>().Fields!.Select(x => GetArgumentValue(context, x)).ToList(),
+                ASTNodeKindProxy.ObjectField => GetArgumentValue(context, arg.DuckCast<GraphQLValueProxy>().Value),
 
                 _ => null
             };
