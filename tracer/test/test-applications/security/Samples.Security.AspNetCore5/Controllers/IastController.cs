@@ -107,9 +107,9 @@ namespace Samples.Security.AspNetCore5.Controllers
                     return BadRequest($"No file was provided");
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                return StatusCode(500, "File could not be opened");
+                return StatusCode(500, "The provided file could not be opened");
             }
         }
     }

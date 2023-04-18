@@ -10,7 +10,7 @@ using Datadog.Trace.Iast.Dataflow;
 namespace Datadog.Trace.Iast.Aspects;
 
 /// <summary> StreamWriterAspect class aspects </summary>
-[AspectClass("mscorlib,System.Private.CoreLib", AspectType.Sink, VulnerabilityType.PathTraversal)]
+[AspectClass("mscorlib,System.IO.FileSystem,System.Runtime", AspectType.Sink, VulnerabilityType.PathTraversal)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public partial class FileStreamAspect
@@ -25,11 +25,15 @@ public partial class FileStreamAspect
     [AspectMethodInsertBefore("System.IO.FileStream::.ctor(System.String,System.IO.FileMode,System.IO.FileAccess,System.IO.FileShare)", 3)]
     [AspectMethodInsertBefore("System.IO.FileStream::.ctor(System.String,System.IO.FileMode,System.IO.FileAccess,System.IO.FileShare,System.Int32)", 4)]
     [AspectMethodInsertBefore("System.IO.FileStream::.ctor(System.String,System.IO.FileMode,System.IO.FileAccess,System.IO.FileShare,System.Int32,System.Boolean)", 5)]
-    [AspectMethodInsertBefore("System.IO.FileStream::.ctor(System.String,System.IO.FileMode,System.IO.FileAccess,System.IO.FileShare,System.Int32,System.IO.FileOptions)", 6)]
-    [AspectMethodInsertBefore("System.IO.FileStream::.ctor(System.String,System.IO.FileMode,System.IO.FileAccess,System.IO.FileShare,System.Int32,System.IO.FileOptions,System.Boolean)", 7)]
-    [AspectMethodInsertBefore("System.IO.FileStream::.ctor(System.String,System.IO.FileMode,System.Security.AccessControl.FileSystemRights,System.IO.FileShare,System.Int32,System.IO.FileOptions)", 8)]
-    [AspectMethodInsertBefore("System.IO.FileStream::.ctor(System.String,System.IO.FileMode,System.Security.AccessControl.FileSystemRights,System.IO.FileShare,System.Int32,System.IO.FileOptions,System.Security.AccessControl.FileSecurity)", 9)]
-    public static string Init(string path)
+    [AspectMethodInsertBefore("System.IO.FileStream::.ctor(System.String,System.IO.FileMode,System.IO.FileAccess,System.IO.FileShare,System.Int32,System.IO.FileOptions)", 5)]
+#if NETFRAMEWORK
+    [AspectMethodInsertBefore("System.IO.FileStream::.ctor(System.String,System.IO.FileMode,System.Security.AccessControl.FileSystemRights,System.IO.FileShare,System.Int32,System.IO.FileOptions)", 5)]
+    [AspectMethodInsertBefore("System.IO.FileStream::.ctor(System.String,System.IO.FileMode,System.Security.AccessControl.FileSystemRights,System.IO.FileShare,System.Int32,System.IO.FileOptions,System.Security.AccessControl.FileSecurity)", 6)]
+#endif
+#if NET6_0_OR_GREATER
+    [AspectMethodInsertBefore("System.IO.FileStream::.ctor(System.String,System.IO.FileStreamOptions)", 1)]
+#endif
+    public static string ReviewPath(string path)
     {
         IastModule.OnPathTraversal(path);
         return path;

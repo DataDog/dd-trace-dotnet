@@ -103,9 +103,9 @@ namespace Samples.Security.AspNetCore5.Controllers
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, $"No file was provided");
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError, "File could not be opened");
+                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError, "The provided file could not be opened");
             }
         }
     }

@@ -24,9 +24,9 @@ public class StreamWriterTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenAStreamReader_WhenCreatingFromTaintedString_LocationIsCorrect()
+    public void GivenAStreamWriter_WhenCreatingFromTaintedString_LocationIsCorrect()
     {
-        ExecuteAction(() => { new StreamReader(taintedValue); });
+        ExecuteAction(() => { new StreamWriter(taintedValue); });
         AssertLocation(nameof(StreamWriterTests));
     }
 

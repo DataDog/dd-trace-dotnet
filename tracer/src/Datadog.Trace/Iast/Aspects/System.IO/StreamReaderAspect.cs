@@ -10,7 +10,7 @@ using Datadog.Trace.Iast.Dataflow;
 namespace Datadog.Trace.Iast.Aspects;
 
 /// <summary> StreamReaderAspect class aspects </summary>
-[AspectClass("mscorlib,System.Private.CoreLib", AspectType.Sink, VulnerabilityType.PathTraversal)]
+[AspectClass("mscorlib,System.IO.FileSystem,System.Runtime", AspectType.Sink, VulnerabilityType.PathTraversal)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public partial class StreamReaderAspect
@@ -25,9 +25,11 @@ public partial class StreamReaderAspect
     [AspectMethodInsertBefore("System.IO.StreamReader::.ctor(System.String,System.Text.Encoding)", 1)]
     [AspectMethodInsertBefore("System.IO.StreamReader::.ctor(System.String,System.Text.Encoding,System.Boolean)", 2)]
     [AspectMethodInsertBefore("System.IO.StreamReader::.ctor(System.String,System.Text.Encoding,System.Boolean,System.Int32)", 3)]
+#if NET6_0_OR_GREATER
     [AspectMethodInsertBefore("System.IO.StreamReader::.ctor(System.String,System.Text.Encoding,System.Boolean,System.IO.FileStreamOptions)", 3)]
     [AspectMethodInsertBefore("System.IO.StreamReader::.ctor(System.String,System.IO.FileStreamOptions)", 1)]
-    public static string Init(string path)
+#endif
+    public static string ReviewPath(string path)
     {
         IastModule.OnPathTraversal(path);
         return path;

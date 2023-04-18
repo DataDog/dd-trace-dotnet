@@ -32,8 +32,10 @@ public partial class FileAspect
 #endif
     [AspectMethodInsertBefore("System.IO.File::ReadAllLines(System.String)")]
     [AspectMethodInsertBefore("System.IO.File::ReadAllLines(System.String,System.Text.Encoding)", 1)]
+#if !NETFRAMEWORK
     [AspectMethodInsertBefore("System.IO.File::ReadAllLinesAsync(System.String,System.Threading.CancellationToken)", 1)]
     [AspectMethodInsertBefore("System.IO.File::ReadAllLinesAsync(System.String,System.Text.Encoding,System.Threading.CancellationToken)", 2)]
+#endif
     [AspectMethodInsertBefore("System.IO.File::ReadAllText(System.String)")]
 #if !NETFRAMEWORK
     [AspectMethodInsertBefore("System.IO.File::ReadAllTextAsync(System.String,System.Text.Encoding,System.Threading.CancellationToken)", 2)]
@@ -72,17 +74,23 @@ public partial class FileAspect
 #endif
     [AspectMethodInsertBefore("System.IO.File::SetAttributes(System.String,System.IO.FileAttributes)", 1)]
     [AspectMethodInsertBefore("System.IO.File::WriteAllBytes(System.String,System.Byte[])", 1)]
+#if !NETFRAMEWORK
     [AspectMethodInsertBefore("System.IO.File::WriteAllBytesAsync(System.String,System.Byte[],System.Threading.CancellationToken)", 2)]
+#endif
     [AspectMethodInsertBefore("System.IO.File::WriteAllLines(System.String,System.String[])", 1)]
     [AspectMethodInsertBefore("System.IO.File::WriteAllLines(System.String,System.String[],System.Text.Encoding)", 2)]
     [AspectMethodInsertBefore("System.IO.File::WriteAllLines(System.String,System.Collections.Generic.IEnumerable`1<System.String>)", 1)]
     [AspectMethodInsertBefore("System.IO.File::WriteAllLines(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Text.Encoding)", 2)]
+#if !NETFRAMEWORK
     [AspectMethodInsertBefore("System.IO.File::WriteAllLinesAsync(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Text.Encoding,System.Threading.CancellationToken)", 3)]
     [AspectMethodInsertBefore("System.IO.File::WriteAllLinesAsync(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Threading.CancellationToken)", 2)]
+#endif
     [AspectMethodInsertBefore("System.IO.File::WriteAllText(System.String,System.String)", 1)]
     [AspectMethodInsertBefore("System.IO.File::WriteAllText(System.String,System.String,System.Text.Encoding)", 2)]
+#if !NETFRAMEWORK
     [AspectMethodInsertBefore("System.IO.File::WriteAllTextAsync(System.String,System.String,System.Threading.CancellationToken)", 2)]
     [AspectMethodInsertBefore("System.IO.File::WriteAllTextAsync(System.String,System.String,System.Text.Encoding,System.Threading.CancellationToken)", 3)]
+#endif
     [AspectMethodInsertBefore("System.IO.File::Copy(System.String,System.String)", new int[] { 0, 1 })]
     [AspectMethodInsertBefore("System.IO.File::Copy(System.String,System.String,System.Boolean)", new int[] { 1, 2 })]
     [AspectMethodInsertBefore("System.IO.File::Move(System.String,System.String)", new int[] { 0, 1 })]
