@@ -578,12 +578,17 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Enables generating 128-bit trace ids instead of 64-bit trace ids.
+            /// Note that a 128-bit trace id may be received from an upstream service or from
+            /// an Activity even if we are not generating them ourselves.
+            /// Default value is <c>false</c> (disabled).
             /// </summary>
             public const string TraceId128BitGenerationEnabled = "DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED";
 
             /// <summary>
-            /// Enables injecting 128-bit trace ids into logs, if available, instead of 64-bit trace ids.
-            /// Note that a 128-bit trace id may be received from an upstream service even if we are not generating them.
+            /// Enables injecting 128-bit trace ids into logs as a hexadecimal string.
+            /// If disabled, 128-bit trace ids will be truncated to the lower 64 bits,
+            /// and all trace ids will be injected as decimal strings
+            /// Default value is <c>false</c> (disabled).
             /// </summary>
             public const string TraceId128BitLoggingEnabled = "DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED";
         }
