@@ -29,12 +29,12 @@ namespace Datadog.Trace.AppSec
             var iastEnabled = Iast.Iast.Instance.Settings.Enabled;
             Scope scope = null;
 
-            if ((context != null && security.Settings.Enabled) || iastEnabled)
+            if ((context != null && security.Enabled) || iastEnabled)
             {
                 scope = SharedItems.TryPeekScope(context, peekScopeKey);
             }
 
-            if (context != null && security.Settings.Enabled)
+            if (context != null && security.Enabled)
             {
                 var bodyDic = new Dictionary<string, object>(parameters.Count);
                 var pathParamsDic = new Dictionary<string, object>(parameters.Count);

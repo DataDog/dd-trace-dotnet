@@ -1,15 +1,14 @@
-// <copyright file="AsmFeatures.cs" company="Datadog">
+﻿// <copyright file="Payload.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
 #nullable enable
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-using Datadog.Trace.AppSec;
+namespace Datadog.Trace.AppSec.Rcm.Models.AsmData;
 
-namespace Datadog.Trace.AppSec;
-
-internal class AsmFeatures
+internal class Payload
 {
-    public AsmFeature Asm { get; set; } = new();
+    [JsonProperty("rules_data")]
+    public RuleData[]? RulesData { get; set; }
 }

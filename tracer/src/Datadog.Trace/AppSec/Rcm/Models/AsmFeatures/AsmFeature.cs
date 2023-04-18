@@ -9,5 +9,5 @@ namespace Datadog.Trace.AppSec;
 
 internal class AsmFeature
 {
-    public bool Enabled { get; set; }
+    public bool? Enabled { get; set; }
 }
