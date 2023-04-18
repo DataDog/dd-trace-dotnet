@@ -14,6 +14,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
     {
         public IReadOnlyCollection<string> ProductKeys { get; }
 
-        Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, List<ApplyDetails>> Invoke { get; }
+        Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, IEnumerable<ApplyDetails>> Invoke { get; }
     }
 }

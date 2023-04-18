@@ -14,7 +14,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
     {
         private readonly HashSet<string> _productKeys;
 
-        public Subscription(Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, List<ApplyDetails>> callback, params string[] productKeys)
+        public Subscription(Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, IEnumerable<ApplyDetails>> callback, params string[] productKeys)
         {
             _productKeys = new HashSet<string>(productKeys);
             Invoke = callback;
@@ -22,6 +22,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public IReadOnlyCollection<string> ProductKeys => _productKeys;
 
-        public Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, List<ApplyDetails>> Invoke { get; }
+        public Func<Dictionary<string, List<RemoteConfiguration>>, Dictionary<string, List<RemoteConfigurationPath>>?, IEnumerable<ApplyDetails>> Invoke { get; }
     }
 }

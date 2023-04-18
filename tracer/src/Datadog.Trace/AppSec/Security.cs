@@ -150,7 +150,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal List<ApplyDetails> UpdateFromRcm(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
+        internal IEnumerable<ApplyDetails> UpdateFromRcm(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
         {
             string? rcmUpdateError = null;
             UpdateResult? updateResult = null;

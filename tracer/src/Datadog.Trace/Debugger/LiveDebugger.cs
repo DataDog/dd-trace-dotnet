@@ -71,7 +71,7 @@ namespace Datadog.Trace.Debugger
                 {
                     AcceptAddedConfiguration(updates.Values.SelectMany(u => u).Select(i => new NamedRawFile(i.Path, i.Contents)));
                     AcceptRemovedConfiguration(removals.Values.SelectMany(u => u));
-                    return new List<ApplyDetails>(0);
+                    return Enumerable.Empty<ApplyDetails>();
                 },
                 RcmProducts.LiveDebugging);
             discoveryService?.SubscribeToChanges(DiscoveryCallback);
