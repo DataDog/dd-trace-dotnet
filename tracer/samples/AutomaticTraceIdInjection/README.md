@@ -39,14 +39,13 @@ For additional documentation on these features and how to enable them in your en
 
 - Powershell 7+ to run `BuildAndRunSample.ps1`
 - `dotnet` command line tool is installed
-- .NET 7.0 AND/OR .NET Framework 4.6.2
+- .NET 7.0 or .NET Framework 4.6.2
 - [Datadog Agent](https://docs.datadoghq.com/agent/) is installed
   - Note that this is **not** a requirement for the Agentless Log Collection
 - Any of the following operating systems:
   - Windows 32-bit
   - Windows 64-bit
   - Linux 64-bit
-- Windows (32-bit AND/OR 64-bit) AND/OR 64-bit Linux
 
 The `BuildAndRunSample.ps1` script will set the necessary environment variables for the given sample automatically.
 However, there may be some additional setup required to try out each of the features.
