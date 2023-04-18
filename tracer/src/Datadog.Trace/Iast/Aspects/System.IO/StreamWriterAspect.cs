@@ -18,7 +18,7 @@ public partial class StreamWriterAspect
     /// <summary>
     /// Launches a path traversal vulnerability if the file is tainted
     /// </summary>
-    /// <param name="path">the path or file</param>
+    /// <param name="path">the path of the file</param>
     /// <returns>the path parameter</returns>
 #if NET6_0_OR_GREATER
     [AspectMethodInsertBefore("System.IO.StreamWriter::.ctor(System.String,System.Text.Encoding,System.IO.FileStreamOptions)", 2)]

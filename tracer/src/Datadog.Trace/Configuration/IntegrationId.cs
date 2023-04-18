@@ -57,6 +57,6 @@ namespace Datadog.Trace.Configuration
         HashAlgorithm,
         SymmetricAlgorithm,
         OpenTelemetry,
-        File
+        PathTraversal
     }
 }

@@ -18,7 +18,7 @@ public partial class FileStreamAspect
     /// <summary>
     /// Launches a path traversal vulnerability if the file is tainted
     /// </summary>
-    /// <param name="path">the path or file</param>
+    /// <param name="path">the path of the file</param>
     /// <returns>the path parameter</returns>
     [AspectMethodInsertBefore("System.IO.FileStream::.ctor(System.String,System.IO.FileMode)", 1)]
     [AspectMethodInsertBefore("System.IO.FileStream::.ctor(System.String,System.IO.FileMode,System.IO.FileAccess)", 2)]

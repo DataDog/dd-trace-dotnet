@@ -18,7 +18,7 @@ public partial class StreamReaderAspect
     /// <summary>
      /// Launches a path traversal vulnerability if the file is tainted
      /// </summary>
-     /// <param name="path">the path or file</param>
+     /// <param name="path">the path of the file</param>
      /// <returns>the path parameter</returns>
     [AspectMethodInsertBefore("System.IO.StreamReader::.ctor(System.String)")]
     [AspectMethodInsertBefore("System.IO.StreamReader::.ctor(System.String,System.Boolean)", 1)]

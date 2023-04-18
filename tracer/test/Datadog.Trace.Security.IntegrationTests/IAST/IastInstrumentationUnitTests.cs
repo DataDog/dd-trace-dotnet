@@ -21,7 +21,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast;
 
 public class IastInstrumentationUnitTests : TestHelper
 {
-    private List<Type> _instrumentedTypes = new List<Type>()
+    private List<Type> _taintedTypes = new List<Type>()
     {
         typeof(string), typeof(StringBuilder), typeof(object), typeof(char[]), typeof(object[]), typeof(IEnumerable),
         typeof(string[]), typeof(HashAlgorithm), typeof(SymmetricAlgorithm)
@@ -253,6 +253,7 @@ public class IastInstrumentationUnitTests : TestHelper
             "void SetAccessControl(System.String, System.Security.AccessControl.FileSecurity)"
 #endif
 #if NETCOREAPP3_0
+            // special case
             "System.IO.File Move(System.String, System.String, Boolean)"
 #endif
         };
@@ -261,6 +262,7 @@ public class IastInstrumentationUnitTests : TestHelper
         var aspectsToExclude = new List<string>()
         {
 #if NET6_0
+            // special case
             "System.IO.File::ReadLinesAsync(System.String, System.Threading.CancellationToken)"
 #endif
         };
@@ -290,6 +292,7 @@ public class IastInstrumentationUnitTests : TestHelper
         {
             "void CreateAsSymbolicLink(System.String)",
 #if NETCOREAPP3_0
+            // special case
             "void MoveTo(System.String, Boolean)"
 #endif
         };
@@ -381,7 +384,7 @@ public class IastInstrumentationUnitTests : TestHelper
 
         foreach (var parameter in parameters)
         {
-            if (_instrumentedTypes.Contains(parameter.ParameterType))
+            if (_taintedTypes.Contains(parameter.ParameterType))
             {
                 return true;
             }

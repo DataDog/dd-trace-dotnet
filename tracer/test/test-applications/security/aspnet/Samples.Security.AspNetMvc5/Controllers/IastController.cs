@@ -105,7 +105,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
             catch
             {
-                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError, "The provided file could not be opened");
+                return Content("The provided file could not be opened");
             }
         }
     }

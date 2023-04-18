@@ -16,9 +16,9 @@ namespace Datadog.Trace.Iast.Aspects;
 public partial class DirectoryAspect
 {
     /// <summary>
-    /// Launches a path traversal vulnerability if the file is tainted
+    /// Launches a path traversal vulnerability if the directory is tainted
     /// </summary>
-    /// <param name="path">the path or file</param>
+    /// <param name="path">the path</param>
     /// <returns>the path parameter</returns>
     [AspectMethodInsertBefore("System.IO.Directory::CreateDirectory(System.String)")]
 

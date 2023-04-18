@@ -109,7 +109,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
             catch
             {
-                return StatusCode(500, "The provided file could not be opened");
+                return Content("The provided file could not be opened");
             }
         }
     }

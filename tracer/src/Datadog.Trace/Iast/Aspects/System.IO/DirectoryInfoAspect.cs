@@ -18,7 +18,7 @@ public partial class DirectoryInfoAspect
     /// <summary>
     /// Launches a path traversal vulnerability if the file is tainted
     /// </summary>
-    /// <param name="path">the path or file</param>
+    /// <param name="path">the path</param>
     /// <returns>the path parameter</returns>
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::.ctor(System.String)")]
     [AspectMethodInsertBefore("System.IO.DirectoryInfo::CreateSubdirectory(System.String)")]

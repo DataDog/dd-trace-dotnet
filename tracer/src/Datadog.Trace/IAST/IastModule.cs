@@ -31,7 +31,7 @@ internal static class IastModule
     {
         try
         {
-            return GetScope(evidence, IntegrationId.File, VulnerabilityTypeName.PathTraversal, OperationNamePathTraversal, true);
+            return GetScope(evidence, IntegrationId.PathTraversal, VulnerabilityTypeName.PathTraversal, OperationNamePathTraversal, true);
         }
         catch (Exception ex)
         {
@@ -132,7 +132,7 @@ internal static class IastModule
     private static Scope? GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, bool taintedFromEvidenceRequired = false)
     {
         var tracer = Tracer.Instance;
-        if (!iastSettings.Enabled || (!tracer.Settings.IsIntegrationEnabled(integrationId)))
+        if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
         {
             // integration disabled, don't create a scope, skip this span
             return null;
