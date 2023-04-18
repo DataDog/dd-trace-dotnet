@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
                 tags.TopicName = AwsSnsCommon.GetTopicName(request.TopicArn);
             }
 
-            if (scope?.Span.Context is { } context)
+            if (scope?.Span.GetContext() is { } context)
             {
                 ContextPropagation.InjectHeadersIntoMessage<TTarget, TPublishRequest>(request, context);
             }

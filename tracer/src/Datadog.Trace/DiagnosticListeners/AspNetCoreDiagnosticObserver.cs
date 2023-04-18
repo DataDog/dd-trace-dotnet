@@ -564,7 +564,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (Iast.Iast.Instance.Settings.Enabled)
                 {
-                    rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
+                    rootSpan.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
                 }
             }
         }
@@ -612,7 +612,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (shouldUseIast)
                 {
-                    rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
+                    rootSpan.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
                 }
             }
         }

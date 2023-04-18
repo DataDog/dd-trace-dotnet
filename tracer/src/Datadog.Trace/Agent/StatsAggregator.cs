@@ -169,7 +169,7 @@ namespace Datadog.Trace.Agent
                 span.OperationName,
                 span.Type,
                 httpStatusCode,
-                span.Context.Origin == "synthetics");
+                span.TraceContext.Origin == "synthetics");
         }
 
         internal async Task Flush()

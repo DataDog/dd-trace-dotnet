@@ -74,7 +74,7 @@ namespace Datadog.Trace.Activity.Handlers
                     {
                         if (ActivityMappingById.TryGetValue(activityTraceId + parentSpanId, out ActivityMapping mapping))
                         {
-                            parent = mapping.Scope.Span.Context;
+                            parent = mapping.Scope.Span.GetContext();
                         }
                         else
                         {
@@ -95,7 +95,7 @@ namespace Datadog.Trace.Activity.Handlers
                         // we have a ParentSpanId/ParentId, but no TraceId/SpanId, so default to use the ParentId for lookup
                         if (ActivityMappingById.TryGetValue(parentId, out ActivityMapping mapping))
                         {
-                            parent = mapping.Scope.Span.Context;
+                            parent = mapping.Scope.Span.GetContext();
                         }
                     }
                 }
@@ -108,10 +108,10 @@ namespace Datadog.Trace.Activity.Handlers
                     if (activity.Parent is null || activity.Parent.StartTimeUtc < activeSpan.StartTime.UtcDateTime)
                     {
                         // TraceId (always 32 chars long even when using 64-bit ids)
-                        w3cActivity.TraceId = activeSpan.Context.RawTraceId;
+                        w3cActivity.TraceId = activeSpan.RawTraceId;
 
                         // SpanId (always 16 chars long)
-                        w3cActivity.ParentSpanId = activeSpan.Context.RawSpanId;
+                        w3cActivity.ParentSpanId = activeSpan.RawSpanId;
 
                         // We clear internals Id and ParentId values to force recalculation.
                         w3cActivity.RawId = null;

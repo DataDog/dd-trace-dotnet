@@ -20,7 +20,7 @@ internal class TaggingUtils
         if (span is Span spanClassTemp)
         {
             spanClass = spanClassTemp;
-            traceContext = spanClass.Context.TraceContext;
+            traceContext = spanClass.TraceContext;
         }
         else
         {

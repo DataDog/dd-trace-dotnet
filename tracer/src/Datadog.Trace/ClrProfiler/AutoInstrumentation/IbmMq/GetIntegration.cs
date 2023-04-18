@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
                             pathwayContext);
                         // we need to inject new context, since message objects can theoretically be reused
                         // hence we need to make sure the parent hash changes properly
-                        dataStreams.InjectPathwayContextAsBase64String(scope.Span.Context.PathwayContext, new IbmMqHeadersAdapter(msg));
+                        dataStreams.InjectPathwayContextAsBase64String(scope.Span.PathwayContext, new IbmMqHeadersAdapter(msg));
                     }
 
                     scope.DisposeWithException(exception);

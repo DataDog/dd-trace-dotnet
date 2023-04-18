@@ -171,7 +171,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     tags.AspNetArea = areaName;
                     tags.AspNetController = controllerName;
                     tags.AspNetAction = actionName;
-                    var rootspanTags = span.Context.TraceContext?.RootSpan.Tags;
+                    var rootspanTags = span.TraceContext?.RootSpan.Tags;
 
                     // in case of a transfered request, the child request shouldnt set a new http route.
                     if (rootspanTags is AspNetTags rootAspNetTags)
@@ -183,7 +183,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     }
                     else if (string.IsNullOrEmpty(rootspanTags.GetTag(Tags.HttpRoute)))
                     {
-                        span.Context.TraceContext?.RootSpan.Tags.SetTag(Tags.HttpRoute, routeUrl);
+                        span.TraceContext?.RootSpan.Tags.SetTag(Tags.HttpRoute, routeUrl);
                     }
 
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);

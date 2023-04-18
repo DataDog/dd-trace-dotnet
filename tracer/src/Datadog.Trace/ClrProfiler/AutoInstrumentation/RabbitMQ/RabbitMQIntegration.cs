@@ -125,7 +125,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                                    new[] { "direction:out", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" } :
                                    new[] { "direction:out", $"exchange:{tags.Exchange}", $"has_routing_key:{!string.IsNullOrEmpty(tags.RoutingKey)}", "type:rabbitmq" };
                 span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, GetHeadersSize(headers) + messageSize, 0);
-                dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, headersAdapter);
+                dataStreamsManager.InjectPathwayContext(span.PathwayContext, headersAdapter);
             }
             catch (Exception ex)
             {

@@ -45,7 +45,7 @@ namespace Datadog.Trace.Sampling
                                 "Matched on rule {RuleName}. Applying rate of {Rate} to trace id {TraceId}",
                                 rule.RuleName,
                                 sampleRate,
-                                span.Context.RawTraceId);
+                                span.RawTraceId);
                         }
 
                         return MakeSamplingDecision(span, sampleRate, rule.SamplingMechanism);
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Sampling
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug("No rules matched for trace {TraceId}", span.Context.RawTraceId);
+                Log.Debug("No rules matched for trace {TraceId}", span.RawTraceId);
             }
 
             return SamplingDecision.Default;

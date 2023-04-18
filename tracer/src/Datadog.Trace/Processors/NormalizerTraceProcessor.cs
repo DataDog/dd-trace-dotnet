@@ -58,7 +58,7 @@ namespace Datadog.Trace.Processors
             }
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L133-L135
-            var traceContext = trace.Array![trace.Offset].Context.TraceContext;
+            var traceContext = trace.Array![trace.Offset].TraceContext;
 
             if (!string.IsNullOrEmpty(traceContext.Environment))
             {
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Processors
             if (span.StartTime < Year2000Time)
             {
                 Log.Debug("Fixing malformed trace. Start date is invalid (reason:invalid_start_date), setting span.start=time.now(): {Span}", span);
-                var now = span.Context.TraceContext.Clock.UtcNow;
+                var now = span.TraceContext.Clock.UtcNow;
                 var start = now - span.Duration;
                 if (start.ToUnixTimeNanoseconds() < 0)
                 {

@@ -198,7 +198,7 @@ namespace Datadog.Trace
                     Log.Debug<ulong, string, int>(
                         "Closing span {SpanId} triggered a partial flush of trace {TraceId} with {SpanCount} pending spans",
                         span.SpanId,
-                        span.Context.RawTraceId,
+                        span.RawTraceId,
                         _spans.Count);
 
                     spansToWrite = _spans.GetArray();
@@ -275,7 +275,7 @@ namespace Datadog.Trace
                 return;
             }
 
-            if (spans.Array![spans.Offset].Context.TraceContext?.SamplingPriority <= 0)
+            if (spans.Array![spans.Offset].TraceContext?.SamplingPriority <= 0)
             {
                 for (int i = 0; i < spans.Count; i++)
                 {

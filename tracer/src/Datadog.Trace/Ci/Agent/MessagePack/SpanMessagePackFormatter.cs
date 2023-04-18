@@ -78,7 +78,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
         public int Serialize(ref byte[] bytes, int offset, Span value, IFormatterResolver formatterResolver)
         {
-            var context = value.Context;
+            var context = value.GetContext();
             var testSessionTags = value.Tags as TestSessionSpanTags;
             var testModuleTags = value.Tags as TestModuleSpanTags;
             var testSuiteTags = value.Tags as TestSuiteSpanTags;
@@ -216,7 +216,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         private int WriteTags(ref byte[] bytes, int offset, Span span, ITags tags, ITagProcessor[] tagProcessors)
         {
             int originalOffset = offset;
-            var traceContext = span.Context.TraceContext;
+            var traceContext = span.TraceContext;
 
             // Start of "meta" dictionary. Do not add any string tags before this line.
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _metaBytes);
@@ -271,7 +271,8 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             }
 
             // add "version" tags to all spans whose service name is the default service name
-            if (string.Equals(span.Context.ServiceNameInternal, traceContext?.Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
+            // TODO: use span.ServiceNameInternal
+            if (string.Equals(span.GetContext().ServiceNameInternal, traceContext?.Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
             {
                 var version = traceContext?.ServiceVersion;
 
@@ -361,7 +362,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 }
 
                 // add "_sampling_priority_v1" tag
-                if (span.Context.TraceContext.SamplingPriority is { } samplingPriority)
+                if (span.TraceContext.SamplingPriority is { } samplingPriority)
                 {
                     count++;
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _samplingPriorityNameBytes);

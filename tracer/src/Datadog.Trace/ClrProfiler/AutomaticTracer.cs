@@ -97,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler
             // This is a compromise: we add an additional asynclocal read for the manual tracer when there is no parent trace,
             // but it allows us to remove the asynclocal write for the automatic tracer when running without manual instrumentation.
 
-            return DistributedTrace.Value ?? Tracer.Instance.InternalActiveScope?.Span?.Context;
+            return DistributedTrace.Value ?? Tracer.Instance.InternalActiveScope?.Span.GetContext();
         }
 
         /// <summary>

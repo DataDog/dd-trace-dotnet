@@ -49,8 +49,8 @@ public sealed class Test
 
         scope.Span.Type = SpanTypes.Test;
         scope.Span.ResourceName = $"{suite.Name}.{name}";
-        scope.Span.Context.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep, SamplingMechanism.Manual);
-        scope.Span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
+        scope.Span.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep, SamplingMechanism.Manual);
+        scope.Span.TraceContext.Origin = TestTags.CIAppTestOriginName;
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
 
         _scope = scope;
@@ -339,7 +339,7 @@ public sealed class Test
         var tags = (TestSpanTags)scope.Span.Tags;
 
         // Calculate duration beforehand
-        duration ??= _scope.Span.Context.TraceContext.Clock.ElapsedSince(scope.Span.StartTime);
+        duration ??= _scope.Span.TraceContext.Clock.ElapsedSince(scope.Span.StartTime);
 
         // Set coverage
         if (CIVisibility.Settings.CodeCoverageEnabled == true)

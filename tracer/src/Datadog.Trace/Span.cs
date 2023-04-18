@@ -110,13 +110,13 @@ namespace Datadog.Trace
         /// </summary>
         internal ulong SpanId => _context.SpanId;
 
-        internal ulong? ParentId => _context.Parent?.SpanId;
+        internal ulong? ParentId => _context.ParentInternal?.SpanId;
 
         internal string RawTraceId => _context.RawTraceId;
 
         internal string RawSpanId => _context.RawSpanId;
 
-        internal ISpanContext Parent => _context.Parent;
+        internal ISpanContext Parent => _context.ParentInternal;
 
         /// <summary>
         /// Gets <i>local root span id</i>, i.e. the <c>SpanId</c> of the span that is the root of the local, non-reentrant
@@ -514,8 +514,10 @@ namespace Datadog.Trace
         /// <param name="manager">The <see cref="DataStreamsManager"/> to use</param>
         /// <param name="checkpointKind">The type of the checkpoint</param>
         /// <param name="edgeTags">The edge tags for this checkpoint. NOTE: These MUST be sorted alphabetically</param>
-        internal void SetCheckpoint(DataStreamsManager manager, CheckpointKind checkpointKind, string[] edgeTags) =>
-            _context.SetCheckpoint(manager, checkpointKind, edgeTags);
+        /// <param name="payloadSizeBytes">Payload size in bytes</param>
+        /// <param name="timeInQueueMs">Edge start time extracted from the message metadata. Used only if this is start of the pathway</param>
+        internal void SetCheckpoint(DataStreamsManager manager, CheckpointKind checkpointKind, string[] edgeTags, long payloadSizeBytes, long timeInQueueMs) =>
+            _context.SetCheckpoint(manager, checkpointKind, edgeTags, payloadSizeBytes, timeInQueueMs);
 
         /// <summary>
         /// Merges two DataStreams <see cref="PathwayContext"/>

@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                         startTime: null,
                         addToTraceContext: false);
 
-                    if (span?.Context != null)
+                    if (span != null)
                     {
                         // Add distributed tracing headers to the HTTP request.
                         // The expected sequence of calls is GetRequestStream -> GetResponse. Headers can't be modified after calling GetRequestStream.
@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                         // Instead, we generate a spancontext and inject it in the headers. GetResponse will fetch them and create an active scope with the right id.
                         // Additionally, add the request headers to a cache to indicate that distributed tracing headers were
                         // added by us, not the application
-                        SpanContextPropagator.Instance.Inject(span.Context, request.Headers.Wrap());
+                        SpanContextPropagator.Instance.Inject(span.GetContext(), request.Headers.Wrap());
                         HeadersInjectedCache.SetInjectedHeaders(request.Headers);
                     }
                 }

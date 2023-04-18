@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
                 {
                     var edgeTags = new[] { "direction:out", $"topic:{instance.Name}", $"type:{IbmMqConstants.QueueType}" };
                     scope.Span.SetDataStreamsCheckpoint(dataStreams, CheckpointKind.Produce, edgeTags, msg.MessageLength, 0);
-                    dataStreams.InjectPathwayContextAsBase64String(scope.Span.Context.PathwayContext, new IbmMqHeadersAdapter(msg));
+                    dataStreams.InjectPathwayContextAsBase64String(scope.Span.PathwayContext, new IbmMqHeadersAdapter(msg));
                 }
 
                 return new CallTargetState(scope);

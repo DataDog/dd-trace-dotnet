@@ -95,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                     {
                         if (setSamplingPriority)
                         {
-                            scope.Span.Context.TraceContext.SetSamplingPriority(existingSpanContext.SamplingPriority.Value);
+                            scope.Span.TraceContext.SetSamplingPriority(existingSpanContext.SamplingPriority.Value);
                         }
 
                         if (returnValue is HttpWebResponse response)

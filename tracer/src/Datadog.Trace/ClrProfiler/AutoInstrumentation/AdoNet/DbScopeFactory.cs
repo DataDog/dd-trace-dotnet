@@ -81,12 +81,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                             && tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Service)
                         {
                             _dbCommandCachingLogged = true;
-                            var spanContext = scope.Span.Context;
+                            var span = scope.Span;
                             Log.Warning(
                                 "The {CommandType} IDbCommand instance already contains DBM information. Caching of the command objects is not supported with full DBM mode. [s_id: {SpanId}, t_id: {TraceId}]",
                                 command.CommandType,
-                                spanContext.RawSpanId,
-                                spanContext.RawTraceId);
+                                span.RawSpanId,
+                                span.RawTraceId);
                         }
                     }
                     else
