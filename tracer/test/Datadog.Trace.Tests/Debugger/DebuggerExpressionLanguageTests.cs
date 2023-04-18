@@ -46,6 +46,8 @@ namespace Datadog.Trace.Tests.Debugger
                 Null = null,
                 Nested = new TestStruct.NestedObject { NestedString = "Hello from nested object", Nested = new TestStruct.NestedObject { NestedString = "Hello from another nested object" } }
             };
+
+            TestObject.Nested.CreateCircleRef();
         }
 
         internal TestStruct TestObject { get; set; }
@@ -327,7 +329,7 @@ namespace Datadog.Trace.Tests.Debugger
 
             internal class NestedObject
             {
-                private string _string = "I'm a string field";
+                private NestedObject _circleRef;
 
                 private TimeSpan _timeSpan = new TimeSpan();
 
@@ -336,6 +338,8 @@ namespace Datadog.Trace.Tests.Debugger
                 private IEnumerable<int> _ienumerable = Enumerable.Range(0, 4);
 
                 private IReadOnlyList<int> _readonlyList = new ArraySegment<int>(new int[] { 1, 2, 3, 4 });
+
+                private string _string = "I'm a string field";
 
                 private List<List<int>> _listOfLists = new List<List<int>>()
                 {
@@ -372,6 +376,12 @@ namespace Datadog.Trace.Tests.Debugger
                 public string NestedString { get; set; }
 
                 public NestedObject Nested { get; set; }
+
+                public void CreateCircleRef()
+                {
+                    _circleRef = new NestedObject();
+                    _circleRef._circleRef = new NestedObject();
+                }
 
                 public override string ToString()
                 {

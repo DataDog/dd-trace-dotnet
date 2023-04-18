@@ -48,7 +48,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private static readonly string[] AllowedSpecialCasedCollectionTypeNames = { }; // "RangeIterator"
 
-        private static readonly Type[] AllowedTypesSafeToCallToString =
+        internal static readonly Type[] AllowedTypesSafeToCallToString =
         {
             typeof(DateTime),
             typeof(TimeSpan),
@@ -65,11 +65,11 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(SecureString),
         };
 
-        internal static bool IsSafeToCallToString(Type type, bool includeCollection = true)
+        internal static bool IsSafeToCallToString(Type type)
         {
             return TypeExtensions.IsSimple(type) ||
                    AllowedTypesSafeToCallToString.Contains(type) ||
-                   (includeCollection && IsSupportedCollection(type));
+                   IsSupportedCollection(type);
         }
 
         internal static bool IsSupportedDictionary(object o)

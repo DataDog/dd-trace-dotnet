@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -19,7 +20,8 @@ internal partial class ProbeExpressionParser<T>
 {
     private Expression DumpExpression(Expression expression, List<ParameterExpression> scopeMembers)
     {
-        if (SupportedTypesService.IsSafeToCallToString(expression.Type, includeCollection: false))
+        if (Datadog.Trace.Debugger.Helpers.TypeExtensions.IsSimple(expression.Type) ||
+            SupportedTypesService.AllowedTypesSafeToCallToString.Contains(expression.Type))
         {
             return Expression.Call(expression, GetMethodByReflection(typeof(object), nameof(object.ToString), Type.EmptyTypes));
         }
