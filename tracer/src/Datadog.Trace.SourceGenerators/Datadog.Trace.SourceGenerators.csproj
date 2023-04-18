@@ -7,17 +7,17 @@
   <ItemGroup>
     <Compile Include="..\Datadog.Trace\ClrProfiler\InstrumentationCategory.cs" Link="InstrumentationDefinitions\InstrumentationCategory.cs" />
     <Compile Include="..\Datadog.Trace\ClrProfiler\DefinitionsIdAttribute.cs" Link="InstrumentationDefinitions\DefinitionsIdAttribute.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\Dataflow\AspectType.cs" Link="AspectsDefinitions\AspectType.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\Dataflow\AspectAttribute.cs" Link="AspectsDefinitions\AspectAttribute.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\Dataflow\AspectClassAttribute.cs" Link="AspectsDefinitions\AspectClassAttribute.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\Dataflow\AspectCtorReplaceAttribute.cs" Link="AspectsDefinitions\AspectCtorReplaceAttribute.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\Dataflow\AspectFilter.cs" Link="AspectsDefinitions\AspectFilter.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\Dataflow\AspectMethodInsertAfterAttribute.cs" Link="AspectsDefinitions\AspectMethodInsertAfterAttribute.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\Dataflow\AspectMethodInsertBeforeAttribute.cs" Link="AspectsDefinitions\AspectMethodInsertBeforeAttribute.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\Dataflow\AspectMethodReplaceAttribute.cs" Link="AspectsDefinitions\AspectMethodReplaceAttribute.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\Helpers\StringExtensions.cs" Link="AspectsDefinitions\StringExtensions.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\VulnerabilityType.cs" Link="AspectsDefinitions\VulnerabilityType.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\VulnerabilityTypeName.cs" Link="AspectsDefinitions\VulnerabilityTypeName.cs" />
+    <Compile Include="..\Datadog.Trace\IAST\Dataflow\AspectType.cs" Link="AspectsDefinitions\AspectType.cs" />
+    <Compile Include="..\Datadog.Trace\IAST\Dataflow\AspectAttribute.cs" Link="AspectsDefinitions\AspectAttribute.cs" />
+    <Compile Include="..\Datadog.Trace\IAST\Dataflow\AspectClassAttribute.cs" Link="AspectsDefinitions\AspectClassAttribute.cs" />
+    <Compile Include="..\Datadog.Trace\IAST\Dataflow\AspectCtorReplaceAttribute.cs" Link="AspectsDefinitions\AspectCtorReplaceAttribute.cs" />
+    <Compile Include="..\Datadog.Trace\IAST\Dataflow\AspectFilter.cs" Link="AspectsDefinitions\AspectFilter.cs" />
+    <Compile Include="..\Datadog.Trace\IAST\Dataflow\AspectMethodInsertAfterAttribute.cs" Link="AspectsDefinitions\AspectMethodInsertAfterAttribute.cs" />
+    <Compile Include="..\Datadog.Trace\IAST\Dataflow\AspectMethodInsertBeforeAttribute.cs" Link="AspectsDefinitions\AspectMethodInsertBeforeAttribute.cs" />
+    <Compile Include="..\Datadog.Trace\IAST\Dataflow\AspectMethodReplaceAttribute.cs" Link="AspectsDefinitions\AspectMethodReplaceAttribute.cs" />
+    <Compile Include="..\Datadog.Trace\IAST\Helpers\StringExtensions.cs" Link="AspectsDefinitions\StringExtensions.cs" />
+    <Compile Include="..\Datadog.Trace\IAST\VulnerabilityType.cs" Link="AspectsDefinitions\VulnerabilityType.cs" />
+    <Compile Include="..\Datadog.Trace\IAST\VulnerabilityTypeName.cs" Link="AspectsDefinitions\VulnerabilityTypeName.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" PrivateAssets="all" />
