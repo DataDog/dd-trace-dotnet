@@ -110,7 +110,6 @@ endif()
 target_compile_definitions(${PROFILER_STATIC_LIB_NAME} PUBLIC "-D_GLIBCXX_USE_CXX11_ABI=0")
 
 target_link_libraries(${PROFILER_STATIC_LIB_NAME}
-    fmt-lib
     libunwind-lib
     libdatadog-lib
     coreclr
@@ -123,7 +122,7 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -ldl
 )
 
-add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt-lib libdatadog-lib libunwind-lib coreclr spdlog-headers PPDB)
+add_dependencies(${PROFILER_STATIC_LIB_NAME} libdatadog-lib libunwind-lib coreclr spdlog-headers PPDB)
 
 # ******************************************************
 # Define shared target
