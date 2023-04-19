@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Nuke.Common;
 using Nuke.Common.IO;
+using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
@@ -236,6 +237,7 @@ internal static partial class DotNetSettingsExtensions
 
         if (enabled)
         {
+            settings = settings.AddProcessEnvironmentVariable("DD_LOGGER_BUILD_SOURCESDIRECTORY", NukeBuild.RootDirectory);
             var pArgConf = settings.ProcessArgumentConfigurator ?? (args => args);
             return settings.SetProcessArgumentConfigurator(
                 args => pArgConf(args.Add("--logger:datadog")));
