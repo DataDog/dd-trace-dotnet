@@ -73,14 +73,40 @@ internal abstract class GraphQLSecurity
                         break;
                     }
 
-                    // if Value is VariableReference
-                    if (toDuckValue.TryDuckCast<VariableReferenceProxy>(out var variableRef))
+                    value = GetValue(toDuckValue);
+
+                    object GetValue(object duckVal)
                     {
-                        value = GetVariableValue(context, variableRef.Name);
-                    }
-                    else if (toDuckValue.TryDuckCast<GraphQLValueProxy>(out var argValue))
-                    {
-                        value = argValue.Value;
+                        // if Value is VariableReference
+                        if (duckVal.TryDuckCast<GraphQLObjectValueProxy>(out var objFieldValue))
+                        {
+                            var dic = new Dictionary<string, object>();
+                            // return objFieldValue.ObjectFields.Select(GetValue).ToList();
+
+                            foreach (var obj in objFieldValue.ObjectFields)
+                            {
+                                if (obj.TryDuckCast<GraphQLObjectFieldProxy>(out var objField))
+                                {
+                                    dic.Add(objField.NameNode.Name, GetValue(objField.Value));
+                                }
+                            }
+
+                            return dic;
+                        }
+                        else if (duckVal.TryDuckCast<GraphQLValuesProxy>(out var argValues))
+                        {
+                            return argValues.Values.Select(GetValue).ToList();
+                        }
+                        else if (duckVal.TryDuckCast<GraphQLValueProxy>(out var argValue))
+                        {
+                            return GetValue(argValue.Value);
+                        }
+                        else if (duckVal.TryDuckCast<VariableReferenceProxy>(out var variableRef))
+                        {
+                            return GetVariableValue(context, variableRef.Name);
+                        }
+
+                        return duckVal.ToString();
                     }
                 }
                 else
