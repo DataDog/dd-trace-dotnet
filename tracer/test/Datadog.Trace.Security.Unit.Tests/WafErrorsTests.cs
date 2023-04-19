@@ -44,7 +44,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             waf.Should().NotBeNull();
             initResult.Success.Should().BeTrue();
             initResult.FailedToLoadRules.Should().Be(0);
-            initResult.LoadedRules.Should().Be(135);
+            initResult.LoadedRules.Should().Be(136);
             initResult.Errors.Should().BeEmpty();
             initResult.HasErrors.Should().BeFalse();
             initResult.ErrorMessage.Should().BeNullOrEmpty();
