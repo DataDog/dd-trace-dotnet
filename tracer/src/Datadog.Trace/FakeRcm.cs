@@ -9,6 +9,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -66,7 +67,8 @@ namespace Datadog.Trace
             {
                 GlobalSettings.SetDebugEnabled(debugLogsEnabled.Value);
                 Security.Instance.SetDebugEnabled(debugLogsEnabled.Value);
-                // TODO: notify the native tracer and continuous profiler
+
+                NativeMethods.UpdateSettings(new[] { "DD_TRACE_DEBUG" }, new[] { debugLogsEnabled.Value ? "1" : "0" });
             }
 
             TracerManager.ReplaceGlobalManager(newSettings, TracerManagerFactory.Instance);

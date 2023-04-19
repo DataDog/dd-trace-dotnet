@@ -46,7 +46,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     // check if debug mode is enabled
     if (IsDebugEnabled())
     {
-        Logger::EnableDebug();
+        Logger::EnableDebug(true);
     }
 
     CorProfilerBase::Initialize(cor_profiler_info_unknown);
@@ -1296,6 +1296,37 @@ void CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
     else
     {
         Logger::Info("IAST is disabled.");
+    }
+}
+
+void CorProfiler::UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
+{
+    for (int i = 0; i < length; i++)
+    {
+        if (wcscmp(keys[i], L"DD_TRACE_DEBUG") == 0)
+        {
+            if (values[i] == nullptr || *values[i] == L'\0')
+            {
+                continue;
+            }
+
+            WSTRING value(values[i]);
+
+            if (IsTrue(value))
+            {
+                Logger::EnableDebug(true);
+                Logger::Info("Debug logging has been turned on by remote configuration");
+            }
+            else if (IsFalse(value))
+            {
+                Logger::EnableDebug(false);
+                Logger::Info("Debug logging has been turned off by remote configuration");
+            }
+            else
+            {
+                Logger::Warn("Received an invalid value for DD_TRACE_DEBUG: ", value);
+            }            
+        }        
     }
 }
 

@@ -176,7 +176,10 @@ EXTERN_C VOID STDAPICALLTYPE RegisterIastAspects(WCHAR** aspects, int aspectsLen
     trace::profiler->RegisterIastAspects(aspects, aspectsLength);
 }
 
-
+EXTERN_C VOID STDAPICALLTYPE UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
+{
+    return trace::profiler->UpdateSettings(keys, values, length);
+}
 
 #ifndef _WIN32
 EXTERN_C void *dddlopen (const char *__file, int __mode)
