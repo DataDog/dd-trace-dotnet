@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP3_0_OR_GREATER
+#if NETCOREAPP3_1_OR_GREATER
 
 using System.Net;
 using System.Threading.Tasks;
@@ -41,13 +41,15 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestQuerySecurity(string query)
         {
-            EnableDebugMode();
             await fixture.TryStartApp(this, enableSecurity: true, externalRulesFile: DefaultRuleFile);
             SetHttpPort(fixture.HttpPort);
 
             var settings = VerifyHelper.GetSpanVerifierSettings(query);
 
-            // IncludeAllHttpSpans = true; // Include graphql spans
+            // On netcoreapp3.1 and net5.0 the response content type is application/json
+            // So we change it to application/graphql-response+json to match the newer version
+            settings.AddSimpleScrubber("http.response.headers.content-type: application/json; charset=utf-8", "http.response.headers.content-type: application/graphql-response+json; charset=utf-8");
+
             await TestAppSecRequestWithVerifyAsync(fixture.Agent, "/graphql", query, 1, 1, settings);
         }
     }

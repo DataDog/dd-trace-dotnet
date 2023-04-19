@@ -38,7 +38,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM
         /// <param name="node">The execution node of the GraphQL operation.</param>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TContext, TNode>(TTarget instance, TContext context, TNode node)
-        where TContext : IExecutionContext
         where TNode : IExecutionNode
         {
             GraphQLSecurity.RegisterResolver(context, node, true);

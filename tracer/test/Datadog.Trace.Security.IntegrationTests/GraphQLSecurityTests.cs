@@ -11,23 +11,16 @@ using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
+#pragma warning disable SA1402 // file may only contain a single type
+#pragma warning disable SA1649 // file name should match first type name
+
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class GraphQLSecurityTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
+    public class GraphQL7SecurityTests : GraphQLSecurityTestsBase
     {
-        private readonly AspNetCoreTestFixture fixture;
-
-        public GraphQLSecurityTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base("GraphQL7", outputHelper, "/shutdown", samplesDir: "test/test-applications/integrations", changeDefaults: true)
+        public GraphQL7SecurityTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, "GraphQL7")
         {
-            this.fixture = fixture;
-            this.fixture.SetOutput(outputHelper);
-        }
-
-        public override void Dispose()
-        {
-            base.Dispose();
-            fixture.SetOutput(null);
         }
 
         [SkippableTheory]
@@ -40,14 +33,94 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData(@"{""query"":""mutation createVarInArray($bobName:String!){createHumans(names: [\""Alice\"", $bobName]){name}}"",""variables"":{""bobName"": ""<script>test""}}")]
         [Trait("RunOnWindows", "True")]
         public async Task TestQuerySecurity(string query)
+            => await Test(query);
+    }
+
+    public class GraphQL4SecurityTests : GraphQLSecurityTestsBase
+    {
+        public GraphQL4SecurityTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, "GraphQL4")
         {
-            EnableDebugMode();
-            await fixture.TryStartApp(this, enableSecurity: true, externalRulesFile: DefaultRuleFile);
-            SetHttpPort(fixture.HttpPort);
+        }
+
+        [SkippableTheory]
+        [InlineData(@"{""query"":""mutation objectNameNormal{createHuman(human: { name: \""Alice\"" }){id name}}""}")]
+        [InlineData(@"{""query"":""mutation objectName{createHuman(human: { name: \""<script>test\"" }){id name}}""}")]
+        [InlineData(@"{""query"":""mutation objectVarName($humanName:String!){createHuman(human: { name: $humanName }){id name}}"",""variables"":{""humanName"": ""<script>test""}}")]
+        [InlineData(@"{""query"":""mutation objectVar($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"":{""human"":{""name"": ""<script>test""}}}")]
+        [InlineData(@"{""query"":""mutation createArray{createHumans(names: [\""Alice\"", \""<script>test\""]){name}}""}")]
+        [InlineData(@"{""query"":""mutation createArrayVar($humanNames:[String!]!){createHumans(names: $humanNames){name}}"",""variables"":{""humanNames"": [""Alice"", ""<script>test""]}}")]
+        [InlineData(@"{""query"":""mutation createVarInArray($bobName:String!){createHumans(names: [\""Alice\"", $bobName]){name}}"",""variables"":{""bobName"": ""<script>test""}}")]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestQuerySecurity(string query)
+            => await Test(query);
+    }
+
+    public class GraphQL3SecurityTests : GraphQLSecurityTestsBase
+    {
+        public GraphQL3SecurityTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, "GraphQL3")
+        {
+        }
+
+        [SkippableTheory]
+        [InlineData(@"{""query"":""mutation objectNameNormal{createHuman(human: { name: \""Alice\"" }){id name}}""}")]
+        [InlineData(@"{""query"":""mutation objectName{createHuman(human: { name: \""<script>test\"" }){id name}}""}")]
+        [InlineData(@"{""query"":""mutation objectVarName($humanName:String!){createHuman(human: { name: $humanName }){id name}}"",""variables"":{""humanName"": ""<script>test""}}")]
+        [InlineData(@"{""query"":""mutation objectVar($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"":{""human"":{""name"": ""<script>test""}}}")]
+        [InlineData(@"{""query"":""mutation createArray{createHumans(names: [\""Alice\"", \""<script>test\""]){name}}""}")]
+        [InlineData(@"{""query"":""mutation createArrayVar($humanNames:[String!]!){createHumans(names: $humanNames){name}}"",""variables"":{""humanNames"": [""Alice"", ""<script>test""]}}")]
+        [InlineData(@"{""query"":""mutation createVarInArray($bobName:String!){createHumans(names: [\""Alice\"", $bobName]){name}}"",""variables"":{""bobName"": ""<script>test""}}")]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestQuerySecurity(string query)
+            => await Test(query);
+    }
+
+    public class GraphQL2SecurityTests : GraphQLSecurityTestsBase
+    {
+        public GraphQL2SecurityTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, "GraphQL")
+        {
+        }
+
+        [SkippableTheory]
+        [InlineData(@"{""query"":""mutation objectNameNormal{createHuman(human: { name: \""Alice\"" }){id name}}""}")]
+        [InlineData(@"{""query"":""mutation objectName{createHuman(human: { name: \""<script>test\"" }){id name}}""}")]
+        [InlineData(@"{""query"":""mutation objectVarName($humanName:String!){createHuman(human: { name: $humanName }){id name}}"",""variables"":{""humanName"": ""<script>test""}}")]
+        [InlineData(@"{""query"":""mutation objectVar($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"":{""human"":{""name"": ""<script>test""}}}")]
+        [InlineData(@"{""query"":""mutation createArray{createHumans(names: [\""Alice\"", \""<script>test\""]){name}}""}")]
+        [InlineData(@"{""query"":""mutation createArrayVar($humanNames:[String!]!){createHumans(names: $humanNames){name}}"",""variables"":{""humanNames"": [""Alice"", ""<script>test""]}}")]
+        [InlineData(@"{""query"":""mutation createVarInArray($bobName:String!){createHumans(names: [\""Alice\"", $bobName]){name}}"",""variables"":{""bobName"": ""<script>test""}}")]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestQuerySecurity(string query)
+            => await Test(query);
+    }
+
+    public class GraphQLSecurityTestsBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
+    {
+        private readonly AspNetCoreTestFixture _fixture;
+
+        protected GraphQLSecurityTestsBase(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string sampleName)
+            : base(sampleName, outputHelper, "/shutdown", samplesDir: "test/test-applications/integrations", changeDefaults: true)
+        {
+            _fixture = fixture;
+            _fixture.SetOutput(outputHelper);
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            _fixture.SetOutput(null);
+        }
+
+        protected async Task Test(string query)
+        {
+            await _fixture.TryStartApp(this, enableSecurity: true, externalRulesFile: DefaultRuleFile);
+            SetHttpPort(_fixture.HttpPort);
 
             var settings = VerifyHelper.GetSpanVerifierSettings(query);
 
-            await TestAppSecRequestWithVerifyAsync(fixture.Agent, "/graphql", query, 1, 1, settings);
+            await TestAppSecRequestWithVerifyAsync(_fixture.Agent, "/graphql", query, 1, 1, settings);
         }
     }
 }
