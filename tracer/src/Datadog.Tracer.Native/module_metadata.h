@@ -108,6 +108,8 @@ public:
 
     TracerTokens* GetTracerTokens()
     {
+        std::scoped_lock<std::mutex> lock(wrapper_mutex);
+
         if (tracerTokens == nullptr)
         {
             tracerTokens = std::make_unique<TracerTokens>(this, enable_by_ref_instrumentation, enable_calltarget_state_by_ref);
@@ -117,6 +119,8 @@ public:
 
     debugger::DebuggerTokens* GetDebuggerTokens()
     {
+        std::scoped_lock<std::mutex> lock(wrapper_mutex);
+
         if (debuggerTokens == nullptr)
         {
             debuggerTokens = std::make_unique<debugger::DebuggerTokens>(this);
