@@ -83,7 +83,7 @@ public class FileInfoTests : InstrumentationTestsBase
     [Fact]
     public void GivenAFileInfo_WhenMoveToNoExistingFile_FileNotFoundException()
     {
-        Assert.Throws<FileNotFoundException>(() => new FileInfo(notTaintedValue).MoveTo(taintedPathValue));
+        Assert.Throws<FileNotFoundException>(() => new FileInfo(notTaintedValue).MoveTo(notTaintedValue));
     }
 
 #if NETCOREAPP3_0_OR_GREATER

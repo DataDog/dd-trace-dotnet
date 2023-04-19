@@ -14,11 +14,9 @@ public class StreamReaderTests : InstrumentationTestsBase
 {
     protected string taintedValue = "tainted";
     protected string notTaintedValue = "c:\\nottainted2";
-    protected string taintedPathValue = "c:\\path";
 
     public StreamReaderTests()
     {
-        AddTainted(taintedPathValue);
         AddTainted(taintedValue);
     }
 

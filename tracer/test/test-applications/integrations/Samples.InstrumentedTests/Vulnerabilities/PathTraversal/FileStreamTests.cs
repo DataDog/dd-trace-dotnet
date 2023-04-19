@@ -12,14 +12,12 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
 public class FileStreamTests : InstrumentationTestsBase
 {
-    protected string taintedValue = "tainted";
     protected string notTaintedValue = "c:\\nottainte9d";
     protected string taintedPathValue = "c:\\path";
 
     public FileStreamTests()
     {
         AddTainted(taintedPathValue);
-        AddTainted(taintedValue);
     }
 
     [Fact]

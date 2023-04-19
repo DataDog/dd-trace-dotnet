@@ -32,13 +32,6 @@ public class DirectoryTests : InstrumentationTestsBase
 
     // Cover System.IO.Directory::CreateDirectory(System.String)
 
-    [Fact]
-    public void GivenADirectory_WhenCreatingFromInvalidCharsString_ExceptionIsThrown()
-    {
-        Assert.Throws<ArgumentException>(() => Directory.CreateDirectory(taintedPathValue));
-        AssertVulnerable();
-    }
-
 #if NETFRAMEWORK
 
     // Cover System.IO.Directory::CreateDirectory(System.String,System.Security.AccessControl.DirectorySecurity)

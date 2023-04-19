@@ -15,12 +15,10 @@ public class StreamWriterTests : InstrumentationTestsBase
 {
     protected string taintedValue = "#invalidFileTainted#";
     protected string notTaintedValue = "nottainted";
-    protected string taintedPathValue = "c:\\path";
 
     public StreamWriterTests()
     {
         AddTainted(taintedValue);
-        AddTainted(taintedPathValue);
     }
 
     [Fact]

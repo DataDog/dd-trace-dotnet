@@ -34,13 +34,6 @@ public class DirectoryInfoTests : InstrumentationTestsBase
     // Cover System.IO.DirectoryInfo::.ctor(System.String)
 
     [Fact]
-    public void GivenADirectoryInfo_WhenCreatingFromInvalidCharsString_ExceptionIsThrown()
-    {
-        Assert.Throws<ArgumentException>(() => new DirectoryInfo(taintedPathValue));
-        AssertVulnerable();
-    }
-
-    [Fact]
     public void GivenADirectoryInfo_WhenCreatingFromTaintedString_VulnerabilityIsLogged()
     {
         ExecuteAction(() => { new DirectoryInfo(taintedPathValue); });

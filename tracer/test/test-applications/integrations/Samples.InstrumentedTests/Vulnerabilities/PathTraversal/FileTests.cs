@@ -28,7 +28,7 @@ public class FileTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenAFileStream_WhenCreatingFromTaintedString_LocationIsCorrect()
+    public void GivenAFile_WhenWriteAllTextTaintedString_LocationIsCorrect()
     {
         ExecuteAction(() => { File.WriteAllText(taintedPathValue, notTaintedValue); });
         AssertLocation(nameof(FileTests));
