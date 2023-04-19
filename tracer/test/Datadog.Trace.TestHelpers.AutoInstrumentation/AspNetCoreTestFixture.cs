@@ -83,6 +83,14 @@ namespace Datadog.Trace.TestHelpers
 
                     int? port = null;
 
+                    Process.Exited += (_, _) =>
+                    {
+                        WriteToOutput("The process has exited");
+                        mutex.Set();
+                    };
+
+                    Process.EnableRaisingEvents = true;
+
                     Process.OutputDataReceived += (_, args) =>
                     {
                         if (args.Data != null)
@@ -120,7 +128,16 @@ namespace Datadog.Trace.TestHelpers
 
                     if (!mutex.Wait(TimeSpan.FromSeconds(15)))
                     {
-                        WriteToOutput("Timeout while waiting for the proces to start");
+                        WriteToOutput("Timeout while waiting for the process to start");
+
+                        if (Process.HasExited)
+                        {
+                            WriteToOutput($"The process has exited with exit code {Process.ExitCode}");
+                        }
+                        else
+                        {
+                            MemoryDumpHelper.CaptureMemoryDump(Process);
+                        }
                     }
 
                     if (port == null)
