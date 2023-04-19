@@ -83,3 +83,4 @@ steps:
   retryCountOnTaskFailure: ${{ parameters.retryCountForRunCommand }}
   env:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
+    DD_LOGGER_BUILD_SOURCESDIRECTORY: /project
