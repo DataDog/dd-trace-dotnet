@@ -131,6 +131,9 @@ namespace Datadog.Trace
 
         internal ITags Tags { get; set; }
 
+        // do not remove this property, it is accessed via reflection from older versions of the tracer
+        private SpanContext Context => _context;
+
         internal DateTimeOffset StartTime { get; private set; }
 
         internal TimeSpan Duration { get; private set; }
