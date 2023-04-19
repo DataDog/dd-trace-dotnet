@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], metadataSchemaVersion };
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsMongoDb();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsMongoDb(metadataSchemaVersion);
 
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
@@ -92,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                   .UseTextForParameters($"packageVersion={snapshotSuffix}.Schema{metadataSchemaVersion.ToUpper()}")
                                   .DisableRequireUniquePrefix();
 
-                ValidateIntegrationSpans(allMongoSpans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                ValidateIntegrationSpans(allMongoSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.MongoDb);
 

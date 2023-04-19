@@ -1,16 +1,17 @@
-// <copyright file="SpanMetadataRules.cs" company="Datadog">
+// <copyright file="SpanMetadataV0Rules.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System.Collections.Generic;
+using static Datadog.Trace.TestHelpers.SpanMetadataRulesHelpers;
 
 namespace Datadog.Trace.TestHelpers
 {
 #pragma warning disable SA1601 // Partial elements should be documented
-    public static partial class SpanMetadataRules
+    internal static class SpanMetadataV0Rules
     {
-        public static Result IsAdoNet(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAdoNetV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Type, "sql"))
             .Tags(s => s
@@ -19,7 +20,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "AdoNet")
                 .Matches("span.kind", "client"));
 
-        public static Result IsAerospike(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAerospikeV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "aerospike.command")
                 .Matches(Type, "aerospike"))
@@ -31,7 +32,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "aerospike")
                 .Matches("span.kind", "client"));
 
-        public static Result IsAspNet(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAspNetV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "aspnet.request")
                 .Matches(Type, "web"))
@@ -48,7 +49,7 @@ namespace Datadog.Trace.TestHelpers
                 // .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
 
-        public static Result IsAspNetMvc(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAspNetMvcV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "aspnet-mvc.request")
                 .Matches(Type, "web"))
@@ -66,7 +67,7 @@ namespace Datadog.Trace.TestHelpers
                 // .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
 
-        public static Result IsAspNetWebApi2(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAspNetWebApi2V0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "aspnet-webapi.request")
                 .Matches(Type, "web"))
@@ -93,7 +94,7 @@ namespace Datadog.Trace.TestHelpers
                 // .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
 
-        public static Result IsAspNetCore(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
+        public static Result IsAspNetCoreV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
                 .Matches(Name, "aspnet_core.request")
                 .Matches(Type, "web"))
@@ -111,7 +112,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
 
-        public static Result IsAspNetCoreMvc(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAspNetCoreMvcV0(this MockSpan span) => Result.FromSpan(span)
             .WithIntegrationName("AspNetCore")
             .Properties(s => s
                 .Matches(Name, "aspnet_core_mvc.request")
@@ -125,7 +126,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
 
-        public static Result IsAwsSqs(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAwsSqsV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "sqs.request")
                 .Matches(Type, "http"))
@@ -143,7 +144,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "client"));
 
-        public static Result IsCosmosDb(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsCosmosDbV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "cosmosdb.query")
                 .Matches(Type, "sql"))
@@ -155,7 +156,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "CosmosDb")
                 .Matches("span.kind", "client"));
 
-        public static Result IsCouchbase(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsCouchbaseV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "couchbase.query")
                 .Matches(Type, "db"))
@@ -168,7 +169,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "Couchbase")
                 .Matches("span.kind", "client"));
 
-        public static Result IsElasticsearchNet(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsElasticsearchNetV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "elasticsearch.query")
                 .Matches(Type, "elasticsearch"))
@@ -179,7 +180,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "elasticsearch-net")
                 .Matches("span.kind", "client"));
 
-        public static Result IsGraphQL(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsGraphQLV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .MatchesOneOf(Name, "graphql.execute", "graphql.validate")
                 .Matches(Type, "graphql"))
@@ -190,7 +191,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "GraphQL")
                 .Matches("span.kind", "server"));
 
-        public static Result IsGrpc(this MockSpan span, ISet<string> excludeTags) => Result.FromSpan(span, excludeTags)
+        public static Result IsGrpcV0(this MockSpan span, ISet<string> excludeTags) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
                 .Matches(Name, "grpc.request")
                 .Matches(Type, "grpc"))
@@ -204,7 +205,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "Grpc")
                 .MatchesOneOf("span.kind", "client", "server"));
 
-        public static Result IsHotChocolate(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsHotChocolateV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .MatchesOneOf(Name, "graphql.execute", "graphql.validate")
                 .Matches(Type, "graphql"))
@@ -215,7 +216,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "HotChocolate")
                 .Matches("span.kind", "server"));
 
-        public static Result IsHttpMessageHandler(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsHttpMessageHandlerV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "http.request")
                 .Matches(Type, "http"))
@@ -227,7 +228,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("component")
                 .Matches("span.kind", "client"));
 
-        public static Result IsKafka(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsKafkaV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .MatchesOneOf(Name, "kafka.consume", "kafka.produce")
                 .Matches(Type, "queue"))
@@ -242,7 +243,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "kafka")
                 .IsPresent("span.kind"));
 
-        public static Result IsMongoDb(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsMongoDbV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "mongodb.query")
                 .Matches(Type, "mongodb"))
@@ -255,7 +256,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "MongoDb")
                 .Matches("span.kind", "client"));
 
-        public static Result IsMsmq(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsMsmqV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "msmq.command")
                 .Matches(Type, "queue"))
@@ -267,7 +268,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "msmq")
                 .MatchesOneOf("span.kind", "client", "producer", "consumer"));
 
-        public static Result IsMySql(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsMySqlV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "mysql.query")
                 .Matches(Type, "sql"))
@@ -279,7 +280,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "MySql")
                 .Matches("span.kind", "client"));
 
-        public static Result IsNpgsql(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsNpgsqlV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "postgres.query")
                 .Matches(Type, "sql"))
@@ -290,7 +291,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "Npgsql")
                 .Matches("span.kind", "client"));
 
-        public static Result IsOpenTelemetry(this MockSpan span, ISet<string> resources, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
+        public static Result IsOpenTelemetryV0(this MockSpan span, ISet<string> resources, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => { })
             .AdditionalTags(s => s
                 .PassesThroughSource("OTEL Resource Attributes", resources))
@@ -303,7 +304,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("otel.status_description")
                 .MatchesOneOf("span.kind", "internal", "server", "client", "producer", "consumer"));
 
-        public static Result IsOracle(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsOracleV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "oracle.query")
                 .Matches(Type, "sql"))
@@ -313,7 +314,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "Oracle")
                 .Matches("span.kind", "client"));
 
-        public static Result IsProcess(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsProcessV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "command_execution")
                 .Matches(Type, "system"))
@@ -321,7 +322,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("cmd.environment_variables")
                 .Matches("span.kind", "internal"));
 
-        public static Result IsRabbitMQ(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsRabbitMQV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "amqp.command")
                 .Matches(Type, "queue"))
@@ -335,7 +336,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "RabbitMQ")
                 .IsPresent("span.kind"));
 
-        public static Result IsServiceRemoting(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsServiceRemotingV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .MatchesOneOf(Name, "service_remoting.client", "service_remoting.server"))
             .Tags(s => s
@@ -352,7 +353,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("service-fabric.service-remoting.invocation-id")
                 .MatchesOneOf("span.kind", "client", "server"));
 
-        public static Result IsServiceStackRedis(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsServiceStackRedisV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "redis.command")
                 .Matches(Type, "redis"))
@@ -365,7 +366,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "ServiceStackRedis")
                 .Matches("span.kind", "client"));
 
-        public static Result IsStackExchangeRedis(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsStackExchangeRedisV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "redis.command")
                 .Matches(Type, "redis"))
@@ -378,7 +379,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "StackExchangeRedis")
                 .Matches("span.kind", "client"));
 
-        public static Result IsSqlite(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsSqliteV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "sqlite.query")
                 .Matches(Type, "sql"))
@@ -389,7 +390,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "Sqlite")
                 .Matches("span.kind", "client"));
 
-        public static Result IsSqlClient(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsSqlClientV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "sql-server.query")
                 .Matches(Type, "sql"))
@@ -400,7 +401,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "SqlClient")
                 .Matches("span.kind", "client"));
 
-        public static Result IsWcf(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsWcfV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "wcf.request")
                 .Matches(Type, "web"))
@@ -411,7 +412,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "Wcf")
                 .Matches("span.kind", "server"));
 
-        public static Result IsWebRequest(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsWebRequestV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "http.request")
                 .Matches(Type, "http"))

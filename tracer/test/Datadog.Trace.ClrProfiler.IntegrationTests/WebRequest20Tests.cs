@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsWebRequest();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsWebRequest(metadataSchemaVersion);
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
                 Assert.Equal(expectedSpanCount, spans.Count);
-                ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var firstSpan = spans.First();
                 var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
