@@ -96,6 +96,14 @@ internal sealed class GraphQLSecurityCommon
 
     public static bool IsEnabled()
     {
+        // Check if ASM is Enabled
+        if (!Security.Instance.Settings.Enabled)
+        {
+            return false;
+        }
+
+        // Check if this is a WebSocket connection
+        // WebSocket connexion are not supported yet
 #if NETFRAMEWORK
         var httpContext = HttpContext.Current;
         var isWebsocket = httpContext is not null && httpContext.IsWebSocketRequest;
@@ -103,6 +111,6 @@ internal sealed class GraphQLSecurityCommon
         var httpContext = CoreHttpContextStore.Instance.Get();
         var isWebsocket = httpContext is not null && httpContext.WebSockets.IsWebSocketRequest;
 #endif
-        return Security.Instance.Settings.Enabled && !isWebsocket;
+        return !isWebsocket;
     }
 }
