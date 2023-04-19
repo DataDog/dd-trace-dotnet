@@ -109,10 +109,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "/handler-api/api?ps=false&ts=false", 500, 1 },
         };
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             span.Name switch
             {
-                "aspnet-webapi.request" => span.IsAspNetWebApi2(),
+                "aspnet-webapi.request" => span.IsAspNetWebApi2(metadataSchemaVersion),
                 _ => Result.DefaultSuccess,
             };
 
@@ -125,7 +125,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             await _fixture.TryStartApp(this, _output);
 
             var spans = await _fixture.WaitForSpans(Output, path, expectedSpanCount);
-            ValidateIntegrationSpans(spans, expectedServiceName: "Samples.Owin.WebApi2", isExternalSpan: false);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.Owin.WebApi2", isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);

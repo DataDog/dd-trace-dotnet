@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         }
 
         // Assert Npgsql because the Dapper application uses Postgres for the actual client
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsNpgsql();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsNpgsql(metadataSchemaVersion);
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
                 Assert.Equal(expectedSpanCount, spans.Count);
-                ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
             }
         }
     }

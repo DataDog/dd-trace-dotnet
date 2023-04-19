@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], metadataSchemaVersion };
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsElasticsearchNet();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsElasticsearchNet(metadataSchemaVersion);
 
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
@@ -148,7 +148,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                  .OrderBy(s => s.Start)
                                  .ToList();
 
-                ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
                 ValidateSpans(spans, (span) => span.Resource, expected);
                 telemetry.AssertIntegrationEnabled(IntegrationId.ElasticsearchNet);
             }

@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], metadataSchemaVersion };
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsCouchbase();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsCouchbase(metadataSchemaVersion);
 
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var spans = agent.WaitForSpans(13, 500);
                 Assert.True(spans.Count >= 13, $"Expecting at least 13 spans, only received {spans.Count}");
-                ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var expected = new List<string>
                 {

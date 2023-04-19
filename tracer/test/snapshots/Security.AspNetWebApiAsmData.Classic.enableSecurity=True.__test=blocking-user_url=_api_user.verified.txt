@@ -41,7 +41,7 @@
       runtime-id: Guid_1,
       span.kind: server,
       usr.id: user3,
-      _dd.appsec.waf.version: 1.8.2,
+      _dd.appsec.waf.version: 1.9.0,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },
@@ -50,7 +50,7 @@
       _dd.agent_psr: 1.0,
       _dd.appsec.enabled: 1.0,
       _dd.appsec.event_rules.error_count: 0.0,
-      _dd.appsec.event_rules.loaded: 135.0,
+      _dd.appsec.event_rules.loaded: 136.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
@@ -104,7 +104,7 @@
       runtime-id: Guid_1,
       span.kind: server,
       usr.id: user3,
-      _dd.appsec.event_rules.version: 1.5.2,
+      _dd.appsec.event_rules.version: 1.6.0,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"blk-001-002","name":"Block User Addresses","tags":{"category":"security_response","type":"block_user"}},"rule_matches":[{"operator":"exact_match","operator_value":"","parameters":[{"address":"usr.id","highlight":["user3"],"key_path":[],"value":"user3"}]}]}]},
       _dd.origin: appsec,
       _dd.p.dm: -0,

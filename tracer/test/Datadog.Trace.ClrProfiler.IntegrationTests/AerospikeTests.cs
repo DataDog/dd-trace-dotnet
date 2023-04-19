@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], metadataSchemaVersion };
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsAerospike();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsAerospike(metadataSchemaVersion);
 
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 using var s = new AssertionScope();
                 spans.Count.Should().Be(expectedSpanCount);
-                ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
 
