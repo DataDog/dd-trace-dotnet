@@ -33,6 +33,9 @@ internal readonly struct Location
 
     private void GetMethodPathFromStackFile(string? stackFile, out string? methodValue, out string? pathValue)
     {
+        methodValue = null;
+        pathValue = null;
+
         try
         {
             if (!string.IsNullOrEmpty(stackFile))
@@ -53,8 +56,5 @@ internal readonly struct Location
         {
             // we have an invalid stackFile
         }
-
-        methodValue = null;
-        pathValue = null;
     }
 }

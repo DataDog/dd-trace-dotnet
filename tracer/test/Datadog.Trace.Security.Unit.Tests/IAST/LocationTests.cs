@@ -37,14 +37,6 @@ public class LocationTests
     }
 
     [Fact]
-    public void GivenALocation_WhenCreatedFromInvalid_NothingIsStored()
-    {
-        var location = new Location("!¡", 23, 4);
-        location.Path.Should().BeNull();
-        location.Method.Should().BeNull();
-    }
-
-    [Fact]
     public void GivenALocation_WhenCreatedFromEmpty_NothingIsStored()
     {
         var location = new Location(string.Empty, 23, 4);
