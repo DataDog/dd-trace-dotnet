@@ -456,7 +456,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void OriginHeader_RootSpanTag()
         {
-            const ulong traceId = 9;
+            var traceId = (TraceId)9;
             const ulong spanId = 7;
             const int samplingPriority = SamplingPriorityValues.UserKeep;
             const string origin = "synthetics";
@@ -484,7 +484,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void OriginHeader_InjectFromChildSpan()
         {
-            const ulong traceId = 9;
+            var traceId = (TraceId)9;
             const ulong spanId = 7;
             const int samplingPriority = SamplingPriorityValues.UserKeep;
             const string origin = "synthetics";

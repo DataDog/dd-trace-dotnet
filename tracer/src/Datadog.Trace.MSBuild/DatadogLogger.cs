@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Ci;
@@ -15,7 +16,6 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Microsoft.Build.Framework;
 
@@ -28,9 +28,9 @@ namespace Datadog.Trace.MSBuild
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatadogLogger));
 
-        private Tracer _tracer = null;
-        private Span _buildSpan = null;
-        private ConcurrentDictionary<int, Span> _projects = new ConcurrentDictionary<int, Span>();
+        private readonly ConcurrentDictionary<int, Span> _projects = new();
+        private Tracer _tracer;
+        private Span _buildSpan;
 
         static DatadogLogger()
         {
@@ -367,7 +367,18 @@ namespace Datadog.Trace.MSBuild
             {
                 _level = level;
                 _message = message;
-                _context = span is null ? null : new Context(span.TraceId, span.SpanId, span.Context.Origin);
+
+                if (span is null)
+                {
+                    _context = null;
+                }
+                else
+                {
+                    var traceId = span.GetTraceIdStringForLogs();
+                    var spanId = span.SpanId.ToString(CultureInfo.InvariantCulture);
+
+                    _context = new Context(traceId, spanId, span.Context.Origin);
+                }
             }
 
             public override void Format(StringBuilder sb, LogFormatter formatter)
@@ -382,14 +393,19 @@ namespace Datadog.Trace.MSBuild
                     exception: null,
                     (JsonTextWriter writer, in Context? state) =>
                     {
-                        if (state.HasValue)
+                        if (state is { } context)
                         {
+                            // encode all 128 bits of the trace id as a hex string, or
+                            // encode only the lower 64 bits of the trace ids as decimal (not hex)
                             writer.WritePropertyName("dd.trace_id");
-                            writer.WriteValue($"{state.Value.TraceId}");
+                            writer.WriteValue(context.TraceId);
+
+                            // 64-bit span ids are always encoded as decimal (not hex)
                             writer.WritePropertyName("dd.span_id");
-                            writer.WriteValue($"{state.Value.SpanId}");
+                            writer.WriteValue(context.SpanId);
+
                             writer.WritePropertyName("_dd.origin");
-                            writer.WriteValue($"{state.Value.Origin}");
+                            writer.WriteValue(context.Origin);
                         }
 
                         return default;
@@ -398,11 +414,11 @@ namespace Datadog.Trace.MSBuild
 
             private readonly struct Context
             {
-                public readonly ulong TraceId;
-                public readonly ulong SpanId;
+                public readonly string TraceId;
+                public readonly string SpanId;
                 public readonly string Origin;
 
-                public Context(ulong traceId, ulong spanId, string origin)
+                public Context(string traceId, string spanId, string origin)
                 {
                     TraceId = traceId;
                     SpanId = spanId;

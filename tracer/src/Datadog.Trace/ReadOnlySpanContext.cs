@@ -7,17 +7,31 @@ namespace Datadog.Trace
 {
     internal class ReadOnlySpanContext : ISpanContext
     {
-        public ReadOnlySpanContext(ulong traceId, ulong spanId, string serviceName)
+        public ReadOnlySpanContext(TraceId traceId, ulong spanId, string serviceName)
         {
-            TraceId = traceId;
+            TraceId128 = traceId;
             SpanId = spanId;
             ServiceName = serviceName;
         }
 
-        public ulong TraceId { get; }
+        /// <summary>
+        /// Gets the lower 64 bits of the 128-bit trace identifier.
+        /// </summary>
+        ulong ISpanContext.TraceId => TraceId128.Lower;
 
+        /// <summary>
+        /// Gets the 128-bit trace identifier.
+        /// </summary>
+        public TraceId TraceId128 { get; }
+
+        /// <summary>
+        /// Gets the 64-bit span identifier.
+        /// </summary>
         public ulong SpanId { get; }
 
+        /// <summary>
+        /// Gets the service name to propagate to child spans.
+        /// </summary>
         public string ServiceName { get; }
     }
 }

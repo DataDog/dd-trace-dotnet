@@ -3,9 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Headers.Ip;
 using Xunit;
 
-namespace Datadog.Trace.Headers.Ip
+namespace Datadog.Trace.Tests.Headers.Ip
 {
     public class IpExtractionTests
     {

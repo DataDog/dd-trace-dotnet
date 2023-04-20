@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -31,10 +32,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         internal static IEnumerable<InstrumentationOptions> InstrumentationOptionsValues =>
             new List<InstrumentationOptions>
             {
-                new InstrumentationOptions(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: false),
-                new InstrumentationOptions(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: true),
-                new InstrumentationOptions(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: false),
-                new InstrumentationOptions(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: true),
+                new(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: false),
+                new(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: true),
+                new(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: false),
+                new(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: true),
             };
 
         public static IEnumerable<object[]> IntegrationConfig() =>
@@ -48,7 +49,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             from queryStringEnabled in new[] { true, false }
             from queryStringSizeAndExpectation in new[] { new KeyValuePair<int?, string>(null, "?key1=value1&<redacted>"), new KeyValuePair<int?, string>(200, "?key1=value1&<redacted>"), new KeyValuePair<int?, string>(2, "?k") }
             from metadataSchemaVersion in new[] { "v0", "v1" }
-            select new object[] { instrumentationOptions, socketHandlerEnabled, queryStringEnabled, queryStringSizeAndExpectation.Key,  queryStringSizeAndExpectation.Value, metadataSchemaVersion };
+            from traceId128Enabled in new[] { true, false }
+            select new object[]
+                   {
+                       instrumentationOptions,
+                       socketHandlerEnabled,
+                       queryStringEnabled,
+                       queryStringSizeAndExpectation.Key,
+                       queryStringSizeAndExpectation.Value,
+                       metadataSchemaVersion,
+                       traceId128Enabled
+                   };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsHttpMessageHandler(metadataSchemaVersion);
 
@@ -57,11 +68,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
         [MemberData(nameof(IntegrationConfigWithObfuscation))]
-        public void HttpClient_SubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler, bool queryStringCaptureEnabled, int? queryStringSize, string expectedQueryString, string metadataSchemaVersion)
+        public void HttpClient_SubmitsTraces(
+            InstrumentationOptions instrumentation,
+            bool socketsHandlerEnabled,
+            bool queryStringCaptureEnabled,
+            int? queryStringSize,
+            string expectedQueryString,
+            string metadataSchemaVersion,
+            bool traceId128Enabled)
         {
             SetInstrumentationVerification();
-            ConfigureInstrumentation(instrumentation, enableSocketsHandler);
+            ConfigureInstrumentation(instrumentation, socketsHandlerEnabled);
             SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING", queryStringCaptureEnabled ? "true" : "false");
+            SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED", traceId128Enabled ? "true" : "false");
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
 
             if (queryStringSize.HasValue)
             {
@@ -78,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            // metadata schema version
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-http-client" : EnvironmentHelper.FullSampleName;
 
@@ -110,12 +130,38 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
                 }
 
-                var firstSpan = spans.First();
+                // parse http headers from stdout
                 var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
                 var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+                var propagatedTags = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.PropagatedTags);
 
+                var firstSpan = spans.First();
                 Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
                 Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
+
+                var traceTags = TagPropagation.ParseHeader(propagatedTags);
+                var traceIdUpperTagFromHeader = traceTags.GetTag(Tags.Propagated.TraceIdUpper);
+                var traceIdUpperTagFromSpan = firstSpan.GetTag(Tags.Propagated.TraceIdUpper);
+
+                if (traceId128Enabled)
+                {
+                    // assert that "_dd.p.tid" was added to the "x-datadog-tags" header (horizontal propagation)
+                    // note this assumes Datadog propagation headers are enabled (which is the default).
+                    Assert.NotNull(traceIdUpperTagFromHeader);
+
+                    // not all spans will have this tag, but if it is present,
+                    // it should match the value in the "x-datadog-tags" header
+                    if (traceIdUpperTagFromSpan != null)
+                    {
+                        Assert.Equal(traceIdUpperTagFromHeader, traceIdUpperTagFromSpan);
+                    }
+                }
+                else
+                {
+                    // assert that "_dd.p.tid" was NOT added
+                    Assert.Null(traceIdUpperTagFromHeader);
+                    Assert.Null(traceIdUpperTagFromSpan);
+                }
 
                 using var scope = new AssertionScope();
                 telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
