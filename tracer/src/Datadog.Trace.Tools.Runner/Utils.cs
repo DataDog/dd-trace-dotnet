@@ -288,7 +288,7 @@ namespace Datadog.Trace.Tools.Runner
             var env = new NameValueCollection();
             if (!string.IsNullOrWhiteSpace(agentUrl))
             {
-                env["DD_TRACE_AGENT_URL"] = agentUrl;
+                env[ConfigurationKeys.AgentUri] = agentUrl;
             }
 
             var configurationSource = new CompositeConfigurationSource()

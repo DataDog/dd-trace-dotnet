@@ -481,6 +481,11 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for forcing Agent's EVP Proxy
             /// </summary>
             public const string ForceAgentsEvpProxy = "DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY";
+
+            /// <summary>
+            /// Configuration key for setting the external code coverage file path
+            /// </summary>
+            public const string ExternalCodeCoveragePath = "DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH";
         }
 
         /// <summary>
