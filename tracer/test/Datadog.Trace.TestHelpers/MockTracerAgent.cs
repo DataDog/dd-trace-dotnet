@@ -1185,31 +1185,13 @@ namespace Datadog.Trace.TestHelpers
 
             private async Task HandleNamedPipeStats(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
             {
-                // A somewhat large, arbitrary amount, but Runtime metrics sends a lot
-                // Will throw if we exceed that but YOLO
-                var bytesReceived = new byte[0x10_000];
-                var byteCount = 0;
-                int bytesRead;
+                using var reader = new StreamReader(namedPipeServerStream);
 
-                try
+                while (await reader.ReadLineAsync() is { } request)
                 {
-                    do
-                    {
-                        bytesRead = await namedPipeServerStream.ReadAsync(bytesReceived, byteCount, count: 500, cancellationToken);
-                        byteCount += bytesRead;
-                    }
-                    while (bytesRead > 0);
+                    OnMetricsReceived(request);
+                    StatsdRequests.Enqueue(request);
                 }
-                catch (Exception ex)
-                {
-                    var content = Encoding.UTF8.GetString(bytesReceived, 0, byteCount);
-
-                    throw new Exception("Error while reading a namedpipe statsd request. Content read so far: " + content, ex);
-                }
-
-                var stats = Encoding.UTF8.GetString(bytesReceived, 0, byteCount);
-                OnMetricsReceived(stats);
-                StatsdRequests.Enqueue(stats);
             }
 
             private async Task HandleNamedPipeTraces(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
