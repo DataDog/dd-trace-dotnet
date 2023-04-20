@@ -14,6 +14,30 @@
     window.postData = function () {
         post("/data", "arg=database()");
     }
+
+    window.postJson = function (url, data) {
+        let fullUrl = window.location + url;
+        console.log(fullUrl);
+        return fetch(url, { 
+            method: "POST", 
+            headers: { 
+                'Content-Type': 'application/json' 
+            }, 
+            body: JSON.stringify({ query: data }) 
+        });
+    }
+
+    window.postJson2 = function (url, data) {
+        let fullUrl = window.location + url;
+        console.log(fullUrl);
+        return fetch(url, { 
+            method: "POST", 
+            headers: { 
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }, 
+            body: data
+        });
+    }
 </script>
 
 <div>
@@ -50,6 +74,10 @@
     <div><a href="/Iast/ExecuteCommand?file=nonexisting.exe&argumentLine=arg1">GET /Iast/ExecuteCommand?file=nonexisting.exe&argumentLine=arg1</a></div>
 
     <div><a href="/Iast/GetFileContent?file=nonexisting.txt">GET /Iast/GetFileContent?file=nonexisting.txt</a></div>
+
+    <div><a href="javascript:postJson('/Iast/ExecuteQueryFromBodyQueryData','SELECT Surname from Persons where name=\'Vicent\'')">POST /Iast/ExecuteQueryFromBodyText</a></div>
+
+    <div><a href="#" onclick="postJson2('/DataRazorIastPage', 'property=Execute&property3=2&Property2=nonexisting.exe')">POST Razor</a></div>
 
     <div>
         @Html.Raw(Context.Request.Query["q"])

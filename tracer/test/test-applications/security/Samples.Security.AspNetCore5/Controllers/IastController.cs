@@ -9,6 +9,12 @@ using Samples.Security.Data;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
+    public class QueryData
+    {
+        public string Query { get; set; }
+        public int IntField { get; set; }
+    }
+
     [Route("[controller]")]
     [ApiController]
     public class IastController : ControllerBase
@@ -89,6 +95,55 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
             }
+        }
+
+        [Route("ExecuteQueryFromBodyQueryData")]
+        public ActionResult ExecuteQueryFromBodyQueryData([FromBody] QueryData query)
+        {
+            try
+            {
+                if (dbConnection is null)
+                {
+                    dbConnection = IastControllerHelper.CreateDatabase();
+                }
+
+                if (!string.IsNullOrEmpty(query.Query))
+                {
+                    var rname = new SQLiteCommand(query.Query, dbConnection).ExecuteScalar();
+                    return Content($"Result: " + rname);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Content(IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return Content($"No query or username was provided");
+        }
+
+        [Route("ExecuteQueryFromBodyText")]
+        [Consumes("text/plain")]
+        public ActionResult ExecuteQueryFromBodyText([FromBody] string query)
+        {
+            try
+            {
+                if (dbConnection is null)
+                {
+                    dbConnection = IastControllerHelper.CreateDatabase();
+                }
+
+                if (!string.IsNullOrEmpty(query))
+                {
+                    var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
+                    return Content($"Result: " + rname);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Content(IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return Content($"No query or username was provided");
         }
 
         [HttpGet("GetFileContent")]
