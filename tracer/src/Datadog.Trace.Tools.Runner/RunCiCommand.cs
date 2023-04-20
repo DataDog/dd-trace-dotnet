@@ -332,7 +332,7 @@ namespace Datadog.Trace.Tools.Runner
 
                                     // Adds the global code coverage percentage to the session
                                     session.SetTag(CommonTags.TestSessionCodeCoverageEnabled, "true");
-                                    session.SetTag(CommonTags.CodeCoverageTotalLines, (seqCovValue / 100).ToString(CultureInfo.InvariantCulture));
+                                    session.SetTag(CommonTags.CodeCoverageTotalLines, Math.Round(seqCovValue / 100, 4).ToString("F4", CultureInfo.InvariantCulture));
                                     Log.Debug("RunCiCommand: OpenCover code coverage was reported: {Value}", seqCovValue);
                                 }
                                 else if (xmlDoc.SelectSingleNode("/coverage/@line-rate") is { } lineRateAttribute &&
