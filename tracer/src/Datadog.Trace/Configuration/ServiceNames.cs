@@ -14,9 +14,9 @@ namespace Datadog.Trace.Configuration
         private readonly Dictionary<string, string> _mappings = null;
         private readonly bool _unifyServiceNames;
 
-        public ServiceNames(IDictionary<string, string> mappings, string metadataSchemaVersion)
+        public ServiceNames(IDictionary<string, string> mappings, SchemaVersion metadataSchemaVersion)
         {
-            _unifyServiceNames = metadataSchemaVersion == "v0" ? false : true;
+            _unifyServiceNames = metadataSchemaVersion != SchemaVersion.V0;
             if (mappings?.Count > 0)
             {
                 _mappings = new Dictionary<string, string>(mappings);

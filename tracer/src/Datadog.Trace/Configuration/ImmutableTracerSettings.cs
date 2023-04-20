@@ -454,7 +454,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets the metadata schema version
         /// </summary>
-        internal string MetadataSchemaVersion { get; }
+        internal SchemaVersion MetadataSchemaVersion { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources
