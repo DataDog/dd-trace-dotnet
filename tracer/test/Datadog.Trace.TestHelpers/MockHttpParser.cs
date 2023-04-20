@@ -137,7 +137,8 @@ namespace Datadog.Trace.TestHelpers
                     stringBuilder.Clear();
 
                     headers.Add(name, value);
-                } while (true);
+                }
+                while (true);
 
                 var length = long.TryParse(headers.GetValue(ContentLengthHeaderKey), out var headerValue) ? headerValue : (long?)null;
 
