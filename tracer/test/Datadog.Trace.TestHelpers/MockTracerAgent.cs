@@ -1127,7 +1127,6 @@ namespace Datadog.Trace.TestHelpers
         {
             private readonly PipeServer _statsPipeServer;
             private readonly PipeServer _tracesPipeServer;
-            private readonly Task _statsdTask;
 
             public NamedPipeAgent(WindowsPipesConfig config)
                 : base(config.UseTelemetry, TestTransports.WindowsNamedPipe)
@@ -1152,7 +1151,7 @@ namespace Datadog.Trace.TestHelpers
                         ex => Exceptions.Add(ex),
                         x => Output?.WriteLine(x));
 
-                    _statsdTask = Task.Run(_statsPipeServer.Start);
+                    _statsPipeServer.Start();
                 }
 
                 if (File.Exists(config.Traces))
@@ -1191,12 +1190,22 @@ namespace Datadog.Trace.TestHelpers
                 var bytesReceived = new byte[0x10_000];
                 var byteCount = 0;
                 int bytesRead;
-                do
+
+                try
                 {
-                    bytesRead = await namedPipeServerStream.ReadAsync(bytesReceived, byteCount, count: 500, cancellationToken);
-                    byteCount += bytesRead;
+                    do
+                    {
+                        bytesRead = await namedPipeServerStream.ReadAsync(bytesReceived, byteCount, count: 500, cancellationToken);
+                        byteCount += bytesRead;
+                    }
+                    while (bytesRead > 0);
                 }
-                while (bytesRead > 0);
+                catch (Exception ex)
+                {
+                    var content = Encoding.UTF8.GetString(bytesReceived, 0, byteCount);
+
+                    throw new Exception("Error while reading a namedpipe statsd request. Content read so far: " + content, ex);
+                }
 
                 var stats = Encoding.UTF8.GetString(bytesReceived, 0, byteCount);
                 OnMetricsReceived(stats);
