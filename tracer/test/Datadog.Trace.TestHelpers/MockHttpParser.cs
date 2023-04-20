@@ -24,6 +24,7 @@ namespace Datadog.Trace.TestHelpers
             var headers = new HttpHeaders();
             char currentChar = char.MinValue;
             int streamPosition = 0;
+            string pathAndQuery = null;
 
             // https://tools.ietf.org/html/rfc2616#section-4.2
             const int bufferSize = 10;
@@ -89,64 +90,70 @@ namespace Datadog.Trace.TestHelpers
 
             stringBuilder.Clear();
 
-            // Read POST
-            await ReadUntil(stringBuilder, stopChar: ' ').ConfigureAwait(false);
-
-            var method = stringBuilder.ToString();
-            stringBuilder.Clear();
-
-            // Read /path?request
-            await GoNextChar().ConfigureAwait(false);
-            await ReadUntil(stringBuilder, stopChar: ' ').ConfigureAwait(false);
-
-            var pathAndQuery = stringBuilder.ToString().Trim();
-            stringBuilder.Clear();
-
-            // Skip to end of line
-            await ReadUntilNewLine(stringBuilder).ConfigureAwait(false);
-            stringBuilder.Clear();
-
-            // Read headers
-            do
+            try
             {
-                await GoNextChar().ConfigureAwait(false);
+                // Read POST
+                await ReadUntil(stringBuilder, stopChar: ' ').ConfigureAwait(false);
 
-                // Check for end of headers
-                if (await IsNewLine().ConfigureAwait(false))
-                {
-                    // Empty line, content starts next
-                    break;
-                }
-
-                // Read key
-                await ReadUntil(stringBuilder, stopChar: ':').ConfigureAwait(false);
-
-                var name = stringBuilder.ToString().Trim();
+                var method = stringBuilder.ToString();
                 stringBuilder.Clear();
 
-                // skip separator
+                // Read /path?request
                 await GoNextChar().ConfigureAwait(false);
+                await ReadUntil(stringBuilder, stopChar: ' ').ConfigureAwait(false);
 
-                // Read value
+                pathAndQuery = stringBuilder.ToString().Trim();
+                stringBuilder.Clear();
+
+                // Skip to end of line
                 await ReadUntilNewLine(stringBuilder).ConfigureAwait(false);
-
-                var value = stringBuilder.ToString().Trim();
                 stringBuilder.Clear();
 
-                headers.Add(name, value);
+                // Read headers
+                do
+                {
+                    await GoNextChar().ConfigureAwait(false);
+
+                    // Check for end of headers
+                    if (await IsNewLine().ConfigureAwait(false))
+                    {
+                        // Empty line, content starts next
+                        break;
+                    }
+
+                    // Read key
+                    await ReadUntil(stringBuilder, stopChar: ':').ConfigureAwait(false);
+
+                    var name = stringBuilder.ToString().Trim();
+                    stringBuilder.Clear();
+
+                    // skip separator
+                    await GoNextChar().ConfigureAwait(false);
+
+                    // Read value
+                    await ReadUntilNewLine(stringBuilder).ConfigureAwait(false);
+
+                    var value = stringBuilder.ToString().Trim();
+                    stringBuilder.Clear();
+
+                    headers.Add(name, value);
+                } while (true);
+
+                var length = long.TryParse(headers.GetValue(ContentLengthHeaderKey), out var headerValue) ? headerValue : (long?)null;
+
+                return new MockHttpRequest()
+                {
+                    Headers = headers,
+                    Method = method,
+                    PathAndQuery = pathAndQuery,
+                    ContentLength = length,
+                    Body = new StreamContent(stream, length)
+                };
             }
-            while (true);
-
-            var length = long.TryParse(headers.GetValue(ContentLengthHeaderKey), out var headerValue) ? headerValue : (long?)null;
-
-            return new MockHttpRequest()
+            catch (Exception ex) when (pathAndQuery != null)
             {
-                Headers = headers,
-                Method = method,
-                PathAndQuery = pathAndQuery,
-                ContentLength = length,
-                Body = new StreamContent(stream, length)
-            };
+                throw new Exception($"Error while parsing the request to {pathAndQuery}", ex);
+            }
         }
 
         internal class MockHttpRequest
