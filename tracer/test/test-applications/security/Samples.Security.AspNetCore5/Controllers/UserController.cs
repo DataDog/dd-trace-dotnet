@@ -17,11 +17,11 @@ namespace Samples.Security.AspNetCore5.Controllers
             _logger = logger;
         }
 
-        public IActionResult Index()
+        public IActionResult Index(string userId = null)
         {
-            var userDetails = new UserDetails()
+            var userDetails = new UserDetails
             {
-                Id = "user3",
+                Id = userId ?? "user3"
             };
             Tracer.Instance.ActiveScope?.Span.SetUser(userDetails);
 

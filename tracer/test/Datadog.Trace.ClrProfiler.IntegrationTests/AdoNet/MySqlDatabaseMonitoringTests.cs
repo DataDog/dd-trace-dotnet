@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsMySql();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsMySql(metadataSchemaVersion);
 
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]

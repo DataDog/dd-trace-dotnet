@@ -87,7 +87,7 @@ namespace Datadog.Trace.Configuration
             HttpServerErrorStatusCodes = settings.HttpServerErrorStatusCodes;
             HttpClientErrorStatusCodes = settings.HttpClientErrorStatusCodes;
             MetadataSchemaVersion = settings.MetadataSchemaVersion;
-            ServiceNameMappings = settings.ServiceNameMappings;
+            ServiceNameMappings = new ServiceNames(settings.ServiceNameMappings, settings.MetadataSchemaVersion);
             TraceBufferSize = settings.TraceBufferSize;
             TraceBatchInterval = settings.TraceBatchInterval;
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;

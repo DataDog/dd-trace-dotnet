@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             from metadataSchemaVersion in new[] { "v0", "v1" }
             select new object[] { instrumentationOptions, socketHandlerEnabled, queryStringEnabled, queryStringSizeAndExpectation.Key,  queryStringSizeAndExpectation.Value, metadataSchemaVersion };
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsHttpMessageHandler();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsHttpMessageHandler(metadataSchemaVersion);
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
                 Assert.Equal(expectedSpanCount, spans.Count);
-                ValidateIntegrationSpans(spans, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 foreach (var span in spans)
                 {

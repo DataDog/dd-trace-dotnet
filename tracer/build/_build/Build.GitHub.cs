@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -754,11 +755,41 @@ partial class Build
 
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
 
+            var artifactsPath = OutputDirectory / artifact.Name;
             Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
-            Console.WriteLine("::set-output name=artifacts_path::" + OutputDirectory / artifact.Name);
+            Console.WriteLine("::set-output name=artifacts_path::" + artifactsPath);
 
+            var gitlabPath = OutputDirectory / CommitSha;
             await DownloadGitlabArtifacts(OutputDirectory, CommitSha, FullVersion);
-            Console.WriteLine("::set-output name=gitlab_artifacts_path::" + OutputDirectory / CommitSha);
+            Console.WriteLine("::set-output name=gitlab_artifacts_path::" + gitlabPath);
+
+            var files = artifactsPath.GlobFiles("*.*")
+                .Concat(gitlabPath.GlobFiles("*.*"))
+                .OrderBy(x => Path.GetFileName(x));
+
+            var checksums = new List<string>();
+            foreach (var path in files)
+            {
+                using var file = File.OpenRead(path);
+                var expectedBytes = 512 / 8;
+                var buffer = new byte[expectedBytes];
+                var bytes = await SHA512.HashDataAsync(file, buffer);
+                if (bytes != expectedBytes)
+                {
+                    throw new Exception($"Expected to write {expectedBytes}bytes, but wrote {bytes}");
+                }
+
+                var checksumLine = $"{Convert.ToHexString(buffer)} {Path.GetFileName(path)}";
+                Logger.Info(checksumLine);
+                checksums.Add(checksumLine);
+            }
+
+            var checksumPath = OutputDirectory / "sha512.txt";
+
+            // Use LF so can be read on linux
+            File.WriteAllText(checksumPath, string.Join("\n", checksums));
+
+            Console.WriteLine("::set-output name=sha_path::" + checksumPath);
         });
 
     Target CompareCodeCoverageReports => _ => _

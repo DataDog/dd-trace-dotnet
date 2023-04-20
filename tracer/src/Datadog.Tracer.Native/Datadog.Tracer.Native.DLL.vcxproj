@@ -32,7 +32,7 @@
     <ProjectConfiguration Include="Release|ARM64EC">
       <Configuration>Release</Configuration>
       <Platform>ARM64EC</Platform>
-    </ProjectConfiguration>    
+    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -41,7 +41,7 @@
     <RootNamespace>DatadogTraceClrProfilerNativeDLL</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <LIB_PATH>..\..\..\shared\src\native-lib\</LIB_PATH>
-    <LIB_INCLUDES>$(LIB_PATH)fmt\include;$(LIB_PATH)spdlog\include;$(LIB_PATH)coreclr\src\pal\prebuilt\inc</LIB_INCLUDES>
+    <LIB_INCLUDES>$(LIB_PATH)spdlog\include;$(LIB_PATH)coreclr\src\pal\prebuilt\inc</LIB_INCLUDES>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -314,10 +314,6 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />
-  </ItemGroup>
-  <ItemGroup Label="fmt">
-    <ClCompile Include="..\..\..\shared\src\native-lib\fmt\src\format.cc" />
-    <ClCompile Include="..\..\..\shared\src\native-lib\fmt\src\posix.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

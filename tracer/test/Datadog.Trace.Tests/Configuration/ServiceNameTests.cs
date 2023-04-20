@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using FluentAssertions;
@@ -101,59 +102,29 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
-        public void CanAddMappingsLaterV0()
+        public void CanAddMappingsViaConfigurationSourceV0()
         {
             var serviceName = "elasticsearch";
             var expected = "custom-name";
 
-            var serviceNames = new ServiceNames(new Dictionary<string, string>(), "v0");
-            serviceNames.SetServiceNameMappings(new Dictionary<string, string> { { serviceName, expected } });
-            serviceNames.GetServiceName(ApplicationName, serviceName).Should().Be(expected);
+            var collection = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, "v0" }, { ConfigurationKeys.ServiceNameMappings, $"{serviceName}:{expected}" } };
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(collection));
+
+            var immutableTracerSettings = new ImmutableTracerSettings(tracerSettings);
+            immutableTracerSettings.ServiceNameMappings.GetServiceName(ApplicationName, serviceName).Should().Be(expected);
         }
 
         [Fact]
-        public void CanAddMappingsLaterV1()
+        public void CanAddMappingsViaConfigurationSourceV1()
         {
             var serviceName = "elasticsearch";
             var expected = "custom-name";
 
-            var serviceNames = new ServiceNames(new Dictionary<string, string>(), "v1");
-            serviceNames.SetServiceNameMappings(new Dictionary<string, string> { { serviceName, expected } });
-            serviceNames.GetServiceName(ApplicationName, serviceName).Should().Be(expected);
-        }
+            var collection = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, "v1" }, { ConfigurationKeys.ServiceNameMappings, $"{serviceName}:{expected}" } };
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(collection));
 
-        [Fact]
-        public void ReplacesExistingMappingsV0()
-        {
-            var serviceNames = new ServiceNames(
-                new Dictionary<string, string>
-                {
-                    { "sql-server", "custom-db" },
-                    { "elasticsearch", "original-service" },
-                },
-                "v0");
-            serviceNames.SetServiceNameMappings(new Dictionary<string, string> { { "elasticsearch", "custom-name" } });
-
-            serviceNames.GetServiceName(ApplicationName, "mongodb").Should().Be($"{ApplicationName}-mongodb");
-            serviceNames.GetServiceName(ApplicationName, "elasticsearch").Should().Be("custom-name");
-            serviceNames.GetServiceName(ApplicationName, "sql-server").Should().Be($"{ApplicationName}-sql-server");
-        }
-
-        [Fact]
-        public void ReplacesExistingMappingsV1()
-        {
-            var serviceNames = new ServiceNames(
-                new Dictionary<string, string>
-                {
-                    { "sql-server", "custom-db" },
-                    { "elasticsearch", "original-service" },
-                },
-                "v1");
-            serviceNames.SetServiceNameMappings(new Dictionary<string, string> { { "elasticsearch", "custom-name" } });
-
-            serviceNames.GetServiceName(ApplicationName, "mongodb").Should().Be(ApplicationName);
-            serviceNames.GetServiceName(ApplicationName, "elasticsearch").Should().Be("custom-name");
-            serviceNames.GetServiceName(ApplicationName, "sql-server").Should().Be(ApplicationName);
+            var immutableTracerSettings = new ImmutableTracerSettings(tracerSettings);
+            immutableTracerSettings.ServiceNameMappings.GetServiceName(ApplicationName, serviceName).Should().Be(expected);
         }
     }
 }

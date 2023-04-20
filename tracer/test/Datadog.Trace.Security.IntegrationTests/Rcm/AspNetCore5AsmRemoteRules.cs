@@ -32,12 +32,10 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
             var spans1 = await SendRequestsAsync(agent, url);
-            var acknowledgedId = nameof(TestNewRemoteRules);
-            await agent.SetupRcmAndWait(Output, new[] { (GetRules("2.22.222"), testid: acknowledgedId) }, "ASM_DD", appliedServiceNames: new[] { acknowledgedId });
+            var productId = nameof(TestNewRemoteRules);
+            await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductName, string Id)> { (GetRules("2.22.222"), "ASM_DD", productId) });
             var spans2 = await SendRequestsAsync(agent, url);
-
-            var acknowledgedId2 = nameof(TestNewRemoteRules) + 2;
-            await agent.SetupRcmAndWait(Output, new[] { (GetRules("3.33.333"), "2") }, "ASM_DD", appliedServiceNames: new[] { acknowledgedId2 });
+            await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductName, string Id)> { (GetRules("3.33.333"), "ASM_DD", productId) });
             var spans3 = await SendRequestsAsync(agent, url);
 
             var spans = new List<MockSpan>();
