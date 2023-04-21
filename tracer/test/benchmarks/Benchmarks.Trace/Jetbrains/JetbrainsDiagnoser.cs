@@ -58,7 +58,7 @@ internal class JetbrainsDiagnoser : IDiagnoser
         if (signal == HostSignal.BeforeActualRun)
         {
             var outputFolder = _outputFolder ?? parameters.Config.ArtifactsPath;
-            var filePath = Path.Combine(outputFolder, parameters.BenchmarkCase.Descriptor.FolderInfo.Replace(".", "_") + $"_{DateTime.UtcNow.ToBinary()}");
+            var filePath = Path.Combine(outputFolder, parameters.BenchmarkCase.Descriptor.FolderInfo.Replace(".", "_") + $"_{DateTime.UtcNow:yyyy_MM_dd_HH_mm_ss}");
             switch (_product)
             {
                 case JetbrainsProduct.Memory:
