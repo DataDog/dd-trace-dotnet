@@ -24,8 +24,26 @@ public class LocationTests
     {
         var method = "Samples.InstrumentedTests.Iast.Vulnerabilities.CommandInjectionTests::<GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable>b__6_0";
         var location = new Location(null, method, 23, 4);
+        location.Path.Should().Be("Samples.InstrumentedTests.Iast.Vulnerabilities.CommandInjectionTests");
+        location.Method.Should().Be("GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable");
+    }
+
+    [Fact]
+    public void GivenALocation_WhenCreatedFromMethod_MethodIsStored2()
+    {
+        var method = "Samples.InstrumentedTests.Iast.Vulnerabilities.CommandInjectionTests::GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable";
+        var location = new Location(null, method, 23, 4);
+        location.Path.Should().Be("Samples.InstrumentedTests.Iast.Vulnerabilities.CommandInjectionTests");
+        location.Method.Should().Be("GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable");
+    }
+
+    [Fact]
+    public void GivenALocation_WhenCreatedFromMethod_MethodIsStored3()
+    {
+        var method = "Samples.InstrumentedTests.Iast.Vulnerabilities.CommandInjectionTests.GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable";
+        var location = new Location(null, method, 23, 4);
         location.Path.Should().BeNull();
-        location.Method.Should().Be(method);
+        location.Method.Should().Be("Samples.InstrumentedTests.Iast.Vulnerabilities.CommandInjectionTests.GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable");
     }
 
     [Fact]
