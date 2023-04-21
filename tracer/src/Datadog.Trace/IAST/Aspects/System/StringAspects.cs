@@ -17,7 +17,7 @@ namespace Datadog.Trace.Iast.Aspects.System;
 [AspectClass("mscorlib,netstandard,System.Private.CoreLib,System.Runtime", AspectFilter.StringOptimization)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public partial class StringAspects
+public class StringAspects
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StringAspects));
 

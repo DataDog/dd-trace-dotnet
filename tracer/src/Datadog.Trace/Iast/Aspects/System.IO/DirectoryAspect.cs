@@ -13,7 +13,7 @@ namespace Datadog.Trace.Iast.Aspects;
 [AspectClass("mscorlib,System.IO.FileSystem,System.Runtime", AspectType.Sink, VulnerabilityType.PathTraversal)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public partial class DirectoryAspect
+public class DirectoryAspect
 {
     /// <summary>
     /// Launches a path traversal vulnerability if the directory is tainted
