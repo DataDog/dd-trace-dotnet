@@ -9,11 +9,10 @@ namespace Datadog.Trace.Iast;
 
 internal readonly struct Location
 {
-    public Location(string? stackFile, int? line, ulong? spanId)
+    public Location(string? stackFile, string? method, int? line, ulong? spanId)
     {
-        GetMethodPathFromStackFile(stackFile, out string? method, out string? path);
         this.Method = method;
-        this.Path = path;
+        this.Path = System.IO.Path.GetFileName(stackFile);
         this.Line = line;
         this.SpanId = spanId == 0 ? null : spanId;
     }
@@ -29,32 +28,5 @@ internal readonly struct Location
     public override int GetHashCode()
     {
         return IastUtils.GetHashCode(Path, Line, SpanId);
-    }
-
-    private void GetMethodPathFromStackFile(string? stackFile, out string? methodValue, out string? pathValue)
-    {
-        methodValue = null;
-        pathValue = null;
-
-        try
-        {
-            if (!string.IsNullOrEmpty(stackFile))
-            {
-                if (stackFile!.Contains("::") == true)
-                {
-                    methodValue = stackFile;
-                    pathValue = null;
-                }
-                else
-                {
-                    pathValue = System.IO.Path.GetFileName(stackFile);
-                    methodValue = null;
-                }
-            }
-        }
-        catch
-        {
-            // we have an invalid stackFile
-        }
     }
 }

@@ -160,7 +160,14 @@ internal static class IastModule
 
         // Sometimes we do not have the file/line but we have the method/class.
         var filename = frameInfo.StackFrame?.GetFileName();
-        var vulnerability = new Vulnerability(vulnerabilityType, new Location(filename ?? GetMethodName(frameInfo.StackFrame), filename != null ? frameInfo.StackFrame?.GetFileLineNumber() : null, currentSpan?.SpanId), new Evidence(evidenceValue, tainted?.Ranges));
+        var vulnerability = new Vulnerability(
+            vulnerabilityType,
+            new Location(
+                filename,
+                string.IsNullOrEmpty(filename) ? GetMethodName(frameInfo.StackFrame) : null,
+                !string.IsNullOrEmpty(filename) ? frameInfo.StackFrame?.GetFileLineNumber() : null,
+                currentSpan?.SpanId),
+            new Evidence(evidenceValue, tainted?.Ranges));
 
         if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
