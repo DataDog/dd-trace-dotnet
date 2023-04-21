@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Sampling
 {
@@ -78,7 +79,7 @@ namespace Datadog.Trace.Sampling
         private SamplingDecision MakeSamplingDecision(Span span, float rate, int mechanism)
         {
             // make a sampling decision as a function of traceId and sampling rate.
-            var sample = SamplingHelpers.SampleByRate(span.TraceId, rate);
+            var sample = SamplingHelpers.SampleByRate(span.TraceId128, rate);
 
             var priority = mechanism switch
                            {
