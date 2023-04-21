@@ -15,7 +15,7 @@ namespace Datadog.Trace.Util
 
         internal static bool SampleByRate(TraceId traceId, double rate) =>
             // use the lower 64 bits of the trace id which are the only random part
-            ((traceId.Lower * KnuthFactor) % MaxInt64) <= (rate * MaxInt64);
+            SampleByRate(traceId.Lower, rate);
 
         internal static bool SampleByRate(ulong spanId, double rate) =>
             ((spanId * KnuthFactor) % MaxInt64) <= (rate * MaxInt64);
