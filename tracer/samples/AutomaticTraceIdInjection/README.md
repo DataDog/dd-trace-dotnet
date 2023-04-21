@@ -64,7 +64,7 @@ File-tail log collection requires the following:
 - [Configured the Datadog Agent](https://docs.datadoghq.com/logs/log_collection/csharp/?tab=serilog#configure-the-datadog-agent) for logs collection which covers:
   - Enabling [log collection](https://docs.datadoghq.com/agent/logs/?tab=tailfiles#activate-log-collection) for the agent
   - Configuring [custom log collection](https://docs.datadoghq.com/agent/logs/?tab=tailfiles#custom-log-collection) for the agent
-- The `path:` value will change based on which sample is being run. In general log files are output in the same directory as the built project
+- The `path:` value will change based on which sample is being run. In general log files are output in the same directory as the built project for these samples
   - This should be an *absolute* path to the log file
   - Example *relative* output location of log file for the Log4Net's sample: `\Log4NetExample\bin\Debug\net462\win-x86\log-log4net-jsonFile-allProperties.log`
 
@@ -222,7 +222,7 @@ Example for `NLog46`: layouts configured in the sample produce three log files i
   - `log-NLog46-jsonFile-includeMdlc-true.log`
 - JSON format while needing to specify the Datadog properties to extract (`includeMdlc="false"`)
   - `log-NLog46-jsonFile-includeMdlc-false.log`
-- Custom format - Datadog properties must be extracted indicuallay using `${mdlc:item=String}`
+- Custom format - Datadog properties must be extracted individually using `${mdlc:item=String}`
   - `log-NLog46-textFile.log`
 
 #### Running the NLog Samples
