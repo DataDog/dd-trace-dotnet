@@ -24,11 +24,13 @@ namespace Benchmarks.Trace
 
             if (args?.Any(a => a == jetBrainsDotTrace) == true)
             {
+                Console.WriteLine("Setting Jetbrains trace collection... (could take time downloading collector binaries)");
                 args = args.Where(a => a != jetBrainsDotTrace).ToArray();
                 config = config.WithJetbrains(JetbrainsProduct.Trace);
             }
             else if (args?.Any(a => a == jetBrainsDotMemory) == true)
             {
+                Console.WriteLine("Setting Jetbrains memory collection... (could take time downloading collector binaries)");
                 args = args.Where(a => a != jetBrainsDotMemory).ToArray();
                 config = config.WithJetbrains(JetbrainsProduct.Memory);
             }
@@ -48,6 +50,7 @@ namespace Benchmarks.Trace
                 Console.WriteLine($"Unknown agent name {agentName}; executing all benchmarks");
             }
 
+            Console.WriteLine("Running tests...");
             BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
         }
     }
