@@ -119,8 +119,9 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             if (isSpan)
             {
+                // trace_id field is 64-bits, truncate by using TraceId128.Lower
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdBytes);
-                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.TraceId);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.TraceId128.Lower);
 
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.SpanId);

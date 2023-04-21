@@ -119,6 +119,11 @@ internal static class HexString
     [Pure]
     public static string ToHexString(ulong value, bool lowerCase = true)
     {
+        if (value == 0)
+        {
+            return "0000000000000000";
+        }
+
         value = ReverseIfLittleEndian(value);
 
 #if NETCOREAPP3_1_OR_GREATER
@@ -142,6 +147,11 @@ internal static class HexString
         {
             // this trace id fits in 16 hex characters and padding to 32 characters was not requested
             return ToHexString(value.Lower);
+        }
+
+        if (value == TraceId.Zero)
+        {
+            return "00000000000000000000000000000000";
         }
 
         var (upper, lower) = ReverseIfLittleEndian(value);

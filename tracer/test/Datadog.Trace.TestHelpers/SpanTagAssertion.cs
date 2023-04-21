@@ -24,9 +24,10 @@ namespace Datadog.Trace.TestHelpers
         public static void DefaultTagAssertions(SpanTagAssertion<T> s) => s
             .IsPresent("env")
             .IsOptional("runtime-id") // TODO: Make runtime-id required on all spans, per our span attributes push
-            .IsOptional("language") // TODO: Make language required on all spans, per our span attributes push
+            .IsOptional("language")   // TODO: Make language required on all spans, per our span attributes push
             .IsOptional("version")
-            .IsOptional("_dd.p.dm")
+            .IsOptional("_dd.p.dm")   // "decision maker", but contains the sampling mechanism
+            .IsOptional("_dd.p.tid")  // contains the upper 64 bits of a 128-bit trace id
             .IsOptional("error.msg")
             .IsOptional("error.type")
             .IsOptional("error.stack")

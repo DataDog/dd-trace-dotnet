@@ -122,6 +122,9 @@ namespace Datadog.Trace.Configuration
             IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
             AzureAppServiceMetadata = settings.AzureAppServiceMetadata;
 
+            TraceId128BitGenerationEnabled = settings.TraceId128BitGenerationEnabled;
+            TraceId128BitLoggingEnabled = settings.TraceId128BitLoggingEnabled;
+
             static string? GetExplicitSettingOrTag(string? explicitSetting, IDictionary<string, string> globalTags, string tag)
             {
                 if (!string.IsNullOrWhiteSpace(explicitSetting))
@@ -429,6 +432,19 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the tracer should propagate service data in db queries
         /// </summary>
         internal DbmPropagationLevel DbmPropagationMode { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer will generate 128-bit trace ids
+        /// instead of 64-bits trace ids.
+        /// </summary>
+        internal bool TraceId128BitGenerationEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer will inject 128-bit trace ids into logs, if available,
+        /// instead of 64-bit trace ids. Note that a 128-bit trace id may be received from an upstream service
+        /// even if we are not generating them.
+        /// </summary>
+        internal bool TraceId128BitLoggingEnabled { get; }
 
         /// <summary>
         /// Gets the AAS settings. Guaranteed not <c>null</c> when <see cref="IsRunningInAzureAppService"/> is not <c>null</c>

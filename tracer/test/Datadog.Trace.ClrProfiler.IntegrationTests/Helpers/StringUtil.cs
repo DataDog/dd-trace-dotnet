@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
         /// <returns>Matched string or null if no match</returns>
         internal static string GetHeader(string source, string name)
         {
-            var pattern = $@"^\[HttpListener\] request header: {name}=(\w+)\r?$";
+            var pattern = $@"^\[HttpListener\] request header: {name}=(.*?)\r?$";
             var match = Regex.Match(source, pattern, RegexOptions.Multiline);
 
             return match.Success

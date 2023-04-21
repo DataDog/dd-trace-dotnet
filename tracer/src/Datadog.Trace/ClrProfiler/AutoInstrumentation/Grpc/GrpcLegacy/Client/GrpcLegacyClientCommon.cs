@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                 // grab the temporary values we stored in the metadata
                 ExtractTemporaryHeaders(
                     requestMetadata,
-                    existingSpanContext?.TraceId,
+                    existingSpanContext?.TraceId128 ?? default,
                     out var methodKind,
                     out var methodName,
                     out var grpcService,
@@ -64,8 +64,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                     GrpcCommon.OperationName,
                     parent: parentContext,
                     tags: tags,
-                    spanId: existingSpanContext?.SpanId,
-                    traceId: existingSpanContext?.TraceId,
+                    spanId: existingSpanContext?.SpanId ?? 0,
+                    traceId: existingSpanContext?.TraceId128 ?? default,
                     serviceName: serviceName,
                     startTime: startTime);
 
@@ -163,7 +163,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
         private static void ExtractTemporaryHeaders(
             IMetadata metadata,
-            ulong? traceId,
+            TraceId traceId,
             out string methodKind,
             out string? methodName,
             out string? serviceName,
@@ -187,13 +187,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                 : DateTimeOffset.UtcNow;
 
             parentContext = null;
-            if (traceId.HasValue)
+
+            if (traceId != TraceId.Zero)
             {
                 var parentIdString = metadata.Get(TemporaryHeaders.ParentId)?.DuckCast<MetadataEntryStruct>().Value;
                 var parentService = metadata.Get(TemporaryHeaders.ParentService)?.DuckCast<MetadataEntryStruct>().Value;
                 if (!string.IsNullOrEmpty(parentService) && ulong.TryParse(parentIdString, out var parentId))
                 {
-                    parentContext = new ReadOnlySpanContext(traceId.Value, parentId, parentService);
+                    parentContext = new ReadOnlySpanContext(traceId, parentId, parentService);
                 }
             }
         }

@@ -63,7 +63,7 @@ namespace Datadog.Trace.Propagators
 
             internal set
             {
-                if (value is null)
+                if (value == null!)
                 {
                     ThrowHelper.ThrowArgumentNullException(nameof(value));
                 }
@@ -98,9 +98,9 @@ namespace Datadog.Trace.Propagators
         /// <typeparam name="TCarrier">Type of header collection</typeparam>
         public void Inject<TCarrier>(SpanContext context, TCarrier carrier, Action<TCarrier, string, string> setter)
         {
-            if (context is null) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
-            if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
-            if (setter is null) { ThrowHelper.ThrowArgumentNullException(nameof(setter)); }
+            if (context == null!) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
+            if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
+            if (setter == null!) { ThrowHelper.ThrowArgumentNullException(nameof(setter)); }
 
             Inject(context, carrier, new ActionSetter<TCarrier>(setter));
         }
@@ -108,8 +108,8 @@ namespace Datadog.Trace.Propagators
         internal void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
-            if (context is null) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
-            if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
+            if (context == null!) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
+            if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
 
             for (var i = 0; i < _injectors.Length; i++)
             {
@@ -138,8 +138,8 @@ namespace Datadog.Trace.Propagators
         /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from <paramref name="carrier"/>.</returns>
         public SpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
         {
-            if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
-            if (getter is null) { ThrowHelper.ThrowArgumentNullException(nameof(getter)); }
+            if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
+            if (getter == null!) { ThrowHelper.ThrowArgumentNullException(nameof(getter)); }
 
             return Extract(carrier, new FuncGetter<TCarrier>(getter));
         }
