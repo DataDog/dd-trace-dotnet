@@ -41,7 +41,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
             if (scope != null)
             {
-                request.Headers.Set(HttpHeaderNames.TraceId, scope.Span.TraceId.ToString());
+                // TODO: support 128-bit trace ids?
+                request.Headers.Set(HttpHeaderNames.TraceId, scope.Span.TraceId128.Lower.ToString());
                 request.Headers.Set(HttpHeaderNames.SpanId, scope.Span.SpanId.ToString());
 
                 if (scope.Span.Context.TraceContext?.SamplingPriority is { } samplingPriority)
