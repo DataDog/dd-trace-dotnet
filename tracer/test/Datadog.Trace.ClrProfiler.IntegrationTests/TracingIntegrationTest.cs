@@ -22,13 +22,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
         }
 
-        public abstract Result ValidateIntegrationSpan(MockSpan span);
+        public abstract Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion);
 
-        public void ValidateIntegrationSpans(IEnumerable<MockSpan> spans, string expectedServiceName, bool isExternalSpan = true)
+        public void ValidateIntegrationSpans(IEnumerable<MockSpan> spans, string metadataSchemaVersion, string expectedServiceName, bool isExternalSpan)
         {
             foreach (var span in spans)
             {
-                var result = ValidateIntegrationSpan(span);
+                var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
                 Assert.True(result.Success, result.ToString());
 
                 Assert.Equal(expectedServiceName, span.Service);

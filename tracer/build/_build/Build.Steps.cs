@@ -59,7 +59,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.8.2";
+    const string LibDdwafVersion = "1.9.0";
 
     const string OlderLibDdwafVersion = "1.4.0";
 
@@ -1155,6 +1155,7 @@ partial class Build
                     .SetTargetPlatformAnyCPU()
                     .SetFramework(Framework)
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
+                    .EnableCrashDumps()
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetTestTargetPlatform(TargetPlatform)
@@ -1280,6 +1281,7 @@ partial class Build
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatformAnyCPU()
                     .SetFramework(Framework)
+                    .EnableCrashDumps()
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "Category=Smoke&LoadFromGAC!=True&Category!=AzureFunctions")
@@ -2213,7 +2215,7 @@ partial class Build
     {
         if (Directory.Exists(TempDirectory))
         {
-            foreach (var dump in GlobFiles(TempDirectory, "coredump*"))
+            foreach (var dump in GlobFiles(TempDirectory, "coredump*", "*.dmp"))
             {
                 MoveFileToDirectory(dump, root / "dumps", FileExistsPolicy.Overwrite);
             }

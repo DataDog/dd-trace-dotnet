@@ -19,36 +19,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public class NetActivitySdkTests : TracingIntegrationTest
     {
+        private static readonly HashSet<string> Resources = new HashSet<string>
+        {
+            "service.instance.id",
+            "service.name",
+            "service.version",
+        };
+
+        private static readonly HashSet<string> ExcludeTags = new HashSet<string>
+        {
+            "attribute-string",
+            "attribute-int",
+            "attribute-bool",
+            "attribute-double",
+            "attribute-stringArray",
+            "attribute-stringArrayEmpty",
+            "attribute-intArray",
+            "attribute-intArrayEmpty",
+            "attribute-boolArray",
+            "attribute-boolArrayEmpty",
+            "attribute-doubleArray",
+            "attribute-doubleArrayEmpty",
+            "set-string",
+        };
+
         public NetActivitySdkTests(ITestOutputHelper output)
             : base("NetActivitySdk", output)
         {
             SetServiceVersion("1.0.0");
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.IsOpenTelemetry(
-                resources: new HashSet<string>
-                {
-                    "service.instance.id",
-                    "service.name",
-                    "service.version"
-                },
-                excludeTags: new HashSet<string>
-                {
-                    "attribute-string",
-                    "attribute-int",
-                    "attribute-bool",
-                    "attribute-double",
-                    "attribute-stringArray",
-                    "attribute-stringArrayEmpty",
-                    "attribute-intArray",
-                    "attribute-intArrayEmpty",
-                    "attribute-boolArray",
-                    "attribute-boolArrayEmpty",
-                    "attribute-doubleArray",
-                    "attribute-doubleArrayEmpty",
-                    "set-string"
-                });
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsOpenTelemetry(metadataSchemaVersion, Resources, ExcludeTags);
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
@@ -69,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var myServiceNameSpans = spans.Where(s => s.Service == "MyServiceName");
 
-                ValidateIntegrationSpans(myServiceNameSpans, expectedServiceName: "MyServiceName");
+                ValidateIntegrationSpans(myServiceNameSpans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 await VerifyHelper.VerifySpans(spans, settings)

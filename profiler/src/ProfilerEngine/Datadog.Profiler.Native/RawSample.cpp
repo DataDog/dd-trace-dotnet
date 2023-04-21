@@ -3,7 +3,7 @@
 
 #include "RawSample.h"
 
-RawSample::RawSample()
+RawSample::RawSample() noexcept
     :
     Timestamp {0},
     AppDomainId {0},
@@ -12,4 +12,21 @@ RawSample::RawSample()
     ThreadInfo{nullptr},
     Stack{}
 {
+}
+
+RawSample::RawSample(RawSample&& other) noexcept
+{
+    *this = std::move(other);
+}
+
+RawSample& RawSample::operator=(RawSample&& other) noexcept
+{
+    Timestamp = other.Timestamp;
+    AppDomainId = other.AppDomainId;
+    LocalRootSpanId = other.LocalRootSpanId;
+    SpanId = other.SpanId;
+    ThreadInfo = std::move(other.ThreadInfo);
+    Stack = std::move(other.Stack);
+
+    return *this;
 }

@@ -38,7 +38,7 @@ AllocationsProvider::AllocationsProvider(
     ISampledAllocationsListener* pListener,
     MetricsRegistry& metricsRegistry)
     :
-    CollectorBase<RawAllocationSample>("AllocationsProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
+    CollectorBase<RawAllocationSample>("AllocationsProvider", valueOffset, SampleTypeDefinitions.size(), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),

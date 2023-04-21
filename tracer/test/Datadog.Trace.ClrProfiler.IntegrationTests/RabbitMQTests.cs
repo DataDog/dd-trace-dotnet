@@ -23,20 +23,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [Trait("RequiresDockerDependency", "true")]
     public class RabbitMQTests : TracingIntegrationTest
     {
-        private const string ExpectedServiceName = "Samples.RabbitMQ-rabbitmq";
-
         public RabbitMQTests(ITestOutputHelper output)
             : base("RabbitMQ", output)
         {
             SetServiceVersion("1.0.0");
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsRabbitMQ();
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.RabbitMQ
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsRabbitMQ(metadataSchemaVersion);
 
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.RabbitMQ), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitsTraces(string packageVersion)
+        public async Task SubmitTraces(string packageVersion, string metadataSchemaVersion)
         {
 #if NET6_0_OR_GREATER
             if (packageVersion?.StartsWith("3.") == true)
@@ -49,6 +52,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var expectedSpanCount = 52;
 
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-rabbitmq" : EnvironmentHelper.FullSampleName;
+
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
@@ -56,9 +63,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 using var assertionScope = new AssertionScope();
                 var spans = agent.WaitForSpans(expectedSpanCount); // Do not filter on operation name because they will vary depending on instrumented method
 
-                var rabbitmqSpans = spans.Where(span => string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
+                var rabbitmqSpans = spans.Where(span => string.Equals(span.GetTag("component"), "RabbitMQ", StringComparison.OrdinalIgnoreCase));
 
-                ValidateIntegrationSpans(rabbitmqSpans, expectedServiceName: "Samples.RabbitMQ-rabbitmq");
+                ValidateIntegrationSpans(rabbitmqSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
                 var settings = VerifyHelper.GetSpanVerifierSettings();
 
                 // We generate a new queue name for the "default" queue with each run
@@ -77,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                            .ThenBy(x => x.Resource)
                                            .ThenBy(x => x.Start)
                                            .ThenBy(x => x.Duration))
-                                  .UseFileName(filename)
+                                  .UseFileName(filename + $".Schema{metadataSchemaVersion.ToUpper()}")
                                   .DisableRequireUniquePrefix();
             }
 

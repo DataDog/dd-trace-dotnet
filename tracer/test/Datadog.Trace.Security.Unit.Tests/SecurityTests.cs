@@ -6,7 +6,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.RcmModels.Asm;
+using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using FluentAssertions;
 using Xunit;
 

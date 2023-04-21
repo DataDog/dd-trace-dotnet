@@ -4,6 +4,9 @@ using System.Data.SQLite;
 using System;
 using System.Text;
 using Samples.Security.Data;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Net;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -33,7 +36,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         public ActionResult SqlQuery(string username, string query)
         {
             try
-            { 
+            {
                 if (dbConnection is null)
                 {
                     dbConnection = IastControllerHelper.CreateDatabase();
@@ -58,6 +61,31 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
 
             return Content($"No query or username was provided");
+        }
+
+        [Route("ExecuteCommand")]
+        public ActionResult ExecuteCommand(string file, string argumentLine)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(file))
+                {
+                    var result = Process.Start(file, argumentLine);
+                    return Content($"Process launched: " + result.ProcessName);
+                }
+                else
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, $"No file was provided");
+                }
+            }
+            catch (Win32Exception ex)
+            {
+                return Content(IastControllerHelper.ToFormattedString(ex));
+            }
+            catch (Exception ex)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError, IastControllerHelper.ToFormattedString(ex));
+            }
         }
     }
 }

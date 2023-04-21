@@ -9,6 +9,31 @@
 class RawAllocationSample : public RawSample
 {
 public:
+    RawAllocationSample() = default;
+
+    RawAllocationSample(RawAllocationSample&& other) noexcept
+        :
+        RawSample(std::move(other)),
+        AllocationClass(std::move(other.AllocationClass)),
+        AllocationSize(other.AllocationSize),
+        Address(other.Address),
+        MethodTable(other.MethodTable)
+    {
+    }
+
+    RawAllocationSample& operator=(RawAllocationSample&& other) noexcept
+    {
+        if (this != &other)
+        {
+            RawSample::operator=(std::move(other));
+            AllocationClass = std::move(other.AllocationClass);
+            AllocationSize = other.AllocationSize;
+            Address = other.Address;
+            MethodTable = other.MethodTable;
+        }
+        return *this;
+    }
+
     inline void OnTransform(std::shared_ptr<Sample>& sample, uint32_t valueOffset) const override
     {
         uint32_t allocationCountIndex = valueOffset;

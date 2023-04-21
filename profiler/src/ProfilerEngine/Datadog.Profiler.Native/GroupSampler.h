@@ -9,43 +9,122 @@
 #include "GenericSampler.h"
 #include "IConfiguration.h"
 
+template <class TGroup>
+struct UpscaleGroupInfo
+{
+public:
+    TGroup Group;
+    uint64_t RealCount;
+    uint64_t SampledCount;
+};
 
 // Template class that support "sampling by group".
-// At least one element in the group will ALWAYS be sampled
+// At least one element in the group will ALWAYS be sampled if keepAtleastOne is true
 template <class TGroup>
 class GroupSampler : public GenericSampler
 {
 public:
-    GroupSampler<TGroup>(int32_t samplesLimit, std::chrono::seconds uploadInterval)
+    GroupSampler<TGroup>(int32_t samplesLimit, std::chrono::seconds uploadInterval, bool keepAtLeastOne = true)
         :
-        GenericSampler(samplesLimit, uploadInterval)
+        GenericSampler(samplesLimit, uploadInterval),
+        _keepAtLeastOne{keepAtLeastOne}
     {
     }
 
+public:
+    struct GroupInfo
+    {
+        uint64_t Real;
+        uint64_t Sampled;
+    };
+
+public:
     bool Sample(TGroup group)
     {
-        std::unique_lock lock(_knownGroupsMutex);
+        std::unique_lock lock(_groupsMutex);
+
+        // increment the real count for the given group
+        GroupInfo* pInfo;
+        AddInGroup(group, pInfo);
 
         auto [it, inserted] = _knownGroups.insert(std::move(group));
-        if (inserted)
+        if (inserted && _keepAtLeastOne)
         {
+            // increment the sampled count for the given group
+            pInfo->Sampled++;
+
             // This is the first time we see this group in this time window,
-            // force the sampling decision
+            // so force the sampling decision
             return _sampler.Keep();
         }
 
-        // We've already seen this group, let the sampler decide
-        return _sampler.Sample();
+        auto sampled = _sampler.Sample();
+        if (sampled)
+        {
+            // increment the sampled count for the given group
+            pInfo->Sampled++;
+        }
+
+        return sampled;
+    }
+
+    // MUST be called under the lock
+    void AddInGroup(TGroup group, GroupInfo*& groupInfo)
+    {
+        auto info = _groups.find(group);
+        if (info != _groups.end())
+        {
+            groupInfo = &(info->second);
+            info->second.Real++;
+
+            return;
+        }
+
+        // need to add the info of this new group
+        GroupInfo gi;
+        gi.Real = 1;
+        gi.Sampled = 0;
+        auto slot = _groups.insert_or_assign(group, gi);
+        groupInfo = &((*slot.first).second);
+    }
+
+    std::vector<UpscaleGroupInfo<TGroup>> GetGroups()
+    {
+        std::vector<UpscaleGroupInfo<TGroup>> upscaleGroups;
+        std::unique_lock lock(_groupsMutex);
+
+        upscaleGroups.reserve(_groups.size());
+
+        for (auto& [name, counts] : _groups)
+        {
+            auto sampledCount = counts.Sampled;
+            if (sampledCount > 0)
+            {
+                upscaleGroups.push_back(UpscaleGroupInfo<TGroup>{name, counts.Real, sampledCount});
+            }
+
+            // reset groups count
+            counts.Real = 0;
+            counts.Sampled = 0;
+        }
+
+        return upscaleGroups;
     }
 
 protected:
     void OnRollWindow() override
     {
-        std::unique_lock lock(_knownGroupsMutex);
+        std::unique_lock lock(_groupsMutex);
         _knownGroups.clear();
     }
 
 private:
+    // _knownGroups is used to detect when a new group appear during a given window
     std::unordered_set<TGroup> _knownGroups;
-    std::mutex _knownGroupsMutex;
+
+    // _groups keeps track of the sampled/real count per group
+    std::unordered_map<TGroup, GroupInfo> _groups;
+    bool _keepAtLeastOne;
+
+    std::mutex _groupsMutex;
 };

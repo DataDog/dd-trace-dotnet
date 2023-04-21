@@ -29,6 +29,14 @@ namespace Datadog.Trace.TestHelpers
         public CustomTestFramework(IMessageSink messageSink, Type typeTestedAssembly)
             : this(messageSink)
         {
+            Task memoryDumpTask = null;
+
+            if (bool.Parse(Environment.GetEnvironmentVariable("enable_crash_dumps") ?? "false"))
+            {
+                var progress = new Progress<string>(message => messageSink.OnMessage(new DiagnosticMessage(message)));
+                memoryDumpTask = MemoryDumpHelper.InitializeAsync(progress);
+            }
+
             var targetPath = GetMonitoringHomeTargetFrameworkFolder();
 
             if (targetPath != null)
@@ -38,15 +46,23 @@ namespace Datadog.Trace.TestHelpers
                 File.Copy(file, destination, true);
 
                 messageSink.OnMessage(new DiagnosticMessage("Replaced {0} with {1} to setup code coverage", destination, file));
+            }
+            else
+            {
+                var message = "Could not find the target framework directory";
 
-                return;
+                messageSink.OnMessage(new DiagnosticMessage(message));
+                throw new DirectoryNotFoundException(message);
             }
 
-            var message = "Could not find the target framework directory";
-
-            messageSink.OnMessage(new DiagnosticMessage(message));
-
-            throw new DirectoryNotFoundException(message);
+            try
+            {
+                memoryDumpTask?.GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                messageSink.OnMessage(new DiagnosticMessage($"MemoryDumpHelper initialization failed: {ex}"));
+            }
         }
 
         internal static string GetMonitoringHomeTargetFrameworkFolder()

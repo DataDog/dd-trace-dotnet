@@ -12,8 +12,10 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -57,38 +59,54 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         [Trait("RunOnWindows", "True")]
         public async Task TestSecurityToggling()
         {
-            var expectedState = EnableSecurity == false ? ApplyStates.UNACKNOWLEDGED : ApplyStates.ACKNOWLEDGED;
+            // we acknowledge either way, data is changed in memory
+            var expectedState = ApplyStates.ACKNOWLEDGED;
 
             var url = "/Health/?[$slice]=value";
             await TryStartApp();
             var agent = Fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
-            var spans1 = await SendRequestsAsync(agent, url);
-            var acknowledgedId = nameof(TestSecurityToggling) + Guid.NewGuid();
+            var span0nominalState = await SendRequestsAsync(agent, url);
 
-            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, acknowledgedId) }, "ASM_FEATURES", "first", new[] { acknowledgedId });
+            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, "ASM_FEATURES", nameof(TestSecurityToggling)) }, timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
+            request1.Should().NotBeNull();
 
-            RcmBase.CheckAckState(request1, "ASM_FEATURES", 1, expectedState, null, "First RCM call");
-            request1.Client.State.BackendClientState.Should().Be("first");
+            void CheckRequest(GetRcmRequest associatedRcmRequest, int fileNumberIfSecurityCanBeToggled)
+            {
+                if (EnableSecurity != null)
+                {
+                    associatedRcmRequest.CachedTargetFiles.Should().BeEmpty();
+                    associatedRcmRequest.Client.Products.Should().HaveCount(EnableSecurity == false ? 0 : 3);
+                }
+                else
+                {
+                    associatedRcmRequest.CachedTargetFiles.Should().HaveCount(fileNumberIfSecurityCanBeToggled);
+                    if (fileNumberIfSecurityCanBeToggled > 0)
+                    {
+                        CheckAckState(associatedRcmRequest, "ASM_FEATURES", 1, expectedState, null, "First RCM call");
+                    }
+                }
+            }
 
-            RcmBase.CheckAckState(request1, "ASM_FEATURES", 1, expectedState, null, "First RCM call");
+            CheckRequest(request1, 1);
+            var span1ShouldStillBeDisabled = await SendRequestsAsync(agent, url);
 
-            var spans2 = await SendRequestsAsync(agent, url);
-            var acknowledgedId2 = nameof(TestSecurityToggling) + Guid.NewGuid();
+            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, "ASM_FEATURES", nameof(TestSecurityToggling)) });
+            CheckRequest(request2, 1);
 
-            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, acknowledgedId2) }, "ASM_FEATURES", "second", new[] { acknowledgedId2 });
+            var spans2ShouldBeEnabled = await SendRequestsAsync(agent, url);
 
-            RcmBase.CheckAckState(request2, "ASM_FEATURES", 1, expectedState, null, "Second RCM call");
+            var request3 = await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductId, string Id)>());
+            CheckRequest(request3, 0);
 
-            var request3 = await agent.WaitRcmRequestAndReturnLast(appliedServiceNames: new[] { acknowledgedId2 });
-            request3.Client.State.BackendClientState.Should().Be("second");
-            var spans3 = await SendRequestsAsync(agent, url);
+            var span3ConfigurationRemovedShouldBeDisabled = await SendRequestsAsync(agent, url);
 
             var spans = new List<MockSpan>();
-            spans.AddRange(spans1);
-            spans.AddRange(spans2);
-            spans.AddRange(spans3);
+            spans.AddRange(span0nominalState);
+            spans.AddRange(span1ShouldStillBeDisabled);
+            spans.AddRange(spans2ShouldBeEnabled);
+            spans.AddRange(span3ConfigurationRemovedShouldBeDisabled);
 
             await VerifySpans(spans.ToImmutableList(), settings);
         }
@@ -97,7 +115,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
     public class AspNetCore5AsmToggleConfigError : RcmBase
     {
         public AspNetCore5AsmToggleConfigError(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmToggleConfigError))
+            : base(fixture, outputHelper, enableSecurity: null, testName: nameof(AspNetCore5AsmToggleConfigError))
         {
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
         }
@@ -112,11 +130,9 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
             var spans1 = await SendRequestsAsync(agent, url);
-            var acknowledgedId = nameof(TestRemoteConfigError) + Guid.NewGuid();
+            var request = await agent.SetupRcmAndWait(Output, new[] { ((object)"haha, you weren't expect this!", "ASM_FEATURES", nameof(TestRemoteConfigError)) });
 
-            var request = await agent.SetupRcmAndWait(Output, new[] { ((object)"haha, you weren't expect this!", acknowledgedId) }, "ASM_FEATURES", appliedServiceNames: new[] { acknowledgedId });
-
-            RcmBase.CheckAckState(request, "ASM_FEATURES", 1, ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.AppSec.AsmFeatures'. Path '', line 1, position 32.", "First RCM call");
+            CheckAckState(request, "ASM_FEATURES", 1, ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.AppSec.Rcm.Models.AsmFeatures.AsmFeatures'. Path '', line 1, position 32.", "First RCM call");
 
             await VerifySpans(spans1.ToImmutableList(), settings);
         }

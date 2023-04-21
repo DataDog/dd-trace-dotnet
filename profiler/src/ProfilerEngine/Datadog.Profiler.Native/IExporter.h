@@ -6,6 +6,7 @@
 
 // forward declarations
 class IProfile;
+class IUpscaleProvider;
 class Sample;
 
 class IExporter
@@ -15,4 +16,5 @@ public:
     virtual void Add(std::shared_ptr<Sample> const& sample) = 0;
     virtual void SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint) = 0;
     virtual bool Export() = 0;
+    virtual void RegisterUpscaleProvider(IUpscaleProvider* provider) = 0;
 };

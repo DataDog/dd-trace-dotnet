@@ -4,8 +4,10 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.Configuration;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Configuration
@@ -13,16 +15,19 @@ namespace Datadog.Trace.Tests.Configuration
     public class ServiceNameTests
     {
         private const string ApplicationName = "MyApplication";
-        private readonly ServiceNames _serviceNames;
+        private readonly ServiceNames _serviceNamesV0;
+        private readonly ServiceNames _serviceNamesV1;
 
         public ServiceNameTests()
         {
-            _serviceNames = new ServiceNames(new Dictionary<string, string>
+            var mappings = new Dictionary<string, string>
             {
                 { "sql-server", "custom-db" },
                 { "http-client", "some-service" },
                 { "mongodb", "my-mongo" },
-            });
+            };
+            _serviceNamesV0 = new ServiceNames(mappings, "v0");
+            _serviceNamesV1 = new ServiceNames(mappings, "v1");
         }
 
         [Theory]
@@ -31,80 +36,95 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("mongodb", "my-mongo")]
         public void RetrievesMappedServiceNames(string serviceName, string expected)
         {
-            var actual = _serviceNames.GetServiceName(ApplicationName, serviceName);
-
-            Assert.Equal(expected, actual);
+            _serviceNamesV0.GetServiceName(ApplicationName, serviceName).Should().Be(expected);
+            _serviceNamesV1.GetServiceName(ApplicationName, serviceName).Should().Be(expected);
         }
 
         [Theory]
         [InlineData("elasticsearch")]
         [InlineData("postgres")]
         [InlineData("custom-service")]
-        public void RetrievesUnmappedServiceNames(string serviceName)
+        public void RetrievesUnmappedServiceNamesV0(string serviceName)
         {
             var expected = $"{ApplicationName}-{serviceName}";
-
-            var actual = _serviceNames.GetServiceName(ApplicationName, serviceName);
-
-            Assert.Equal(expected, actual);
+            _serviceNamesV0.GetServiceName(ApplicationName, serviceName).Should().Be(expected);
         }
 
         [Theory]
         [InlineData("elasticsearch")]
         [InlineData("postgres")]
         [InlineData("custom-service")]
-        public void DoesNotRequireAnyMappings(string serviceName)
+        public void RetrievesUnmappedServiceNamesV1(string serviceName)
         {
-            var serviceNames = new ServiceNames(new Dictionary<string, string>());
+            _serviceNamesV1.GetServiceName(ApplicationName, serviceName).Should().Be(ApplicationName);
+        }
+
+        [Theory]
+        [InlineData("elasticsearch")]
+        [InlineData("postgres")]
+        [InlineData("custom-service")]
+        public void DoesNotRequireAnyMappingsV0(string serviceName)
+        {
+            var serviceNames = new ServiceNames(new Dictionary<string, string>(), "v0");
             var expected = $"{ApplicationName}-{serviceName}";
 
-            var actual = serviceNames.GetServiceName(ApplicationName, serviceName);
+            serviceNames.GetServiceName(ApplicationName, serviceName).Should().Be(expected);
+        }
 
-            Assert.Equal(expected, actual);
+        [Theory]
+        [InlineData("elasticsearch")]
+        [InlineData("postgres")]
+        [InlineData("custom-service")]
+        public void DoesNotRequireAnyMappingsV1(string serviceName)
+        {
+            var serviceNames = new ServiceNames(new Dictionary<string, string>(), "v1");
+
+            serviceNames.GetServiceName(ApplicationName, serviceName).Should().Be(ApplicationName);
         }
 
         [Fact]
-        public void CanPassNullToConstructor()
+        public void CanPassNullToConstructorV0()
         {
             var serviceName = "elasticsearch";
             var expected = $"{ApplicationName}-{serviceName}";
-            var serviceNames = new ServiceNames(null);
+            var serviceNames = new ServiceNames(null, "v0");
 
-            var actual = serviceNames.GetServiceName(ApplicationName, serviceName);
-
-            Assert.Equal(expected, actual);
+            serviceNames.GetServiceName(ApplicationName, serviceName).Should().Be(expected);
         }
 
         [Fact]
-        public void CanAddMappingsLater()
+        public void CanPassNullToConstructorV1()
+        {
+            var serviceName = "elasticsearch";
+            var serviceNames = new ServiceNames(null, "v1");
+
+            serviceNames.GetServiceName(ApplicationName, serviceName).Should().Be(ApplicationName);
+        }
+
+        [Fact]
+        public void CanAddMappingsViaConfigurationSourceV0()
         {
             var serviceName = "elasticsearch";
             var expected = "custom-name";
-            var serviceNames = new ServiceNames(new Dictionary<string, string>());
-            serviceNames.SetServiceNameMappings(new Dictionary<string, string> { { serviceName, expected } });
 
-            var actual = serviceNames.GetServiceName(ApplicationName, serviceName);
+            var collection = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, "v0" }, { ConfigurationKeys.ServiceNameMappings, $"{serviceName}:{expected}" } };
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(collection));
 
-            Assert.Equal(expected, actual);
+            var immutableTracerSettings = new ImmutableTracerSettings(tracerSettings);
+            immutableTracerSettings.ServiceNameMappings.GetServiceName(ApplicationName, serviceName).Should().Be(expected);
         }
 
         [Fact]
-        public void ReplacesExistingMappings()
+        public void CanAddMappingsViaConfigurationSourceV1()
         {
-            var serviceNames = new ServiceNames(new Dictionary<string, string>
-            {
-                { "sql-server", "custom-db" },
-                { "elasticsearch", "original-service" },
-            });
-            serviceNames.SetServiceNameMappings(new Dictionary<string, string> { { "elasticsearch", "custom-name" } });
+            var serviceName = "elasticsearch";
+            var expected = "custom-name";
 
-            var mongodbActual = serviceNames.GetServiceName(ApplicationName, "mongodb");
-            var elasticActual = serviceNames.GetServiceName(ApplicationName, "elasticsearch");
-            var sqlActual = serviceNames.GetServiceName(ApplicationName, "sql-server");
+            var collection = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, "v1" }, { ConfigurationKeys.ServiceNameMappings, $"{serviceName}:{expected}" } };
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(collection));
 
-            Assert.Equal($"{ApplicationName}-mongodb", mongodbActual);
-            Assert.Equal("custom-name", elasticActual);
-            Assert.Equal($"{ApplicationName}-sql-server", sqlActual);
+            var immutableTracerSettings = new ImmutableTracerSettings(tracerSettings);
+            immutableTracerSettings.ServiceNameMappings.GetServiceName(ApplicationName, serviceName).Should().Be(expected);
         }
     }
 }

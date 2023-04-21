@@ -151,7 +151,7 @@ namespace Datadog.Trace.AspNet
                 scope = tracer.StartActiveInternal(_requestOperationName, propagatedContext, tags: tags);
                 // Leave resourceName blank for now - we'll update it in OnEndRequest
                 scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, userAgent, tags, tagsFromHeaders);
-                if (tracer.Settings.IpHeaderEnabled || Security.Instance.Settings.Enabled)
+                if (tracer.Settings.IpHeaderEnabled || Security.Instance.Enabled)
                 {
                     Headers.Ip.RequestIpExtractor.AddIpToTags(httpRequest.UserHostAddress, httpRequest.IsSecureConnection, key => httpRequest.Headers[key], tracer.Settings.IpHeader, tags);
                 }
@@ -172,7 +172,7 @@ namespace Datadog.Trace.AspNet
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
                 var security = Security.Instance;
-                if (security.Settings.Enabled)
+                if (security.Enabled)
                 {
                     SecurityCoordinator.ReportWafInitInfoOnce(security, scope.Span);
                     var securityCoordinator = new SecurityCoordinator(security, httpContext, scope.Span);
@@ -274,7 +274,7 @@ namespace Datadog.Trace.AspNet
                         }
 
                         var security = Security.Instance;
-                        if (security.Settings.Enabled)
+                        if (security.Enabled)
                         {
                             var securityCoordinator = new SecurityCoordinator(security, app.Context, rootSpan);
                             if (!securityCoordinator.IsBlocked)

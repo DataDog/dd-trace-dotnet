@@ -15,19 +15,13 @@ namespace Datadog.Trace.Tagging
 {
     internal class TraceTagCollection
     {
-        private readonly int _outgoingHeaderMaxLength;
-
         private List<KeyValuePair<string, string>>? _tags;
         private string? _cachedPropagationHeader;
 
-        public TraceTagCollection(int outgoingHeaderMaxLength)
-            : this(outgoingHeaderMaxLength, null, null)
+        public TraceTagCollection(
+            List<KeyValuePair<string, string>>? tags = null,
+            string? cachedPropagationHeader = null)
         {
-        }
-
-        public TraceTagCollection(int outgoingHeaderMaxLength, List<KeyValuePair<string, string>>? tags, string? cachedPropagationHeader)
-        {
-            _outgoingHeaderMaxLength = outgoingHeaderMaxLength;
             _tags = tags;
             _cachedPropagationHeader = cachedPropagationHeader;
         }
@@ -212,15 +206,36 @@ namespace Datadog.Trace.Tagging
             }
         }
 
+        public void FixTraceIdTag(TraceId traceId)
+        {
+            var tagValue = GetTag(Trace.Tags.Propagated.TraceIdUpper);
+
+            if (traceId.Upper > 0)
+            {
+                // add missing "_dd.p.tid" tag with the upper 64 bits of the trace id,
+                // or replace existing tag if it has the wrong value
+                // (parse the hex string and compare ulongs to avoid allocating another string)
+                if (tagValue == null || !HexString.TryParseUInt64(tagValue, out var currentValue) || currentValue != traceId.Upper)
+                {
+                    SetTag(Trace.Tags.Propagated.TraceIdUpper, HexString.ToHexString(traceId.Upper));
+                }
+            }
+            else if (traceId.Upper == 0 && tagValue != null)
+            {
+                // remove tag "_dd.p.tid" if trace id is only 64 bits
+                RemoveTag(Trace.Tags.Propagated.TraceIdUpper);
+            }
+        }
+
         /// <summary>
         /// Constructs a string that can be used for horizontal propagation using the "x-datadog-tags" header
         /// in a "key1=value1,key2=value2" format. This header should only include tags with the "_dd.p.*" prefix.
         /// The returned string is cached and reused if no relevant tags are changed between calls.
         /// </summary>
         /// <returns>A string that can be used for horizontal propagation using the "x-datadog-tags" header.</returns>
-        public string ToPropagationHeader()
+        public string ToPropagationHeader(int? maximumHeaderLength)
         {
-            return _cachedPropagationHeader ??= TagPropagation.ToHeader(this, _outgoingHeaderMaxLength);
+            return _cachedPropagationHeader ??= TagPropagation.ToHeader(this, maximumHeaderLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
         }
 
         public KeyValuePair<string, string>[] ToArray()

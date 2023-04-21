@@ -11,7 +11,7 @@ using Datadog.Trace.Vendors.StatsdClient;
 namespace Datadog.Trace.TestHelpers
 {
     #pragma warning disable SA1601 // Partial elements should be documented
-    public static partial class SpanMetadataRules
+    public static class SpanMetadataRulesHelpers
     {
         internal static (string PropertyName, string Result) Name(MockSpan span) => (nameof(span.Name), span.Name);
 

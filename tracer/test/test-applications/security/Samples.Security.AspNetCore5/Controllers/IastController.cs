@@ -1,5 +1,7 @@
 using System;
+using System.ComponentModel;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
@@ -61,6 +63,32 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
 
             return BadRequest($"No query or username was provided");
+        }
+
+        [HttpGet("ExecuteCommand")]
+        [Route("ExecuteCommand")]
+        public IActionResult ExecuteCommand(string file, string argumentLine)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(file))
+                {
+                    var result = Process.Start(file, argumentLine);
+                    return Content($"Process launched: " + result.ProcessName);
+                }
+                else
+                {
+                    return BadRequest($"No file was provided");
+                }
+            }
+            catch (Win32Exception ex)
+            {
+                return Content(IastControllerHelper.ToFormattedString(ex));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
+            }
         }
     }
 }

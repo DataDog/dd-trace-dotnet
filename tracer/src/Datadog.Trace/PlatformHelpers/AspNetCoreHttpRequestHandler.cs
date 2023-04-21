@@ -127,7 +127,7 @@ namespace Datadog.Trace.PlatformHelpers
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, propagatedContext, tags: tags);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags, tagsFromHeaders);
-            if (tracer.Settings.IpHeaderEnabled || security.Settings.Enabled)
+            if (tracer.Settings.IpHeaderEnabled || security.Enabled)
             {
                 var peerIp = new Headers.Ip.IpInfo(httpContext.Connection.RemoteIpAddress?.ToString(), httpContext.Connection.RemotePort);
                 Func<string, string> getRequestHeaderFromKey = key => request.Headers.TryGetValue(key, out var value) ? value : string.Empty;
@@ -170,7 +170,7 @@ namespace Datadog.Trace.PlatformHelpers
                 }
 
                 span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
-                if (security.Settings.Enabled)
+                if (security.Enabled)
                 {
                     var transport = new SecurityCoordinator(security, httpContext, span);
                     transport.AddResponseHeadersToSpanAndCleanup();

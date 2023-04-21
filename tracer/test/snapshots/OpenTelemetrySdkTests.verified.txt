@@ -27,7 +27,8 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       attribute-double: 2.0,
@@ -221,7 +222,8 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -249,7 +251,8 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -274,7 +277,8 @@
       otel.trace_id: Guid_6,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,

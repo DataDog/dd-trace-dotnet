@@ -2,15 +2,18 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
-#include "CollectorBase.h"
 
-#include "IContentionListener.h"
-#include "RawContentionSample.h"
+#include <atomic>
+
+#include "CollectorBase.h"
+#include "CounterMetric.h"
 #include "GenericSampler.h"
 #include "GroupSampler.h"
-#include "MetricsRegistry.h"
-#include "CounterMetric.h"
+#include "IContentionListener.h"
+#include "IUpscaleProvider.h"
 #include "MeanMaxMetric.h"
+#include "MetricsRegistry.h"
+#include "RawContentionSample.h"
 
 class IConfiguration;
 class IManagedThreadList;
@@ -20,7 +23,10 @@ class IAppDomainStore;
 class IRuntimeIdStore;
 
 
-class ContentionProvider : public CollectorBase<RawContentionSample>, public IContentionListener
+class ContentionProvider :
+    public CollectorBase<RawContentionSample>,
+    public IContentionListener,
+    public IUpscaleProvider
 {
 public:
     static std::vector<SampleValueType> SampleTypeDefinitions;
@@ -39,6 +45,8 @@ public:
 
     void OnContention(double contentionDurationNs) override;
 
+    UpscalingInfo GetInfo() override;
+
 private:
     static std::string GetBucket(double contentionDurationNs);
 
@@ -52,4 +60,5 @@ private:
     std::shared_ptr<MeanMaxMetric> _lockContentionsDurationMetric;
     std::shared_ptr<CounterMetric> _sampledLockContentionsCountMetric;
     std::shared_ptr<MeanMaxMetric> _sampledLockContentionsDurationMetric;
+    std::mutex _contentionsLock;
 };

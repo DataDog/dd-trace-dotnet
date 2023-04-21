@@ -104,7 +104,7 @@ internal readonly partial struct SecurityCoordinator
 
     internal static void ReportWafInitInfoOnce(Security security, Span span)
     {
-        if (!security.WafInitResult.Reported)
+        if (security.WafInitResult is { Reported: false })
         {
             span = TryGetRoot(span);
             security.WafInitResult.Reported = true;

@@ -5,29 +5,35 @@
 
 #nullable enable
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
-
 namespace Datadog.Trace.RemoteConfigurationManagement;
 
 internal struct ApplyDetails
 {
-    public ApplyDetails()
+    public ApplyDetails(string filename)
     {
-        Filename = null;
+        Filename = filename;
         ApplyState = ApplyStates.UNACKNOWLEDGED;
         Error = null;
     }
 
-    public string? Filename { get; set; }
+    public string Filename { get; }
 
     public uint ApplyState { get; set; }
 
     public string? Error { get; set; }
+
+    public static ApplyDetails FromOk(string fileName)
+    {
+        var applyDetails = new ApplyDetails(fileName);
+        if (applyDetails.ApplyState == ApplyStates.UNACKNOWLEDGED)
+        {
+            applyDetails.ApplyState = ApplyStates.ACKNOWLEDGED;
+        }
+
+        return applyDetails;
+    }
+
+    public static ApplyDetails FromError(string fileName, string? error) => new(fileName) { ApplyState = ApplyStates.ERROR, Error = error };
 
     public override string ToString()
     {

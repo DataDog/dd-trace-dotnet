@@ -15,12 +15,18 @@ internal readonly record struct TraceId(ulong Upper, ulong Lower) : IComparable<
 {
     public const int Size = sizeof(ulong) * 2;
 
+    public static readonly TraceId Zero = new(0, 0);
+
     public readonly ulong Upper = Upper;
     public readonly ulong Lower = Lower;
 
-    public static implicit operator TraceId(ulong lower) => new(0, lower);
+    public static explicit operator TraceId(ulong lower) => new(0, lower);
 
-    public static implicit operator TraceId(int lower) => new(0, (ulong)lower);
+    public static explicit operator TraceId(long lower) => new(0, (ulong)lower);
+
+    public static explicit operator TraceId(uint lower) => new(0, lower);
+
+    public static explicit operator TraceId(int lower) => new(0, (ulong)lower);
 
     public static bool operator <(TraceId left, TraceId right)
     {
@@ -81,6 +87,8 @@ internal readonly record struct TraceId(ulong Upper, ulong Lower) : IComparable<
     [Pure]
     public override string ToString()
     {
-        return HexString.ToHexString(this, pad16To32: true, lowerCase: true);
+        return this == Zero ?
+                   "00000000000000000000000000000000" :
+                   HexString.ToHexString(this, pad16To32: true, lowerCase: true);
     }
 }

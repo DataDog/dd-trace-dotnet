@@ -412,7 +412,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var security = CurrentSecurity;
 
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = security.Settings.Enabled;
+            var shouldSecure = security.Enabled;
 
             if (!shouldTrace && !shouldSecure)
             {
@@ -575,7 +575,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var security = CurrentSecurity;
 
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = security.Settings.Enabled;
+            var shouldSecure = security.Enabled;
             var shouldUseIast = Iast.Iast.Instance.Settings.Enabled;
 
             if (!shouldTrace && !shouldSecure && !shouldUseIast)

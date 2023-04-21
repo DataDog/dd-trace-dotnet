@@ -106,6 +106,16 @@ namespace Datadog.Trace.Ci.Tags
         public const string CIJobName = "ci.job.name";
 
         /// <summary>
+        /// CI Node Name
+        /// </summary>
+        public const string CINodeName = "ci.node.name";
+
+        /// <summary>
+        /// CI Node Labels
+        /// </summary>
+        public const string CINodeLabels = "ci.node.labels";
+
+        /// <summary>
         /// CI Stage Name
         /// </summary>
         public const string StageName = "ci.stage.name";

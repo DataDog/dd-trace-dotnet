@@ -405,6 +405,14 @@ namespace Datadog.Trace.Configuration
         public const string DbmPropagationMode = "DD_DBM_PROPAGATION_MODE";
 
         /// <summary>
+        /// Configuration key for setting the schema version for service naming and span attributes
+        /// Accepted values are: "v1", "v0"
+        /// Default value is "v0"
+        /// </summary>
+        /// <seealso cref="TracerSettings.MetadataSchemaVersion"/>
+        public const string MetadataSchemaVersion = "DD_TRACE_SPAN_ATTRIBUTE_SCHEMA";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility
@@ -559,7 +567,7 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Enables a fix around header tags normalization.
             /// We used to normalize periods even if a tag was provided for a header, whereas we should not.
-            /// This flag defaults to true and is here in case customers need retrocompatibility only
+            /// This flag defaults to true and is here only in case customers need backwards compatibility.
             /// </summary>
             public const string HeaderTagsNormalizationFixEnabled = "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED";
 
@@ -567,6 +575,22 @@ namespace Datadog.Trace.Configuration
             /// Enables beta support for instrumentation via the System.Diagnostics API and the OpenTelemetry SDK.
             /// </summary>
             public const string OpenTelemetryEnabled = "DD_TRACE_OTEL_ENABLED";
+
+            /// <summary>
+            /// Enables generating 128-bit trace ids instead of 64-bit trace ids.
+            /// Note that a 128-bit trace id may be received from an upstream service or from
+            /// an Activity even if we are not generating them ourselves.
+            /// Default value is <c>false</c> (disabled).
+            /// </summary>
+            public const string TraceId128BitGenerationEnabled = "DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED";
+
+            /// <summary>
+            /// Enables injecting 128-bit trace ids into logs as a hexadecimal string.
+            /// If disabled, 128-bit trace ids will be truncated to the lower 64 bits,
+            /// and all trace ids will be injected as decimal strings
+            /// Default value is <c>false</c> (disabled).
+            /// </summary>
+            public const string TraceId128BitLoggingEnabled = "DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED";
         }
 
         internal static class Telemetry

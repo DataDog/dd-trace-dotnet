@@ -6,6 +6,8 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <vector>
+
 #include "Log.h"
 #include "OpSysTools.h"
 
@@ -50,6 +52,7 @@ public:
     CollectorBase<TRawSample>(
         const char* name,
         uint32_t valueOffset,
+        std::size_t nbValues,
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAppDomainStore,
@@ -64,6 +67,11 @@ public:
         _pThreadsCpuManager{pThreadsCpuManager},
         _isTimestampsAsLabelEnabled{pConfiguration->IsTimestampsAsLabelEnabled()}
     {
+        _valueOffsets.reserve(nbValues);
+        for (auto i = _valueOffset; i < _valueOffset + nbValues; i++)
+        {
+            _valueOffsets.push_back(i);
+        }
     }
 
 // interfaces implementation
@@ -131,6 +139,11 @@ protected:
     uint64_t GetCurrentTimestamp()
     {
         return OpSysTools::GetHighPrecisionTimestamp();
+    }
+
+    std::vector<std::uintptr_t> const& GetValueOffsets() const
+    {
+        return _valueOffsets;
     }
 
 private:
@@ -240,4 +253,5 @@ private:
 
     std::mutex _rawSamplesLock;
     std::list<TRawSample> _collectedSamples;
+    std::vector<std::uintptr_t> _valueOffsets;
 };

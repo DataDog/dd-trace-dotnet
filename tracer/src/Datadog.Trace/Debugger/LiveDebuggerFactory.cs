@@ -27,7 +27,7 @@ internal class LiveDebuggerFactory
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebuggerFactory));
 
-    public static LiveDebugger Create(IDiscoveryService discoveryService, IRemoteConfigurationManager remoteConfigurationManager, ImmutableTracerSettings tracerSettings, string serviceName)
+    public static LiveDebugger Create(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, ImmutableTracerSettings tracerSettings, string serviceName)
     {
         var settings = DebuggerSettings.FromDefaultSource();
         if (!settings.Enabled)
