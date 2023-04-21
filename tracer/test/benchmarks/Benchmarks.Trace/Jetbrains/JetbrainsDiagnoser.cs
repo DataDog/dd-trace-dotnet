@@ -12,6 +12,8 @@ using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Validators;
 using JetBrains.Profiler.SelfApi;
 
+#nullable enable
+
 namespace Benchmarks.Trace.Jetbrains;
 
 /// <summary>
@@ -62,11 +64,11 @@ internal class JetbrainsDiagnoser : IDiagnoser
             switch (_product)
             {
                 case JetbrainsProduct.Memory:
-                    DotMemory.Attach(new DotMemory.Config().SaveToFile(filePath));
+                    DotMemory.Attach(new DotMemory.Config().SaveToFile(filePath + ".dmw"));
                     DotMemory.GetSnapshot("Start");
                     break;
                 case JetbrainsProduct.Trace:
-                    DotTrace.Attach(new DotTrace.Config().SaveToFile(filePath));
+                    DotTrace.Attach(new DotTrace.Config().SaveToFile(filePath + ".dtp"));
                     DotTrace.StartCollectingData();
                     break;
             }

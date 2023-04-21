@@ -1,6 +1,8 @@
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
 
+#nullable enable
+
 namespace Benchmarks.Trace.Jetbrains;
 
 /// <summary>
