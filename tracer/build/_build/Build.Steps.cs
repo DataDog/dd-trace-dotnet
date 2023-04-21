@@ -671,12 +671,16 @@ partial class Build
                 var outputDir = SymbolsDirectory / new FileInfo(file).Directory!.Name;
                 EnsureExistingDirectory(outputDir);
                 var outputFile = outputDir / Path.GetFileNameWithoutExtension(file);
+                var debugOutputFile = outputFile + ".debug";
 
-                Logger.Info($"Extracting debug symbol for {file} to {outputFile}.debug");
-                ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {outputFile}.debug");
+                Logger.Info($"Extracting debug symbol for {file} to {debugOutputFile}");
+                ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {debugOutputFile}");
 
                 Logger.Info($"Stripping out unneeded information from {file}");
                 StripBinary.Value(arguments: $"--strip-unneeded {file}");
+
+                Logger.Info($"Add .gnu_debuglink for {file} targeting {debugOutputFile}");
+                ExtractDebugInfo.Value(arguments: $"--add-gnu-debuglink={debugOutputFile} {file}");
             }
         });
 
