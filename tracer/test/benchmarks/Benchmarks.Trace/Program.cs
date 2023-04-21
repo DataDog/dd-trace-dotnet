@@ -10,7 +10,7 @@ using BenchmarkDotNet.Running;
 using Datadog.Trace.BenchmarkDotNet;
 using BenchmarkDotNet.Exporters.Json;
 using BenchmarkDotNet.Filters;
-using Tony.BenchmarkDotnet.Jetbrains;
+using Benchmarks.Trace.Jetbrains;
 
 namespace Benchmarks.Trace
 {
