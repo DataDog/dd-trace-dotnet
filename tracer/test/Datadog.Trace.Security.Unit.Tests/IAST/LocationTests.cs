@@ -14,7 +14,7 @@ public class LocationTests
     [Fact]
     public void GivenALocation_WhenCreatedFromFile_PathIsStored()
     {
-        var location = new Location("c:\\mydir\\file.cs", null, 23, 4);
+        var location = new Location("/mydir/file.cs", null, 23, 4);
         location.Method.Should().BeNull();
         location.Path.Should().Be("file.cs");
     }
