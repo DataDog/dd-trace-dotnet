@@ -109,6 +109,10 @@ namespace BuggyBits.Models
 
                     continue;
                 }
+                catch (Exception e)
+                {
+                    Console.WriteLine("[Error] Ooops we did not catch this one " + e.GetType().ToString());
+                }
             }
 
             return allProducts;
