@@ -10,6 +10,7 @@ using BenchmarkDotNet.Running;
 using Datadog.Trace.BenchmarkDotNet;
 using BenchmarkDotNet.Exporters.Json;
 using BenchmarkDotNet.Filters;
+using Tony.BenchmarkDotnet.Jetbrains;
 
 namespace Benchmarks.Trace
 {
@@ -20,30 +21,43 @@ namespace Benchmarks.Trace
             Console.WriteLine($"Execution context: ");
             Console.WriteLine("CurrentCulture is {0}.", CultureInfo.CurrentCulture.Name);
 
+            var config = DefaultConfig.Instance;
             if (args?.Any(a => a == "-jetbrains") == true)
             {
                 ExecuteWithJetbrainsTools(args);
+                return;
+            }
+
+            const string jetBrainsDotTrace = "-jetbrains:dottrace";
+            const string jetBrainsDotMemory = "-jetbrains:dotmemory";
+
+            if (args?.Any(a => a == jetBrainsDotTrace) == true)
+            {
+                args = args.Where(a => a != jetBrainsDotTrace).ToArray();
+                config = config.WithJetbrains(JetbrainsProduct.Trace);
+            }
+            else if (args?.Any(a => a == jetBrainsDotMemory) == true)
+            {
+                args = args.Where(a => a != jetBrainsDotMemory).ToArray();
+                config = config.WithJetbrains(JetbrainsProduct.Memory);
+            }
+            
+            config = config.WithDatadog()
+                           .AddExporter(JsonExporter.FullCompressed);
+            
+            var agentName = Environment.GetEnvironmentVariable("AGENT_NAME");
+            if (Enum.TryParse(agentName, out AgentFilterAttribute.Agent benchmarkAgent))
+            {
+                var attributeName = $"{benchmarkAgent}Attribute";
+                Console.WriteLine($"Found agent name {agentName}; executing only benchmarks decorated with '{attributeName}");
+                config.AddFilter(new AttributesFilter(new[] { attributeName }));
             }
             else
             {
-                var config = DefaultConfig.Instance
-                    .WithDatadog()
-                    .AddExporter(JsonExporter.FullCompressed);
-                // config = config.WithOptions(ConfigOptions.DisableOptimizationsValidator);
-                var agentName = Environment.GetEnvironmentVariable("AGENT_NAME");
-                if (Enum.TryParse(agentName, out AgentFilterAttribute.Agent benchmarkAgent))
-                {
-                    var attributeName = $"{benchmarkAgent}Attribute";
-                    Console.WriteLine($"Found agent name {agentName}; executing only benchmarks decorated with '{attributeName}");
-                    config.AddFilter(new AttributesFilter(new[] { attributeName }));
-                }
-                else
-                {
-                    Console.WriteLine($"Unknown agent name {agentName}; executing all benchmarks");
-                }
-
-                BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
+                Console.WriteLine($"Unknown agent name {agentName}; executing all benchmarks");
             }
+
+            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
         }
 
         private static void ExecuteWithJetbrainsTools(string[] args)
