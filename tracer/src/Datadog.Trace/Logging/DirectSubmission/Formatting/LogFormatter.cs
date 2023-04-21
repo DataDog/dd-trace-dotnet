@@ -7,7 +7,6 @@
 using System;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Text;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
@@ -347,11 +346,14 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                     service = span.ServiceName;
                 }
 
+                // encode all 128 bits of the trace id as a hex string, or
+                // encode only the lower 64 bits of the trace ids as decimal (not hex)
                 writer.WritePropertyName("dd.trace_id", escape: false);
-                writer.WriteValue($"{span.TraceId}");
+                writer.WriteValue(span.GetTraceIdStringForLogs());
 
+                // 64-bit span ids are always encoded as decimal (not hex)
                 writer.WritePropertyName("dd.span_id", escape: false);
-                writer.WriteValue($"{span.SpanId}");
+                writer.WriteValue(span.SpanId.ToString(CultureInfo.InvariantCulture));
 
                 if (span.GetTag(TestTags.Suite) is { } suite)
                 {

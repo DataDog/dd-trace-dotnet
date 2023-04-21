@@ -343,7 +343,7 @@ namespace Datadog.Trace
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
-        internal SpanContext CreateSpanContext(ISpanContext parent = null, string serviceName = null, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null)
+        internal SpanContext CreateSpanContext(ISpanContext parent = null, string serviceName = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null)
         {
             // null parent means use the currently active span
             parent ??= DistributedTracer.Instance.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.Context;
@@ -358,8 +358,8 @@ namespace Datadog.Trace
 
                 if (traceContext == null)
                 {
-                    // if parent is SpanContext but its TraceContext is null, then it was extracted from
-                    // propagation headers. create a new TraceContext (this will start a new trace) and initialize
+                    // If parent is SpanContext but its TraceContext is null, then it was extracted from
+                    // propagation headers. Create a new TraceContext (this will start a new trace) and initialize
                     // it with the propagated values (sampling priority, origin, tags, W3C trace state, etc).
                     traceContext = new TraceContext(this, parentSpanContext.PropagatedTags);
 
@@ -380,23 +380,26 @@ namespace Datadog.Trace
                 var samplingPriority = DistributedTracer.Instance.GetSamplingPriority();
                 traceContext.SetSamplingPriority(samplingPriority);
 
-                if (traceId == null)
+                if (traceId == TraceId.Zero &&
+                    Activity.ActivityListener.GetCurrentActivity() is Activity.DuckTypes.IW3CActivity { TraceId: { } activityTraceId })
                 {
-                    var activity = Activity.ActivityListener.GetCurrentActivity();
-                    if (activity is Activity.DuckTypes.IW3CActivity w3CActivity)
-                    {
-                        // If the Activity has an ActivityIdFormat.Hierarchical instead of W3C it's TraceId & SpanId will be null
-                        if (w3CActivity.TraceId is { } w3cTraceId)
-                        {
-                            // If there's an existing activity we use the same traceId (converted).
-                            rawTraceId = w3cTraceId;
-                            traceId = Convert.ToUInt64(w3cTraceId.Substring(16), 16);
-                        }
-                    }
+                    // if there's an existing Activity we try to use its TraceId,
+                    // but if Activity.IdFormat is not ActivityIdFormat.W3C, it may be null or unparsable
+                    rawTraceId = activityTraceId;
+                    HexString.TryParseTraceId(activityTraceId, out traceId);
                 }
             }
 
             var finalServiceName = serviceName ?? DefaultServiceName;
+
+            if (traceId == TraceId.Zero)
+            {
+                // generate the trace id here using the 128-bit setting
+                // instead of letting the SpanContext generate it in its ctor
+                var useAllBits = Settings?.TraceId128BitGenerationEnabled ?? false;
+                traceId = RandomIdGenerator.Shared.NextTraceId(useAllBits);
+            }
+
             return new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
         }
 
@@ -406,7 +409,7 @@ namespace Datadog.Trace
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
-        internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true)
+        internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true)
         {
             var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId);
 

@@ -25,7 +25,7 @@ namespace Datadog.Trace
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
-        private readonly object _lock = new object();
+        private readonly object _lock = new();
 
         internal Span(SpanContext context, DateTimeOffset? start)
             : this(context, start, null)
@@ -80,12 +80,17 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets the trace's unique identifier.
+        /// Gets the trace's unique 128-bit identifier.
         /// </summary>
-        internal ulong TraceId => Context.TraceId;
+        internal TraceId TraceId128 => Context.TraceId128;
 
         /// <summary>
-        /// Gets the span's unique identifier.
+        /// Gets the 64-bit trace id, or the lower 64 bits of a 128-bit trace id.
+        /// </summary>
+        internal ulong TraceId => Context.TraceId128.Lower;
+
+        /// <summary>
+        /// Gets the span's unique 64-bit identifier.
         /// </summary>
         internal ulong SpanId => Context.SpanId;
 
@@ -132,7 +137,8 @@ namespace Datadog.Trace
         public override string ToString()
         {
             var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-            sb.AppendLine($"TraceId: {Context.TraceId}");
+            sb.AppendLine($"TraceId64: {Context.TraceId}");
+            sb.AppendLine($"TraceId128: {Context.TraceId128}");
             sb.AppendLine($"ParentId: {Context.ParentId}");
             sb.AppendLine($"SpanId: {Context.SpanId}");
             sb.AppendLine($"Origin: {Context.Origin}");
@@ -394,6 +400,8 @@ namespace Datadog.Trace
                     return Context.TraceContext?.ServiceVersion;
                 case Trace.Tags.Origin:
                     return Context.TraceContext?.Origin;
+                case Trace.Tags.TraceId:
+                    return Context.RawTraceId;
                 default:
                     return Tags.GetTag(key);
             }

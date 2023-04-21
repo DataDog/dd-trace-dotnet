@@ -9,7 +9,7 @@ using Datadog.Trace.Headers.Ip;
 using FluentAssertions;
 using Xunit;
 
-namespace Datadog.Trace.Headers.Ip
+namespace Datadog.Trace.Tests.Headers.Ip
 {
     public class RequestHeadersHelpersTests
     {
