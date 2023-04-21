@@ -31,7 +31,7 @@ namespace Datadog.Trace.Sampling
 
         public SamplingDecision MakeSamplingDecision(Span span)
         {
-            var traceId = span.TraceId;
+            var traceId = span.Context.RawTraceId;
 
             if (_rules.Count > 0)
             {
