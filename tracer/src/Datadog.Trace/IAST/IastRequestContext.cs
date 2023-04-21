@@ -6,11 +6,14 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Iast;
 
 internal class IastRequestContext
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastRequestContext));
     private VulnerabilityBatch? _vulnerabilityBatch;
     private object _vulnerabilityLock = new();
     private TaintedObjects _taintedObjects = new();
@@ -38,6 +41,34 @@ internal class IastRequestContext
         {
             _vulnerabilityBatch ??= IastModule.GetVulnerabilityBatch();
             _vulnerabilityBatch.Add(vulnerability);
+        }
+    }
+
+    internal void AddRequestBody(object body)
+    {
+        try
+        {
+            var keysAndValues = ObjectExtractor.Extract(body);
+            var keysAndValuesDic = keysAndValues as Dictionary<string, object>;
+
+            if (keysAndValuesDic != null)
+            {
+                foreach (var key in keysAndValuesDic.Keys)
+                {
+                    var value = keysAndValuesDic[key] as string;
+
+                    if (!string.IsNullOrEmpty(value))
+                    {
+#pragma warning disable CS8604 // Possible null reference argument.
+                        _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.RequestBody), key, value));
+#pragma warning restore CS8604 // Possible null reference argument.
+                    }
+                }
+            }
+        }
+        catch
+        {
+            Log.Warning("Error reading request Body.");
         }
     }
 
