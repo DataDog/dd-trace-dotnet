@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 {
     internal static class KafkaHelper
     {
+        private const string MessagingType = "kafka";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaHelper));
         private static bool _headersInjectionEnabled = true;
         private static string[] defaultProduceEdgeTags = new[] { "direction:out", "type:kafka" };
@@ -40,11 +41,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                string serviceName = settings.GetServiceName(tracer, KafkaConstants.ServiceName);
+                var schema = tracer.Settings.Schema;
+                string operationName = schema.Messaging.GetOutboundOperationName(MessagingType);
+                if (!tracer.Settings.TryGetServiceName(MessagingType, out string serviceName))
+                {
+                    serviceName = schema.Messaging.GetOutboundServiceName(tracer.DefaultServiceName, MessagingType);
+                }
+
                 var tags = new KafkaTags(SpanKinds.Producer);
 
                 scope = tracer.StartActiveInternal(
-                    KafkaConstants.ProduceOperationName,
+                    operationName,
                     tags: tags,
                     serviceName: serviceName,
                     finishOnClose: finishOnClose);
@@ -135,11 +142,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     }
                 }
 
-                string serviceName = tracer.Settings.GetServiceName(tracer, KafkaConstants.ServiceName);
+                var schema = tracer.Settings.Schema;
+                string operationName = schema.Messaging.GetInboundOperationName(MessagingType);
+                if (!tracer.Settings.TryGetServiceName(MessagingType, out string serviceName))
+                {
+                    serviceName = schema.Messaging.GetInboundServiceName(tracer.DefaultServiceName, MessagingType);
+                }
 
                 var tags = new KafkaTags(SpanKinds.Consumer);
 
-                scope = tracer.StartActiveInternal(KafkaConstants.ConsumeOperationName, parent: propagatedContext, tags: tags, serviceName: serviceName);
+                scope = tracer.StartActiveInternal(operationName, parent: propagatedContext, tags: tags, serviceName: serviceName);
 
                 string resourceName = $"Consume Topic {(string.IsNullOrEmpty(topic) ? "kafka" : topic)}";
 

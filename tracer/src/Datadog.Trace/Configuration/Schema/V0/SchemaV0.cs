@@ -12,9 +12,12 @@ namespace Datadog.Trace.Configuration.Schema.V0
     internal class SchemaV0 : ISchema
     {
         private static readonly IDatabaseSchema DatabaseSchema = new DatabaseSchemaV0();
+        private static readonly IMessagingSchema MessagingSchema = new MessagingSchemaV0();
 
         public SchemaVersion Version => SchemaVersion.V0;
 
         public IDatabaseSchema Database => DatabaseSchema;
+
+        public IMessagingSchema Messaging => MessagingSchema;
     }
 }

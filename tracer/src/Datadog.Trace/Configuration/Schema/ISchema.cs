@@ -13,5 +13,7 @@ namespace Datadog.Trace.Configuration.Schema
         SchemaVersion Version { get; }
 
         IDatabaseSchema Database { get; }
+
+        IMessagingSchema Messaging { get; }
     }
 }
