@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Util;
@@ -86,7 +87,7 @@ namespace Datadog.Trace.Configuration
             HttpClientExcludedUrlSubstrings = settings.HttpClientExcludedUrlSubstrings;
             HttpServerErrorStatusCodes = settings.HttpServerErrorStatusCodes;
             HttpClientErrorStatusCodes = settings.HttpClientErrorStatusCodes;
-            MetadataSchemaVersion = settings.MetadataSchemaVersion;
+            Schema = settings.Schema;
             ServiceNameMappings = settings.ServiceNameMappings;
             TraceBufferSize = settings.TraceBufferSize;
             TraceBatchInterval = settings.TraceBatchInterval;
@@ -454,7 +455,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets the metadata schema version
         /// </summary>
-        internal SchemaVersion MetadataSchemaVersion { get; }
+        internal ISchema Schema { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources
@@ -507,7 +508,7 @@ namespace Datadog.Trace.Configuration
             {
                 return name;
             }
-            else if (MetadataSchemaVersion != SchemaVersion.V0)
+            else if (Schema.Version != SchemaVersion.V0)
             {
                 return tracer.DefaultServiceName;
             }

@@ -23,8 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         internal const string Major2Minor2 = "2.2"; // Synchronous methods added in 2.2
         internal const string MongoDbClientAssembly = "MongoDB.Driver.Core";
 
-        private const string OperationName = "mongodb.query";
-        private const string ServiceName = "mongodb";
+        private const string DatabaseType = "mongodb";
 
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.MongoDb;
 
@@ -65,14 +64,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                     // the name of the first element in the command BsonDocument will be the operation type (insert, delete, find, etc)
                     // and its value is the collection name
                     var firstElement = protocolWithCommand.Command.GetElement(0);
-                    string operationName = firstElement.Name;
+                    string mongoOperationName = firstElement.Name;
 
-                    if (operationName == "isMaster" || operationName == "hello")
+                    if (mongoOperationName == "isMaster" || mongoOperationName == "hello")
                     {
                         return null;
                     }
 
-                    resourceName = $"{operationName ?? "operation"} {databaseName ?? "database"}";
+                    resourceName = $"{mongoOperationName ?? "operation"} {databaseName ?? "database"}";
                     collectionName = firstElement.Value?.ToString();
                     query = protocolWithCommand.Command.ToString();
                 }
@@ -96,14 +95,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 port = dnsEndPoint.Port.ToString();
             }
 
-            string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
+            var schema = tracer.Settings.Schema;
+            string operationName = schema.Database.GetOperationName(DatabaseType);
+            if (!tracer.Settings.TryGetServiceName(DatabaseType, out string serviceName))
+            {
+                serviceName = schema.Database.GetServiceName(tracer.DefaultServiceName, DatabaseType);
+            }
 
             Scope scope = null;
 
             try
             {
                 var tags = new MongoDbTags();
-                scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
+                scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
                 var span = scope.Span;
                 span.Type = SpanTypes.MongoDb;
                 span.ResourceName = resourceName;

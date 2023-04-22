@@ -11,6 +11,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
+using Datadog.Trace.Configuration.Schema;
+using Datadog.Trace.Configuration.Schema.V0;
+using Datadog.Trace.Configuration.Schema.V1;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Propagators;
@@ -116,7 +119,7 @@ namespace Datadog.Trace.Configuration
             var headerTagsNormalizationFixEnabled = source.GetBool(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled) ?? true;
             // Filter out tags with empty keys or empty values, and trim whitespaces
             HeaderTags = InitializeHeaderTags(inputHeaderTags, headerTagsNormalizationFixEnabled);
-            MetadataSchemaVersion = ParseMetadataSchemaVersion(source.GetString(ConfigurationKeys.MetadataSchemaVersion));
+            Schema = CreateSchemaFromMetadataSchemaVersion(source.GetString(ConfigurationKeys.MetadataSchemaVersion));
 
             ServiceNameMappings = source.GetDictionary(ConfigurationKeys.ServiceNameMappings)
                                             ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
@@ -625,9 +628,9 @@ namespace Datadog.Trace.Configuration
         internal ImmutableAzureAppServiceSettings? AzureAppServiceMetadata { get; set; }
 
         /// <summary>
-        /// Gets or sets the metadata schema version
+        /// Gets or sets the metadata schema
         /// </summary>
-        internal SchemaVersion MetadataSchemaVersion { get; set; }
+        internal ISchema Schema { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
@@ -721,11 +724,11 @@ namespace Datadog.Trace.Configuration
             return headerTags;
         }
 
-        private static SchemaVersion ParseMetadataSchemaVersion(string? value) =>
+        private static ISchema CreateSchemaFromMetadataSchemaVersion(string? value) =>
             value switch
             {
-                "v1" or "V1" => SchemaVersion.V1,
-                _ => SchemaVersion.V0,
+                "v1" or "V1" => new SchemaV1(),
+                _ => new SchemaV0(),
             };
 
         internal static string[] TrimSplitString(string? textValues, char[] separators)
