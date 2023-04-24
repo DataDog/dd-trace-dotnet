@@ -306,6 +306,11 @@ namespace Datadog.Trace.Tools.Runner
                     // Note: we also write the total global code coverage to the `session-coverage-{date}.json` file
                     if (!string.IsNullOrEmpty(codeCoveragePath))
                     {
+                        if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath)))
+                        {
+                            Log.Warning("DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH was ignored because DD_CIVISIBILITY_CODE_COVERAGE_ENABLED is set.");
+                        }
+
                         var outputPath = Path.Combine(codeCoveragePath, $"session-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}.json");
                         if (CoverageUtils.TryCombineAndGetTotalCoverage(codeCoveragePath, outputPath, out var globalCoverage, useStdOut: false) &&
                             globalCoverage is not null)
@@ -332,7 +337,7 @@ namespace Datadog.Trace.Tools.Runner
 
                                     // Adds the global code coverage percentage to the session
                                     session.SetTag(CommonTags.TestSessionCodeCoverageEnabled, "true");
-                                    session.SetTag(CommonTags.CodeCoverageTotalLines, Math.Round(seqCovValue / 100, 4).ToString("F4", CultureInfo.InvariantCulture));
+                                    session.SetTag(CommonTags.CodeCoverageTotalLines, Math.Round(seqCovValue, 2).ToString("F2", CultureInfo.InvariantCulture));
                                     Log.Debug("RunCiCommand: OpenCover code coverage was reported: {Value}", seqCovValue);
                                 }
                                 else if (xmlDoc.SelectSingleNode("/coverage/@line-rate") is { } lineRateAttribute &&
@@ -342,7 +347,7 @@ namespace Datadog.Trace.Tools.Runner
 
                                     // Adds the global code coverage percentage to the session
                                     session.SetTag(CommonTags.TestSessionCodeCoverageEnabled, "true");
-                                    session.SetTag(CommonTags.CodeCoverageTotalLines, Math.Round(lineRateValue, 4).ToString("F4", CultureInfo.InvariantCulture));
+                                    session.SetTag(CommonTags.CodeCoverageTotalLines, Math.Round(lineRateValue * 100, 2).ToString("F2", CultureInfo.InvariantCulture));
                                     Log.Debug("RunCiCommand: Cobertura code coverage was reported: {Value}", lineRateAttribute.Value);
                                 }
                                 else
