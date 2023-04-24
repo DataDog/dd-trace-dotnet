@@ -21,6 +21,8 @@ class ModuleMetadata
 {
 private:
     std::mutex wrapper_mutex;
+    std::once_flag tracer_tokens_once_flag;
+    std::once_flag debugger_tokens_once_flag;
     std::unique_ptr<std::unordered_map<shared::WSTRING, mdTypeRef>> integration_types = nullptr;
     std::unique_ptr<TracerTokens> tracerTokens = nullptr;
     std::unique_ptr<debugger::DebuggerTokens> debuggerTokens = nullptr;
@@ -77,12 +79,14 @@ public:
     {
     }
 
-    bool TryGetIntegrationTypeRef(const shared::WSTRING& keyIn, mdTypeRef& valueOut) const
+    bool TryGetIntegrationTypeRef(const shared::WSTRING& keyIn, mdTypeRef& valueOut)
     {
         if (integration_types == nullptr)
         {
             return false;
         }
+
+        std::scoped_lock<std::mutex> lock(wrapper_mutex);
 
         const auto search = integration_types->find(keyIn);
 
@@ -108,19 +112,21 @@ public:
 
     TracerTokens* GetTracerTokens()
     {
-        if (tracerTokens == nullptr)
-        {
-            tracerTokens = std::make_unique<TracerTokens>(this, enable_by_ref_instrumentation, enable_calltarget_state_by_ref);
-        }
+        std::call_once(tracer_tokens_once_flag,
+            [this] {
+                tracerTokens = std::make_unique<TracerTokens>(this, enable_by_ref_instrumentation, enable_calltarget_state_by_ref);
+            });
+
         return tracerTokens.get();
     }
 
     debugger::DebuggerTokens* GetDebuggerTokens()
     {
-        if (debuggerTokens == nullptr)
-        {
-            debuggerTokens = std::make_unique<debugger::DebuggerTokens>(this);
-        }
+        std::call_once(debugger_tokens_once_flag,
+            [this] {
+               debuggerTokens = std::make_unique<debugger::DebuggerTokens>(this);
+            });
+
         return debuggerTokens.get();
     }
 };
