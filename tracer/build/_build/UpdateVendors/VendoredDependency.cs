@@ -44,9 +44,9 @@ namespace UpdateVendors
 
             Add(
                 libraryName: "MessagePack",
-                version: "1.9.3",
-                downloadUrl: "https://github.com/neuecc/MessagePack-CSharp/archive/v1.9.3.zip",
-                pathToSrc: new[] { "MessagePack-CSharp-1.9.3", "src", "MessagePack" },
+                version: "1.9.11",
+                downloadUrl: "https://github.com/neuecc/MessagePack-CSharp/archive/refs/tags/v1.9.11.zip",
+                pathToSrc: new[] { "MessagePack-CSharp-1.9.11", "src", "MessagePack" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "MessagePack"));
 
             Add(
