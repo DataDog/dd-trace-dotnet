@@ -15,21 +15,11 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
 {
     internal class NamedPipeTransport : ITransport
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<NamedPipeTransport>();
-
-        private static long Counter = 0;
-        private static long Count = 0;
-
         private readonly NamedPipeClientStream _namedPipe;
         private readonly TimeSpan _timeout;
-        private byte[] _internalbuffer = new byte[0];
+        private readonly object _lock = new object();
 
-        // `SpinLock` is a struct. A struct marked as `readonly` is copied each time a mutating function is called.
-        // When calling `_lock.Enter` and `_lock.Exit()` the `SpinLock` instance is copied. Calling `_lock.Exit()` raises an
-        // error as the instance does not hold the lock (System.Threading.SynchronizationLockException : The calling
-        // thread does not hold the lock.)
-        // For this reason, `_lock` is not marked as `readonly`
-        private SpinLock _lock = new SpinLock(enableThreadOwnerTracking: true);
+        private byte[] _internalbuffer = Array.Empty<byte>();
 
         public NamedPipeTransport(string pipeName, TimeSpan? timeout = null)
         {
@@ -43,21 +33,8 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
 
         public bool Send(byte[] buffer, int length)
         {
-            var content = Encoding.UTF8.GetString(buffer, 0, length);
-
-            var token = Interlocked.Increment(ref Counter);
-            var waiters = Interlocked.Increment(ref Count);
-
-            Log.Information("Namedpipe transport send {Counter} - waiters {Count}: {Content}", token, waiters, content);
-            var gotLock = false;
-            try
+            lock (_lock)
             {
-                _lock.Enter(ref gotLock);
-
-                waiters = Interlocked.Decrement(ref Count);
-
-                Log.Information("Namedpipe transport lock acquired {Counter} - remaining waiters: {Count}", token, waiters);
-
                 if (_internalbuffer.Length < length + 1)
                 {
                     _internalbuffer = new byte[length + 1];
@@ -68,13 +45,6 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
                 _internalbuffer[length] = (byte)'\n';
 
                 return SendBuffer(_internalbuffer, length + 1, allowRetry: true);
-            }
-            finally
-            {
-                if (gotLock)
-                {
-                    _lock.Exit();
-                }
             }
         }
 
@@ -89,7 +59,6 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
             {
                 if (!_namedPipe.IsConnected)
                 {
-                    Log.Information("Connecting to named pipe");
                     _namedPipe.Connect((int)_timeout.TotalMilliseconds);
                 }
             }
@@ -104,26 +73,20 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
             {
                 // WriteAsync overload with a CancellationToken instance seems to not work.
                 _namedPipe.WriteAsync(buffer, 0, length).Wait(cts.Token);
-                Log.Information("Written");
                 return true;
             }
-            catch (OperationCanceledException ex)
+            catch (OperationCanceledException)
             {
-                Log.Warning(ex, "OperatioNCanceledException in NamedPipeTransport");
-
                 return false;
             }
-            catch (IOException ex)
+            catch (IOException)
             {
                 // When the server disconnects, IOException is raised with the message "Pipe is broken".
                 // In this case, we try to reconnect once.
                 if (allowRetry)
                 {
-                    Log.Warning(ex, "IOException in NamedPipeTransport, retrying");
                     return SendBuffer(buffer, length, allowRetry: false);
                 }
-
-                Log.Warning(ex, "IOException in NamedPipeTransport, giving up");
 
                 return false;
             }
