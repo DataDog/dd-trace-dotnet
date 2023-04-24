@@ -87,7 +87,7 @@ namespace Datadog.Trace.Tests.Telemetry
             {
                 { ConfigurationKeys.AppSec.Enabled, enabled.ToString() },
             });
-            collector.RecordSecuritySettings(new SecuritySettings(source));
+            collector.RecordSecuritySettings(new SecuritySettings(source, NullConfigurationTelemetry.Instance));
 
             var data = collector.GetConfigurationData()
                                 .ToDictionary(x => x.Name, x => x.Value);

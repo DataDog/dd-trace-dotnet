@@ -9,7 +9,10 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.AppSec
@@ -18,49 +21,55 @@ namespace Datadog.Trace.AppSec
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecuritySettings>();
 
-        public SecuritySettings(IConfigurationSource? source)
+        public SecuritySettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {
             source ??= NullConfigurationSource.Instance;
-            BlockedHtmlTemplate = source.GetString(ConfigurationKeys.AppSec.HtmlBlockedTemplate) ?? SecurityConstants.BlockedHtmlTemplate;
-            BlockedJsonTemplate = source.GetString(ConfigurationKeys.AppSec.JsonBlockedTemplate) ?? SecurityConstants.BlockedJsonTemplate;
+            var config = new ConfigurationBuilder(source, telemetry);
+            BlockedHtmlTemplate = config
+                                 .WithKeys(ConfigurationKeys.AppSec.HtmlBlockedTemplate)
+                                 .AsString()
+                                 .Get(SecurityConstants.BlockedHtmlTemplate);
+
+            BlockedJsonTemplate = config
+                                 .WithKeys(ConfigurationKeys.AppSec.JsonBlockedTemplate)
+                                 .AsString()
+                                 .Get(SecurityConstants.BlockedJsonTemplate);
+
             // both should default to false
-            var enabledEnvVar = source.GetBool(ConfigurationKeys.AppSec.Enabled);
+            var enabledEnvVar = config
+                               .WithKeys(ConfigurationKeys.AppSec.Enabled)
+                               .AsBool()
+                               .Get();
+
             Enabled = enabledEnvVar ?? false;
             CanBeToggled = enabledEnvVar == null;
 
-            Rules = source.GetString(ConfigurationKeys.AppSec.Rules);
-            CustomIpHeader = source.GetString(ConfigurationKeys.AppSec.CustomIpHeader);
-            var extraHeaders = source.GetString(ConfigurationKeys.AppSec.ExtraHeaders);
+            Rules = config.WithKeys(ConfigurationKeys.AppSec.Rules).AsString().Get();
+            CustomIpHeader = config.WithKeys(ConfigurationKeys.AppSec.CustomIpHeader).AsString().Get();
+            var extraHeaders = config.WithKeys(ConfigurationKeys.AppSec.ExtraHeaders).AsString().Get();
             ExtraHeaders = !string.IsNullOrEmpty(extraHeaders) ? extraHeaders!.Split(',') : Array.Empty<string>();
-            KeepTraces = source.GetBool(ConfigurationKeys.AppSec.KeepTraces) ?? true;
+            KeepTraces = config.WithKeys(ConfigurationKeys.AppSec.KeepTraces).AsBool().Get(true);
 
             // empty or junk values to default to 100, any number is valid, with zero or less meaning limit off
-            TraceRateLimit = source.GetInt32(ConfigurationKeys.AppSec.TraceRateLimit) ?? 100;
+            TraceRateLimit = config.WithKeys(ConfigurationKeys.AppSec.TraceRateLimit).AsInt32().Get(100);
 
-            var wafTimeoutString = source.GetString(ConfigurationKeys.AppSec.WafTimeout);
-            const int defaultWafTimeout = 100_000;
-            if (string.IsNullOrWhiteSpace(wafTimeoutString))
-            {
-                WafTimeoutMicroSeconds = defaultWafTimeout;
-            }
-            else
-            {
-                // Default timeout of 100 ms, only extreme conditions should cause timeout
-                var wafTimeout = ParseWafTimeout(wafTimeoutString!);
-                if (wafTimeout <= 0)
-                {
-                    Log.Warning("Ignoring '{WafTimeoutKey}' of '{WafTimeoutString}' because it was zero or less", ConfigurationKeys.AppSec.WafTimeout, wafTimeoutString);
-                    wafTimeout = defaultWafTimeout;
-                }
+            WafTimeoutMicroSeconds = (ulong)config
+                                           .WithKeys(ConfigurationKeys.AppSec.WafTimeout)
+                                           .AsString()
+                                           .GetAs<int>(
+                                                getDefaultValue: () => 100_000, // Default timeout of 100 ms, only extreme conditions should cause timeout
+                                                converter: ParseWafTimeout,
+                                                validator: wafTimeout => wafTimeout > 0);
 
-                WafTimeoutMicroSeconds = (ulong)wafTimeout;
-            }
+            ObfuscationParameterKeyRegex = config
+                                          .WithKeys(ConfigurationKeys.AppSec.ObfuscationParameterKeyRegex)
+                                          .AsString()
+                                          .Get(SecurityConstants.ObfuscationParameterKeyRegexDefault, x => !string.IsNullOrWhiteSpace(x));
 
-            var obfuscationParameterKeyRegex = source.GetString(ConfigurationKeys.AppSec.ObfuscationParameterKeyRegex);
-            ObfuscationParameterKeyRegex = string.IsNullOrWhiteSpace(obfuscationParameterKeyRegex) ? SecurityConstants.ObfuscationParameterKeyRegexDefault : obfuscationParameterKeyRegex!;
-
-            var obfuscationParameterValueRegex = source.GetString(ConfigurationKeys.AppSec.ObfuscationParameterValueRegex);
-            ObfuscationParameterValueRegex = string.IsNullOrWhiteSpace(obfuscationParameterValueRegex) ? SecurityConstants.ObfuscationParameterValueRegexDefault : obfuscationParameterValueRegex!;
+            ObfuscationParameterValueRegex = config
+                                            .WithKeys(ConfigurationKeys.AppSec.ObfuscationParameterValueRegex)
+                                            .AsString()
+                                            .Get(SecurityConstants.ObfuscationParameterValueRegexDefault, x => !string.IsNullOrWhiteSpace(x));
         }
 
         public bool Enabled { get; }
@@ -118,15 +127,20 @@ namespace Datadog.Trace.AppSec
 
         public static SecuritySettings FromDefaultSources()
         {
-            return new SecuritySettings(GlobalConfigurationSource.Instance);
+            return new SecuritySettings(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
         }
 
-        private static int ParseWafTimeout(string wafTimeoutString)
+        private static ParsingResult<int> ParseWafTimeout(string wafTimeoutString)
         {
+            if (string.IsNullOrWhiteSpace(wafTimeoutString))
+            {
+                return ReturnFailure(wafTimeoutString);
+            }
+
             var numberStyles = NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite | NumberStyles.Any;
             if (int.TryParse(wafTimeoutString, numberStyles, CultureInfo.InvariantCulture, out var result))
             {
-                return result;
+                return ParsingResult<int>.Success(result);
             }
 
             wafTimeoutString = wafTimeoutString.Trim();
@@ -152,15 +166,21 @@ namespace Datadog.Trace.AppSec
 
             if (intPart == null)
             {
-                return -1;
+                return ParsingResult<int>.Failure();
             }
 
             if (int.TryParse(intPart, numberStyles, CultureInfo.InvariantCulture, out result))
             {
-                return result * multipler;
+                return ParsingResult<int>.Success(result * multipler);
             }
 
-            return -1;
+            return ParsingResult<int>.Failure();
+
+            static ParsingResult<int> ReturnFailure(string timeoutString)
+            {
+                Log.Warning("Ignoring '{WafTimeoutKey}' of '{WafTimeoutString}' because it was zero or less", ConfigurationKeys.AppSec.WafTimeout, timeoutString);
+                return ParsingResult<int>.Failure();
+            }
         }
     }
 }
