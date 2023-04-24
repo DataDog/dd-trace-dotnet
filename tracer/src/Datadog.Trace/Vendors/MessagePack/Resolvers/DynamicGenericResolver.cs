@@ -146,8 +146,8 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
                 {
                     return CreateInstance(typeof(NullableFormatter<>), new[] { nullableElementType });
                 }
-#endif
 
+#endif
                 // Tuple
                 else if (ti.FullName.StartsWith("System.Tuple"))
                 {
@@ -185,7 +185,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
                     return CreateInstance(tupleFormatterType, ti.GenericTypeArguments);
                 }
 
-#if NETSTANDARD || NETCOREAPP
+#if NETCOREAPP
                 // ValueTuple
                 else if (ti.FullName.StartsWith("System.ValueTuple"))
                 {
@@ -222,11 +222,11 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
 
                     return CreateInstance(tupleFormatterType, ti.GenericTypeArguments);
                 }
-#endif
 
 #endif
 
-                // ArraySegement
+#endif
+                // ArraySegment
                 else if (genericType == typeof(ArraySegment<>))
                 {
                     if (ti.GenericTypeArguments[0] == typeof(byte))

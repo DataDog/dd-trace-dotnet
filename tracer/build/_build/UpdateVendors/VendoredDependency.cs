@@ -224,6 +224,14 @@ namespace UpdateVendors
                             {
                                 builder.Replace("#if !(NETSTANDARD || NETFRAMEWORK)", "#if !(NETSTANDARD || NETFRAMEWORK || NETCOREAPP)");
                             }
+                            else if (fileName == "DynamicGenericResolver")
+                            {
+                                builder.Replace("                // ValueTask", "#if NETCOREAPP\n                // ValueTask");
+                                builder.Replace("                // ValueTuple", "#if NETCOREAPP\n                // ValueTuple");
+                                builder.Replace("                // Tuple", "#endif\n                // Tuple");
+                                builder.Replace("                // ArraySegement", "#endif\n                // ArraySegment");
+                                builder.Replace("GetTypeInfo().IsConstructedGenericType()", "IsConstructedGenericType");
+                            }
                         }
 
                         // Debugger.Break() is a dangerous method that may crash the process. We don't
