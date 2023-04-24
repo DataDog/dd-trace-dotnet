@@ -46,10 +46,17 @@ namespace Datadog.Trace.TestHelpers
 
             async Task ReadUntil(StringBuilder builder, char stopChar)
             {
-                while (!currentChar.Equals(stopChar))
+                try
                 {
-                    builder.Append(currentChar);
-                    await GoNextChar().ConfigureAwait(false);
+                    while (!currentChar.Equals(stopChar))
+                    {
+                        builder.Append(currentChar);
+                        await GoNextChar().ConfigureAwait(false);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("Error in MockHttpParser.ReadRequest+ReadUntil. Read so far: " + builder, ex);
                 }
             }
 
