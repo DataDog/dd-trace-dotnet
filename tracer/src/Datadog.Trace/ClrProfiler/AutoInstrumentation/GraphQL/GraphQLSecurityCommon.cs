@@ -84,6 +84,12 @@ internal sealed class GraphQLSecurityCommon
         var securityCoordinator = new SecurityCoordinator(security, httpContext, scope.Span);
         var result = securityCoordinator.RunWaf(args);
         securityCoordinator.CheckAndBlock(result);
+
+        // TODO: Aggregate triggers
+        // if (result is { ReturnCode: ReturnCode.Match or ReturnCode.Block })
+        // {
+        //     scope.Span.SetTag(Tags.AppSecJson, "{\"triggers\":" + result.Data + "}");
+        // }
 #endif
     }
 
