@@ -43,7 +43,7 @@ namespace Benchmarks.Trace
             {
                 var attributeName = $"{benchmarkAgent}Attribute";
                 Console.WriteLine($"Found agent name {agentName}; executing only benchmarks decorated with '{attributeName}");
-                config.AddFilter(new AttributesFilter(new[] { attributeName }));
+                config = config.AddFilter(new AttributesFilter(new[] { attributeName }));
             }
             else
             {
