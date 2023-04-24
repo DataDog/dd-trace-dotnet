@@ -20,7 +20,7 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Ci
 {
-    internal class CITracerManager : TracerManager, ILockedTracer
+    internal class CITracerManager : TracerManager
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CITracerManager>();
 
@@ -90,6 +90,14 @@ namespace Datadog.Trace.Ci
             }
 
             ((IEventWriter)AgentWriter).WriteEvent(@event);
+        }
+
+        internal class LockedManager : CITracerManager, ILockedTracer
+        {
+            public LockedManager(ImmutableTracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, RuntimeMetricsWriter runtimeMetricsWriter, DirectLogSubmissionManager logSubmissionManager, ITelemetryController telemetry, IDiscoveryService discoveryService, DataStreamsManager dataStreamsManager, string defaultServiceName, IGitMetadataTagsProvider gitMetadataTagsProvider)
+            : base(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetricsWriter, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider)
+            {
+            }
         }
     }
 }
