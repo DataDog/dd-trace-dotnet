@@ -199,6 +199,16 @@ namespace UpdateVendors
                             }
                         }
 
+                        // Special MessagePack processing
+                        if (originalNamespace.Equals("MessagePack"))
+                        {
+                            if (Path.GetFileNameWithoutExtension(filePath) == "StandardClassLibraryFormatter")
+                            {
+                                builder.Replace("    public sealed class ValueTaskFormatter<T>", "#if NETCOREAPP\n    public sealed class ValueTaskFormatter<T>");
+                                builder.Replace("    }\n\n#endif\n}", "    }\n#endif\n\n#endif\n}");
+                            }
+                        }
+
                         // Debugger.Break() is a dangerous method that may crash the process. We don't
                         // want to take any risk of calling it, ever, so replace it with a noop.
                         builder.Replace("Debugger.Break();", "{}");

@@ -571,7 +571,6 @@ namespace Datadog.Trace.Vendors.MessagePack.Formatters
         }
     }
 
-
 #if NETCOREAPP
     internal sealed class ValueTaskFormatter<T> : IMessagePackFormatter<ValueTask<T>>
     {
