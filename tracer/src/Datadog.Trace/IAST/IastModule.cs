@@ -43,7 +43,9 @@ internal static class IastModule
     {
         try
         {
+            Log.Warning("Calling ProcessStart with file {File}", file);
             var evidence = BuildCommandInjectionEvidence(file, argumentLine, argumentList);
+            Log.Warning("Calling ProcessStart with evidence {File}", evidence);
             return string.IsNullOrEmpty(evidence) ? null : GetScope(evidence, integrationId, VulnerabilityTypeName.CommandInjection, OperationNameCommandInjection, true);
         }
         catch (Exception ex)
@@ -120,6 +122,7 @@ internal static class IastModule
         var tracer = Tracer.Instance;
         if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
         {
+            Log.Warning("Calling ProcessStart with integrationDisabled");
             // integration disabled, don't create a scope, skip this span
             return null;
         }
@@ -131,6 +134,7 @@ internal static class IastModule
         // We do not have, for now, tainted objects in console apps, so further checking is not neccessary.
         if (!isRequest && taintedFromEvidenceRequired)
         {
+            Log.Warning("Calling ProcessStart out of request");
             return null;
         }
 
@@ -140,12 +144,14 @@ internal static class IastModule
             tainted = traceContext?.IastRequestContext?.GetTainted(evidenceValue);
             if (tainted is null)
             {
+                Log.Warning("Calling ProcessStart with UNTAINTED");
                 return null;
             }
         }
 
         if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
         {
+            Log.Warning("Calling ProcessStart NO VULNERABILITY ADDED");
             // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
             // not activated for this particular request
             return null;
@@ -155,6 +161,7 @@ internal static class IastModule
 
         if (!frameInfo.IsValid)
         {
+            Log.Warning("Calling ProcessStart with INVALID STACK");
             return null;
         }
 
@@ -173,6 +180,7 @@ internal static class IastModule
         {
             if (isRequest)
             {
+                Log.Warning("Calling ProcessStart VULNERABILITYADDED {Evidence}", evidenceValue);
                 traceContext?.IastRequestContext.AddVulnerability(vulnerability);
                 return null;
             }
@@ -182,6 +190,7 @@ internal static class IastModule
             }
         }
 
+        Log.Warning("Calling ProcessStart OUT {Evidence}", evidenceValue);
         return null;
     }
 
