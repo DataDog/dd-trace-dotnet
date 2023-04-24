@@ -8,11 +8,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Waf.Initialization;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Vendors.Serilog;
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
 namespace Datadog.Trace.AppSec.Rcm;
@@ -23,6 +26,9 @@ internal record ConfigurationStatus
     internal const string WafRulesOverridesKey = "rules_override";
     internal const string WafExclusionsKey = "exclusions";
     internal const string WafRulesDataKey = "rules_data";
+    internal const string WafCustomRulesKey = "custom_rules";
+
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationStatus>();
 
     private readonly string? _embeddedRulesPath;
 
@@ -41,6 +47,8 @@ internal record ConfigurationStatus
     internal Dictionary<string, RuleSet> RulesByFile { get; } = new();
 
     internal Dictionary<string, AsmFeature> AsmFeaturesByFile { get; } = new();
+
+    internal Dictionary<string, JArray> CustomRulesByFile { get; } = new();
 
     internal IncomingUpdateStatus IncomingUpdateState { get; } = new();
 
@@ -99,6 +107,13 @@ internal record ConfigurationStatus
         {
             var rulesData = MergeRuleData(RulesDataByFile.SelectMany(x => x.Value));
             dictionary.Add(WafRulesDataKey, rulesData.Select(r => r.ToKeyValuePair()).ToArray());
+        }
+
+        if (IncomingUpdateState.WafKeysToApply.Contains(WafCustomRulesKey))
+        {
+            var customRules = CustomRulesByFile.SelectMany(x => x.Value).ToList();
+            var mergedCustomRules = new JArray(customRules);
+            dictionary.Add(WafCustomRulesKey, mergedCustomRules);
         }
 
         if (IncomingUpdateState.FallbackToEmbeddedRulesetAtNextUpdate)
