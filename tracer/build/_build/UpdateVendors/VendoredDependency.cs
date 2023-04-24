@@ -200,12 +200,17 @@ namespace UpdateVendors
                         }
 
                         // Special MessagePack processing
-                        if (originalNamespace.Equals("MessagePack"))
+                        if (originalNamespace.StartsWith("MessagePack"))
                         {
-                            if (Path.GetFileNameWithoutExtension(filePath) == "StandardClassLibraryFormatter")
+                            var fileName = Path.GetFileNameWithoutExtension(filePath);
+                            if (fileName == "StandardClassLibraryFormatter")
                             {
                                 builder.Replace("    public sealed class ValueTaskFormatter<T>", "#if NETCOREAPP\n    public sealed class ValueTaskFormatter<T>");
                                 builder.Replace("    }\n\n#endif\n}", "    }\n#endif\n\n#endif\n}");
+                            }
+                            else if (fileName == "ValueTupleFormatter")
+                            {
+                                builder.Replace("#if NETSTANDARD || NETFRAMEWORK", "#if NETSTANDARD || NETCOREAPP");
                             }
                         }
 
