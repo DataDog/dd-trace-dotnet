@@ -212,6 +212,10 @@ namespace UpdateVendors
                             {
                                 builder.Replace("#if NETSTANDARD || NETFRAMEWORK", "#if NETSTANDARD || NETCOREAPP");
                             }
+                            else if (fileName == "DynamicAssembly")
+                            {
+                                builder.Replace("#if NETSTANDARD || NETFRAMEWORK", "#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP");
+                            }
                         }
 
                         // Debugger.Break() is a dangerous method that may crash the process. We don't
