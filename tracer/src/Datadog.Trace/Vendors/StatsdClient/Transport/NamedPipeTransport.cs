@@ -6,12 +6,17 @@
 using System;
 using System.IO;
 using System.IO.Pipes;
+using System.Text;
 using System.Threading;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.StatsdClient.Bufferize;
 
 namespace Datadog.Trace.Vendors.StatsdClient.Transport
 {
     internal class NamedPipeTransport : ITransport
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<NamedPipeTransport>();
+
         private readonly NamedPipeClientStream _namedPipe;
         private readonly TimeSpan _timeout;
         private byte[] _internalbuffer = new byte[0];
@@ -35,6 +40,9 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
 
         public bool Send(byte[] buffer, int length)
         {
+            var content = Encoding.UTF8.GetString(buffer, 0, length);
+
+            Log.Information("Namedpipe transport send: {Content}", content);
             var gotLock = false;
             try
             {
@@ -70,6 +78,7 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
             {
                 if (!_namedPipe.IsConnected)
                 {
+                    Log.Information("Connecting to named pipe");
                     _namedPipe.Connect((int)_timeout.TotalMilliseconds);
                 }
             }
@@ -84,20 +93,26 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
             {
                 // WriteAsync overload with a CancellationToken instance seems to not work.
                 _namedPipe.WriteAsync(buffer, 0, length).Wait(cts.Token);
+                Log.Information("Written");
                 return true;
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
+                Log.Warning(ex, "OperatioNCanceledException in NamedPipeTransport");
+
                 return false;
             }
-            catch (IOException)
+            catch (IOException ex)
             {
                 // When the server disconnects, IOException is raised with the message "Pipe is broken".
                 // In this case, we try to reconnect once.
                 if (allowRetry)
                 {
+                    Log.Warning(ex, "IOException in NamedPipeTransport, retrying");
                     return SendBuffer(buffer, length, allowRetry: false);
                 }
+
+                Log.Warning(ex, "IOException in NamedPipeTransport, giving up");
 
                 return false;
             }

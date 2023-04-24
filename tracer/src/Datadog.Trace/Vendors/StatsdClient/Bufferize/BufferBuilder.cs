@@ -4,6 +4,7 @@
 //------------------------------------------------------------------------------
 using System;
 using System.Text;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
 {
@@ -12,6 +13,8 @@ namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
     /// </summary>
     internal class BufferBuilder
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<BufferBuilder>();
+
         private static readonly Encoding _encoding = Encoding.UTF8;
         private readonly IBufferBuilderHandler _handler;
         private readonly byte[] _buffer;
@@ -82,6 +85,8 @@ namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
         {
             if (Length > 0)
             {
+                Log.Information<int>("Flushing buffer builder - Length {Length}", Length);
+
                 _handler.Handle(_buffer, Length);
                 Length = 0;
             }

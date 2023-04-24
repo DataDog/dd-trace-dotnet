@@ -4,6 +4,8 @@
 //------------------------------------------------------------------------------
 using System;
 using System.Globalization;
+using Datadog.Trace.Logging;
+using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Vendors.StatsdClient.Bufferize;
 
 namespace Datadog.Trace.Vendors.StatsdClient
@@ -14,6 +16,8 @@ namespace Datadog.Trace.Vendors.StatsdClient
     /// </summary>
     internal class DogStatsdService : IDogStatsd, IDisposable
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DogStatsdService>();
+
         private StatsdBuilder _statsdBuilder = new StatsdBuilder(new StatsBufferizeFactory());
         private MetricsSender _metricsSender;
         private StatsdData _statsdData;
@@ -114,6 +118,11 @@ namespace Datadog.Trace.Vendors.StatsdClient
         /// <param name="tags">Array of tags to be added to the data.</param>
         public void Gauge(string statName, double value, double sampleRate = 1.0, string[] tags = null)
         {
+            if (_metricsSender == null)
+            {
+                Log.Warning("Dropping {StatName} because metricsSender is null", statName);
+            }
+
             _metricsSender?.SendMetric(MetricType.Gauge, statName, value, sampleRate, tags);
         }
 

@@ -4,6 +4,8 @@
 //------------------------------------------------------------------------------
 using System;
 using System.Threading.Tasks;
+using Datadog.Trace.Logging;
+using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Vendors.StatsdClient.Statistic;
 using Datadog.Trace.Vendors.StatsdClient.Worker;
 
@@ -14,6 +16,8 @@ namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
     /// </summary>
     internal class StatsBufferize : IDisposable
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StatsBufferize>();
+
         private readonly AsynchronousWorker<Stats> _worker;
 
         public StatsBufferize(
@@ -37,6 +41,8 @@ namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
         {
             if (!this._worker.TryEnqueue(serializedMetric))
             {
+                Log.Warning("Dropping {Name} because worker enqueue failed", serializedMetric.Metric.StatName);
+
                 serializedMetric.Dispose();
                 return false;
             }
@@ -56,6 +62,8 @@ namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
 
         private class WorkerHandler : IAsynchronousWorkerHandler<Stats>
         {
+            private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<WorkerHandler>();
+
             private readonly StatsRouter _statsRouter;
             private readonly TimeSpan _maxIdleWaitBeforeSending;
             private System.Diagnostics.Stopwatch _stopwatch;
@@ -70,6 +78,8 @@ namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
             {
                 using (stats)
                 {
+                    Log.Information("Routing {Name}", stats.Metric.StatName);
+
                     _statsRouter.Route(stats);
                     _stopwatch = null;
                 }

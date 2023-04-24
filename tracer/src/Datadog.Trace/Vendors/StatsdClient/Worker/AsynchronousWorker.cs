@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.StatsdClient.Bufferize;
 
 namespace Datadog.Trace.Vendors.StatsdClient.Worker
 {
@@ -16,6 +18,8 @@ namespace Datadog.Trace.Vendors.StatsdClient.Worker
     /// </summary>
     internal class AsynchronousWorker<T> : IDisposable
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AsynchronousWorker<T>>();
+
         private static TimeSpan maxWaitDurationInFlush = TimeSpan.FromSeconds(3);
         private readonly ConcurrentBoundedQueue<T> _queue;
         private readonly List<Task> _workers = new List<Task>();
@@ -109,6 +113,8 @@ namespace Datadog.Trace.Vendors.StatsdClient.Worker
                 {
                     if (_queue.TryDequeue(out var v))
                     {
+                        Log.Information("Dequeued {Name}", v);
+
                         _handler.OnNewValue(v);
                         waitDuration = MinWaitDuration;
                     }
