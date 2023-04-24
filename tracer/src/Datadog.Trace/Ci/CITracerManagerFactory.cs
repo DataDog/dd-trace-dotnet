@@ -24,12 +24,14 @@ namespace Datadog.Trace.Ci
         private readonly CIVisibilitySettings _settings;
         private readonly IDiscoveryService _discoveryService;
         private readonly bool _enabledEventPlatformProxy;
+        private readonly bool _useLockedManager;
 
-        public CITracerManagerFactory(CIVisibilitySettings settings, IDiscoveryService discoveryService, bool enabledEventPlatformProxy = false)
+        public CITracerManagerFactory(CIVisibilitySettings settings, IDiscoveryService discoveryService, bool enabledEventPlatformProxy = false, bool useLockedManager = true)
         {
             _settings = settings;
             _discoveryService = discoveryService;
             _enabledEventPlatformProxy = enabledEventPlatformProxy;
+            _useLockedManager = useLockedManager;
         }
 
         protected override TracerManager CreateTracerManagerFrom(
@@ -46,7 +48,14 @@ namespace Datadog.Trace.Ci
             string defaultServiceName,
             IGitMetadataTagsProvider gitMetadataTagsProvider)
         {
-            return new CITracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider);
+            if (_useLockedManager)
+            {
+                return new CITracerManager.LockedManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider);
+            }
+            else
+            {
+                return new CITracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider);
+            }
         }
 
         protected override IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings)

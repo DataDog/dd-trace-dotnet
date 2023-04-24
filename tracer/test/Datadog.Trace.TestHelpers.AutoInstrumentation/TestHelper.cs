@@ -423,7 +423,11 @@ namespace Datadog.Trace.TestHelpers
         protected void SetInstrumentationVerification()
         {
             bool verificationEnabled = ShouldUseInstrumentationVerification();
-            SetEnvironmentVariable(ConfigurationKeys.LogDirectory, verificationEnabled ? EnvironmentHelper.LogDirectory : null);
+
+            if (verificationEnabled)
+            {
+                SetEnvironmentVariable(ConfigurationKeys.LogDirectory, EnvironmentHelper.LogDirectory);
+            }
         }
 
         protected void VerifyInstrumentation(Process process)
