@@ -216,6 +216,10 @@ namespace UpdateVendors
                             {
                                 builder.Replace("#if NETSTANDARD || NETFRAMEWORK", "#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP");
                             }
+                            else if (fileName == "LZ4Codec.Helper")
+                            {
+                                builder.Replace("#if NETSTANDARD || NETFRAMEWORK", "#if ENABLE_UNSAFE_MSGPACK");
+                            }
                         }
 
                         // Debugger.Break() is a dangerous method that may crash the process. We don't
