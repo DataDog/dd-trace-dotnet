@@ -49,10 +49,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private BigInteger _capabilities;
         private int _targetsVersion;
         private string? _lastPollError;
-        private bool _isPollingStarted;
         private bool _isRcmEnabled;
         private string? _backendClientState;
         private bool _gitMetadataAddedToRequestTags;
+        private Task? _pollingTask;
 
         private RemoteConfigurationManager(
             IDiscoveryService discoveryService,
@@ -150,45 +150,40 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             action(inst);
         }
 
-        public async Task StartPollingAsync()
+        public Task StartPollingAsync()
         {
             lock (LockObject)
             {
-                if (_isPollingStarted)
+                if (_pollingTask != null)
                 {
                     Log.Warning("Remote Configuration management polling is already started.");
-                    return;
+                    return Task.CompletedTask;
                 }
 
-                _isPollingStarted = true;
-                LifetimeManager.Instance.AddShutdownTask(OnShutdown);
+                _pollingTask = Task.Run(Poll);
             }
 
-            while (!_cancellationSource.IsCancellationRequested)
-            {
-                var isRcmEnabled = Volatile.Read(ref _isRcmEnabled);
+            LifetimeManager.Instance.AddAsyncShutdownTask(OnShutdownAsync);
 
-                if (isRcmEnabled && _subscriptionManager.HasAnySubscription)
-                {
-                    await Poll().ConfigureAwait(false);
-                    _lastPollError = null;
-                }
-
-                try
-                {
-                    await Task.Delay(_pollInterval, _cancellationSource.Token).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    // We are shutting down, so don't do anything about it
-                }
-            }
+            return Task.CompletedTask;
         }
 
-        public void OnShutdown()
+        public async Task OnShutdownAsync()
         {
             _discoveryService.RemoveSubscription(SetRcmEnabled);
             _cancellationSource.Cancel();
+
+            if (_pollingTask != null)
+            {
+                try
+                {
+                    await _pollingTask.ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "RCM polling task failed");
+                }
+            }
         }
 
         public void SetCapability(BigInteger index, bool available)
@@ -204,6 +199,29 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         }
 
         private async Task Poll()
+        {
+            while (!_cancellationSource.IsCancellationRequested)
+            {
+                var isRcmEnabled = Volatile.Read(ref _isRcmEnabled);
+
+                if (isRcmEnabled && _subscriptionManager.HasAnySubscription)
+                {
+                    await GetConfig().ConfigureAwait(false);
+                    _lastPollError = null;
+                }
+
+                try
+                {
+                    await Task.Delay(_pollInterval, _cancellationSource.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    // We are shutting down, so don't do anything about it
+                }
+            }
+        }
+
+        private async Task GetConfig()
         {
             try
             {
