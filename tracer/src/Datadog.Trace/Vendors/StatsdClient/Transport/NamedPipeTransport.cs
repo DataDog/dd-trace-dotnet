@@ -17,6 +17,9 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<NamedPipeTransport>();
 
+        private static long Counter = 0;
+        private static long Count = 0;
+
         private readonly NamedPipeClientStream _namedPipe;
         private readonly TimeSpan _timeout;
         private byte[] _internalbuffer = new byte[0];
@@ -42,11 +45,19 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
         {
             var content = Encoding.UTF8.GetString(buffer, 0, length);
 
-            Log.Information("Namedpipe transport send: {Content}", content);
+            var token = Interlocked.Increment(ref Counter);
+            var waiters = Interlocked.Increment(ref Count);
+
+            Log.Information("Namedpipe transport send {Counter} - waiters {Count}: {Content}", token, waiters, content);
             var gotLock = false;
             try
             {
                 _lock.Enter(ref gotLock);
+
+                waiters = Interlocked.Decrement(ref Count);
+
+                Log.Information("Namedpipe transport lock acquired {Counter} - remaining waiters: {Count}", token, waiters);
+
                 if (_internalbuffer.Length < length + 1)
                 {
                     _internalbuffer = new byte[length + 1];
