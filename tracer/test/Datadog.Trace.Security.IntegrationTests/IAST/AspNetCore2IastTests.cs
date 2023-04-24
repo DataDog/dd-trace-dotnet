@@ -56,7 +56,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
     public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullSampling
     {
         public AspNetCore2IastTestsFullSamplingEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore2IastTestsEnabled")
+            : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore2IastTestsEnabled", isIastDeduplicationEnabled: false)
         {
         }
     }
@@ -212,6 +212,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         {
             EnableIast(IastEnabled);
             DisableObfuscationQueryString();
+            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
             SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
             SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
             SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
