@@ -1185,13 +1185,28 @@ namespace Datadog.Trace.TestHelpers
 
             private async Task HandleNamedPipeStats(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
             {
-                using var reader = new StreamReader(namedPipeServerStream);
+                Output.WriteLine($"HandleNamedPipeStats {DateTime.Now.ToLongTimeString()}");
 
-                while (await reader.ReadLineAsync() is { } request)
+                try
                 {
-                    OnMetricsReceived(request);
-                    StatsdRequests.Enqueue(request);
+                    using var reader = new StreamReader(namedPipeServerStream);
+
+                    while (await reader.ReadLineAsync() is { } request)
+                    {
+                        Output.WriteLine($"HandleNamedPipeStats {DateTime.Now.ToLongTimeString()} - received " + request);
+
+                        OnMetricsReceived(request);
+                        StatsdRequests.Enqueue(request);
+
+                        Output.WriteLine($"HandleNamedPipeStats {DateTime.Now.ToLongTimeString()} - reading next");
+                    }
                 }
+                catch (Exception ex)
+                {
+                    Output.WriteLine($"Exception in HandleNamedPipeStats {DateTime.Now.ToLongTimeString()}: " + ex);
+                }
+
+                Output.WriteLine($"HandleNamedPipeStats {DateTime.Now.ToLongTimeString()} - exit");
             }
 
             private async Task HandleNamedPipeTraces(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
