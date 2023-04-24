@@ -16,15 +16,7 @@
     }
 
     window.postJson = function (url, data) {
-        let fullUrl = window.location + url;
-        console.log(fullUrl);
-        return fetch(url, { 
-            method: "POST", 
-            headers: { 
-                'Content-Type': 'application/json' 
-            }, 
-            body: JSON.stringify({ query: data }) 
-        });
+        post(url, JSON.stringify({ query: data }));
     }
 
     window.postJson2 = function (url, data) {
