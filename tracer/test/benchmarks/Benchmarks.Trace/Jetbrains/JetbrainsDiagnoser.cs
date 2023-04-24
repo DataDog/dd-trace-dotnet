@@ -26,8 +26,8 @@ internal class JetbrainsDiagnoser : IDiagnoser
     public IEnumerable<IAnalyser> Analysers { get; } = Array.Empty<IAnalyser>();
 
     private readonly JetbrainsProduct _product;
-    private List<string> _filePaths;
-    private string? _outputFolder;
+    private readonly List<string> _filePaths;
+    private readonly string? _outputFolder;
 
     public JetbrainsDiagnoser(JetbrainsProduct product, string? outputFolder = null)
     {
@@ -40,6 +40,7 @@ internal class JetbrainsDiagnoser : IDiagnoser
                 DotMemory.EnsurePrerequisite();
                 break;
             case JetbrainsProduct.Trace:
+            case JetbrainsProduct.TimelineTrace:
                 DotTrace.EnsurePrerequisite();
                 break;
         }
@@ -71,6 +72,10 @@ internal class JetbrainsDiagnoser : IDiagnoser
                     DotTrace.Attach(new DotTrace.Config().SaveToFile(filePath + ".dtp"));
                     DotTrace.StartCollectingData();
                     break;
+                case JetbrainsProduct.TimelineTrace:
+                    DotTrace.Attach(new DotTrace.Config().SaveToFile(filePath + ".dtt").UseTimelineProfilingType(true));
+                    DotTrace.StartCollectingData();
+                    break;
             }
         }
         else if (signal == HostSignal.AfterActualRun)
@@ -82,6 +87,7 @@ internal class JetbrainsDiagnoser : IDiagnoser
                     _filePaths.Add(DotMemory.Detach());
                     break;
                 case JetbrainsProduct.Trace:
+                case JetbrainsProduct.TimelineTrace:
                     DotTrace.SaveData();
                     _filePaths.AddRange(DotTrace.GetCollectedSnapshotFiles());
                     DotTrace.Detach();

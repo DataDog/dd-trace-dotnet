@@ -13,5 +13,10 @@ public enum JetbrainsProduct
     /// <summary>
     /// DotTrace file
     /// </summary>
-    Trace
+    Trace,
+    
+    /// <summary>
+    /// DotTrace timeline profile
+    /// </summary>
+    TimelineTrace
 }

@@ -20,6 +20,7 @@ namespace Benchmarks.Trace
             var config = DefaultConfig.Instance;
 
             const string jetBrainsDotTrace = "-jetbrains:dottrace";
+            const string jetBrainsDotTraceTimeline = "-jetbrains:dottrace:timeline";
             const string jetBrainsDotMemory = "-jetbrains:dotmemory";
 
             if (args?.Any(a => a == jetBrainsDotTrace) == true)
@@ -27,6 +28,12 @@ namespace Benchmarks.Trace
                 Console.WriteLine("Setting Jetbrains trace collection... (could take time downloading collector binaries)");
                 args = args.Where(a => a != jetBrainsDotTrace).ToArray();
                 config = config.WithJetbrains(JetbrainsProduct.Trace);
+            }
+            else if (args?.Any(a => a == jetBrainsDotTraceTimeline) == true)
+            {
+                Console.WriteLine("Setting Jetbrains timeline trace collection... (could take time downloading collector binaries)");
+                args = args.Where(a => a != jetBrainsDotTraceTimeline).ToArray();
+                config = config.WithJetbrains(JetbrainsProduct.TimelineTrace);
             }
             else if (args?.Any(a => a == jetBrainsDotMemory) == true)
             {
