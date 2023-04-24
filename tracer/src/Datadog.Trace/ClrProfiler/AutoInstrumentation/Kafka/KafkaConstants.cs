@@ -1,4 +1,4 @@
-﻿// <copyright file="KafkaConstants.cs" company="Datadog">
+// <copyright file="KafkaConstants.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,7 +10,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
     internal static class KafkaConstants
     {
         internal const string IntegrationName = nameof(Configuration.IntegrationId.Kafka);
-        internal const string ConsumeOperationName = "kafka.consume";
+        internal const string ConsumeV0OperationName = "kafka.consume";
+        internal const string ConsumeV1OperationName = "kafka.process";
         internal const string ProduceOperationName = "kafka.produce";
         internal const string TopicPartitionTypeName = "Confluent.Kafka.TopicPartition";
         internal const string MessageTypeName = "Confluent.Kafka.Message`2[!0,!1]";

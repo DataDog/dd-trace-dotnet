@@ -106,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 var parent = tracer.ActiveScope?.Span;
                 if (parent is not null &&
-                    parent.OperationName == KafkaConstants.ConsumeOperationName &&
+                    (parent.OperationName == KafkaConstants.ConsumeV0OperationName || parent.OperationName == KafkaConstants.ConsumeV1OperationName) &&
                     parent.GetTag(Tags.InstrumentationName) != null)
                 {
                     return null;
@@ -253,7 +253,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 var activeScope = tracer.InternalActiveScope;
                 var currentSpan = activeScope?.Span;
-                if (currentSpan?.OperationName != KafkaConstants.ConsumeOperationName)
+                if (currentSpan?.OperationName != KafkaConstants.ConsumeV0OperationName
+                    && currentSpan?.OperationName != KafkaConstants.ConsumeV1OperationName)
                 {
                     // Not currently in a consumer operation
                     return;
