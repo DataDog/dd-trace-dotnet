@@ -839,23 +839,22 @@ namespace Datadog.Trace.TestHelpers
         {
             if (request.ContentLength is null)
             {
-                return new byte[0];
+                return Array.Empty<byte>();
             }
 
             var i = 0;
             var body = new byte[request.ContentLength.Value];
 
-            while (request.Body.Stream.CanRead && i < request.ContentLength)
+            while (i < request.ContentLength)
             {
-                var nextByte = request.Body.Stream.ReadByte();
+                var read = request.Body.Stream.Read(body, i, body.Length - i);
 
-                if (nextByte == -1)
+                i += read;
+
+                if (read == 0 || read == body.Length)
                 {
                     break;
                 }
-
-                body[i] = (byte)nextByte;
-                i++;
             }
 
             if (i < request.ContentLength)
