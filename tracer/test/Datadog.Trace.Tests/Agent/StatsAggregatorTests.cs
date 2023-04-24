@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -175,7 +174,11 @@ namespace Datadog.Trace.Tests.Agent
                 span.OperationName = operationName;
                 span.Type = type;
                 span.SetTag(Tags.HttpStatusCode, httpStatusCode);
-                span.TraceContext.Origin = origin;
+
+                if (span.TraceContext is { } traceContext)
+                {
+                    traceContext.Origin = origin;
+                }
 
                 return span;
             }
