@@ -15,7 +15,6 @@ using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
 using Nuke.Common.Tools.NuGet;
 using Nuke.Common.Utilities.Collections;
-using static CustomDotNetTasks;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.IO.FileSystemTasks;
