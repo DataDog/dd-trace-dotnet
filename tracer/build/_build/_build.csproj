@@ -7,6 +7,8 @@
     <NoWarn>CS0649;CS0169;SA1652</NoWarn>
     <NukeRootDirectory>..\..\..</NukeRootDirectory>
     <NukeScriptDirectory>..\..</NukeScriptDirectory>
+    <NukeExcludeDirectoryBuild>True</NukeExcludeDirectoryBuild>
+    <NukeTasksEnabled>False</NukeTasksEnabled>
     <NukeTelemetryVersion>1</NukeTelemetryVersion>
   </PropertyGroup>
 
@@ -20,7 +22,10 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="NuGet.Protocol" Version="5.10.0" />
-    <PackageReference Include="Nuke.Common" Version="6.3.0" />
+
+    <!-- Excluding the build assets, because for some reason, this breaks the ARM64 buidld -->
+    <!-- If you update this, need to update the package reference in Directory.Build.targets too -->
+    <PackageReference Include="Nuke.Common" Version="6.3.0" ExcludeAssets="build" />
     <PackageReference Include="Colorful.Console" Version="1.2.15" />
     <PackageReference Include="Octokit.GraphQL" Version="0.1.8-beta" />
     <PackageReference Include="Perfolizer" Version="0.2.1" />
