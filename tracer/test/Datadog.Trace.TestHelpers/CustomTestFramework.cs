@@ -245,7 +245,9 @@ namespace Datadog.Trace.TestHelpers
             {
                 _queue = new();
 
-                for (int i = 0; i < Environment.ProcessorCount; i++)
+                var concurrency = Math.Max(1, Environment.ProcessorCount / 2);
+
+                for (int i = 0; i < concurrency; i++)
                 {
                     Task.Run(DoWork);
                 }
