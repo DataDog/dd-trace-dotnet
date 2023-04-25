@@ -232,6 +232,8 @@ namespace UpdateVendors
                                 builder.Replace("                // ArraySegement", "#endif\n                // ArraySegment");
                                 builder.Replace("GetTypeInfo().IsConstructedGenericType()", "IsConstructedGenericType");
                             }
+
+                            builder.Replace("#if NETSTANDARD || NETFRAMEWORK\n        [System.Runtime.CompilerServices.MethodImpl", "#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP\n        [System.Runtime.CompilerServices.MethodImpl");
                         }
 
                         // Debugger.Break() is a dangerous method that may crash the process. We don't

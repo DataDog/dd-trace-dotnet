@@ -124,7 +124,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
         static readonly bool Is32Bit = (IntPtr.Size == 4);
 #endif
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         static ulong ByteArrayGetHashCode(byte[] x, int offset, int count)

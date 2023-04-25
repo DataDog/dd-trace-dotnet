@@ -264,7 +264,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// </remarks>
         public static int MaxArrayAllocationSize = int.MaxValue;
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static void EnsureCapacity(ref byte[] bytes, int offset, int appendLength)
@@ -313,7 +313,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         }
 
         // Buffer.BlockCopy version of Array.Resize
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static void FastResize(ref byte[] array, int newSize)
@@ -335,7 +335,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             }
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static byte[] FastCloneWithResize(byte[] array, int newSize)
@@ -354,7 +354,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return array3;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static MessagePackType GetMessagePackType(byte[] bytes, int offset)
@@ -362,7 +362,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return MessagePackCode.ToMessagePackType(bytes[offset]);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int ReadNext(byte[] bytes, int offset)
@@ -370,7 +370,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return readNextDecoders[bytes[offset]].Read(bytes, offset);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int ReadNextBlock(byte[] bytes, int offset)
@@ -415,7 +415,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             }
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteNil(ref byte[] bytes, int offset)
@@ -426,7 +426,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return 1;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static Nil ReadNil(byte[] bytes, int offset, out int readSize)
@@ -442,7 +442,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             }
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool IsNil(byte[] bytes, int offset)
@@ -669,7 +669,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// Unsafe. If value is guranteed 0 ~ MessagePackRange.MaxFixMapCount(15), can use this method.
         /// </summary>
         /// <returns></returns>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteFixedMapHeaderUnsafe(ref byte[] bytes, int offset, int count)
@@ -682,7 +682,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Write map count.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteMapHeader(ref byte[] bytes, int offset, int count)
@@ -696,7 +696,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Write map count.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteMapHeader(ref byte[] bytes, int offset, uint count)
@@ -736,7 +736,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Write map format header, always use map32 format(length is fixed, 5).
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteMapHeaderForceMap32Block(ref byte[] bytes, int offset, uint count)
@@ -756,7 +756,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Return map count.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int ReadMapHeader(byte[] bytes, int offset, out int readSize)
@@ -779,7 +779,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Return map count.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static uint ReadMapHeaderRaw(byte[] bytes, int offset, out int readSize)
@@ -801,7 +801,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return count;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int GetArrayHeaderLength(int count)
@@ -824,7 +824,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// Unsafe. If value is guranteed 0 ~ MessagePackRange.MaxFixArrayCount(15), can use this method.
         /// </summary>
         /// <returns></returns>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteFixedArrayHeaderUnsafe(ref byte[] bytes, int offset, int count)
@@ -837,7 +837,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Write array count.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteArrayHeader(ref byte[] bytes, int offset, int count)
@@ -851,7 +851,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Write array count.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteArrayHeader(ref byte[] bytes, int offset, uint count)
@@ -891,7 +891,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Write array format header, always use array32 format(length is fixed, 5).
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteArrayHeaderForceArray32Block(ref byte[] bytes, int offset, uint count)
@@ -911,7 +911,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Return array count.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int ReadArrayHeader(byte[] bytes, int offset, out int readSize)
@@ -936,7 +936,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Return array count.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static uint ReadArrayHeaderRaw(byte[] bytes, int offset, out int readSize)
@@ -959,7 +959,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return count;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteBoolean(ref byte[] bytes, int offset, bool value)
@@ -970,7 +970,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return 1;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool ReadBoolean(byte[] bytes, int offset, out int readSize)
@@ -979,7 +979,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return booleanDecoders[bytes[offset]].Read();
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteByte(ref byte[] bytes, int offset, byte value)
@@ -999,7 +999,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             }
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteByteForceByteBlock(ref byte[] bytes, int offset, byte value)
@@ -1010,7 +1010,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return 2;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static byte ReadByte(byte[] bytes, int offset, out int readSize)
@@ -1018,7 +1018,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return byteDecoders[bytes[offset]].Read(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteBytes(ref byte[] bytes, int offset, byte[] value)
@@ -1033,7 +1033,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             }
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteBytes(ref byte[] dest, int dstOffset, byte[] src, int srcOffset, int count)
@@ -1088,7 +1088,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             }
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static byte[] ReadBytes(byte[] bytes, int offset, out int readSize)
@@ -1096,7 +1096,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return bytesDecoders[bytes[offset]].Read(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static ArraySegment<byte> ReadBytesSegment(byte[] bytes, int offset, out int readSize)
@@ -1104,7 +1104,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return bytesSegmentDecoders[bytes[offset]].Read(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteSByte(ref byte[] bytes, int offset, sbyte value)
@@ -1124,7 +1124,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             }
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteSByteForceSByteBlock(ref byte[] bytes, int offset, sbyte value)
@@ -1135,7 +1135,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return 2;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static sbyte ReadSByte(byte[] bytes, int offset, out int readSize)
@@ -1143,7 +1143,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return sbyteDecoders[bytes[offset]].Read(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteSingle(ref byte[] bytes, int offset, float value)
@@ -1171,7 +1171,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return 5;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static float ReadSingle(byte[] bytes, int offset, out int readSize)
@@ -1179,7 +1179,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return singleDecoders[bytes[offset]].Read(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteDouble(ref byte[] bytes, int offset, double value)
@@ -1215,7 +1215,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return 9;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static double ReadDouble(byte[] bytes, int offset, out int readSize)
@@ -1223,7 +1223,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return doubleDecoders[bytes[offset]].Read(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteInt16(ref byte[] bytes, int offset, short value)
@@ -1280,7 +1280,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             }
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteInt16ForceInt16Block(ref byte[] bytes, int offset, short value)
@@ -1292,7 +1292,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return 3;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static short ReadInt16(byte[] bytes, int offset, out int readSize)
@@ -1303,7 +1303,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Unsafe. If value is guranteed 0 ~ MessagePackCode.MaxFixInt(127), can use this method.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WritePositiveFixedIntUnsafe(ref byte[] bytes, int offset, int value)
@@ -1313,7 +1313,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return 1;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteInt32(ref byte[] bytes, int offset, int value)
@@ -1393,7 +1393,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Acquire static message block(always 5 bytes).
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteInt32ForceInt32Block(ref byte[] bytes, int offset, int value)
@@ -1407,7 +1407,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return 5;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int ReadInt32(byte[] bytes, int offset, out int readSize)
@@ -1415,7 +1415,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return int32Decoders[bytes[offset]].Read(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteInt64(ref byte[] bytes, int offset, long value)
@@ -1520,7 +1520,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             }
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteInt64ForceInt64Block(ref byte[] bytes, int offset, long value)
@@ -1538,7 +1538,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return 9;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static long ReadInt64(byte[] bytes, int offset, out int readSize)
@@ -1546,7 +1546,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return int64Decoders[bytes[offset]].Read(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteUInt16(ref byte[] bytes, int offset, ushort value)
@@ -1574,7 +1574,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             }
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteUInt16ForceUInt16Block(ref byte[] bytes, int offset, ushort value)
@@ -1586,7 +1586,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return 3;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static ushort ReadUInt16(byte[] bytes, int offset, out int readSize)
@@ -1594,7 +1594,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return uint16Decoders[bytes[offset]].Read(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteUInt32(ref byte[] bytes, int offset, uint value)
@@ -1632,7 +1632,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             }
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteUInt32ForceUInt32Block(ref byte[] bytes, int offset, uint value)
@@ -1646,7 +1646,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return 5;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static uint ReadUInt32(byte[] bytes, int offset, out int readSize)
@@ -1654,7 +1654,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return uint32Decoders[bytes[offset]].Read(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteUInt64(ref byte[] bytes, int offset, ulong value)
@@ -1706,7 +1706,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             }
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteUInt64ForceUInt64Block(ref byte[] bytes, int offset, ulong value)
@@ -1724,7 +1724,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return 9;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static ulong ReadUInt64(byte[] bytes, int offset, out int readSize)
@@ -1732,7 +1732,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return uint64Decoders[bytes[offset]].Read(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteChar(ref byte[] bytes, int offset, char value)
@@ -1740,7 +1740,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return WriteUInt16(ref bytes, offset, (ushort)value);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static char ReadChar(byte[] bytes, int offset, out int readSize)
@@ -1751,7 +1751,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Unsafe. If value is guranteed length is 0 ~ 31, can use this method.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteFixedStringUnsafe(ref byte[] bytes, int offset, string value, int byteCount)
@@ -1766,7 +1766,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Unsafe. If pre-calculated byteCount of target string, can use this method.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteStringUnsafe(ref byte[] bytes, int offset, string value, int byteCount)
@@ -1808,7 +1808,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             }
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteStringBytes(ref byte[] bytes, int offset, byte[] utf8stringBytes)
@@ -1988,7 +1988,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return byteCount + 5;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static string ReadString(byte[] bytes, int offset, out int readSize)
@@ -1996,7 +1996,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return stringDecoders[bytes[offset]].Read(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static ArraySegment<byte> ReadStringSegment(byte[] bytes, int offset, out int readSize)
@@ -2004,7 +2004,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return stringSegmentDecoders[bytes[offset]].Read(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteExtensionFormatHeader(ref byte[] bytes, int offset, sbyte typeCode, int dataLength)
@@ -2074,7 +2074,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Write extension format header, always use ext32 format(length is fixed, 6).
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteExtensionFormatHeaderForceExt32Block(ref byte[] bytes, int offset, sbyte typeCode, int dataLength)
@@ -2089,7 +2089,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return 6;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteExtensionFormat(ref byte[] bytes, int offset, sbyte typeCode, byte[] data)
@@ -2191,7 +2191,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             }
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static ExtensionResult ReadExtensionFormat(byte[] bytes, int offset, out int readSize)
@@ -2202,7 +2202,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// return byte length of ExtensionFormat.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static ExtensionHeader ReadExtensionFormatHeader(byte[] bytes, int offset, out int readSize)
@@ -2210,7 +2210,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return extHeaderDecoders[bytes[offset]].Read(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int GetExtensionFormatHeaderLength(int dataLength)
@@ -2245,7 +2245,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         // FixExt8(-1) => nanoseconds + seconds | [1970-01-01 00:00:00.000000000 UTC, 2514-05-30 01:53:04.000000000 UTC) range
         // Ext8(12,-1) => nanoseconds + seconds | [-584554047284-02-23 16:59:44 UTC, 584554051223-11-09 07:00:16.000000000 UTC) range
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteDateTime(ref byte[] bytes, int offset, DateTime dateTime)
@@ -2340,7 +2340,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             }
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static DateTime ReadDateTime(byte[] bytes, int offset, out int readSize)
@@ -2665,7 +2665,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             }
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int ReadNext(Stream stream)
@@ -2674,7 +2674,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return ReadMessageBlockFromStreamCore(stream, ref bytes, 0, true);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int ReadNextBlock(Stream stream)
@@ -2684,7 +2684,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return ReadMessageBlockFromStreamCore(stream, ref bytes, offset, false);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteNil(Stream stream)
@@ -2693,7 +2693,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return 1;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static Nil ReadNil(Stream stream)
@@ -2705,7 +2705,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return ReadNil(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool IsNil(Stream stream)
@@ -2720,7 +2720,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// Unsafe. If value is guranteed 0 ~ MessagePackRange.MaxFixMapCount(15), can use this method.
         /// </summary>
         /// <returns></returns>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteFixedMapHeaderUnsafe(Stream stream, int count)
@@ -2732,7 +2732,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Write map count.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteMapHeader(Stream stream, int count)
@@ -2746,7 +2746,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Write map count.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteMapHeader(Stream stream, uint count)
@@ -2760,7 +2760,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Write map format header, always use map32 format(length is fixed, 5).
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteMapHeaderForceMap32Block(Stream stream, uint count)
@@ -2774,7 +2774,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Return map count.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int ReadMapHeader(Stream stream)
@@ -2791,7 +2791,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Return map count.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static uint ReadMapHeaderRaw(Stream stream)
@@ -2806,7 +2806,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// Unsafe. If value is guranteed 0 ~ MessagePackRange.MaxFixArrayCount(15), can use this method.
         /// </summary>
         /// <returns></returns>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteFixedArrayHeaderUnsafe(Stream stream, int count)
@@ -2818,7 +2818,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Write array count.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteArrayHeader(Stream stream, int count)
@@ -2832,7 +2832,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Write array count.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteArrayHeader(Stream stream, uint count)
@@ -2846,7 +2846,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Write array format header, always use array32 format(length is fixed, 5).
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteArrayHeaderForceArray32Block(Stream stream, uint count)
@@ -2860,7 +2860,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Return array count.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int ReadArrayHeader(Stream stream)
@@ -2874,7 +2874,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Return array count.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static uint ReadArrayHeaderRaw(Stream stream)
@@ -2885,7 +2885,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return ReadArrayHeaderRaw(bytes, 0, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteBoolean(Stream stream, bool value)
@@ -2896,7 +2896,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool ReadBoolean(Stream stream)
@@ -2908,7 +2908,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return ReadBoolean(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteByte(Stream stream, byte value)
@@ -2919,7 +2919,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteByteForceByteBlock(Stream stream, byte value)
@@ -2930,7 +2930,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static byte ReadByte(Stream stream)
@@ -2942,7 +2942,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return ReadByte(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteBytes(Stream stream, byte[] value)
@@ -2953,7 +2953,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteBytes(Stream stream, byte[] src, int srcOffset, int count)
@@ -2964,7 +2964,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static byte[] ReadBytes(Stream stream)
@@ -2976,7 +2976,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return ReadBytes(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteSByte(Stream stream, sbyte value)
@@ -2987,7 +2987,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteSByteForceSByteBlock(Stream stream, sbyte value)
@@ -2998,7 +2998,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static sbyte ReadSByte(Stream stream)
@@ -3010,7 +3010,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return ReadSByte(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteSingle(Stream stream, float value)
@@ -3021,7 +3021,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static float ReadSingle(Stream stream)
@@ -3033,7 +3033,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return ReadSingle(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteDouble(Stream stream, double value)
@@ -3044,7 +3044,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static double ReadDouble(Stream stream)
@@ -3056,7 +3056,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return ReadDouble(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteInt16(Stream stream, short value)
@@ -3067,7 +3067,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteInt16ForceInt16Block(Stream stream, short value)
@@ -3078,7 +3078,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static short ReadInt16(Stream stream)
@@ -3093,7 +3093,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Unsafe. If value is guranteed 0 ~ MessagePackCode.MaxFixInt(127), can use this method.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WritePositiveFixedIntUnsafe(Stream stream, int value)
@@ -3104,7 +3104,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteInt32(Stream stream, int value)
@@ -3118,7 +3118,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Acquire static message block(always 5 bytes).
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteInt32ForceInt32Block(Stream stream, int value)
@@ -3129,7 +3129,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int ReadInt32(Stream stream)
@@ -3141,7 +3141,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return ReadInt32(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteInt64(Stream stream, long value)
@@ -3152,7 +3152,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteInt64ForceInt64Block(Stream stream, long value)
@@ -3163,7 +3163,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static long ReadInt64(Stream stream)
@@ -3175,7 +3175,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return ReadInt64(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteUInt16(Stream stream, ushort value)
@@ -3186,7 +3186,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteUInt16ForceUInt16Block(Stream stream, ushort value)
@@ -3197,7 +3197,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static ushort ReadUInt16(Stream stream)
@@ -3209,7 +3209,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return ReadUInt16(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteUInt32(Stream stream, uint value)
@@ -3220,7 +3220,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteUInt32ForceUInt32Block(Stream stream, uint value)
@@ -3231,7 +3231,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static uint ReadUInt32(Stream stream)
@@ -3243,7 +3243,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return ReadUInt32(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteUInt64(Stream stream, ulong value)
@@ -3254,7 +3254,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteUInt64ForceUInt64Block(Stream stream, ulong value)
@@ -3265,7 +3265,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static ulong ReadUInt64(Stream stream)
@@ -3277,7 +3277,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return ReadUInt64(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteChar(Stream stream, char value)
@@ -3288,7 +3288,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static char ReadChar(Stream stream)
@@ -3303,7 +3303,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Unsafe. If value is guranteed length is 0 ~ 31, can use this method.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteFixedStringUnsafe(Stream stream, string value, int byteCount)
@@ -3317,7 +3317,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Unsafe. If pre-calculated byteCount of target string, can use this method.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteStringUnsafe(Stream stream, string value, int byteCount)
@@ -3328,7 +3328,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteStringBytes(Stream stream, byte[] utf8stringBytes)
@@ -3355,7 +3355,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static string ReadString(Stream stream)
@@ -3367,7 +3367,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return ReadString(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteExtensionFormatHeader(Stream stream, sbyte typeCode, int dataLength)
@@ -3381,7 +3381,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// Write extension format header, always use ext32 format(length is fixed, 6).
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteExtensionFormatHeaderForceExt32Block(Stream stream, sbyte typeCode, int dataLength)
@@ -3392,7 +3392,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteExtensionFormat(Stream stream, sbyte typeCode, byte[] data)
@@ -3403,7 +3403,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static ExtensionResult ReadExtensionFormat(Stream stream)
@@ -3418,7 +3418,7 @@ namespace Datadog.Trace.Vendors.MessagePack
         /// <summary>
         /// return byte length of ExtensionFormat.
         /// </summary>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static ExtensionHeader ReadExtensionFormatHeader(Stream stream)
@@ -3430,7 +3430,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return ReadExtensionFormatHeader(bytes, offset, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static int WriteDateTime(Stream stream, DateTime dateTime)
@@ -3441,7 +3441,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return writeCount;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static DateTime ReadDateTime(Stream stream)
