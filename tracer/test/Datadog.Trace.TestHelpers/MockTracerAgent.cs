@@ -1262,7 +1262,9 @@ namespace Datadog.Trace.TestHelpers
                             _pipeDirection, // we don't send responses to stats requests
                             NamedPipeServerStream.MaxAllowedServerInstances,
                             PipeTransmissionMode.Byte,
-                            PipeOptions.Asynchronous);
+                            PipeOptions.Asynchronous,
+                            64 * 1024,
+                            64 * 1024);
 
                         _log("Starting wait for connection " + instance);
                         var connectTask = statsServerStream.WaitForConnectionAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
