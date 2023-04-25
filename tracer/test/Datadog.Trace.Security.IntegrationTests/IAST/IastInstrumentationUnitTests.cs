@@ -183,7 +183,6 @@ public class IastInstrumentationUnitTests : TestHelper
 #endif
             SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests"));
             SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "0");
-            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
             ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);
             processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
         }
