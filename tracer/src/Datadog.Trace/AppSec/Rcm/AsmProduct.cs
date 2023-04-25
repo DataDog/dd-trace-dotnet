@@ -38,6 +38,12 @@ internal class AsmProduct : IAsmConfigUpdater
                 configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsKey);
             }
 
+            if (asmConfig.CustomRules != null)
+            {
+                configurationStatus.CustomRulesByFile[asmConfigName] = asmConfig.CustomRules;
+                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafCustomRulesKey);
+            }
+
             if (asmConfig.Actions != null)
             {
                 foreach (var action in asmConfig.Actions)
@@ -58,15 +64,17 @@ internal class AsmProduct : IAsmConfigUpdater
 
     public void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
     {
-        var removedRulesOveride = false;
+        var removedRulesOverride = false;
         var removedExclusions = false;
+        var removedCustomRules = false;
         foreach (var configurationPath in removedConfigsForThisProduct)
         {
-            removedRulesOveride |= configurationStatus.RulesOverridesByFile.Remove(configurationPath.Path);
+            removedRulesOverride |= configurationStatus.RulesOverridesByFile.Remove(configurationPath.Path);
             removedExclusions |= configurationStatus.ExclusionsByFile.Remove(configurationPath.Path);
+            removedCustomRules |= configurationStatus.CustomRulesByFile.Remove(configurationPath.Path);
         }
 
-        if (removedRulesOveride)
+        if (removedRulesOverride)
         {
             configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
         }
@@ -74,6 +82,11 @@ internal class AsmProduct : IAsmConfigUpdater
         if (removedExclusions)
         {
             configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsKey);
+        }
+
+        if (removedCustomRules)
+        {
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafCustomRulesKey);
         }
     }
 }
