@@ -14,7 +14,8 @@
       otel.trace_id: Guid_1,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -81,7 +82,8 @@
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -105,7 +107,8 @@
       otel.trace_id: Guid_3,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -172,7 +175,8 @@
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -196,7 +200,8 @@
       otel.trace_id: Guid_4,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -271,7 +276,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -295,7 +301,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       otel.trace_id: Guid_5,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -370,7 +377,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -394,7 +402,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       otel.trace_id: Guid_6,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -469,7 +478,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -493,7 +503,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       otel.trace_id: Guid_7,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -568,7 +579,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -592,7 +604,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       otel.trace_id: Guid_8,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -667,7 +680,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -691,7 +705,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       otel.trace_id: Guid_9,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -766,7 +781,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -790,7 +806,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       otel.trace_id: Guid_10,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -865,7 +882,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -889,7 +907,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       otel.trace_id: Guid_11,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -964,7 +983,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -988,7 +1008,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       otel.trace_id: Guid_12,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1055,7 +1076,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1079,7 +1101,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       otel.trace_id: Guid_13,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1146,7 +1169,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1170,7 +1194,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       otel.trace_id: Guid_14,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1237,7 +1262,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1261,7 +1287,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       otel.trace_id: Guid_15,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1331,7 +1358,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1355,7 +1383,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       otel.trace_id: Guid_16,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1425,7 +1454,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
