@@ -414,7 +414,7 @@ void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
     profileInfoScope.profileInfo.samplesCount++;
 }
 
-void LibddprofExporter::SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint)
+std::optional<LibddprofExporter::ProfileInfoScope> LibddprofExporter::TryGetInfo(const std::string& runtimeId)
 {
     std::lock_guard lock(_perAppInfoLock);
 
@@ -423,17 +423,29 @@ void LibddprofExporter::SetEndpoint(const std::string& runtimeId, uint64_t trace
     auto it = _perAppInfo.find(runtimeId);
     if (it == _perAppInfo.end())
     {
+        return {};
+    }
+
+    return it->second;
+}
+
+void LibddprofExporter::SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint)
+{
+    auto scope = TryGetInfo(runtimeId);
+
+    if (!scope.has_value())
+    {
         return;
     }
 
-    auto& profileInfoScope = it->second;
+    auto& profileInfoScope = scope.value();
 
-    if (profileInfoScope.profile == nullptr)
+    if (profileInfoScope.profileInfo.profile == nullptr)
     {
-        profileInfoScope.profile = CreateProfile();
+        profileInfoScope.profileInfo.profile = CreateProfile();
     }
 
-    auto* profile = profileInfoScope.profile;
+    auto* profile = profileInfoScope.profileInfo.profile;
 
     auto endpointName = FfiHelper::StringToCharSlice(endpoint);
 

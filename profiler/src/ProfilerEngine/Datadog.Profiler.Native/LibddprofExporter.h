@@ -9,6 +9,7 @@
 #include "MetricsRegistry.h"
 #include "Sample.h"
 #include "TagsHelper.h"
+
 #include <mutex>
 
 extern "C"
@@ -21,6 +22,7 @@ extern "C"
 #include <string_view>
 #include <unordered_map>
 #include <vector>
+#include <optional>
 
 class Sample;
 class IMetricsSender;
@@ -141,6 +143,7 @@ private:
     std::string GenerateFilePath(const std::string& applicationName, int idx, const std::string& extension) const;
     std::string CreateMetricsFileContent() const;
     std::vector<UpscalingInfo> GetUpscalingInfos();
+    std::optional<ProfileInfoScope> TryGetInfo(const std::string& runtimeId);
 
     static tags CommonTags;
     static std::string const ProcessId;
