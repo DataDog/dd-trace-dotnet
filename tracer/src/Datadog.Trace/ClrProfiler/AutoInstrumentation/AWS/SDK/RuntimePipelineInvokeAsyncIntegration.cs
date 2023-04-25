@@ -40,6 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         internal static CallTargetState OnMethodBegin<TTarget, TExecutionContext>(TTarget instance, TExecutionContext executionContext)
             where TExecutionContext : IExecutionContext, IDuckType
         {
+            Console.WriteLine("foobar");
             if (executionContext.Instance is null)
             {
                 return CallTargetState.GetDefault();
