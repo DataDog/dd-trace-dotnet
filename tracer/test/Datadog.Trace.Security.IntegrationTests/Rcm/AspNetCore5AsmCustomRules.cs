@@ -81,12 +81,17 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { CustomRules = (JArray)JToken.Parse(CustomRuleExample) }, AsmProduct, nameof(TestCustomRules)) });
 
             var spans2 = await SendRequestsAsync(agent, url);
+
+            // test reset works (& need to reset if the process is going to be reused)
+            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { CustomRules = new JArray() }, AsmProduct, nameof(TestCustomRules)) });
+
+            var spans3 = await SendRequestsAsync(agent, url);
+
             var spans = new List<MockSpan>();
             spans.AddRange(spans1);
             spans.AddRange(spans2);
+            spans.AddRange(spans3);
             await VerifySpans(spans.ToImmutableList(), settings);
-            // need to reset if the process is going to be reused
-            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { CustomRules = new JArray() }, AsmProduct, nameof(TestCustomRules)) });
         }
 
         protected override string GetTestName() => Prefix + nameof(AspNetCore5AsmCustomRules);
