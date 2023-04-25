@@ -2,14 +2,20 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: SendBothStreamingRequest,
+    Name: Samples.GrpcDotNet.internal,
     Resource: SendBothStreamingRequest,
     Service: Samples.GrpcDotNet,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.GrpcDotNet,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -81,9 +87,10 @@
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingBothWays,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -120,14 +127,20 @@
   {
     TraceId: Id_7,
     SpanId: Id_8,
-    Name: SendClientStreamingRequest,
+    Name: Samples.GrpcDotNet.internal,
     Resource: SendClientStreamingRequest,
     Service: Samples.GrpcDotNet,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.GrpcDotNet,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -199,9 +212,10 @@
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingFromClient,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -238,14 +252,20 @@
   {
     TraceId: Id_13,
     SpanId: Id_14,
-    Name: SendErrors_Cancelled,
+    Name: Samples.GrpcDotNet.internal,
     Resource: SendErrors_Cancelled,
     Service: Samples.GrpcDotNet,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.GrpcDotNet,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_4,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -319,9 +339,10 @@
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -360,14 +381,20 @@
   {
     TraceId: Id_19,
     SpanId: Id_20,
-    Name: SendErrors_DataLoss,
+    Name: Samples.GrpcDotNet.internal,
     Resource: SendErrors_DataLoss,
     Service: Samples.GrpcDotNet,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.GrpcDotNet,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_5,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -441,9 +468,10 @@
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -482,14 +510,20 @@
   {
     TraceId: Id_25,
     SpanId: Id_26,
-    Name: SendErrors_NotFound,
+    Name: Samples.GrpcDotNet.internal,
     Resource: SendErrors_NotFound,
     Service: Samples.GrpcDotNet,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.GrpcDotNet,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -563,9 +597,10 @@
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -604,14 +639,20 @@
   {
     TraceId: Id_31,
     SpanId: Id_32,
-    Name: SendErrors_Throw,
+    Name: Samples.GrpcDotNet.internal,
     Resource: SendErrors_Throw,
     Service: Samples.GrpcDotNet,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.GrpcDotNet,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_7,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -685,9 +726,10 @@
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -730,14 +772,20 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_37,
     SpanId: Id_38,
-    Name: SendErrorsAsync_Cancelled,
+    Name: Samples.GrpcDotNet.internal,
     Resource: SendErrorsAsync_Cancelled,
     Service: Samples.GrpcDotNet,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.GrpcDotNet,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_8,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -811,9 +859,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -852,14 +901,20 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_43,
     SpanId: Id_44,
-    Name: SendErrorsAsync_DataLoss,
+    Name: Samples.GrpcDotNet.internal,
     Resource: SendErrorsAsync_DataLoss,
     Service: Samples.GrpcDotNet,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.GrpcDotNet,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_9,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -933,9 +988,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -974,14 +1030,20 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_49,
     SpanId: Id_50,
-    Name: SendErrorsAsync_NotFound,
+    Name: Samples.GrpcDotNet.internal,
     Resource: SendErrorsAsync_NotFound,
     Service: Samples.GrpcDotNet,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.GrpcDotNet,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_10,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1055,9 +1117,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1096,14 +1159,20 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_55,
     SpanId: Id_56,
-    Name: SendErrorsAsync_Throw,
+    Name: Samples.GrpcDotNet.internal,
     Resource: SendErrorsAsync_Throw,
     Service: Samples.GrpcDotNet,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.GrpcDotNet,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_11,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1177,9 +1246,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1222,14 +1292,20 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_61,
     SpanId: Id_62,
-    Name: SendServerStreamingRequest,
+    Name: Samples.GrpcDotNet.internal,
     Resource: SendServerStreamingRequest,
     Service: Samples.GrpcDotNet,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.GrpcDotNet,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_12,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1301,9 +1377,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingFromServer,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1340,14 +1417,20 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_67,
     SpanId: Id_68,
-    Name: SendUnaryRequest,
+    Name: Samples.GrpcDotNet.internal,
     Resource: SendUnaryRequest,
     Service: Samples.GrpcDotNet,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.GrpcDotNet,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_13,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1419,9 +1502,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/Unary,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1458,14 +1542,20 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_73,
     SpanId: Id_74,
-    Name: SendUnaryRequestAsync,
+    Name: Samples.GrpcDotNet.internal,
     Resource: SendUnaryRequestAsync,
     Service: Samples.GrpcDotNet,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.GrpcDotNet,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_14,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1537,9 +1627,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/Unary,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1576,14 +1667,20 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_79,
     SpanId: Id_80,
-    Name: SendVerySlowRequest,
+    Name: Samples.GrpcDotNet.internal,
     Resource: SendVerySlowRequest,
     Service: Samples.GrpcDotNet,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.GrpcDotNet,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_15,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1655,9 +1752,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/VerySlow,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1696,14 +1794,20 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_85,
     SpanId: Id_86,
-    Name: SendVerySlowRequestAsync,
+    Name: Samples.GrpcDotNet.internal,
     Resource: SendVerySlowRequestAsync,
     Service: Samples.GrpcDotNet,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.GrpcDotNet,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_16,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1775,9 +1879,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/VerySlow,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
