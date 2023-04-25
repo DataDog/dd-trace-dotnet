@@ -428,9 +428,10 @@ partial class Build
     Target RunProfilerAsanTest => _ => _
         .Unlisted()
         .Description("Compile and run the profiler with Clang Address sanitizer")
-        .DependsOn(BuildNativeLoader)
+        //.DependsOn(BuildNativeLoader)
         .DependsOn(CompileProfilerWithAsanLinux)
         .DependsOn(CompileProfilerWithAsanWindows)
+        .DependsOn(BuildTracerHome)
         .DependsOn(PublishProfiler)
         .DependsOn(RunSampleWithProfilerAsan);
 
@@ -511,6 +512,7 @@ partial class Build
         .After(PublishProfiler)
         .After(CompileProfilerWithAsanLinux)
         .After(CompileProfilerWithAsanWindows)
+        .After(BuildTracerHome)
         .Triggers(CheckTestResultForProfilerWithSanitizer)
         .Executes(() =>
         {
@@ -518,8 +520,6 @@ partial class Build
                 IsWin
                 ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
                 : new[] { MSBuildTargetPlatform.x64 };
-
-            var sampleApp = ProfilerSamplesSolution.GetProject("Samples.Computer01");
 
             foreach (var platform in platforms)
             {
@@ -625,7 +625,7 @@ partial class Build
     {
         var envVars = new Dictionary<string, string>()
             {
-                { "DD_TRACE_ENABLED", "0" }, // Disable tracer for this test
+                { "DD_TRACE_ENABLED", "1" }, // Disable tracer for this test
                 { "DD_PROFILING_ENABLED", "1" },
                 { "DD_PROFILING_EXCEPTION_ENABLED", "1" },
                 { "DD_PROFILING_ALLOCATION_ENABLED", "1"},
@@ -654,7 +654,7 @@ partial class Build
 
         AddContinuousProfilerEnvironmentVariables(envVars);
 
-        var sampleApp = ProfilerSamplesSolution.GetProject("Samples.Computer01");
+        var sampleApp = ProfilerSamplesSolution.GetProject("Samples.BuggyBits");
 
         var baseOutputDir = ProfilerBuildDataDirectory / platform.ToString();
 
