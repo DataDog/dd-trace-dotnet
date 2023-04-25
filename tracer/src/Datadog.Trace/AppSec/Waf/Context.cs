@@ -55,6 +55,15 @@ namespace Datadog.Trace.AppSec.Waf
             return new Context(contextHandle, waf, wafLibraryInvoker);
         }
 
+        public IResult Run2(IntPtr args, ulong timeoutMicroSeconds)
+        {
+            DdwafResultStruct retNative = default;
+            var code = _waf.Run(_contextHandle, args, ref retNative, timeoutMicroSeconds);
+            var result = new Result(retNative, code, _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000));
+            _wafLibraryInvoker.ResultFree(ref retNative);
+            return result;
+        }
+
         public IResult? Run(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
         {
             if (_disposed)

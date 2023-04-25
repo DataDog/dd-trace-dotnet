@@ -138,6 +138,79 @@ namespace Datadog.Trace.AppSec.Waf
             return value;
         }
 
+        public static DdwafObjectStruct EncodeInternal2(object o, WafLibraryInvoker wafLibraryInvoker)
+        {
+            var ddwafObjectStruct = new DdwafObjectStruct();
+            switch (o)
+            {
+                case string or long or uint or ulong or JValue:
+                {
+                    ddwafObjectStruct.Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING;
+                    var s = o.ToString();
+                    ddwafObjectStruct.ParameterNameLength = (ulong)s!.Length;
+                    ddwafObjectStruct.Array = Marshal.StringToCoTaskMemAuto(s);
+                    break;
+                }
+
+                case bool b:
+                {
+                    ddwafObjectStruct.Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_BOOL;
+                    ddwafObjectStruct.Boolean = b ? (byte)1 : (byte)0;
+                    break;
+                }
+
+                case IEnumerable<KeyValuePair<string, string>> objDict:
+                {
+                    ddwafObjectStruct.Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP;
+                    foreach (var keyValue in objDict)
+                    {
+                        ddwafObjectStruct.ParameterName = Marshal.StringToCoTaskMemAuto(keyValue.Key);
+                        ddwafObjectStruct.ParameterNameLength = (ulong)keyValue.Value.Length;
+                        var result = EncodeInternal2(keyValue.Value, wafLibraryInvoker);
+                        var pnt = Marshal.AllocHGlobal(Marshal.SizeOf(result));
+                        Marshal.StructureToPtr(result, pnt, false);
+                        ddwafObjectStruct.Array = pnt;
+                    }
+
+                    break;
+                }
+
+                case IEnumerable<KeyValuePair<string, object>> objDict:
+                {
+                    ddwafObjectStruct.Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP;
+                    foreach (var keyValue in objDict)
+                    {
+                        ddwafObjectStruct.ParameterName = Marshal.StringToCoTaskMemAuto(keyValue.Key);
+                        // ddwafObjectStruct.ParameterNameLength = (ulong)keyValue.Value.Length;
+                        var result = EncodeInternal2(keyValue.Value, wafLibraryInvoker);
+                        var pnt = Marshal.AllocHGlobal(Marshal.SizeOf(result));
+                        Marshal.StructureToPtr(result, pnt, false);
+                        ddwafObjectStruct.Array = pnt;
+                    }
+
+                    break;
+                }
+
+                case IEnumerable<KeyValuePair<string, List<string>>> objDict:
+                {
+                    ddwafObjectStruct.Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP;
+                    foreach (var keyValue in objDict)
+                    {
+                        ddwafObjectStruct.ParameterName = Marshal.StringToCoTaskMemAuto(keyValue.Key);
+                        ddwafObjectStruct.ParameterNameLength = (ulong)keyValue.Value.Count;
+                        var result = EncodeInternal2(keyValue.Value, wafLibraryInvoker);
+                        var pnt = Marshal.AllocHGlobal(Marshal.SizeOf(result));
+                        Marshal.StructureToPtr(result, pnt, false);
+                        ddwafObjectStruct.Array = pnt;
+                    }
+
+                    break;
+                }
+            }
+
+            return ddwafObjectStruct;
+        }
+
         private static Obj EncodeList(IEnumerable<object> objEnumerator, List<Obj>? argCache, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
         {
             var arrNat = wafLibraryInvoker.ObjectArray();

@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
@@ -97,6 +98,22 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Theory]
         [InlineData("/.adsensepostnottherenonobook", "security_scanner", "crs-913-120")]
         public void BodyAttack(string body, string flow, string rule) => Execute(AddressesConstants.RequestBody, body, flow, rule);
+
+        [Theory]
+        [InlineData("x_filename", "routing.yml")]
+        public void Test(string header, string content)
+        {
+            var args = new Dictionary<string, string> { { header, content } };
+            var argsroot = new Dictionary<string, object> { { AddressesConstants.RequestHeaderNoCookies, args } };
+            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, @"C:\Repositories\dd-trace-dotnet\tracer\src\Datadog.Trace\AppSec\Waf\rule-set.json");
+            using var waf = initResult.Waf;
+            waf.Should().NotBeNull();
+            using var context = waf.CreateContext() as Context;
+            var result = Encoder.EncodeInternal2(argsroot, WafLibraryInvoker);
+            var pnt = Marshal.AllocHGlobal(Marshal.SizeOf(result));
+            Marshal.StructureToPtr(result, pnt, false);
+            var resultwaf = context.Run2(pnt, TimeoutMicroSeconds);
+        }
 
         private void Execute(string address, object value, string flow, string rule)
         {
