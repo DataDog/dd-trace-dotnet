@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,9 +11,13 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Sampling;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Datadog.Trace.Tests.Agent
 {
@@ -111,30 +114,39 @@ namespace Datadog.Trace.Tests.Agent
             ulong id = 0;
             var start = DateTimeOffset.UtcNow;
 
+            var tracer = new Tracer(
+                new TracerSettings(),
+                Mock.Of<IAgentWriter>(),
+                Mock.Of<ITraceSampler>(),
+                Mock.Of<IScopeManager>(),
+                Mock.Of<IDogStatsd>(),
+                NullTelemetryController.Instance,
+                NullDiscoveryService.Instance);
+
             var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
 
             try
             {
                 // Baseline
-                var baselineSpan = CreateSpan(id++, start, durationMs);
+                var baselineSpan = CreateSpan(tracer, id++, start, durationMs);
 
                 // Unique Name (Operation)
-                var operationSpan = CreateSpan(id++, start, durationMs, operationName: "unique-name");
+                var operationSpan = CreateSpan(tracer, id++, start, durationMs, operationName: "unique-name");
 
                 // Unique Resource
-                var resourceSpan = CreateSpan(id++, start, durationMs, resourceName: "unique-resource");
+                var resourceSpan = CreateSpan(tracer, id++, start, durationMs, resourceName: "unique-resource");
 
                 // Unique Service
-                var serviceSpan = CreateSpan(id++, start, durationMs, serviceName: "unique-service");
+                var serviceSpan = CreateSpan(tracer, id++, start, durationMs, serviceName: "unique-service");
 
                 // Unique Type
-                var typeSpan = CreateSpan(id++, start, durationMs, type: "unique-type");
+                var typeSpan = CreateSpan(tracer, id++, start, durationMs, type: "unique-type");
 
                 // Unique Synthetics
-                var syntheticsSpan = CreateSpan(id++, start, durationMs, origin: "synthetics");
+                var syntheticsSpan = CreateSpan(tracer, id++, start, durationMs, origin: "synthetics");
 
                 // Unique HTTP Status Code
-                var httpSpan = CreateSpan(id++, start, durationMs, httpStatusCode: "400");
+                var httpSpan = CreateSpan(tracer, id++, start, durationMs, httpStatusCode: "400");
 
                 var spans = new Span[] { baselineSpan, operationSpan, resourceSpan, serviceSpan, typeSpan, syntheticsSpan, httpSpan };
                 aggregator.Add(spans);
@@ -164,21 +176,17 @@ namespace Datadog.Trace.Tests.Agent
                 await aggregator.DisposeAsync();
             }
 
-            Span CreateSpan(ulong id, DateTimeOffset start, long durationMs, string operationName = "name", string resourceName = "resource", string serviceName = "service", string type = "http", string httpStatusCode = "200", string origin = "rum")
+            static Span CreateSpan(Tracer tracer, ulong id, DateTimeOffset start, long durationMs, string operationName = "name", string resourceName = "resource", string serviceName = "service", string type = "http", string httpStatusCode = "200", string origin = "rum")
             {
-                var span = new Span(new SpanContext(id, id), start);
-                span.SetDuration(TimeSpan.FromMilliseconds(durationMs));
+                var span = tracer.StartSpan(operationName, tags: null, SpanContext.None, serviceName, start, (TraceId)id, spanId: id);
 
+                span.SetDuration(TimeSpan.FromMilliseconds(durationMs));
                 span.ResourceName = resourceName;
                 span.ServiceName = serviceName;
                 span.OperationName = operationName;
                 span.Type = type;
+                span.TraceContext.Origin = origin;
                 span.SetTag(Tags.HttpStatusCode, httpStatusCode);
-
-                if (span.TraceContext is { } traceContext)
-                {
-                    traceContext.Origin = origin;
-                }
 
                 return span;
             }
