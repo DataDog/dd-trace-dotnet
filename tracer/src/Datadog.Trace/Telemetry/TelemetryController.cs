@@ -102,8 +102,11 @@ namespace Datadog.Trace.Telemetry
         public async Task DisposeAsync(bool sendAppClosingTelemetry)
         {
             TerminateLoop(sendAppClosingTelemetry);
+            Log.Information("TelemetryController.Disposesync - After TerminateLoop");
             await _flushTask.ConfigureAwait(false);
+            Log.Information("TelemetryController.Disposesync - After _flushTask");
             await _heartbeatTask.ConfigureAwait(false);
+            Log.Information("TelemetryController.Disposesync - After _heartbeatTask");
         }
 
         public Task DisposeAsync()
