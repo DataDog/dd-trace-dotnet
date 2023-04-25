@@ -1457,7 +1457,10 @@ partial class Build
                     (_, null) => true,
                     (_, { } p) when p.Name.Contains("Samples.AspNetCoreRazorPages") => true, // always have to build this one
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) && p.Name.Contains(SampleName) => true,
-                    (var required, { } p) => p.RequiresDockerDependency() == required,
+                    // The latest version of Nuke appears to have a bug that stops us calling RequiresDockerDependency() because
+                    // it can't locate MSBuild. No idea why, but this is just an optimisation for now, so taking the easy road.
+                    // (var required, { } p) => p.RequiresDockerDependency() == required,
+                    _ => true,  
                 })
                 .Where(x =>
                 {
