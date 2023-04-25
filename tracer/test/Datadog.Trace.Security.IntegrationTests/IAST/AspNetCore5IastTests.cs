@@ -176,6 +176,25 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     [SkippableFact]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
+    public async Task TestRequestBodyTainting()
+    {
+        var filename = IastEnabled ? "Iast.RequestBodyTest.AspNetCore5.IastEnabled" : "Iast.RequestBodyTest.AspNetCore5.IastDisabled";
+        var url = "/Iast/ExecuteQueryFromBodyQueryData";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, url, "{\"Query\": \"SELECT Surname from Persons where name='Vicent'\"}", 1, 1, string.Empty, "application/json", null);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+    }
+
+    [SkippableFact]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
     public async Task TestIastSqlInjectionRequest()
     {
         var filename = IastEnabled ? "Iast.SqlInjection.AspNetCore5.IastEnabled" : "Iast.SqlInjection.AspNetCore5.IastDisabled";
