@@ -40,6 +40,22 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             Assert.True(CheckSamplesAreGC(runner.Environment.PprofDir));
         }
 
+        [TestAppFact("Samples.Computer01", new[] { "net6.0" })]
+        public void ShouldGetGarbageCollectionSamplesByDefault(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
+
+            // disable default profilers
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+
+            // only garbage collection profiler enabled so should only see the 1 related value per sample + Generation label
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            runner.Run(agent);
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            Assert.True(CheckSamplesAreGC(runner.Environment.PprofDir));
+        }
+
         private bool CheckSamplesAreGC(string directory)
         {
             int profileCount = 0;
