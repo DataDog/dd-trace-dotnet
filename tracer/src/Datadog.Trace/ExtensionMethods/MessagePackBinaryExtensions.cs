@@ -5,7 +5,6 @@
 
 #if NETCOREAPP
 using System;
-using System.IO;
 
 namespace Datadog.Trace.Vendors.MessagePack
 {
@@ -104,22 +103,6 @@ namespace Datadog.Trace.Vendors.MessagePack
                 utf8stringBytes.CopyTo(bytes.AsSpan(offset + 5, byteCount));
                 return byteCount + 5;
             }
-        }
-
-        public static int WriteBytes(Stream stream, ReadOnlySpan<byte> value)
-        {
-            var buffer = StreamDecodeMemoryPool.GetBuffer();
-            var writeCount = WriteBytes(ref buffer, 0, value);
-            stream.Write(buffer, 0, writeCount);
-            return writeCount;
-        }
-
-        public static int WriteStringBytes(Stream stream, ReadOnlySpan<byte> utf8stringBytes)
-        {
-            var buffer = StreamDecodeMemoryPool.GetBuffer();
-            var writeCount = WriteStringBytes(ref buffer, 0, utf8stringBytes);
-            stream.Write(buffer, 0, writeCount);
-            return writeCount;
         }
     }
 }
