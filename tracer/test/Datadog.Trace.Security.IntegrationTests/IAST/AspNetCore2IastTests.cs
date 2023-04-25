@@ -212,7 +212,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         {
             EnableIast(IastEnabled);
             DisableObfuscationQueryString();
-            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
             SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
             SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
             SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
