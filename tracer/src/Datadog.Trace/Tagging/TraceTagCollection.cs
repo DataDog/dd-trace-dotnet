@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Util;
@@ -20,9 +19,11 @@ namespace Datadog.Trace.Tagging
         private string? _cachedPropagationHeader;
         private string? _decisionMakerValue;
 
-        public TraceTagCollection(
-            List<KeyValuePair<string, string>>? tags = null,
-            string? cachedPropagationHeader = null)
+        public TraceTagCollection()
+        {
+        }
+
+        public TraceTagCollection(List<KeyValuePair<string, string>>? tags, string? cachedPropagationHeader)
         {
             if (tags?.Count > 0)
             {
@@ -53,7 +54,7 @@ namespace Datadog.Trace.Tagging
         /// <summary>
         /// Gets the number of elements contained in the <see cref="TraceTagCollection"/>.
         /// </summary>
-        public int Count => _tags?.Count ?? 0;
+        public int Count => (_tags?.Count ?? 0) + (_decisionMakerValue != null ? 1 : 0);
 
         /// <summary>
         /// Adds a new tag to the collection.
