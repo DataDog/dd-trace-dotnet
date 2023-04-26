@@ -22,7 +22,7 @@ $IMAGE_NAME="dd-trace-dotnet/alpine-base"
     --env NugetPackageDirectory=/project/packages `
     --env artifacts=/project/tracer/bin/artifacts `
     --env DD_INSTRUMENTATION_TELEMETRY_ENABLED=0 `
-    --env NUKE_TELEMETRY_OPTOUT=0 `
+    --env NUKE_TELEMETRY_OPTOUT=1 `
     -p 5003:5003 `
     -v /ddlogs:/var/log/datadog/dotnet `
     $IMAGE_NAME `
