@@ -246,8 +246,8 @@ namespace Datadog.Trace.TestHelpers
         }
 
         public IImmutableList<MockDataStreamsPayload> WaitForDataStreams(
-            int count,
-            int timeoutInMilliseconds = 20000)
+            int timeoutInMilliseconds,
+            Func<IImmutableList<MockDataStreamsPayload>, bool> waitFunc)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
 
@@ -257,7 +257,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 stats = DataStreams;
 
-                if (stats.Count >= count)
+                if (waitFunc(stats))
                 {
                     break;
                 }
@@ -266,6 +266,27 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return stats;
+        }
+
+        public IImmutableList<MockDataStreamsPayload> WaitForDataStreamsPoints(
+            int statsCount,
+            int timeoutInMilliseconds = 20000)
+        {
+            return WaitForDataStreams(
+                timeoutInMilliseconds,
+                (stats) =>
+                {
+                    return stats.Sum(s => s.Stats.Sum(bucket => bucket.Stats.Length)) == statsCount;
+                });
+        }
+
+        public IImmutableList<MockDataStreamsPayload> WaitForDataStreams(
+            int payloadCount,
+            int timeoutInMilliseconds = 20000)
+        {
+            return WaitForDataStreams(
+                timeoutInMilliseconds,
+                (stats) => stats.Count == payloadCount);
         }
 
         /// <summary>
@@ -949,7 +970,7 @@ namespace Datadog.Trace.TestHelpers
                         }
                     }
 
-                    _statsdTask = Task.Run(HandleStatsdRequests);
+                    _statsdTask = Task.Factory.StartNew(HandleStatsdRequests, TaskCreationOptions.LongRunning);
 
                     listeners.Add($"Stats at port {StatsdPort}");
                 }
@@ -978,7 +999,7 @@ namespace Datadog.Trace.TestHelpers
                         _listener = listener;
 
                         listeners.Add($"Traces at port {Port}");
-                        _tracesListenerTask = Task.Run(HandleHttpRequests);
+                        _tracesListenerTask = Task.Factory.StartNew(HandleHttpRequests, TaskCreationOptions.LongRunning);
 
                         return;
                     }
@@ -1107,7 +1128,6 @@ namespace Datadog.Trace.TestHelpers
             private readonly PipeServer _statsPipeServer;
             private readonly PipeServer _tracesPipeServer;
             private readonly Task _statsdTask;
-            private readonly Task _tracesListenerTask;
 
             public NamedPipeAgent(WindowsPipesConfig config)
                 : base(config.UseTelemetry, TestTransports.WindowsNamedPipe)
@@ -1150,7 +1170,7 @@ namespace Datadog.Trace.TestHelpers
                     ex => Exceptions.Add(ex),
                     x => Output?.WriteLine(x));
 
-                _tracesListenerTask = Task.Run(_tracesPipeServer.Start);
+                _tracesPipeServer.Start();
             }
 
             public string TracesWindowsPipeName { get; }
@@ -1223,7 +1243,7 @@ namespace Datadog.Trace.TestHelpers
                     _log = log;
                 }
 
-                public Task Start()
+                public void Start()
                 {
                     for (var i = 0; i < ConcurrentInstanceCount; i++)
                     {
@@ -1233,8 +1253,6 @@ namespace Datadog.Trace.TestHelpers
                         _tasks.Add(startPipe);
                         mutex.Wait(5_000);
                     }
-
-                    return Task.CompletedTask;
                 }
 
                 public void Dispose()
@@ -1330,7 +1348,7 @@ namespace Datadog.Trace.TestHelpers
 
                     _udsStatsSocket.Bind(_statsEndpoint);
                     // NOTE: Connectionless protocols don't use Listen()
-                    _statsdTask = Task.Run(HandleUdsStats);
+                    _statsdTask = Task.Factory.StartNew(HandleUdsStats, TaskCreationOptions.LongRunning);
                 }
 
                 _tracesEndpoint = new UnixDomainSocketEndPoint(config.Traces);
@@ -1344,7 +1362,7 @@ namespace Datadog.Trace.TestHelpers
                 _udsTracesSocket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
                 _udsTracesSocket.Bind(_tracesEndpoint);
                 _udsTracesSocket.Listen(1000);
-                _tracesListenerTask = Task.Run(HandleUdsTraces);
+                _tracesListenerTask = Task.Factory.StartNew(HandleUdsTraces, TaskCreationOptions.LongRunning);
             }
 
             public string TracesUdsPath { get; }

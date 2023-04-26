@@ -1,0 +1,89 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet.request,
+    Resource: GET /iast/executecommand,
+    Service: sample,
+    Type: web,
+    Tags: {
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.route: {controller}/{action}/{id},
+      http.status_code: 200,
+      http.url: http://localhost:00000/Iast/ExecuteCommand?file=nonexisting.exe&argumentLine=arg1,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.iast.enabled: 1,
+      _dd.iast.json:
+{
+  "vulnerabilities": [
+    {
+      "type": "COMMAND_INJECTION",
+      
+      "evidence": {
+        "valueParts": [
+          {
+            "value": "nonexisting.exe",
+            "source": 0
+          },
+          {
+            "value": " "
+          },
+          {
+            "value": "arg1",
+            "source": 1
+          }
+        ]
+      }
+    }
+  ],
+  "sources": [
+    {
+      "origin": "http.request.parameter",
+      "name": "file",
+      "value": "nonexisting.exe"
+    },
+    {
+      "origin": "http.request.parameter",
+      "name": "argumentLine",
+      "value": "arg1"
+    }
+  ]
+},
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet-mvc.request,
+    Resource: GET /iast/executecommand,
+    Service: sample,
+    Type: web,
+    ParentId: Id_2,
+    Tags: {
+      aspnet.action: executecommand,
+      aspnet.controller: iast,
+      aspnet.route: {controller}/{action}/{id},
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Iast/ExecuteCommand?file=nonexisting.exe&argumentLine=arg1,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      span.kind: server
+    }
+  }
+]

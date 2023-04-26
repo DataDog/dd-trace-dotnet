@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Datadog.Trace;
 using Serilog;
@@ -30,7 +31,7 @@ namespace SerilogExample
             //
             loggerConfiguration = loggerConfiguration
                                       .WriteTo.File(
-                                          "log-Serilog-textFile.log",
+                                          Path.Combine(AppContext.BaseDirectory, "log-Serilog-textFile.log"),
                                           outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Properties} {Message:lj} {NewLine}{Exception}");
 
             // The built-in JsonFormatter will display all properties by default, so no extra work is needed to emit the Datadog properties
@@ -40,7 +41,7 @@ namespace SerilogExample
             loggerConfiguration = loggerConfiguration
                                       .WriteTo.File(
                                           new JsonFormatter(),
-                                          "log-Serilog-jsonFile-allProperties.log");
+                                          Path.Combine(AppContext.BaseDirectory, "log-Serilog-jsonFile-allProperties.log"));
 
             // The CompactJsonFormatter from the Serilog.Formatting.Compact NuGet package will display all properties by default, so no extra work is needed to emit the Datadog properties
             //
@@ -49,7 +50,7 @@ namespace SerilogExample
             loggerConfiguration = loggerConfiguration
                                       .WriteTo.File(
                                           new CompactJsonFormatter(),
-                                          "log-Serilog-compactJsonFile-allProperties.log");
+                                          Path.Combine(AppContext.BaseDirectory, "log-Serilog-compactJsonFile-allProperties.log"));
 
             // Main procedure
             var log = loggerConfiguration.CreateLogger();

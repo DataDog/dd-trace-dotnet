@@ -59,7 +59,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.8.2";
+    const string LibDdwafVersion = "1.9.0";
 
     const string OlderLibDdwafVersion = "1.4.0";
 
@@ -1155,6 +1155,7 @@ partial class Build
                     .SetTargetPlatformAnyCPU()
                     .SetFramework(Framework)
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
+                    .EnableCrashDumps()
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetTestTargetPlatform(TargetPlatform)
@@ -1280,6 +1281,7 @@ partial class Build
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatformAnyCPU()
                     .SetFramework(Framework)
+                    .EnableCrashDumps()
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "Category=Smoke&LoadFromGAC!=True&Category!=AzureFunctions")
@@ -1857,6 +1859,8 @@ partial class Build
             knownPatterns.Add(new(@".*LinuxStackFramesCollector::CollectStackSampleImplementation: Unable to send signal .*Error code: No such process", RegexOptions.Compiled));
             // profiler throws this on .NET 7 - currently allowed
             knownPatterns.Add(new(@".*Profiler call failed with result Unspecified-Failure \(80131351\): pInfo..GetModuleInfo\(moduleId, nullptr, 0, nullptr, nullptr, .assemblyId\)", RegexOptions.Compiled));
+            // avoid any issue with CLR events that are not supported before 5.1 or .NET Framework
+            knownPatterns.Add(new(@".*Event-based profilers \(Allocation, LockContention\) are not supported for", RegexOptions.Compiled));
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });
@@ -2213,7 +2217,7 @@ partial class Build
     {
         if (Directory.Exists(TempDirectory))
         {
-            foreach (var dump in GlobFiles(TempDirectory, "coredump*"))
+            foreach (var dump in GlobFiles(TempDirectory, "coredump*", "*.dmp"))
             {
                 MoveFileToDirectory(dump, root / "dumps", FileExistsPolicy.Overwrite);
             }

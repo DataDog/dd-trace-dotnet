@@ -71,20 +71,41 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return File.OpenRead(rulesFile);
         }
 
-        internal InitResult Configure(string? rulesFile, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        internal static JToken? DeserializeEmbeddedRules(string? rulesFilePath)
         {
-            var argsToDispose = new List<Obj>();
-            var rulesObj = GetConfigObj(rulesFile, argsToDispose);
-            return ConfigureAndDispose(rulesObj, rulesFile, argsToDispose, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+            JToken root;
+            try
+            {
+                using var stream = GetRulesStream(rulesFilePath);
+
+                if (stream == null)
+                {
+                    return null;
+                }
+
+                using var reader = new StreamReader(stream);
+                using var jsonReader = new JsonTextReader(reader);
+                root = JToken.ReadFrom(jsonReader);
+                LogRuleDetailsIfDebugEnabled(root);
+            }
+            catch (Exception ex)
+            {
+                if (rulesFilePath != null)
+                {
+                    Log.Error(ex, "DDAS-0003-02: AppSec could not read the rule file \"{RulesFile}\". Reason: Invalid file format. AppSec will not run any protections in this application.", rulesFilePath);
+                }
+                else
+                {
+                    Log.Error(ex, "DDAS-0003-02: AppSec could not read the rule file embedded in the manifest. Reason: Invalid file format. AppSec will not run any protections in this application.");
+                }
+
+                return null;
+            }
+
+            return root;
         }
 
-        internal InitResult ConfigureFromRemoteConfig(string rulesJson, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
-        {
-            var argCache = new List<Obj>();
-            return ConfigureAndDispose(GetConfigObjFromRemoteJson(rulesJson, argCache), "RemoteConfig", argCache, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
-        }
-
-        private InitResult ConfigureAndDispose(Obj? rulesObj, string? rulesFile, List<Obj> argsToDispose, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        internal InitResult ConfigureAndDispose(Obj? rulesObj, string? rulesFile, List<Obj> argsToDispose, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
             if (rulesObj == null)
             {
@@ -155,66 +176,6 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     arg.Dispose();
                 }
             }
-        }
-
-        private Obj? GetConfigObj(string? rulesFile, List<Obj> argCache)
-        {
-            Obj configObj;
-            try
-            {
-                using var stream = GetRulesStream(rulesFile);
-
-                if (stream == null)
-                {
-                    return null;
-                }
-
-                using var reader = new StreamReader(stream);
-                configObj = GetConfigObj(reader, argCache);
-            }
-            catch (Exception ex)
-            {
-                if (rulesFile != null)
-                {
-                    Log.Error(ex, "DDAS-0003-02: AppSec could not read the rule file \"{RulesFile}\". Reason: Invalid file format. AppSec will not run any protections in this application.", rulesFile);
-                }
-                else
-                {
-                    Log.Error(ex, "DDAS-0003-02: AppSec could not read the rule file embedded in the manifest. Reason: Invalid file format. AppSec will not run any protections in this application.");
-                }
-
-                return null;
-            }
-
-            return configObj;
-        }
-
-        internal Obj? GetConfigObjFromRemoteJson(string rulesJson, List<Obj>? argCache)
-        {
-            Obj configObj;
-            try
-            {
-                using var reader = new StringReader(rulesJson);
-                configObj = GetConfigObj(reader, argCache);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "DDAS-0003-02: AppSec could not read the rule file sent by remote config. Reason: Invalid file format. AppSec will not run any protections in this application.");
-                return null;
-            }
-
-            return configObj;
-        }
-
-        private Obj GetConfigObj(TextReader reader, List<Obj>? argCache)
-        {
-            using var jsonReader = new JsonTextReader(reader);
-            var root = JToken.ReadFrom(jsonReader);
-
-            LogRuleDetailsIfDebugEnabled(root);
-            // applying safety limits during rule parsing could result in truncated rules
-            var configObj = Encoder.Encode(root, _wafLibraryInvoker, argCache, applySafetyLimits: false);
-            return configObj;
         }
     }
 }

@@ -958,6 +958,7 @@ stages:
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        enable_crash_dumps: true
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -3805,6 +3806,11 @@ stages:
 
     steps:
       - checkout: none
+
+      - task: UsePythonVersion@0
+        inputs:
+            versionSpec: '3.9'
+        displayName: Install python 3.9
 
       - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo

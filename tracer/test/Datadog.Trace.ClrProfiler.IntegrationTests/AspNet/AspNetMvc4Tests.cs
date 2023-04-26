@@ -111,11 +111,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
               { "/graphql/GetAllFoo", 200 }, // Slug in route template
         };
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             span.Name switch
             {
-                "aspnet.request" => span.IsAspNet(),
-                "aspnet-mvc.request" => span.IsAspNetMvc(),
+                "aspnet.request" => span.IsAspNet(metadataSchemaVersion),
+                "aspnet-mvc.request" => span.IsAspNetMvc(metadataSchemaVersion),
                 _ => Result.DefaultSuccess,
             };
 
@@ -134,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode);
-            ValidateIntegrationSpans(spans, expectedServiceName: "sample", isExternalSpan: false);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: "sample", isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
@@ -181,7 +181,7 @@ Expect: 100-continue
                 minDateTime: testStart,
                 returnAllOperations: true);
 
-            ValidateIntegrationSpans(spans, expectedServiceName: "sample", isExternalSpan: false);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: "sample", isExternalSpan: false);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 

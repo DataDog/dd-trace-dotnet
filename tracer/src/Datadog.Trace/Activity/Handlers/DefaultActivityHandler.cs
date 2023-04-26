@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -36,12 +35,12 @@ namespace Datadog.Trace.Activity.Handlers
             where T : IActivity
         {
             Tracer.Instance.TracerManager.Telemetry.IntegrationRunning(IntegrationId);
-            var activeSpan = (Span?)Tracer.Instance.ActiveScope?.Span;
+            var activeSpan = Tracer.Instance.ActiveScope?.Span as Span;
 
             // Propagate Trace and Parent Span ids
             SpanContext? parent = null;
-            ulong? traceId = null;
-            ulong? spanId = null;
+            TraceId traceId = default;
+            ulong spanId = 0;
             string? rawTraceId = null;
             string? rawSpanId = null;
 
@@ -52,42 +51,45 @@ namespace Datadog.Trace.Activity.Handlers
 
             if (activity is IW3CActivity w3cActivity)
             {
-                if (w3cActivity.TraceId is { } activityTraceId && w3cActivity.SpanId is { } activitySpanId)
+                var activityTraceId = w3cActivity.TraceId;
+                var activitySpanId = w3cActivity.SpanId;
+
+                if (activityTraceId != null! && activitySpanId != null!)
                 {
                     activityKey = activityTraceId + activitySpanId;
                 }
 
                 // If the user has specified a parent context, get the parent Datadog SpanContext
-                if (w3cActivity.ParentSpanId is not null
-                 && w3cActivity.ParentId is { } parentId)
+                if (w3cActivity is { ParentSpanId: { } parentSpanId, ParentId: { } parentId })
                 {
-                    // we know that we have a parent context, but we use TraceId+ParentSpanId for the mapping
+                    // We know that we have a parent context, but we use TraceId+ParentSpanId for the mapping.
                     // This is a result of an issue with OTel v1.0.1 (unsure if OTel or us tbh) where the
-                    // ".ParentId" matched for the Trace+Span IDs but not for the flags portion
-                    // Doing a lookup on just the TraceId+ParentSpanId seems to be more resilient
-                    if (w3cActivity.TraceId is { } && w3cActivity.ParentSpanId is { } parentSpanId)
+                    // ".ParentId" matched for the Trace+Span IDs but not for the flags portion.
+                    // Doing a lookup on just the TraceId+ParentSpanId seems to be more resilient.
+                    if (activityTraceId != null!)
                     {
-                        if (ActivityMappingById.TryGetValue(w3cActivity.TraceId + w3cActivity.ParentSpanId, out ActivityMapping mapping))
+                        if (ActivityMappingById.TryGetValue(activityTraceId + parentSpanId, out ActivityMapping mapping))
                         {
                             parent = mapping.Scope.Span.Context;
                         }
                         else
                         {
                             // create a new parent span context for the ActivityContext
-#if NETCOREAPP
-                            _ = HexString.TryParseUInt64(w3cActivity.TraceId.AsSpan(16), out var newActivityTraceId);
-                            _ = HexString.TryParseUInt64(w3cActivity.ParentSpanId, out var newActivitySpanId);
-#else
-                            _ = HexString.TryParseUInt64(w3cActivity.TraceId.Substring(16), out var newActivityTraceId);
-                            _ = HexString.TryParseUInt64(w3cActivity.ParentSpanId, out var newActivitySpanId);
-#endif
-                            parent = Tracer.Instance.CreateSpanContext(SpanContext.None, traceId: newActivityTraceId, spanId: newActivitySpanId, rawTraceId: w3cActivity.TraceId, rawSpanId: w3cActivity.ParentSpanId);
+                            _ = HexString.TryParseTraceId(activityTraceId, out var newActivityTraceId);
+                            _ = HexString.TryParseUInt64(parentSpanId, out var newActivitySpanId);
+
+                            parent = Tracer.Instance.CreateSpanContext(
+                                SpanContext.None,
+                                traceId: newActivityTraceId,
+                                spanId: newActivitySpanId,
+                                rawTraceId: activityTraceId,
+                                rawSpanId: parentSpanId);
                         }
                     }
                     else
                     {
                         // we have a ParentSpanId/ParentId, but no TraceId/SpanId, so default to use the ParentId for lookup
-                        if (ActivityMappingById.TryGetValue(w3cActivity.ParentId, out ActivityMapping mapping))
+                        if (ActivityMappingById.TryGetValue(parentId, out ActivityMapping mapping))
                         {
                             parent = mapping.Scope.Span.Context;
                         }
@@ -101,31 +103,34 @@ namespace Datadog.Trace.Activity.Handlers
 
                     if (activity.Parent is null || activity.Parent.StartTimeUtc < activeSpan.StartTime.UtcDateTime)
                     {
-                        // TraceId
-                        w3cActivity.TraceId = string.IsNullOrWhiteSpace(activeSpan.Context.RawTraceId) ?
-                                                  activeSpan.TraceId.ToString("x32") : activeSpan.Context.RawTraceId;
+                        // TraceId (always 32 chars long even when using 64-bit ids)
+                        w3cActivity.TraceId = activeSpan.Context.RawTraceId;
 
-                        // SpanId
-                        w3cActivity.ParentSpanId = string.IsNullOrWhiteSpace(activeSpan.Context.RawSpanId) ?
-                                                       activeSpan.SpanId.ToString("x16") : activeSpan.Context.RawSpanId;
+                        // SpanId (always 16 chars long)
+                        w3cActivity.ParentSpanId = activeSpan.Context.RawSpanId;
 
                         // We clear internals Id and ParentId values to force recalculation.
                         w3cActivity.RawId = null;
                         w3cActivity.RawParentId = null;
 
                         // Avoid recalculation of the traceId.
-                        traceId = activeSpan.TraceId;
+                        traceId = activeSpan.TraceId128;
                     }
                 }
 
-                // We convert the activity traceId and spanId to use it in the
-                // Datadog span creation.
-                if (w3cActivity.TraceId is { } w3cTraceId && w3cActivity.SpanId is { } w3cSpanId)
+                // if there's an existing Activity we try to use its TraceId and SpanId,
+                // but if Activity.IdFormat is not ActivityIdFormat.W3C, they may be null or unparsable
+                if (activityTraceId != null! && activitySpanId != null!)
                 {
-                    // If the Activity has an ActivityIdFormat.Hierarchical instead of W3C it's TraceId & SpanId will be null
-                    traceId ??= Convert.ToUInt64(w3cTraceId.Substring(16), 16);
-                    spanId = Convert.ToUInt64(w3cSpanId, 16);
-                    rawTraceId = w3cTraceId;
+                    if (traceId == TraceId.Zero)
+                    {
+                        _ = HexString.TryParseTraceId(activityTraceId, out traceId);
+                    }
+
+                    _ = HexString.TryParseUInt64(activitySpanId, out spanId);
+
+                    rawTraceId = activityTraceId;
+                    rawSpanId = activitySpanId;
                 }
             }
 
@@ -133,7 +138,17 @@ namespace Datadog.Trace.Activity.Handlers
             {
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug("DefaultActivityHandler.ActivityStarted: [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]", new object[] { sourceName, activity.Id, activity.RootId, activity.OperationName!, activity.StartTimeUtc, activity.Duration });
+                    Log.Debug(
+                        "DefaultActivityHandler.ActivityStarted: [Source={SourceName}, Id={Id}, RootId={RootId}, OperationName={OperationName}, StartTimeUtc={StartTimeUtc}, Duration={Duration}]",
+                        new object[]
+                        {
+                            sourceName,
+                            activity.Id,
+                            activity.RootId,
+                            activity.OperationName!,
+                            activity.StartTimeUtc,
+                            activity.Duration
+                        });
                 }
 
                 // We check if we have to ignore the activity by the operation name value
@@ -150,11 +165,19 @@ namespace Datadog.Trace.Activity.Handlers
                 Log.Error(ex, "Error processing the OnActivityStarted callback");
             }
 
-            static Scope CreateScopeFromActivity(T activity, SpanContext? parent, ulong? traceId, ulong? spanId, string? rawTraceId, string? rawSpanId)
+            static Scope CreateScopeFromActivity(T activity, SpanContext? parent, TraceId traceId, ulong spanId, string? rawTraceId, string? rawSpanId)
             {
-                var span = Tracer.Instance.StartSpan(activity.OperationName, parent: parent, startTime: activity.StartTimeUtc, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
+                var span = Tracer.Instance.StartSpan(
+                    activity.OperationName,
+                    parent: parent,
+                    startTime: activity.StartTimeUtc,
+                    traceId: traceId,
+                    spanId: spanId,
+                    rawTraceId: rawTraceId,
+                    rawSpanId: rawSpanId);
+
                 Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-                return Tracer.Instance.ActivateSpan(span, false);
+                return Tracer.Instance.ActivateSpan(span, finishOnClose: false);
             }
         }
 

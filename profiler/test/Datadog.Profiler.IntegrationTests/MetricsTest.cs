@@ -28,6 +28,7 @@ namespace Datadog.Profiler.IntegrationTests
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 10 --threads 20");
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);

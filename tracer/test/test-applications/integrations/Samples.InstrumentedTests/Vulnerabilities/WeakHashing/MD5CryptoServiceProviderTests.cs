@@ -25,20 +25,20 @@ public class MD5CryptoServiceProviderTests : InstrumentationTestsBase
     public void GivenAMD5CryptoServiceProvider_WhenCreating_VulnerabilityIsLogged()
     {
         new MD5CryptoServiceProvider().ComputeHash(new byte[] { 5, 5, 5 }, 0, 2);
-        AssertVulnerable(WeakHashVulnerabilityType, "MD5");
+        AssertVulnerable(WeakHashVulnerabilityType, "MD5", false);
     }
 
     [Fact]
     public void GivenAMD5CryptoServiceProvider_WhenCreating_VulnerabilityIsLogged2()
     {
         new MD5CryptoServiceProvider().ComputeHash(new byte[] { 5, 5, 5 });
-        AssertVulnerable(WeakHashVulnerabilityType, "MD5");
+        AssertVulnerable(WeakHashVulnerabilityType, "MD5", false);
     }
 
     [Fact]
     public void GivenAMD5CryptoServiceProvider_WhenCreating_VulnerabilityIsLogged3()
     {
         new MD5CryptoServiceProvider().ComputeHash(new Mock<Stream>().Object);
-        AssertVulnerable(WeakHashVulnerabilityType, "MD5");
+        AssertVulnerable(WeakHashVulnerabilityType, "MD5", false);
     }
 }

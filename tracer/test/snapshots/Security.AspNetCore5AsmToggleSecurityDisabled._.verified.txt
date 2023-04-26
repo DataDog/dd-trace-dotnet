@@ -91,5 +91,36 @@
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_8,
+    Name: aspnet_core.request,
+    Resource: GET /health,
+    Service: Samples.Security.AspNetCore5,
+    Type: web,
+    Tags: {
+      aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.HealthController.Index (Samples.Security.AspNetCore5),
+      aspnet_core.route: health,
+      component: aspnet_core,
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.route: health,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Health/?[$slice]=value,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
   }
 ]

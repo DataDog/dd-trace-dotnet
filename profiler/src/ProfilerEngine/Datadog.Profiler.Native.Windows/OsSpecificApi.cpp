@@ -35,13 +35,38 @@ uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
     FILETIME creationTime, exitTime = {}; // not used here
     FILETIME kernelTime = {};
     FILETIME userTime = {};
+    static bool isFirstError = true;
 
     if (::GetThreadTimes(pThreadInfo->GetOsThreadHandle(), &creationTime, &exitTime, &kernelTime, &userTime))
     {
         uint64_t milliseconds = GetTotalMilliseconds(userTime) + GetTotalMilliseconds(kernelTime);
         return milliseconds;
     }
+    else
+    {
+        DWORD errorCode = GetLastError();
+        if (isFirstError && (errorCode != ERROR_INVALID_HANDLE)) // expected invalid handle case
+        {
+            isFirstError = false;
+            LPVOID msgBuffer;
 
+            if (errorCode == 0)
+            {
+                Log::Error("GetThreadCpuTime() error calling GetThreadTimes (last error = 0)");
+            }
+            else
+            {
+                FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                              NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgBuffer, 0, NULL);
+
+                if (msgBuffer != NULL)
+                {
+                    Log::Error("GetThreadCpuTime() error calling GetThreadTimes (last error = 0x", std::hex, errorCode, std::dec, "): ", (LPCTSTR)msgBuffer);
+                    LocalFree(msgBuffer);
+                }
+            }
+        }
+    }
     return 0;
 }
 
@@ -131,8 +156,11 @@ bool IsRunning(ULONG threadState)
     // If some callstacks show non cpu-bound frames at the top, return true only for Running state
 }
 
-bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
+bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
 {
+    failed = true;
+    cpuTime = 0;
+
     if (NtQueryInformationThread == nullptr)
     {
         if (!InitializeNtQueryInformationThreadCallback())
@@ -144,14 +172,41 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
     SYSTEM_THREAD_INFORMATION sti = {0};
     auto size = sizeof(SYSTEM_THREAD_INFORMATION);
     ULONG buflen = 0;
+    static bool isFirstError = true;
     NTSTATUS lResult = NtQueryInformationThread(pThreadInfo->GetOsThreadHandle(), SYSTEMTHREADINFORMATION, &sti, static_cast<ULONG>(size), &buflen);
+    // deal with an invalid thread handle case (thread might have died)
     if (lResult != 0)
     {
+#if BIT64 // Windows 64-bit
+        if (isFirstError && (lResult != STATUS_INVALID_HANDLE))
+        {
+            isFirstError = false;
+            LPVOID msgBuffer;
+            DWORD errorCode = GetLastError();
+
+            if (errorCode == 0)
+            {
+                Log::Error("IsRunning() error 0x", std::hex, lResult, " calling NtQueryInformationThread");
+            }
+            else
+            {
+                FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                              NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgBuffer, 0, NULL);
+
+                if (msgBuffer != NULL)
+                {
+                    Log::Error("IsRunning() error 0x", std::hex, lResult, " calling NtQueryInformationThread (last error =  0x", std::hex, errorCode, std::dec, "): ", (LPTSTR)msgBuffer);
+                    LocalFree(msgBuffer);
+                }
+            }
+        }
+#endif
         // This always happens in 32 bit so uses another API to at least get the CPU consumption
         cpuTime = GetThreadCpuTime(pThreadInfo);
         return false;
     }
 
+    failed = false;
     cpuTime = GetTotalMilliseconds(sti.UserTime) + GetTotalMilliseconds(sti.KernelTime);
 
     return IsRunning(sti.ThreadState);

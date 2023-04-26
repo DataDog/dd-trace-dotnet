@@ -17,8 +17,14 @@ class Sample;
 class RawSample
 {
 public:
-    RawSample();
+    RawSample() noexcept;
     virtual ~RawSample() = default;
+
+    RawSample(RawSample const&) = delete;
+    RawSample& operator=(RawSample const&) = delete;
+
+    RawSample(RawSample&& other) noexcept;
+    RawSample& operator=(RawSample&& other) noexcept;
 
     // set values and additional labels on target sample
     virtual void OnTransform(std::shared_ptr<Sample>& sample, uint32_t valueOffset) const = 0;

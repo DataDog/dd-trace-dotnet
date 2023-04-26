@@ -1012,4 +1012,3 @@ services:
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=Strong!Passw0rd
-

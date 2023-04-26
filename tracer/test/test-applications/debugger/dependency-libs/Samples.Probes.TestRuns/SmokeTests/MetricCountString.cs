@@ -5,7 +5,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
 {
     public class MetricCountString : IRun
     {
-        private const string Json = @"{""ref"": ""intArg""}";
+        private const string Json = @"{""ref"": ""stringArg""}";
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
@@ -17,7 +17,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         [MetricMethodProbeTestData(
             metricJson: Json,
             metricKind: Const.Count,
-            metricName: nameof(MetricCountInt),
+            metricName: nameof(MetricCountString),
             captureSnapshot: false,
             evaluateAt: Const.Exit,
             expectedNumberOfSnapshots: 0,

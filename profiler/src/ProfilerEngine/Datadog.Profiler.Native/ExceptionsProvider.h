@@ -6,6 +6,7 @@
 #include "CollectorBase.h"
 #include "IFrameStore.h"
 #include "IManagedThreadList.h"
+#include "IUpscaleProvider.h"
 #include "RawExceptionSample.h"
 #include "cor.h"
 #include "corprof.h"
@@ -14,11 +15,13 @@
 #include "StackSnapshotResultBuffer.h"
 #include "MetricsRegistry.h"
 #include "CounterMetric.h"
+#include "IUpscaleProvider.h"
 
 class IConfiguration;
 
-class ExceptionsProvider
-    : public CollectorBase<RawExceptionSample>
+class ExceptionsProvider :
+    public CollectorBase<RawExceptionSample>,
+    public IUpscaleProvider
 {
 public:
     static std::vector<SampleValueType> SampleTypeDefinitions;
@@ -38,9 +41,19 @@ public:
     bool OnModuleLoaded(ModuleID moduleId);
     bool OnExceptionThrown(ObjectID thrownObjectId);
 
+    UpscalingInfo GetInfo() override;
+
+private:
+    struct ExceptionBucket
+    {
+        std::string Name;
+        uint64_t Count;
+    };
+
 private:
     bool LoadExceptionMetadata();
     bool GetExceptionType(ClassID classId, std::string& exceptionType);
+
 
 private:
     ICorProfilerInfo4* _pCorProfilerInfo;

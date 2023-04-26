@@ -26,18 +26,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.SystemDataSqlClient
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
         public static IEnumerable<object[]> GetTestData()
             => from packageVersion in PackageVersions.SystemDataSqlClient.SelectMany(x => x).Select(x => (string)x)
                from propagation in new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" }
                select new object[] { packageVersion, propagation };
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsSqlClient();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlClient(metadataSchemaVersion);
 
         [SkippableTheory]
-        [MemberData(nameof(GetTestData))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async void SubmitsTraces(string packageVersion, string dbmPropagation)
+        public void SubmitsTraces(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
         {
             SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
 
@@ -63,15 +68,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const int expectedSpanCount = 168;
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.SqlServer-" + dbType;
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-{dbType}" : EnvironmentHelper.FullSampleName;
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
 
-            spans.Count().Should().Be(expectedSpanCount);
-            ValidateIntegrationSpans(spans, expectedServiceName: expectedServiceName);
+            Assert.Equal(expectedSpanCount, spans.Count);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
             telemetry.AssertIntegrationEnabled(IntegrationId.SqlClient);
 
             // Testing that spans yield the expected output when using DBM

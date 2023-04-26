@@ -21,6 +21,7 @@ namespace Samples
         private static readonly Type SpanContextType = Type.GetType("Datadog.Trace.SpanContext, Datadog.Trace");
         private static readonly Type TracerSettingsType = Type.GetType("Datadog.Trace.Configuration.TracerSettings, Datadog.Trace");
         private static readonly Type TracerConstantsType = Type.GetType("Datadog.Trace.TracerConstants, Datadog.Trace");
+        private static readonly PropertyInfo GetTracerManagerProperty = TracerType?.GetProperty("TracerManager", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo GetNativeTracerVersionMethod = InstrumentationType?.GetMethod("GetNativeTracerVersion");
         private static readonly MethodInfo GetTracerInstance = TracerType?.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)?.GetMethod;
         private static readonly MethodInfo StartActiveMethod = TracerType?.GetMethod("StartActive", types: new[] { typeof(string) });
@@ -300,6 +301,37 @@ namespace Samples
                           select new KeyValuePair<string, string>(key, value);
 
             return envVars.ToList();
+        }
+
+        public static Task WaitForDiscoveryService()
+        {
+            var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
+
+            if (tracer == null)
+            {
+                return Task.CompletedTask;
+            }
+
+            var tracerManager = GetTracerManagerProperty?.GetValue(tracer);
+
+            if (tracerManager == null)
+            {
+                return Task.CompletedTask;
+            }
+
+            var discoveryService = tracerManager.GetType()
+               .GetProperty("DiscoveryService", BindingFlags.Public | BindingFlags.Instance)
+               ?.GetValue(tracerManager);
+
+            if (discoveryService == null)
+            {
+                return Task.CompletedTask;
+            }
+
+            var result = InstrumentationType?.GetMethod("WaitForDiscoveryService", BindingFlags.NonPublic | BindingFlags.Static)
+               ?.Invoke(null, new[] { discoveryService });
+
+            return result as Task ?? Task.CompletedTask;
         }
 
         class NoOpDisposable : IDisposable

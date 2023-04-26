@@ -137,6 +137,52 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
+        public void SetServiceNameMappings_AddsMappings()
+        {
+            var collection = new NameValueCollection { };
+
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var settings = new TracerSettings(source);
+            settings.ServiceNameMappings.Should().BeNullOrEmpty();
+
+            var mappings = new Dictionary<string, string> { { "elasticsearch", "custom-name" } };
+            settings.SetServiceNameMappings(mappings);
+            settings.ServiceNameMappings.Should().BeEquivalentTo(mappings);
+        }
+
+        [Fact]
+        public void SetServiceNameMappings_ReplacesExistingMappings()
+        {
+            var collection = new NameValueCollection { };
+
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var settings = new TracerSettings(source);
+            settings.ServiceNameMappings.Should().BeNullOrEmpty();
+
+            var mappings = new Dictionary<string, string> { { "elasticsearch", "custom-name" } };
+            settings.SetServiceNameMappings(mappings);
+            settings.ServiceNameMappings.Should().BeEquivalentTo(mappings);
+
+            var newMappings = new Dictionary<string, string> { { "sql-server", "custom-db" } };
+            settings.SetServiceNameMappings(newMappings);
+            settings.ServiceNameMappings.Should().BeEquivalentTo(newMappings);
+        }
+
+        [Fact]
+        public void Constructor_HandlesNullSource()
+        {
+            var tracerSettings = new TracerSettings(null);
+            tracerSettings.Should().NotBeNull();
+        }
+
+        [Fact]
+        public void Constructor_HandlesEmptyource()
+        {
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()));
+            tracerSettings.Should().NotBeNull();
+        }
+
+        [Fact]
         public void SetClientHttpCodes()
         {
             SetAndValidateStatusCodes((s, c) => s.SetHttpClientErrorStatusCodes(c), s => s.HttpClientErrorStatusCodes);

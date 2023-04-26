@@ -3,12 +3,6 @@
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="interop.cpp" />
-    <ClCompile Include="..\..\..\shared\src\native-lib\fmt\src\format.cc">
-      <Filter>fmt</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\shared\src\native-lib\fmt\src\posix.cc">
-      <Filter>fmt</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dllmain.h" />
@@ -19,10 +13,5 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Datadog.Tracer.Native.def" />
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="fmt">
-      <UniqueIdentifier>{9e0bb9f2-390d-4230-b523-5dc521f8ead8}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
 </Project>

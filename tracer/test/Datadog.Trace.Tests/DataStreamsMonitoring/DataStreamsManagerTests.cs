@@ -81,7 +81,7 @@ public class DataStreamsManagerTests
     {
         var dsm = GetDataStreamManager(true, out _);
 
-        var context = dsm.SetCheckpoint(parentPathway: null, new[] { "some-tags" });
+        var context = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new[] { "some-tags" });
         context.Should().NotBeNull();
     }
 
@@ -93,7 +93,7 @@ public class DataStreamsManagerTests
         var edgeTags = new[] { "some-tags" };
         var dsm = GetDataStreamManager(true, out _);
 
-        var context = dsm.SetCheckpoint(parentPathway: null, edgeTags);
+        var context = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, edgeTags);
         context.Should().NotBeNull();
 
         var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null);
@@ -112,7 +112,7 @@ public class DataStreamsManagerTests
         var dsm = GetDataStreamManager(true, out _);
         var parent = new PathwayContext(new PathwayHash(123), 12340000, 56780000);
 
-        var context = dsm.SetCheckpoint(parent, edgeTags);
+        var context = dsm.SetCheckpoint(parent, CheckpointKind.Consume, edgeTags);
         context.Should().NotBeNull();
 
         var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null);
@@ -128,7 +128,7 @@ public class DataStreamsManagerTests
         var dsm = GetDataStreamManager(false, out _);
         var parent = new PathwayContext(new PathwayHash(123), 12340000, 56780000);
 
-        var context = dsm.SetCheckpoint(parent, new[] { "some-tags" });
+        var context = dsm.SetCheckpoint(parent, CheckpointKind.Consume, new[] { "some-tags" });
         context.Should().BeNull();
     }
 
@@ -138,7 +138,7 @@ public class DataStreamsManagerTests
         var dsm = GetDataStreamManager(true, out _);
         var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
 
-        span.SetDataStreamsCheckpoint(dsm, new[] { "direction:out" });
+        span.SetDataStreamsCheckpoint(dsm,  CheckpointKind.Produce, new[] { "direction:out" });
         span.Tags.GetTag("pathway.hash").Should().NotBeNull();
     }
 
@@ -153,7 +153,7 @@ public class DataStreamsManagerTests
         await dsm.DisposeAsync();
         dsm.IsEnabled.Should().BeFalse();
 
-        var context = dsm.SetCheckpoint(parent, new[] { "some-tags" });
+        var context = dsm.SetCheckpoint(parent, CheckpointKind.Consume, new[] { "some-tags" });
         context.Should().BeNull();
     }
 
@@ -163,7 +163,7 @@ public class DataStreamsManagerTests
         var dsm = GetDataStreamManager(enabled: false, out var writer);
         writer.Should().BeNull(); // can't send points to it, because it's null!
 
-        dsm.SetCheckpoint(parentPathway: null, new[] { "edge" });
+        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new[] { "edge" });
 
         await dsm.DisposeAsync();
     }
@@ -173,7 +173,7 @@ public class DataStreamsManagerTests
     {
         var dsm = GetDataStreamManager(enabled: true, out var writer);
 
-        dsm.SetCheckpoint(parentPathway: null, new[] { "edge" });
+        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new[] { "edge" });
 
         await dsm.DisposeAsync();
 

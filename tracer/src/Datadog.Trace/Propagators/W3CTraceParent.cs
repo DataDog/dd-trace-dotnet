@@ -9,22 +9,22 @@ namespace Datadog.Trace.Propagators;
 
 internal readonly struct W3CTraceParent
 {
-    public readonly ulong TraceId;
+    public readonly TraceId TraceId;
 
     public readonly ulong ParentId;
 
     public readonly bool Sampled;
 
-    public readonly string? RawTraceId;
+    public readonly string RawTraceId;
 
-    public readonly string? RawParentId;
+    public readonly string RawParentId;
 
     public W3CTraceParent(
-        ulong traceId,
+        TraceId traceId,
         ulong parentId,
         bool sampled,
-        string? rawTraceId,
-        string? rawParentId)
+        string rawTraceId,
+        string rawParentId)
     {
         TraceId = traceId;
         ParentId = parentId;

@@ -55,7 +55,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
                 if (tracer.Settings.IsIntegrationEnabled(WebRequestCommon.IntegrationId))
                 {
-                    var span = ScopeFactory.CreateInactiveOutboundHttpSpan(tracer, request.Method, request.RequestUri, WebRequestCommon.IntegrationId, out _, traceId: null, spanId: null, startTime: null, addToTraceContext: false);
+                    var span = ScopeFactory.CreateInactiveOutboundHttpSpan(
+                        tracer,
+                        request.Method,
+                        request.RequestUri,
+                        WebRequestCommon.IntegrationId,
+                        out _,
+                        traceId: TraceId.Zero,
+                        spanId: 0,
+                        startTime: null,
+                        addToTraceContext: false);
 
                     if (span?.Context != null)
                     {
