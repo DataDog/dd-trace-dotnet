@@ -75,7 +75,7 @@ internal static class SamplingMechanism
     /// </summary>
     public const int SpanSamplingRule = 8;
 
-    public static string GetTraceContextDecisionMakerTagValue(int mechanism)
+    public static string GetTagValue(int mechanism)
     {
         // set the sampling mechanism trace tag
         // * only set tag if priority is AUTO_KEEP (1) or USER_KEEP (2)

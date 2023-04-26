@@ -17,7 +17,7 @@ namespace Datadog.Trace.Tagging
     {
         private List<KeyValuePair<string, string>>? _tags;
         private string? _cachedPropagationHeader;
-        private string? _decisionMakerValue;
+        private string? _samplingMechanismValue;
 
         public TraceTagCollection()
         {
@@ -29,20 +29,20 @@ namespace Datadog.Trace.Tagging
             {
                 lock (tags)
                 {
-                    KeyValuePair<string, string>? decisionMakerPair = null;
+                    KeyValuePair<string, string>? samplingMechanismPair = null;
                     foreach (var item in tags)
                     {
                         if (item.Key == Trace.Tags.Propagated.DecisionMaker)
                         {
-                            decisionMakerPair = item;
+                            samplingMechanismPair = item;
                             break;
                         }
                     }
 
-                    if (decisionMakerPair != null)
+                    if (samplingMechanismPair != null)
                     {
-                        tags.Remove(decisionMakerPair.Value);
-                        _decisionMakerValue = decisionMakerPair.Value.Value;
+                        tags.Remove(samplingMechanismPair.Value);
+                        _samplingMechanismValue = samplingMechanismPair.Value.Value;
                     }
                 }
             }
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tagging
         /// <summary>
         /// Gets the number of elements contained in the <see cref="TraceTagCollection"/>.
         /// </summary>
-        public int Count => (_tags?.Count ?? 0) + (_decisionMakerValue != null ? 1 : 0);
+        public int Count => (_tags?.Count ?? 0) + (_samplingMechanismValue != null ? 1 : 0);
 
         /// <summary>
         /// Adds a new tag to the collection.
@@ -106,12 +106,12 @@ namespace Datadog.Trace.Tagging
 
             if (name == Trace.Tags.Propagated.DecisionMaker)
             {
-                if (_decisionMakerValue != null && !replaceIfExists)
+                if (_samplingMechanismValue != null && !replaceIfExists)
                 {
                     return false;
                 }
 
-                _decisionMakerValue = value;
+                _samplingMechanismValue = value;
                 return true;
             }
 
@@ -176,7 +176,7 @@ namespace Datadog.Trace.Tagging
 
             if (name == Trace.Tags.Propagated.DecisionMaker)
             {
-                _decisionMakerValue = null;
+                _samplingMechanismValue = null;
                 return true;
             }
 
@@ -219,7 +219,7 @@ namespace Datadog.Trace.Tagging
 
             if (name == Trace.Tags.Propagated.DecisionMaker)
             {
-                return _decisionMakerValue;
+                return _samplingMechanismValue;
             }
 
             var tags = _tags;
@@ -287,9 +287,9 @@ namespace Datadog.Trace.Tagging
         public void Enumerate<TTagEnumerator>(ref TTagEnumerator tagEnumerator)
             where TTagEnumerator : struct, ITagEnumerator
         {
-            if (_decisionMakerValue != null)
+            if (_samplingMechanismValue != null)
             {
-                tagEnumerator.Next(new KeyValuePair<string, string>(Trace.Tags.Propagated.DecisionMaker, _decisionMakerValue));
+                tagEnumerator.Next(new KeyValuePair<string, string>(Trace.Tags.Propagated.DecisionMaker, _samplingMechanismValue));
             }
 
             var tags = _tags;

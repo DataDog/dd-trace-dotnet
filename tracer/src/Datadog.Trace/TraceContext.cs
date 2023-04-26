@@ -206,7 +206,7 @@ namespace Datadog.Trace
 
             if (priority > 0 && mechanism != null)
             {
-                Tags.TryAddTag(tagName, SamplingMechanism.GetTraceContextDecisionMakerTagValue(mechanism.Value));
+                Tags.TryAddTag(tagName, SamplingMechanism.GetTagValue(mechanism.Value));
             }
             else if (priority <= 0)
             {
