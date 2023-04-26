@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -22,7 +23,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void RuntimeId()
         {
             var source = CreateConfigurationSource();
-            var settings = new RemoteConfigurationSettings(source);
+            var settings = new RemoteConfigurationSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.RuntimeId.Should().Be(Datadog.Trace.Util.RuntimeId.Get());
         }
@@ -31,7 +32,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void TracerVersion()
         {
             var source = CreateConfigurationSource();
-            var settings = new RemoteConfigurationSettings(source);
+            var settings = new RemoteConfigurationSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.TracerVersion.Should().Be(TracerConstants.ThreePartVersion);
         }
@@ -55,7 +56,7 @@ namespace Datadog.Trace.Tests.Configuration
                 (ConfigurationKeys.Rcm.PollIntervalInternal, fallbackValue));
 #pragma warning restore CS0618
 
-            var settings = new RemoteConfigurationSettings(source);
+            var settings = new RemoteConfigurationSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.PollInterval.Should().Be(TimeSpan.FromMilliseconds(expected));
         }
