@@ -6,6 +6,8 @@ This package contains the Datadog .NET APM tracer for configuring custom instrum
 
 > If you are using automatic instrumentation and would like to interact with APM only through C# attributes, see the [Datadog.Trace.Annotations](https://www.nuget.org/packages/Datadog.Trace.Annotations/) NuGet package.
 
+Please note that Datadog does not support tracing (manual or automatic) in partial-trust environments.
+
 ## Getting Started
 
 1. Configure the Datadog agent for APM [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core#configure-the-datadog-agent-for-apm).
