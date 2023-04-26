@@ -1239,7 +1239,7 @@ namespace Datadog.Trace.TestHelpers
                     {
                         _log("Starting PipeServer " + _pipeName);
                         using var mutex = new ManualResetEventSlim();
-                        var startPipe = StartNamedPipeServer(mutex);
+                        var startPipe = Task.Run(() => StartNamedPipeServer(mutex));
                         _tasks.Add(startPipe);
                         mutex.Wait(5_000);
                     }
