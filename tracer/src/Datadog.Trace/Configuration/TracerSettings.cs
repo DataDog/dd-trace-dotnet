@@ -357,7 +357,7 @@ namespace Datadog.Trace.Configuration
                                         .Get(false);
             if (IsRunningInAzureAppService)
             {
-                AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source);
+                AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, Telemetry);
                 if (AzureAppServiceMetadata.IsUnsafeToTrace)
                 {
                     TraceEnabled = false;
