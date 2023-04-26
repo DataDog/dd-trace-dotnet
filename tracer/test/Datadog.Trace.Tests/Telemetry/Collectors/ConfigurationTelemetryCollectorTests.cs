@@ -108,7 +108,7 @@ namespace Datadog.Trace.Tests.Telemetry
             {
                 { ConfigurationKeys.Iast.Enabled, enabled.ToString() },
             });
-            collector.RecordIastSettings(new IastSettings(source));
+            collector.RecordIastSettings(new IastSettings(source, NullConfigurationTelemetry.Instance));
 
             var data = collector.GetConfigurationData()
                                 .ToDictionary(x => x.Name, x => x.Value);
