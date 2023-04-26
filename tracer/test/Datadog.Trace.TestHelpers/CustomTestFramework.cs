@@ -247,7 +247,8 @@ namespace Datadog.Trace.TestHelpers
 
                 for (int i = 0; i < Environment.ProcessorCount; i++)
                 {
-                    Task.Run(DoWork);
+                    var thread = new Thread(DoWork) { IsBackground = true };
+                    thread.Start();
                 }
             }
 
@@ -275,11 +276,11 @@ namespace Datadog.Trace.TestHelpers
                 return tcs.Task;
             }
 
-            private async Task DoWork()
+            private void DoWork()
             {
                 foreach (var item in _queue.GetConsumingEnumerable())
                 {
-                    await item();
+                    item().GetAwaiter().GetResult();
                 }
             }
         }
