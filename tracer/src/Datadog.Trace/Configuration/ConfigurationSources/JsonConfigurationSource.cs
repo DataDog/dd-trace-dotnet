@@ -12,6 +12,7 @@ using System.IO;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -33,6 +34,7 @@ namespace Datadog.Trace.Configuration
         /// class with the specified JSON string.
         /// </summary>
         /// <param name="json">A JSON string that contains configuration values.</param>
+        [PublicApi]
         public JsonConfigurationSource(string json)
             : this(json, ConfigurationOrigins.Code)
         {
@@ -52,6 +54,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="filename">A JSON file that contains configuration values.</param>
         /// <returns>The newly created configuration source.</returns>
+        [PublicApi]
         public static JsonConfigurationSource FromFile(string filename)
             => FromFile(filename, ConfigurationOrigins.Code);
 
@@ -70,7 +73,7 @@ namespace Datadog.Trace.Configuration
         /// <returns>The value of the setting, or null if not found.</returns>
         string? IConfigurationSource.GetString(string key)
         {
-            return GetValue<string>(key);
+            return GetValueInternal<string>(key);
         }
 
         /// <summary>
@@ -82,7 +85,7 @@ namespace Datadog.Trace.Configuration
         /// <returns>The value of the setting, or null if not found.</returns>
         int? IConfigurationSource.GetInt32(string key)
         {
-            return GetValue<int?>(key);
+            return GetValueInternal<int?>(key);
         }
 
         /// <summary>
@@ -94,7 +97,7 @@ namespace Datadog.Trace.Configuration
         /// <returns>The value of the setting, or null if not found.</returns>
         double? IConfigurationSource.GetDouble(string key)
         {
-            return GetValue<double?>(key);
+            return GetValueInternal<double?>(key);
         }
 
         /// <summary>
@@ -104,9 +107,10 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="key">The key that identifies the setting.</param>
         /// <returns>The value of the setting, or null if not found.</returns>
+        [PublicApi]
         bool? IConfigurationSource.GetBool(string key)
         {
-            return GetValue<bool?>(key);
+            return GetValueInternal<bool?>(key);
         }
 
         /// <summary>
@@ -116,7 +120,10 @@ namespace Datadog.Trace.Configuration
         /// <typeparam name="T">The type to convert the setting value into.</typeparam>
         /// <param name="key">The key that identifies the setting.</param>
         /// <returns>The value of the setting, or the default value of T if not found.</returns>
-        public T? GetValue<T>(string key)
+        [PublicApi]
+        public T? GetValue<T>(string key) => GetValueInternal<T>(key);
+
+        internal T? GetValueInternal<T>(string key)
         {
             JToken? token = _configuration?.SelectToken(key, errorWhenNoMatch: false);
 
@@ -189,7 +196,7 @@ namespace Datadog.Trace.Configuration
                 }
             }
 
-            return StringConfigurationSource.ParseCustomKeyValues(token.ToString(), allowOptionalMappings);
+            return StringConfigurationSource.ParseCustomKeyValuesInternal(token.ToString(), allowOptionalMappings);
         }
 
         /// <inheritdoc />
@@ -383,7 +390,7 @@ namespace Datadog.Trace.Configuration
                     }
                 }
 
-                var result = StringConfigurationSource.ParseCustomKeyValues(tokenAsString, allowOptionalMappings);
+                var result = StringConfigurationSource.ParseCustomKeyValuesInternal(tokenAsString, allowOptionalMappings);
                 return Validate(result);
             }
             catch (InvalidCastException)

@@ -7,6 +7,7 @@
 
 using System.Collections.Specialized;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Configuration
 {
@@ -37,6 +38,7 @@ namespace Datadog.Trace.Configuration
         internal override ConfigurationOrigins Origin { get; }
 
         /// <inheritdoc />
+        [PublicApi]
         public override string? GetString(string key)
         {
             return _nameValueCollection[key];

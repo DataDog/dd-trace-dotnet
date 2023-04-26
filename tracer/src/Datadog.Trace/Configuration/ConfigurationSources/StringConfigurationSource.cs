@@ -12,6 +12,7 @@ using System.Globalization;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Configuration
 {
@@ -31,9 +32,10 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="data">A string containing key-value pairs which are comma-separated, and for which the key and value are colon-separated.</param>
         /// <returns><see cref="IDictionary{TKey, TValue}"/> of key value pairs.</returns>
+        [PublicApi]
         public static IDictionary<string, string>? ParseCustomKeyValues(string? data)
         {
-            return ParseCustomKeyValues(data, allowOptionalMappings: false);
+            return ParseCustomKeyValuesInternal(data, allowOptionalMappings: false);
         }
 
         /// <summary>
@@ -43,8 +45,13 @@ namespace Datadog.Trace.Configuration
         /// <param name="data">A string containing key-value pairs which are comma-separated, and for which the key and value are colon-separated.</param>
         /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping</param>
         /// <returns><see cref="IDictionary{TKey, TValue}"/> of key value pairs.</returns>
+        [PublicApi]
         [return: NotNullIfNotNull(nameof(data))]
         public static IDictionary<string, string>? ParseCustomKeyValues(string? data, bool allowOptionalMappings)
+            => ParseCustomKeyValuesInternal(data, allowOptionalMappings);
+
+        [return: NotNullIfNotNull(nameof(data))]
+        internal static IDictionary<string, string>? ParseCustomKeyValuesInternal(string? data, bool allowOptionalMappings)
         {
             // A null return value means the key was not present,
             // and CompositeConfigurationSource depends on this behavior
@@ -102,6 +109,7 @@ namespace Datadog.Trace.Configuration
         public abstract string? GetString(string key);
 
         /// <inheritdoc />
+        [PublicApi]
         public virtual int? GetInt32(string key)
         {
             var value = GetString(key);
@@ -113,6 +121,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
+        [PublicApi]
         public double? GetDouble(string key)
         {
             var value = GetString(key);
@@ -123,6 +132,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
+        [PublicApi]
         public virtual bool? GetBool(string key)
         {
             var value = GetString(key);
@@ -134,9 +144,10 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="key">The key</param>
         /// <returns><see cref="ConcurrentDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
+        [PublicApi]
         public IDictionary<string, string>? GetDictionary(string key)
         {
-            return ParseCustomKeyValues(GetString(key), allowOptionalMappings: false);
+            return ParseCustomKeyValuesInternal(GetString(key), allowOptionalMappings: false);
         }
 
         /// <summary>
@@ -145,9 +156,10 @@ namespace Datadog.Trace.Configuration
         /// <param name="key">The key</param>
         /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping</param>
         /// <returns><see cref="ConcurrentDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
+        [PublicApi]
         public IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings)
         {
-            return ParseCustomKeyValues(GetString(key), allowOptionalMappings);
+            return ParseCustomKeyValuesInternal(GetString(key), allowOptionalMappings);
         }
 
         /// <inheritdoc />
@@ -296,7 +308,7 @@ namespace Datadog.Trace.Configuration
             // We record the original dictionary value here instead of serializing the _parsed_ value
             // Currently we have no validation of the dictionary values during parsing, so there's no way to get
             // a validation error that needs recording at this stage
-            var result = ParseCustomKeyValues(value, allowOptionalMappings);
+            var result = ParseCustomKeyValuesInternal(value, allowOptionalMappings);
 
             if (validator is null || validator(result))
             {

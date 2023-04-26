@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
@@ -53,6 +54,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="key">The key that identifies the setting.</param>
         /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
+        [PublicApi]
         public string? GetString(string key)
         {
             return _sources.Select(source => source.GetString(key, NullConfigurationTelemetry.Instance, validator: null, recordValue: true))
@@ -66,6 +68,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="key">The key that identifies the setting.</param>
         /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
+        [PublicApi]
         public int? GetInt32(string key)
         {
             return _sources.Select(source => source.GetInt32(key, NullConfigurationTelemetry.Instance, validator: null))
@@ -79,6 +82,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="key">The key that identifies the setting.</param>
         /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
+        [PublicApi]
         public double? GetDouble(string key)
         {
             return _sources.Select(source => source.GetDouble(key, NullConfigurationTelemetry.Instance, validator: null))
@@ -92,6 +96,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="key">The key that identifies the setting.</param>
         /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
+        [PublicApi]
         public bool? GetBool(string key)
         {
             return _sources.Select(source => source.GetBool(key, NullConfigurationTelemetry.Instance, validator: null))
@@ -99,6 +104,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
+        [PublicApi]
         IEnumerator<IConfigurationSource> IEnumerable<IConfigurationSource>.GetEnumerator()
         {
             return _sources
@@ -109,6 +115,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
+        [PublicApi]
         IEnumerator IEnumerable.GetEnumerator()
         {
             return _sources
@@ -119,6 +126,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
+        [PublicApi]
         public IDictionary<string, string>? GetDictionary(string key)
         {
             return _sources.Select(source => source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null))
@@ -126,6 +134,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
+        [PublicApi]
         public IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings)
         {
             return _sources.Select(source => source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null, allowOptionalMappings))
