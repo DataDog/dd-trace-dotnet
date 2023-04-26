@@ -34,8 +34,6 @@ namespace Datadog.Trace.Tagging
         /// </summary>
         public int Count => _tags?.Count ?? 0;
 
-        public IReadOnlyList<KeyValuePair<string, string>> Tags => ToArray();
-
         /// <summary>
         /// Adds a new tag to the collection.
         /// If the tag already exists, is not modified.
@@ -261,26 +259,6 @@ namespace Datadog.Trace.Tagging
         public string ToPropagationHeader(int? maximumHeaderLength)
         {
             return _cachedPropagationHeader ??= TagPropagation.ToHeader(this, maximumHeaderLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
-        }
-
-        public KeyValuePair<string, string>[] ToArray()
-        {
-            var tags = _tags;
-
-            if (tags == null || tags.Count == 0)
-            {
-                return Array.Empty<KeyValuePair<string, string>>();
-            }
-
-            lock (tags)
-            {
-                if (_decisionMakerValue == null)
-                {
-                    return tags.ToArray();
-                }
-
-                return tags.Concat(new[] { new KeyValuePair<string, string>(Trace.Tags.Propagated.DecisionMaker, _decisionMakerValue) }).ToArray();
-            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

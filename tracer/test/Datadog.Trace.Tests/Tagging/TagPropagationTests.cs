@@ -30,7 +30,9 @@ public class TagPropagationTests
 
         var tags = TagPropagation.ParseHeader(header);
 
-        tags.ToArray().Should().BeEquivalentTo(expectedPairs);
+        var enumerator = new ListTagEnumerator();
+        tags.Enumerate(ref enumerator);
+        enumerator.Values.ToArray().Should().BeEquivalentTo(expectedPairs);
     }
 
     [Theory]
@@ -44,7 +46,9 @@ public class TagPropagationTests
         tags.Count.Should().Be(0);
 
         // no error tags added in these cases
-        tags.ToArray().Should().BeEmpty();
+        var enumerator = new ListTagEnumerator();
+        tags.Enumerate(ref enumerator);
+        enumerator.Values.ToArray().Should().BeEmpty();
     }
 
     [Theory]
@@ -63,7 +67,9 @@ public class TagPropagationTests
         var tags = TagPropagation.ParseHeader(header);
 
         // the error tag should be the only tag
-        tags.ToArray().Should().BeEquivalentTo(expectedPairs);
+        var enumerator = new ListTagEnumerator();
+        tags.Enumerate(ref enumerator);
+        enumerator.Values.ToArray().Should().BeEquivalentTo(expectedPairs);
     }
 
     [Fact]
@@ -77,7 +83,9 @@ public class TagPropagationTests
         var tags = TagPropagation.ParseHeader(header);
 
         // the error tag should be the only tag
-        tags.ToArray().Should().BeEquivalentTo(expectedPairs);
+        var enumerator = new ListTagEnumerator();
+        tags.Enumerate(ref enumerator);
+        enumerator.Values.ToArray().Should().BeEquivalentTo(expectedPairs);
     }
 
     [Theory]
@@ -223,5 +231,17 @@ public class TagPropagationTests
 
         var cachedHeader = tags!.ToPropagationHeader(MaxInjectLength);
         cachedHeader.Should().NotBeSameAs(header);
+    }
+
+    private readonly struct ListTagEnumerator : TraceTagCollection.ITagEnumerator
+    {
+        public readonly List<KeyValuePair<string, string>> Values;
+
+        public ListTagEnumerator()
+        {
+            Values = new List<KeyValuePair<string, string>>();
+        }
+
+        public void Next(KeyValuePair<string, string> tag) => Values.Add(tag);
     }
 }
