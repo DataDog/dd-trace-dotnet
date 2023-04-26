@@ -11,8 +11,10 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
 using Xunit;
 
@@ -105,14 +107,32 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             var args = new Dictionary<string, string> { { header, content } };
             var argsroot = new Dictionary<string, object> { { AddressesConstants.RequestHeaderNoCookies, args } };
+            if (!argsroot.ContainsKey(AddressesConstants.RequestUriRaw))
+            {
+                argsroot.Add(AddressesConstants.RequestUriRaw, "http://localhost:54587/");
+            }
+
+            if (!argsroot.ContainsKey(AddressesConstants.RequestMethod))
+            {
+                argsroot.Add(AddressesConstants.RequestMethod, "GET");
+            }
+
             var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, @"C:\Repositories\dd-trace-dotnet\tracer\src\Datadog.Trace\AppSec\Waf\rule-set.json");
             using var waf = initResult.Waf;
             waf.Should().NotBeNull();
             using var context = waf.CreateContext() as Context;
+            var stopwatch = new System.Diagnostics.Stopwatch();
+            using var context2 = waf.CreateContext() as Context;
+            stopwatch.Restart();
+            var resultOriginal = context2.Run(argsroot, TimeoutMicroSeconds);
+            stopwatch.Stop();
+            Console.WriteLine(stopwatch.ElapsedMilliseconds);
+            stopwatch.Restart();
             var result = Encoder.EncodeInternal2(argsroot, WafLibraryInvoker);
-            var pnt = Marshal.AllocHGlobal(Marshal.SizeOf(result));
-            Marshal.StructureToPtr(result, pnt, false);
-            var resultwaf = context.Run2(pnt, TimeoutMicroSeconds);
+            var resultwaf = context.Run2(result, TimeoutMicroSeconds);
+            stopwatch.Stop();
+            Console.WriteLine(stopwatch.ElapsedMilliseconds);
+            resultwaf.ReturnCode.Should().Be(ReturnCode.Match);
         }
 
         private void Execute(string address, object value, string flow, string rule)

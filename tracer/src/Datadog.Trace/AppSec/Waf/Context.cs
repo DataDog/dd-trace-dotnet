@@ -55,12 +55,60 @@ namespace Datadog.Trace.AppSec.Waf
             return new Context(contextHandle, waf, wafLibraryInvoker);
         }
 
-        public IResult Run2(IntPtr args, ulong timeoutMicroSeconds)
+        public IResult Run2(DdwafObjectStruct args, ulong timeoutMicroSeconds)
         {
             DdwafResultStruct retNative = default;
-            var code = _waf.Run(_contextHandle, args, ref retNative, timeoutMicroSeconds);
+            var code = _waf.Run(_contextHandle, ref args, ref retNative, timeoutMicroSeconds);
             var result = new Result(retNative, code, _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000));
             _wafLibraryInvoker.ResultFree(ref retNative);
+            return result;
+        }
+        
+        public IResult? Run2(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
+        {
+            if (_disposed)
+            {
+                ThrowHelper.ThrowException("Can't run WAF when context is disposed");
+            }
+
+            DdwafResultStruct retNative = default;
+
+            if (_waf.Disposed)
+            {
+                Log.Warning("Context can't run when waf handle has been disposed. This shouldn't have happened with the locks, check concurrency.");
+                return null;
+            }
+
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                var parameters = Encoder.FormatArgs(addresses);
+                Log.Debug("DDAS-0010-00: Executing AppSec In-App WAF with parameters: {Parameters}", parameters);
+            }
+
+            // not restart cause it's the total runtime over runs, and we run several * during request
+            _stopwatch.Start();
+            using var pwArgs = Encoder.Encode2(addresses, _wafLibraryInvoker, _argCache, applySafetyLimits: true);
+            var rawArgs = pwArgs.RawPtr;
+
+            DDWAF_RET_CODE code;
+            lock (_sync)
+            {
+                code = _waf.Run(_contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
+            }
+
+            _stopwatch.Stop();
+            _totalRuntimeOverRuns += retNative.TotalRuntime / 1000;
+            var result = new Result(retNative, code, _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000));
+            _wafLibraryInvoker.ResultFree(ref retNative);
+
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug(
+                    "DDAS-0011-00: AppSec In-App WAF returned: {ReturnCode} {Data}",
+                    result.ReturnCode,
+                    result.Data);
+            }
+
             return result;
         }
 

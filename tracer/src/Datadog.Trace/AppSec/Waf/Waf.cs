@@ -181,6 +181,8 @@ namespace Datadog.Trace.AppSec.Waf
         // Doesn't require a non disposed waf handle, but as the WAF instance needs to be valid for the lifetime of the context, if waf is disposed, don't run (unpredictable)
         public DDWAF_RET_CODE Run(IntPtr contextHandle, IntPtr rawArgs, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds) => _wafLibraryInvoker.Run(contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
 
+        public DDWAF_RET_CODE Run(IntPtr contextHandle, ref DdwafObjectStruct args, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds) => _wafLibraryInvoker.Run(contextHandle, ref args, ref retNative, timeoutMicroSeconds);
+
         internal static List<RuleData> MergeRuleData(IEnumerable<RuleData> res)
         {
             if (res == null)

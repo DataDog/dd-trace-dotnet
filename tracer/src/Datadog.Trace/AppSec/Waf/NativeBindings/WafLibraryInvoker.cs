@@ -25,6 +25,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly InitDelegate _initField;
         private readonly InitContextDelegate _initContextField;
         private readonly RunDelegate _runField;
+        private readonly RunDelegate2 _runField2;
         private readonly DestroyDelegate _destroyField;
         private readonly ContextDestroyDelegate _contextDestroyField;
         private readonly ObjectInvalidDelegate _objectInvalidField;
@@ -50,6 +51,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _initField = GetDelegateForNativeFunction<InitDelegate>(libraryHandle, "ddwaf_init");
             _initContextField = GetDelegateForNativeFunction<InitContextDelegate>(libraryHandle, "ddwaf_context_init");
             _runField = GetDelegateForNativeFunction<RunDelegate>(libraryHandle, "ddwaf_run");
+            _runField2 = GetDelegateForNativeFunction<RunDelegate2>(libraryHandle, "ddwaf_run");
             _destroyField = GetDelegateForNativeFunction<DestroyDelegate>(libraryHandle, "ddwaf_destroy");
             _updateField = GetDelegateForNativeFunction<UpdateDelegate>(libraryHandle, "ddwaf_update");
             _contextDestroyField = GetDelegateForNativeFunction<ContextDestroyDelegate>(libraryHandle, "ddwaf_context_destroy");
@@ -73,7 +75,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             // convert to a delegate and attempt to pin it by assigning it to  field
             _setupLogCallbackField = new SetupLogCallbackDelegate(LoggingCallback);
             // set the log level and setup the logger
-            var level = GlobalSettings.Instance.DebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
+            var level = DDWAF_LOG_LEVEL.DDWAF_DEBUG;
             setupLogging(_setupLogCallbackField, level);
         }
 
@@ -90,6 +92,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private delegate IntPtr InitContextDelegate(IntPtr wafHandle);
 
         private delegate DDWAF_RET_CODE RunDelegate(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs);
+
+        private delegate DDWAF_RET_CODE RunDelegate2(IntPtr context, ref DdwafObjectStruct newArgs, ref DdwafResultStruct result, ulong timeLeftInUs);
 
         private delegate void DestroyDelegate(IntPtr handle);
 
@@ -203,6 +207,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         internal IntPtr InitContext(IntPtr powerwafHandle) => _initContextField(powerwafHandle);
 
         internal DDWAF_RET_CODE Run(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs) => _runField(context, newArgs, ref result, timeLeftInUs);
+
+        internal DDWAF_RET_CODE Run(IntPtr context, ref DdwafObjectStruct newArgs, ref DdwafResultStruct result, ulong timeLeftInUs) => _runField2(context, ref newArgs, ref result, timeLeftInUs);
 
         internal void Destroy(IntPtr wafHandle) => _destroyField(wafHandle);
 
