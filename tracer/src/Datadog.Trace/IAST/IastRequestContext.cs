@@ -48,8 +48,7 @@ internal class IastRequestContext
     {
         try
         {
-            var keysAndValues = ObjectExtractor.Extract(body);
-            var keysAndValuesDic = keysAndValues as Dictionary<string, object>;
+            var keysAndValuesDic = ObjectExtractor.Extract(body) as Dictionary<string, object>;
 
             if (keysAndValuesDic != null)
             {
