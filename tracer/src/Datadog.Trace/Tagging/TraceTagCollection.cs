@@ -24,9 +24,30 @@ namespace Datadog.Trace.Tagging
             List<KeyValuePair<string, string>>? tags = null,
             string? cachedPropagationHeader = null)
         {
+            if (tags?.Count > 0)
+            {
+                lock (tags)
+                {
+                    KeyValuePair<string, string>? decisionMakerPair = null;
+                    foreach (var item in tags)
+                    {
+                        if (item.Key == Trace.Tags.Propagated.DecisionMaker)
+                        {
+                            decisionMakerPair = item;
+                            break;
+                        }
+                    }
+
+                    if (decisionMakerPair != null)
+                    {
+                        tags.Remove(decisionMakerPair.Value);
+                        _decisionMakerValue = decisionMakerPair.Value.Value;
+                    }
+                }
+            }
+
             _tags = tags;
             _cachedPropagationHeader = cachedPropagationHeader;
-            _decisionMakerValue = null;
         }
 
         /// <summary>
