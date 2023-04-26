@@ -206,13 +206,7 @@ namespace Datadog.Trace
 
             if (priority > 0 && mechanism != null)
             {
-                // set the sampling mechanism trace tag
-                // * only set tag if priority is AUTO_KEEP (1) or USER_KEEP (2)
-                // * do not overwrite an existing value
-                // * don't set tag if sampling mechanism is unknown (null)
-                // * the "-" prefix is a left-over separator from a previous iteration of this feature (not a typo or a negative sign)
-                var tagValue = $"-{mechanism.Value.ToString(CultureInfo.InvariantCulture)}";
-                Tags.TryAddTag(tagName, tagValue);
+                Tags.TryAddTag(tagName, SamplingMechanism.GetTraceContextDecisionMakerTagValue(mechanism.Value));
             }
             else if (priority <= 0)
             {

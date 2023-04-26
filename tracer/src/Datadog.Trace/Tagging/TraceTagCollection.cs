@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Util;
@@ -17,6 +18,7 @@ namespace Datadog.Trace.Tagging
     {
         private List<KeyValuePair<string, string>>? _tags;
         private string? _cachedPropagationHeader;
+        private string? _decisionMakerValue;
 
         public TraceTagCollection(
             List<KeyValuePair<string, string>>? tags = null,
@@ -24,6 +26,7 @@ namespace Datadog.Trace.Tagging
         {
             _tags = tags;
             _cachedPropagationHeader = cachedPropagationHeader;
+            _decisionMakerValue = null;
         }
 
         /// <summary>
@@ -79,6 +82,17 @@ namespace Datadog.Trace.Tagging
             if (value == null)
             {
                 return RemoveTag(name);
+            }
+
+            if (name == Trace.Tags.Propagated.DecisionMaker)
+            {
+                if (_decisionMakerValue != null && !replaceIfExists)
+                {
+                    return false;
+                }
+
+                _decisionMakerValue = value;
+                return true;
             }
 
             var tags = _tags;
@@ -140,6 +154,12 @@ namespace Datadog.Trace.Tagging
                 ThrowHelper.ThrowArgumentNullException(nameof(name));
             }
 
+            if (name == Trace.Tags.Propagated.DecisionMaker)
+            {
+                _decisionMakerValue = null;
+                return true;
+            }
+
             var tags = _tags;
             if (tags == null || tags.Count == 0)
             {
@@ -175,6 +195,11 @@ namespace Datadog.Trace.Tagging
             if (name == null!)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(name));
+            }
+
+            if (name == Trace.Tags.Propagated.DecisionMaker)
+            {
+                return _decisionMakerValue;
             }
 
             var tags = _tags;
@@ -249,7 +274,12 @@ namespace Datadog.Trace.Tagging
 
             lock (tags)
             {
-                return tags.ToArray();
+                if (_decisionMakerValue == null)
+                {
+                    return tags.ToArray();
+                }
+
+                return tags.Concat(new[] { new KeyValuePair<string, string>(Trace.Tags.Propagated.DecisionMaker, _decisionMakerValue) }).ToArray();
             }
         }
 
@@ -257,6 +287,11 @@ namespace Datadog.Trace.Tagging
         public void Enumerate<TTagEnumerator>(ref TTagEnumerator tagEnumerator)
             where TTagEnumerator : struct, ITagEnumerator
         {
+            if (_decisionMakerValue != null)
+            {
+                tagEnumerator.Next(new KeyValuePair<string, string>(Trace.Tags.Propagated.DecisionMaker, _decisionMakerValue));
+            }
+
             var tags = _tags;
             if (tags is null || tags.Count == 0)
             {
