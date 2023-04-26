@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.InstrumentedAssemblyGenerator;
 using Datadog.InstrumentedAssemblyVerification;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Tools.Runner.Checks;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -152,6 +153,6 @@ internal class AnalyzeInstrumentationErrorsCommand : Command<AnalyzeInstrumentat
             logDirectory = process?.GetProcessLogDirectory();
         }
 
-        return logDirectory ?? Logging.DatadogLoggingFactory.GetLogDirectory();
+        return logDirectory ?? Logging.DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance);
     }
 }

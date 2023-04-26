@@ -8,6 +8,8 @@
 using System;
 using System.IO;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.Internal.Configuration;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
@@ -20,22 +22,25 @@ internal static class DatadogLoggingFactory
     private const int DefaultRateLimit = 0;
     private const int DefaultMaxLogFileSize = 10 * 1024 * 1024;
 
-    public static DatadogLoggingConfiguration GetConfiguration(IConfigurationSource source)
+    public static DatadogLoggingConfiguration GetConfiguration(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
-        var logSinkOptions = source.GetString(ConfigurationKeys.LogSinks)
-                                   ?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+        var logSinkOptions = new ConfigurationBuilder(source, telemetry)
+                            .WithKeys(ConfigurationKeys.LogSinks)
+                            .AsString()
+                            .Get()
+                           ?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
         FileLoggingConfiguration? fileConfig = null;
         if (logSinkOptions is null || Contains(logSinkOptions, LogSinkOptions.File))
         {
-            fileConfig = GetFileLoggingConfiguration(source);
+            fileConfig = GetFileLoggingConfiguration(source, telemetry);
         }
 
-        var rateLimit = source.GetInt32(ConfigurationKeys.LogRateLimit) switch
-        {
-            >= 0 and { } r => r,
-            _ => DefaultRateLimit,
-        };
+        var rateLimit = new ConfigurationBuilder(source, telemetry)
+                       .WithKeys(ConfigurationKeys.LogRateLimit)
+                       .AsInt32()
+                       .Get(DefaultRateLimit, x => x >= 0)
+                       .Value;
 
         return new DatadogLoggingConfiguration(rateLimit, fileConfig);
 
@@ -127,16 +132,16 @@ internal static class DatadogLoggingFactory
     }
 
     // Internal for testing
-    internal static string GetLogDirectory()
-        => GetLogDirectory(GlobalConfigurationSource.CreateDefaultConfigurationSource());
+    internal static string GetLogDirectory(IConfigurationTelemetry telemetry)
+        => GetLogDirectory(GlobalConfigurationSource.CreateDefaultConfigurationSource(), telemetry);
 
-    private static string GetLogDirectory(IConfigurationSource source)
+    private static string GetLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
-        var logDirectory = source.GetString(ConfigurationKeys.LogDirectory);
+        var logDirectory = new ConfigurationBuilder(source, telemetry).WithKeys(ConfigurationKeys.LogDirectory).AsString().Get();
         if (string.IsNullOrEmpty(logDirectory))
         {
 #pragma warning disable 618 // ProfilerLogPath is deprecated but still supported
-            var nativeLogFile = source.GetString(ConfigurationKeys.ProfilerLogPath);
+            var nativeLogFile = new ConfigurationBuilder(source, telemetry).WithKeys(ConfigurationKeys.ProfilerLogPath).AsString().Get();
 #pragma warning restore 618
 
             if (!string.IsNullOrEmpty(nativeLogFile))
@@ -190,12 +195,12 @@ internal static class DatadogLoggingFactory
         return logDirectory!;
     }
 
-    private static FileLoggingConfiguration? GetFileLoggingConfiguration(IConfigurationSource source)
+    private static FileLoggingConfiguration? GetFileLoggingConfiguration(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
         string? logDirectory = null;
         try
         {
-            logDirectory = GetLogDirectory(source);
+            logDirectory = GetLogDirectory(source, telemetry);
         }
         catch
         {
@@ -208,14 +213,21 @@ internal static class DatadogLoggingFactory
         }
 
         // get file details
-        var maxLogSizeVar = source.GetString(ConfigurationKeys.MaxLogFileSize);
-        var maxLogFileSize = long.TryParse(maxLogSizeVar, out var maxLogSize) ? maxLogSize : DefaultMaxLogFileSize;
+        var maxLogFileSize = new ConfigurationBuilder(source, telemetry)
+                            .WithKeys(ConfigurationKeys.MaxLogFileSize)
+                            .AsString()
+                            .GetAs(
+                                 () => DefaultMaxLogFileSize,
+                                 converter: x => long.TryParse(x, out var maxLogSize)
+                                                     ? ParsingResult<long>.Success(maxLogSize)
+                                                     : ParsingResult<long>.Failure(),
+                                 validator: x => x >= 0);
 
-        var logFileRetentionDays = source.GetInt32(ConfigurationKeys.LogFileRetentionDays) switch
-        {
-            >= 0 and var d => d,
-            _ => 32,
-        };
+        var logFileRetentionDays = new ConfigurationBuilder(source, telemetry)
+                                  .WithKeys(ConfigurationKeys.LogFileRetentionDays)
+                                  .AsInt32()
+                                  .Get(32, x => x >= 0)
+                                  .Value;
 
         return new FileLoggingConfiguration(maxLogFileSize, logDirectory, logFileRetentionDays);
     }
