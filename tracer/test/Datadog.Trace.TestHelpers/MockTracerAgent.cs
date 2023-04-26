@@ -1268,7 +1268,7 @@ namespace Datadog.Trace.TestHelpers
 
                         _log("Starting wait for connection " + instance);
                         var connectTask = statsServerStream.WaitForConnectionAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
-                        mutex.Set();
+                        mutex?.Set();
 
                         _log("Awaiting connection " + instance);
                         await connectTask;
@@ -1277,10 +1277,7 @@ namespace Datadog.Trace.TestHelpers
 
                         // start a new Named pipe server to handle additional connections
                         // Yes, this is madness, but apparently the way it's supposed to be done
-                        using var m = new ManualResetEventSlim();
-                        _tasks.Add(Task.Run(() => StartNamedPipeServer(m)));
-                        // Wait for the next instance to start listening before we handle this one
-                        m.Wait(5_000);
+                        _tasks.Add(Task.Run(() => StartNamedPipeServer(null)));
 
                         _log("Executing read for " + instance);
 
