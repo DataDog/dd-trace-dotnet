@@ -69,6 +69,8 @@ This section describes some of the most important breaking changes. For full det
 
 For full details of supported versions, see [our documentation on .NET Framework compatibility requirements](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-framework) and [.NET/.NET Core compatibility requirements](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-core).
 
+> Note that Datadog does not support tracing (manual or automatic) in partial-trust environments.
+
 ### Singleton `Tracer` instances
 
 In .NET Tracer 1.x, you could create new `Tracer` instances with different settings for each instance, using the `Tracer` constructor. In .NET Tracer 2.0 this constructor is marked `[Obsolete]` and it is no longer possible to create `Tracer` instances with different settings. This was done to avoid multiple problematic patterns that were hard for users to detect.
