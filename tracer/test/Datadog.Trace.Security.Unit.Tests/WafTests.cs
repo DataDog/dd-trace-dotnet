@@ -101,35 +101,42 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData("/.adsensepostnottherenonobook", "security_scanner", "crs-913-120")]
         public void BodyAttack(string body, string flow, string rule) => Execute(AddressesConstants.RequestBody, body, flow, rule);
 
-        [Theory]
-        [InlineData("x_filename", "routing.yml")]
-        public void Test(string header, string content)
+        [Fact]
+        public void Test()
         {
-            var args = new Dictionary<string, string> { { header, content } };
-            var argsroot = new Dictionary<string, object> { { AddressesConstants.RequestHeaderNoCookies, args } };
-            if (!argsroot.ContainsKey(AddressesConstants.RequestUriRaw))
+            var args = new Dictionary<string, object>
             {
-                argsroot.Add(AddressesConstants.RequestUriRaw, "http://localhost:54587/");
-            }
+                { AddressesConstants.RequestHeaderNoCookies, new Dictionary<string, string> { { "x_filename", "routing.yml" } } },
+                {
+                    AddressesConstants.RequestBody, new Dictionary<string, object>
+                    {
+                        { "value1", "adsensepostnottherenonobook" },
+                        { "value5", true },
+                        { "value6", false },
+                        { "value2", "security_scanner2" },
+                        { "value3", "security_scanner3" },
+                        { "value4", new Dictionary<string, object> { { "test1", "test2" }, { "test3", new List<string> { "test", "test2", "test3" } } } }
+                    }
+                },
+                { AddressesConstants.RequestPathParams, new Dictionary<string, object> { { "something", "appscan_fingerprint" }, { "something2", true }, { "so", new List<string> { "test", "test2", "test3", "test4" } } } },
+                { AddressesConstants.RequestCookies, new Dictionary<string, string> { { "something", ".htaccess" }, { "something2", ";shutdown--" } } },
+                { AddressesConstants.RequestQuery, new Dictionary<string, string> { { "[$ne]", "appscan_fingerprint" }, } },
+                { AddressesConstants.RequestUriRaw, "http://localhost:54587/" },
+                { AddressesConstants.RequestMethod, "GET" },
+            };
 
-            if (!argsroot.ContainsKey(AddressesConstants.RequestMethod))
-            {
-                argsroot.Add(AddressesConstants.RequestMethod, "GET");
-            }
-
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, @"C:\Repositories\dd-trace-dotnet\tracer\src\Datadog.Trace\AppSec\Waf\rule-set.json");
+            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
             using var waf = initResult.Waf;
             waf.Should().NotBeNull();
             using var context = waf.CreateContext() as Context;
             var stopwatch = new System.Diagnostics.Stopwatch();
             using var context2 = waf.CreateContext() as Context;
             stopwatch.Restart();
-            var resultOriginal = context2.Run(argsroot, TimeoutMicroSeconds);
+            var resultOriginal = context2.Run(args, TimeoutMicroSeconds);
             stopwatch.Stop();
             Console.WriteLine(stopwatch.ElapsedMilliseconds);
             stopwatch.Restart();
-            var result = Encoder.EncodeInternal2(argsroot, WafLibraryInvoker);
-            var resultwaf = context.Run2(result, TimeoutMicroSeconds);
+            var resultwaf = context.Run2(args, TimeoutMicroSeconds);
             stopwatch.Stop();
             Console.WriteLine(stopwatch.ElapsedMilliseconds);
             resultwaf.ReturnCode.Should().Be(ReturnCode.Match);

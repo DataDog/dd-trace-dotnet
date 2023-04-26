@@ -75,7 +75,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             // convert to a delegate and attempt to pin it by assigning it to  field
             _setupLogCallbackField = new SetupLogCallbackDelegate(LoggingCallback);
             // set the log level and setup the logger
-            var level = DDWAF_LOG_LEVEL.DDWAF_DEBUG;
+            var level = GlobalSettings.Instance.DebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
             setupLogging(_setupLogCallbackField, level);
         }
 

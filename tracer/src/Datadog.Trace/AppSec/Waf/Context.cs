@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -26,6 +27,7 @@ namespace Datadog.Trace.AppSec.Waf
         private readonly Waf _waf;
 
         private readonly List<Obj> _argCache = new();
+        private readonly List<GCHandle> _argCache2 = new();
         private readonly Stopwatch _stopwatch;
         private readonly WafLibraryInvoker _wafLibraryInvoker;
 
@@ -55,15 +57,6 @@ namespace Datadog.Trace.AppSec.Waf
             return new Context(contextHandle, waf, wafLibraryInvoker);
         }
 
-        public IResult Run2(DdwafObjectStruct args, ulong timeoutMicroSeconds)
-        {
-            DdwafResultStruct retNative = default;
-            var code = _waf.Run(_contextHandle, ref args, ref retNative, timeoutMicroSeconds);
-            var result = new Result(retNative, code, _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000));
-            _wafLibraryInvoker.ResultFree(ref retNative);
-            return result;
-        }
-        
         public IResult? Run2(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
         {
             if (_disposed)
@@ -87,13 +80,12 @@ namespace Datadog.Trace.AppSec.Waf
 
             // not restart cause it's the total runtime over runs, and we run several * during request
             _stopwatch.Start();
-            using var pwArgs = Encoder.Encode2(addresses, _wafLibraryInvoker, _argCache, applySafetyLimits: true);
-            var rawArgs = pwArgs.RawPtr;
+            var pwArgs = Encoder.Encode2(addresses, _wafLibraryInvoker, applySafetyLimits: true, argCache: _argCache2);
 
             DDWAF_RET_CODE code;
             lock (_sync)
             {
-                code = _waf.Run(_contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
+                code = _waf.Run(_contextHandle, ref pwArgs, ref retNative, timeoutMicroSeconds);
             }
 
             _stopwatch.Stop();
@@ -172,6 +164,11 @@ namespace Datadog.Trace.AppSec.Waf
             foreach (var arg in _argCache)
             {
                 arg.Dispose();
+            }
+
+            foreach (var arg in _argCache2)
+            {
+                arg.Free();
             }
 
             lock (_sync)

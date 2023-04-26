@@ -1,4 +1,4 @@
-// <copyright file="DdwafObjectStruct.cs" company="Datadog">
+// <copyright file="DdwafObjectStructWithArray.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,7 +11,7 @@ using Datadog.Trace.Vendors.Serilog;
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
     [StructLayout(LayoutKind.Explicit)]
-    internal struct DdwafObjectStruct
+    internal struct DdwafObjectStructWithArray
     {
         [FieldOffset(0)]
         public IntPtr ParameterName;
@@ -25,13 +25,13 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         // union
         // {
         [FieldOffset(16)]
-        public IntPtr Array;
-        
-        [FieldOffset(16)]
-        public string StringValue;
+        public DdwafObjectStructWithArray[] Array;
 
         [FieldOffset(16)]
         public ulong UintValue;
+
+        [FieldOffset(16)]
+        public IntPtr StringValue;
 
         [FieldOffset(16)]
         public byte Boolean;
@@ -58,26 +58,21 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 }
                 else
                 {
-                    var structSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
+                    var structSize = Marshal.SizeOf(typeof(DdwafObjectStructWithArray));
                     for (var i = 0; i < nbEntriesStart; i++)
                     {
-                        var arrayPtr = new IntPtr(Array.ToInt64() + (structSize * i));
-                        var array = (DdwafObjectStruct?)Marshal.PtrToStructure(arrayPtr, typeof(DdwafObjectStruct));
-                        if (array is { } arrayValue)
+                        var arrayValue = Array[i];
+                        var key = Marshal.PtrToStringAnsi(arrayValue.ParameterName, (int)arrayValue.ParameterNameLength);
+                        var nbEntries = (int)arrayValue.NbEntries;
+                        var ruleIds = new string[nbEntries];
+                        for (var j = 0; j < nbEntries; j++)
                         {
-                            var key = Marshal.PtrToStringAnsi(arrayValue.ParameterName, (int)arrayValue.ParameterNameLength);
-                            var nbEntries = (int)arrayValue.NbEntries;
-                            var ruleIds = new string[nbEntries];
-                            for (var j = 0; j < nbEntries; j++)
-                            {
-                                var errorPtr = new IntPtr(arrayValue.Array.ToInt64() + (structSize * j));
-                                var error = (DdwafObjectStruct?)Marshal.PtrToStructure(errorPtr, typeof(DdwafObjectStruct));
-                                var ruleId = Marshal.PtrToStringAnsi(error!.Value.Array);
-                                ruleIds[j] = ruleId!;
-                            }
-
-                            errorsDic.Add(key, ruleIds);
+                            var error = arrayValue.Array[j];
+                            var ruleId = Marshal.PtrToStringAnsi(error!.StringValue);
+                            ruleIds[j] = ruleId!;
                         }
+
+                        errorsDic.Add(key, ruleIds);
                     }
                 }
             }
