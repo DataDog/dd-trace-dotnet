@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
 public class EFCoreSqliteTests : EFCoreBaseTests
-{
+{ 
     public EFCoreSqliteTests()
     {
         var connection = MicrosoftDataSqliteDdbbCreator.Create();
@@ -14,6 +14,11 @@ public class EFCoreSqliteTests : EFCoreBaseTests
         dbContext.Database.OpenConnection();
         titleParam = new SqliteParameter("@title", taintedTitle);
     }
-}
+
+    [Fact]
+    public void GivenAProcess_WhenStartTaintedProcess_ThenLocationIsCorrect()
+    {
+        AssertLocation(nameof(EFCoreSqliteTests));
+    }
 
 #endif
