@@ -113,7 +113,7 @@ namespace Datadog.Trace.Configuration
 
             Integrations = new IntegrationSettingsCollection(source);
 
-            Exporter = new ExporterSettings(source);
+            Exporter = new ExporterSettings(source, Telemetry);
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = config.WithKeys(ConfigurationKeys.GlobalAnalyticsEnabled).AsBool()
