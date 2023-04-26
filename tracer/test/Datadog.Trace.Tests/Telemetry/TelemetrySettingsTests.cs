@@ -289,7 +289,7 @@ namespace Datadog.Trace.Tests.Telemetry
         public void HeartbeatInterval(string value, int expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds, value));
-            var settings = TelemetrySettings.FromSource(source, () => true);
+            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, () => true);
 
             settings.HeartbeatInterval.Should().Be(TimeSpan.FromSeconds(expected));
         }
