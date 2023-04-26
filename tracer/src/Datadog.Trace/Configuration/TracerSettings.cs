@@ -306,7 +306,7 @@ namespace Datadog.Trace.Configuration
                 DisabledIntegrationNames.Add(nameof(Configuration.IntegrationId.OpenTelemetry));
             }
 
-            LogSubmissionSettings = new DirectLogSubmissionSettings(source);
+            LogSubmissionSettings = new DirectLogSubmissionSettings(source, Telemetry);
 
             TraceMethods = config
                           .WithKeys(ConfigurationKeys.TraceMethods)
