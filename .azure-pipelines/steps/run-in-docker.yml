@@ -43,6 +43,7 @@ steps:
         --env NugetPackageDirectory=/project/$(relativeNugetPackageDirectory) \
         --env artifacts=/project/$(relativeArtifacts) \
         --env DD_CLR_ENABLE_NGEN=$(DD_CLR_ENABLE_NGEN) \
+        --env NUKE_TELEMETRY_OPTOUT=1 \
         --env DD_INSTRUMENTATION_TELEMETRY_ENABLED \
         --env Verify_DisableClipboard=true \
         --env DiffEngine_Disabled=true \

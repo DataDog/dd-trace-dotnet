@@ -5,7 +5,7 @@ using Nuke.Common.Tools.DotNet;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
-
+using Logger = Serilog.Log;
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
 // #pragma warning disable SA1111

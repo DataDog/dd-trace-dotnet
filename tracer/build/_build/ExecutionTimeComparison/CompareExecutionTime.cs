@@ -8,6 +8,7 @@ using Nuke.Common;
 using Nuke.Common.IO;
 using Perfolizer.Mathematics.SignificanceTesting;
 using Perfolizer.Mathematics.Thresholds;
+using Logger = Serilog.Log;
 
 public class CompareExecutionTime
 {
@@ -16,11 +17,11 @@ public class CompareExecutionTime
 
     public static string GetMarkdown(List<ExecutionTimeResultSource> sources)
     {
-        Logger.Info("Reading execution benchmarkResults results");
+        Logger.Information("Reading execution benchmarkResults results");
         var results = sources.SelectMany(ReadJsonResults).ToList();
 
         // Group execution time benchmarks by Sample Name, Framework
-        Logger.Info($"Found {results.Count} results: building markdown");
+        Logger.Information($"Found {results.Count} results: building markdown");
         var charts = results
                     .GroupBy(x => (x.TestSample, x.Framework))
                     .Select(group =>
@@ -175,7 +176,7 @@ public class CompareExecutionTime
             }
             catch (Exception ex)
             {
-                Logger.Info($"Error reading {fileName}: {ex.Message}. Skipping");
+                Logger.Information($"Error reading {fileName}: {ex.Message}. Skipping");
             }
         }
 
