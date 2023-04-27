@@ -28,7 +28,7 @@ You can develop the tracer on various environments.
   - Individual components
     - When opening a solution, Visual Studio will prompt you to install any missing components.
       The prompt will appear in the "Solution Explorer". A list of all recommended components can be found in our [.vsconfig](../.vsconfig)-file.
-- [.NET76.0 SDK](https://dotnet.microsoft.com/download/dotnet/7.0)
+- [.NET7.0 SDK](https://dotnet.microsoft.com/download/dotnet/7.0)
   - Optional: [.NET 7.0 x86 SDK](https://dotnet.microsoft.com/download/dotnet/7.0) to run 32-bit tests locally
 - Optional: ASP.NET Core Runtimes to run tests locally
   - [ASP.NET Core 2.1](https://dotnet.microsoft.com/download/dotnet/2.1)
