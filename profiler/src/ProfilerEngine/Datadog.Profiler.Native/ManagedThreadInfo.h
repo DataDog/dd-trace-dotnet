@@ -109,7 +109,7 @@ private:
         ScopedHandle(ScopedHandle&& other) noexcept
         {
             // set the other handle to NULL and store its value in _handle
-            _handle = std::exchange(other._handle, NULL);
+            _handle = std::exchange(other._handle, static_cast<HANDLE>(NULL));
         }
 
         ScopedHandle& operator=(ScopedHandle&& other) noexcept
@@ -117,7 +117,7 @@ private:
             if (this != &other)
             {
                 // set the other handle to NULL and store its value in _handle
-                _handle = std::exchange(other._handle, NULL);
+                _handle = std::exchange(other._handle, static_cast<HANDLE>(NULL));
             }
             return *this;
         }
