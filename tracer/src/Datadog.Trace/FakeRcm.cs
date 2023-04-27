@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace
 {
@@ -47,7 +46,13 @@ namespace Datadog.Trace
             var oldSettings = Tracer.Instance.Settings;
 
             var headerTags = TracerSettings.InitializeHeaderTags(settings, "TraceHeaderTags", oldSettings.HeaderTagsNormalizationFixEnabled);
-            var serviceNameMappings = TracerSettings.InitializeServiceNames(settings, "TraceServiceMapping");
+            var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(settings, "TraceServiceMapping");
+            ServiceNames serviceNames = null;
+
+            if (serviceNameMappings != null)
+            {
+                serviceNames = new ServiceNames(serviceNameMappings, oldSettings.MetadataSchemaVersion);
+            }
 
             var newSettings = oldSettings with
             {
@@ -58,7 +63,7 @@ namespace Datadog.Trace
                 SpanSamplingRules = settings.GetString("SpanSamplingRules") ?? oldSettings.SpanSamplingRules,
                 LogsInjectionEnabled = settings.GetBool("LogsInjectionEnabled") ?? oldSettings.LogsInjectionEnabled,
                 HeaderTags = (headerTags as IReadOnlyDictionary<string, string>) ?? oldSettings.HeaderTags,
-                ServiceNameMappings = serviceNameMappings ?? oldSettings.ServiceNameMappings
+                ServiceNameMappings = serviceNames ?? oldSettings.ServiceNameMappings
             };
 
             var debugLogsEnabled = settings.GetBool("DebugLogsEnabled");

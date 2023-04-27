@@ -768,25 +768,17 @@ namespace Datadog.Trace.Configuration
             return new ImmutableTracerSettings(this);
         }
 
-        internal static ServiceNames? InitializeServiceNames(IConfigurationSource source, string key)
+        internal static IDictionary<string, string>? InitializeServiceNameMappings(IConfigurationSource source, string key)
         {
-            var mappings = source.GetDictionary(ConfigurationKeys.ServiceNameMappings);
+            var mappings = source.GetDictionary(key);
 
-            if (mappings == null)
-            {
-                return null;
-            }
-
-            var serviceNameMappings = mappings
-                .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
-
-            return new ServiceNames(serviceNameMappings);
+            return mappings?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+               .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
         }
 
         internal static IDictionary<string, string>? InitializeHeaderTags(IConfigurationSource source, string key, bool headerTagsNormalizationFixEnabled)
         {
-            var configurationDictionary = source.GetDictionary(ConfigurationKeys.GrpcTags, allowOptionalMappings: true);
+            var configurationDictionary = source.GetDictionary(key, allowOptionalMappings: true);
 
             if (configurationDictionary == null)
             {
