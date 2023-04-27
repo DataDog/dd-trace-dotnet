@@ -140,6 +140,15 @@ namespace Datadog.Trace.AppSec.Waf
 
         public static DdwafObjectStruct Encode2(object o, WafLibraryInvoker wafLibraryInvoker, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, List<GCHandle>? argCache = null, bool applySafetyLimits = false)
         {
+            IntPtr ConvertToUtf8(string s)
+            {
+                var bytes = Encoding.UTF8.GetBytes(s);
+                var pinnedArray = GCHandle.Alloc(bytes);
+                argCache?.Add(pinnedArray);
+                var pointer = Marshal.UnsafeAddrOfPinnedArrayElement(bytes, 0);
+                return pointer;
+            }
+
             void AddToMap(ref DdwafObjectStruct map, params DdwafObjectStruct[] children)
             {
                 var structArray = children;
@@ -153,12 +162,12 @@ namespace Datadog.Trace.AppSec.Waf
             void FillParamName(ref DdwafObjectStruct ddwafObjectStruct, string paramName)
             {
 #if NETCOREAPP
-                ddwafObjectStruct.ParameterName = Marshal.StringToCoTaskMemUTF8(paramName);
+                ddwafObjectStruct.ParameterName = ConvertToUtf8(paramName);
 
 #else
-                ddwafObjectStruct.ParameterName = Marshal.StringToCoTaskMemUni(paramName);
+                ddwafObjectStruct.ParameterName = ConvertToUtf8(paramName);
 #endif
-                ddwafObjectStruct.ParameterNameLength = Convert.ToUInt64(paramName.Length);
+                ddwafObjectStruct.ParameterNameLength = (ulong)paramName.Length;
             }
 
             DdwafObjectStruct GetStringObject(string? key, string value)
@@ -167,7 +176,7 @@ namespace Datadog.Trace.AppSec.Waf
                 {
                     Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING,
 #if NETCOREAPP
-                    Array = Marshal.StringToCoTaskMemUTF8(value),
+                    StringValue = ConvertToUtf8(value),
 
 #else
                     Array = Marshal.StringToCoTaskMemUni(value),

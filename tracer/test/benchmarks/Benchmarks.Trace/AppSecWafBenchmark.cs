@@ -21,10 +21,8 @@ public class AppSecWafBenchmark
 {
     public const int TimeoutMicroSeconds = 1_000_000;
 
-    private readonly WafLibraryInvoker _wafLibraryInvoker;
-    private Waf _waf;
+    private readonly Waf _waf;
     private Context _context;
-    private readonly Dictionary<string, object> _args;
 
     public AppSecWafBenchmark()
     {
@@ -35,10 +33,21 @@ public class AppSecWafBenchmark
             throw new ArgumentException("Waf could not load");
         }
 
-        _wafLibraryInvoker = libInitResult.WafLibraryInvoker!;
-        var initResult = Waf.Create(_wafLibraryInvoker, string.Empty, string.Empty);
+        var wafLibraryInvoker = libInitResult.WafLibraryInvoker!;
+        var initResult = Waf.Create(wafLibraryInvoker, string.Empty, string.Empty);
         _waf = initResult.Waf;
-        _args = new Dictionary<string, object>
+    }
+    
+    public IEnumerable<Dictionary<string, object>> Source() // for multiple arguments it's an IEnumerable of array of objects (object[])
+    {
+        yield return new Dictionary<string, object>
+        {
+            { AddressesConstants.RequestCookies, new Dictionary<string, string> { { "something", ".htaccess" }, { "something2", ";shutdown--" } } },
+            { AddressesConstants.RequestQuery, new Dictionary<string, string> { { "[$ne]", "appscan_fingerprint" }, } },
+            { AddressesConstants.RequestUriRaw, "http://localhost:54587/" },
+            { AddressesConstants.RequestMethod, "GET" },
+        };
+        yield return new Dictionary<string, object>
         {
             { AddressesConstants.RequestHeaderNoCookies, new Dictionary<string, string> { { "x_filename", "routing.yml" } } },
             {
@@ -52,14 +61,36 @@ public class AppSecWafBenchmark
                     { "value4", new Dictionary<string, object> { { "test1", "test2" }, { "test3", new List<string> { "test", "test2", "test3" } } } }
                 }
             },
-            { AddressesConstants.RequestPathParams, new Dictionary<string, object> { { "something", "appscan_fingerprint" }, { "something2", true }, { "so", new List<string> { "test", "test2", "test3", "test4" } } } },
+            { AddressesConstants.RequestPathParams, new Dictionary<string, object> { { "something", "appscan_fingerprint" }, { "something2", true }, { "something3", true }, { "something4", true }, { "something5", true }, { "so", new List<string> { "test", "test2", "test3", "test4" } } } },
             { AddressesConstants.RequestCookies, new Dictionary<string, string> { { "something", ".htaccess" }, { "something2", ";shutdown--" } } },
             { AddressesConstants.RequestQuery, new Dictionary<string, string> { { "[$ne]", "appscan_fingerprint" }, } },
             { AddressesConstants.RequestUriRaw, "http://localhost:54587/" },
             { AddressesConstants.RequestMethod, "GET" },
         };
+        yield return new Dictionary<string, object>
+        {
+            { AddressesConstants.RequestHeaderNoCookies, new Dictionary<string, string> { { "x_filename", "routing.yml" }, { "x_filename2", "hello there very long string we have here now and it's potentially an attack" } } },
+            { AddressesConstants.RequestBodyFileFieldNames, new Dictionary<string, string> { { "x_filename2", "routing.yml2" } } },
+            {
+                AddressesConstants.RequestBody, new Dictionary<string, object>
+                {
+                    { "value1", "adsensepostnottherenonobook" },
+                    { "value5", true },
+                    { "value6", false },
+                    { "value2", "security_scanner2" },
+                    { "value3", "security_scanner3" },
+                    { "key", new Dictionary<string, object> { { "test1", "test2" }, { "test3", new List<string> { "test", "test2", "test3" } }, { "test4", new List<object> { true, true, true, false, true, 1234} } } },
+                    { "value4", new Dictionary<string, object> { { "test1", "test2" }, { "test3", new List<string> { "test", "test2", "test3" } }, { "test4", new List<object> { true, true, true, false, true, 1234} } } }
+                }
+            },
+            { AddressesConstants.RequestPathParams, new Dictionary<string, object> { { "something", "appscan_fingerprint" }, { "something2", true }, { "something3", true }, { "something4", true }, { "something5", true }, { "so", new List<string> { "test", "test2", "test3", "test4" } } } },
+            { AddressesConstants.RequestCookies, new Dictionary<string, string> { { "something", ".htaccess" }, { "something2", ";shutdown--" } } },
+            { AddressesConstants.RequestQuery, new Dictionary<string, string> { { "[$ne]", "appscan_fingerprint" }, { "arg!", "appscan_fingerprint" } } },
+            { AddressesConstants.RequestUriRaw, "http://localhost:54587/lalallala" },
+            { AddressesConstants.RequestMethod, "POST" },
+        };
     }
-
+    
     [GlobalSetup]
     public void Setup()
     {
@@ -73,14 +104,16 @@ public class AppSecWafBenchmark
     }
 
     [Benchmark]
-    public void RunWafWithBindingsFromWaf()
+    [ArgumentsSource(nameof(Source))]
+    public void RunWafWithBindingsFromWaf(Dictionary<string, object> args)
     {
-        var result = _context.Run(_args, TimeoutMicroSeconds);
+        _context.Run(args, TimeoutMicroSeconds);
     }
 
-    [Benchmark]
-    public void RunWafWithMarshallEncoding()
+    [Benchmark]    
+    [ArgumentsSource(nameof(Source))]
+    public void RunWafWithMarshallEncoding(Dictionary<string, object> args)
     {
-        var result = _context.Run2(_args, TimeoutMicroSeconds);
+        _context.Run2(args, TimeoutMicroSeconds);
     }
 }

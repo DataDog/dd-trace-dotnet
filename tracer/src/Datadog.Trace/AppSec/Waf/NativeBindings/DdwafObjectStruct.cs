@@ -26,9 +26,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         // {
         [FieldOffset(16)]
         public IntPtr Array;
-        
-        [FieldOffset(16)]
-        public string StringValue;
 
         [FieldOffset(16)]
         public ulong UintValue;
@@ -38,6 +35,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         [FieldOffset(16)]
         public long IntValue;
+
+        [FieldOffset(16)]
+        public IntPtr StringValue;
         // };
 
         [FieldOffset(24)]
