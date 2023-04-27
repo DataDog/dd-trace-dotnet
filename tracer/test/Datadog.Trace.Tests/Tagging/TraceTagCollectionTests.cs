@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -97,7 +98,10 @@ public class TraceTagCollectionTests
     {
         var tags = new TraceTagCollection();
         tags.Count.Should().Be(0);
-        tags.ToArray().Should().BeEmpty();
+
+        var enumerator = new EmptyTagEnumerator();
+        tags.Enumerate(ref enumerator);
+        enumerator.IsEmpty.Should().BeTrue();
 
         var header = tags.ToPropagationHeader(MaxHeaderLength);
         header.Should().BeEmpty();
@@ -257,5 +261,17 @@ public class TraceTagCollectionTests
 
         // if upper 64 bits are zero, the tag should not be present in the collection
         context.PropagatedTags.GetTag(Tags.Propagated.TraceIdUpper).Should().BeNull();
+    }
+
+    private struct EmptyTagEnumerator : TraceTagCollection.ITagEnumerator
+    {
+        public bool IsEmpty;
+
+        public EmptyTagEnumerator()
+        {
+            IsEmpty = true;
+        }
+
+        public void Next(KeyValuePair<string, string> tag) => IsEmpty = false;
     }
 }
