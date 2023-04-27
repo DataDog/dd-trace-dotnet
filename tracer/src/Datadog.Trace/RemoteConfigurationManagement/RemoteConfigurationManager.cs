@@ -150,22 +150,20 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             action(inst);
         }
 
-        public Task StartPollingAsync()
+        public void StartPolling()
         {
             lock (LockObject)
             {
                 if (_pollingTask != null)
                 {
                     Log.Warning("Remote Configuration management polling is already started.");
-                    return Task.CompletedTask;
+                    return;
                 }
 
                 _pollingTask = Task.Run(Poll);
             }
 
             LifetimeManager.Instance.AddAsyncShutdownTask(OnShutdownAsync);
-
-            return Task.CompletedTask;
         }
 
         public async Task OnShutdownAsync()

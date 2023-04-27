@@ -4,16 +4,15 @@
 // </copyright>
 
 using System.Numerics;
-using System.Threading.Tasks;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal interface IRemoteConfigurationManager
     {
         /// <summary>
-        /// Start polling configurations asynchronously in an endless loop.
+        /// Start polling configurations in an endless loop.
         /// </summary>
-        Task StartPollingAsync();
+        void StartPolling();
 
         void SetCapability(BigInteger index, bool available);
     }
