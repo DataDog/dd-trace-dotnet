@@ -217,18 +217,18 @@ namespace Datadog.Trace
                     await oldManager.AgentWriter.FlushAndCloseAsync().ConfigureAwait(false);
                 }
 
-                var statsdReplaced = false;
-                if (oldManager.Statsd != newManager.Statsd)
-                {
-                    statsdReplaced = true;
-                    oldManager.Statsd?.Dispose();
-                }
-
                 var runtimeMetricsWriterReplaced = false;
                 if (oldManager.RuntimeMetrics != newManager.RuntimeMetrics)
                 {
                     runtimeMetricsWriterReplaced = true;
                     oldManager.RuntimeMetrics?.Dispose();
+                }
+
+                var statsdReplaced = false;
+                if (oldManager.Statsd != newManager.Statsd)
+                {
+                    statsdReplaced = true;
+                    oldManager.Statsd?.Dispose();
                 }
 
                 var telemetryReplaced = false;
@@ -607,7 +607,10 @@ namespace Datadog.Trace
             // use the count of Tracer instances as the heartbeat value
             // to estimate the number of "live" Tracers than can potentially
             // send traces to the Agent
-            _instance?.Statsd?.Gauge(TracerMetricNames.Health.Heartbeat, Tracer.LiveTracerCount);
+            if (_instance?.Settings.TracerMetricsEnabled == true)
+            {
+                _instance?.Statsd?.Gauge(TracerMetricNames.Health.Heartbeat, Tracer.LiveTracerCount);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

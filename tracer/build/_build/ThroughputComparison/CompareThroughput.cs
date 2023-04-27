@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using Nuke.Common;
 using Nuke.Common.IO;
+using Logger = Serilog.Log;
 
 namespace ThroughputComparison;
 
@@ -15,11 +16,11 @@ public class CompareThroughput
 
     public static string GetMarkdown(List<CrankResultSource> sources)
     {
-        Logger.Info("Reading crank results");
+        Logger.Information("Reading crank results");
         var crankResults = sources.SelectMany(ReadJsonResults).ToList();
 
         // Group crankResults by test suite (result type), then 
-        Logger.Info($"Found {crankResults.Count} results: building markdown");
+        Logger.Information($"Found {crankResults.Count} results: building markdown");
         var charts = crankResults
                     .GroupBy(x => x.TestSuite)
                     .Select(group =>
@@ -174,7 +175,7 @@ public class CompareThroughput
             }
             catch (Exception ex)
             {
-                Logger.Info($"Error reading {fileName}: {ex.Message}. Skipping");
+                Logger.Information($"Error reading {fileName}: {ex.Message}. Skipping");
             }
         }
 

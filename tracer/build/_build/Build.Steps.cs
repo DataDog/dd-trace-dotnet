@@ -15,13 +15,13 @@ using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
 using Nuke.Common.Tools.NuGet;
 using Nuke.Common.Utilities.Collections;
-using static CustomDotNetTasks;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
+using Logger = Serilog.Log;
 
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
@@ -673,13 +673,13 @@ partial class Build
                 var outputFile = outputDir / Path.GetFileNameWithoutExtension(file);
                 var debugOutputFile = outputFile + ".debug";
 
-                Logger.Info($"Extracting debug symbol for {file} to {debugOutputFile}");
+                Logger.Information($"Extracting debug symbol for {file} to {outputFile}.debug");
                 ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {debugOutputFile}");
 
-                Logger.Info($"Stripping out unneeded information from {file}");
+                Logger.Information($"Stripping out unneeded information from {file}");
                 StripBinary.Value(arguments: $"--strip-unneeded {file}");
 
-                Logger.Info($"Add .gnu_debuglink for {file} targeting {debugOutputFile}");
+                Logger.Information($"Add .gnu_debuglink for {file} targeting {debugOutputFile}");
                 ExtractDebugInfo.Value(arguments: $"--add-gnu-debuglink={debugOutputFile} {file}");
             }
         });
@@ -1420,13 +1420,11 @@ partial class Build
                 "Samples.Wcf",
                 "Samples.WebRequest.NetFramework20",
                 "DogStatsD.RaceCondition",
-                "Sandbox.ManualTracing",
                 "StackExchange.Redis.AssemblyConflict.LegacyProject",
                 "Samples.OracleMDA", // We don't test these yet
                 "Samples.OracleMDA.Core", // We don't test these yet
                 "MismatchedTracerVersions",
                 "IBM.Data.DB2.DBCommand",
-                "Sandbox.AutomaticInstrumentation", // Doesn't run on Linux
             };
 
             // These sample projects are built using RestoreAndBuildSamplesForPackageVersions
@@ -1461,7 +1459,10 @@ partial class Build
                     (_, null) => true,
                     (_, { } p) when p.Name.Contains("Samples.AspNetCoreRazorPages") => true, // always have to build this one
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) && p.Name.Contains(SampleName) => true,
-                    (var required, { } p) => p.RequiresDockerDependency() == required,
+                    // The latest version of Nuke appears to have a bug that stops us calling RequiresDockerDependency() because
+                    // it can't locate MSBuild. No idea why, but this is just an optimisation for now, so taking the easy road.
+                    // (var required, { } p) => p.RequiresDockerDependency() == required,
+                    _ => true,
                 })
                 .Where(x =>
                 {
@@ -1755,7 +1756,7 @@ partial class Build
              catch
              {
                  // This step is expected to fail if the tool is not already installed
-                 Logger.Info("Could not uninstall the dd-trace tool. It's probably not installed.");
+                 Logger.Information("Could not uninstall the dd-trace tool. It's probably not installed.");
              }
 
              DotNetToolInstall(s => s
@@ -1863,6 +1864,8 @@ partial class Build
             knownPatterns.Add(new(@".*LinuxStackFramesCollector::CollectStackSampleImplementation: Unable to send signal .*Error code: No such process", RegexOptions.Compiled));
             // profiler throws this on .NET 7 - currently allowed
             knownPatterns.Add(new(@".*Profiler call failed with result Unspecified-Failure \(80131351\): pInfo..GetModuleInfo\(moduleId, nullptr, 0, nullptr, nullptr, .assemblyId\)", RegexOptions.Compiled));
+            // avoid any issue with CLR events that are not supported before 5.1 or .NET Framework
+            knownPatterns.Add(new(@".*Event-based profilers \(Allocation, LockContention\) are not supported for", RegexOptions.Compiled));
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });
@@ -1870,9 +1873,9 @@ partial class Build
     private void CheckLogsForErrors(List<Regex> knownPatterns, bool allFilesMustExist, LogLevel minLogLevel)
     {
         var logDirectory = BuildDataDirectory / "logs";
-        if (!DirectoryExists(logDirectory))
+        if (!logDirectory.Exists())
         {
-            Logger.Info($"Skipping log parsing, directory '{logDirectory}' not found");
+            Logger.Information($"Skipping log parsing, directory '{logDirectory}' not found");
             if (allFilesMustExist)
             {
                 ExitCode = 1;
@@ -1916,11 +1919,11 @@ partial class Build
          && nativeProfilerErrors.Count == 0
          && nativeLoaderErrors.Count == 0)
         {
-            Logger.Info("No problems found in managed or native logs");
+            Logger.Information("No problems found in managed or native logs");
             return;
         }
 
-        Logger.Warn("Found the following problems in log files:");
+        Logger.Warning("Found the following problems in log files:");
         var allErrors = managedErrors
                        .Concat(nativeTracerErrors)
                        .Concat(nativeProfilerErrors)
@@ -1932,7 +1935,7 @@ partial class Build
             var errors = erroredFile.Where(x => !ContainsCanary(x)).ToList();
             if(errors.Any())
             {
-                Logger.Info();
+                Logger.Information("");
                 Logger.Error($"Found errors in log file '{erroredFile.Key}':");
                 foreach (var error in errors)
                 {
@@ -1943,7 +1946,7 @@ partial class Build
             var canaries = erroredFile.Where(ContainsCanary).ToList();
             if(canaries.Any())
             {
-                Logger.Info();
+                Logger.Information("");
                 Logger.Error($"Found usage of canary environment variable in log file '{erroredFile.Key}':");
                 foreach (var canary in canaries)
                 {
@@ -2015,14 +2018,14 @@ partial class Build
                     }
                     catch (Exception ex)
                     {
-                        Logger.Info($"Error parsing line: '{line}. {ex}");
+                        Logger.Information($"Error parsing line: '{line}. {ex}");
                     }
                 }
                 else
                 {
                     if (currentLine is null)
                     {
-                        Logger.Warn("Incomplete log line: " + line);
+                        Logger.Warning("Incomplete log line: " + line);
                     }
                     else
                     {
@@ -2083,14 +2086,14 @@ partial class Build
                     }
                     catch (Exception ex)
                     {
-                        Logger.Info($"Error parsing line: '{line}. {ex}");
+                        Logger.Information($"Error parsing line: '{line}. {ex}");
                     }
                 }
                 else
                 {
                     if (currentLine is null)
                     {
-                        Logger.Warn("Incomplete log line: " + line);
+                        Logger.Warning("Incomplete log line: " + line);
                     }
                     else
                     {
@@ -2135,7 +2138,7 @@ partial class Build
         var packageDirectory = NugetPackageDirectory;
         if (string.IsNullOrEmpty(NugetPackageDirectory))
         {
-            Logger.Info("NugetPackageDirectory not set, querying for global-package location");
+            Logger.Information("NugetPackageDirectory not set, querying for global-package location");
             var packageLocation = "global-packages";
             var output = DotNet($"nuget locals {packageLocation} --list");
 
@@ -2148,14 +2151,14 @@ partial class Build
 
             if (string.IsNullOrEmpty(location))
             {
-                Logger.Info("Couldn't determine global-package location, skipping chmod +x on grpc.tools");
+                Logger.Information("Couldn't determine global-package location, skipping chmod +x on grpc.tools");
                 return;
             }
 
             packageDirectory = (AbsolutePath)(location);
         }
 
-        Logger.Info($"Using '{packageDirectory}' for NuGet package location");
+        Logger.Information($"Using '{packageDirectory}' for NuGet package location");
 
         // GRPC runs a tool for codegen, which apparently isn't automatically marked as executable
         var grpcTools = GlobFiles(packageDirectory / "grpc.tools", "**/tools/linux_*/*");
@@ -2247,16 +2250,16 @@ partial class Build
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include=\"[Datadog.Trace.ClrProfiler.*]*,[Datadog.Trace]*,[Datadog.Trace.AspNet]*\""));
     }
 
-    protected override void OnTargetStart(string target)
+    protected override void OnTargetRunning(string target)
     {
         if (PrintDriveSpace)
         {
             foreach (var drive in DriveInfo.GetDrives().Where(d => d.IsReady))
             {
-                Logger.Info($"Drive space available on '{drive.Name}': {PrettyPrint(drive.AvailableFreeSpace)} / {PrettyPrint(drive.TotalSize)}");
+                Logger.Information($"Drive space available on '{drive.Name}': {PrettyPrint(drive.AvailableFreeSpace)} / {PrettyPrint(drive.TotalSize)}");
             }
         }
-        base.OnTargetStart(target);
+        base.OnTargetRunning(target);
 
         static string PrettyPrint(long bytes)
         {

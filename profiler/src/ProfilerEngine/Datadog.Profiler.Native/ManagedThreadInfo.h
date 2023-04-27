@@ -13,6 +13,7 @@
 
 #include <atomic>
 #include <memory>
+#include <utility>
 
 
 static constexpr int32_t MinFieldAlignRequirement = 8;
@@ -88,13 +89,56 @@ private:
     inline void BuildProfileThreadName();
 
 private:
+    class ScopedHandle
+    {
+    public:
+        explicit ScopedHandle(HANDLE hnd) :
+            _handle(hnd)
+            {}
+
+        ~ScopedHandle()
+        {
+#ifdef _WINDOWS
+            ::CloseHandle(_handle);
+#endif
+        }
+
+        // Make it non copyable
+        ScopedHandle(ScopedHandle&) = delete;
+        ScopedHandle& operator=(ScopedHandle&) = delete;
+
+        ScopedHandle(ScopedHandle&& other) noexcept
+        {
+            // set the other handle to NULL and store its value in _handle
+            _handle = std::exchange(other._handle, static_cast<HANDLE>(NULL));
+        }
+
+        ScopedHandle& operator=(ScopedHandle&& other) noexcept
+        {
+            if (this != &other)
+            {
+                // set the other handle to NULL and store its value in _handle
+                _handle = std::exchange(other._handle, static_cast<HANDLE>(NULL));
+            }
+            return *this;
+        }
+
+        operator HANDLE() const
+        {
+            return _handle;
+        }
+
+    private:
+        HANDLE _handle;
+    };
+
     static constexpr std::uint32_t MaxProfilerThreadInfoId = 0xFFFFFF; // = 16,777,215
     static std::atomic<std::uint32_t> s_nextProfilerThreadInfoId;
 
     std::uint32_t _profilerThreadInfoId;
     ThreadID _clrThreadId;
     DWORD _osThreadId;
-    HANDLE _osThreadHandle;
+    ScopedHandle _osThreadHandle;
     shared::WSTRING _pThreadName;
 
     std::uint64_t _lastSampleHighPrecisionTimestampNanoseconds;
@@ -188,7 +232,7 @@ inline HANDLE ManagedThreadInfo::GetOsThreadHandle() const
 inline void ManagedThreadInfo::SetOsInfo(DWORD osThreadId, HANDLE osThreadHandle)
 {
     _osThreadId = osThreadId;
-    _osThreadHandle = osThreadHandle;
+    _osThreadHandle = ScopedHandle(osThreadHandle);
 
     BuildProfileThreadId();
 }

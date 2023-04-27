@@ -15,7 +15,9 @@
     <PackageProjectUrl>https://docs.datadoghq.com/tracing/trace_collection/dd_libraries</PackageProjectUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes>See release notes at https://github.com/DataDog/dd-trace-dotnet/releases</PackageReleaseNotes>
+    <PackageReleaseNotes>See release notes at https://github.com/DataDog/dd-trace-dotnet/releases.
+      Please note that Datadog does not support tracing (manual or automatic) in partial-trust environments.
+    </PackageReleaseNotes>
     <PackageTags>Datadog;APM;tracing;profiling;instrumentation</PackageTags>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/DataDog/dd-trace-dotnet.git</RepositoryUrl>
