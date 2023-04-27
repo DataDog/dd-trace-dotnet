@@ -424,11 +424,9 @@ namespace Datadog.Trace.ClrProfiler
 
                         Log.Debug("Initializing Remote Configuration management.");
 
-                        await Task
-                             .WhenAll(
-                                  InitializeRemoteConfigurationManager(configurationManager),
-                                  InitializeLiveDebugger(liveDebugger))
-                             .ConfigureAwait(false);
+                        InitializeRemoteConfigurationManager(configurationManager);
+
+                        await InitializeLiveDebugger(liveDebugger).ConfigureAwait(false);
                     }
                 });
         }
@@ -451,11 +449,11 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        internal static async Task InitializeRemoteConfigurationManager(IRemoteConfigurationManager remoteConfigurationManager)
+        internal static void InitializeRemoteConfigurationManager(IRemoteConfigurationManager remoteConfigurationManager)
         {
             try
             {
-                await remoteConfigurationManager.StartPollingAsync().ConfigureAwait(false);
+                remoteConfigurationManager.StartPolling();
             }
             catch (Exception ex)
             {
