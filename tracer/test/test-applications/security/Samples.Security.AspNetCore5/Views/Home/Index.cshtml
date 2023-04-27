@@ -69,6 +69,8 @@
 
     <div><a href="javascript:postJson('/Iast/ExecuteQueryFromBodyQueryData','SELECT Surname from Persons where name=\'Vicent\'')">POST /Iast/ExecuteQueryFromBodyText</a></div>
 
+    <div><a href="javascript:post('/Iast/ExecuteQueryFromBodyQueryData', '{%22InnerQuery%22: {%22Arguments%22: [%22SELECT Surname from Persons where name=\'Vicent\'%22]}, %22Query%22: %22SELECT Surname from Persons where name=\'Vicent\'%22,%22QueryNotUsed%22: %22SELECT Surname from Persons where name=\'Vicent\'%22,%22IntField%22: 1,%22Arguments%22: [%22SELECT Surname from Persons where name=\'Vicent\'%22, %22SELECT Surname from Persons where name=\'Mark\'%22],%22StringMap%22: {%22query1%22: %22SELECT Surname from Persons where name=\'Vicent\'%22,%22query2%22: %22SELECT Surname from Persons where name=\'Vicent\'%22},%22StringArrayArguments%22: [%22SELECT Surname from Persons where name=\'Vicent\'%22, %22SELECT Surname from Persons where name=\'Mark\'%22]}')">POST /Iast/ExecuteQueryFromBodyText</a></div>
+
     <div><a href="#" onclick="postJson2('/DataRazorIastPage', 'property=Execute&property3=2&Property2=nonexisting.exe')">POST Razor</a></div>
 
     <div>

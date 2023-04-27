@@ -39,7 +39,7 @@
   "sources": [
     {
       "origin": "http.request.body",
-      "name": "Query",
+      ,
       "value": "SELECT Surname from Persons where name='Vicent'"
     }
   ]

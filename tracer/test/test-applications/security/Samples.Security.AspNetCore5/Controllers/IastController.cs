@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +15,14 @@ namespace Samples.Security.AspNetCore5.Controllers
     {
         public string Query { get; set; }
         public int IntField { get; set; }
+
+        public List<string> Arguments { get; set; }
+
+        public Dictionary<string, string> StringMap { get; set; }
+
+        public string[] StringArrayArguments { get; set; }
+
+        public QueryData InnerQuery { get; set; }
     }
 
     [Route("[controller]")]
@@ -107,15 +117,63 @@ namespace Samples.Security.AspNetCore5.Controllers
                     dbConnection = IastControllerHelper.CreateDatabase();
                 }
 
-                if (!string.IsNullOrEmpty(query.Query))
-                {
-                    var rname = new SQLiteCommand(query.Query, dbConnection).ExecuteScalar();
-                    return Content($"Result: " + rname);
-                }
+                return Query(query);
             }
             catch (Exception ex)
             {
                 return Content(IastControllerHelper.ToFormattedString(ex));
+            }
+        }
+
+        private ActionResult Query(QueryData query)
+        {
+
+            if (!string.IsNullOrEmpty(query.Query))
+            {
+                return ExecuteQuery(query.Query);
+            }
+
+            if (query.Arguments is not null)
+            {
+                foreach (var value in query.Arguments)
+                {
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        return ExecuteQuery(value);
+                    }
+                }
+            }
+
+            if (query.StringArrayArguments is not null)
+            {
+                foreach (var value in query.StringArrayArguments)
+                {
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        return ExecuteQuery(value);
+                    }
+                }
+            }
+
+
+            if (query.StringMap is not null)
+            {
+                foreach (var value in query.StringMap)
+                {
+                    if (!string.IsNullOrEmpty(value.Value))
+                    {
+                        return ExecuteQuery(value.Value);
+                    }
+                    if (!string.IsNullOrEmpty(value.Key))
+                    {
+                        return ExecuteQuery(value.Key);
+                    }
+                }
+            }
+
+            if (query.InnerQuery !=null)
+            {
+                return Query(query.InnerQuery);
             }
 
             return Content($"No query or username was provided");
@@ -166,6 +224,12 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return Content("The provided file could not be opened");
             }
+        }
+
+        private ActionResult ExecuteQuery(string query)
+        {
+            var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
+            return Content($"Result: " + rname);
         }
     }
 }

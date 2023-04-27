@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Xml.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Logging;
 
@@ -48,26 +49,45 @@ internal class IastRequestContext
     {
         try
         {
-            var keysAndValuesDic = ObjectExtractor.Extract(body) as Dictionary<string, object>;
-
-            if (keysAndValuesDic != null)
-            {
-                foreach (var key in keysAndValuesDic.Keys)
-                {
-                    var value = keysAndValuesDic[key] as string;
-
-                    if (!string.IsNullOrEmpty(value))
-                    {
-#pragma warning disable CS8604 // Possible null reference argument.
-                        _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.RequestBody), key, value));
-#pragma warning restore CS8604 // Possible null reference argument.
-                    }
-                }
-            }
+            var bodyExtracted = ObjectExtractor.Extract(body);
+            AddExtractedBody(bodyExtracted, null);
         }
         catch
         {
             Log.Warning("Error reading request Body.");
+        }
+    }
+
+    private void AddExtractedBody(object bodyExtracted, string? key)
+    {
+        if (bodyExtracted != null)
+        {
+            // We get either string, List<object> or Dictionary<string, object>
+            if (bodyExtracted is string bodyExtractedStr)
+            {
+                _taintedObjects.TaintInputString(bodyExtractedStr, new Source(SourceType.GetByte(SourceTypeName.RequestBody), key, bodyExtractedStr));
+            }
+            else
+            {
+                if (bodyExtracted is List<object> bodyExtractedList)
+                {
+                    foreach (var element in bodyExtractedList)
+                    {
+                        AddExtractedBody(element, key);
+                    }
+                }
+                else
+                {
+                    if (bodyExtracted is Dictionary<string, object> bodyExtractedDic)
+                    {
+                        foreach (var keyValue in bodyExtractedDic)
+                        {
+                            AddExtractedBody(keyValue.Value, keyValue.Key);
+                            AddExtractedBody(keyValue.Key, key);
+                        }
+                    }
+                }
+            }
         }
     }
 
