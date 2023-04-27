@@ -138,7 +138,7 @@ namespace Datadog.Trace.AppSec.Waf
             return value;
         }
 
-        public static DdwafObjectStruct Encode2(object o, WafLibraryInvoker wafLibraryInvoker, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, List<GCHandle>? argCache = null, bool applySafetyLimits = false)
+        public static DdwafObjectStruct Encode2(object? o, WafLibraryInvoker wafLibraryInvoker, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, List<GCHandle>? argCache = null, bool applySafetyLimits = false)
         {
             IntPtr ConvertToUtf8(string s)
             {
@@ -242,7 +242,21 @@ namespace Datadog.Trace.AppSec.Waf
                     break;
                 }
 
-                case IList<object> list:
+                case IEnumerable<KeyValuePair<string, string>> objDict:
+                {
+                    var objDictAsObjects = objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value));
+                    ddwafObjectStruct = Encode2(objDictAsObjects, wafLibraryInvoker, remainingDepth, key);
+                    break;
+                }
+
+                case IEnumerable<KeyValuePair<string, JToken>> objDict:
+                {
+                    var objDictAsObjects = objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value));
+                    ddwafObjectStruct = Encode2(objDictAsObjects, wafLibraryInvoker, remainingDepth, key);
+                    break;
+                }
+
+                case System.Collections.IEnumerable list:
                 {
                     ddwafObjectStruct.Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY;
                     if (!string.IsNullOrEmpty(key))
@@ -256,43 +270,14 @@ namespace Datadog.Trace.AppSec.Waf
                         break;
                     }
 
-                    var i = 0;
-                    var children = new DdwafObjectStruct[list.Count];
+                    var children = new List<DdwafObjectStruct>();
                     foreach (var val in list)
                     {
                         var result = Encode2(val, wafLibraryInvoker, remainingDepth);
-                        children.SetValue(result, i++);
+                        children.Add(result);
                     }
 
-                    AddToMap(ref ddwafObjectStruct, children);
-                    break;
-                }
-
-                case IList<string> list:
-                {
-                    var val = list.Select(c => (object)c).ToList();
-                    ddwafObjectStruct = Encode2(val, wafLibraryInvoker, remainingDepth, key);
-                    break;
-                }
-
-                case IList<JToken> list:
-                {
-                    var val = list.Select(c => (object)c).ToList();
-                    ddwafObjectStruct = Encode2(val, wafLibraryInvoker, remainingDepth, key);
-                    break;
-                }
-
-                case IEnumerable<KeyValuePair<string, string>> objDict:
-                {
-                    var objDictAsObjects = objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value));
-                    ddwafObjectStruct = Encode2(objDictAsObjects, wafLibraryInvoker, remainingDepth, key);
-                    break;
-                }
-
-                case IEnumerable<KeyValuePair<string, JToken>> objDict:
-                {
-                    var objDictAsObjects = objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value));
-                    ddwafObjectStruct = Encode2(objDictAsObjects, wafLibraryInvoker, remainingDepth, key);
+                    AddToMap(ref ddwafObjectStruct, children.ToArray());
                     break;
                 }
             }

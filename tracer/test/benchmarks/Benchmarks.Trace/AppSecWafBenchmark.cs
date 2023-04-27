@@ -84,7 +84,7 @@ public class AppSecWafBenchmark
                 }
             },
             { AddressesConstants.RequestPathParams, new Dictionary<string, object> { { "something", "appscan_fingerprint" }, { "something2", true }, { "something3", true }, { "something4", true }, { "something5", true }, { "so", new List<string> { "test", "test2", "test3", "test4" } } } },
-            { AddressesConstants.RequestCookies, new Dictionary<string, string> { { "something", ".htaccess" }, { "something2", ";shutdown--" } } },
+            { AddressesConstants.RequestCookies, new Dictionary<string, object> { { "something", ".htaccess" }, { "something2", ";shutdown--" }, {"test", new List<bool> { true, false, true, true, true } } } },
             { AddressesConstants.RequestQuery, new Dictionary<string, string> { { "[$ne]", "appscan_fingerprint" }, { "arg!", "appscan_fingerprint" } } },
             { AddressesConstants.RequestUriRaw, "http://localhost:54587/lalallala" },
             { AddressesConstants.RequestMethod, "POST" },
