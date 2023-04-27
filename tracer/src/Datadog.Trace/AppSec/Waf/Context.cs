@@ -166,14 +166,14 @@ namespace Datadog.Trace.AppSec.Waf
                 arg.Dispose();
             }
 
-            foreach (var arg in _argCache2)
-            {
-                arg.Free();
-            }
-
             lock (_sync)
             {
                 _wafLibraryInvoker.ContextDestroy(_contextHandle);
+            }
+
+            foreach (var arg in _argCache2)
+            {
+                arg.Free();
             }
         }
 

@@ -129,6 +129,7 @@ namespace Datadog.Trace.AppSec.Waf
                     IEnumerable<KeyValuePair<string, object>> objDict => EncodeDictionary(objDict, argCache, remainingDepth, applyLimits, wafLibraryInvoker),
                     IList<JToken> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth, applyLimits, wafLibraryInvoker),
                     IList<string> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth, applyLimits, wafLibraryInvoker),
+                    IList<bool> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth, applyLimits, wafLibraryInvoker),
                     IList<object> objs => EncodeList(objs, argCache, remainingDepth, applyLimits, wafLibraryInvoker),
                     _ => EncodeUnknownType(o, wafLibraryInvoker),
                 };
@@ -140,10 +141,35 @@ namespace Datadog.Trace.AppSec.Waf
 
         public static DdwafObjectStruct Encode2(object? o, WafLibraryInvoker wafLibraryInvoker, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, List<GCHandle>? argCache = null, bool applySafetyLimits = false)
         {
+            DdwafObjectStruct ProcessKeyValuePairs(System.Collections.IEnumerable objDict, Func<object, string> getKey, Func<object, object> getValue)
+            {
+                DdwafObjectStruct ddWafObjectMap = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
+                if (!string.IsNullOrEmpty(key))
+                {
+                    FillParamName(ref ddWafObjectMap, key!);
+                }
+
+                if (applySafetyLimits && remainingDepth-- <= 0)
+                {
+                    // Log.Warning("EncodeDictionary: object graph too deep, truncating nesting {Items}", string.Join(", ", objDict.GetEnumerator().Select(x => $"{getKey(x)}, {getValue(x)}")));
+                    return ddWafObjectMap;
+                }
+
+                var children = new List<DdwafObjectStruct>();
+                foreach (var keyValue in objDict)
+                {
+                    var result = Encode2(getValue(keyValue!), wafLibraryInvoker, remainingDepth, getKey(keyValue!));
+                    children.Add(result);
+                }
+
+                AddToMap(ref ddWafObjectMap, children.ToArray());
+                return ddWafObjectMap;
+            }
+
             IntPtr ConvertToUtf8(string s)
             {
                 var bytes = Encoding.UTF8.GetBytes(s);
-                var pinnedArray = GCHandle.Alloc(bytes);
+                var pinnedArray = GCHandle.Alloc(bytes, GCHandleType.Normal);
                 argCache?.Add(pinnedArray);
                 var pointer = Marshal.UnsafeAddrOfPinnedArrayElement(bytes, 0);
                 return pointer;
@@ -152,7 +178,7 @@ namespace Datadog.Trace.AppSec.Waf
             void AddToMap(ref DdwafObjectStruct map, params DdwafObjectStruct[] children)
             {
                 var structArray = children;
-                var gcHandle = GCHandle.Alloc(structArray);
+                var gcHandle = GCHandle.Alloc(structArray, GCHandleType.Normal);
                 argCache?.Add(gcHandle);
                 var bufferPtr = Marshal.UnsafeAddrOfPinnedArrayElement(structArray, 0);
                 map.Array = bufferPtr;
@@ -161,104 +187,63 @@ namespace Datadog.Trace.AppSec.Waf
 
             void FillParamName(ref DdwafObjectStruct ddwafObjectStruct, string paramName)
             {
-#if NETCOREAPP
                 ddwafObjectStruct.ParameterName = ConvertToUtf8(paramName);
-
-#else
-                ddwafObjectStruct.ParameterName = ConvertToUtf8(paramName);
-#endif
                 ddwafObjectStruct.ParameterNameLength = (ulong)paramName.Length;
             }
 
-            DdwafObjectStruct GetStringObject(string? key, string value)
+            DdwafObjectStruct GetStringObject(string? keyForObject, string value)
             {
-                var ddWafObject = new DdwafObjectStruct
+                var ddWafObject = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING, StringValue = ConvertToUtf8(value), NbEntries = (ulong)value.Length };
+                if (keyForObject != null)
                 {
-                    Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING,
-#if NETCOREAPP
-                    StringValue = ConvertToUtf8(value),
-
-#else
-                    Array = Marshal.StringToCoTaskMemUni(value),
-#endif
-                    NbEntries = (ulong)value.Length
-                };
-                if (key != null)
-                {
-                    FillParamName(ref ddWafObject, key);
+                    FillParamName(ref ddWafObject, keyForObject);
                 }
 
                 return ddWafObject;
             }
 
-            var ddwafObjectStruct = new DdwafObjectStruct();
+            DdwafObjectStruct ddwafObjectStruct;
             switch (o)
             {
                 case string or int or uint or long:
                 case ulong or JValue:
                 case null:
-                {
                     var value = o?.ToString() ?? string.Empty;
                     var encodeString = applySafetyLimits ? TruncateLongString(value) : value;
                     ddwafObjectStruct = GetStringObject(key, encodeString);
                     break;
-                }
 
                 case bool b:
-                {
-                    ddwafObjectStruct.Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_BOOL;
-                    ddwafObjectStruct.Boolean = b ? (byte)1 : (byte)0;
+                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_BOOL, Boolean = b ? (byte)1 : (byte)0 };
                     if (key != null)
                     {
                         FillParamName(ref ddwafObjectStruct, key);
                     }
 
                     break;
-                }
 
                 case IEnumerable<KeyValuePair<string, object>> objDict:
-                {
-                    ddwafObjectStruct.Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP;
-                    if (!string.IsNullOrEmpty(key))
-                    {
-                        FillParamName(ref ddwafObjectStruct, key!);
-                    }
-
-                    if (applySafetyLimits && remainingDepth-- <= 0)
-                    {
-                        Log.Warning("EncodeDictionary: object graph too deep, truncating nesting {Items}", string.Join(", ", objDict.Select(x => $"{x.Key}, {x.Value}")));
-                        break;
-                    }
-
-                    var i = 0;
-                    var children = new DdwafObjectStruct[objDict.Count()];
-                    foreach (var keyValue in objDict)
-                    {
-                        var result = Encode2(keyValue.Value, wafLibraryInvoker, remainingDepth, keyValue.Key);
-                        children.SetValue(result, i++);
-                    }
-
-                    AddToMap(ref ddwafObjectStruct, children);
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, obj => ((KeyValuePair<string, object>)obj).Key, obj => ((KeyValuePair<string, object>)obj).Value);
                     break;
-                }
 
                 case IEnumerable<KeyValuePair<string, string>> objDict:
-                {
-                    var objDictAsObjects = objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value));
-                    ddwafObjectStruct = Encode2(objDictAsObjects, wafLibraryInvoker, remainingDepth, key);
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, obj => ((KeyValuePair<string, string>)obj).Key, obj => ((KeyValuePair<string, string>)obj).Value);
                     break;
-                }
 
                 case IEnumerable<KeyValuePair<string, JToken>> objDict:
-                {
-                    var objDictAsObjects = objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value));
-                    ddwafObjectStruct = Encode2(objDictAsObjects, wafLibraryInvoker, remainingDepth, key);
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, obj => ((KeyValuePair<string, JToken>)obj).Key, obj => ((KeyValuePair<string, JToken>)obj).Value);
                     break;
-                }
+
+                case IEnumerable<KeyValuePair<string, string[]>> objDict:
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, obj => ((KeyValuePair<string, string[]>)obj).Key, obj => ((KeyValuePair<string, string[]>)obj).Value);
+                    break;
+
+                case IEnumerable<KeyValuePair<string, List<string>>> objDict:
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, obj => ((KeyValuePair<string, List<string>>)obj).Key, obj => ((KeyValuePair<string, List<string>>)obj).Value);
+                    break;
 
                 case System.Collections.IEnumerable list:
-                {
-                    ddwafObjectStruct.Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY;
+                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY };
                     if (!string.IsNullOrEmpty(key))
                     {
                         FillParamName(ref ddwafObjectStruct, key!);
@@ -279,7 +264,11 @@ namespace Datadog.Trace.AppSec.Waf
 
                     AddToMap(ref ddwafObjectStruct, children.ToArray());
                     break;
-                }
+
+                default:
+                    Log.Warning("Couldn't encode object of unknown type {Type}, falling back to ToString", o.GetType());
+                    ddwafObjectStruct = GetStringObject(key, string.Empty);
+                    break;
             }
 
             return ddwafObjectStruct;
