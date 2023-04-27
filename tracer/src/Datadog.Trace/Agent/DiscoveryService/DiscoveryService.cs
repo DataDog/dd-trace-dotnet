@@ -273,14 +273,10 @@ namespace Datadog.Trace.Agent.DiscoveryService
             }
         }
 
-        public async Task DisposeAsync()
+        public Task DisposeAsync()
         {
             _processExit.Cancel();
-            Log.Information("DiscoveryService.Disposesync - After _processExit");
-
-            await _discoveryTask.ConfigureAwait(false);
-
-            Log.Information("DiscoveryService.Disposesync - done");
+            return _discoveryTask;
         }
     }
 }

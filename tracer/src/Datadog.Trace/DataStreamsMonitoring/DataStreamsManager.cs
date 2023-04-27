@@ -62,8 +62,6 @@ internal class DataStreamsManager
 
         if (writer is null)
         {
-            Log.Information("DataStreamsManager.Disposesync - writer is null");
-
             return;
         }
 

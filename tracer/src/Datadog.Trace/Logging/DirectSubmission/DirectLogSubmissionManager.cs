@@ -67,8 +67,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 {
                     await sink.DisposeAsync().ConfigureAwait(false);
                 }
-
-                Logger.Information("direct submission - done");
             }
             catch (Exception ex)
             {

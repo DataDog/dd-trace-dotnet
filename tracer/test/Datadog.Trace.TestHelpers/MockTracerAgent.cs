@@ -1239,7 +1239,7 @@ namespace Datadog.Trace.TestHelpers
                     {
                         _log("Starting PipeServer " + _pipeName);
                         using var mutex = new ManualResetEventSlim();
-                        var startPipe = Task.Run(() => StartNamedPipeServer(mutex));
+                        var startPipe = StartNamedPipeServer(mutex);
                         _tasks.Add(startPipe);
                         mutex.Wait(5_000);
                     }
@@ -1262,9 +1262,7 @@ namespace Datadog.Trace.TestHelpers
                             _pipeDirection, // we don't send responses to stats requests
                             NamedPipeServerStream.MaxAllowedServerInstances,
                             PipeTransmissionMode.Byte,
-                            PipeOptions.Asynchronous,
-                            64 * 1024,
-                            64 * 1024);
+                            PipeOptions.Asynchronous);
 
                         _log("Starting wait for connection " + instance);
                         var connectTask = statsServerStream.WaitForConnectionAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
@@ -1277,7 +1275,10 @@ namespace Datadog.Trace.TestHelpers
 
                         // start a new Named pipe server to handle additional connections
                         // Yes, this is madness, but apparently the way it's supposed to be done
-                        _tasks.Add(Task.Run(() => StartNamedPipeServer(null)));
+                        using var m = new ManualResetEventSlim();
+                        _tasks.Add(Task.Run(() => StartNamedPipeServer(m)));
+                        // Wait for the next instance to start listening before we handle this one
+                        m.Wait(5_000);
 
                         _log("Executing read for " + instance);
 

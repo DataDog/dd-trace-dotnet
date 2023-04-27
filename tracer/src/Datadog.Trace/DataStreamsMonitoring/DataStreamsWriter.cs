@@ -99,21 +99,13 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     public async Task DisposeAsync()
     {
-        Log.Information("DataStreamsWriter.Disposesync");
-
         _discoveryService.RemoveSubscription(HandleConfigUpdate);
-
-        Log.Information("DataStreamsWriter.Disposesync - Removed subscription");
 #if NETCOREAPP3_1_OR_GREATER
         await _flushTimer.DisposeAsync().ConfigureAwait(false);
 #else
         _flushTimer.Dispose();
 #endif
-        Log.Information("DataStreamsWriter.Disposesync - After FlushTimer");
-
         await FlushAndCloseAsync().ConfigureAwait(false);
-
-        Log.Information("DataStreamsWriter.Disposesync - After FlushAndCloseAsync");
     }
 
     private async Task FlushAndCloseAsync()

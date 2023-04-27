@@ -142,7 +142,6 @@ namespace Datadog.Trace.Agent
         {
             if (!_processExit.TrySetResult(true))
             {
-                Log.Information("FlushAndCloseAsync - processExit already set");
                 return;
             }
 
@@ -180,22 +179,16 @@ namespace Datadog.Trace.Agent
                 }
             }
 
-            Log.Information("FlushAndCloseAsync - after flushtask");
-
             // Once all the spans have been processed, flush the stats
             if (_statsAggregator != null)
             {
-                Log.Information("FlushAndCloseAsync - flusing stats");
                 await _statsAggregator.DisposeAsync().ConfigureAwait(false);
-                Log.Information("FlushAndCloseAsync - after flushing stats");
             }
 
             if (!success)
             {
                 Log.Warning("Could not flush all traces before process exit");
             }
-
-            Log.Information("FlushAndCloseAsync - done");
         }
 
         public async Task FlushTracesAsync()
