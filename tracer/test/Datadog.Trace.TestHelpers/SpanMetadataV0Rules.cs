@@ -397,10 +397,10 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .IsOptional("db.name")
                 .IsPresent("out.host")
-                .IsOptional("_dd.dbm_trace_injected")
                 .Matches("db.type", "sql-server")
                 .Matches("component", "SqlClient")
-                .Matches("span.kind", "client"));
+                .Matches("span.kind", "client")
+                .IsOptional("_dd.dbm_trace_injected"));
 
         public static Result IsWcfV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s

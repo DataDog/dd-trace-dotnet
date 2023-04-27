@@ -29,12 +29,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         public static IEnumerable<object[]> GetEnabledConfig()
             => from packageVersionArray in PackageVersions.SystemDataSqlClient
                from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
-
-        public static IEnumerable<object[]> GetTestData()
-            => from packageVersion in PackageVersions.SystemDataSqlClient.SelectMany(x => x).Select(x => (string)x)
                from propagation in new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" }
-               select new object[] { packageVersion, propagation };
+               select new[] { packageVersionArray[0], metadataSchemaVersion, propagation };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlClient(metadataSchemaVersion);
 
@@ -78,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
 
-            Assert.Equal(expectedSpanCount, spans.Count);
+            spans.Count.Should().Be(expectedSpanCount);
             ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
             telemetry.AssertIntegrationEnabled(IntegrationId.SqlClient);
 
@@ -89,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             settings.AddSimpleScrubber("out.host: (localdb)\\MSSQLLocalDB", "out.host: sqlserver");
             settings.AddSimpleScrubber("out.host: (localdb)\\MSSQLLocalDB_arm64", "out.host: sqlserver");
 
-            var fileName = nameof(SystemDataSqlClientTests);
+            var fileName = nameof(SystemDataSqlClientTests) + $".Schema{metadataSchemaVersion.ToUpper()}";
 
             fileName = fileName + (dbmPropagation switch
             {
