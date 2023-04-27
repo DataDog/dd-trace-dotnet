@@ -120,12 +120,10 @@ namespace Datadog.Trace.Propagators
 
         internal static string CreateTraceParentHeader(SpanContext context)
         {
-            var traceId = IsValidHexString(context.RawTraceId, length: 32) ? context.RawTraceId : context.TraceId.ToString("x32");
-            var spanId = IsValidHexString(context.RawSpanId, length: 16) ? context.RawSpanId : context.SpanId.ToString("x16");
             var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority ?? SamplingPriorityValues.AutoKeep;
             var sampled = samplingPriority > 0 ? "01" : "00";
 
-            return $"00-{traceId}-{spanId}-{sampled}";
+            return $"00-{context.RawTraceId}-{context.RawSpanId}-{sampled}";
         }
 
         internal static string CreateTraceStateHeader(SpanContext context)
@@ -154,10 +152,12 @@ namespace Datadog.Trace.Propagators
                 }
 
                 // propagated tags ("t.<key>:<value>")
-                if (context.TraceContext?.Tags is { Count: > 0 } tags)
+                var propagatedTags = context.PrepareTagsForPropagation();
+
+                if (propagatedTags?.Count > 0)
                 {
                     var traceTagAppender = new TraceTagAppender(sb);
-                    tags.Enumerate(ref traceTagAppender);
+                    propagatedTags.Enumerate(ref traceTagAppender);
                 }
 
                 if (sb.Length == 3)
@@ -237,7 +237,7 @@ namespace Datadog.Trace.Propagators
                 return false;
             }
 
-            ulong traceId;
+            TraceId traceId;
             ulong parentId;
             string rawTraceId;
             string rawSpanId;
@@ -246,7 +246,7 @@ namespace Datadog.Trace.Propagators
             var w3cTraceId = header.AsSpan(start: 3, length: 32);
             var w3cSpanId = header.AsSpan(start: 36, length: 16);
 
-            if (!HexString.TryParseUInt64(w3cTraceId[16..], out traceId) || traceId == 0)
+            if (!HexString.TryParseTraceId(w3cTraceId, out traceId) || traceId == TraceId.Zero)
             {
                 return false;
             }
@@ -262,7 +262,7 @@ namespace Datadog.Trace.Propagators
 
             if (HexString.TryParseByte(header.AsSpan(53, 2), out var traceFlags))
             {
-                sampled = ((TraceFlags)traceFlags & TraceFlags.Sampled) == TraceFlags.Sampled;
+                sampled = ((TraceFlags)traceFlags).HasFlagFast(TraceFlags.Sampled);
             }
             else
             {
@@ -272,7 +272,7 @@ namespace Datadog.Trace.Propagators
             rawTraceId = header.Substring(startIndex: 3, length: 32);
             rawSpanId = header.Substring(startIndex: 36, length: 16);
 
-            if (!HexString.TryParseUInt64(rawTraceId.Substring(16), out traceId) || traceId == 0)
+            if (!HexString.TryParseTraceId(rawTraceId, out traceId) || traceId == TraceId.Zero)
             {
                 return false;
             }
@@ -609,6 +609,7 @@ namespace Datadog.Trace.Propagators
             };
 
             var traceTags = TagPropagation.ParseHeader(traceState.PropagatedTags);
+
             if (traceParent.Sampled && traceState.SamplingPriority <= 0)
             {
                 traceTags.SetTag(Tags.Propagated.DecisionMaker, "-0");
@@ -629,24 +630,6 @@ namespace Datadog.Trace.Propagators
 
             spanContext.PropagatedTags = traceTags;
             spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
-            return true;
-        }
-
-        private static bool IsValidHexString([NotNullWhen(true)] string? value, int length)
-        {
-            if (value?.Length != length)
-            {
-                return false;
-            }
-
-            foreach (var t in value)
-            {
-                if (t is (< '0' or > '9') and (< 'a' or > 'f'))
-                {
-                    return false;
-                }
-            }
-
             return true;
         }
 
@@ -830,7 +813,10 @@ namespace Datadog.Trace.Propagators
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Next(KeyValuePair<string, string> tag)
             {
-                if (tag.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
+                // do not propagate "t.tid" tag in W3C headers,
+                // the full 128-bit trace id is propagated in the traceparent header
+                if (tag.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal) &&
+                    !tag.Key.Equals(Tags.Propagated.TraceIdUpper, StringComparison.Ordinal))
                 {
 #if NETCOREAPP
                     var key = tag.Key.AsSpan(start: 6);

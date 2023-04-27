@@ -133,7 +133,6 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioExceptions);
             // By default, the codehotspot feature is activated
-
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
 

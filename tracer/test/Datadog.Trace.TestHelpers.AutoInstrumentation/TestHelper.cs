@@ -294,28 +294,32 @@ namespace Datadog.Trace.TestHelpers
 
             var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
-            Task.Run(() =>
-            {
-                string line;
-                while ((line = process.StandardOutput.ReadLine()) != null)
+            Task.Factory.StartNew(
+                () =>
                 {
-                    Output.WriteLine($"[webserver][stdout] {line}");
-
-                    if (line.Contains("IIS Express is running"))
+                    string line;
+                    while ((line = process.StandardOutput.ReadLine()) != null)
                     {
-                        wh.Set();
-                    }
-                }
-            });
+                        Output.WriteLine($"[webserver][stdout] {line}");
 
-            Task.Run(() =>
-            {
-                string line;
-                while ((line = process.StandardError.ReadLine()) != null)
+                        if (line.Contains("IIS Express is running"))
+                        {
+                            wh.Set();
+                        }
+                    }
+                },
+                TaskCreationOptions.LongRunning);
+
+            Task.Factory.StartNew(
+                () =>
                 {
-                    Output.WriteLine($"[webserver][stderr] {line}");
-                }
-            });
+                    string line;
+                    while ((line = process.StandardError.ReadLine()) != null)
+                    {
+                        Output.WriteLine($"[webserver][stderr] {line}");
+                    }
+                },
+                TaskCreationOptions.LongRunning);
 
             wh.WaitOne(5000);
 
@@ -423,7 +427,11 @@ namespace Datadog.Trace.TestHelpers
         protected void SetInstrumentationVerification()
         {
             bool verificationEnabled = ShouldUseInstrumentationVerification();
-            SetEnvironmentVariable(ConfigurationKeys.LogDirectory, verificationEnabled ? EnvironmentHelper.LogDirectory : null);
+
+            if (verificationEnabled)
+            {
+                SetEnvironmentVariable(ConfigurationKeys.LogDirectory, EnvironmentHelper.LogDirectory);
+            }
         }
 
         protected void VerifyInstrumentation(Process process)

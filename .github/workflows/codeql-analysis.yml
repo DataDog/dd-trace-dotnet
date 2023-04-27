@@ -57,6 +57,7 @@ jobs:
           -**/test/test-applications/**
           -**/test/samples/**
           -**/Web.config
+          -**/obj/**
         input: ../results/cpp.sarif
         output: ../results/cpp.sarif
 
@@ -68,6 +69,7 @@ jobs:
           -**/test/test-applications/**
           -**/test/samples/**
           -**/Web.config
+          -**/obj/**
         input: ../results/csharp.sarif
         output: ../results/csharp.sarif
 
@@ -124,6 +126,7 @@ jobs:
           -**/test/test-applications/**
           -**/test/samples/**
           -**/Web.config
+          -**/obj/**
         input: ../results/cpp.sarif
         output: ../results/cpp.sarif
 
@@ -135,6 +138,7 @@ jobs:
           -**/test/test-applications/**
           -**/test/samples/**
           -**/Web.config
+          -**/obj/**
         input: ../results/csharp.sarif
         output: ../results/csharp.sarif
 

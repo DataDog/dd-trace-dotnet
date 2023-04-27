@@ -31,4 +31,13 @@
     <PackageReference Include="Verify.Xunit" Version="14.13.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="coverage.cobertura.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="coverage.opencover.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

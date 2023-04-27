@@ -24,7 +24,9 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
         public void GetCpuSamplesIfCpuProfilerIsActivatedByDefault(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
+            // disable default profilers except CPU
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -38,7 +40,9 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
         public void GetWalltimeSamplesIfWalltimeProfilerIsActivatedByDefault(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
+            // disable default profilers except wall time
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -52,8 +56,10 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
         public void NoSampleIfCpuAndWalltimeProfilersAreDeactivated(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
+            // disable default profilers
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -67,7 +73,10 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
         public void GetCpuSamplesIfCpuProfilerIsActivated(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
+            // disable default profilers
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
@@ -82,7 +91,10 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
         public void CheckCpuDurationInSamples(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
+            // disable default profilers
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
@@ -101,8 +113,11 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
         public void CheckWalltimeDurationInSamples(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
+            // disable default profilers
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -120,8 +135,11 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
         public void GetWalltimeSamplesIfWalltimeProfilerIsActivated(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
+            // disable default profilers
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 

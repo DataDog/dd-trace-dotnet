@@ -970,7 +970,7 @@ namespace Datadog.Trace.TestHelpers
                         }
                     }
 
-                    _statsdTask = Task.Run(HandleStatsdRequests);
+                    _statsdTask = Task.Factory.StartNew(HandleStatsdRequests, TaskCreationOptions.LongRunning);
 
                     listeners.Add($"Stats at port {StatsdPort}");
                 }
@@ -999,7 +999,7 @@ namespace Datadog.Trace.TestHelpers
                         _listener = listener;
 
                         listeners.Add($"Traces at port {Port}");
-                        _tracesListenerTask = Task.Run(HandleHttpRequests);
+                        _tracesListenerTask = Task.Factory.StartNew(HandleHttpRequests, TaskCreationOptions.LongRunning);
 
                         return;
                     }
@@ -1348,7 +1348,7 @@ namespace Datadog.Trace.TestHelpers
 
                     _udsStatsSocket.Bind(_statsEndpoint);
                     // NOTE: Connectionless protocols don't use Listen()
-                    _statsdTask = Task.Run(HandleUdsStats);
+                    _statsdTask = Task.Factory.StartNew(HandleUdsStats, TaskCreationOptions.LongRunning);
                 }
 
                 _tracesEndpoint = new UnixDomainSocketEndPoint(config.Traces);
@@ -1362,7 +1362,7 @@ namespace Datadog.Trace.TestHelpers
                 _udsTracesSocket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
                 _udsTracesSocket.Bind(_tracesEndpoint);
                 _udsTracesSocket.Listen(1000);
-                _tracesListenerTask = Task.Run(HandleUdsTraces);
+                _tracesListenerTask = Task.Factory.StartNew(HandleUdsTraces, TaskCreationOptions.LongRunning);
             }
 
             public string TracesUdsPath { get; }
