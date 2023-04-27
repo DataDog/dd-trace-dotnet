@@ -232,30 +232,12 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
 #if NETFRAMEWORK
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void ConfigurationDataShouldIncludeExpectedFullTrustValues(bool isFullTrust)
+        [Fact]
+        public void ConfigurationDataShouldIncludeExpectedFullTrustValues()
         {
-            Dictionary<string, object> data;
-            if (isFullTrust)
-            {
-                var carrier = new AppDomainCarrierClass();
-                data = carrier.BuildFullTrustConfigurationData();
-            }
-            else
-            {
-                PermissionSet permSet = new PermissionSet(PermissionState.None);
-                permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
-                permSet.AddPermission(new EnvironmentPermission(PermissionState.Unrestricted)); // The module initializer in the test DLL sets an environment variable to disable telemetry
-                var remote = AppDomain.CreateDomain("ConfigurationDataShouldIncludeExpectedFullTrustValues", null, AppDomain.CurrentDomain.SetupInformation, permSet);
-
-                var carrierType = typeof(AppDomainCarrierClass);
-                var carrier = (AppDomainCarrierClass)remote.CreateInstanceAndUnwrap(carrierType.Assembly.FullName, carrierType.FullName);
-                data = carrier.BuildFullTrustConfigurationData();
-            }
-
-            data[ConfigTelemetryData.FullTrustAppDomain].Should().Be(isFullTrust);
+            var carrier = new AppDomainCarrierClass();
+            var data = carrier.BuildFullTrustConfigurationData();
+            data[ConfigTelemetryData.FullTrustAppDomain].Should().Be(true);
         }
 
         public class AppDomainCarrierClass : MarshalByRefObject

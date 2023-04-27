@@ -1416,13 +1416,11 @@ partial class Build
                 "Samples.Wcf",
                 "Samples.WebRequest.NetFramework20",
                 "DogStatsD.RaceCondition",
-                "Sandbox.ManualTracing",
                 "StackExchange.Redis.AssemblyConflict.LegacyProject",
                 "Samples.OracleMDA", // We don't test these yet
                 "Samples.OracleMDA.Core", // We don't test these yet
                 "MismatchedTracerVersions",
                 "IBM.Data.DB2.DBCommand",
-                "Sandbox.AutomaticInstrumentation", // Doesn't run on Linux
             };
 
             // These sample projects are built using RestoreAndBuildSamplesForPackageVersions
