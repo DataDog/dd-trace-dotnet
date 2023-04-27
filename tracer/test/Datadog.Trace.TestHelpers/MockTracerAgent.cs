@@ -1266,7 +1266,7 @@ namespace Datadog.Trace.TestHelpers
 
                         _log("Starting wait for connection " + instance);
                         var connectTask = statsServerStream.WaitForConnectionAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
-                        mutex?.Set();
+                        mutex.Set();
 
                         _log("Awaiting connection " + instance);
                         await connectTask;
