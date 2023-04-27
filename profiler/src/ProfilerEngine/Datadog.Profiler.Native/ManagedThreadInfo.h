@@ -13,6 +13,7 @@
 
 #include <atomic>
 #include <memory>
+#include <utility>
 
 
 static constexpr int32_t MinFieldAlignRequirement = 8;
