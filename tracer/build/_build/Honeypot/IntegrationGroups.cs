@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using GeneratePackageVersions;
 using Nuke.Common;
+using Logger = Serilog.Log;
 
 namespace Honeypot
 {
@@ -148,7 +149,7 @@ namespace Honeypot
 
                 if (latestSupportedPackage is null)
                 {
-                    Logger.Warn($"No version of {packageName} below maximum package version {MaximumAssemblyVersion}." +
+                    Logger.Warning($"No version of {packageName} below maximum package version {MaximumAssemblyVersion}." +
                                 $"Using latest instead");
                 }
 

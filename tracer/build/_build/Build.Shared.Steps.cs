@@ -9,6 +9,7 @@ using Nuke.Common.Tools.MSBuild;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
+using Logger = Serilog.Log;
 
 partial class Build
 {
