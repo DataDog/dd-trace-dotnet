@@ -20,7 +20,7 @@ internal static class DatadogLoggingFactory
     private const int DefaultRateLimit = 0;
     private const int DefaultMaxLogFileSize = 10 * 1024 * 1024;
 
-    public static DatadogLoggingConfiguration GetConfiguration(IConfigurationSource source)
+    public static DatadogLoggingConfiguration GetConfiguration(LayeredSource source)
     {
         var logSinkOptions = source.GetString(ConfigurationKeys.LogSinks)
                                    ?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
@@ -31,7 +31,7 @@ internal static class DatadogLoggingFactory
             fileConfig = GetFileLoggingConfiguration(source);
         }
 
-        var rateLimit = source.GetInt32(ConfigurationKeys.LogRateLimit) switch
+        var rateLimit = source.GetInt32(ConfigurationKeys.LogRateLimit, DefaultRateLimit) switch
         {
             >= 0 and { } r => r,
             _ => DefaultRateLimit,

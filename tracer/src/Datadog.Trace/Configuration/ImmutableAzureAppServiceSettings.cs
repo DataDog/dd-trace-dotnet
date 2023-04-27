@@ -39,7 +39,7 @@ namespace Datadog.Trace.Configuration
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        public ImmutableAzureAppServiceSettings(IConfigurationSource? source)
+        public ImmutableAzureAppServiceSettings(LayeredSource? source)
         {
             source ??= NullConfigurationSource.Instance;
             var apiKey = source.GetString(Configuration.ConfigurationKeys.ApiKey);

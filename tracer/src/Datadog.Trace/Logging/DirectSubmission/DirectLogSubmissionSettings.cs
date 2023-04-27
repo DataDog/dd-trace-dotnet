@@ -32,7 +32,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
         {
         }
 
-        public DirectLogSubmissionSettings(IConfigurationSource? source)
+        public DirectLogSubmissionSettings(LayeredSource source)
         {
             source ??= NullConfigurationSource.Instance;
             DirectLogSubmissionHost = source.GetString(ConfigurationKeys.DirectLogSubmission.Host)

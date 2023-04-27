@@ -14,7 +14,7 @@ namespace Datadog.Trace.Ci.Configuration
     {
         private TracerSettings? _tracerSettings;
 
-        public CIVisibilitySettings(IConfigurationSource source)
+        public CIVisibilitySettings(LayeredSource source)
         {
             Enabled = source.GetBool(ConfigurationKeys.CIVisibility.Enabled) ?? false;
             Agentless = source.GetBool(ConfigurationKeys.CIVisibility.AgentlessEnabled) ?? false;

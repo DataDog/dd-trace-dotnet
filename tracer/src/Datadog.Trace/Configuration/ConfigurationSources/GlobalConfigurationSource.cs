@@ -19,35 +19,33 @@ internal class GlobalConfigurationSource
     /// <summary>
     /// Gets the configuration source instance.
     /// </summary>
-    internal static IConfigurationSource Instance { get; private set;  } = CreateDefaultConfigurationSource();
+    internal static LayeredSource Instance { get; private set;  } = CreateDefaultConfigurationSource();
 
     /// <summary>
     /// Creates a <see cref="IConfigurationSource"/> by combining environment variables,
     /// AppSettings where available, and a local datadog.json file, if present.
     /// </summary>
     /// <returns>A new <see cref="IConfigurationSource"/> instance.</returns>
-    internal static CompositeConfigurationSource CreateDefaultConfigurationSource()
+    internal static LayeredSource CreateDefaultConfigurationSource()
     {
         // env > AppSettings > datadog.json
-        var configurationSource = new CompositeConfigurationSource
-        {
-            new EnvironmentConfigurationSource(),
+        var configurationSource = new LayeredSource();
+        configurationSource.Add("environment", new EnvironmentConfigurationSource());
 
 #if NETFRAMEWORK
-            // on .NET Framework only, also read from app.config/web.config
-            new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings)
+        // on .NET Framework only, also read from app.config/web.config
+        configurationSource.Add("configFile", new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings));
 #endif
-        };
 
         if (TryLoadJsonConfigurationFile(configurationSource, null, out var jsonConfigurationSource))
         {
-            configurationSource.Add(jsonConfigurationSource);
+            configurationSource.Add("dd-config-file", jsonConfigurationSource);
         }
 
         return configurationSource;
     }
 
-    internal static bool TryLoadJsonConfigurationFile(IConfigurationSource configurationSource, string? baseDirectory, [NotNullWhen(true)] out IConfigurationSource? jsonConfigurationSource)
+    internal static bool TryLoadJsonConfigurationFile(LayeredSource configurationSource, string? baseDirectory, [NotNullWhen(true)] out IConfigurationSource? jsonConfigurationSource)
     {
         try
         {

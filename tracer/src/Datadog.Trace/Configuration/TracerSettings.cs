@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Propagators;
@@ -54,11 +55,15 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         public TracerSettings(IConfigurationSource? source)
+        : this (new LayeredSource(ConfigurationOrigins.Code, source))
+        {
+        }
+
+        internal TracerSettings(LayeredSource source)
         {
             var commaSeparator = new[] { ',' };
-            source ??= NullConfigurationSource.Instance;
 
-            Environment = source.GetString(ConfigurationKeys.Environment);
+            Environment = source.GetString(ConfigurationKeys.Environment, null);
 
             ServiceName = source.GetString(ConfigurationKeys.ServiceName) ??
                           // backwards compatibility for names used in the past

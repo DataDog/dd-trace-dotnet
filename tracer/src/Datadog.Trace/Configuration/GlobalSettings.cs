@@ -28,7 +28,7 @@ namespace Datadog.Trace.Configuration
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        internal GlobalSettings(IConfigurationSource? source)
+        internal GlobalSettings(LayeredSource? source)
         {
             DebugEnabled = source?.GetBool(ConfigurationKeys.DebugEnabled) ??
                            // default value
