@@ -11,3 +11,4 @@
 using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1636:File header copyright text should match", Justification = "Different templates between tracer and profiler", Scope = "namespace", Target = "~N:Datadog.Trace")]
+[assembly: SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1636:File header copyright text should match", Justification = "Different templates between tracer and profiler", Scope = "namespace", Target = "~N:Datadog.Trace.TestHelpers")]
