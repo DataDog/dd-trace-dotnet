@@ -83,7 +83,7 @@ internal class IastRequestContext
                         foreach (var keyValue in bodyExtractedDic)
                         {
                             AddExtractedBody(keyValue.Value, keyValue.Key);
-                            AddExtractedBody(keyValue.Key, key);
+                            _taintedObjects.TaintInputString(keyValue.Key, new Source(SourceType.GetByte(SourceTypeName.RequestBody), key, keyValue.Key));
                         }
                     }
                 }

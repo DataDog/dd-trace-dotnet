@@ -15,10 +15,6 @@
         post("/data", "arg=database()");
     }
 
-    window.postJson = function (url, data) {
-        post(url, JSON.stringify({ query: data }));
-    }
-
     window.postJson2 = function (url, data) {
         let fullUrl = window.location + url;
         console.log(fullUrl);

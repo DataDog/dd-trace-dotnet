@@ -127,7 +127,6 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         private ActionResult Query(QueryData query)
         {
-
             if (!string.IsNullOrEmpty(query.Query))
             {
                 return ExecuteQuery(query.Query);
@@ -154,7 +153,6 @@ namespace Samples.Security.AspNetCore5.Controllers
                     }
                 }
             }
-
 
             if (query.StringMap is not null)
             {
