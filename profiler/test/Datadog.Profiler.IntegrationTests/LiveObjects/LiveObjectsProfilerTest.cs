@@ -30,6 +30,7 @@ namespace Datadog.Profiler.IntegrationTests.LiveObjects
             // disable default profilers
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
             // enable Live Objects profiler
             runner.Environment.SetVariable(EnvironmentVariables.LiveHeapProfilerEnabled, "1");
 

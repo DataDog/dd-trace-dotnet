@@ -5,6 +5,7 @@ using System.Linq;
 using Nuke.Common;
 using Nuke.Common.Execution;
 using Nuke.Common.Tooling;
+using Nuke.Common.Utilities;
 
 [TypeConverter(typeof(TargetFrameworkTypeConverter))]
 public class TargetFramework : Enumeration
@@ -27,7 +28,7 @@ public class TargetFramework : Enumeration
     public static TargetFramework[] GetFrameworks(params TargetFramework[] except)
     {
         return typeof(TargetFramework)
-              .GetFields(ReflectionService.Static)
+              .GetFields(ReflectionUtility.Static)
               .Select(x => x.GetValue(null))
               .Cast<TargetFramework>()
               .Except(except ?? Array.Empty<TargetFramework>())
@@ -45,7 +46,7 @@ public class TargetFramework : Enumeration
                 var matchingFields = AllTargetFrameworks
                     .Where(x=> string.Equals(x.Value, stringValue, StringComparison.OrdinalIgnoreCase))
                     .ToList();
-                ControlFlow.Assert(matchingFields.Count == 1, "matchingFields.Count == 1");
+                Assert.True(matchingFields.Count == 1, "matchingFields.Count == 1");
                 return matchingFields.Single();
             }
 

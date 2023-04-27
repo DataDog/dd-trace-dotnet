@@ -503,10 +503,10 @@ TEST(ConfigurationTest, CheckNamedPipePathWhenProvided)
     EXPECT_EQ(configuration.GetNamedPipeName(), expectedPath);
 }
 
-TEST(ConfigurationTest, CheckTimestampAsLabelIsDisabledByDefault)
+TEST(ConfigurationTest, CheckTimestampAsLabelIsEnabledByDefault)
 {
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.IsTimestampsAsLabelEnabled(), false);
+    ASSERT_THAT(configuration.IsTimestampsAsLabelEnabled(), true);
 }
 
 TEST(ConfigurationTest, CheckTimestampAsLabelIsEnabledIfEnvVarSetToTrue)
@@ -585,10 +585,10 @@ TEST(ConfigurationTest, CheckCpuThreadsThresholdIfCorrectValue)
     ASSERT_THAT(threshold, 16);
 }
 
-TEST(ConfigurationTest, CheckGarbageCollectionProfilingIsDisabledByDefault)
+TEST(ConfigurationTest, CheckGarbageCollectionProfilingIsEnabledByDefault)
 {
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.IsGarbageCollectionProfilingEnabled(), false);
+    ASSERT_THAT(configuration.IsGarbageCollectionProfilingEnabled(), true);
 }
 
 TEST(ConfigurationTest, CheckGarbageCollectionProfilingIsEnabledIfEnvVarSetToTrue)

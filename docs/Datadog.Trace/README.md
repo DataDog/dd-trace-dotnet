@@ -6,6 +6,8 @@ This package contains the Datadog .NET APM tracer for configuring custom instrum
 
 > If you are using automatic instrumentation and would like to interact with APM only through C# attributes, see the [Datadog.Trace.Annotations](https://www.nuget.org/packages/Datadog.Trace.Annotations/) NuGet package.
 
+Please note that Datadog does not support tracing (manual or automatic) in partial-trust environments.
+
 ## Getting Started
 
 1. Configure the Datadog agent for APM [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core#configure-the-datadog-agent-for-apm).
@@ -68,6 +70,8 @@ This section describes some of the most important breaking changes. For full det
 .NET Tracer 2.0 adds support for .NET 6.0 and raises the minimum supported version of .NET Framework from .NET Framework 4.5 to .NET Framework 4.6.1. If you are currently targeting version < 4.6.1, we suggest you upgrade [in line with Microsoft's guidance](https://docs.microsoft.com/en-us/lifecycle/products/microsoft-net-framework).
 
 For full details of supported versions, see [our documentation on .NET Framework compatibility requirements](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-framework) and [.NET/.NET Core compatibility requirements](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-core).
+
+> Note that Datadog does not support tracing (manual or automatic) in partial-trust environments.
 
 ### Singleton `Tracer` instances
 
