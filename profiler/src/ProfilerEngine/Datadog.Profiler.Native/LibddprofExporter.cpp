@@ -325,7 +325,7 @@ ddog_Endpoint LibddprofExporter::CreateEndpoint(IConfiguration* configuration)
     return ddog_Endpoint_agent(FfiHelper::StringToCharSlice(_agentUrl));
 }
 
-LibddprofExporter::ProfileInfoScope LibddprofExporter::GetInfo(std::string_view runtimeId)
+LibddprofExporter::ProfileInfoScope LibddprofExporter::GetOrCreateInfo(std::string_view runtimeId)
 {
     std::lock_guard lock(_perAppInfoLock);
 
@@ -336,7 +336,7 @@ LibddprofExporter::ProfileInfoScope LibddprofExporter::GetInfo(std::string_view 
 
 void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
 {
-    auto profileInfoScope = GetInfo(sample->GetRuntimeId());
+    auto profileInfoScope = GetOrCreateInfo(sample->GetRuntimeId());
 
     if (profileInfoScope.profileInfo.profile == nullptr)
     {
@@ -414,7 +414,7 @@ void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
     profileInfoScope.profileInfo.samplesCount++;
 }
 
-std::optional<LibddprofExporter::ProfileInfoScope> LibddprofExporter::TryGetInfo(const std::string& runtimeId)
+std::optional<LibddprofExporter::ProfileInfoScope> LibddprofExporter::GetInfo(const std::string& runtimeId)
 {
     std::lock_guard lock(_perAppInfoLock);
 
@@ -426,12 +426,13 @@ std::optional<LibddprofExporter::ProfileInfoScope> LibddprofExporter::TryGetInfo
         return {};
     }
 
+    // The line below will implicit create a ProfileInfoScope from the ProfileInfo
     return it->second;
 }
 
 void LibddprofExporter::SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint)
 {
-    auto scope = TryGetInfo(runtimeId);
+    auto scope = GetInfo(runtimeId);
 
     if (!scope.has_value())
     {
@@ -542,7 +543,7 @@ bool LibddprofExporter::Export()
         // This way, we know that nobody else will ever use that profile again, and we can take our time to manipulate it
         // outside of the lock.
         {
-            const auto scope = GetInfo(runtimeId);
+            const auto scope = GetOrCreateInfo(runtimeId);
 
             // Get everything we need then release the lock
             profile = scope.profileInfo.profile;
