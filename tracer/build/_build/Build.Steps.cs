@@ -96,50 +96,9 @@ partial class Build
     [LazyPathExecutable(name: "otool")] readonly Lazy<Tool> OTool;
     [LazyPathExecutable(name: "lipo")] readonly Lazy<Tool> Lipo;
 
-    IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatformForTracer
-    {
-        get
-        {
-            if (TargetPlatform == MSBuildTargetPlatform.x64)
-            {
-                if (ForceARM64BuildInWindows)
-                {
-                    return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, ARM64ECTargetPlatform };
-                }
-                else
-                {
-                    return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 };
-                }
-            }
-            else if (TargetPlatform == ARM64TargetPlatform)
-            {
-                return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, ARM64ECTargetPlatform };
-            }
-            else if (TargetPlatform == MSBuildTargetPlatform.x86)
-            {
-                return new[] { MSBuildTargetPlatform.x86 };
-            }
+    TargetPlatform[] ArchitecturesForPlatformForTracer => Architectures(supportsWindowsArm64: true);
 
-            return new[] { TargetPlatform };
-        }
-    }
-
-    IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatformForProfiler
-    {
-        get
-        {
-            if (TargetPlatform == MSBuildTargetPlatform.x64)
-            {
-                return new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 };
-            }
-            else if (TargetPlatform == MSBuildTargetPlatform.x86)
-            {
-                return new[] { MSBuildTargetPlatform.x86 };
-            }
-
-            return new[] { TargetPlatform };
-        }
-    }
+    TargetPlatform[] ArchitecturesForPlatformForProfiler => Architectures(supportsWindowsArm64: false);
 
     bool IsArm64 => RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
     string UnixArchitectureIdentifier => IsArm64 ? "arm64" : TargetPlatform.ToString();
@@ -369,11 +328,8 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            // If we're building for x64, build for x86 too
-            var platforms =
-                Equals(TargetPlatform, MSBuildTargetPlatform.x64)
-                    ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
-                    : new[] { MSBuildTargetPlatform.x86 };
+            // Tests don't support arm64 on Windows
+            var platforms = Architectures(supportsWindowsArm64: false);
 
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
             MSBuild(s => s
@@ -1678,7 +1634,7 @@ partial class Build
                 true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions){dockerFilter}{armFilter}",
             };
 
-            var targetPlatform = IsArm64 ? (MSBuildTargetPlatform) "arm64" : TargetPlatform;
+            var targetPlatform = IsArm64 ? TargetPlatform.arm64 : TargetPlatform;
 
             try
             {
@@ -2302,4 +2258,15 @@ partial class Build
             .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")) //nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             .CombineWith(projPaths, (settings, projPath) => settings.SetProjectFile(projPath)));
     }
+
+    TargetPlatform[] Architectures(bool supportsWindowsArm64)
+    => (RuntimeInformation.IsOSPlatform(OSPlatform.Windows), TargetPlatform, PlatformRequirement, supportsArm64: supportsWindowsArm64) switch
+    {
+        (true, TargetPlatform.arm64 or TargetPlatform.arm64ec, PlatformRequirement.Single, false) => throw new Exception($"Requested {TargetPlatform} platform build on Windows, but ARM64 is not supported"),
+        (_, _, PlatformRequirement.Single, _) => new[] { TargetPlatform },
+        (true, TargetPlatform.x64, PlatformRequirement.ForceWindowsArm64, true) => new[] { TargetPlatform.x64, TargetPlatform.x86, TargetPlatform.arm64ec },
+        (_, TargetPlatform.x64, PlatformRequirement.ForceWindowsArm64 or PlatformRequirement.Default, _) => new[] { TargetPlatform.x64, TargetPlatform.x86},
+        (false, TargetPlatform.arm64, _, _) => new[] { TargetPlatform.x64, TargetPlatform.x86, TargetPlatform.arm64ec },
+        _ => new[] { TargetPlatform },
+    };
 }
