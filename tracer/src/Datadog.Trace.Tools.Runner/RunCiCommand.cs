@@ -336,7 +336,7 @@ namespace Datadog.Trace.Tools.Runner
                                     // Found using the OpenCover format.
 
                                     // Adds the global code coverage percentage to the session
-                                    session.SetTag(CommonTags.TestSessionCodeCoverageEnabled, "true");
+                                    session.SetTag(CommonTags.TestCodeCoverageEnabled, "true");
                                     session.SetTag(CommonTags.CodeCoverageTotalLines, Math.Round(seqCovValue, 2).ToString("F2", CultureInfo.InvariantCulture));
                                     Log.Debug("RunCiCommand: OpenCover code coverage was reported: {Value}", seqCovValue);
                                 }
@@ -346,7 +346,7 @@ namespace Datadog.Trace.Tools.Runner
                                     // Found using the Cobertura format.
 
                                     // Adds the global code coverage percentage to the session
-                                    session.SetTag(CommonTags.TestSessionCodeCoverageEnabled, "true");
+                                    session.SetTag(CommonTags.TestCodeCoverageEnabled, "true");
                                     session.SetTag(CommonTags.CodeCoverageTotalLines, Math.Round(lineRateValue * 100, 2).ToString("F2", CultureInfo.InvariantCulture));
                                     Log.Debug("RunCiCommand: Cobertura code coverage was reported: {Value}", lineRateAttribute.Value);
                                 }
