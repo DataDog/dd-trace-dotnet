@@ -94,6 +94,8 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
             environment["DD_PROFILING_WALLTIME_ENABLED"] = "1";
             environment["DD_PROFILING_CPU_ENABLED"] = "1";
             environment["DD_PROFILING_ALLOCATION_ENABLED"] = "1";
+            environment["DD_PROFILING_CONTENTION_ENABLED"] = "1";
+            environment["DD_PROFILING_EXCEPTION_ENABLED"] = "1";
         }
     }
 
