@@ -61,7 +61,6 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
             }
 
             var environment = parameters.Process.StartInfo.Environment;
-            environment["DD_ENV"] = "benchnmark";
             environment["COR_ENABLE_PROFILING"] = "1";
             environment["CORECLR_ENABLE_PROFILING"] = "1";
             environment["COR_PROFILER"] = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
@@ -91,7 +90,6 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
             }
 
             environment["DD_TRACE_ENABLED"] = "0";
-            environment["DD_TRACE_DEBUG"] = "1";
             environment["DD_PROFILING_ENABLED"] = "1";
             environment["DD_PROFILING_WALLTIME_ENABLED"] = "1";
             environment["DD_PROFILING_CPU_ENABLED"] = "1";
