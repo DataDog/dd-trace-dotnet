@@ -272,8 +272,8 @@ namespace Datadog.Trace.MSBuild
                     projectSpan.SetTag(BuildTags.ErrorMessage, message);
                     projectSpan.SetTag(BuildTags.ErrorType, type);
                     projectSpan.SetTag(BuildTags.ErrorCode, code);
-                    projectSpan.SetTag(BuildTags.ErrorStartLine, lineNumber.ToString());
-                    projectSpan.SetTag(BuildTags.ErrorStartColumn, columnNumber.ToString());
+                    projectSpan.SetTag(BuildTags.ErrorStartLine, lineNumber?.ToString(CultureInfo.InvariantCulture) ?? string.Empty);
+                    projectSpan.SetTag(BuildTags.ErrorStartColumn, columnNumber?.ToString(CultureInfo.InvariantCulture) ?? string.Empty);
                     projectSpan.SetTag(BuildTags.ErrorProjectFile, projectFile);
 
                     if (!string.IsNullOrEmpty(e.File))
