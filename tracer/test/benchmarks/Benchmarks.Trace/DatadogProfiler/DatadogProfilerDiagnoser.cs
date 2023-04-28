@@ -43,6 +43,11 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
         if (signal == HostSignal.BeforeProcessStart)
         {
             var monitorHome = EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
+            if (monitorHome is not null && !Directory.Exists(monitorHome))
+            {
+                monitorHome = null;
+            }
+
             string? profiler32Path, profiler64Path, ldPreload, loaderConfig;
             if (FrameworkDescription.Instance.IsWindows())
             {
