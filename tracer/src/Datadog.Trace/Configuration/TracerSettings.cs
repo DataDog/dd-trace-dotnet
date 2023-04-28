@@ -12,8 +12,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.Schema;
-using Datadog.Trace.Configuration.Schema.V0;
-using Datadog.Trace.Configuration.Schema.V1;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Propagators;
@@ -630,7 +628,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets the metadata schema
         /// </summary>
-        internal ISchema Schema { get; set; }
+        internal NamingSchema Schema { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
@@ -724,11 +722,11 @@ namespace Datadog.Trace.Configuration
             return headerTags;
         }
 
-        private static ISchema CreateSchemaFromMetadataSchemaVersion(string? value) =>
+        private static NamingSchema CreateSchemaFromMetadataSchemaVersion(string? value) =>
             value switch
             {
-                "v1" or "V1" => new SchemaV1(),
-                _ => new SchemaV0(),
+                "v1" or "V1" => new NamingSchema(SchemaVersion.V1),
+                _ => new NamingSchema(SchemaVersion.V0),
             };
 
         internal static string[] TrimSplitString(string? textValues, char[] separators)
