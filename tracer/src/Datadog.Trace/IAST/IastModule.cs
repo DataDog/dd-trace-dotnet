@@ -163,10 +163,11 @@ internal static class IastModule
         var vulnerability = new Vulnerability(
             vulnerabilityType,
             new Location(
-                filename,
-                string.IsNullOrEmpty(filename) ? GetMethodName(frameInfo.StackFrame) : null,
-                !string.IsNullOrEmpty(filename) ? frameInfo.StackFrame?.GetFileLineNumber() : null,
-                currentSpan?.SpanId),
+                stackFile: filename,
+                methodName: string.IsNullOrEmpty(filename) ? frameInfo.StackFrame?.GetMethod()?.Name : null,
+                line: !string.IsNullOrEmpty(filename) ? frameInfo.StackFrame?.GetFileLineNumber() : null,
+                spanId: currentSpan?.SpanId,
+                methodTypeName: string.IsNullOrEmpty(filename) ? GetMethodTypeName(frameInfo.StackFrame) : null),
             new Evidence(evidenceValue, tainted?.Ranges));
 
         if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
@@ -203,20 +204,18 @@ internal static class IastModule
         return scope;
     }
 
-    private static string? GetMethodName(StackFrame? frame)
+    private static string? GetMethodTypeName(StackFrame? frame)
     {
         var method = frame?.GetMethod();
         var declaringType = method?.DeclaringType;
-        var namespaceName = declaringType?.Namespace;
-        var typeName = declaringType?.Name;
-        var methodName = method?.Name;
+        var typeName = declaringType?.FullName;
 
-        if (methodName == null || typeName == null || namespaceName == null)
+        if (method == null || typeName == null)
         {
             return null;
         }
 
-        return $"{namespaceName}.{typeName}::{methodName}";
+        return typeName;
     }
 
     private static bool InvalidHashAlgorithm(string algorithm)

@@ -165,10 +165,6 @@ public class InstrumentationTestsBase
         {
             path.ToString().Should().Contain(location, "Incorrect path: " + path);
         }
-        else
-        {
-            method.ToString().Should().Contain(location, "Incorrect method: " + method);
-        }
     }
 
     private List<object> GetGeneratedVulnerabilities()

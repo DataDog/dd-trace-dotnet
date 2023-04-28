@@ -14,7 +14,7 @@ public class LocationTests
     [Fact]
     public void GivenALocation_WhenCreatedFromFile_PathIsStored()
     {
-        var location = new Location("/mydir/file.cs", null, 23, 4);
+        var location = new Location("/mydir/file.cs", null, 23, 4, null);
         location.Method.Should().BeNull();
         location.Path.Should().Be("file.cs");
     }
@@ -22,18 +22,19 @@ public class LocationTests
     [Fact]
     public void GivenALocation_WhenCreatedFromMethod_MethodIsStored()
     {
-        var method = "Samples.InstrumentedTests.Iast.Vulnerabilities.CommandInjectionTests::<GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable>b__6_0";
-        var location = new Location(null, method, 23, 4);
-        location.Path.Should().Be("Samples.InstrumentedTests.Iast.Vulnerabilities.CommandInjectionTests");
-        location.Method.Should().Be("GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable");
+        var method = "GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable";
+        var typeName = "Samples.InstrumentedTests.Iast.Vulnerabilities.CommandInjectionTests";
+        var location = new Location(null, method, 23, 4, typeName);
+        location.Path.Should().Be(typeName);
+        location.Method.Should().Be(method);
     }
 
     [Fact]
     public void GivenALocation_WhenCreatedFromMethod_MethodIsStored2()
     {
-        var method = "Samples.InstrumentedTests.Iast.Vulnerabilities.CommandInjectionTests::GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable";
-        var location = new Location(null, method, 23, 4);
-        location.Path.Should().Be("Samples.InstrumentedTests.Iast.Vulnerabilities.CommandInjectionTests");
+        var method = "GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable";
+        var location = new Location(null, method, null, 4, null);
+        location.Path.Should().BeNull();
         location.Method.Should().Be("GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable");
     }
 
@@ -41,7 +42,7 @@ public class LocationTests
     public void GivenALocation_WhenCreatedFromMethod_MethodIsStored3()
     {
         var method = "Samples.InstrumentedTests.Iast.Vulnerabilities.CommandInjectionTests.GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable";
-        var location = new Location(null, method, 23, 4);
+        var location = new Location(null, method, 23, 4, null);
         location.Path.Should().BeNull();
         location.Method.Should().Be("Samples.InstrumentedTests.Iast.Vulnerabilities.CommandInjectionTests.GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable");
     }
@@ -49,7 +50,7 @@ public class LocationTests
     [Fact]
     public void GivenALocation_WhenCreatedFromNull_NothingIsStored()
     {
-        var location = new Location(null, null, 23, 4);
+        var location = new Location(null, null, 23, 4, null);
         location.Path.Should().BeNull();
         location.Method.Should().BeNull();
     }
