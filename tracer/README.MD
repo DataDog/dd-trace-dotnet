@@ -28,13 +28,14 @@ You can develop the tracer on various environments.
   - Individual components
     - When opening a solution, Visual Studio will prompt you to install any missing components.
       The prompt will appear in the "Solution Explorer". A list of all recommended components can be found in our [.vsconfig](../.vsconfig)-file.
-- [.NET 6.0 SDK](https://dotnet.microsoft.com/download/dotnet/6.0)
-  - Optional: [.NET 6.0 x86 SDK](https://dotnet.microsoft.com/download/dotnet/6.0) to run 32-bit tests locally
+- [.NET 7.0 SDK](https://dotnet.microsoft.com/download/dotnet/7.0)
+  - Optional: [.NET 7.0 x86 SDK](https://dotnet.microsoft.com/download/dotnet/7.0) to run 32-bit tests locally
 - Optional: ASP.NET Core Runtimes to run tests locally
   - [ASP.NET Core 2.1](https://dotnet.microsoft.com/download/dotnet/2.1)
   - [ASP.NET Core 3.0](https://dotnet.microsoft.com/download/dotnet/3.0)
   - [ASP.NET Core 3.1](https://dotnet.microsoft.com/download/dotnet/3.1)
   - [ASP.NET Core 5.0](https://dotnet.microsoft.com/download/dotnet/5.0)
+  - [ASP.NET Core 6.0](https://dotnet.microsoft.com/download/dotnet/6.0)
 - Optional: [nuget.exe CLI](https://www.nuget.org/downloads) v5.3 or newer
 - Optional: [WiX Toolset 3.11.1](http://wixtoolset.org/releases/) or newer to build Windows installer (msi)
   - [WiX Toolset Visual Studio Extension](https://wixtoolset.org/releases/) to build installer from Visual Studio
