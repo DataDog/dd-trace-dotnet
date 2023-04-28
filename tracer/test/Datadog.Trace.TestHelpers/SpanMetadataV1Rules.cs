@@ -326,6 +326,8 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "amqp.command")
                 .Matches(Type, "queue"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured"))
             .Tags(s => s
                 .IsPresent("amqp.command")
                 .IsOptional("amqp.delivery_mode")
