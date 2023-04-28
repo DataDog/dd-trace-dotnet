@@ -30,7 +30,7 @@ internal class RumLibraryInvoker
         _scanDelegate = GetDelegateForNativeFunction<ScanDelegate>(libraryHandle, "scan");
     }
 
-    private delegate RumScanStatus ScanDelegate(ref RumScanResultStruct result, ref string document);
+    private delegate RumScanStatus ScanDelegate(ref RumScanResultStruct result, string document);
 
     internal bool ExportErrorHappened { get; private set; }
 
@@ -86,5 +86,5 @@ internal class RumLibraryInvoker
     private T GetDelegateForNativeFunction<T>(IntPtr handle, string functionName)
         where T : Delegate => GetDelegateForNativeFunction<T>(handle, functionName, out _);
 
-    internal RumScanStatus Scan(ref RumScanResultStruct result, ref string document) => _scanDelegate(ref result, ref document);
+    internal RumScanStatus Scan(ref RumScanResultStruct result, string document) => _scanDelegate(ref result, document);
 }

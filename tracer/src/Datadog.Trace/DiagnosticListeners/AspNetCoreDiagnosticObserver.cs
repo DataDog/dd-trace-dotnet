@@ -101,10 +101,6 @@ namespace Datadog.Trace.DiagnosticListeners
                     _hostingHttpRequestInStartEventKey = eventName;
                     OnHostingHttpRequestInStart(arg);
                 }
-                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.BeginRequest"))
-                {
-                    OnHostingBeginRequest(arg);
-                }
 
                 return;
             }
@@ -412,18 +408,6 @@ namespace Datadog.Trace.DiagnosticListeners
             return span;
         }
 
-        private void OnHostingBeginRequest(object arg)
-        {
-            var tracer = CurrentTracer;
-            var scope = tracer.InternalActiveScope;
-            var httpContext = scope is not null ? arg.DuckCast<HttpRequestInStopStruct>().HttpContext : null;
-
-            if (httpContext is not null)
-            {
-                RumRequestInjector.Instance.InjectRumRequest(httpContext);
-            }
-        }
-
         private void OnHostingHttpRequestInStart(object arg)
         {
             var tracer = CurrentTracer;
@@ -442,6 +426,9 @@ namespace Datadog.Trace.DiagnosticListeners
                 HttpContext httpContext = requestStruct.HttpContext;
                 if (shouldTrace)
                 {
+                    // Change the response body for RUM
+                    RumRequestInjector.UpdateStreamResponseBody(httpContext);
+
                     // Use an empty resource name here, as we will likely replace it as part of the request
                     // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
                     var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, CurrentSecurity, httpContext, resourceName: string.Empty);

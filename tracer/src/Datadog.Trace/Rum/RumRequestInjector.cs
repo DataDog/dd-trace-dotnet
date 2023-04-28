@@ -7,6 +7,7 @@
 #nullable enable
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -47,27 +48,17 @@ internal sealed class RumRequestInjector
     // Public property to access the singleton instance
     public static RumRequestInjector Instance => _instance.Value;
 
-    public void InjectRumRequest(HttpContext httpContext)
+    public static void UpdateStreamResponseBody(HttpContext httpContext)
     {
-        httpContext.Response.OnStarting(async () => await Inject().ConfigureAwait(false));
-        async Task Inject()
-        {
-            if (!IsRequestHandled(httpContext) || !IsValidContentType(httpContext))
-            {
-                // Do not inject if the request is not handled or the content type is not valid
-                return;
-            }
+        // Store the current response body stream into item of HttpContext
+        httpContext.Items["DD_RUM_ResponseBodyStream"] = httpContext.Response.Body;
 
-            // Get the html of the response body
-            var html = await GetHtml(httpContext).ConfigureAwait(false);
+        // Create a new MemoryStream to replace the current response body stream
+        var memoryStream = new MemoryStream();
+        httpContext.Response.Body = memoryStream;
 
-            // Scan the html using the shared library
-            var scanResult = Scan(ref html);
-
-            // Add <script>alert(1)</script> to the response body of httpContext
-            var bytes = Encoding.UTF8.GetBytes("<script>alert(1)</script>");
-            await httpContext.Response.Body.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
-        }
+        // Add a callback to inject the script into the response body
+        httpContext.Response.OnStarting(async () => await Instance.Inject(httpContext).ConfigureAwait(false));
     }
 
     // Only edit response of status code:
@@ -87,32 +78,44 @@ internal sealed class RumRequestInjector
     // Get the html of the response body
     private static async Task<string> GetHtml(HttpContext httpContext)
     {
-        var originalResponseBody = httpContext.Response.Body;
+        var memoryStream = (MemoryStream)httpContext.Response.Body;
 
-        try
+        memoryStream.Seek(0, SeekOrigin.Begin);
+        var body = await new StreamReader(memoryStream).ReadToEndAsync().ConfigureAwait(false);
+        memoryStream.Seek(0, SeekOrigin.Begin);
+
+        return body;
+    }
+
+    private async Task Inject(HttpContext httpContext)
+    {
+        if (!IsRequestHandled(httpContext) || !IsValidContentType(httpContext))
         {
-            using var memoryStream = new MemoryStream();
-            httpContext.Response.Body = memoryStream;
-
-            // Read the content of the memory stream
-            using var streamReader = new StreamReader(memoryStream, Encoding.UTF8);
-            string htmlContent = await streamReader.ReadToEndAsync().ConfigureAwait(false);
-
-            // Write the content back to the original response body
-            memoryStream.Seek(0, SeekOrigin.Begin);
-            await memoryStream.CopyToAsync(originalResponseBody).ConfigureAwait(false);
-
-            return htmlContent;
+            // Do not inject if the request is not handled or the content type is not valid
+            return;
         }
-        finally
-        {
-            // Restore the original response body
-            httpContext.Response.Body = originalResponseBody;
-        }
+
+        // Get the html of the response body
+        var html = await GetHtml(httpContext).ConfigureAwait(false);
+
+        // Restore the original response body stream
+        httpContext.Response.Body = (Stream)httpContext.Items["DD_RUM_ResponseBodyStream"];
+
+        // Scan the html using the shared library
+        var scanResult = Scan(html);
+
+        var test = Marshal.PtrToStringAuto(scanResult.MatchRule);
+
+        // Concat the html and the script
+        var result = html + scanResult;
+
+        // Add the changes to the response body
+        var bytes = Encoding.UTF8.GetBytes(result);
+        await httpContext.Response.Body.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
     }
 
     // Scan the html using the shared library
-    private RumScanResultStruct Scan(ref string? html)
+    private RumScanResultStruct Scan(string html)
     {
         RumScanResultStruct retNative = default;
         if (_rumLibraryInvoker == null)
@@ -120,7 +123,7 @@ internal sealed class RumRequestInjector
             return retNative;
         }
 
-        RumScanStatus status = _rumLibraryInvoker.Scan(ref retNative, ref html);
+        RumScanStatus status = _rumLibraryInvoker.Scan(ref retNative, html);
         if (status != RumScanStatus.SCAN_MATCH)
         {
             // logs happened during the process of scanning
