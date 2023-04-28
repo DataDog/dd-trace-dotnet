@@ -224,6 +224,8 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "http.request")
                 .Matches(Type, "http"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured"))
             .Tags(s => s
                 .IsPresent("http-client-handler-type")
                 .IsPresent("http.method")
@@ -422,6 +424,8 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "http.request")
                 .Matches(Type, "http"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured"))
             .Tags(s => s
                 .IsOptional("http-client-handler-type")
                 .IsPresent("http.method")
