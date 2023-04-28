@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
@@ -22,6 +23,7 @@ using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Rum;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
@@ -98,6 +100,10 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     _hostingHttpRequestInStartEventKey = eventName;
                     OnHostingHttpRequestInStart(arg);
+                }
+                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.BeginRequest"))
+                {
+                    OnHostingBeginRequest(arg);
                 }
 
                 return;
@@ -404,6 +410,18 @@ namespace Datadog.Trace.DiagnosticListeners
             }
 
             return span;
+        }
+
+        private void OnHostingBeginRequest(object arg)
+        {
+            var tracer = CurrentTracer;
+            var scope = tracer.InternalActiveScope;
+            var httpContext = scope is not null ? arg.DuckCast<HttpRequestInStopStruct>().HttpContext : null;
+
+            if (httpContext is not null)
+            {
+                RumRequestInjector.Instance.InjectRumRequest(httpContext);
+            }
         }
 
         private void OnHostingHttpRequestInStart(object arg)

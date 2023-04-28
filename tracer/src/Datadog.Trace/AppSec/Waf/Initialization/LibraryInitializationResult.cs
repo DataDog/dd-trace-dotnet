@@ -5,20 +5,24 @@
 
 #nullable enable
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Rum;
 
 namespace Datadog.Trace.AppSec.Waf.Initialization;
 
 internal class LibraryInitializationResult
 {
-    private LibraryInitializationResult(bool exportErrorHappened, bool libraryLoadError, bool platformNotSupported, WafLibraryInvoker? wafLibraryInvoker = null)
+    private LibraryInitializationResult(bool exportErrorHappened, bool libraryLoadError, bool platformNotSupported, WafLibraryInvoker? wafLibraryInvoker = null, RumLibraryInvoker? rumLibraryInvoker = null)
     {
         ExportErrorHappened = exportErrorHappened;
         LibraryLoadError = libraryLoadError;
         PlatformNotSupported = platformNotSupported;
         WafLibraryInvoker = wafLibraryInvoker;
+        RumLibraryInvoker = rumLibraryInvoker;
     }
 
     internal WafLibraryInvoker? WafLibraryInvoker { get; }
+
+    internal RumLibraryInvoker? RumLibraryInvoker { get; }
 
     internal bool ExportErrorHappened { get; }
 
@@ -34,5 +38,7 @@ internal class LibraryInitializationResult
 
     internal static LibraryInitializationResult FromPlatformNotSupported() => new(false, false, true);
 
-    public static LibraryInitializationResult FromSuccess(WafLibraryInvoker wafLibraryInvoker) => new(false, false, false, wafLibraryInvoker);
+    public static LibraryInitializationResult FromSuccess(WafLibraryInvoker wafLibraryInvoker) => new(false, false, false, wafLibraryInvoker: wafLibraryInvoker);
+
+    public static LibraryInitializationResult FromSuccess(RumLibraryInvoker rumLibraryInvoker) => new(false, false, false, rumLibraryInvoker: rumLibraryInvoker);
 }

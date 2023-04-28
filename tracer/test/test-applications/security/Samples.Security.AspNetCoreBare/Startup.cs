@@ -41,6 +41,17 @@ namespace Samples.Security.AspNetCoreBare
                     await context.Response.WriteAsync("Yes");
                 });
             });
+            
+            // Hello world HTML
+            app.Map("/hello-world", builder =>
+            {
+                builder.Run(async context =>
+                {
+                    // Set text/html content type
+                    context.Response.ContentType = "text/html";
+                    await context.Response.WriteAsync("<!DOCTYPE html><html><head><title>Test</title></head><body><h1>Test</h1></body></html>");
+                });
+            });
 
             app.Map("/shutdown", builder =>
             {
