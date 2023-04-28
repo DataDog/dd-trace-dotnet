@@ -4,11 +4,16 @@
 // </copyright>
 #nullable enable
 
+using System.ComponentModel;
+
 namespace Datadog.Trace.ClrProfiler;
 
 /// <summary>
 /// Instrumentation Loader
+/// Needs to be public as invoked from managed loader
 /// </summary>
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class InstrumentationLoader
 {
     /// <summary>
