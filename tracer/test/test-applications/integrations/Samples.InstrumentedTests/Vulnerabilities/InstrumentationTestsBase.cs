@@ -159,7 +159,6 @@ public class InstrumentationTestsBase
         var vulnerability = GetGeneratedVulnerabilities()[0];
         var locationProperty = _locationProperty.Invoke(vulnerability, Array.Empty<object>());
         var path = _pathProperty.Invoke(locationProperty, Array.Empty<object>());
-        var method = _methodProperty.Invoke(locationProperty, Array.Empty<object>());
 
         if (!string.IsNullOrEmpty(path as string))
         {
