@@ -150,6 +150,8 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "cosmosdb.query")
                 .Matches(Type, "sql"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured"))
             .Tags(s => s
                 .IsOptional("cosmosdb.container")
                 .IsOptional("db.name")
