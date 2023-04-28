@@ -117,7 +117,7 @@ namespace Datadog.Trace.Configuration
             var headerTagsNormalizationFixEnabled = source.GetBool(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled) ?? true;
             // Filter out tags with empty keys or empty values, and trim whitespaces
             HeaderTags = InitializeHeaderTags(inputHeaderTags, headerTagsNormalizationFixEnabled);
-            Schema = CreateSchemaFromMetadataSchemaVersion(source.GetString(ConfigurationKeys.MetadataSchemaVersion));
+            MetadataSchemaVersion = ParseMetadataSchemaVersion(source.GetString(ConfigurationKeys.MetadataSchemaVersion));
 
             ServiceNameMappings = source.GetDictionary(ConfigurationKeys.ServiceNameMappings)
                                             ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
@@ -626,9 +626,9 @@ namespace Datadog.Trace.Configuration
         internal ImmutableAzureAppServiceSettings? AzureAppServiceMetadata { get; set; }
 
         /// <summary>
-        /// Gets or sets the metadata schema
+        /// Gets or sets the metadata schema version
         /// </summary>
-        internal NamingSchema Schema { get; set; }
+        internal SchemaVersion MetadataSchemaVersion { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
@@ -722,11 +722,11 @@ namespace Datadog.Trace.Configuration
             return headerTags;
         }
 
-        private static NamingSchema CreateSchemaFromMetadataSchemaVersion(string? value) =>
+        private static SchemaVersion ParseMetadataSchemaVersion(string? value) =>
             value switch
             {
-                "v1" or "V1" => new NamingSchema(SchemaVersion.V1),
-                _ => new NamingSchema(SchemaVersion.V0),
+                "v1" or "V1" => SchemaVersion.V1,
+                _ => SchemaVersion.V0,
             };
 
         internal static string[] TrimSplitString(string? textValues, char[] separators)

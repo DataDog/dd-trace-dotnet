@@ -41,12 +41,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                var schema = tracer.Settings.Schema;
-                string operationName = schema.Messaging.GetOutboundOperationName(MessagingType);
-                if (!tracer.Settings.TryGetServiceName(MessagingType, out string serviceName))
-                {
-                    serviceName = schema.Messaging.GetOutboundServiceName(tracer.DefaultServiceName, MessagingType);
-                }
+                string operationName = tracer.Schema.Messaging.GetOutboundOperationName(MessagingType);
+                string serviceName = tracer.Schema.Messaging.GetOutboundServiceName(MessagingType);
 
                 var tags = new KafkaTags(SpanKinds.Producer);
 
@@ -142,12 +138,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     }
                 }
 
-                var schema = tracer.Settings.Schema;
-                string operationName = schema.Messaging.GetInboundOperationName(MessagingType);
-                if (!tracer.Settings.TryGetServiceName(MessagingType, out string serviceName))
-                {
-                    serviceName = schema.Messaging.GetInboundServiceName(tracer.DefaultServiceName, MessagingType);
-                }
+                string operationName = tracer.Schema.Messaging.GetInboundOperationName(MessagingType);
+                string serviceName = tracer.Schema.Messaging.GetInboundServiceName(MessagingType);
 
                 var tags = new KafkaTags(SpanKinds.Consumer);
 

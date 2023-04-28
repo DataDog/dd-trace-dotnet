@@ -95,12 +95,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 port = dnsEndPoint.Port.ToString();
             }
 
-            var schema = tracer.Settings.Schema;
-            string operationName = schema.Database.GetOperationName(DatabaseType);
-            if (!tracer.Settings.TryGetServiceName(DatabaseType, out string serviceName))
-            {
-                serviceName = schema.Database.GetServiceName(tracer.DefaultServiceName, DatabaseType);
-            }
+            string operationName = tracer.Schema.Database.GetOperationName(DatabaseType);
+            string serviceName = tracer.Schema.Database.GetServiceName(DatabaseType);
 
             Scope scope = null;
 

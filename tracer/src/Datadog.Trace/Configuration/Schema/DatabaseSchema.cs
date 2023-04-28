@@ -5,24 +5,37 @@
 
 #nullable enable
 
+using System.Collections.Generic;
+
 namespace Datadog.Trace.Configuration.Schema
 {
     internal class DatabaseSchema
     {
         private readonly SchemaVersion _version;
+        private readonly string _defaultServiceName;
+        private readonly IDictionary<string, string>? _serviceNameMappings;
 
-        public DatabaseSchema(SchemaVersion version)
+        public DatabaseSchema(SchemaVersion version, string defaultServiceName, IDictionary<string, string>? serviceNameMappings)
         {
             _version = version;
+            _defaultServiceName = defaultServiceName;
+            _serviceNameMappings = serviceNameMappings;
         }
 
         public string GetOperationName(string databaseType) => $"{databaseType}.query";
 
-        public string GetServiceName(string applicationName, string databaseType)
-            => _version switch
+        public string GetServiceName(string databaseType)
+        {
+            if (_serviceNameMappings is not null && _serviceNameMappings.TryGetValue(databaseType, out var mappedServiceName))
             {
-                SchemaVersion.V1 => applicationName,
-                _ => $"{applicationName}-{databaseType}",
+                return mappedServiceName;
+            }
+
+            return _version switch
+            {
+                SchemaVersion.V1 => _defaultServiceName,
+                _ => $"{_defaultServiceName}-{databaseType}",
             };
+        }
     }
 }

@@ -87,7 +87,7 @@ namespace Datadog.Trace.Configuration
             HttpClientExcludedUrlSubstrings = settings.HttpClientExcludedUrlSubstrings;
             HttpServerErrorStatusCodes = settings.HttpServerErrorStatusCodes;
             HttpClientErrorStatusCodes = settings.HttpClientErrorStatusCodes;
-            Schema = settings.Schema;
+            MetadataSchemaVersion = settings.MetadataSchemaVersion;
             ServiceNameMappings = settings.ServiceNameMappings;
             TraceBufferSize = settings.TraceBufferSize;
             TraceBatchInterval = settings.TraceBatchInterval;
@@ -455,7 +455,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets the metadata schema version
         /// </summary>
-        internal NamingSchema Schema { get; }
+        internal SchemaVersion MetadataSchemaVersion { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources
@@ -508,7 +508,7 @@ namespace Datadog.Trace.Configuration
             {
                 return name;
             }
-            else if (Schema.Version != SchemaVersion.V0)
+            else if (MetadataSchemaVersion != SchemaVersion.V0)
             {
                 return tracer.DefaultServiceName;
             }

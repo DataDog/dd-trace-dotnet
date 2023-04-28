@@ -5,15 +5,21 @@
 
 #nullable enable
 
+using System.Collections.Generic;
+
 namespace Datadog.Trace.Configuration.Schema
 {
     internal class MessagingSchema
     {
         private readonly SchemaVersion _version;
+        private readonly string _defaultServiceName;
+        private readonly IDictionary<string, string>? _serviceNameMappings;
 
-        public MessagingSchema(SchemaVersion version)
+        public MessagingSchema(SchemaVersion version, string defaultServiceName, IDictionary<string, string>? serviceNameMappings)
         {
             _version = version;
+            _defaultServiceName = defaultServiceName;
+            _serviceNameMappings = serviceNameMappings;
         }
 
         public string GetInboundOperationName(string messagingSystem)
@@ -23,12 +29,19 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => $"{messagingSystem}.consume",
             };
 
-        public string GetInboundServiceName(string applicationName, string messagingSystem)
-            => _version switch
+        public string GetInboundServiceName(string messagingSystem)
+        {
+            if (_serviceNameMappings is not null && _serviceNameMappings.TryGetValue(messagingSystem, out var mappedServiceName))
             {
-                SchemaVersion.V1 => applicationName,
-                _ => $"{applicationName}-{messagingSystem}",
+                return mappedServiceName;
+            }
+
+            return _version switch
+            {
+                SchemaVersion.V1 => _defaultServiceName,
+                _ => $"{_defaultServiceName}-{messagingSystem}",
             };
+        }
 
         public string GetOutboundOperationName(string messagingSystem)
             => _version switch
@@ -37,11 +50,18 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => $"{messagingSystem}.produce",
             };
 
-        public string GetOutboundServiceName(string applicationName, string messagingSystem)
-            => _version switch
+        public string GetOutboundServiceName(string messagingSystem)
+        {
+            if (_serviceNameMappings is not null && _serviceNameMappings.TryGetValue(messagingSystem, out var mappedServiceName))
             {
-                SchemaVersion.V1 => applicationName,
-                _ => $"{applicationName}-{messagingSystem}",
+                return mappedServiceName;
+            }
+
+            return _version switch
+            {
+                SchemaVersion.V1 => _defaultServiceName,
+                _ => $"{_defaultServiceName}-{messagingSystem}",
             };
+        }
     }
 }

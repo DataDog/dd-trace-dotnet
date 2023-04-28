@@ -5,15 +5,17 @@
 
 #nullable enable
 
+using System.Collections.Generic;
+
 namespace Datadog.Trace.Configuration.Schema
 {
     internal class NamingSchema
     {
-        public NamingSchema(SchemaVersion version)
+        public NamingSchema(SchemaVersion version, string defaultServiceName, IDictionary<string, string>? serviceNameMappings)
         {
             Version = version;
-            Database = new DatabaseSchema(version);
-            Messaging = new MessagingSchema(version);
+            Database = new DatabaseSchema(version, defaultServiceName, serviceNameMappings);
+            Messaging = new MessagingSchema(version, defaultServiceName, serviceNameMappings);
         }
 
         // TODO: Temporary, we can probably delete this once we migrate all the code off MetadataSchemaVersion
