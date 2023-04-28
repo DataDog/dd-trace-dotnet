@@ -206,16 +206,7 @@ internal static class IastModule
 
     private static string? GetMethodTypeName(StackFrame? frame)
     {
-        var method = frame?.GetMethod();
-        var declaringType = method?.DeclaringType;
-        var typeName = declaringType?.FullName;
-
-        if (method == null || typeName == null)
-        {
-            return null;
-        }
-
-        return typeName;
+        return frame?.GetMethod()?.DeclaringType?.FullName;
     }
 
     private static bool InvalidHashAlgorithm(string algorithm)
