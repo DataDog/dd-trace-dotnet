@@ -32,6 +32,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => ComponentName;
 
+        [Metric(Trace.Tags.Measured)]
+        public double? Measured => 1.0;
+
         [Tag(Trace.Tags.KafkaPartition)]
         public string Partition { get; set; }
 

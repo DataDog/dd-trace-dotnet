@@ -8,6 +8,8 @@ namespace Datadog.Trace.Tagging
 {
     partial class KafkaTags
     {
+        // MeasuredBytes = System.Text.Encoding.UTF8.GetBytes("_dd.measured");
+        private static readonly byte[] MeasuredBytes = new byte[] { 95, 100, 100, 46, 109, 101, 97, 115, 117, 114, 101, 100 };
         // MessageQueueTimeMsBytes = System.Text.Encoding.UTF8.GetBytes("message.queue_time_ms");
         private static readonly byte[] MessageQueueTimeMsBytes = new byte[] { 109, 101, 115, 115, 97, 103, 101, 46, 113, 117, 101, 117, 101, 95, 116, 105, 109, 101, 95, 109, 115 };
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
@@ -148,6 +150,7 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
+                "_dd.measured" => Measured,
                 "message.queue_time_ms" => MessageQueueTimeMs,
                 _ => base.GetMetric(key),
             };
@@ -160,6 +163,9 @@ namespace Datadog.Trace.Tagging
                 case "message.queue_time_ms": 
                     MessageQueueTimeMs = value;
                     break;
+                case "_dd.measured": 
+                    Logger.Value.Warning("Attempted to set readonly metric {MetricName} on {TagType}. Ignoring.", key, nameof(KafkaTags));
+                    break;
                 default: 
                     base.SetMetric(key, value);
                     break;
@@ -168,6 +174,11 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateMetrics<TProcessor>(ref TProcessor processor)
         {
+            if (Measured is not null)
+            {
+                processor.Process(new TagItem<double>("_dd.measured", Measured.Value, MeasuredBytes));
+            }
+
             if (MessageQueueTimeMs is not null)
             {
                 processor.Process(new TagItem<double>("message.queue_time_ms", MessageQueueTimeMs.Value, MessageQueueTimeMsBytes));
@@ -178,6 +189,13 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
         {
+            if (Measured is not null)
+            {
+                sb.Append("_dd.measured (metric):")
+                  .Append(Measured.Value)
+                  .Append(',');
+            }
+
             if (MessageQueueTimeMs is not null)
             {
                 sb.Append("message.queue_time_ms (metric):")

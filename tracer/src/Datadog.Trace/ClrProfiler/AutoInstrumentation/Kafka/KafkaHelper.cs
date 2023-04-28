@@ -64,9 +64,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Tombstone = "true";
                 }
 
-                // Producer spans should always be measured
-                span.SetTag(Tags.Measured, "1");
-
                 tags.SetAnalyticsSampleRate(KafkaConstants.IntegrationId, settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(KafkaConstants.IntegrationId);
             }
@@ -173,9 +170,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 {
                     tags.Tombstone = "true";
                 }
-
-                // Consumer spans should always be measured
-                span.SetTag(Tags.Measured, "1");
 
                 tags.SetAnalyticsSampleRate(KafkaConstants.IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
 
