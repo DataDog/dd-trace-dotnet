@@ -5,7 +5,10 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
+using System.Web;
+using Microsoft.AspNetCore.Http;
 using System.Xml.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Logging;
@@ -163,7 +166,23 @@ internal class IastRequestContext
 
             AddRequestHeaders(request.Headers);
             AddQueryPath(request.Path);
+            AddRequestCookies(request.Cookies);
             _querySourcesAdded = true;
+        }
+    }
+
+    private void AddRequestCookies(HttpCookieCollection cookies)
+    {
+        foreach (string key in cookies.AllKeys)
+        {
+            var values = cookies[key].Values.GetValues(key);
+            if (values is not null)
+            {
+                foreach (string value in values)
+                {
+                    AddCookieData(key, value);
+                }
+            }
         }
     }
 
@@ -204,7 +223,16 @@ internal class IastRequestContext
             AddQueryPath(request.Path);
             AddQueryStringRaw(request.QueryString.Value);
             AddRequestHeaders(request.Headers);
+            AddRequestCookies(request.Cookies);
             _querySourcesAdded = true;
+        }
+    }
+
+    private void AddRequestCookies(IRequestCookieCollection cookies)
+    {
+        foreach (var cookie in cookies)
+        {
+            AddCookieData(cookie.Key, cookie.Value);
         }
     }
 
@@ -230,6 +258,12 @@ internal class IastRequestContext
     }
 
 #endif
+
+    private void AddCookieData(string name, string value)
+    {
+        _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.CookieValue), name, value));
+        _taintedObjects.TaintInputString(name, new Source(SourceType.GetByte(SourceTypeName.CookieName), name, null));
+    }
 
     private void AddHeaderData(string name, string value)
     {
