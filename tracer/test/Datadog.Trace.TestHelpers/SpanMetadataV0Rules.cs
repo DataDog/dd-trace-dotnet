@@ -24,6 +24,8 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "aerospike.command")
                 .Matches(Type, "aerospike"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured"))
             .Tags(s => s
                 .IsOptional("aerospike.key")
                 .IsOptional("aerospike.namespace")
