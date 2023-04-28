@@ -13,6 +13,7 @@ using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Validators;
 using Datadog.Trace;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Util;
 
 #nullable enable
 
@@ -41,10 +42,11 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
     {
         if (signal == HostSignal.BeforeProcessStart)
         {
-            string? monitorHome, profiler32Path, profiler64Path, ldPreload, loaderConfig;
+            var monitorHome = EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
+            string? profiler32Path, profiler64Path, ldPreload, loaderConfig;
             if (FrameworkDescription.Instance.IsWindows())
             {
-                monitorHome = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "..\\..\\..\\..\\..\\..\\..\\shared\\bin\\monitoring-home");
+                monitorHome ??= Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "..\\..\\..\\..\\..\\..\\..\\shared\\bin\\monitoring-home");
                 monitorHome = Path.GetFullPath(monitorHome);
                 profiler32Path = Path.Combine(monitorHome, "win-x86\\Datadog.Trace.ClrProfiler.Native.dll");
                 profiler64Path = Path.Combine(monitorHome, "win-x64\\Datadog.Trace.ClrProfiler.Native.dll");
@@ -53,12 +55,27 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
             }
             else
             {
-                monitorHome = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../../../../../shared/bin/monitoring-home/");
+                monitorHome ??= Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../../../../../shared/bin/monitoring-home/");
                 monitorHome = Path.GetFullPath(monitorHome);
                 profiler32Path = null;
                 profiler64Path = Path.Combine(monitorHome, "linux-x64/Datadog.Trace.ClrProfiler.Native.so");
                 loaderConfig = Path.Combine(monitorHome, "linux-x64/loader.conf");
                 ldPreload = Path.Combine(monitorHome, "linux-x64/Datadog.Linux.ApiWrapper.x64.so");
+            }
+
+            if (profiler64Path is not null && !File.Exists(profiler64Path))
+            {
+                throw new FileNotFoundException(null, profiler64Path);
+            }
+
+            if (profiler32Path is not null && !File.Exists(profiler64Path))
+            {
+                throw new FileNotFoundException(null, profiler32Path);
+            }
+            
+            if (loaderConfig is not null && !File.Exists(loaderConfig))
+            {
+                throw new FileNotFoundException(null, loaderConfig);
             }
 
             var environment = parameters.Process.StartInfo.Environment;
