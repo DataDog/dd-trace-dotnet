@@ -266,6 +266,8 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "msmq.command")
                 .Matches(Type, "queue"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured"))
             .Tags(s => s
                 .IsPresent("msmq.command")
                 .IsOptional("msmq.message.transactional")

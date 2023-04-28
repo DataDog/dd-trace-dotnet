@@ -20,6 +20,9 @@ namespace Datadog.Trace.Tagging
         /// <param name="spanKind">kind of span</param>
         public MsmqTags(string spanKind) => SpanKind = spanKind;
 
+        [Metric(Trace.Tags.Measured)]
+        public double? Measured => 1.0;
+
         [Tag(Trace.Tags.MsmqCommand)]
         public string Command { get; set; }
 
