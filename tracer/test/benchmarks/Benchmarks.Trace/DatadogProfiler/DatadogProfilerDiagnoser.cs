@@ -12,6 +12,7 @@ using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Validators;
 using Datadog.Trace;
+using Datadog.Trace.Ci;
 
 #nullable enable
 
@@ -61,6 +62,21 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
             }
 
             var environment = parameters.Process.StartInfo.Environment;
+            if (!environment.TryGetValue("DD_SERVICE", out _))
+            {
+                environment["DD_SERVICE"] = parameters.BenchmarkCase.Descriptor.FolderInfo;
+            }
+
+            if (!environment.TryGetValue("DD_ENV", out _))
+            {
+                environment["DD_ENV"] = "benchmarks";
+            }
+
+            if (!environment.TryGetValue("DD_VERSION", out _))
+            {
+                environment["DD_VERSION"] = CIEnvironmentValues.Instance.Branch;
+            }
+
             environment["COR_ENABLE_PROFILING"] = "1";
             environment["CORECLR_ENABLE_PROFILING"] = "1";
             environment["COR_PROFILER"] = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
