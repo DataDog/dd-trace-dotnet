@@ -264,8 +264,6 @@ namespace Datadog.Trace.MSBuild
                     int? endLineNumber = e.EndLineNumber > 0 ? e.EndLineNumber : null;
                     int? endColumnNumber = e.EndColumnNumber > 0 ? e.EndColumnNumber : null;
                     string projectFile = e.ProjectFile;
-                    string filePath;
-                    string stack;
                     string subCategory = e.Subcategory;
 
                     projectSpan.Error = true;
@@ -278,11 +276,12 @@ namespace Datadog.Trace.MSBuild
 
                     if (!string.IsNullOrEmpty(e.File))
                     {
-                        filePath = Path.Combine(Path.GetDirectoryName(projectFile), e.File);
+                        var filePath = Path.Combine(Path.GetDirectoryName(projectFile), e.File);
                         projectSpan.SetTag(BuildTags.ErrorFile, filePath);
+
                         if (lineNumber.HasValue && lineNumber != 0)
                         {
-                            stack = $" at Source code in {filePath}:line {e.LineNumber}";
+                            var stack = $" at Source code in {filePath}:line {e.LineNumber}";
                             projectSpan.SetTag(BuildTags.ErrorStack, stack);
                         }
                     }
@@ -323,6 +322,7 @@ namespace Datadog.Trace.MSBuild
                 Log.Debug("Warning Raised");
 
                 int context = e.BuildEventContext.ProjectContextId;
+
                 if (_projects.TryGetValue(context, out Span projectSpan))
                 {
                     _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Warning, e.Message, projectSpan));
