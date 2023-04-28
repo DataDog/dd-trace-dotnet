@@ -9,6 +9,29 @@
 class GCBaseRawSample : public RawSample
 {
 public:
+    GCBaseRawSample() = default;
+
+    GCBaseRawSample(GCBaseRawSample&& other) noexcept
+        :
+        RawSample(std::move(other)),
+        Number(other.Number),
+        Generation(other.Generation),
+        Duration(other.Duration)
+    {
+    }
+
+    GCBaseRawSample& operator=(GCBaseRawSample&& other) noexcept
+    {
+        if (this != &other)
+        {
+            RawSample::operator=(std::move(other));
+            Number = other.Number;
+            Generation = other.Generation;
+            Duration = other.Duration;
+        }
+        return *this;
+    }
+
     // This base class is in charge of storing garbage collection number and generation as labels
     // and fill up the callstack based on generation.
     // The default value is the Duration field; derived class could override by implementing GetValue()
@@ -36,7 +59,6 @@ public:
 
     // Derived classes are expected to set the event type + any additional field as label
     virtual void DoAdditionalTransform(std::shared_ptr<Sample> sample, uint32_t valueOffset) const = 0;
-
 
 public:
     int32_t Number;

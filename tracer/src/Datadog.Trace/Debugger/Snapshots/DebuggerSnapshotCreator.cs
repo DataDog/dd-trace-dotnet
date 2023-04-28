@@ -708,12 +708,12 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return this;
             }
 
-            _jsonWriter.WritePropertyName("errors");
+            _jsonWriter.WritePropertyName("evaluationErrors");
             _jsonWriter.WriteStartArray();
             foreach (var error in _errors)
             {
                 _jsonWriter.WriteStartObject();
-                _jsonWriter.WritePropertyName("expression");
+                _jsonWriter.WritePropertyName("expr");
                 _jsonWriter.WriteValue(error.Expression);
                 _jsonWriter.WritePropertyName("message");
                 _jsonWriter.WriteValue(error.Message);

@@ -101,7 +101,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             else
             {
                 Serverless.Debug($"creating the placeholder traceId = {traceId}");
-                span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, traceId: Convert.ToUInt64(traceId), addToTraceContext: false);
+                span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, traceId: (TraceId)Convert.ToUInt64(traceId), addToTraceContext: false);
             }
 
             if (samplingPriority == null)

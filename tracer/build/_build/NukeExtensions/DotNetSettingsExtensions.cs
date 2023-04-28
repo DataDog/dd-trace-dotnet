@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Nuke.Common;
 using Nuke.Common.IO;
+using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
@@ -91,6 +92,11 @@ internal static partial class DotNetSettingsExtensions
         return settings.SetProperty("BuildProjectReferences", false);
     }
 
+    public static DotNetMSBuildSettings EnableNoDependencies(this DotNetMSBuildSettings settings)
+    {
+        return settings.SetProperty("BuildProjectReferences", false);
+    }
+
     public static DotNetTestSettings EnableCrashDumps(this DotNetTestSettings settings, MiniDumpType dumpType = MiniDumpType.MiniDumpWithFullMemory)
     {
         if (bool.Parse(Environment.GetEnvironmentVariable("enable_crash_dumps") ?? "false"))
@@ -106,7 +112,7 @@ internal static partial class DotNetSettingsExtensions
     public static DotNetTestSettings EnableTrxLogOutput(this DotNetTestSettings settings, string resultsDirectory)
     {
         return settings
-            .SetLogger("trx")
+            .SetLoggers("trx")
             .SetResultsDirectory(resultsDirectory);
     }
 
@@ -154,7 +160,7 @@ internal static partial class DotNetSettingsExtensions
     /// </summary>
     public static string GetDotNetPath(MSBuildTargetPlatform platform)
     {
-        if (platform == MSBuildTargetPlatform.x64 || platform == null)
+        if (!MSBuildTargetPlatform.x86.Equals(platform))
             return DotNetTasks.DotNetPath;
 
         var dotnetPath = EnvironmentInfo.GetVariable<string>("DOTNET_EXE_32")
@@ -172,12 +178,13 @@ internal static partial class DotNetSettingsExtensions
     {
         // To avoid annoying differences in the test code, convert the MSBuildTargetPlatform string values to
         // the same values returned by Environment.Platform(), and skip unsupported values (e.g. MSIL, arm)
-        var target = platform.ToString() switch
+        var strPlatform = platform.ToString().ToLowerInvariant();
+        var target = strPlatform switch
         {
             "x86" => "X86",
             "x64" => "X64",
             "arm64" => "ARM64",
-            _ => throw new InvalidOperationException("Should only use x64 and x86 for Test target platform"),
+            _ => throw new InvalidOperationException($"Should only use x64, x86 or ARM64 for Test target platform. (Invalid : {strPlatform})"),
         };
 
         return settings.SetProcessEnvironmentVariable("TargetPlatform", target);
@@ -235,6 +242,7 @@ internal static partial class DotNetSettingsExtensions
 
         if (enabled)
         {
+            settings = settings.SetProcessEnvironmentVariable("DD_LOGGER_BUILD_SOURCESDIRECTORY", NukeBuild.RootDirectory);
             var pArgConf = settings.ProcessArgumentConfigurator ?? (args => args);
             return settings.SetProcessArgumentConfigurator(
                 args => pArgConf(args.Add("--logger:datadog")));

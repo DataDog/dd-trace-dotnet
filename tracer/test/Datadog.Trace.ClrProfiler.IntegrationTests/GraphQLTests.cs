@@ -10,15 +10,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
-using System.Net.WebSockets;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -26,10 +21,26 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
 #if NETCOREAPP3_1_OR_GREATER
-    public class GraphQL7Tests : GraphQLTests
+    public class GraphQL7SchemaV0Tests : GraphQL7Tests
     {
-        public GraphQL7Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base("GraphQL7", fixture, output, nameof(GraphQL7Tests))
+        public GraphQL7SchemaV0Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v0")
+        {
+        }
+    }
+
+    public class GraphQL7SchemaV1Tests : GraphQL7Tests
+    {
+        public GraphQL7SchemaV1Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v1")
+        {
+        }
+    }
+
+    public abstract class GraphQL7Tests : GraphQLTests
+    {
+        public GraphQL7Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string metadataSchemaVersion)
+            : base("GraphQL7", fixture, output, nameof(GraphQL7Tests), metadataSchemaVersion)
         {
         }
 
@@ -54,10 +65,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             => await RunSubmitsTraces("SubmitsTracesWebsockets", packageVersion, true);
     }
 
-    public class GraphQL4Tests : GraphQLTests
+    public class GraphQL4SchemaV0Tests : GraphQL4Tests
     {
-        public GraphQL4Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base("GraphQL4", fixture, output, nameof(GraphQL4Tests))
+        public GraphQL4SchemaV0Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v0")
+        {
+        }
+    }
+
+    public class GraphQL4SchemaV1Tests : GraphQL4Tests
+    {
+        public GraphQL4SchemaV1Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v1")
+        {
+        }
+    }
+
+    public abstract class GraphQL4Tests : GraphQLTests
+    {
+        public GraphQL4Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string metadataSchemaVersion)
+            : base("GraphQL4", fixture, output, nameof(GraphQL4Tests), metadataSchemaVersion)
         {
         }
 
@@ -73,20 +100,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces(string packageVersion)
             => await RunSubmitsTraces(packageVersion: packageVersion);
-
-        [SkippableTheory]
-        [MemberData(nameof(TestData))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTracesWebsockets(string packageVersion)
-            => await RunSubmitsTraces("SubmitsTracesWebsockets", packageVersion, true);
     }
 #endif
 
-    public class GraphQL3Tests : GraphQLTests
+    public class GraphQL3SchemaV0Tests : GraphQL3Tests
     {
-        public GraphQL3Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base("GraphQL3", fixture, output, nameof(GraphQL3Tests))
+        public GraphQL3SchemaV0Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v0")
+        {
+        }
+    }
+
+    public class GraphQL3SchemaV1Tests : GraphQL3Tests
+    {
+        public GraphQL3SchemaV1Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v1")
+        {
+        }
+    }
+
+    public abstract class GraphQL3Tests : GraphQLTests
+    {
+        public GraphQL3Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string metadataSchemaVersion)
+            : base("GraphQL3", fixture, output, nameof(GraphQL3Tests), metadataSchemaVersion)
         {
         }
 
@@ -98,10 +134,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             => await RunSubmitsTraces();
     }
 
-    public class GraphQL2Tests : GraphQLTests
+    public class GraphQL2SchemaV0Tests : GraphQL2Tests
     {
-        public GraphQL2Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base("GraphQL", fixture, output, nameof(GraphQL2Tests))
+        public GraphQL2SchemaV0Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v0")
+        {
+        }
+    }
+
+    public class GraphQL2SchemaV1Tests : GraphQL2Tests
+    {
+        public GraphQL2SchemaV1Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v1")
+        {
+        }
+    }
+
+    public abstract class GraphQL2Tests : GraphQLTests
+    {
+        public GraphQL2Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string metadataSchemaVersion)
+            : base("GraphQL", fixture, output, nameof(GraphQL2Tests), metadataSchemaVersion)
         {
         }
 
@@ -130,13 +182,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private const string ServiceVersion = "1.0.0";
 
         private readonly string _testName;
+        private readonly string _metadataSchemaVersion;
 
-        protected GraphQLTests(string sampleAppName, AspNetCoreTestFixture fixture, ITestOutputHelper output, string testName)
+        protected GraphQLTests(string sampleAppName, AspNetCoreTestFixture fixture, ITestOutputHelper output, string testName, string metadataSchemaVersion)
             : base(sampleAppName, output)
         {
             SetServiceVersion(ServiceVersion);
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
 
             _testName = testName;
+            _metadataSchemaVersion = metadataSchemaVersion;
 
             Fixture = fixture;
             Fixture.SetOutput(output);
@@ -149,15 +204,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Fixture.SetOutput(null);
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.Type switch
-            {
-                "graphql" => span.IsGraphQL(),
-                _ => Result.DefaultSuccess,
-            };
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsGraphQL(metadataSchemaVersion);
 
         protected async Task RunSubmitsTraces(string testName = "SubmitsTraces", string packageVersion = "", bool usingWebsockets = false)
         {
+            var isExternalSpan = _metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-graphql" : EnvironmentHelper.FullSampleName;
+
             SetInstrumentationVerification();
 
             await Fixture.TryStartApp(this);
@@ -165,12 +218,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var expectedSpans = await SubmitRequests(Fixture.HttpPort, usingWebsockets);
 
             var spans = Fixture.Agent.WaitForSpans(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
-            foreach (var span in spans)
-            {
-                // TODO: Refactor to use ValidateIntegrationSpans when the graphql server integration is fixed. It currently produces a service name of {service]-graphql
-                var result = ValidateIntegrationSpan(span);
-                Assert.True(result.Success, result.ToString());
-            }
+
+            var graphQLSpans = spans.Where(span => span.Type == "graphql");
+            ValidateIntegrationSpans(graphQLSpans, _metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
@@ -184,7 +234,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Ensures that we get nice file nesting in Solution Explorer
             var fxSuffix = EnvironmentHelper.IsCoreClr() ? string.Empty : ".netfx";
             await VerifyHelper.VerifySpans(spans, settings)
-                              .UseFileName($"{_testName}.{testName}{fxSuffix}")
+                              .UseFileName($"{_testName}.{testName}{fxSuffix}.Schema{_metadataSchemaVersion.ToUpper()}")
                               .DisableRequireUniquePrefix(); // all package versions should be the same
 
             VerifyInstrumentation(Fixture.Process);
@@ -266,9 +316,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 expectedAspNetcoreRequestSpanCount++;
-                SubmitRequest(
+                GraphQLCommon.SubmitRequest(
+                    Output,
                     aspNetCorePort,
-                    new RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
+                    new GraphQLCommon.RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
             }
 
             async Task SubmitGraphqlWebsocketRequest(
@@ -285,185 +336,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 expectedAspNetcoreRequestSpanCount++;
-                await SubmitWebsocketRequest(
+                await GraphQLCommon.SubmitWebsocketRequest(
+                    Output,
                     aspNetCorePort,
-                    new RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
+                    new GraphQLCommon.RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
             }
-        }
-
-        private void SubmitRequest(int aspNetCorePort, RequestInfo requestInfo, bool printResponseText = true)
-        {
-            try
-            {
-                var request = WebRequest.Create($"http://localhost:{aspNetCorePort}{requestInfo.Url}");
-                request.Method = requestInfo.HttpMethod;
-                ((HttpWebRequest)request).UserAgent = "testhelper";
-
-                if (requestInfo.RequestBody != null)
-                {
-                    byte[] requestBytes = System.Text.Encoding.UTF8.GetBytes(requestInfo.RequestBody);
-
-                    request.ContentType = "application/json";
-                    request.ContentLength = requestBytes.Length;
-
-                    using (var dataStream = request.GetRequestStream())
-                    {
-                        dataStream.Write(requestBytes, 0, requestBytes.Length);
-                    }
-                }
-
-                using (var response = (HttpWebResponse)request.GetResponse())
-                using (var stream = response.GetResponseStream())
-                using (var reader = new StreamReader(stream))
-                {
-                    string responseText;
-                    try
-                    {
-                        responseText = reader.ReadToEnd();
-                    }
-                    catch (Exception ex)
-                    {
-                        responseText = "ENCOUNTERED AN ERROR WHEN READING RESPONSE.";
-                        Output.WriteLine(ex.ToString());
-                    }
-
-                    if (printResponseText)
-                    {
-                        Output.WriteLine($"[http] {response.StatusCode} {responseText}");
-                    }
-                }
-            }
-            catch (WebException wex)
-            {
-                Output.WriteLine($"[http] exception: {wex}");
-                if (wex.Response is HttpWebResponse response)
-                {
-                    using (var stream = response.GetResponseStream())
-                    using (var reader = new StreamReader(stream))
-                    {
-                        Output.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
-                    }
-                }
-            }
-        }
-
-        private async Task SubmitWebsocketRequest(int aspNetCorePort, RequestInfo requestInfo)
-        {
-            var uri = new Uri($"ws://localhost:{aspNetCorePort}{requestInfo.Url}");
-            var webSocket = new ClientWebSocket();
-            webSocket.Options.AddSubProtocol("graphql-ws");
-
-            try
-            {
-                await webSocket.ConnectAsync(uri, CancellationToken.None);
-                Output.WriteLine("[websocket] WebSocket connection established");
-
-                // GraphQL First packet initialization
-                const string initPayload = @"{
-                    ""type"": ""connection_init"",
-                    ""payload"": {""Accept"":""application/json""}
-                }";
-                var initBuffer = System.Text.Encoding.UTF8.GetBytes(initPayload);
-                var initSegment = new ArraySegment<byte>(initBuffer);
-                await webSocket.SendAsync(initSegment, WebSocketMessageType.Text, true, CancellationToken.None);
-                Output.WriteLine("[websocket] Connection initialized (init packet sent) 1/2");
-                await WaitForMessage();
-                Output.WriteLine("[websocket] Connection initialized (init packet received) 2/2");
-
-                // Send test request
-                Output.WriteLine($"[websocket] Send request: {requestInfo.RequestBody}");
-                var buffer = System.Text.Encoding.UTF8.GetBytes(requestInfo.RequestBody);
-                var segment = new ArraySegment<byte>(buffer);
-                await webSocket.SendAsync(segment, WebSocketMessageType.Text, true, CancellationToken.None);
-                Output.WriteLine("[websocket] Request sent");
-                Output.WriteLine("[websocket] Waiting for the response:");
-                await WaitForMessage();
-                Output.WriteLine("[websocket] Response received.");
-
-                // Terminate the GraphQl Websocket connection
-                Output.WriteLine("[websocket] Send connection_terminate...");
-                const string terminatePayload = @"{
-                    ""type"": ""connection_terminate"",
-                    ""payload"": {}
-                }";
-                var terminateBuffer = System.Text.Encoding.UTF8.GetBytes(terminatePayload);
-                var terminateSegment = new ArraySegment<byte>(terminateBuffer);
-                await webSocket.SendAsync(terminateSegment, WebSocketMessageType.Text, true, CancellationToken.None);
-                Output.WriteLine("[websocket] connection_terminate sent");
-                await WaitForMessage();
-            }
-            catch (Exception ex)
-            {
-                Output.WriteLine($"[websocket] WebSocket connection error: {ex.Message}");
-            }
-            finally
-            {
-                if (webSocket.State == WebSocketState.Open)
-                {
-                    await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
-                    Output.WriteLine("[websocket] WebSocket connection closed");
-                }
-
-                webSocket.Dispose();
-                Output.WriteLine("[websocket] Websocket connection disposed.");
-            }
-
-            async Task WaitForMessage()
-            {
-                Output.WriteLine("[websocket][debug] Start waiting for a message!");
-                Output.WriteLine("[websocket][debug] Websocket state: " + webSocket.State);
-                var ms = new MemoryStream();
-                while (webSocket.State == WebSocketState.Open)
-                {
-                    WebSocketReceiveResult res;
-                    do
-                    {
-                        var messageBuffer = WebSocket.CreateClientBuffer(1024, 16);
-                        res = await webSocket.ReceiveAsync(messageBuffer, CancellationToken.None);
-                        ms.Write(messageBuffer.Array, messageBuffer.Offset, res.Count);
-                    }
-                    while (!res.EndOfMessage);
-
-                    Output.WriteLine("[websocket][debug] Message type: " + res.MessageType);
-                    if (res.MessageType == WebSocketMessageType.Close)
-                    {
-                        Output.WriteLine($"[websocket][debug] Close websocket on message close: {res.CloseStatus}: {res.CloseStatusDescription}");
-                        await webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
-                        break;
-                    }
-
-                    // Message received from the websocket
-                    var msgString = Encoding.UTF8.GetString(ms.ToArray());
-                    ms = new MemoryStream(); // Reset Stream
-
-                    if (msgString.Length == 0)
-                    {
-                        Output.WriteLine("[websocket][debug] Received an empty message.");
-                        continue;
-                    }
-
-                    // Check if the data received is a 'complete' message
-                    Output.WriteLine("[websocket] before json: " + msgString);
-                    var jsonObj = JObject.Parse(msgString);
-                    var typeData = jsonObj.GetValue("type")?.Value<string>();
-                    if (typeData is "complete" or "error" or "connection_ack")
-                    {
-                        Output.WriteLine("[websocket][debug] Complete or Error or Connection_ack Message");
-                        break;
-                    }
-                }
-
-                Output.WriteLine("[websocket] Stopped waiting for a message");
-            }
-        }
-
-        private class RequestInfo
-        {
-            public string Url { get; set; }
-
-            public string HttpMethod { get; set; }
-
-            public string RequestBody { get; set; }
         }
     }
 }

@@ -28,7 +28,6 @@
     </ClCompile>
     <ClCompile Include="environment_variables_util.cpp" />
     <ClCompile Include="tracer_tokens.cpp" />
-    <ClCompile Include="..\..\..\shared\src\native-lib\spdlog\src\spdlog.cpp" />
     <ClCompile Include="..\..\..\shared\src\native-src\string.cpp">
       <Filter>shared</Filter>
     </ClCompile>
@@ -60,12 +59,6 @@
     <ClCompile Include="iast\dataflow.cpp" />
     <ClCompile Include="iast\string_literal_aspect_filter.cpp" />
     <ClCompile Include="iast\string_optimization_aspect_filter.cpp" />
-    <ClCompile Include="..\..\..\shared\src\native-lib\fmt\src\format.cc">
-      <Filter>fmt</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\shared\src\native-lib\fmt\src\posix.cc">
-      <Filter>fmt</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -163,9 +156,6 @@
     </Filter>
     <Filter Include="shared">
       <UniqueIdentifier>{b31bbb47-af39-4840-88e2-eaba1bf73d34}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="fmt">
-      <UniqueIdentifier>{ce905be0-cb16-4827-83d3-4e2cdd17437f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

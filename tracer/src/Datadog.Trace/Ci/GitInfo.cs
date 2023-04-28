@@ -489,7 +489,7 @@ namespace Datadog.Trace.Ci
                             }
 
                             // Check if the object size is in the aceptable range
-                            if (objectSize > 0 && objectSize < ushort.MaxValue)
+                            if (objectSize is > 0 and < ushort.MaxValue)
                             {
                                 // Advance 2 bytes to skip the zlib magic number
                                 uint zlibMagicNumber = br.ReadUInt16();
@@ -508,7 +508,7 @@ namespace Datadog.Trace.Ci
                                 }
                                 else
                                 {
-                                    Log.Warning("The commit data doesn't have a valid zlib header magic number.");
+                                    Log.Warning("The commit data doesn't have a valid zlib header magic number. [Received: 0x{ZlibMagicNumber}, Expected: 0x78]", zlibMagicNumber.ToString("X2"));
                                 }
                             }
                             else

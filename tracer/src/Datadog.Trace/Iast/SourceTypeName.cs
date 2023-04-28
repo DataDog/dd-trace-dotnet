@@ -14,5 +14,8 @@ internal enum SourceTypeName
     RoutedParameterValue,
     RequestHeader,
     RequestHeaderName,
-    RequestQueryString
+    RequestQuery,
+    CookieName,
+    CookieValue,
+    MatrixParameter
 }

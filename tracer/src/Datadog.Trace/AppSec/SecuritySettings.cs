@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -16,27 +18,26 @@ namespace Datadog.Trace.AppSec
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecuritySettings>();
 
-        private bool _enabled = false;
-
-        public SecuritySettings(IConfigurationSource source)
+        public SecuritySettings(IConfigurationSource? source)
         {
-            BlockedHtmlTemplate = source?.GetString(ConfigurationKeys.AppSec.HtmlBlockedTemplate) ?? SecurityConstants.BlockedHtmlTemplate;
-            BlockedJsonTemplate = source?.GetString(ConfigurationKeys.AppSec.JsonBlockedTemplate) ?? SecurityConstants.BlockedJsonTemplate;
+            source ??= NullConfigurationSource.Instance;
+            BlockedHtmlTemplate = source.GetString(ConfigurationKeys.AppSec.HtmlBlockedTemplate) ?? SecurityConstants.BlockedHtmlTemplate;
+            BlockedJsonTemplate = source.GetString(ConfigurationKeys.AppSec.JsonBlockedTemplate) ?? SecurityConstants.BlockedJsonTemplate;
             // both should default to false
-            var enabledEnvVar = source?.GetBool(ConfigurationKeys.AppSec.Enabled);
-            _enabled = enabledEnvVar ?? false;
-            CanBeEnabled = enabledEnvVar == null || enabledEnvVar.Value;
+            var enabledEnvVar = source.GetBool(ConfigurationKeys.AppSec.Enabled);
+            Enabled = enabledEnvVar ?? false;
+            CanBeToggled = enabledEnvVar == null;
 
-            Rules = source?.GetString(ConfigurationKeys.AppSec.Rules);
-            CustomIpHeader = source?.GetString(ConfigurationKeys.AppSec.CustomIpHeader);
-            var extraHeaders = source?.GetString(ConfigurationKeys.AppSec.ExtraHeaders);
-            ExtraHeaders = !string.IsNullOrEmpty(extraHeaders) ? extraHeaders.Split(',') : Array.Empty<string>();
-            KeepTraces = source?.GetBool(ConfigurationKeys.AppSec.KeepTraces) ?? true;
+            Rules = source.GetString(ConfigurationKeys.AppSec.Rules);
+            CustomIpHeader = source.GetString(ConfigurationKeys.AppSec.CustomIpHeader);
+            var extraHeaders = source.GetString(ConfigurationKeys.AppSec.ExtraHeaders);
+            ExtraHeaders = !string.IsNullOrEmpty(extraHeaders) ? extraHeaders!.Split(',') : Array.Empty<string>();
+            KeepTraces = source.GetBool(ConfigurationKeys.AppSec.KeepTraces) ?? true;
 
             // empty or junk values to default to 100, any number is valid, with zero or less meaning limit off
-            TraceRateLimit = source?.GetInt32(ConfigurationKeys.AppSec.TraceRateLimit) ?? 100;
+            TraceRateLimit = source.GetInt32(ConfigurationKeys.AppSec.TraceRateLimit) ?? 100;
 
-            var wafTimeoutString = source?.GetString(ConfigurationKeys.AppSec.WafTimeout);
+            var wafTimeoutString = source.GetString(ConfigurationKeys.AppSec.WafTimeout);
             const int defaultWafTimeout = 100_000;
             if (string.IsNullOrWhiteSpace(wafTimeoutString))
             {
@@ -45,7 +46,7 @@ namespace Datadog.Trace.AppSec
             else
             {
                 // Default timeout of 100 ms, only extreme conditions should cause timeout
-                var wafTimeout = ParseWafTimeout(wafTimeoutString);
+                var wafTimeout = ParseWafTimeout(wafTimeoutString!);
                 if (wafTimeout <= 0)
                 {
                     Log.Warning("Ignoring '{WafTimeoutKey}' of '{WafTimeoutString}' because it was zero or less", ConfigurationKeys.AppSec.WafTimeout, wafTimeoutString);
@@ -55,23 +56,18 @@ namespace Datadog.Trace.AppSec
                 WafTimeoutMicroSeconds = (ulong)wafTimeout;
             }
 
-            var obfuscationParameterKeyRegex = source?.GetString(ConfigurationKeys.AppSec.ObfuscationParameterKeyRegex);
-            ObfuscationParameterKeyRegex = string.IsNullOrWhiteSpace(obfuscationParameterKeyRegex) ? SecurityConstants.ObfuscationParameterKeyRegexDefault : obfuscationParameterKeyRegex;
+            var obfuscationParameterKeyRegex = source.GetString(ConfigurationKeys.AppSec.ObfuscationParameterKeyRegex);
+            ObfuscationParameterKeyRegex = string.IsNullOrWhiteSpace(obfuscationParameterKeyRegex) ? SecurityConstants.ObfuscationParameterKeyRegexDefault : obfuscationParameterKeyRegex!;
 
-            var obfuscationParameterValueRegex = source?.GetString(ConfigurationKeys.AppSec.ObfuscationParameterValueRegex);
-            ObfuscationParameterValueRegex = string.IsNullOrWhiteSpace(obfuscationParameterValueRegex) ? SecurityConstants.ObfuscationParameterValueRegexDefault : obfuscationParameterValueRegex;
+            var obfuscationParameterValueRegex = source.GetString(ConfigurationKeys.AppSec.ObfuscationParameterValueRegex);
+            ObfuscationParameterValueRegex = string.IsNullOrWhiteSpace(obfuscationParameterValueRegex) ? SecurityConstants.ObfuscationParameterValueRegexDefault : obfuscationParameterValueRegex!;
         }
 
-        public bool Enabled
-        {
-            get { return _enabled && CanBeEnabled; }
+        public bool Enabled { get; }
 
-            set { _enabled = value; }
-        }
+        public bool CanBeToggled { get; }
 
-        public bool CanBeEnabled { get; }
-
-        public string CustomIpHeader { get; }
+        public string? CustomIpHeader { get; }
 
         /// <summary>
         /// Gets keys indicating the optional custom appsec headers the user wants to send.
@@ -82,7 +78,7 @@ namespace Datadog.Trace.AppSec
         /// Gets the path to a user-defined WAF Rules file.
         /// Default is null, meaning uses embedded rule set
         /// </summary>
-        public string Rules { get; }
+        public string? Rules { get; }
 
         /// <summary>
         /// Gets a value indicating whether traces should be mark traces with manual keep below trace rate limit
@@ -136,7 +132,7 @@ namespace Datadog.Trace.AppSec
             wafTimeoutString = wafTimeoutString.Trim();
 
             int multipler = 1;
-            string intPart = null;
+            string? intPart = null;
 
             if (wafTimeoutString.EndsWith("ms"))
             {

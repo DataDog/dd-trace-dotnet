@@ -82,7 +82,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             if (settings.TracesTransport == TracesTransportType.UnixDomainSocket)
             {
                 transport = "domain sockets";
-                endpoint = settings.TracesUnixDomainSocketPath;
+                endpoint = settings.TracesUnixDomainSocketPath ?? "<not set>";
             }
             else
             {

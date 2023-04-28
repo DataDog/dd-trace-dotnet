@@ -32,9 +32,11 @@ namespace Datadog.Trace.Tests.Debugger
 
         private const string TemplatesFolder = "Templates";
 
+        private const string MetricsFolder = "Metrics";
+
         public DebuggerExpressionLanguageTests()
         {
-            Test = new TestStruct
+            TestObject = new TestStruct
             {
                 Collection = new List<string> { "hello", "1st Item", "2nd item", "3rd item" },
                 Dictionary = new Dictionary<string, string> { { "hello", "world" } },
@@ -46,7 +48,7 @@ namespace Datadog.Trace.Tests.Debugger
             };
         }
 
-        internal TestStruct Test { get; set; }
+        internal TestStruct TestObject { get; set; }
 
         public static IEnumerable<object[]> TemplatesResources()
         {
@@ -59,6 +61,13 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var sourceFilePath = GetSourceFilePath();
             var path = Path.Combine(sourceFilePath, "..", "ProbeExpressionsResources", ConditionsFolder);
+            return Directory.EnumerateFiles(path, "*.json", SearchOption.TopDirectoryOnly).Select(file => new object[] { file });
+        }
+
+        public static IEnumerable<object[]> MetricsResources()
+        {
+            var sourceFilePath = GetSourceFilePath();
+            var path = Path.Combine(sourceFilePath, "..", "ProbeExpressionsResources", MetricsFolder);
             return Directory.EnumerateFiles(path, "*.json", SearchOption.TopDirectoryOnly).Select(file => new object[] { file });
         }
 
@@ -76,23 +85,24 @@ namespace Datadog.Trace.Tests.Debugger
                 throw new SkipException("Skip because this test has an issue of not raising a KeyNotFoundException");
             }
 
-            // Arrange
-            var evaluator = GetEvaluator(expressionTestFilePath);
-            var settings = ConfigureVerifySettings(expressionTestFilePath);
-
-            // Act
-            var result = Evaluate(evaluator);
-
-            // Assert
-            Assert.NotNull(result.Template);
-            Assert.True(evaluator.Evaluator.CompiledTemplates.Length > 0);
-            var toVerify = GetStringToVerify(evaluator.Evaluator, result);
-            await Verifier.Verify(toVerify, settings);
+            await Test(expressionTestFilePath);
         }
 
         [Theory]
         [MemberData(nameof(ConditionsResources))]
         public async Task TestConditions(string expressionTestFilePath)
+        {
+            await Test(expressionTestFilePath);
+        }
+
+        [Theory]
+        [MemberData(nameof(MetricsResources))]
+        public async Task TestMetrics(string expressionTestFilePath)
+        {
+            await Test(expressionTestFilePath);
+        }
+
+        private async Task Test(string expressionTestFilePath)
         {
             // Arrange
             var evaluator = GetEvaluator(expressionTestFilePath);
@@ -102,9 +112,6 @@ namespace Datadog.Trace.Tests.Debugger
             var result = Evaluate(evaluator);
 
             // Assert
-            Assert.NotNull(result.Template);
-            Assert.True(result.Condition.HasValue);
-            Assert.True(evaluator.Evaluator.CompiledTemplates.Length > 0);
             var toVerify = GetStringToVerify(evaluator.Evaluator, result);
             await Verifier.Verify(toVerify, settings);
         }
@@ -117,17 +124,28 @@ namespace Datadog.Trace.Tests.Debugger
             var scopeMembers = CreateScopeMembers();
             DebuggerExpression? condition = null;
             DebuggerExpression[] templates;
-            if (new DirectoryInfo(Path.GetDirectoryName(expressionTestFilePath)).Name == ConditionsFolder)
+            DebuggerExpression? metrics = null;
+            var dirName = new DirectoryInfo(Path.GetDirectoryName(expressionTestFilePath)).Name;
+            if (dirName == ConditionsFolder)
             {
                 condition = new DebuggerExpression(dsl, json, null);
                 templates = new DebuggerExpression[] { new(DefaultDslTemplate, DefaultJsonTemplate, null) };
             }
-            else
+            else if (dirName == TemplatesFolder)
             {
                 templates = new DebuggerExpression[] { new(null, null, "The result of the expression is: "), new(dsl, json, null) };
             }
+            else if (dirName == MetricsFolder)
+            {
+                metrics = new DebuggerExpression(dsl, json, null);
+                templates = new DebuggerExpression[] { new(DefaultDslTemplate, DefaultJsonTemplate, null) };
+            }
+            else
+            {
+                throw new Exception($"{nameof(DebuggerExpressionLanguageTests)}.{nameof(GetEvaluator)}: Incorrect folder name");
+            }
 
-            return (new ProbeExpressionEvaluator(templates, condition, null), scopeMembers);
+            return (new ProbeExpressionEvaluator(templates, condition, metrics), scopeMembers);
         }
 
         private VerifySettings ConfigureVerifySettings(string expressionTestFilePath)
@@ -171,23 +189,23 @@ namespace Datadog.Trace.Tests.Debugger
             var scope = new MethodScopeMembers(5, 5);
 
             // Add locals
-            scope.AddMember(new ScopeMember("IntLocal", Test.IntNumber.GetType(), Test.IntNumber, ScopeMemberKind.Local));
-            scope.AddMember(new ScopeMember("DoubleLocal", Test.DoubleNumber.GetType(), Test.DoubleNumber, ScopeMemberKind.Local));
-            scope.AddMember(new ScopeMember("StringLocal", Test.String.GetType(), Test.String, ScopeMemberKind.Local));
-            scope.AddMember(new ScopeMember("CollectionLocal", Test.Collection.GetType(), Test.Collection, ScopeMemberKind.Local));
-            scope.AddMember(new ScopeMember("DictionaryLocal", Test.Dictionary.GetType(), Test.Dictionary, ScopeMemberKind.Local));
-            scope.AddMember(new ScopeMember("NestedObjectLocal", Test.Nested.GetType(), Test.Nested, ScopeMemberKind.Local));
-            scope.AddMember(new ScopeMember("NullLocal", Test.Nested.GetType(), Test.Null, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("IntLocal", TestObject.IntNumber.GetType(), TestObject.IntNumber, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("DoubleLocal", TestObject.DoubleNumber.GetType(), TestObject.DoubleNumber, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("StringLocal", TestObject.String.GetType(), TestObject.String, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("CollectionLocal", TestObject.Collection.GetType(), TestObject.Collection, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("DictionaryLocal", TestObject.Dictionary.GetType(), TestObject.Dictionary, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("NestedObjectLocal", TestObject.Nested.GetType(), TestObject.Nested, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("NullLocal", TestObject.Nested.GetType(), TestObject.Null, ScopeMemberKind.Local));
 
             // Add arguments
-            scope.AddMember(new ScopeMember("IntArg", Test.IntNumber.GetType(), Test.IntNumber, ScopeMemberKind.Argument));
-            scope.AddMember(new ScopeMember("DoubleArg", Test.DoubleNumber.GetType(), Test.DoubleNumber, ScopeMemberKind.Argument));
-            scope.AddMember(new ScopeMember("StringArg", Test.String.GetType(), Test.String, ScopeMemberKind.Argument));
-            scope.AddMember(new ScopeMember("CollectionArg", Test.Collection.GetType(), Test.Collection, ScopeMemberKind.Argument));
-            scope.AddMember(new ScopeMember("NestedObjectArg", Test.Nested.GetType(), Test.Nested, ScopeMemberKind.Argument));
+            scope.AddMember(new ScopeMember("IntArg", TestObject.IntNumber.GetType(), TestObject.IntNumber, ScopeMemberKind.Argument));
+            scope.AddMember(new ScopeMember("DoubleArg", TestObject.DoubleNumber.GetType(), TestObject.DoubleNumber, ScopeMemberKind.Argument));
+            scope.AddMember(new ScopeMember("StringArg", TestObject.String.GetType(), TestObject.String, ScopeMemberKind.Argument));
+            scope.AddMember(new ScopeMember("CollectionArg", TestObject.Collection.GetType(), TestObject.Collection, ScopeMemberKind.Argument));
+            scope.AddMember(new ScopeMember("NestedObjectArg", TestObject.Nested.GetType(), TestObject.Nested, ScopeMemberKind.Argument));
 
             // Add "this" member
-            scope.InvocationTarget = new ScopeMember("this", Test.GetType(), Test, ScopeMemberKind.This);
+            scope.InvocationTarget = new ScopeMember("this", TestObject.GetType(), TestObject, ScopeMemberKind.This);
 
             // Add "return" member
             scope.Return = new ScopeMember("Dummy Return", typeof(string), "I'm a return value", ScopeMemberKind.Return);
@@ -201,13 +219,13 @@ namespace Datadog.Trace.Tests.Debugger
             return scope;
         }
 
-        private (string Template, bool? Condition, List<EvaluationError> Errors) Evaluate((ProbeExpressionEvaluator Evaluator, MethodScopeMembers ScopeMembers) evaluator)
+        private (string Template, bool? Condition, double? Metric, List<EvaluationError> Errors) Evaluate((ProbeExpressionEvaluator Evaluator, MethodScopeMembers ScopeMembers) evaluator)
         {
             var result = evaluator.Evaluator.Evaluate(evaluator.ScopeMembers);
-            return (result.Template, result.Condition, result.Errors);
+            return (result.Template, result.Condition, result.Metric, result.Errors);
         }
 
-        private string GetStringToVerify(ProbeExpressionEvaluator evaluator, (string Template, bool? Condition, List<EvaluationError> Errors) evaluationResult)
+        private string GetStringToVerify(ProbeExpressionEvaluator evaluator, (string Template, bool? Condition, double? Metric, List<EvaluationError> Errors) evaluationResult)
         {
             var builder = new StringBuilder();
             if (evaluationResult.Condition.HasValue)
@@ -224,6 +242,14 @@ namespace Datadog.Trace.Tests.Debugger
                 builder.AppendLine($"Segments: {string.Join(Environment.NewLine, evaluator.Templates.Select(t => t.Json))}");
                 builder.AppendLine($"Expressions: {string.Join(Environment.NewLine, evaluator.CompiledTemplates.Select(t => t.ParsedExpression.ToReadableString()))}");
                 builder.AppendLine($"Result: {evaluationResult.Template}");
+            }
+
+            if (evaluationResult.Metric.HasValue)
+            {
+                builder.AppendLine("Metric:");
+                builder.AppendLine($"Json:{evaluator.Metric.Value.Json}");
+                builder.AppendLine($"Expression: {evaluator.CompiledMetric.Value.ParsedExpression.ToReadableString()}");
+                builder.AppendLine($"Result: {evaluationResult.Metric}");
             }
 
             if (evaluationResult.Errors is { Count: > 0 })

@@ -1,8 +1,6 @@
 using System.Collections.Generic;
-using System.IO;
-using Newtonsoft.Json;
 using Nuke.Common;
-using Nuke.Common.IO;
+using Logger = Serilog.Log;
 
 partial class Build
 {

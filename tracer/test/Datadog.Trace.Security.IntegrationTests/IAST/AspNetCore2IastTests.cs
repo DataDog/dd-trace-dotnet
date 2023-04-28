@@ -122,6 +122,25 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();
         }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestIastCommandInjectionRequest()
+        {
+            var filename = IastEnabled ? "Iast.CommandInjection.AspNetCore2.IastEnabled" : "Iast.CommandInjection.AspNetCore2.IastDisabled";
+            var url = "/Iast/ExecuteCommand?file=nonexisting.exe&argumentLine=arg1";
+            IncludeAllHttpSpans = true;
+            await TryStartApp();
+            var agent = Fixture.Agent;
+            var spans = await SendRequestsAsync(agent, new string[] { url });
+            var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddIastScrubbing();
+            await VerifyHelper.VerifySpans(spansFiltered, settings)
+                              .UseFileName(filename)
+                              .DisableRequireUniquePrefix();
+        }
     }
 
     public class AspNetCore2IastTests50PctSamplingIastEnabled : AspNetCore2IastTests
@@ -166,6 +185,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             : base("AspNetCore2", outputHelper, "/shutdown", testName: testName)
         {
             Fixture = fixture;
+            fixture.SetOutput(outputHelper);
             IastEnabled = enableIast;
             IsIastDeduplicationEnabled = isIastDeduplicationEnabled;
             VulnerabilitiesPerRequest = vulnerabilitiesPerRequest;
@@ -202,7 +222,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         protected async Task TestWeakHashing(string filename, MockTracerAgent agent)
         {
             var url = "/Iast/WeakHashing";
-            var spans = await SendRequestsAsync(agent, new string[] { url });
+            var spans = await SendRequestsAsync(agent, expectedSpansPerRequest: 2, url);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddIastScrubbing();

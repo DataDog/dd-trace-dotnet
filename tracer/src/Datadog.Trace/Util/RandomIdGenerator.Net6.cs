@@ -76,7 +76,7 @@ internal sealed class RandomIdGenerator : IRandomIdGenerator
         if (!useAllBits)
         {
             // get a value in the range (0, Int64.MaxValue]
-            return NextLegacyId();
+            return (TraceId)NextLegacyId();
         }
 
         var seconds = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();

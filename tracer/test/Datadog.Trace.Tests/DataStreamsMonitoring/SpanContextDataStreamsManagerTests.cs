@@ -22,7 +22,7 @@ public class SpanContextDataStreamsManagerTests
         var spanContext = new SpanContext(traceId: 123, spanId: 1234);
         spanContext.PathwayContext.Should().BeNull();
 
-        spanContext.SetCheckpoint(dsm, new[] { "some-edge" });
+        spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, new[] { "some-edge" });
 
         spanContext.PathwayContext.Should().NotBeNull();
     }
@@ -44,7 +44,7 @@ public class SpanContextDataStreamsManagerTests
     {
         var dsm = GetEnabledDataStreamManager();
         var spanContext = new SpanContext(traceId: 123, spanId: 1234);
-        spanContext.SetCheckpoint(dsm, new[] { "some-edge" });
+        spanContext.SetCheckpoint(dsm,  CheckpointKind.Produce, new[] { "some-edge" });
         spanContext.PathwayContext.Should().NotBeNull();
         var previous = spanContext.PathwayContext;
 
@@ -59,12 +59,12 @@ public class SpanContextDataStreamsManagerTests
         // When we have a context and there's a new context we pick one randomly
         var dsm = GetEnabledDataStreamManager();
         var spanContext = new SpanContext(traceId: 123, spanId: 1234);
-        spanContext.SetCheckpoint(dsm, new[] { "some-edge" });
+        spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, new[] { "some-edge" });
 
         // Make sure we have a different hash for comparison purposes
         while (spanContext.PathwayContext.Value.Hash.Value < (ulong)iterations)
         {
-            spanContext.SetCheckpoint(dsm, new[] { "some-edge" });
+            spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, new[] { "some-edge" });
         }
 
         var sameCount = 0;

@@ -15,19 +15,38 @@ namespace Datadog.Trace.Tagging
 {
     internal class TraceTagCollection
     {
-        private readonly int _outgoingHeaderMaxLength;
-
         private List<KeyValuePair<string, string>>? _tags;
         private string? _cachedPropagationHeader;
+        private string? _samplingMechanismValue;
 
-        public TraceTagCollection(int outgoingHeaderMaxLength)
-            : this(outgoingHeaderMaxLength, null, null)
+        public TraceTagCollection()
         {
         }
 
-        public TraceTagCollection(int outgoingHeaderMaxLength, List<KeyValuePair<string, string>>? tags, string? cachedPropagationHeader)
+        public TraceTagCollection(List<KeyValuePair<string, string>>? tags, string? cachedPropagationHeader)
         {
-            _outgoingHeaderMaxLength = outgoingHeaderMaxLength;
+            if (tags?.Count > 0)
+            {
+                lock (tags)
+                {
+                    KeyValuePair<string, string>? samplingMechanismPair = null;
+                    foreach (var item in tags)
+                    {
+                        if (item.Key == Trace.Tags.Propagated.DecisionMaker)
+                        {
+                            samplingMechanismPair = item;
+                            break;
+                        }
+                    }
+
+                    if (samplingMechanismPair != null)
+                    {
+                        tags.Remove(samplingMechanismPair.Value);
+                        _samplingMechanismValue = samplingMechanismPair.Value.Value;
+                    }
+                }
+            }
+
             _tags = tags;
             _cachedPropagationHeader = cachedPropagationHeader;
         }
@@ -35,9 +54,7 @@ namespace Datadog.Trace.Tagging
         /// <summary>
         /// Gets the number of elements contained in the <see cref="TraceTagCollection"/>.
         /// </summary>
-        public int Count => _tags?.Count ?? 0;
-
-        public IReadOnlyList<KeyValuePair<string, string>> Tags => ToArray();
+        public int Count => (_tags?.Count ?? 0) + (_samplingMechanismValue != null ? 1 : 0);
 
         /// <summary>
         /// Adds a new tag to the collection.
@@ -85,6 +102,17 @@ namespace Datadog.Trace.Tagging
             if (value == null)
             {
                 return RemoveTag(name);
+            }
+
+            if (name == Trace.Tags.Propagated.DecisionMaker)
+            {
+                if (_samplingMechanismValue != null && !replaceIfExists)
+                {
+                    return false;
+                }
+
+                _samplingMechanismValue = value;
+                return true;
             }
 
             var tags = _tags;
@@ -146,6 +174,12 @@ namespace Datadog.Trace.Tagging
                 ThrowHelper.ThrowArgumentNullException(nameof(name));
             }
 
+            if (name == Trace.Tags.Propagated.DecisionMaker)
+            {
+                _samplingMechanismValue = null;
+                return true;
+            }
+
             var tags = _tags;
             if (tags == null || tags.Count == 0)
             {
@@ -183,6 +217,11 @@ namespace Datadog.Trace.Tagging
                 ThrowHelper.ThrowArgumentNullException(nameof(name));
             }
 
+            if (name == Trace.Tags.Propagated.DecisionMaker)
+            {
+                return _samplingMechanismValue;
+            }
+
             var tags = _tags;
             if (tags == null || tags.Count == 0)
             {
@@ -212,36 +251,47 @@ namespace Datadog.Trace.Tagging
             }
         }
 
+        public void FixTraceIdTag(TraceId traceId)
+        {
+            var tagValue = GetTag(Trace.Tags.Propagated.TraceIdUpper);
+
+            if (traceId.Upper > 0)
+            {
+                // add missing "_dd.p.tid" tag with the upper 64 bits of the trace id,
+                // or replace existing tag if it has the wrong value
+                // (parse the hex string and compare ulongs to avoid allocating another string)
+                if (tagValue == null || !HexString.TryParseUInt64(tagValue, out var currentValue) || currentValue != traceId.Upper)
+                {
+                    SetTag(Trace.Tags.Propagated.TraceIdUpper, HexString.ToHexString(traceId.Upper));
+                }
+            }
+            else if (traceId.Upper == 0 && tagValue != null)
+            {
+                // remove tag "_dd.p.tid" if trace id is only 64 bits
+                RemoveTag(Trace.Tags.Propagated.TraceIdUpper);
+            }
+        }
+
         /// <summary>
         /// Constructs a string that can be used for horizontal propagation using the "x-datadog-tags" header
         /// in a "key1=value1,key2=value2" format. This header should only include tags with the "_dd.p.*" prefix.
         /// The returned string is cached and reused if no relevant tags are changed between calls.
         /// </summary>
         /// <returns>A string that can be used for horizontal propagation using the "x-datadog-tags" header.</returns>
-        public string ToPropagationHeader()
+        public string ToPropagationHeader(int? maximumHeaderLength)
         {
-            return _cachedPropagationHeader ??= TagPropagation.ToHeader(this, _outgoingHeaderMaxLength);
-        }
-
-        public KeyValuePair<string, string>[] ToArray()
-        {
-            var tags = _tags;
-
-            if (tags == null || tags.Count == 0)
-            {
-                return Array.Empty<KeyValuePair<string, string>>();
-            }
-
-            lock (tags)
-            {
-                return tags.ToArray();
-            }
+            return _cachedPropagationHeader ??= TagPropagation.ToHeader(this, maximumHeaderLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Enumerate<TTagEnumerator>(ref TTagEnumerator tagEnumerator)
             where TTagEnumerator : struct, ITagEnumerator
         {
+            if (_samplingMechanismValue != null)
+            {
+                tagEnumerator.Next(new KeyValuePair<string, string>(Trace.Tags.Propagated.DecisionMaker, _samplingMechanismValue));
+            }
+
             var tags = _tags;
             if (tags is null || tags.Count == 0)
             {

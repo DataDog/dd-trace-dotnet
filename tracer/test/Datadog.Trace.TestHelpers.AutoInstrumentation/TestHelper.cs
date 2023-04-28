@@ -159,34 +159,6 @@ namespace Datadog.Trace.TestHelpers
             return process;
         }
 
-        public async Task<bool> TakeMemoryDump(Process process)
-        {
-            try
-            {
-                if (EnvironmentTools.IsLinux())
-                {
-                    var dotnetRuntimeFolder = Path.GetDirectoryName(typeof(object).Assembly.Location);
-                    var createDumpExecutable = Path.Combine(dotnetRuntimeFolder!, "createdump");
-                    // createdump automatically puts the dump in the /tmp/ directory, which is where we grab it from
-                    var args = process.Id.ToString();
-                    return CaptureMemoryDump(createDumpExecutable, args);
-                }
-                else if (EnvironmentTools.IsWindows())
-                {
-                    var procDumpExecutable = await DownloadProcdumpZipAndExtract();
-                    var args = $"-ma {process.Id} -accepteula";
-                    return CaptureMemoryDump(procDumpExecutable, args);
-                }
-            }
-            catch (Exception ex)
-            {
-                Output.WriteLine("Error taking memory dump: " + ex);
-                return false;
-            }
-
-            return false;
-        }
-
         public ProcessResult RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000)
         {
             var process = StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework);
@@ -220,9 +192,9 @@ namespace Datadog.Trace.TestHelpers
 
             if (!ranToCompletion && !process.HasExited)
             {
-                var tookMemoryDump = TakeMemoryDump(process);
+                var tookMemoryDump = MemoryDumpHelper.CaptureMemoryDump(process);
                 process.Kill();
-                throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump.Result}. Killing process.");
+                throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump}. Killing process.");
             }
 
             var exitCode = process.ExitCode;
@@ -322,28 +294,32 @@ namespace Datadog.Trace.TestHelpers
 
             var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
-            Task.Run(() =>
-            {
-                string line;
-                while ((line = process.StandardOutput.ReadLine()) != null)
+            Task.Factory.StartNew(
+                () =>
                 {
-                    Output.WriteLine($"[webserver][stdout] {line}");
-
-                    if (line.Contains("IIS Express is running"))
+                    string line;
+                    while ((line = process.StandardOutput.ReadLine()) != null)
                     {
-                        wh.Set();
-                    }
-                }
-            });
+                        Output.WriteLine($"[webserver][stdout] {line}");
 
-            Task.Run(() =>
-            {
-                string line;
-                while ((line = process.StandardError.ReadLine()) != null)
+                        if (line.Contains("IIS Express is running"))
+                        {
+                            wh.Set();
+                        }
+                    }
+                },
+                TaskCreationOptions.LongRunning);
+
+            Task.Factory.StartNew(
+                () =>
                 {
-                    Output.WriteLine($"[webserver][stderr] {line}");
-                }
-            });
+                    string line;
+                    while ((line = process.StandardError.ReadLine()) != null)
+                    {
+                        Output.WriteLine($"[webserver][stderr] {line}");
+                    }
+                },
+                TaskCreationOptions.LongRunning);
 
             wh.WaitOne(5000);
 
@@ -451,7 +427,11 @@ namespace Datadog.Trace.TestHelpers
         protected void SetInstrumentationVerification()
         {
             bool verificationEnabled = ShouldUseInstrumentationVerification();
-            SetEnvironmentVariable(ConfigurationKeys.LogDirectory, verificationEnabled ? EnvironmentHelper.LogDirectory : null);
+
+            if (verificationEnabled)
+            {
+                SetEnvironmentVariable(ConfigurationKeys.LogDirectory, EnvironmentHelper.LogDirectory);
+            }
         }
 
         protected void VerifyInstrumentation(Process process)
@@ -700,58 +680,6 @@ namespace Datadog.Trace.TestHelpers
 
         private bool IsServerSpan(MockSpan span) =>
             span.Tags.GetValueOrDefault(Tags.SpanKind) == SpanKinds.Server;
-
-        private async Task<string> DownloadProcdumpZipAndExtract()
-        {
-            // We don't know if procdump is available, so download it fresh
-            const string url = @"https://download.sysinternals.com/files/Procdump.zip";
-            var client = new HttpClient();
-            var zipFilePath = Path.GetTempFileName();
-            Output.WriteLine($"Downloading Procdump to '{zipFilePath}'");
-            using (var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
-            {
-                using var bodyStream = await response.Content.ReadAsStreamAsync();
-                using Stream streamToWriteTo = File.Open(zipFilePath, FileMode.Create);
-                await bodyStream.CopyToAsync(streamToWriteTo);
-            }
-
-            var unpackedDirectory = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetTempFileName()));
-            Output.WriteLine($"Procdump downloaded. Unpacking to '{unpackedDirectory}'");
-            System.IO.Compression.ZipFile.ExtractToDirectory(zipFilePath, unpackedDirectory);
-
-            var procDump = Path.Combine(unpackedDirectory, "procdump.exe");
-            return procDump;
-        }
-
-        private bool CaptureMemoryDump(string tool, string args)
-        {
-            Output.WriteLine($"Capturing memory dump using '{tool} {args}'");
-
-            using var dumpToolProcess = Process.Start(new ProcessStartInfo(tool, args)
-            {
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            });
-
-            using var helper = new ProcessHelper(dumpToolProcess);
-            dumpToolProcess.WaitForExit(30_000);
-            helper.Drain();
-            Output.WriteLine($"[dump][stdout] {helper.StandardOutput}");
-            Output.WriteLine($"[dump][stderr] {helper.ErrorOutput}");
-
-            if (dumpToolProcess.ExitCode == 0)
-            {
-                Output.WriteLine($"Memory dump successfully captured using '{tool} {args}'.");
-            }
-            else
-            {
-                Output.WriteLine($"Failed to capture memory dump using '{tool} {args}'. {tool}'s exit code was {dumpToolProcess.ExitCode}.");
-            }
-
-            return true;
-        }
 
         protected internal class TupleList<T1, T2> : List<Tuple<T1, T2>>
         {

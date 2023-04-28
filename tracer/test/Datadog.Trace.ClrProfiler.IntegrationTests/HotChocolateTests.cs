@@ -8,14 +8,9 @@
 #pragma warning disable SA1649 // File name should match first type name
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
@@ -23,10 +18,26 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class HotChocolate12Tests : HotChocolateTests
+    public class HotChocolateSchemaV0Tests : HotChocolateTests
     {
-        public HotChocolate12Tests(ITestOutputHelper output)
-            : base("HotChocolate", output, nameof(HotChocolate12Tests))
+        public HotChocolateSchemaV0Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v0")
+        {
+        }
+    }
+
+    public class HotChocolateSchemaV1Tests : HotChocolateTests
+    {
+        public HotChocolateSchemaV1Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v1")
+        {
+        }
+    }
+
+    public abstract class HotChocolateTests : HotChocolateTestsBase
+    {
+        public HotChocolateTests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string metadataSchemaVersion)
+            : base("HotChocolate", fixture, output, nameof(HotChocolateTests), metadataSchemaVersion)
         {
         }
 
@@ -35,205 +46,149 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task SubmitsTraces(string packageVersion)
+        public async Task SubmitsTracesHttp(string packageVersion)
             => await RunSubmitsTraces(packageVersion);
+
+        [SkippableTheory]
+        [MemberData(nameof(PackageVersions.HotChocolate), MemberType = typeof(PackageVersions))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        public async Task SubmitsTracesWebsockets(string packageVersion)
+            => await RunSubmitsTraces(packageVersion, true);
     }
 
     [UsesVerify]
-    public abstract class HotChocolateTests : TracingIntegrationTest
+    public abstract class HotChocolateTestsBase : TracingIntegrationTest, IClassFixture<AspNetCoreTestFixture>
     {
         private const string ServiceVersion = "1.0.0";
 
         private readonly string _testName;
+        private readonly string _metadataSchemaVersion;
 
-        protected HotChocolateTests(string sampleAppName, ITestOutputHelper output, string testName)
+        protected HotChocolateTestsBase(string sampleAppName, AspNetCoreTestFixture fixture, ITestOutputHelper output, string testName, string metadataSchemaVersion)
             : base(sampleAppName, output)
         {
             SetServiceVersion(ServiceVersion);
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
 
             _testName = testName;
+            _metadataSchemaVersion = metadataSchemaVersion;
+
+            Fixture = fixture;
+            Fixture.SetOutput(output);
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.Type switch
-            {
-                "graphql" => span.IsHotChocolate(),
-                _ => Result.DefaultSuccess,
-            };
+        protected AspNetCoreTestFixture Fixture { get; }
 
-        protected async Task RunSubmitsTraces(string packageVersion = "")
+        public override void Dispose()
+        {
+            Fixture.SetOutput(null);
+        }
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsHotChocolate(metadataSchemaVersion);
+
+        protected async Task RunSubmitsTraces(string packageVersion = "", bool usingWebsockets = false)
         {
             SetInstrumentationVerification();
-            using var telemetry = this.ConfigureTelemetry();
-            int? aspNetCorePort = null;
 
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (Process process = StartSample(agent, arguments: null, packageVersion: packageVersion, aspNetCorePort: 0))
-            {
-                var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
+            var isExternalSpan = _metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-graphql" : EnvironmentHelper.FullSampleName;
 
-                using var helper = new ProcessHelper(
-                    process,
-                    onDataReceived: data =>
-                    {
-                        if (data.Contains("Now listening on:"))
-                        {
-                            var splitIndex = data.LastIndexOf(':');
-                            aspNetCorePort = int.Parse(data.Substring(splitIndex + 1));
+            await Fixture.TryStartApp(this);
+            var testStart = DateTime.UtcNow;
+            var expectedSpans = await SubmitRequests(Fixture.HttpPort, usingWebsockets);
 
-                            wh.Set();
-                        }
-                        else if (data.Contains("Unable to start Kestrel"))
-                        {
-                            wh.Set();
-                        }
+            var spans = Fixture.Agent.WaitForSpans(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
 
-                        Output.WriteLine($"[webserver][stdout] {data}");
-                    },
-                    onErrorReceived: data => Output.WriteLine($"[webserver][stderr] {data}"));
+            var graphQLSpans = spans.Where(span => span.Type == "graphql");
+            ValidateIntegrationSpans(graphQLSpans, metadataSchemaVersion: "v0", expectedServiceName: clientSpanServiceName, isExternalSpan);
 
-                wh.WaitOne(15_000);
-                if (!aspNetCorePort.HasValue)
-                {
-                    throw new Exception("Unable to determine port application is listening on");
-                }
+            var settings = VerifyHelper.GetSpanVerifierSettings();
 
-                Output.WriteLine($"The ASP.NET Core server is ready on port {aspNetCorePort}");
-
-                var expectedSpans = SubmitRequests(aspNetCorePort.Value);
-
-                if (!process.HasExited)
-                {
-                    // Try shutting down gracefully
-                    var shutdownRequest = new RequestInfo() { HttpMethod = "GET", Url = "/shutdown" };
-                    SubmitRequest(aspNetCorePort.Value, shutdownRequest);
-
-                    WaitForProcessResult(helper);
-                }
-
-                var spans = agent.WaitForSpans(expectedSpans);
-                foreach (var span in spans)
-                {
-                    // TODO: Refactor to use ValidateIntegrationSpans when the HotChocolate server integration is fixed. It currently produces a service name of {service]-graphql
-                    var result = ValidateIntegrationSpan(span);
-                    Assert.True(result.Success, result.ToString());
-                }
-
-                var settings = VerifyHelper.GetSpanVerifierSettings();
-
-                await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName("HotChocolateTests.SubmitsTraces")
+            await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseFileName($"HotChocolateTests{(usingWebsockets ? "Websockets" : string.Empty)}.SubmitsTraces.Schema{_metadataSchemaVersion.ToUpper()}")
                                   .DisableRequireUniquePrefix(); // all package versions should be the same
 
-                VerifyInstrumentation(process);
-            }
-
-            telemetry.AssertIntegrationEnabled(IntegrationId.HotChocolate);
+            VerifyInstrumentation(Fixture.Process);
         }
 
-        private int SubmitRequests(int aspNetCorePort)
+        private async Task<int> SubmitRequests(int aspNetCorePort, bool usingWebsockets)
         {
-            var expectedGraphQlValidateSpanCount = 0;
             var expectedGraphQlExecuteSpanCount = 0;
+            var expectedAspNetcoreRequestSpanCount = 0;
 
-            // SUCCESS: query using GET
-            SubmitGraphqlRequest(url: "/graphql?query=" + WebUtility.UrlEncode("query{book{title author{name}}}"), httpMethod: "GET", graphQlRequestBody: null);
+            if (usingWebsockets)
+            {
+                await SubmitWebsocketRequests();
+            }
+            else
+            {
+                SubmitHttpRequests();
+            }
 
-            // SUCCESS: query using POST (default)
-            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""{book{title author{name}}}""}");
+            void SubmitHttpRequests()
+            {
+                // SUCCESS: query using GET
+                SubmitGraphqlRequest(url: "/graphql?query=" + WebUtility.UrlEncode("query{book{title author{name}}}"), httpMethod: "GET", graphQlRequestBody: null);
 
-            // SUCCESS: mutation
-            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: "{\"query\":\"mutation m{addBook(book:{title:\\\"New Book\\\"}){book{title}}}\"}");
+                // SUCCESS: query using POST (default)
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""query Book{book{title author{name}}}""}");
 
-            // FAILURE: query fails 'validate' step
-            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""{boook{title author{name}}}""}");
+                // SUCCESS: mutation
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""mutation m{addBook(book:{title:\""New Book\""}){book{title}}}""}");
 
-            // FAILURE: query fails 'execute' step
-            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}");
+                // FAILURE: query fails 'validate' step
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""{boook{title author{name}}}""}");
 
-            return expectedGraphQlExecuteSpanCount + expectedGraphQlValidateSpanCount;
+                // FAILURE: query fails 'execute' step
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}");
+            }
+
+            async Task SubmitWebsocketRequests()
+            {
+                // SUCCESS: query using Websocket
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""query Book{book{title author{name}}}"",""variables"": {}}}");
+
+                // SUCCESS: mutation using Websocket
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""mutation m{addBook(book:{title:\""New Book\""}){book{title}}}"",""variables"": {}}}");
+
+                // FAILURE: query fails 'execute' step using Websocket
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""subscription NotImplementedSub{throwNotImplementedException{name}}"",""variables"": {}}}");
+
+                // FAILURE: query fails 'validate' step using Websocket
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""{boook{title author{name}}}"",""variables"": {}}}");
+            }
+
+            return expectedGraphQlExecuteSpanCount + expectedAspNetcoreRequestSpanCount;
 
             void SubmitGraphqlRequest(
                 string url,
                 string httpMethod,
-                string graphQlRequestBody,
-                bool failsValidation = false)
+                string graphQlRequestBody)
             {
-                expectedGraphQlValidateSpanCount++;
+                expectedGraphQlExecuteSpanCount++;
+                expectedAspNetcoreRequestSpanCount++;
 
-                if (!failsValidation)
-                {
-                    expectedGraphQlExecuteSpanCount++;
-                }
-
-                SubmitRequest(
+                GraphQLCommon.SubmitRequest(
+                    Output,
                     aspNetCorePort,
-                    new RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
+                    new GraphQLCommon.RequestInfo { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
             }
-        }
 
-        private void SubmitRequest(int aspNetCorePort, RequestInfo requestInfo, bool printResponseText = true)
-        {
-            try
+            async Task SubmitGraphqlWebsocketRequest(
+                string url,
+                string httpMethod,
+                string graphQlRequestBody)
             {
-                var request = WebRequest.Create($"http://localhost:{aspNetCorePort}{requestInfo.Url}");
-                request.Method = requestInfo.HttpMethod;
+                expectedGraphQlExecuteSpanCount++;
+                expectedAspNetcoreRequestSpanCount++;
 
-                if (requestInfo.RequestBody != null)
-                {
-                    byte[] requestBytes = System.Text.Encoding.UTF8.GetBytes(requestInfo.RequestBody);
-
-                    request.ContentType = "application/json";
-                    request.ContentLength = requestBytes.Length;
-
-                    using (var dataStream = request.GetRequestStream())
-                    {
-                        dataStream.Write(requestBytes, 0, requestBytes.Length);
-                    }
-                }
-
-                using (var response = (HttpWebResponse)request.GetResponse())
-                using (var stream = response.GetResponseStream())
-                using (var reader = new StreamReader(stream))
-                {
-                    string responseText;
-                    try
-                    {
-                        responseText = reader.ReadToEnd();
-                    }
-                    catch (Exception ex)
-                    {
-                        responseText = "ENCOUNTERED AN ERROR WHEN READING RESPONSE.";
-                        Output.WriteLine(ex.ToString());
-                    }
-
-                    if (printResponseText)
-                    {
-                        Output.WriteLine($"[http] {response.StatusCode} {responseText}");
-                    }
-                }
+                await GraphQLCommon.SubmitWebsocketRequest(
+                    Output,
+                    aspNetCorePort,
+                    new GraphQLCommon.RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
             }
-            catch (WebException wex)
-            {
-                Output.WriteLine($"[http] exception: {wex}");
-                if (wex.Response is HttpWebResponse response)
-                {
-                    using (var stream = response.GetResponseStream())
-                    using (var reader = new StreamReader(stream))
-                    {
-                        Output.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
-                    }
-                }
-            }
-        }
-
-        private class RequestInfo
-        {
-            public string Url { get; set; }
-
-            public string HttpMethod { get; set; }
-
-            public string RequestBody { get; set; }
         }
     }
 }

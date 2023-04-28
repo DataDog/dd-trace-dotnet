@@ -84,6 +84,10 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { CreateFunc(s => s.Exporter.DogStatsdPort), 8125 };
             yield return new object[] { CreateFunc(s => s.PropagationStyleInject), new[] { "tracecontext", "Datadog" } };
             yield return new object[] { CreateFunc(s => s.PropagationStyleExtract), new[] { "tracecontext", "Datadog" } };
+            yield return new object[] { CreateFunc(s => s.ServiceNameMappings), null };
+
+            yield return new object[] { CreateFunc(s => s.TraceId128BitGenerationEnabled), false };
+            yield return new object[] { CreateFunc(s => s.TraceId128BitLoggingEnabled), false };
         }
 
         public static IEnumerable<object[]> GetTestData()
@@ -118,6 +122,8 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { ConfigurationKeys.HeaderTags, "header1:tag1,header2:tag1", CreateFunc(s => s.HeaderTags), HeaderTagsSameTag };
             yield return new object[] { ConfigurationKeys.HeaderTags, "header1:tag1,header1:tag2", CreateFunc(s => s.HeaderTags.Count), 1 };
             yield return new object[] { ConfigurationKeys.HeaderTags, "header3:my.header.with.dot,my.new.header.with.dot", CreateFunc(s => s.HeaderTags), HeaderTagsWithDots };
+
+            yield return new object[] { ConfigurationKeys.ServiceNameMappings, "elasticsearch:custom-name", CreateFunc(s => s.ServiceNameMappings["elasticsearch"]), "custom-name" };
         }
 
         // JsonConfigurationSource needs to be tested with JSON data, which cannot be used with the other IConfigurationSource implementations.

@@ -5,9 +5,9 @@
 
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
@@ -45,7 +45,7 @@ namespace Datadog.Trace
             }
 
             Tracer = tracer;
-            Tags = tags ?? new TraceTagCollection(settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+            Tags = tags ?? new TraceTagCollection();
         }
 
         public Span RootSpan { get; private set; }
@@ -57,6 +57,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the collection of trace-level tags.
         /// </summary>
+        [NotNull]
         public TraceTagCollection Tags { get; }
 
         /// <summary>
@@ -149,10 +150,10 @@ namespace Datadog.Trace
                 }
                 else if (ShouldTriggerPartialFlush())
                 {
-                    Log.Debug<ulong, ulong, int>(
+                    Log.Debug<ulong, string, int>(
                         "Closing span {SpanId} triggered a partial flush of trace {TraceId} with {SpanCount} pending spans",
                         span.SpanId,
-                        span.TraceId,
+                        span.Context.RawTraceId,
                         _spans.Count);
 
                     spansToWrite = _spans.GetArray();
@@ -205,13 +206,7 @@ namespace Datadog.Trace
 
             if (priority > 0 && mechanism != null)
             {
-                // set the sampling mechanism trace tag
-                // * only set tag if priority is AUTO_KEEP (1) or USER_KEEP (2)
-                // * do not overwrite an existing value
-                // * don't set tag if sampling mechanism is unknown (null)
-                // * the "-" prefix is a left-over separator from a previous iteration of this feature (not a typo or a negative sign)
-                var tagValue = $"-{mechanism.Value.ToString(CultureInfo.InvariantCulture)}";
-                Tags.TryAddTag(tagName, tagValue);
+                Tags.TryAddTag(tagName, SamplingMechanism.GetTagValue(mechanism.Value));
             }
             else if (priority <= 0)
             {

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -22,6 +23,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private static readonly Regex StackRegex = new(@"      error.stack:(\n|\r){1,2}.*(\n|\r){1,2}.*,(\r|\n){1,2}");
         private static readonly Regex ErrorMsgRegex = new(@"      error.msg:.*,(\r|\n){1,2}");
+        private static readonly TestTransports[] Transports = new[]
+        {
+            TestTransports.Tcp,
+            TestTransports.WindowsNamedPipe,
+#if NETCOREAPP3_1_OR_GREATER
+            TestTransports.Uds,
+#endif
+        };
 
         private readonly ITestOutputHelper _output;
 
@@ -32,27 +41,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
+        public static IEnumerable<object[]> TestData
+            => from behaviour in (AgentBehaviour[])Enum.GetValues(typeof(AgentBehaviour))
+               from transportType in Transports
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new object[] { behaviour, transportType, metadataSchemaVersion };
+
         [SkippableTheory]
+        [MemberData(nameof(TestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [InlineData(AgentBehaviour.Normal, TestTransports.Tcp)]
-        [InlineData(AgentBehaviour.NoAnswer, TestTransports.Tcp)]
-        [InlineData(AgentBehaviour.WrongAnswer, TestTransports.Tcp)]
-        [InlineData(AgentBehaviour.Return404, TestTransports.Tcp)]
-        [InlineData(AgentBehaviour.Return500, TestTransports.Tcp)]
-        [InlineData(AgentBehaviour.Normal, TestTransports.WindowsNamedPipe)]
-        [InlineData(AgentBehaviour.NoAnswer, TestTransports.WindowsNamedPipe)]
-        [InlineData(AgentBehaviour.WrongAnswer, TestTransports.WindowsNamedPipe)]
-        [InlineData(AgentBehaviour.Return404, TestTransports.WindowsNamedPipe)]
-        [InlineData(AgentBehaviour.Return500, TestTransports.WindowsNamedPipe)]
-#if NETCOREAPP3_1_OR_GREATER
-        [InlineData(AgentBehaviour.Normal, TestTransports.Uds)]
-        [InlineData(AgentBehaviour.NoAnswer, TestTransports.Uds)]
-        [InlineData(AgentBehaviour.WrongAnswer, TestTransports.Uds)]
-        [InlineData(AgentBehaviour.Return404, TestTransports.Uds)]
-        [InlineData(AgentBehaviour.Return500, TestTransports.Uds)]
-#endif
-        public async Task SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType)
+        public async Task SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType, string metadataSchemaVersion)
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             if (transportType == TestTransports.WindowsNamedPipe && !EnvironmentTools.IsWindows())
@@ -71,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 try
                 {
                     attemptsRemaining--;
-                    await TestInstrumentation(agent);
+                    await TestInstrumentation(agent, metadataSchemaVersion);
                     return;
                 }
                 catch (Exception ex) when (transportType == TestTransports.WindowsNamedPipe && attemptsRemaining > 0 && ex is not SkipException)
@@ -81,10 +80,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private async Task TestInstrumentation(MockTracerAgent agent)
+        private async Task TestInstrumentation(MockTracerAgent agent, string metadataSchemaVersion)
         {
             const int expectedSpanCount = 5;
             const string expectedOperationName = "command_execution";
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
 
             using var process = RunSampleAndWaitForExit(agent);
 
@@ -99,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     "ProcessStartTests.SubmitsTracesOsx" :
                     "ProcessStartTests.SubmitsTraces";
             await VerifyHelper.VerifySpans(spans, settings)
-                              .UseFileName(filename)
+                              .UseFileName(filename + $".Schema{metadataSchemaVersion.ToUpper()}")
                               .DisableRequireUniquePrefix();
 
             VerifyInstrumentation(process.Process);

@@ -15,14 +15,14 @@ namespace Datadog.Trace.Tests.Propagators;
 
 public class DistributedPropagatorTests
 {
-    private const ulong TraceId = 1;
-    private const ulong SpanId = 2;
     private const int SamplingPriority = SamplingPriorityValues.UserReject;
     private const string Origin = "origin";
-    private const string RawTraceId = "1a";
-    private const string RawSpanId = "2b";
     private const string PropagatedTagsString = "_dd.p.key1=value1,_dd.p.key2=value2";
     private const string AdditionalW3CTraceState = "key3=value3,key4=value4";
+    private const ulong SpanId = 0x1122334455667788;                       // 1234605616436508552
+    private const string RawSpanId = "1122334455667788";                   // 1234605616436508552
+    private const string RawTraceId = "00000000000000001234567890abcdef";  // 1311768467294899695
+    private static readonly TraceId TraceId = (TraceId)0x1234567890abcdef; // 1311768467294899695
 
     private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
 
@@ -30,7 +30,7 @@ public class DistributedPropagatorTests
 
     private static readonly KeyValuePair<string, string>[] DefaultHeaderValues =
     {
-        new("__DistributedKey-TraceId", TraceId.ToString(InvariantCulture)),
+        new("__DistributedKey-TraceId", TraceId.Lower.ToString(InvariantCulture)),
         new("__DistributedKey-ParentId", SpanId.ToString(InvariantCulture)),
         new("__DistributedKey-SamplingPriority", SamplingPriority.ToString(InvariantCulture)),
         new("__DistributedKey-Origin", Origin),
@@ -41,7 +41,6 @@ public class DistributedPropagatorTests
     };
 
     private static readonly TraceTagCollection PropagatedTagsCollection = new(
-        TagPropagation.OutgoingTagPropagationHeaderMaxLength,
         new List<KeyValuePair<string, string>>
         {
             new("_dd.p.key1", "value1"),
@@ -49,7 +48,7 @@ public class DistributedPropagatorTests
         },
         PropagatedTagsString);
 
-    private static readonly TraceTagCollection EmptyPropagatedTags = new(TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+    private static readonly TraceTagCollection EmptyPropagatedTags = new();
 
     static DistributedPropagatorTests()
     {
@@ -82,7 +81,8 @@ public class DistributedPropagatorTests
               .BeEquivalentTo(
                    new SpanContextMock
                    {
-                       TraceId = TraceId,
+                       TraceId128 = TraceId,
+                       TraceId = TraceId.Lower,
                        SpanId = SpanId,
                        RawTraceId = RawTraceId,
                        RawSpanId = RawSpanId,
@@ -108,7 +108,7 @@ public class DistributedPropagatorTests
     [Fact]
     public void Extract_TraceIdOnly()
     {
-        var value = TraceId.ToString(InvariantCulture);
+        var value = TraceId.Lower.ToString(InvariantCulture);
 
         // only setup TraceId, other properties remain null/empty
         var headers = new Mock<IReadOnlyDictionary<string, string>>();
@@ -117,17 +117,21 @@ public class DistributedPropagatorTests
         // extract SpanContext
         var result = Propagator.Extract(headers.Object);
 
-        result.Should().BeEquivalentTo(new SpanContextMock
-                                       {
-                                           TraceId = TraceId,
-                                           PropagatedTags = EmptyPropagatedTags,
-                                       });
+        result.Should().BeEquivalentTo(
+            new SpanContextMock
+            {
+                TraceId128 = TraceId,
+                TraceId = TraceId.Lower,
+                RawTraceId = RawTraceId,
+                RawSpanId = "0000000000000000",
+                PropagatedTags = EmptyPropagatedTags,
+            });
     }
 
     [Fact]
     public void SpanContextRoundTrip()
     {
-        var propagatedTags = new TraceTagCollection(100);
+        var propagatedTags = new TraceTagCollection();
         propagatedTags.SetTag("_dd.p.key1", "value1");
         propagatedTags.SetTag("_dd.p.key2", "value2");
 
@@ -193,7 +197,8 @@ public class DistributedPropagatorTests
                    new SpanContextMock
                    {
                        // SpanId has default value
-                       TraceId = TraceId,
+                       TraceId128 = TraceId,
+                       TraceId = TraceId.Lower,
                        Origin = Origin,
                        RawTraceId = RawTraceId,
                        RawSpanId = RawSpanId,
@@ -229,7 +234,8 @@ public class DistributedPropagatorTests
               .BeEquivalentTo(
                    new SpanContextMock
                    {
-                       TraceId = TraceId,
+                       TraceId128 = TraceId,
+                       TraceId = TraceId.Lower,
                        SpanId = SpanId,
                        RawTraceId = RawTraceId,
                        RawSpanId = RawSpanId,

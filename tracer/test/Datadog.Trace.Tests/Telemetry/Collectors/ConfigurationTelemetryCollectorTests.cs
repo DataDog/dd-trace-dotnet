@@ -169,10 +169,9 @@ namespace Datadog.Trace.Tests.Telemetry
             using var scope = new AssertionScope();
             data[ConfigTelemetryData.AasConfigurationError].Should().BeOfType<bool>().Subject.Should().BeTrue();
             data[ConfigTelemetryData.CloudHosting].Should().Be("Azure");
-            // TODO: Don't we want to collect these anyway? If so, need to update AzureAppServices behaviour
-            data[ConfigTelemetryData.AasAppType].Should().BeNull();
-            data[ConfigTelemetryData.AasFunctionsRuntimeVersion].Should().BeNull();
-            data[ConfigTelemetryData.AasSiteExtensionVersion].Should().BeNull();
+            data[ConfigTelemetryData.AasAppType].Should().Be("function");
+            data[ConfigTelemetryData.AasFunctionsRuntimeVersion].Should().Be("~3");
+            data[ConfigTelemetryData.AasSiteExtensionVersion].Should().Be("1.5.0");
         }
 
         [Fact]
@@ -233,30 +232,12 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
 #if NETFRAMEWORK
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void ConfigurationDataShouldIncludeExpectedFullTrustValues(bool isFullTrust)
+        [Fact]
+        public void ConfigurationDataShouldIncludeExpectedFullTrustValues()
         {
-            Dictionary<string, object> data;
-            if (isFullTrust)
-            {
-                var carrier = new AppDomainCarrierClass();
-                data = carrier.BuildFullTrustConfigurationData();
-            }
-            else
-            {
-                PermissionSet permSet = new PermissionSet(PermissionState.None);
-                permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
-                permSet.AddPermission(new EnvironmentPermission(PermissionState.Unrestricted)); // The module initializer in the test DLL sets an environment variable to disable telemetry
-                var remote = AppDomain.CreateDomain("ConfigurationDataShouldIncludeExpectedFullTrustValues", null, AppDomain.CurrentDomain.SetupInformation, permSet);
-
-                var carrierType = typeof(AppDomainCarrierClass);
-                var carrier = (AppDomainCarrierClass)remote.CreateInstanceAndUnwrap(carrierType.Assembly.FullName, carrierType.FullName);
-                data = carrier.BuildFullTrustConfigurationData();
-            }
-
-            data[ConfigTelemetryData.FullTrustAppDomain].Should().Be(isFullTrust);
+            var carrier = new AppDomainCarrierClass();
+            var data = carrier.BuildFullTrustConfigurationData();
+            data[ConfigTelemetryData.FullTrustAppDomain].Should().Be(true);
         }
 
         public class AppDomainCarrierClass : MarshalByRefObject

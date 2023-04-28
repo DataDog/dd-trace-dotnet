@@ -30,6 +30,7 @@ namespace Samples.HotChocolate
                               ILoggerFactory loggerFactory)
         {
             app.UseRouting();
+            app.UseWebSockets();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapGraphQL();

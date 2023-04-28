@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode, expectedSpanCount: 1);
             foreach (var span in spans)
             {
-                var result = ValidateIntegrationSpan(span);
+                var result = ValidateIntegrationSpan(span, metadataSchemaVersion: "v0");
                 Assert.True(result.Success, result.ToString());
             }
 

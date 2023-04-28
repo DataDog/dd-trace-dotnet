@@ -9,6 +9,8 @@ namespace Datadog.Trace.Tests.Propagators;
 
 internal class SpanContextMock
 {
+    public TraceId TraceId128 { get; set; }
+
     public ulong TraceId { get; set; }
 
     public ulong SpanId { get; set; }

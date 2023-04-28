@@ -16,6 +16,7 @@ using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using Nuke.Common.Utilities;
 using System.Collections;
+using Logger = Serilog.Log;
 
 partial class Build
 {
@@ -164,7 +165,7 @@ partial class Build
         .After(CompileProfilerNativeSrc)
         .Executes(() =>
         {
-            foreach (var architecture in ArchitecturesForPlatform)
+            foreach (var architecture in ArchitecturesForPlatformForProfiler)
             {
                 var sourceDir = ProfilerOutputDirectory / "DDProf-Deploy" / $"win-{architecture}";
                 var source = sourceDir / "Datadog.Profiler.Native.dll";
@@ -231,6 +232,7 @@ partial class Build
                                 .SetNoWarnDotNetCore3()
                                 .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                                 .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+                                .EnableCrashDumps()
                                 .SetFilter(filter)
                                 .SetProcessLogOutput(true)
                                 .SetProcessEnvironmentVariable("DD_TESTING_OUPUT_DIR", ProfilerBuildDataDirectory)
@@ -244,6 +246,8 @@ partial class Build
         finally
         {
             CopyDumpsTo(ProfilerBuildDataDirectory);
+            // A crashed occured on linux and the memory dump copy failed due a lack of permission.
+            Chmod.Value.Invoke("-R 777 " + ProfilerBuildDataDirectory);
         }
     }
 
@@ -304,7 +308,7 @@ partial class Build
 
             foreach (var platform in new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 })
             {
-                Logger.Info($"======= Run CppCheck for platform {platform}");
+                Logger.Information($"======= Run CppCheck for platform {platform}");
                 RunCppCheck("Datadog.Profiler.Native", platform);
                 RunCppCheck("Datadog.Profiler.Native.Windows", platform);
             }
@@ -334,7 +338,7 @@ partial class Build
 
             foreach (var result in cppcheckResults)
             {
-                Logger.Info($"Check result file {result}");
+                Logger.Information($"Check result file {result}");
                 var doc = XDocument.Load(result);
                 var messages = doc.Descendants("errors").First();
 
@@ -369,7 +373,7 @@ partial class Build
 
             foreach (var result in clangTidyResults)
             {
-                Logger.Info($"Check result file {result}");
+                Logger.Information($"Check result file {result}");
                 using var sr = new StreamReader(result); ;
 
                 string line;
@@ -394,7 +398,6 @@ partial class Build
             EnsureExistingDirectory(ProfilerBuildDataDirectory);
 
             var (arch, ext) = GetUnixArchitectureAndExtension();
-            var outputFile = ProfilerBuildDataDirectory / $"linux-profiler-clang-tidy-{arch}.txt";
 
             CMake.Value(
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DRUN_ANALYSIS=1 -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
@@ -403,7 +406,7 @@ partial class Build
             CMake.Value(
                 arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target all-profiler");
 
-            RunClangTidy.Value($"-j {Environment.ProcessorCount} -checks=\"{ClangTidyChecks}\" -p {NativeBuildDirectory}", logFile: outputFile, logOutput: false);
+            RunClangTidy.Value($"-j {Environment.ProcessorCount} -checks=\"{ClangTidyChecks}\" -p {NativeBuildDirectory}", logOutput: false);
         });
 
     Target RunCppCheckProfilerLinux => _ => _
@@ -537,7 +540,7 @@ partial class Build
             {
                 var baseOutputDir = ProfilerBuildDataDirectory / platform.ToString();
                 var pprofsOutputDir = baseOutputDir / "pprofs";
-                Logger.Info($"Check if pprofs file(s) was/were generated at {pprofsOutputDir}");
+                Logger.Information($"Check if pprofs file(s) was/were generated at {pprofsOutputDir}");
 
                 var pprofFiles = pprofsOutputDir.GlobFiles(
                     $"*.pprof"
@@ -550,7 +553,7 @@ partial class Build
                 }
 
                 var logsOutputDir = baseOutputDir / "logs";
-                Logger.Info($"Look for profiler log file(s) in {logsOutputDir}");
+                Logger.Information($"Look for profiler log file(s) in {logsOutputDir}");
 
                 var logFiles = logsOutputDir.GlobFiles(
                     $"DD-DotNet-Profiler-Native-*.log"
@@ -670,11 +673,10 @@ partial class Build
 
         DotNet($"{sampleAppDll} --scenario 1 --timeout 120", platform, environmentVariables: envVars);
 
-        static IReadOnlyCollection<Output> DotNet(string arguments, MSBuildTargetPlatform platform, string workingDirectory = null, IReadOnlyDictionary<string, string> environmentVariables = null, int? timeout = null, bool? logOutput = null, bool? logInvocation = null, bool? logTimestamp = null, string logFile = null, Func<string, string> outputFilter = null)
+        static IReadOnlyCollection<Output> DotNet(string arguments, MSBuildTargetPlatform platform, IReadOnlyDictionary<string, string> environmentVariables)
         {
             var dotnetPath = DotNetSettingsExtensions.GetDotNetPath(platform);
-
-            using var process = ProcessTasks.StartProcess(dotnetPath, arguments, workingDirectory, environmentVariables, timeout, logOutput, logInvocation, logTimestamp, logFile, DotNetTasks.DotNetLogger, outputFilter);
+            using var process = ProcessTasks.StartProcess(toolPath: dotnetPath, arguments: arguments, environmentVariables: environmentVariables, customLogger: DotNetTasks.DotNetLogger);
             process.AssertZeroExitCode();
             return process.Output;
 
@@ -718,7 +720,7 @@ partial class Build
 
             if (sanitizer is SanitizerKind.Asan)
             {
-                envVars["ASAN_OPTIONS"] = "detect_leaks=0";
+                envVars["ASAN_OPTIONS"] = "detect_leaks=1";
             }
             else if (sanitizer is SanitizerKind.Ubsan)
             {
