@@ -42,30 +42,42 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
     {
         if (signal == HostSignal.BeforeProcessStart)
         {
-            var monitorHome = EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
-            if (monitorHome is not null && !Directory.Exists(monitorHome))
+            var monitoringHome = EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
+            
+            // if the monitoringHome is defined but invalid, we clean the monitoringHome variable.
+            if (monitoringHome is not null && !Directory.Exists(monitoringHome))
             {
-                monitorHome = null;
+                monitoringHome = null;
             }
 
             string? profiler32Path, profiler64Path, ldPreload, loaderConfig;
             if (FrameworkDescription.Instance.IsWindows())
             {
-                monitorHome ??= Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "..\\..\\..\\..\\..\\..\\..\\shared\\bin\\monitoring-home");
-                monitorHome = Path.GetFullPath(monitorHome);
-                profiler32Path = Path.Combine(monitorHome, "win-x86\\Datadog.Trace.ClrProfiler.Native.dll");
-                profiler64Path = Path.Combine(monitorHome, "win-x64\\Datadog.Trace.ClrProfiler.Native.dll");
-                loaderConfig = Path.Combine(monitorHome, "win-x64\\loader.conf");
+                // if monitoring home is not defined, then we try to locate it in the default path using relative path from the benchmark assembly.
+                monitoringHome ??= Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "..\\..\\..\\..\\..\\..\\..\\shared\\bin\\monitoring-home");
+                
+                // clean the path
+                monitoringHome = Path.GetFullPath(monitoringHome);
+                
+                // set required file paths
+                profiler32Path = Path.Combine(monitoringHome, "win-x86\\Datadog.Trace.ClrProfiler.Native.dll");
+                profiler64Path = Path.Combine(monitoringHome, "win-x64\\Datadog.Trace.ClrProfiler.Native.dll");
+                loaderConfig = Path.Combine(monitoringHome, "win-x64\\loader.conf");
                 ldPreload = null;
             }
             else
             {
-                monitorHome ??= Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../../../../../shared/bin/monitoring-home/");
-                monitorHome = Path.GetFullPath(monitorHome);
+                // if monitoring home is not defined, then we try to locate it in the default path using relative path from the benchmark assembly.
+                monitoringHome ??= Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../../../../../shared/bin/monitoring-home/");
+                
+                // clean the path
+                monitoringHome = Path.GetFullPath(monitoringHome);
+                
+                // set required file paths
                 profiler32Path = null;
-                profiler64Path = Path.Combine(monitorHome, "linux-x64/Datadog.Trace.ClrProfiler.Native.so");
-                loaderConfig = Path.Combine(monitorHome, "linux-x64/loader.conf");
-                ldPreload = Path.Combine(monitorHome, "linux-x64/Datadog.Linux.ApiWrapper.x64.so");
+                profiler64Path = Path.Combine(monitoringHome, "linux-x64/Datadog.Trace.ClrProfiler.Native.so");
+                loaderConfig = Path.Combine(monitoringHome, "linux-x64/loader.conf");
+                ldPreload = Path.Combine(monitoringHome, "linux-x64/Datadog.Linux.ApiWrapper.x64.so");
             }
 
             if (profiler64Path is not null && !File.Exists(profiler64Path))
@@ -103,7 +115,7 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
             environment["CORECLR_ENABLE_PROFILING"] = "1";
             environment["COR_PROFILER"] = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
             environment["CORECLR_PROFILER"] = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
-            environment["DD_DOTNET_TRACER_HOME"] = monitorHome;
+            environment["DD_DOTNET_TRACER_HOME"] = monitoringHome;
             
             if (profiler32Path != null)
             {
