@@ -130,6 +130,7 @@
   <!--Enable thread safe support for vendored dnlib library -->
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);THREAD_SAFE</DefineConstants>
+    <AnalysisLevel>none</AnalysisLevel>
   </PropertyGroup>
 
 </Project>

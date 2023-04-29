@@ -502,7 +502,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Probes.TestRuns", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.OpenTelemetrySdk", "tracer\test\test-applications\integrations\Samples.OpenTelemetrySdk\Samples.OpenTelemetrySdk.csproj", "{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.NetActivitySdk", "tracer\test\test-applications\integrations\Samples.NetActivitySdk\Samples.NetActivitySdk.csproj", "{560E1104-9A6E-41E7-AB3D-85BA2740A0F7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.NetActivitySdk", "tracer\test\test-applications\integrations\Samples.NetActivitySdk\Samples.NetActivitySdk.csproj", "{560E1104-9A6E-41E7-AB3D-85BA2740A0F7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Owin.Iis.WebApi2", "tracer\test\test-applications\aspnet\Samples.Owin.Iis.WebApi2\Samples.Owin.Iis.WebApi2.csproj", "{B417E258-A21F-4546-B78F-8A7A4879472A}"
 EndProject
@@ -510,9 +510,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.BenchmarkDotN
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.InstrumentedTests", "tracer\test\test-applications\integrations\Samples.InstrumentedTests\Samples.InstrumentedTests.csproj", "{64E32F7A-8989-480E-AFE7-3BD343424F6A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Isolated", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated\Samples.AzureFunctions.V4Isolated.csproj", "{BDEE131F-CCF5-49BD-9764-9C4A8864CE4E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.V4Isolated", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated\Samples.AzureFunctions.V4Isolated.csproj", "{BDEE131F-CCF5-49BD-9764-9C4A8864CE4E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.GraphQL7", "tracer\test\test-applications\integrations\Samples.GraphQL7\Samples.GraphQL7.csproj", "{A996927A-9222-43F4-8552-810B69FF04DF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.GraphQL7", "tracer\test\test-applications\integrations\Samples.GraphQL7\Samples.GraphQL7.csproj", "{A996927A-9222-43F4-8552-810B69FF04DF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -960,6 +960,8 @@ Global
 		{B22311CE-EC71-4ADD-ADC6-C466B2D10230}.Release|Any CPU.Build.0 = Release|Any CPU
 		{536F1D82-D40C-4E33-B7FA-76A0F17BF672}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{536F1D82-D40C-4E33-B7FA-76A0F17BF672}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A806F4B-39E7-4F38-B36F-F5CFC4F8760A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A806F4B-39E7-4F38-B36F-F5CFC4F8760A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7DFDD339-30C5-4C1D-AB07-F9106256AF77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7DFDD339-30C5-4C1D-AB07-F9106256AF77}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7DFDD339-30C5-4C1D-AB07-F9106256AF77}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1184,8 +1186,8 @@ Global
 		{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CB56AC5A-D2C1-40DE-99D5-DCF9F44C9482}.Release|Any CPU.Build.0 = Release|Any CPU
-		{560E1104-9A6E-41E7-AB3D-85BA2740A0F7}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{560E1104-9A6E-41E7-AB3D-85BA2740A0F7}.Debug|Any CPU.Build.0 = Debug|x64
+		{560E1104-9A6E-41E7-AB3D-85BA2740A0F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{560E1104-9A6E-41E7-AB3D-85BA2740A0F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{560E1104-9A6E-41E7-AB3D-85BA2740A0F7}.Release|Any CPU.ActiveCfg = Release|x64
 		{560E1104-9A6E-41E7-AB3D-85BA2740A0F7}.Release|Any CPU.Build.0 = Release|x64
 		{B417E258-A21F-4546-B78F-8A7A4879472A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU

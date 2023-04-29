@@ -56,7 +56,7 @@ internal class JTokenAssertions : ReferenceTypeAssertions<JToken, JTokenAssertio
     /// <param name="becauseArgs">
     ///     Zero or more objects to format using the placeholders in <see paramref="because" />.
     /// </param>/// <returns> The builder </returns>
-    public AndConstraint<JTokenAssertions> BeEquivalentTo(string expected, string because = "", params object[] becauseArgs)
+    public AndConstraint<JTokenAssertions> BeEquivalentTo(string expected, Func<string, string, bool> filterProperty, string because = "", params object[] becauseArgs)
     {
         JToken parsedExpected;
         try
@@ -73,7 +73,7 @@ internal class JTokenAssertions : ReferenceTypeAssertions<JToken, JTokenAssertio
                 ex);
         }
 
-        return BeEquivalentTo(parsedExpected, because, becauseArgs);
+        return BeEquivalentTo(parsedExpected, filterProperty, because, becauseArgs);
     }
 
     /// <summary>
@@ -89,9 +89,9 @@ internal class JTokenAssertions : ReferenceTypeAssertions<JToken, JTokenAssertio
     ///     Zero or more objects to format using the placeholders in <see paramref="because" />.
     /// </param>
     /// <returns> The builder </returns>
-    public AndConstraint<JTokenAssertions> BeEquivalentTo(JToken expected, string because = "", params object[] becauseArgs)
+    public AndConstraint<JTokenAssertions> BeEquivalentTo(JToken expected, Func<string, string, bool> filterProperty = null, string because = "", params object[] becauseArgs)
     {
-        return BeEquivalentTo(expected, false, options => options, because, becauseArgs);
+        return BeEquivalentTo(expected, false, filterProperty, options => options, because, becauseArgs);
     }
 
     /// <summary>
@@ -108,9 +108,9 @@ internal class JTokenAssertions : ReferenceTypeAssertions<JToken, JTokenAssertio
     ///     Zero or more objects to format using the placeholders in <see paramref="because" />.
     /// </param>
     /// <returns> The builder </returns>
-    public AndConstraint<JTokenAssertions> BeEquivalentTo(JToken expected, Func<IJsonAssertionOptions<object>, IJsonAssertionOptions<object>> config, string because = "", params object[] becauseArgs)
+    public AndConstraint<JTokenAssertions> BeEquivalentTo(JToken expected, Func<string, string, bool> filterProperty, Func<IJsonAssertionOptions<object>, IJsonAssertionOptions<object>> config, string because = "", params object[] becauseArgs)
     {
-        return BeEquivalentTo(expected, false, config, because, becauseArgs);
+        return BeEquivalentTo(expected, false, filterProperty, config, because, becauseArgs);
     }
 
     /// <summary>
@@ -478,7 +478,7 @@ internal class JTokenAssertions : ReferenceTypeAssertions<JToken, JTokenAssertio
     /// <returns> The builder </returns>
     public AndConstraint<JTokenAssertions> ContainSubtree(JToken subtree, string because = "", params object[] becauseArgs)
     {
-        return BeEquivalentTo(subtree, true, options => options, because, becauseArgs);
+        return BeEquivalentTo(subtree, true, null, options => options, because, becauseArgs);
     }
 
 #pragma warning disable CA1822 // Making this method static is a breaking chan
@@ -494,10 +494,10 @@ internal class JTokenAssertions : ReferenceTypeAssertions<JToken, JTokenAssertio
     }
 #pragma warning restore CA1822 // Making this method static is a breaking chan
 
-    private AndConstraint<JTokenAssertions> BeEquivalentTo(JToken expected, bool ignoreExtraProperties, Func<IJsonAssertionOptions<object>, IJsonAssertionOptions<object>> config, string because = "", params object[] becauseArgs)
+    private AndConstraint<JTokenAssertions> BeEquivalentTo(JToken expected, bool ignoreExtraProperties, Func<string, string, bool> filterProperty, Func<IJsonAssertionOptions<object>, IJsonAssertionOptions<object>> config, string because = "", params object[] becauseArgs)
     {
         var differentiator = new JTokenDifferentiator(ignoreExtraProperties, config);
-        Difference difference = differentiator.FindFirstDifference(Subject, expected);
+        Difference difference = differentiator.FindFirstDifference(Subject, expected, filterProperty);
 
         var expectation = ignoreExtraProperties ? "was expected to contain" : "was expected to be equivalent to";
 

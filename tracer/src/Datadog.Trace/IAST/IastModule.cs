@@ -12,8 +12,10 @@ using System.Diagnostics;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Process;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Propagation;
+using Datadog.Trace.Iast.SensitiveData;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.Iast;
 
@@ -25,7 +27,13 @@ internal static class IastModule
     private const string OperationNameCommandInjection = "command_injection";
     private const string OperationNamePathTraversal = "path_traversal";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
+    private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
     private static IastSettings iastSettings = Iast.Instance.Settings;
+
+    static IastModule()
+    {
+        EvidenceRedactorLazy = new(() => CreateRedactor(iastSettings));
+    }
 
     public static Scope? OnPathTraversal(string evidence)
     {
@@ -65,6 +73,11 @@ internal static class IastModule
             Log.Error(ex, "Error while checking for command injection.");
             return null;
         }
+    }
+
+    internal static EvidenceRedactor? CreateRedactor(IastSettings settings)
+    {
+        return settings.RedactionEnabled ? new EvidenceRedactor(settings.RedactionKeysRegex, settings.RedactionValuesRegex, TimeSpan.FromMilliseconds(settings.RedactionRegexTimeout)) : null;
     }
 
     private static string BuildCommandInjectionEvidence(string file, string argumentLine, Collection<string>? argumentList)
@@ -182,7 +195,8 @@ internal static class IastModule
                 line: !string.IsNullOrEmpty(filename) ? frameInfo.StackFrame?.GetFileLineNumber() : null,
                 spanId: currentSpan?.SpanId,
                 methodTypeName: string.IsNullOrEmpty(filename) ? GetMethodTypeName(frameInfo.StackFrame) : null),
-            new Evidence(evidenceValue, tainted?.Ranges));
+            new Evidence(evidenceValue, tainted?.Ranges),
+            integrationId);
 
         if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
@@ -203,12 +217,12 @@ internal static class IastModule
     private static Scope? AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)
     {
         // we either are not in a request or the distributed tracer returned a scope that cannot be casted to Scope and we cannot access the root span.
-        var batch = new VulnerabilityBatch();
+        var batch = new VulnerabilityBatch(EvidenceRedactorLazy.Value);
         batch.Add(vulnerability);
 
         var tags = new IastTags()
         {
-            IastJson = batch.ToString(),
+            IastJson = batch.ToJson(),
             IastEnabled = "1"
         };
 

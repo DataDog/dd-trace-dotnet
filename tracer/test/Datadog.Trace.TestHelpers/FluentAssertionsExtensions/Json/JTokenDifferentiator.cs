@@ -24,7 +24,7 @@ internal class JTokenDifferentiator
         this.config = config;
     }
 
-    public Difference FindFirstDifference(JToken actual, JToken expected)
+    public Difference FindFirstDifference(JToken actual, JToken expected, Func<string, string, bool> filterProperty)
     {
         var path = new JPath();
 
@@ -43,7 +43,7 @@ internal class JTokenDifferentiator
             return new Difference(DifferenceKind.ExpectedIsNull, path);
         }
 
-        return FindFirstDifference(actual, expected, path);
+        return FindFirstDifference(actual, expected, path, filterProperty);
     }
 
     private static string Describe(JTokenType jTokenType)
@@ -72,19 +72,19 @@ internal class JTokenDifferentiator
         };
     }
 
-    private Difference FindFirstDifference(JToken actual, JToken expected, JPath path)
+    private Difference FindFirstDifference(JToken actual, JToken expected, JPath path, Func<string, string, bool> filterProperty)
     {
         return actual switch
         {
-            JArray actualArray => FindJArrayDifference(actualArray, expected, path),
-            JObject actualObject => FindJObjectDifference(actualObject, expected, path),
-            JProperty actualProperty => FindJPropertyDifference(actualProperty, expected, path),
+            JArray actualArray => FindJArrayDifference(actualArray, expected, path, filterProperty),
+            JObject actualObject => FindJObjectDifference(actualObject, expected, path, filterProperty),
+            JProperty actualProperty => FindJPropertyDifference(actualProperty, expected, path, filterProperty),
             JValue actualValue => FindValueDifference(actualValue, expected, path),
             _ => throw new NotSupportedException(),
         };
     }
 
-    private Difference FindJArrayDifference(JArray actualArray, JToken expected, JPath path)
+    private Difference FindJArrayDifference(JArray actualArray, JToken expected, JPath path, Func<string, string, bool> filterProperty)
     {
         if (expected is not JArray expectedArray)
         {
@@ -93,15 +93,15 @@ internal class JTokenDifferentiator
 
         if (ignoreExtraProperties)
         {
-            return CompareExpectedItems(actualArray, expectedArray, path);
+            return CompareExpectedItems(actualArray, expectedArray, path, filterProperty);
         }
         else
         {
-            return CompareItems(actualArray, expectedArray, path);
+            return CompareItems(actualArray, expectedArray, path, filterProperty);
         }
     }
 
-    private Difference CompareExpectedItems(JArray actual, JArray expected, JPath path)
+    private Difference CompareExpectedItems(JArray actual, JArray expected, JPath path, Func<string, string, bool> filterProperty)
     {
         JToken[] actualChildren = actual.Children().ToArray();
         JToken[] expectedChildren = expected.Children().ToArray();
@@ -113,7 +113,7 @@ internal class JTokenDifferentiator
             bool match = false;
             for (int actualIndex = matchingIndex; actualIndex < actualChildren.Length; actualIndex++)
             {
-                var difference = FindFirstDifference(actualChildren[actualIndex], expectedChild);
+                var difference = FindFirstDifference(actualChildren[actualIndex], expectedChild, filterProperty);
 
                 if (difference == null)
                 {
@@ -127,7 +127,7 @@ internal class JTokenDifferentiator
             {
                 if (matchingIndex >= actualChildren.Length)
                 {
-                    if (actualChildren.Any(actualChild => FindFirstDifference(actualChild, expectedChild) == null))
+                    if (actualChildren.Any(actualChild => FindFirstDifference(actualChild, expectedChild, filterProperty) == null))
                     {
                         return new Difference(DifferenceKind.WrongOrder, path.AddIndex(expectedIndex));
                     }
@@ -135,14 +135,14 @@ internal class JTokenDifferentiator
                     return new Difference(DifferenceKind.ActualMissesElement, path.AddIndex(expectedIndex));
                 }
 
-                return FindFirstDifference(actualChildren[matchingIndex], expectedChild, path.AddIndex(expectedIndex));
+                return FindFirstDifference(actualChildren[matchingIndex], expectedChild, path.AddIndex(expectedIndex), filterProperty);
             }
         }
 
         return null;
     }
 
-    private Difference CompareItems(JArray actual, JArray expected, JPath path)
+    private Difference CompareItems(JArray actual, JArray expected, JPath path, Func<string, string, bool> filterProperty)
     {
         JToken[] actualChildren = actual.Children().ToArray();
         JToken[] expectedChildren = expected.Children().ToArray();
@@ -154,7 +154,7 @@ internal class JTokenDifferentiator
 
         for (int i = 0; i < actualChildren.Length; i++)
         {
-            Difference firstDifference = FindFirstDifference(actualChildren[i], expectedChildren[i], path.AddIndex(i));
+            Difference firstDifference = FindFirstDifference(actualChildren[i], expectedChildren[i], path.AddIndex(i), filterProperty);
 
             if (firstDifference != null)
             {
@@ -165,17 +165,17 @@ internal class JTokenDifferentiator
         return null;
     }
 
-    private Difference FindJObjectDifference(JObject actual, JToken expected, JPath path)
+    private Difference FindJObjectDifference(JObject actual, JToken expected, JPath path, Func<string, string, bool> filterProperty)
     {
         if (expected is not JObject expectedObject)
         {
             return new Difference(DifferenceKind.OtherType, path, Describe(actual.Type), Describe(expected.Type));
         }
 
-        return CompareProperties(actual?.Properties(), expectedObject.Properties(), path);
+        return CompareProperties(actual?.Properties(), expectedObject.Properties(), path, filterProperty);
     }
 
-    private Difference CompareProperties(IEnumerable<JProperty> actual, IEnumerable<JProperty> expected, JPath path)
+    private Difference CompareProperties(IEnumerable<JProperty> actual, IEnumerable<JProperty> expected, JPath path, Func<string, string, bool> filterProperty)
     {
         var actualDictionary = actual?.ToDictionary(p => p.Name, p => p.Value) ?? new Dictionary<string, JToken>();
         var expectedDictionary = expected?.ToDictionary(p => p.Name, p => p.Value) ?? new Dictionary<string, JToken>();
@@ -190,7 +190,7 @@ internal class JTokenDifferentiator
 
         foreach (KeyValuePair<string, JToken> actualPair in actualDictionary)
         {
-            if (!ignoreExtraProperties && !expectedDictionary.ContainsKey(actualPair.Key))
+            if (!ignoreExtraProperties && !expectedDictionary.ContainsKey(actualPair.Key) && !(filterProperty?.Invoke(path.ToString(), actualPair.Key) ?? false))
             {
                 return new Difference(DifferenceKind.ExpectedMissesProperty, path.AddProperty(actualPair.Key));
             }
@@ -200,7 +200,7 @@ internal class JTokenDifferentiator
         {
             JToken actualValue = actualDictionary[expectedPair.Key];
 
-            Difference firstDifference = FindFirstDifference(actualValue, expectedPair.Value, path.AddProperty(expectedPair.Key));
+            Difference firstDifference = FindFirstDifference(actualValue, expectedPair.Value, path.AddProperty(expectedPair.Key), filterProperty);
 
             if (firstDifference != null)
             {
@@ -211,7 +211,7 @@ internal class JTokenDifferentiator
         return null;
     }
 
-    private Difference FindJPropertyDifference(JProperty actualProperty, JToken expected, JPath path)
+    private Difference FindJPropertyDifference(JProperty actualProperty, JToken expected, JPath path, Func<string, string, bool> filterProperty)
     {
         if (expected is not JProperty expectedProperty)
         {
@@ -223,7 +223,7 @@ internal class JTokenDifferentiator
             return new Difference(DifferenceKind.OtherName, path);
         }
 
-        return FindFirstDifference(actualProperty.Value, expectedProperty.Value, path);
+        return FindFirstDifference(actualProperty.Value, expectedProperty.Value, path, filterProperty);
     }
 
     private Difference FindValueDifference(JValue actualValue, JToken expected, JPath path)
