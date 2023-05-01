@@ -132,6 +132,8 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "sqs.request")
                 .Matches(Type, "http"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured"))
             .Tags(s => s
                 .Matches("aws.agent", "dotnet-aws-sdk")
                 .IsPresent("aws.operation")

@@ -8,6 +8,8 @@ namespace Datadog.Trace.Tagging
 {
     partial class AwsSdkTags
     {
+        // MeasuredBytes = System.Text.Encoding.UTF8.GetBytes("_dd.measured");
+        private static readonly byte[] MeasuredBytes = new byte[] { 95, 100, 100, 46, 109, 101, 97, 115, 117, 114, 101, 100 };
         // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // AgentNameBytes = System.Text.Encoding.UTF8.GetBytes("aws.agent");
@@ -195,6 +197,49 @@ namespace Datadog.Trace.Tagging
             }
 
             base.WriteAdditionalTags(sb);
+        }
+        public override double? GetMetric(string key)
+        {
+            return key switch
+            {
+                "_dd.measured" => Measured,
+                _ => base.GetMetric(key),
+            };
+        }
+
+        public override void SetMetric(string key, double? value)
+        {
+            switch(key)
+            {
+                case "_dd.measured": 
+                    Logger.Value.Warning("Attempted to set readonly metric {MetricName} on {TagType}. Ignoring.", key, nameof(AwsSdkTags));
+                    break;
+                default: 
+                    base.SetMetric(key, value);
+                    break;
+            }
+        }
+
+        public override void EnumerateMetrics<TProcessor>(ref TProcessor processor)
+        {
+            if (Measured is not null)
+            {
+                processor.Process(new TagItem<double>("_dd.measured", Measured.Value, MeasuredBytes));
+            }
+
+            base.EnumerateMetrics(ref processor);
+        }
+
+        protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
+        {
+            if (Measured is not null)
+            {
+                sb.Append("_dd.measured (metric):")
+                  .Append(Measured.Value)
+                  .Append(',');
+            }
+
+            base.WriteAdditionalMetrics(sb);
         }
     }
 }

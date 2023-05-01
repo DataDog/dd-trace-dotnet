@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -40,6 +40,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -63,6 +66,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -81,6 +87,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -99,6 +108,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -117,6 +129,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -135,6 +150,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -153,6 +171,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -175,6 +196,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -197,6 +221,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -219,6 +246,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -241,6 +271,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -263,6 +296,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -285,6 +321,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -307,6 +346,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -329,6 +371,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -351,6 +396,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -373,6 +421,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -395,6 +446,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -417,6 +471,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -439,6 +496,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -461,6 +521,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -483,6 +546,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -505,6 +571,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -527,6 +596,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -549,6 +621,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -571,6 +646,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -593,6 +671,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -615,6 +696,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -637,6 +721,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -659,6 +746,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -681,6 +771,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -703,6 +796,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -725,6 +821,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   }
 ]

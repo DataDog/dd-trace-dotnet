@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -43,6 +43,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -70,6 +71,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -92,6 +94,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -114,6 +117,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -136,6 +140,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -158,6 +163,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -180,6 +186,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -206,6 +213,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -232,6 +240,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -258,6 +267,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -284,6 +294,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -310,6 +321,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -336,6 +348,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -362,6 +375,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -388,6 +402,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -414,6 +429,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -440,6 +456,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -466,6 +483,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -492,6 +510,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -518,6 +537,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -544,6 +564,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -570,6 +591,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -596,6 +618,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -622,6 +645,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -648,6 +672,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -674,6 +699,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -700,6 +726,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -726,6 +753,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -752,6 +780,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -778,6 +807,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -804,6 +834,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -830,6 +861,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   },
@@ -856,6 +888,7 @@
       span.kind: client
     },
     Metrics: {
+      _dd.measured: 1.0,
       _dd.top_level: 1.0
     }
   }

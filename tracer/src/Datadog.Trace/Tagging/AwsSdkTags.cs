@@ -12,6 +12,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => "aws-sdk";
 
+        [Metric(Trace.Tags.Measured)]
+        public double? Measured => 1.0;
+
         [Tag(Trace.Tags.AwsAgentName)]
         public string AgentName => "dotnet-aws-sdk";
 
