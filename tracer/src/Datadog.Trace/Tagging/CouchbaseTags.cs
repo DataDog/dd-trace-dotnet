@@ -17,6 +17,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => nameof(IntegrationId.Couchbase);
 
+        [Metric(Trace.Tags.Measured)]
+        public double? Measured => 1.0;
+
         [Tag(Trace.Tags.CouchbaseOperationCode)]
         public string OperationCode { get; set; }
 

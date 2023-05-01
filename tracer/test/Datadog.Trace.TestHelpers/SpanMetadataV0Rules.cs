@@ -164,6 +164,8 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "couchbase.query")
                 .Matches(Type, "db"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured"))
             .Tags(s => s
                 .IsOptional("couchbase.operation.bucket")
                 .IsPresent("couchbase.operation.code")
