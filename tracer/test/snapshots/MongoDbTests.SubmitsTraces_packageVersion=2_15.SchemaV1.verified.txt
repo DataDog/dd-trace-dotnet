@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -64,6 +64,9 @@
       out.port: 27017,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -84,6 +87,9 @@
       out.port: 27017,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -104,6 +110,9 @@
       out.port: 27017,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -124,6 +133,9 @@
       out.port: 27017,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -144,6 +156,9 @@
       out.port: 27017,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -164,6 +179,9 @@
       out.port: 27017,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -184,6 +202,9 @@
       out.port: 27017,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -204,6 +225,9 @@
       out.port: 27017,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -224,6 +248,9 @@
       out.port: 27017,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   }
 ]

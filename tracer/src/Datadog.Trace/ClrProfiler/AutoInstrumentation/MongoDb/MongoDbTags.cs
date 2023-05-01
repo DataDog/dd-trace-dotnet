@@ -16,6 +16,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => MongoDbIntegration.IntegrationName;
 
+        [Metric(Trace.Tags.Measured)]
+        public double? Measured => 1.0;
+
         [Tag(Trace.Tags.DbName)]
         public string DbName { get; set; }
 

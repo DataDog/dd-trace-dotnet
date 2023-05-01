@@ -261,6 +261,8 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "mongodb.query")
                 .Matches(Type, "mongodb"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured"))
             .Tags(s => s
                 .IsOptional("db.name")
                 .IsOptional("mongodb.collection")
