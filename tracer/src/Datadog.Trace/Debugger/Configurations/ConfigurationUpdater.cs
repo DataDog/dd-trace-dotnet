@@ -82,7 +82,8 @@ namespace Datadog.Trace.Debugger.Configurations
                 ServiceConfiguration = configuration.ServiceConfiguration,
                 LogProbes = Filter(configuration.LogProbes, MaxAllowedLogProbes),
                 MetricProbes = Filter(configuration.MetricProbes, MaxAllowedMetricProbes),
-                SpanProbes = Filter(configuration.SpanProbes, MaxAllowedSpanProbes)
+                SpanProbes = Filter(configuration.SpanProbes, MaxAllowedSpanProbes),
+                SpanDecorationProbes = Filter(configuration.SpanDecorationProbes, MaxAllowedSpanProbes)
             };
 
             T[] Filter<T>(T[] probes, int maxAllowedProbes)

@@ -77,6 +77,17 @@ public class ProbesTests : TestHelper
             new object[] { typeof(AsyncGenericMethod) }
         };
 
+    public static IEnumerable<object[]> SpanDecorationMemberData =>
+        new List<object[]>
+        {
+            new object[] { typeof(SpanDecorationArgsAndLocals) },
+            new object[] { typeof(SpanDecorationAsync) },
+            new object[] { typeof(SpanDecorationTwoTags) },
+            new object[] { typeof(SpanDecorationSameTags) },
+            new object[] { typeof(SpanDecorationSameTagsError) },
+            new object[] { typeof(SpanDecorationError) }
+        };
+
     public static IEnumerable<object[]> ProbeTests()
     {
         return DebuggerTestHelper.AllTestDescriptions();
@@ -190,6 +201,18 @@ public class ProbesTests : TestHelper
     {
         SkipOverTestIfNeeded(testDescription);
         await RunMethodProbeTests(testDescription, true);
+    }
+
+    [SkippableTheory]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [MemberData(nameof(SpanDecorationMemberData))]
+    public async Task SpanDecorationTest(Type testType)
+    {
+        var method = testType.FullName + "[Method]";
+        SetEnvironmentVariable("DD_TRACE_METHODS", method);
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(testType);
+        await RunMethodProbeTests(testDescription, false);
     }
 
     [SkippableFact]
@@ -311,6 +334,8 @@ public class ProbesTests : TestHelper
 
                 await VerifyLogProbeResults(testDescription, probeData, agent, isMultiPhase, phaseNumber);
 
+                await VerifySpanDecorationResults(sample, testDescription, probeData, agent, isMultiPhase, phaseNumber);
+
                 await VerifySpanProbeResults(snapshotProbes, testDescription, probeData, agent, isMultiPhase, phaseNumber);
 
                 // The Datadog-Agent is continuously receiving probe statuses.
@@ -334,6 +359,49 @@ public class ProbesTests : TestHelper
         {
             await sample.StopSample();
         }
+    }
+
+    private async Task VerifySpanDecorationResults(DebuggerSampleProcessHelper sample, ProbeTestDescription testDescription, ProbeAttributeBase[] probeData, MockTracerAgent agent, bool isMultiPhase, int phaseNumber)
+    {
+        var expectedSpanCount = probeData.Where(DebuggerTestHelper.IsSpanProbe).Count();
+
+        if (sample.Process.StartInfo.EnvironmentVariables.ContainsKey("DD_TRACE_METHODS"))
+        {
+            expectedSpanCount++;
+        }
+
+        if (expectedSpanCount == 0)
+        {
+            return;
+        }
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
+        settings.AddSimpleScrubber("out.host: localhost", "out.host: debugger");
+        settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: debugger");
+        var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
+        settings.UseFileName($"{nameof(ProbeTests)}.{testName}.Spans");
+
+        var spans = agent.WaitForSpans(expectedSpanCount);
+
+        Assert.Equal(expectedSpanCount, spans.Count);
+
+        var decorations = probeData.Where(DebuggerTestHelper.IsSpanDecorationProbe).SelectMany(sd => ((SpanDecorationMethodProbeTestDataAttribute)sd).Decorations).ToList();
+
+        foreach (var span in spans)
+        {
+            var result = Result.FromSpan(span)
+                               .Properties(
+                                    s => s
+                                       .MatchesOneOf(_ => (nameof(span.Name), span.Name), "trace.annotation", "dd.dynamic.span"))
+                               .Tags(
+                                    s => s
+                                        .IsPresent($"dynamic_tags.{decorations.First().Key}")
+                                        .IsPresent($"_dd.dynamic_tags.{decorations.First().Key}.probe_id"));
+            // Assert.True(result.Success, result.ToString());
+        }
+
+        await VerifyHelper.VerifySpans(spans, settings).DisableRequireUniquePrefix();
     }
 
     private async Task VerifySpanProbeResults(ProbeDefinition[] snapshotProbes, ProbeTestDescription testDescription, ProbeAttributeBase[] probeData, MockTracerAgent agent, bool isMultiPhase, int phaseNumber)
@@ -677,9 +745,10 @@ public class ProbesTests : TestHelper
                                      LogProbe log => DefinitionPaths.LogProbe,
                                      MetricProbe metric => DefinitionPaths.MetricProbe,
                                      SpanProbe span => DefinitionPaths.SpanProbe,
+                                     SpanDecorationProbe span => DefinitionPaths.SpanDecorationProbe,
                                      _ => throw new ArgumentOutOfRangeException(snapshotProbe.GetType().FullName, "Add a new probe kind"),
                                  };
-                                 return (snapshotProbe, RcmProducts.LiveDebugging,  $"{path}{snapshotProbe.Id}");
+                                 return (snapshotProbe, RcmProducts.LiveDebugging, $"{path}{snapshotProbe.Id}");
                              })
             .Select(dummy => ((object Config, string ProductName, string Id))dummy);
 
