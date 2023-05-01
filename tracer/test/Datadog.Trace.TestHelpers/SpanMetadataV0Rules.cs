@@ -183,6 +183,8 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "elasticsearch.query")
                 .Matches(Type, "elasticsearch"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured"))
             .Tags(s => s
                 .IsPresent("elasticsearch.action")
                 .IsPresent("elasticsearch.method")

@@ -16,6 +16,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
         [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => ElasticsearchNetCommon.ComponentValue;
 
+        [Metric(Trace.Tags.Measured)]
+        public double? Measured => 1.0;
+
         [Tag(Trace.Tags.ElasticsearchAction)]
         public string Action { get; set; }
 
