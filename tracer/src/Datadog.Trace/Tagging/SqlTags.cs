@@ -13,6 +13,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
+        [Metric(Trace.Tags.Measured)]
+        public double? Measured => 1.0;
+
         [Tag(Trace.Tags.DbType)]
         public string DbType { get; set; }
 

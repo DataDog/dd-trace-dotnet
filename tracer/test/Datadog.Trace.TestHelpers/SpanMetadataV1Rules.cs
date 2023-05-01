@@ -14,6 +14,8 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsAdoNetV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Type, "sql"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured"))
             .Tags(s => s
                 .IsOptional("db.name")
                 .IsPresent("db.type")
@@ -284,6 +286,8 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "mysql.query")
                 .Matches(Type, "sql"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured"))
             .Tags(s => s
                 .IsPresent("db.name")
                 .IsPresent("db.user")
@@ -296,6 +300,8 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "postgres.query")
                 .Matches(Type, "sql"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured"))
             .Tags(s => s
                 .IsPresent("db.name")
                 .IsPresent("out.host")
@@ -320,6 +326,8 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "oracle.query")
                 .Matches(Type, "sql"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured"))
             .Tags(s => s
                 .IsPresent("db.name")
                 .Matches("db.type", "oracle")
@@ -397,6 +405,8 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "sqlite.query")
                 .Matches(Type, "sql"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured"))
             .Tags(s => s
                 .IsOptional("db.name")
                 .IsPresent("out.host")
@@ -408,6 +418,8 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "sql-server.query")
                 .Matches(Type, "sql"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured"))
             .Tags(s => s
                 .IsOptional("db.name")
                 .IsPresent("out.host")
