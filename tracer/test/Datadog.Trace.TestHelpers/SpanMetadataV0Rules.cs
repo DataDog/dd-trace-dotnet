@@ -384,6 +384,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "redis.command")
                 .Matches(Type, "redis"))
             .Metrics(s => s
+                .IsPresent("_dd.measured")
                 .IsPresent("db.redis.database_index"))
             .Tags(s => s
                 .IsPresent("redis.raw_command")
@@ -397,6 +398,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "redis.command")
                 .Matches(Type, "redis"))
             .Metrics(s => s
+                .IsPresent("_dd.measured")
                 .IsOptional("db.redis.database_index"))
             .Tags(s => s
                 .IsPresent("redis.raw_command")

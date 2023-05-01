@@ -17,6 +17,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
         [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName { get; set; }
 
+        [Metric(Trace.Tags.Measured)]
+        public double? Measured => 1.0;
+
         [Tag(Trace.Tags.RedisRawCommand)]
         public string RawCommand { get; set; }
 

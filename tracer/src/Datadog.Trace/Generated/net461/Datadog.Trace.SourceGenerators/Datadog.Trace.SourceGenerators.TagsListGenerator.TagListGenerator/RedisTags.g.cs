@@ -8,6 +8,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 {
     partial class RedisTags
     {
+        // MeasuredBytes = System.Text.Encoding.UTF8.GetBytes("_dd.measured");
+        private static readonly byte[] MeasuredBytes = new byte[] { 95, 100, 100, 46, 109, 101, 97, 115, 117, 114, 101, 100 };
         // DatabaseIndexBytes = System.Text.Encoding.UTF8.GetBytes("db.redis.database_index");
         private static readonly byte[] DatabaseIndexBytes = new byte[] { 100, 98, 46, 114, 101, 100, 105, 115, 46, 100, 97, 116, 97, 98, 97, 115, 101, 95, 105, 110, 100, 101, 120 };
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
@@ -132,6 +134,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
         {
             return key switch
             {
+                "_dd.measured" => Measured,
                 "db.redis.database_index" => DatabaseIndex,
                 _ => base.GetMetric(key),
             };
@@ -144,6 +147,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 case "db.redis.database_index": 
                     DatabaseIndex = value;
                     break;
+                case "_dd.measured": 
+                    Logger.Value.Warning("Attempted to set readonly metric {MetricName} on {TagType}. Ignoring.", key, nameof(RedisTags));
+                    break;
                 default: 
                     base.SetMetric(key, value);
                     break;
@@ -152,6 +158,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
         public override void EnumerateMetrics<TProcessor>(ref TProcessor processor)
         {
+            if (Measured is not null)
+            {
+                processor.Process(new TagItem<double>("_dd.measured", Measured.Value, MeasuredBytes));
+            }
+
             if (DatabaseIndex is not null)
             {
                 processor.Process(new TagItem<double>("db.redis.database_index", DatabaseIndex.Value, DatabaseIndexBytes));
@@ -162,6 +173,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
         protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
         {
+            if (Measured is not null)
+            {
+                sb.Append("_dd.measured (metric):")
+                  .Append(Measured.Value)
+                  .Append(',');
+            }
+
             if (DatabaseIndex is not null)
             {
                 sb.Append("db.redis.database_index (metric):")
