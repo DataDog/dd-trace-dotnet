@@ -48,11 +48,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         private static string TruncateLongString(string s) => s.Length > WafConstants.MaxStringLength ? s.Substring(0, WafConstants.MaxStringLength) : s;
 
-        public static Obj Encode(object o, WafLibraryInvoker wafLibraryInvoker, List<Obj>? argCache = null, bool applySafetyLimits = true) => EncodeInternal(o, argCache, WafConstants.MaxContainerDepth, applySafetyLimits, wafLibraryInvoker);
-
-        public static object Decode(Obj o) => InnerDecode(o.InnerStruct);
-
-        public static object InnerDecode(DdwafObjectStruct o)
+        public static object Decode(DdwafObjectStruct o)
         {
             switch (DecodeArgsType(o.Type))
             {
@@ -72,7 +68,7 @@ namespace Datadog.Trace.AppSec.Waf
                         if (nextObj != null)
                         {
                             var next = (DdwafObjectStruct)nextObj;
-                            arr[i] = InnerDecode(next);
+                            arr[i] = Decode(next);
                         }
                     }
 
@@ -86,9 +82,9 @@ namespace Datadog.Trace.AppSec.Waf
                         if (nextObj != null)
                         {
                             var next = (DdwafObjectStruct)nextObj;
-                            var key = Marshal.PtrToStringAnsi(next.ParameterName, (int)next.ParameterNameLength) ?? string.Empty;
-                            map[key] = InnerDecode(next);
-                            var nextO = InnerDecode(next);
+                            var key = Marshal.PtrToStringAnsi(next.ParameterName, (int)next.ParameterNameLength);
+                            map[key] = Decode(next);
+                            var nextO = Decode(next);
                             map[key] = nextO;
                         }
                     }
@@ -99,118 +95,171 @@ namespace Datadog.Trace.AppSec.Waf
             }
         }
 
-        private static Obj EncodeUnknownType(object o, WafLibraryInvoker wafLibraryInvoker)
+        public static DdwafObjectStruct Encode(object? o, WafLibraryInvoker wafLibraryInvoker, List<GCHandle> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = false)
         {
-            Log.Warning("Couldn't encode object of unknown type {Type}, falling back to ToString", o.GetType());
-
-            var s = o.ToString() ?? string.Empty;
-
-            return CreateNativeString(s, applyLimits: true, wafLibraryInvoker);
-        }
-
-        private static Obj EncodeInternal(object o, List<Obj>? argCache, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
-        {
-            var value =
-                o switch
+            DdwafObjectStruct ProcessKeyValuePairs(System.Collections.IEnumerable objDict, Func<object, string?> getKey, Func<object, object?> getValue)
+            {
+                var ddWafObjectMap = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
+                if (!string.IsNullOrEmpty(key))
                 {
-                    null => CreateNativeString(string.Empty, applyLimits, wafLibraryInvoker),
-                    string s => CreateNativeString(s, applyLimits, wafLibraryInvoker),
-                    JValue jv => CreateNativeString(jv.Value?.ToString() ?? string.Empty, applyLimits, wafLibraryInvoker),
-                    int i => CreateNativeString(i.ToString(), applyLimits, wafLibraryInvoker),
-                    long i => CreateNativeString(i.ToString(), applyLimits, wafLibraryInvoker),
-                    uint i => CreateNativeString(i.ToString(), applyLimits, wafLibraryInvoker),
-                    ulong i => CreateNativeString(i.ToString(), applyLimits, wafLibraryInvoker),
-                    bool b => CreateNativeBool(b, wafLibraryInvoker),
-                    IEnumerable<KeyValuePair<string, JToken>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits, wafLibraryInvoker),
-                    IEnumerable<KeyValuePair<string, string>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits, wafLibraryInvoker),
-                    IEnumerable<KeyValuePair<string, List<string>>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits, wafLibraryInvoker),
-                    IEnumerable<KeyValuePair<string, string[]>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits, wafLibraryInvoker),
-                    IEnumerable<KeyValuePair<string, bool>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits, wafLibraryInvoker),
-                    IEnumerable<KeyValuePair<string, object>> objDict => EncodeDictionary(objDict, argCache, remainingDepth, applyLimits, wafLibraryInvoker),
-                    IList<JToken> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth, applyLimits, wafLibraryInvoker),
-                    IList<string> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth, applyLimits, wafLibraryInvoker),
-                    IList<object> objs => EncodeList(objs, argCache, remainingDepth, applyLimits, wafLibraryInvoker),
-                    _ => EncodeUnknownType(o, wafLibraryInvoker),
-                };
-
-            argCache?.Add(value);
-
-            return value;
-        }
-
-        private static Obj EncodeList(IEnumerable<object> objEnumerator, List<Obj>? argCache, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
-        {
-            var arrNat = wafLibraryInvoker.ObjectArray();
-
-            if (applyLimits && remainingDepth-- <= 0)
-            {
-                Log.Warning("EncodeList: object graph too deep, truncating nesting {Items}", string.Join(", ", objEnumerator));
-                return new Obj(arrNat);
-            }
-
-            var count = objEnumerator is IList<object> objs ? objs.Count : objEnumerator.Count();
-            if (applyLimits && count > WafConstants.MaxContainerSize)
-            {
-                Log.Warning<int, int>("EncodeList: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, WafConstants.MaxContainerSize);
-                objEnumerator = objEnumerator.Take(WafConstants.MaxContainerSize);
-            }
-
-            foreach (var o in objEnumerator)
-            {
-                var value = EncodeInternal(o, argCache, remainingDepth, applyLimits, wafLibraryInvoker);
-                wafLibraryInvoker.ObjectArrayAdd(arrNat, value.RawPtr);
-            }
-
-            return new Obj(arrNat);
-        }
-
-        private static Obj EncodeDictionary(IEnumerable<KeyValuePair<string, object>> objDictEnumerator, List<Obj>? argCache, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
-        {
-            var mapNat = wafLibraryInvoker.ObjectMap();
-
-            if (applyLimits && remainingDepth-- <= 0)
-            {
-                Log.Warning("EncodeDictionary: object graph too deep, truncating nesting {Items}", string.Join(", ", objDictEnumerator.Select(x => $"{x.Key}, {x.Value}")));
-                return new Obj(mapNat);
-            }
-
-            var count = objDictEnumerator is IDictionary<string, object> objDict ? objDict.Count : objDictEnumerator.Count();
-
-            if (applyLimits && count > WafConstants.MaxContainerSize)
-            {
-                Log.Warning<int, int>("EncodeDictionary: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, WafConstants.MaxContainerSize);
-                objDictEnumerator = objDictEnumerator.Take(WafConstants.MaxContainerSize);
-            }
-
-            foreach (var o in objDictEnumerator)
-            {
-                var name = o.Key;
-                if (name != null)
-                {
-                    var value = EncodeInternal(o.Value, argCache, remainingDepth, applyLimits, wafLibraryInvoker);
-                    wafLibraryInvoker.ObjectMapAdd(mapNat, name, Convert.ToUInt64(name.Length), value.RawPtr);
+                    FillParamName(ref ddWafObjectMap, key!);
                 }
-                else
+
+                if (applySafetyLimits && remainingDepth-- <= 0)
                 {
-                    Log.Warning("EncodeDictionary: ignoring dictionary member with null name");
+                    IEnumerable<string> GetItemsAsString()
+                    {
+                        foreach (var x in objDict)
+                        {
+                            yield return $"{getKey(x!)}, {getValue(x!)}";
+                        }
+                    }
+
+                    Log.Warning("EncodeDictionary: object graph too deep, truncating nesting {Items}", string.Join(", ", GetItemsAsString()));
+                    return ddWafObjectMap;
                 }
+
+                var children = new List<DdwafObjectStruct>();
+                foreach (var keyValue in objDict)
+                {
+                    var key = getKey(keyValue!);
+                    if (string.IsNullOrEmpty(key))
+                    {
+                        Log.Warning("EncodeDictionary: ignoring dictionary member with null name");
+                        continue;
+                    }
+
+                    var result = Encode(getValue(keyValue!), wafLibraryInvoker, argToFree, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
+                    children.Add(result);
+                    if (applySafetyLimits && children.Count == WafConstants.MaxContainerSize)
+                    {
+                        Log.Warning<int>("EncodeDictionary: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
+                        break;
+                    }
+                }
+
+                AddToArray(ref ddWafObjectMap, children.ToArray());
+
+                return ddWafObjectMap;
             }
 
-            return new Obj(mapNat);
-        }
+            IntPtr ConvertToUtf8(string s)
+            {
+                var bytes = Encoding.UTF8.GetBytes(s);
+                var pinnedArray = GCHandle.Alloc(bytes, GCHandleType.Pinned);
+                argToFree.Add(pinnedArray);
+                var pointer = Marshal.UnsafeAddrOfPinnedArrayElement(bytes, 0);
+                return pointer;
+            }
 
-        private static Obj CreateNativeString(string s, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
-        {
-            var encodeString =
-                applyLimits
-                    ? TruncateLongString(s)
-                    : s;
-            return new Obj(wafLibraryInvoker.ObjectStringLength(encodeString, Convert.ToUInt64(encodeString.Length)));
-        }
+            void AddToArray(ref DdwafObjectStruct map, params DdwafObjectStruct[] children)
+            {
+                if (children.Length == 0)
+                {
+                    return;
+                }
 
-        private static Obj CreateNativeBool(bool b, WafLibraryInvoker wafLibraryInvoker)
-        {
-            return new Obj(wafLibraryInvoker.ObjectBool(b));
+                var structArray = children;
+                var gcHandle = GCHandle.Alloc(structArray, GCHandleType.Pinned);
+                argToFree.Add(gcHandle);
+                var bufferPtr = Marshal.UnsafeAddrOfPinnedArrayElement(structArray, 0);
+                map.Array = bufferPtr;
+                map.NbEntries = (ulong)structArray.Length;
+            }
+
+            void FillParamName(ref DdwafObjectStruct ddwafObjectStruct, string paramName)
+            {
+                ddwafObjectStruct.ParameterName = ConvertToUtf8(paramName);
+                ddwafObjectStruct.ParameterNameLength = (ulong)paramName.Length;
+            }
+
+            DdwafObjectStruct GetStringObject(string? keyForObject, string value)
+            {
+                var ddWafObject = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING, Array = ConvertToUtf8(value), NbEntries = (ulong)value.Length };
+                if (keyForObject != null)
+                {
+                    FillParamName(ref ddWafObject, keyForObject);
+                }
+
+                return ddWafObject;
+            }
+
+            DdwafObjectStruct ddwafObjectStruct;
+            switch (o)
+            {
+                case string or int or uint or long:
+                case ulong or JValue:
+                case null:
+                    var value = o?.ToString() ?? string.Empty;
+                    var encodeString = applySafetyLimits ? TruncateLongString(value) : value;
+                    ddwafObjectStruct = GetStringObject(key, encodeString);
+                    break;
+
+                case bool b:
+                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_BOOL, Boolean = b ? (byte)1 : (byte)0 };
+                    if (key != null)
+                    {
+                        FillParamName(ref ddwafObjectStruct, key);
+                    }
+
+                    break;
+
+                case IEnumerable<KeyValuePair<string, object>> objDict:
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, obj => ((KeyValuePair<string, object>)obj).Key, obj => ((KeyValuePair<string, object>)obj).Value);
+                    break;
+
+                case IEnumerable<KeyValuePair<string, string>> objDict:
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, obj => ((KeyValuePair<string, string>)obj).Key, obj => ((KeyValuePair<string, string>)obj).Value);
+                    break;
+
+                case IEnumerable<KeyValuePair<string, JToken>> objDict:
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, obj => ((JProperty)obj).Name, obj => ((JProperty)obj).Value);
+                    break;
+
+                case IEnumerable<KeyValuePair<string, string[]>> objDict:
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, obj => ((KeyValuePair<string, string[]>)obj).Key, obj => ((KeyValuePair<string, string[]>)obj).Value);
+                    break;
+
+                case IEnumerable<KeyValuePair<string, List<string>>> objDict:
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, obj => ((KeyValuePair<string, List<string>>)obj).Key, obj => ((KeyValuePair<string, List<string>>)obj).Value);
+                    break;
+
+                case System.Collections.IEnumerable list:
+                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY };
+                    if (!string.IsNullOrEmpty(key))
+                    {
+                        FillParamName(ref ddwafObjectStruct, key!);
+                    }
+
+                    if (applySafetyLimits && remainingDepth-- <= 0)
+                    {
+                        Log.Warning("EncodeList: object graph too deep, truncating nesting {Items}", string.Join(", ", list));
+                        break;
+                    }
+
+                    var children = new List<DdwafObjectStruct>();
+                    foreach (var val in list)
+                    {
+                        if (applySafetyLimits && children.Count == WafConstants.MaxContainerSize)
+                        {
+                            Log.Warning<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
+                            break;
+                        }
+
+                        var result = Encode(val, wafLibraryInvoker, argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                        children.Add(result);
+                    }
+
+                    AddToArray(ref ddwafObjectStruct, children.ToArray());
+                    break;
+
+                default:
+                    Log.Warning("Couldn't encode object of unknown type {Type}, falling back to ToString", o.GetType());
+                    ddwafObjectStruct = GetStringObject(key, string.Empty);
+                    break;
+            }
+
+            return ddwafObjectStruct;
         }
 
         public static string FormatArgs(object o)
