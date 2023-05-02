@@ -13,13 +13,8 @@ using Encoder = Datadog.Trace.AppSec.Waf.Encoder;
 
 namespace Datadog.Trace.Security.Unit.Tests;
 
-public class EncoderUnitTests : WafLibraryRequiredTest
+public class EncoderUnitTests
 {
-    public EncoderUnitTests(WafLibraryInvokerFixture wafLibraryInvokerFixture)
-        : base(wafLibraryInvokerFixture)
-    {
-    }
-
     [SkippableTheory]
     [InlineData(WafConstants.MaxStringLength - 1, WafConstants.MaxStringLength - 1)]
     [InlineData(WafConstants.MaxStringLength, WafConstants.MaxStringLength)]
@@ -29,7 +24,7 @@ public class EncoderUnitTests : WafLibraryRequiredTest
         var l = new List<GCHandle>();
         var target = new string('c', length);
 
-        var intermediate = Encoder.Encode(target, WafLibraryInvoker, argToFree: l, applySafetyLimits: true);
+        var intermediate = Encoder.Encode(target, argToFree: l, applySafetyLimits: true);
         var result = Encoder.Decode(intermediate) as string;
 
         Assert.NotNull(result);
@@ -48,7 +43,7 @@ public class EncoderUnitTests : WafLibraryRequiredTest
 
         var target = Enumerable.Repeat((object)"test", length).ToList();
 
-        var intermediate = Encoder.Encode(target, WafLibraryInvoker, l, applySafetyLimits: true);
+        var intermediate = Encoder.Encode(target, l, applySafetyLimits: true);
         var result = Encoder.Decode(intermediate) as object[];
 
         Assert.NotNull(result);
@@ -67,7 +62,7 @@ public class EncoderUnitTests : WafLibraryRequiredTest
 
         var target = Enumerable.Range(0, length).ToDictionary(x => x.ToString(), _ => (object)"test");
 
-        var intermediate = Encoder.Encode(target, WafLibraryInvoker, l, applySafetyLimits: true);
+        var intermediate = Encoder.Encode(target, l, applySafetyLimits: true);
         var result = Encoder.Decode(intermediate) as Dictionary<string, object>;
 
         Assert.NotNull(result);
@@ -86,7 +81,7 @@ public class EncoderUnitTests : WafLibraryRequiredTest
 
         var target = MakeNestedList(length);
 
-        var intermediate = Encoder.Encode(target, WafLibraryInvoker, l, applySafetyLimits: true);
+        var intermediate = Encoder.Encode(target, l, applySafetyLimits: true);
         var result = Encoder.Decode(intermediate) as object[];
 
         Assert.NotNull(result);
@@ -105,7 +100,7 @@ public class EncoderUnitTests : WafLibraryRequiredTest
 
         var target = MakeNestedMap(length);
 
-        var intermediate = Encoder.Encode(target, WafLibraryInvoker, l, applySafetyLimits: true);
+        var intermediate = Encoder.Encode(target, l, applySafetyLimits: true);
         var result = Encoder.Decode(intermediate) as Dictionary<string, object>;
 
         Assert.NotNull(result);

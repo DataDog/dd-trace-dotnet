@@ -95,7 +95,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
         }
 
-        public static DdwafObjectStruct Encode(object? o, WafLibraryInvoker wafLibraryInvoker, List<GCHandle> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = false)
+        public static DdwafObjectStruct Encode(object? o, List<GCHandle> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = false)
         {
             DdwafObjectStruct ProcessKeyValuePairs(System.Collections.IEnumerable objDict, Func<object, string?> getKey, Func<object, object?> getValue)
             {
@@ -129,7 +129,7 @@ namespace Datadog.Trace.AppSec.Waf
                         continue;
                     }
 
-                    var result = Encode(getValue(keyValue!), wafLibraryInvoker, argToFree, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
+                    var result = Encode(getValue(keyValue!), argToFree, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
                     children.Add(result);
                     if (applySafetyLimits && children.Count == WafConstants.MaxContainerSize)
                     {
@@ -246,7 +246,7 @@ namespace Datadog.Trace.AppSec.Waf
                             break;
                         }
 
-                        var result = Encode(val, wafLibraryInvoker, argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                        var result = Encode(val, argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
                         children.Add(result);
                     }
 

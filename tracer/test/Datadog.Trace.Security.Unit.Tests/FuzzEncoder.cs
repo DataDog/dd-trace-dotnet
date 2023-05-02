@@ -9,9 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
-using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -21,12 +19,11 @@ using Encoder = Datadog.Trace.AppSec.Waf.Encoder;
 
 namespace Datadog.Trace.Security.Unit.Tests;
 
-public class FuzzEncoder : WafLibraryRequiredTest
+public class FuzzEncoder
 {
     private readonly ITestOutputHelper _outputHelper;
 
-    public FuzzEncoder(ITestOutputHelper outputHelper, WafLibraryInvokerFixture wafLibraryInvokerFixture)
-        : base(wafLibraryInvokerFixture)
+    public FuzzEncoder(ITestOutputHelper outputHelper)
     {
         _outputHelper = outputHelper;
     }
@@ -51,7 +48,7 @@ public class FuzzEncoder : WafLibraryRequiredTest
                 var root = JToken.ReadFrom(jsonReader);
 
                 var l = new List<GCHandle>();
-                var result = Encoder.Encode(root, WafLibraryInvoker!, l, applySafetyLimits: true);
+                var result = Encoder.Encode(root, l, applySafetyLimits: true);
 
                 // check the object is valid
                 Assert.NotEqual(DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID, result.Type);

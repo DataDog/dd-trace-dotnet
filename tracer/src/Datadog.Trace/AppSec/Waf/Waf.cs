@@ -58,13 +58,13 @@ namespace Datadog.Trace.AppSec.Waf
 
             if (rulesFromRcm != null)
             {
-                var configObj = Encoder.Encode(rulesFromRcm, wafLibraryInvoker, argToFree: argsToDispose, applySafetyLimits: false);
+                var configObj = Encoder.Encode(rulesFromRcm, argToFree: argsToDispose, applySafetyLimits: false);
                 initResult = wafConfigurator.ConfigureAndDispose(configObj, "RemoteConfig", argsToDispose, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
             }
             else
             {
                 var jtokenRoot = WafConfigurator.DeserializeEmbeddedRules(embeddedRulesetPath);
-                var configObj = Encoder.Encode(jtokenRoot!, wafLibraryInvoker, argToFree: argsToDispose, applySafetyLimits: false);
+                var configObj = Encoder.Encode(jtokenRoot!, argToFree: argsToDispose, applySafetyLimits: false);
                 initResult = wafConfigurator.ConfigureAndDispose(configObj, embeddedRulesetPath, argsToDispose, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
                 initResult.EmbeddedRules = jtokenRoot;
             }
@@ -158,7 +158,7 @@ namespace Datadog.Trace.AppSec.Waf
             UpdateResult updated;
             try
             {
-                var encodedArgs = Encoder.Encode(arguments, _wafLibraryInvoker, argsToDispose);
+                var encodedArgs = Encoder.Encode(arguments, argsToDispose);
                 DdwafRuleSetInfo? rulesetInfo = null;
                 // only if rules are provided will the waf give metrics
                 if (arguments.ContainsKey("rules"))
