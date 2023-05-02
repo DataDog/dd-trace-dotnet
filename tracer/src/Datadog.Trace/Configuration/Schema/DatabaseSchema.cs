@@ -33,8 +33,8 @@ namespace Datadog.Trace.Configuration.Schema
 
             return _version switch
             {
-                SchemaVersion.V1 => _defaultServiceName,
-                _ => $"{_defaultServiceName}-{databaseType}",
+                SchemaVersion.V0 => $"{_defaultServiceName}-{databaseType}",
+                _ => _defaultServiceName,
             };
         }
     }

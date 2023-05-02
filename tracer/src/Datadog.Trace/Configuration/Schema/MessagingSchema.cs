@@ -25,8 +25,8 @@ namespace Datadog.Trace.Configuration.Schema
         public string GetInboundOperationName(string messagingSystem)
             => _version switch
             {
-                SchemaVersion.V1 => $"{messagingSystem}.process",
-                _ => $"{messagingSystem}.consume",
+                SchemaVersion.V0 => $"{messagingSystem}.consume",
+                _ => $"{messagingSystem}.process",
             };
 
         public string GetInboundServiceName(string messagingSystem)
@@ -38,16 +38,16 @@ namespace Datadog.Trace.Configuration.Schema
 
             return _version switch
             {
-                SchemaVersion.V1 => _defaultServiceName,
-                _ => $"{_defaultServiceName}-{messagingSystem}",
+                SchemaVersion.V0 => $"{_defaultServiceName}-{messagingSystem}",
+                _ => _defaultServiceName,
             };
         }
 
         public string GetOutboundOperationName(string messagingSystem)
             => _version switch
             {
-                SchemaVersion.V1 => $"{messagingSystem}.send",
-                _ => $"{messagingSystem}.produce",
+                SchemaVersion.V0 => $"{messagingSystem}.produce",
+                _ => $"{messagingSystem}.send",
             };
 
         public string GetOutboundServiceName(string messagingSystem)
@@ -59,8 +59,8 @@ namespace Datadog.Trace.Configuration.Schema
 
             return _version switch
             {
-                SchemaVersion.V1 => _defaultServiceName,
-                _ => $"{_defaultServiceName}-{messagingSystem}",
+                SchemaVersion.V0 => $"{_defaultServiceName}-{messagingSystem}",
+                _ => _defaultServiceName,
             };
         }
     }
