@@ -207,6 +207,8 @@ namespace Datadog.Trace.TestHelpers
             .Properties(s => s
                 .Matches(Name, "grpc.request")
                 .Matches(Type, "grpc"))
+            .Metrics(s => s
+                .IsOptional("_dd.measured")) // TODO: Split and apply this only to client spans
             .Tags(s => s
                 .IsPresent("grpc.method.kind")
                 .IsPresent("grpc.method.name")

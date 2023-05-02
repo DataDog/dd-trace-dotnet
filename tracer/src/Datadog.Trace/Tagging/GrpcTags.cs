@@ -47,6 +47,9 @@ namespace Datadog.Trace.Tagging
             : base(SpanKinds.Client)
         {
         }
+
+        [Metric(Trace.Tags.Measured)]
+        public double? Measured => 1.0;
     }
 
     internal partial class GrpcServerTags : GrpcTags

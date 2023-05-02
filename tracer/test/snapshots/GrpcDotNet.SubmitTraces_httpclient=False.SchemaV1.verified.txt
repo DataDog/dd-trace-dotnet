@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -41,6 +41,9 @@
       grpc.status.code: 0,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -141,6 +144,9 @@
       grpc.status.code: 0,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -243,6 +249,9 @@
       grpc.status.code: 1,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -347,6 +356,9 @@
       grpc.status.code: 15,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -451,6 +463,9 @@
       grpc.status.code: 5,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -555,6 +570,9 @@
       grpc.status.code: 2,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -663,6 +681,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 1,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -767,6 +788,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 15,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -871,6 +895,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 5,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -975,6 +1002,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 2,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1081,6 +1111,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 0,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1181,6 +1214,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 0,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1281,6 +1317,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 0,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1381,6 +1420,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.status.code: 4,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1483,6 +1525,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.status.code: 4,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {

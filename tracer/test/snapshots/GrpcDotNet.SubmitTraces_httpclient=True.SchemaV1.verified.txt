@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -41,6 +41,9 @@
       grpc.status.code: 0,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -59,6 +62,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingBothWays,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -159,6 +165,9 @@
       grpc.status.code: 0,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -177,6 +186,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingFromClient,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -279,6 +291,9 @@
       grpc.status.code: 1,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -297,6 +312,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -401,6 +419,9 @@
       grpc.status.code: 15,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -419,6 +440,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -523,6 +547,9 @@
       grpc.status.code: 5,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -541,6 +568,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -645,6 +675,9 @@
       grpc.status.code: 2,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -663,6 +696,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -771,6 +807,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 1,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -789,6 +828,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -893,6 +935,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 15,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -911,6 +956,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1015,6 +1063,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 5,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1033,6 +1084,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1137,6 +1191,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 2,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1155,6 +1212,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1261,6 +1321,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 0,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1279,6 +1342,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingFromServer,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1379,6 +1445,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 0,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1397,6 +1466,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/Unary,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1497,6 +1569,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.status.code: 0,
       servermeta: other-server-value,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1515,6 +1590,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/Unary,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1615,6 +1693,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.status.code: 4,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1633,6 +1714,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/VerySlow,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1735,6 +1819,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.status.code: 4,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1753,6 +1840,9 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/VerySlow,
       span.kind: client
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {

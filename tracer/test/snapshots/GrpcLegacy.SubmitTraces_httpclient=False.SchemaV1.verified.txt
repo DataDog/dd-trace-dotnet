@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -46,6 +46,7 @@
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
@@ -130,6 +131,7 @@
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
@@ -220,6 +222,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
@@ -312,6 +315,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
@@ -404,6 +408,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
@@ -496,6 +501,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
@@ -588,6 +594,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
@@ -680,6 +687,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
@@ -772,6 +780,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
@@ -864,6 +873,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
@@ -950,6 +960,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
@@ -1034,6 +1045,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
@@ -1118,6 +1130,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
@@ -1203,6 +1216,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
@@ -1290,6 +1304,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
+      _dd.measured: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
