@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
@@ -49,13 +50,13 @@ public class FuzzEncoder : WafLibraryRequiredTest
                 using var jsonReader = new JsonTextReader(streamReader);
                 var root = JToken.ReadFrom(jsonReader);
 
-                var l = new List<Obj>();
-                using var result = Encoder.Encode(root, WafLibraryInvoker!, l, applySafetyLimits: true);
+                var l = new List<GCHandle>();
+                var result = Encoder.Encode(root, WafLibraryInvoker!, l, applySafetyLimits: true);
 
                 // check the object is valid
-                Assert.NotEqual(ObjType.Invalid, result.ArgsType);
+                Assert.NotEqual(DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID, result.Type);
 
-                l.ForEach(x => x.Dispose());
+                l.ForEach(x => x.Free());
             }
             catch (Exception ex)
             {
