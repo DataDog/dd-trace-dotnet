@@ -3,42 +3,51 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Linq;
+using System.Text;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.RemoteConfigurationManagement;
 
 namespace Datadog.Trace
 {
     internal class FakeRcm
     {
-        private static FakeRcm _instance;
-
-        private readonly FileSystemWatcher _watcher;
-        private readonly Action<IConfigurationSource> _configurationChanged;
-
-        private int _pendingUpdate = 0;
-
-        public FakeRcm(Action<IConfigurationSource> configurationChanged)
-        {
-            const string path = @"C:\temp\rcm.json";
-
-            Console.WriteLine($"FakeRcm watching file {path}");
-
-            _configurationChanged = configurationChanged;
-
-            _watcher = new FileSystemWatcher(Path.GetDirectoryName(path)!, Path.GetFileName(path));
-            _watcher.Changed += Changed;
-            _watcher.EnableRaisingEvents = true;
-        }
-
         public static void Initialize()
         {
-            _instance = new(OnConfigurationChanged);
+            var subscription = new Subscription(ConfigurationUpdated, "APM_LIBRARY");
+
+            RcmSubscriptionManager.Instance.SubscribeToChanges(subscription);
+        }
+
+        private static IEnumerable<ApplyDetails> ConfigurationUpdated(Dictionary<string, List<RemoteConfiguration>> configByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)
+        {
+            Console.WriteLine("ConfigurationUpdated");
+
+            if (configByProduct.TryGetValue("APM_LIBRARY", out var apmLibrary))
+            {
+                if (apmLibrary.Count == 1)
+                {
+                    var configurationSource = new JsonConfigurationSource(Encoding.UTF8.GetString(apmLibrary[0].Contents));
+
+                    OnConfigurationChanged(configurationSource);
+                }
+                else
+                {
+                    Console.WriteLine($"Unexpected number of items in APM_LIBRARY: {apmLibrary.Count}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Missing APM_LIBRARY");
+            }
+
+            return Enumerable.Empty<ApplyDetails>();
         }
 
         private static void OnConfigurationChanged(IConfigurationSource settings)
@@ -47,7 +56,7 @@ namespace Datadog.Trace
 
             var headerTags = TracerSettings.InitializeHeaderTags(settings, "TraceHeaderTags", oldSettings.HeaderTagsNormalizationFixEnabled);
             var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(settings, "TraceServiceMapping");
-            ServiceNames serviceNames = null;
+            ServiceNames? serviceNames = null;
 
             if (serviceNameMappings != null)
             {
@@ -77,27 +86,6 @@ namespace Datadog.Trace
             }
 
             TracerManager.ReplaceGlobalManager(newSettings, TracerManagerFactory.Instance);
-        }
-
-        private void Changed(object sender, FileSystemEventArgs e)
-        {
-            Task.Run(() =>
-            {
-                if (Interlocked.CompareExchange(ref _pendingUpdate, 1, 0) != 0)
-                {
-                    return;
-                }
-
-                Thread.Sleep(500);
-
-                var fileContent = File.ReadAllText(e.FullPath);
-
-                Console.WriteLine($"Applying new configuration: {fileContent}");
-
-                _configurationChanged(new JsonConfigurationSource(fileContent));
-
-                Volatile.Write(ref _pendingUpdate, 0);
-            });
         }
     }
 }
