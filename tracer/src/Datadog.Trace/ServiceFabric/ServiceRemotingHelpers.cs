@@ -96,7 +96,7 @@ namespace Datadog.Trace.ServiceFabric
         public static Span CreateSpan(
             Tracer tracer,
             ISpanContext? context,
-            string spanKind,
+            ServiceRemotingTags tags,
             IServiceRemotingRequestEventArgs? eventArgs,
             IServiceRemotingRequestMessageHeader? messageHeader)
         {
@@ -117,17 +117,14 @@ namespace Datadog.Trace.ServiceFabric
                 resourceName = serviceUrl == null ? methodName : $"{serviceUrl}/{methodName}";
             }
 
-            var tags = new ServiceRemotingTags(spanKind)
-            {
-                ApplicationId = PlatformHelpers.ServiceFabric.ApplicationId,
-                ApplicationName = PlatformHelpers.ServiceFabric.ApplicationName,
-                PartitionId = PlatformHelpers.ServiceFabric.PartitionId,
-                NodeId = PlatformHelpers.ServiceFabric.NodeId,
-                NodeName = PlatformHelpers.ServiceFabric.NodeName,
-                ServiceName = serviceFabricServiceName,
-                RemotingUri = serviceUrl,
-                RemotingMethodName = methodName
-            };
+            tags.ApplicationId = PlatformHelpers.ServiceFabric.ApplicationId;
+            tags.ApplicationName = PlatformHelpers.ServiceFabric.ApplicationName;
+            tags.PartitionId = PlatformHelpers.ServiceFabric.PartitionId;
+            tags.NodeId = PlatformHelpers.ServiceFabric.NodeId;
+            tags.NodeName = PlatformHelpers.ServiceFabric.NodeName;
+            tags.ServiceName = serviceFabricServiceName;
+            tags.RemotingUri = serviceUrl;
+            tags.RemotingMethodName = methodName;
 
             if (messageHeader != null)
             {
@@ -136,7 +133,7 @@ namespace Datadog.Trace.ServiceFabric
                 tags.RemotingInvocationId = messageHeader.InvocationId;
             }
 
-            Span span = tracer.StartSpan(GetSpanName(spanKind), tags, context);
+            Span span = tracer.StartSpan(GetSpanName(tags.SpanKind), tags, context);
             span.ResourceName = resourceName;
             tags.SetAnalyticsSampleRate(ServiceRemotingConstants.IntegrationId, Tracer.Instance.Settings, enabledWithGlobalSetting: false);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(ServiceRemotingConstants.IntegrationId);

@@ -5,28 +5,25 @@
 
 #nullable enable
 
+using Datadog.Trace.Configuration;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ServiceFabric
 {
-    internal partial class ServiceRemotingTags : InstrumentationTags
+    #pragma warning disable SA1402 // File must contain single type
+    internal abstract partial class ServiceRemotingTags : InstrumentationTags
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ServiceRemotingTags"/> class.
-        /// For testing purposes only. Do not use directly.
-        /// </summary>
-        public ServiceRemotingTags()
-        {
-        }
-
         public ServiceRemotingTags(string spanKind)
         {
             SpanKind = spanKind;
         }
 
         [Tag(Trace.Tags.SpanKind)]
-        public override string? SpanKind { get; }
+        public override string SpanKind { get; }
+
+        [Tag(Trace.Tags.InstrumentationName)]
+        public string InstrumentationName => nameof(IntegrationId.ServiceRemoting);
 
         // general Service Fabric
         [Tag(TagNames.ApplicationId)]
@@ -79,6 +76,25 @@ namespace Datadog.Trace.ServiceFabric
             public const string RemotingMethodId = "service-fabric.service-remoting.method-id";
             public const string RemotingInterfaceId = "service-fabric.service-remoting.interface-id";
             public const string RemotingInvocationId = "service-fabric.service-remoting.invocation-id";
+        }
+    }
+
+    internal partial class ServiceRemotingClientTags : ServiceRemotingTags
+    {
+        public ServiceRemotingClientTags()
+            : base(SpanKinds.Client)
+        {
+        }
+
+        [Metric(Trace.Tags.Measured)]
+        public double? Measured => 1.0;
+    }
+
+    internal partial class ServiceRemotingServerTags : ServiceRemotingTags
+    {
+        public ServiceRemotingServerTags()
+            : base(SpanKinds.Server)
+        {
         }
     }
 }

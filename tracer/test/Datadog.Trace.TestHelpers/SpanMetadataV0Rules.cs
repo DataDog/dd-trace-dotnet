@@ -367,6 +367,8 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsServiceRemotingV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .MatchesOneOf(Name, "service_remoting.client", "service_remoting.server"))
+            .Metrics(s => s
+                .IsOptional("_dd.measured")) // TODO: Split and apply this only to client spans
             .Tags(s => s
                 .IsOptional("service-fabric.application-id")
                 .IsOptional("service-fabric.application-name")

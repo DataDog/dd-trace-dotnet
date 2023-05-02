@@ -10,6 +10,8 @@ namespace Datadog.Trace.ServiceFabric
     {
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+        // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // ApplicationIdBytes = System.Text.Encoding.UTF8.GetBytes("service-fabric.application-id");
         private static readonly byte[] ApplicationIdBytes = new byte[] { 115, 101, 114, 118, 105, 99, 101, 45, 102, 97, 98, 114, 105, 99, 46, 97, 112, 112, 108, 105, 99, 97, 116, 105, 111, 110, 45, 105, 100 };
         // ApplicationNameBytes = System.Text.Encoding.UTF8.GetBytes("service-fabric.application-name");
@@ -38,6 +40,7 @@ namespace Datadog.Trace.ServiceFabric
             return key switch
             {
                 "span.kind" => SpanKind,
+                "component" => InstrumentationName,
                 "service-fabric.application-id" => ApplicationId,
                 "service-fabric.application-name" => ApplicationName,
                 "service-fabric.partition-id" => PartitionId,
@@ -91,6 +94,7 @@ namespace Datadog.Trace.ServiceFabric
                     RemotingInvocationId = value;
                     break;
                 case "span.kind": 
+                case "component": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(ServiceRemotingTags));
                     break;
                 default: 
@@ -104,6 +108,11 @@ namespace Datadog.Trace.ServiceFabric
             if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
+            }
+
+            if (InstrumentationName is not null)
+            {
+                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
             }
 
             if (ApplicationId is not null)
@@ -170,6 +179,13 @@ namespace Datadog.Trace.ServiceFabric
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
+                  .Append(',');
+            }
+
+            if (InstrumentationName is not null)
+            {
+                sb.Append("component (tag):")
+                  .Append(InstrumentationName)
                   .Append(',');
             }
 
