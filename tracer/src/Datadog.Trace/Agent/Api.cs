@@ -12,6 +12,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -180,6 +181,7 @@ namespace Datadog.Trace.Agent
         private async Task<bool> SendStatsAsyncImpl(IApiRequest request, bool isFinalTry, SendStatsState state)
         {
             bool success = false;
+            IApiResponse response = null;
 
             // Set additional headers
             if (_containerId != null)
@@ -192,31 +194,54 @@ namespace Datadog.Trace.Agent
 
             var buffer = stream.GetBuffer();
 
-            using var response = await request.PostAsync(new ArraySegment<byte>(buffer, 0, (int)stream.Length), MimeTypes.MsgPack).ConfigureAwait(false);
-
-            if (response.StatusCode is >= 200 and < 300)
-            {
-                success = true;
-            }
-            else if (isFinalTry)
+            try
             {
                 try
                 {
-                    var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-                    _log.Error<int, string>("Failed to submit stats. Status code {StatusCode}, message: {ResponseContent}", response.StatusCode, responseContent);
+                    TelemetryMetrics.Instance.Record(Count.StatsApiRequests);
+                    response = await request.PostAsync(new ArraySegment<byte>(buffer, 0, (int)stream.Length), MimeTypes.MsgPack).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
-                    _log.Error<int>(ex, "Unable to read response for failed request. Status code {StatusCode}", response.StatusCode);
+                    var tag = ex is TimeoutException ? MetricTags.ApiError_Timeout : MetricTags.ApiError_NetworkError;
+                    TelemetryMetrics.Instance.Record(Count.StatsApiErrors, tag);
+                    throw;
                 }
-            }
 
-            if (success)
+                TelemetryMetrics.Instance.Record(Count.StatsApiResponses, response.GetTelemetryStatusCodeMetricTag());
+
+                if (response.StatusCode is >= 200 and < 300)
+                {
+                    success = true;
+                }
+                else if (isFinalTry)
+                {
+                    try
+                    {
+                        var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                        _log.Error<int, string>("Failed to submit stats. Status code {StatusCode}, message: {ResponseContent}", response.StatusCode, responseContent);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error<int>(ex, "Unable to read response for failed request. Status code {StatusCode}", response.StatusCode);
+                    }
+                }
+
+                if (success)
+                {
+                    _log.Debug("Successfully sent stats to the Datadog Agent.");
+                }
+                else
+                {
+                    TelemetryMetrics.Instance.Record(Count.StatsApiErrors, MetricTags.ApiError_StatusCode);
+                }
+
+                return success;
+            }
+            finally
             {
-                _log.Debug("Successfully sent stats to the Datadog Agent.");
+                response?.Dispose();
             }
-
-            return success;
         }
 
         private async Task<bool> SendTracesAsyncImpl(IApiRequest request, bool finalTry, SendTracesState state)
@@ -248,13 +273,16 @@ namespace Datadog.Trace.Agent
             {
                 try
                 {
+                    TelemetryMetrics.Instance.Record(Count.TraceApiRequests);
                     _statsd?.Increment(TracerMetricNames.Api.Requests);
                     response = await request.PostAsync(traces, MimeTypes.MsgPack).ConfigureAwait(false);
                 }
-                catch
+                catch (Exception ex)
                 {
                     // count only network/infrastructure errors, not valid responses with error status codes
                     // (which are handled below)
+                    var tag = ex is TimeoutException ? MetricTags.ApiError_Timeout : MetricTags.ApiError_NetworkError;
+                    TelemetryMetrics.Instance.Record(Count.TraceApiErrors, tag);
                     _statsd?.Increment(TracerMetricNames.Api.Errors);
                     throw;
                 }
@@ -267,6 +295,8 @@ namespace Datadog.Trace.Agent
                     // count every response, grouped by status code
                     _statsd?.Increment(TracerMetricNames.Api.Responses, tags: tags);
                 }
+
+                TelemetryMetrics.Instance.Record(Count.TraceApiResponses, response.GetTelemetryStatusCodeMetricTag());
 
                 // Attempt a retry if the status code is not SUCCESS
                 if (response.StatusCode < 200 || response.StatusCode >= 300)
@@ -284,6 +314,7 @@ namespace Datadog.Trace.Agent
                         }
                     }
 
+                    TelemetryMetrics.Instance.Record(Count.TraceApiErrors, MetricTags.ApiError_StatusCode);
                     return false;
                 }
 
