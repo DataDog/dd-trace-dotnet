@@ -5,7 +5,6 @@
 
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Linq;
 using Datadog.Trace.Configuration;
 using FluentAssertions;
 using Xunit;
@@ -14,9 +13,8 @@ namespace Datadog.Trace.Tests.Configuration
 {
     public class ServiceNameTests
     {
-        private const string ApplicationName = "MyApplication";
-        private readonly ServiceNames _serviceNamesV0;
-        private readonly ServiceNames _serviceNamesV1;
+        private readonly Tracer _tracerV0;
+        private readonly Tracer _tracerV1;
 
         public ServiceNameTests()
         {
@@ -26,8 +24,9 @@ namespace Datadog.Trace.Tests.Configuration
                 { "http-client", "some-service" },
                 { "mongodb", "my-mongo" },
             };
-            _serviceNamesV0 = new ServiceNames(mappings, "v0");
-            _serviceNamesV1 = new ServiceNames(mappings, "v1");
+
+            _tracerV0 = new LockedTracer(new TracerSettings() { MetadataSchemaVersion = SchemaVersion.V0, ServiceNameMappings = mappings });
+            _tracerV1 = new LockedTracer(new TracerSettings() { MetadataSchemaVersion = SchemaVersion.V1, ServiceNameMappings = mappings });
         }
 
         [Theory]
@@ -36,95 +35,63 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("mongodb", "my-mongo")]
         public void RetrievesMappedServiceNames(string serviceName, string expected)
         {
-            _serviceNamesV0.GetServiceName(ApplicationName, serviceName).Should().Be(expected);
-            _serviceNamesV1.GetServiceName(ApplicationName, serviceName).Should().Be(expected);
+            _tracerV0.Settings.GetServiceName(_tracerV0, serviceName).Should().Be(expected);
+            _tracerV1.Settings.GetServiceName(_tracerV1, serviceName).Should().Be(expected);
         }
 
         [Theory]
         [InlineData("elasticsearch")]
         [InlineData("postgres")]
         [InlineData("custom-service")]
-        public void RetrievesUnmappedServiceNamesV0(string serviceName)
+        public void RetrievesUnmappedServiceNames(string serviceName)
         {
-            var expected = $"{ApplicationName}-{serviceName}";
-            _serviceNamesV0.GetServiceName(ApplicationName, serviceName).Should().Be(expected);
+            _tracerV0.Settings.GetServiceName(_tracerV0, serviceName).Should().Be($"{_tracerV0.DefaultServiceName}-{serviceName}");
+            _tracerV1.Settings.GetServiceName(_tracerV1, serviceName).Should().Be(_tracerV1.DefaultServiceName);
         }
 
         [Theory]
         [InlineData("elasticsearch")]
         [InlineData("postgres")]
         [InlineData("custom-service")]
-        public void RetrievesUnmappedServiceNamesV1(string serviceName)
+        public void DoesNotRequireAnyMappings(string serviceName)
         {
-            _serviceNamesV1.GetServiceName(ApplicationName, serviceName).Should().Be(ApplicationName);
-        }
+            var tracerV0 = new LockedTracer(new TracerSettings() { MetadataSchemaVersion = SchemaVersion.V0 });
+            var tracerV1 = new LockedTracer(new TracerSettings() { MetadataSchemaVersion = SchemaVersion.V1 });
 
-        [Theory]
-        [InlineData("elasticsearch")]
-        [InlineData("postgres")]
-        [InlineData("custom-service")]
-        public void DoesNotRequireAnyMappingsV0(string serviceName)
-        {
-            var serviceNames = new ServiceNames(new Dictionary<string, string>(), "v0");
-            var expected = $"{ApplicationName}-{serviceName}";
-
-            serviceNames.GetServiceName(ApplicationName, serviceName).Should().Be(expected);
-        }
-
-        [Theory]
-        [InlineData("elasticsearch")]
-        [InlineData("postgres")]
-        [InlineData("custom-service")]
-        public void DoesNotRequireAnyMappingsV1(string serviceName)
-        {
-            var serviceNames = new ServiceNames(new Dictionary<string, string>(), "v1");
-
-            serviceNames.GetServiceName(ApplicationName, serviceName).Should().Be(ApplicationName);
+            tracerV0.Settings.GetServiceName(tracerV0, serviceName).Should().Be($"{tracerV0.DefaultServiceName}-{serviceName}");
+            tracerV1.Settings.GetServiceName(tracerV1, serviceName).Should().Be(tracerV1.DefaultServiceName);
         }
 
         [Fact]
-        public void CanPassNullToConstructorV0()
-        {
-            var serviceName = "elasticsearch";
-            var expected = $"{ApplicationName}-{serviceName}";
-            var serviceNames = new ServiceNames(null, "v0");
-
-            serviceNames.GetServiceName(ApplicationName, serviceName).Should().Be(expected);
-        }
-
-        [Fact]
-        public void CanPassNullToConstructorV1()
-        {
-            var serviceName = "elasticsearch";
-            var serviceNames = new ServiceNames(null, "v1");
-
-            serviceNames.GetServiceName(ApplicationName, serviceName).Should().Be(ApplicationName);
-        }
-
-        [Fact]
-        public void CanAddMappingsViaConfigurationSourceV0()
+        public void CanAddMappingsViaConfigurationSource()
         {
             var serviceName = "elasticsearch";
             var expected = "custom-name";
 
-            var collection = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, "v0" }, { ConfigurationKeys.ServiceNameMappings, $"{serviceName}:{expected}" } };
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(collection));
+            var collectionV0 = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, "v0" }, { ConfigurationKeys.ServiceNameMappings, $"{serviceName}:{expected}" } };
+            var collectionV1 = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, "v1" }, { ConfigurationKeys.ServiceNameMappings, $"{serviceName}:{expected}" } };
 
-            var immutableTracerSettings = new ImmutableTracerSettings(tracerSettings);
-            immutableTracerSettings.ServiceNameMappings.GetServiceName(ApplicationName, serviceName).Should().Be(expected);
+            var tracerV0 = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collectionV0)));
+            var tracerV1 = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collectionV1)));
+
+            tracerV0.Settings.GetServiceName(tracerV0, serviceName).Should().Be(expected);
+            tracerV1.Settings.GetServiceName(tracerV1, serviceName).Should().Be(expected);
         }
 
-        [Fact]
-        public void CanAddMappingsViaConfigurationSourceV1()
+        private class LockedTracer : Tracer
         {
-            var serviceName = "elasticsearch";
-            var expected = "custom-name";
+            internal LockedTracer(TracerSettings tracerSettings)
+                : base(new LockedTracerManager(tracerSettings))
+            {
+            }
+        }
 
-            var collection = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, "v1" }, { ConfigurationKeys.ServiceNameMappings, $"{serviceName}:{expected}" } };
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(collection));
-
-            var immutableTracerSettings = new ImmutableTracerSettings(tracerSettings);
-            immutableTracerSettings.ServiceNameMappings.GetServiceName(ApplicationName, serviceName).Should().Be(expected);
+        private class LockedTracerManager : TracerManager, ILockedTracer
+        {
+            public LockedTracerManager(TracerSettings tracerSettings)
+                : base(new ImmutableTracerSettings(tracerSettings), null, null, null, null, null, null, null, null, null, null, null)
+            {
+            }
         }
     }
 }
