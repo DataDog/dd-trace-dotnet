@@ -671,12 +671,16 @@ partial class Build
                 var outputDir = SymbolsDirectory / new FileInfo(file).Directory!.Name;
                 EnsureExistingDirectory(outputDir);
                 var outputFile = outputDir / Path.GetFileNameWithoutExtension(file);
+                var debugOutputFile = outputFile + ".debug";
 
                 Logger.Information($"Extracting debug symbol for {file} to {outputFile}.debug");
-                ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {outputFile}.debug");
+                ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {debugOutputFile}");
 
                 Logger.Information($"Stripping out unneeded information from {file}");
                 StripBinary.Value(arguments: $"--strip-unneeded {file}");
+
+                Logger.Information($"Add .gnu_debuglink for {file} targeting {debugOutputFile}");
+                ExtractDebugInfo.Value(arguments: $"--add-gnu-debuglink={debugOutputFile} {file}");
             }
         });
 
@@ -1458,7 +1462,7 @@ partial class Build
                     // The latest version of Nuke appears to have a bug that stops us calling RequiresDockerDependency() because
                     // it can't locate MSBuild. No idea why, but this is just an optimisation for now, so taking the easy road.
                     // (var required, { } p) => p.RequiresDockerDependency() == required,
-                    _ => true,  
+                    _ => true,
                 })
                 .Where(x =>
                 {

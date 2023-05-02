@@ -17,4 +17,5 @@ target_compile_options(coreclr PUBLIC
     -fms-extensions
     -DHOST_64BIT
     -Wno-pragmas
+    -g
 )
