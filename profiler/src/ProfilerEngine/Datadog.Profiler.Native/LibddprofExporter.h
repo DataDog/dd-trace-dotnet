@@ -9,6 +9,7 @@
 #include "MetricsRegistry.h"
 #include "Sample.h"
 #include "TagsHelper.h"
+
 #include <mutex>
 
 extern "C"
@@ -21,6 +22,7 @@ extern "C"
 #include <string_view>
 #include <unordered_map>
 #include <vector>
+#include <optional>
 
 class Sample;
 class IMetricsSender;
@@ -127,7 +129,7 @@ private:
 
     ddog_prof_Exporter_Request* CreateRequest(SerializedProfile const& encodedProfile, ddog_prof_Exporter* exporter, const Tags& additionalTags) const;
     ddog_Endpoint CreateEndpoint(IConfiguration* configuration);
-    ProfileInfoScope GetInfo(std::string_view runtimeId);
+    ProfileInfoScope GetOrCreateInfo(std::string_view runtimeId);
 
     void ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int idx);
     void SaveMetricsToDisk(const std::string& content) const;
@@ -141,6 +143,7 @@ private:
     std::string GenerateFilePath(const std::string& applicationName, int idx, const std::string& extension) const;
     std::string CreateMetricsFileContent() const;
     std::vector<UpscalingInfo> GetUpscalingInfos();
+    std::optional<ProfileInfoScope> GetInfo(const std::string& runtimeId);
 
     static tags CommonTags;
     static std::string const ProcessId;
