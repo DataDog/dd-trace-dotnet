@@ -34,14 +34,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
 
                 var parent = tracer.ActiveScope?.Span;
+                string operationName = tracer.Schema.Messaging.GetOutboundOperationName(MessagingType);
                 if (parent is not null &&
-                    parent.OperationName == KafkaConstants.ProduceOperationName &&
+                    parent.OperationName == operationName &&
                     parent.GetTag(Tags.InstrumentationName) != null)
                 {
                     return null;
                 }
 
-                string operationName = tracer.Schema.Messaging.GetOutboundOperationName(MessagingType);
                 string serviceName = tracer.Schema.Messaging.GetOutboundServiceName(MessagingType);
 
                 var tags = new KafkaTags(SpanKinds.Producer);
@@ -101,8 +101,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
 
                 var parent = tracer.ActiveScope?.Span;
+                string operationName = tracer.Schema.Messaging.GetInboundOperationName(MessagingType);
                 if (parent is not null &&
-                    (parent.OperationName == KafkaConstants.ConsumeV0OperationName || parent.OperationName == KafkaConstants.ConsumeV1OperationName) &&
+                    parent.OperationName == operationName &&
                     parent.GetTag(Tags.InstrumentationName) != null)
                 {
                     return null;
@@ -138,7 +139,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     }
                 }
 
-                string operationName = tracer.Schema.Messaging.GetInboundOperationName(MessagingType);
                 string serviceName = tracer.Schema.Messaging.GetInboundServiceName(MessagingType);
 
                 var tags = new KafkaTags(SpanKinds.Consumer);
@@ -245,8 +245,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 var activeScope = tracer.InternalActiveScope;
                 var currentSpan = activeScope?.Span;
-                if (currentSpan?.OperationName != KafkaConstants.ConsumeV0OperationName
-                    && currentSpan?.OperationName != KafkaConstants.ConsumeV1OperationName)
+                if (currentSpan?.OperationName != tracer.Schema.Messaging.GetInboundOperationName(MessagingType))
                 {
                     // Not currently in a consumer operation
                     return;
