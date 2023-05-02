@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
+using ActivitySampleHelper;
 
 // ReSharper disable MethodHasAsyncOverloadWithCancellation
 // ReSharper disable MethodSupportsCancellation
@@ -11,6 +12,8 @@ namespace Samples.DatabaseHelper
 {
     public static class RelationalDatabaseTestHarness
     {
+        private static readonly ActivitySourceHelper _sampleHelpers = new("DapperTestHarness");
+
         /// <summary>
         /// Helper method that runs ADO.NET test suite for the specified <see cref="IDbCommandExecutor"/>
         /// in addition to other built-in implementations.
@@ -52,7 +55,7 @@ namespace Samples.DatabaseHelper
                                 new DbCommandNetStandardInterfaceGenericExecutor<TCommand>(),
                             };
 
-            using (var root = SampleHelpers.CreateScope("RunAllAsync<TCommand>"))
+            using (var root = _sampleHelpers.CreateScope("RunAllAsync<TCommand>"))
             {
                 foreach (var executor in executors)
                 {
@@ -88,7 +91,7 @@ namespace Samples.DatabaseHelper
                                 new DbCommandNetStandardInterfaceExecutor(),
                             };
 
-            using (var root = SampleHelpers.CreateScope("RunBaseClassesAsync"))
+            using (var root = _sampleHelpers.CreateScope("RunBaseClassesAsync"))
             {
                 foreach (var executor in executors)
                 {
@@ -108,7 +111,7 @@ namespace Samples.DatabaseHelper
                                 providerSpecificCommandExecutor
                             };
 
-            using (var root = SampleHelpers.CreateScope("RunSingleAsync"))
+            using (var root = _sampleHelpers.CreateScope("RunSingleAsync"))
             {
                 foreach (var executor in executors)
                 {
@@ -132,7 +135,7 @@ namespace Samples.DatabaseHelper
             CancellationToken cancellationToken,
             params IDbCommandExecutor[] providerSpecificCommandExecutors)
         {
-            using (var root = SampleHelpers.CreateScope("RunAllAsync"))
+            using (var root = _sampleHelpers.CreateScope("RunAllAsync"))
             {
                 foreach (var executor in providerSpecificCommandExecutors)
                 {
@@ -158,14 +161,14 @@ namespace Samples.DatabaseHelper
             string commandName = commandExecutor.CommandTypeName;
             Console.WriteLine(commandName);
 
-            using (var parentScope = SampleHelpers.CreateScope("command"))
+            using (var parentScope = _sampleHelpers.CreateScope("command"))
             {
-                SampleHelpers.TrySetResourceName(parentScope, commandName);
+                _sampleHelpers.TrySetResourceName(parentScope, commandName);
                 IDbCommand command;
 
-                using (var scope = SampleHelpers.CreateScope("sync"))
+                using (var scope = _sampleHelpers.CreateScope("sync"))
                 {
-                    SampleHelpers.TrySetResourceName(scope, commandName);
+                    _sampleHelpers.TrySetResourceName(scope, commandName);
 
                     Console.WriteLine("  Synchronous");
                     Console.WriteLine();
@@ -197,9 +200,9 @@ namespace Samples.DatabaseHelper
                 {
                     await Task.Delay(100, cancellationToken);
 
-                    using (var scope = SampleHelpers.CreateScope("async"))
+                    using (var scope = _sampleHelpers.CreateScope("async"))
                     {
-                        SampleHelpers.TrySetResourceName(scope, commandName);
+                        _sampleHelpers.TrySetResourceName(scope, commandName);
 
                         Console.WriteLine("  Asynchronous");
                         Console.WriteLine();
@@ -229,9 +232,9 @@ namespace Samples.DatabaseHelper
 
                     await Task.Delay(100, cancellationToken);
 
-                    using (var scope = SampleHelpers.CreateScope("async-with-cancellation"))
+                    using (var scope = _sampleHelpers.CreateScope("async-with-cancellation"))
                     {
-                        SampleHelpers.TrySetResourceName(scope, commandName);
+                        _sampleHelpers.TrySetResourceName(scope, commandName);
 
                         Console.WriteLine("  Asynchronous with cancellation");
                         Console.WriteLine();

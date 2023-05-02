@@ -3,6 +3,7 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
+using ActivitySampleHelper;
 using Dapper;
 
 namespace Samples.DatabaseHelper
@@ -15,6 +16,7 @@ namespace Samples.DatabaseHelper
         private const string UpdateCommandText = "UPDATE DapperEmployees SET Name=@Name WHERE Id=@Id;";
         private const string SelectManyCommandText = "SELECT * FROM DapperEmployees WHERE Id=@Id;";
         private const string DeleteCommandText = "DELETE FROM DapperEmployees WHERE Id=@Id;";
+        private static readonly ActivitySourceHelper _sampleHelpers = new("DapperTestHarness");
 
         public async Task RunAsync(DbConnection connection)
         {
@@ -25,13 +27,13 @@ namespace Samples.DatabaseHelper
 
             string connectionTypeName = connection.GetType().FullName;
 
-            using (var scopeAll = SampleHelpers.CreateScope("run.all"))
+            using (var scopeAll = _sampleHelpers.CreateScope("run.all"))
             {
-                SampleHelpers.TrySetTag(scopeAll, "connection-type", connectionTypeName);
+                _sampleHelpers.TrySetTag(scopeAll, "connection-type", connectionTypeName);
 
-                using (var scopeSync = SampleHelpers.CreateScope("run.sync"))
+                using (var scopeSync = _sampleHelpers.CreateScope("run.sync"))
                 {
-                    SampleHelpers.TrySetTag(scopeSync, "connection-type", connectionTypeName);
+                    _sampleHelpers.TrySetTag(scopeSync, "connection-type", connectionTypeName);
 
                     connection.Open();
                     CreateNewTable(connection);
@@ -47,9 +49,9 @@ namespace Samples.DatabaseHelper
                 // leave a small space between spans, for better visibility in the UI
                 await Task.Delay(TimeSpan.FromSeconds(0.1));
 
-                using (var scopeAsync = SampleHelpers.CreateScope("run.async"))
+                using (var scopeAsync = _sampleHelpers.CreateScope("run.async"))
                 {
-                    SampleHelpers.TrySetTag(scopeAsync, "connection-type", connectionTypeName);
+                    _sampleHelpers.TrySetTag(scopeAsync, "connection-type", connectionTypeName);
 
                     await connection.OpenAsync();
                     await CreateNewTableAsync(connection);

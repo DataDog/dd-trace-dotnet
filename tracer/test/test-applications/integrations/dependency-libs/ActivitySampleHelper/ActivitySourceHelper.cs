@@ -29,5 +29,21 @@ namespace ActivitySampleHelper
             }
             return activity;
         }
+
+        public void TrySetTag(IDisposable scope, string key, string value)
+        {
+            if (scope is Activity activity)
+            {
+                activity.SetTag(key, value);
+            }
+        }
+
+        public void TrySetResourceName(IDisposable scope, string resourceName)
+        {
+            if (scope is Activity activity)
+            {
+                activity.DisplayName = resourceName;
+            }
+        }
     }
 }
