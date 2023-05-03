@@ -85,7 +85,7 @@ namespace Datadog.Trace.AspNet
             {
                 try
                 {
-                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    wrappedAction();
                 }
                 catch (PlatformNotSupportedException ex)
                 {
