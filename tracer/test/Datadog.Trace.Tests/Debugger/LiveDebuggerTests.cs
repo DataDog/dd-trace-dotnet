@@ -135,10 +135,9 @@ public class LiveDebuggerTests
     {
         internal bool Called { get; private set; }
 
-        public Task StartPollingAsync()
+        public void StartPolling()
         {
             Called = true;
-            return Task.CompletedTask;
         }
 
         public void SetCapability(BigInteger index, bool available)
