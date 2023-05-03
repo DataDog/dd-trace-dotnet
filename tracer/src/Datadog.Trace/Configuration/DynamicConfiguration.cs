@@ -10,25 +10,24 @@ using System.Linq;
 using System.Text;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 
 namespace Datadog.Trace.Configuration
 {
     internal class DynamicConfiguration
     {
-        private const string ApmProductName = "APM_LIBRARY";
+        internal const string ProductName = "APM_LIBRARY";
 
         public static void Initialize()
         {
-            var subscription = new Subscription(ConfigurationUpdated, ApmProductName);
+            var subscription = new Subscription(ConfigurationUpdated, ProductName);
 
             RcmSubscriptionManager.Instance.SubscribeToChanges(subscription);
         }
 
         private static IEnumerable<ApplyDetails> ConfigurationUpdated(Dictionary<string, List<RemoteConfiguration>> configByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)
         {
-            if (!configByProduct.TryGetValue(ApmProductName, out var apmLibrary))
+            if (!configByProduct.TryGetValue(ProductName, out var apmLibrary))
             {
                 return Enumerable.Empty<ApplyDetails>();
             }
