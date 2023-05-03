@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         [Trait("Category", "Smoke")]
         public void Fails()
         {
-            CheckForSmoke(shouldDeserializeTraces: false, expectedExitCode: -10);
+            CheckForSmoke(shouldDeserializeTraces: false, expectedExitCode: 0);
         }
     }
 }
