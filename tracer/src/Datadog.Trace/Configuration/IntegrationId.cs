@@ -39,6 +39,7 @@ namespace Datadog.Trace.Configuration
         CosmosDb,
         AwsSdk,
         AwsSqs,
+        AwsSns,
         ILogger,
         Aerospike,
         AzureFunctions,

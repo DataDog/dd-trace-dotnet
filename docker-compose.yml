@@ -6,6 +6,18 @@ services:
     ports:
     - "9324"
 
+  localstack:
+      image: localstack/localstack
+      environment:
+        - SERVICES=sns
+        - DEBUG=1
+        - DATA_DIR=/tmp/localstack/data
+        - DEFAULT_REGION=us-east-1
+      ports:
+        - "4566:4566"
+      volumes:
+        - "./.localstack:/tmp/localstack"
+  
   elasticsearch7_arm64:
     image: elasticsearch:7.10.1
     ports:

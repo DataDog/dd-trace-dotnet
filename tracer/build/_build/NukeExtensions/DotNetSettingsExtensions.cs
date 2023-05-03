@@ -262,6 +262,7 @@ internal static partial class DotNetSettingsExtensions
             .SetProcessEnvironmentVariable("MYSQL_HOST", "localhost")
             .SetProcessEnvironmentVariable("MYSQL_PORT", "3306")
             .SetProcessEnvironmentVariable("RABBITMQ_HOST", "localhost")
-            .SetProcessEnvironmentVariable("AWS_SQS_HOST", "localhost:9324");
+            .SetProcessEnvironmentVariable("AWS_SQS_HOST", "localhost:60060")
+            .SetProcessEnvironmentVariable("AWS_SNS_HOST", "localhost:4566");
     }
 }

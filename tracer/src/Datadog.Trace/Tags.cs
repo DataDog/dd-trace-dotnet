@@ -318,19 +318,49 @@ namespace Datadog.Trace
         internal const string AwsRegion = "aws.region";
 
         /// <summary>
+        /// The region associated with the AWS SDK span.
+        /// </summary>
+        internal const string TopLevelRegion = "region";
+
+        /// <summary>
         /// The request ID associated with the AWS SDK span.
         /// </summary>
         internal const string AwsRequestId = "aws.requestId";
 
         /// <summary>
-        /// The service associated with the AWS SDK span.
+        /// The nested service associated with the AWS SDK span.
         /// </summary>
         internal const string AwsServiceName = "aws.service";
+
+        /// <summary>
+        /// The top level service associated with the AWS SDK span.
+        /// </summary>
+        internal const string TopLevelServiceName = "service";
+
+        /// <summary>
+        /// The queue name associated with the AWS SDK span.
+        /// </summary>
+        internal const string AwsTopicName = "aws.topic.name";
+
+        /// <summary>
+        /// The queue name associated with the AWS SDK span.
+        /// </summary>
+        internal const string TopicName = "topicname";
 
         /// <summary>
         /// The queue name associated with the AWS SDK span.
         /// </summary>
         internal const string AwsQueueName = "aws.queue.name";
+
+        /// <summary>
+        /// The topic arn associated with the AWS SDK span.
+        /// </summary>
+        internal const string AwsTopicArn = "aws.topic.arn";
+
+        /// <summary>
+        /// The queue name associated with the AWS SDK span.
+        /// </summary>
+        internal const string QueueName = "queuename";
 
         /// <summary>
         /// The queue URL associated with the AWS SDK span.
