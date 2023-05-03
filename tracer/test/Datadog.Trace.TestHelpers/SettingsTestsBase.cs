@@ -4,12 +4,27 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.TestHelpers
 {
     public abstract class SettingsTestsBase
     {
-        public static IEnumerable<object[]> BooleanTestCases(bool defaultValue)
+        public enum Strings
+        {
+            /// <summary>
+            /// Empty string values are accepted
+            /// </summary>
+            AllowEmpty,
+
+            /// <summary>
+            /// Empty string values are replaced by the default value
+            /// </summary>
+            DisallowEmpty
+        }
+
+        public static IEnumerable<object[]> BooleanTestCases(bool? defaultValue)
         {
             yield return new object[] { "true", true };
             yield return new object[] { "1", true };
@@ -37,11 +52,23 @@ namespace Datadog.Trace.TestHelpers
             yield return new object[] { string.Empty, string.Empty };
         }
 
-        public static IEnumerable<object[]> StringTestCases(string defaultValue, bool allowEmpty)
+        public static IEnumerable<object[]> StringTestCases(string defaultValue, Strings emptyStringBehavior)
         {
             yield return new object[] { "test", "test" };
             yield return new object[] { null, defaultValue };
-            yield return new object[] { string.Empty, allowEmpty ? string.Empty : defaultValue };
+            yield return new object[] { string.Empty, emptyStringBehavior == Strings.AllowEmpty ? string.Empty : defaultValue };
+        }
+
+        protected static IConfigurationSource CreateConfigurationSource(params (string Key, string Value)[] values)
+        {
+            var config = new NameValueCollection();
+
+            foreach (var (key, value) in values)
+            {
+                config.Add(key, value);
+            }
+
+            return new NameValueConfigurationSource(config);
         }
     }
 }

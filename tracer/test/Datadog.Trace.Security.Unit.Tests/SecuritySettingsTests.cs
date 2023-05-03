@@ -46,7 +46,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases), SecurityConstants.BlockedHtmlTemplate, true)]
+        [MemberData(nameof(StringTestCases), SecurityConstants.BlockedHtmlTemplate, Strings.AllowEmpty)]
         public void BlockedHtmlTemplate(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.HtmlBlockedTemplate, value));
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases), SecurityConstants.BlockedJsonTemplate, true)]
+        [MemberData(nameof(StringTestCases), SecurityConstants.BlockedJsonTemplate, Strings.AllowEmpty)]
         public void BlockedJsonTemplate(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.JsonBlockedTemplate, value));
@@ -142,7 +142,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases), SecurityConstants.ObfuscationParameterKeyRegexDefault, false)]
+        [MemberData(nameof(StringTestCases), SecurityConstants.ObfuscationParameterKeyRegexDefault, Strings.DisallowEmpty)]
         public void ObfuscationParameterKeyRegex(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.ObfuscationParameterKeyRegex, value));
@@ -152,33 +152,13 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases), SecurityConstants.ObfuscationParameterValueRegexDefault, false)]
+        [MemberData(nameof(StringTestCases), SecurityConstants.ObfuscationParameterValueRegexDefault, Strings.DisallowEmpty)]
         public void ObfuscationParameterValueRegex(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.ObfuscationParameterValueRegex, value));
             var settings = new SecuritySettings(source);
 
             Assert.Equal(expected, settings.ObfuscationParameterValueRegex);
-        }
-
-        private static IConfigurationSource CreateConfigurationSource(params (string Key, string Value)[] values)
-        {
-            var config = new NameValueCollection();
-
-            foreach (var (key, value) in values)
-            {
-                config.Add(key, value);
-            }
-
-            return new NameValueConfigurationSource(config);
-        }
-
-        private static SecuritySettings CreateTestTarget(string stringToBeParsed)
-        {
-            var config = new NameValueCollection() { { ConfigurationKeys.AppSec.WafTimeout, stringToBeParsed } };
-
-            var target = new SecuritySettings(new NameValueConfigurationSource(config));
-            return target;
         }
     }
 }
