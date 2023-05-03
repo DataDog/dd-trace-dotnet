@@ -1145,8 +1145,9 @@ partial class Build
         .Requires(() => IsWin)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
-        .Executes(() =>
+        .Executes(async () =>
         {
+            var isDebugRun = await IsDebugRun();
             EnsureExistingDirectory(TestLogsDirectory);
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
@@ -1163,6 +1164,7 @@ partial class Build
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetTestTargetPlatform(TargetPlatform)
+                    .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
@@ -1185,6 +1187,7 @@ partial class Build
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True&Category!=AzureFunctions")
                     .SetTestTargetPlatform(TargetPlatform)
+                    .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
@@ -1233,8 +1236,9 @@ partial class Build
         .Requires(() => IsWin)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
-        .Executes(() =>
+        .Executes(async () =>
         {
+            var isDebugRun = await IsDebugRun();
             var project = Solution.GetProject(Projects.ClrProfilerIntegrationTests);
             EnsureExistingDirectory(TestLogsDirectory);
             EnsureResultsDirectory(project);
@@ -1251,6 +1255,7 @@ partial class Build
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "RunOnWindows=True&Category=AzureFunctions")
                     .SetTestTargetPlatform(TargetPlatform)
+                    .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
@@ -1273,8 +1278,9 @@ partial class Build
         .After(BuildNativeLoader)
         .Requires(() => IsWin)
         .Requires(() => Framework)
-        .Executes(() =>
+        .Executes(async () =>
         {
+            var isDebugRun = await IsDebugRun();
             EnsureExistingDirectory(TestLogsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
 
@@ -1290,6 +1296,7 @@ partial class Build
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "Category=Smoke&LoadFromGAC!=True&Category!=AzureFunctions")
                     .SetTestTargetPlatform(TargetPlatform)
+                    .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
@@ -1312,7 +1319,7 @@ partial class Build
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
-        .Executes(() => RunWindowsIisIntegrationTests(
+        .Executes(async () => await RunWindowsIisIntegrationTests(
                       Solution.GetProject(Projects.ClrProfilerIntegrationTests)));
 
     Target RunWindowsSecurityIisIntegrationTests => _ => _
@@ -1322,11 +1329,12 @@ partial class Build
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
-        .Executes(() => RunWindowsIisIntegrationTests(
+        .Executes(async () => await RunWindowsIisIntegrationTests(
                       Solution.GetProject(Projects.AppSecIntegrationTests)));
 
-    void RunWindowsIisIntegrationTests(Project project)
+    async Task RunWindowsIisIntegrationTests(Project project)
     {
+        var isDebugRun = await IsDebugRun();
         EnsureResultsDirectory(project);
         try
         {
@@ -1340,6 +1348,7 @@ partial class Build
                                 .EnableNoBuild()
                                 .SetFilter(Filter ?? "(RunOnWindows=True)&LoadFromGAC=True&Category!=AzureFunctions")
                                 .SetTestTargetPlatform(TargetPlatform)
+                                .SetIsDebugRun(isDebugRun)
                                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                                 .SetLogsDirectory(TestLogsDirectory)
                                 .When(CodeCoverage, ConfigureCodeCoverage)
@@ -1360,8 +1369,9 @@ partial class Build
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
-        .Executes(() =>
+        .Executes(async () =>
         {
+            var isDebugRun = await IsDebugRun();
             var project = Solution.GetProject(Projects.ClrProfilerIntegrationTests);
             var resultsDirectory = GetResultsDirectory(project);
             EnsureCleanDirectory(resultsDirectory);
@@ -1377,6 +1387,7 @@ partial class Build
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "(RunOnWindows=True)&MSI=True&Category!=AzureFunctions")
                     .SetTestTargetPlatform(TargetPlatform)
+                    .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
@@ -1585,8 +1596,9 @@ partial class Build
         .Requires(() => Framework)
         .Requires(() => !IsWin)
         .Triggers(PrintSnapshotsDiff)
-        .Executes(() =>
+        .Executes(async () =>
         {
+            var isDebugRun = await IsDebugRun();
             EnsureExistingDirectory(TestLogsDirectory);
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
@@ -1617,6 +1629,7 @@ partial class Build
                         //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                         .EnableCrashDumps()
                         .SetFilter(filter)
+                        .SetIsDebugRun(isDebugRun)
                         .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                         .SetTestTargetPlatform(TargetPlatform)
                         .SetLogsDirectory(TestLogsDirectory)
@@ -1664,8 +1677,9 @@ partial class Build
         .Requires(() => Framework)
         .Requires(() => IsOsx)
         .Triggers(PrintSnapshotsDiff)
-        .Executes(() =>
+        .Executes(async () =>
         {
+            var isDebugRun = await IsDebugRun();
             EnsureExistingDirectory(TestLogsDirectory);
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
@@ -1698,6 +1712,7 @@ partial class Build
                         //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                         .EnableCrashDumps()
                         .SetFilter(filter)
+                        .SetIsDebugRun(isDebugRun)
                         .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                         .SetLocalOsxEnvironmentVariables()
                         .SetTestTargetPlatform(targetPlatform)
@@ -1778,8 +1793,9 @@ partial class Build
     Target RunToolArtifactTests => _ => _
        .Description("Runs the tool artifacts tests")
        .After(BuildToolArtifactTests)
-       .Executes(() =>
+       .Executes(async () =>
         {
+            var isDebugRun = await IsDebugRun();
             var project = Solution.GetProject(Projects.ToolArtifactsTests);
 
             DotNetTest(config => config
@@ -1787,6 +1803,7 @@ partial class Build
                 .SetConfiguration(BuildConfiguration)
                 .EnableNoRestore()
                 .EnableNoBuild()
+                .SetIsDebugRun(isDebugRun)
                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                 .SetProcessEnvironmentVariable("ToolInstallDirectory", ToolInstallDirectory)
                 .SetLogsDirectory(TestLogsDirectory)

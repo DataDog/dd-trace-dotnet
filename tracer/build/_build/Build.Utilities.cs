@@ -4,8 +4,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Amazon.SimpleSystemsManagement.Model;
 using DiffMatchPatch;
@@ -355,6 +357,47 @@ partial class Build
             MoveFile(source, dest, FileExistsPolicy.Overwrite, createDirectories: true);
         }
     }
+
+    private async Task<bool> IsDebugRun()
+    {
+        var forceDebugRun = Environment.GetEnvironmentVariable("ForceDebugRun");
+        if (!string.IsNullOrEmpty(forceDebugRun)
+         && (forceDebugRun == "1" || (bool.TryParse(forceDebugRun, out var force) && force)))
+        {
+            return true;
+        }
+
+        var buildId = Environment.GetEnvironmentVariable("BUILD_BUILDID");
+        if (string.IsNullOrEmpty(buildId))
+        {
+            // not in CI
+            return false;
+        }
+
+        try
+        {
+            var azDoApi = $"https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds/{buildId}";
+            using var client = new HttpClient();
+            using var stream = await client.GetStreamAsync(azDoApi + buildId);
+            using var json = await JsonDocument.ParseAsync(stream);
+            var triggerInfo = json.RootElement.GetProperty("triggerInfo");
+            if (triggerInfo.TryGetProperty("scheduleName", out var scheduleNameElement))
+            {
+                var scheduleName = scheduleNameElement.ToString();
+                return scheduleName == "Daily Debug Run";
+            }
+            else
+            {
+                Logger.Warning("Error calling Azdo API to check for debug run - triggerInfo.scheduleName not found");
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Error calling Azdo API to check for debug run");
+            return false;
+        }
+    } 
 
     private static MSBuildTargetPlatform GetDefaultTargetPlatform()
     {

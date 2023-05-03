@@ -16,6 +16,7 @@ using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using Nuke.Common.Utilities;
 using System.Collections;
+using System.Threading.Tasks;
 using Logger = Serilog.Log;
 
 partial class Build
@@ -207,15 +208,17 @@ partial class Build
         .After(BuildProfilerSamples)
         .Description("Builds and runs the profiler integration tests")
         .Requires(() => !IsArm64)
-        .Executes(() =>
+        .Executes(async () =>
         {
             // Exclude CpuLimitTest from this path: They are already launched in a specific step + specific setup
             var filter = $"{(IsLinux ? "(Category!=WindowsOnly)" : "(Category!=LinuxOnly)")}&(Category!=CpuLimitTest)";
-            BuildAndRunProfilerIntegrationTestsInternal(filter);
+            await BuildAndRunProfilerIntegrationTestsInternal(filter);
         });
 
-    private void BuildAndRunProfilerIntegrationTestsInternal(string filter)
+    private async Task BuildAndRunProfilerIntegrationTestsInternal(string filter)
     {
+        var isDebugRun = await IsDebugRun();
+
         EnsureExistingDirectory(ProfilerTestLogsDirectory);
 
         var integrationTestProjects = ProfilerDirectory.GlobFiles("test/*.IntegrationTests/*.csproj")
@@ -235,6 +238,7 @@ partial class Build
                                 .EnableCrashDumps()
                                 .SetFilter(filter)
                                 .SetProcessLogOutput(true)
+                                .SetIsDebugRun(isDebugRun)
                                 .SetProcessEnvironmentVariable("DD_TESTING_OUPUT_DIR", ProfilerBuildDataDirectory)
                                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                                 .CombineWith(integrationTestProjects, (s, project) => s

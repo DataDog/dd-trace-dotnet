@@ -92,8 +92,9 @@ partial class Build
         .After(BuildDebuggerIntegrationTests)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
-        .Executes(() =>
+        .Executes(async () =>
         {
+            var isDebugRun = await IsDebugRun();
             EnsureExistingDirectory(TestLogsDirectory);
             EnsureResultsDirectory(DebuggerIntegrationTests);
 
@@ -109,6 +110,7 @@ partial class Build
                     .EnableNoBuild()
                     .SetFilter(GetTestFilter())
                     .SetTestTargetPlatform(TargetPlatform)
+                    .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
