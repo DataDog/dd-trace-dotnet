@@ -10,8 +10,6 @@ namespace Datadog.Trace.Tagging
     {
         // SamplingLimitDecisionBytes = System.Text.Encoding.UTF8.GetBytes("_dd.limit_psr");
         private static readonly byte[] SamplingLimitDecisionBytes = new byte[] { 95, 100, 100, 46, 108, 105, 109, 105, 116, 95, 112, 115, 114 };
-        // SamplingRuleDecisionBytes = System.Text.Encoding.UTF8.GetBytes("_dd.rule_psr");
-        private static readonly byte[] SamplingRuleDecisionBytes = new byte[] { 95, 100, 100, 46, 114, 117, 108, 101, 95, 112, 115, 114 };
         // TracesKeepRateBytes = System.Text.Encoding.UTF8.GetBytes("_dd.tracer_kr");
         private static readonly byte[] TracesKeepRateBytes = new byte[] { 95, 100, 100, 46, 116, 114, 97, 99, 101, 114, 95, 107, 114 };
         // SamplingAgentDecisionBytes = System.Text.Encoding.UTF8.GetBytes("_dd.agent_psr");
@@ -22,7 +20,6 @@ namespace Datadog.Trace.Tagging
             return key switch
             {
                 "_dd.limit_psr" => SamplingLimitDecision,
-                "_dd.rule_psr" => SamplingRuleDecision,
                 "_dd.tracer_kr" => TracesKeepRate,
                 "_dd.agent_psr" => SamplingAgentDecision,
                 _ => base.GetMetric(key),
@@ -35,9 +32,6 @@ namespace Datadog.Trace.Tagging
             {
                 case "_dd.limit_psr": 
                     SamplingLimitDecision = value;
-                    break;
-                case "_dd.rule_psr": 
-                    SamplingRuleDecision = value;
                     break;
                 case "_dd.tracer_kr": 
                     TracesKeepRate = value;
@@ -56,11 +50,6 @@ namespace Datadog.Trace.Tagging
             if (SamplingLimitDecision is not null)
             {
                 processor.Process(new TagItem<double>("_dd.limit_psr", SamplingLimitDecision.Value, SamplingLimitDecisionBytes));
-            }
-
-            if (SamplingRuleDecision is not null)
-            {
-                processor.Process(new TagItem<double>("_dd.rule_psr", SamplingRuleDecision.Value, SamplingRuleDecisionBytes));
             }
 
             if (TracesKeepRate is not null)
@@ -82,13 +71,6 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("_dd.limit_psr (metric):")
                   .Append(SamplingLimitDecision.Value)
-                  .Append(',');
-            }
-
-            if (SamplingRuleDecision is not null)
-            {
-                sb.Append("_dd.rule_psr (metric):")
-                  .Append(SamplingRuleDecision.Value)
                   .Append(',');
             }
 
