@@ -37,24 +37,20 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             DirectLogSubmissionHost = config
                                      .WithKeys(ConfigurationKeys.DirectLogSubmission.Host)
-                                     .AsString()
-                                     .Get(HostMetadata.Instance.Hostname);
+                                     .AsString(HostMetadata.Instance.Hostname);
             DirectLogSubmissionSource = config
                                        .WithKeys(ConfigurationKeys.DirectLogSubmission.Source)
-                                       .AsString()
-                                       .Get(DefaultSource);
+                                       .AsString(DefaultSource);
 
             DirectLogSubmissionUrl = config
                                     .WithKeys(ConfigurationKeys.DirectLogSubmission.Url)
-                                    .AsString()
-                                    .Get(
+                                    .AsString(
                                          getDefaultValue: () =>
                                          {
                                              // They didn't provide a URL, use the default (With DD_SITE if provided)
                                              var ddSite = config
                                                          .WithKeys(ConfigurationKeys.Site)
-                                                         .AsString()
-                                                         .Get(DefaultSite, x => !string.IsNullOrEmpty(x));
+                                                         .AsString(DefaultSite, x => !string.IsNullOrEmpty(x));
 
                                              return $"{IntakePrefix}{ddSite}{IntakeSuffix}";
                                          },
@@ -62,7 +58,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             DirectLogSubmissionMinimumLevel = config
                                              .WithKeys(ConfigurationKeys.DirectLogSubmission.MinimumLevel)
-                                             .AsString()
                                              .GetAs(
                                                   () => DefaultMinimumLevel,
                                                   converter: x => DirectSubmissionLogLevelExtensions.Parse(x) ?? ParsingResult<DirectSubmissionLogLevel>.Failure(),
@@ -70,8 +65,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             var globalTags = config
                             .WithKeys(ConfigurationKeys.DirectLogSubmission.GlobalTags, ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
-                            .AsDictionary()
-                            .Get();
+                            .AsDictionary();
 
             DirectLogSubmissionGlobalTags = globalTags?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                                                        .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim())
@@ -80,34 +74,30 @@ namespace Datadog.Trace.Logging.DirectSubmission
             var logSubmissionIntegrations = config
                                            .WithKeys(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations)
                                            .AsString()
-                                           .Get()
                                           ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
                                             Enumerable.Empty<string>();
             DirectLogSubmissionEnabledIntegrations = new HashSet<string>(logSubmissionIntegrations, StringComparer.OrdinalIgnoreCase);
 
             DirectLogSubmissionBatchSizeLimit = config
                                                .WithKeys(ConfigurationKeys.DirectLogSubmission.BatchSizeLimit)
-                                               .AsInt32()
-                                               .Get(DefaultBatchSizeLimit, x => x > 0)
+                                               .AsInt32(DefaultBatchSizeLimit, x => x > 0)
                                                .Value;
 
             DirectLogSubmissionQueueSizeLimit = config
                                                .WithKeys(ConfigurationKeys.DirectLogSubmission.QueueSizeLimit)
-                                               .AsInt32()
-                                               .Get(DefaultQueueSizeLimit, x => x > 0)
+                                               .AsInt32(DefaultQueueSizeLimit, x => x > 0)
                                                .Value;
 
             var seconds = config
                      .WithKeys(ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds)
-                     .AsInt32()
-                     .Get(DefaultBatchPeriodSeconds, x => x > 0)
+                     .AsInt32(DefaultBatchPeriodSeconds, x => x > 0)
                      .Value;
 
             DirectLogSubmissionBatchPeriod = TimeSpan.FromSeconds(seconds);
 
-            ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString().Get();
+            ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
 
-            LogsInjectionEnabled = config.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool().Get();
+            LogsInjectionEnabled = config.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool();
         }
 
         /// <summary>

@@ -58,243 +58,198 @@ internal readonly struct ConfigurationBuilder
 
         private string? FallbackKey3 { get; }
 
-        public StringAccessor AsString() => new(this, recordValue: true);
+        // ****************
+        // String accessors
+        // ****************
+        public string? AsRedactedString()
+            => AsString(getDefaultValue: null, validator: null, recordValue: false);
 
-        public StringAccessor AsRedactedString() => new(this, recordValue: false);
+        public string? AsString() => AsString(getDefaultValue: null, validator: null, recordValue: true);
 
-        public BoolAccessor AsBool() => new(this);
+        public string AsString(string defaultValue) => AsString(defaultValue, validator: null);
 
-        public Int32Accessor AsInt32() => new(this);
+        public string? AsString(Func<string, bool> validator) => AsString(getDefaultValue: null, validator, recordValue: true);
 
-        public DictionaryAccessor AsDictionary() => new(this);
+        public string AsString(string defaultValue, Func<string, bool>? validator)
+            => AsString(() => defaultValue, validator, recordValue: true);
 
-        public DoubleAccessor AsDouble() => new(this);
+        [return: NotNullIfNotNull(nameof(getDefaultValue))]
+        public string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator)
+            => AsString(getDefaultValue, validator, recordValue: true);
 
-        internal readonly struct StringAccessor
+        [return: NotNullIfNotNull(nameof(getDefaultValue))]
+        private string? AsString(Func<string>? getDefaultValue, Func<string, bool>? validator, bool recordValue)
         {
-            private readonly HasKeys _keys;
-            private readonly bool _recordValue;
+            var result = Source.GetString(Key, Telemetry, validator, recordValue)
+                      ?? (FallbackKey1 is null ? null : Source.GetString(FallbackKey1, Telemetry, validator, recordValue))
+                      ?? (FallbackKey2 is null ? null : Source.GetString(FallbackKey2, Telemetry, validator, recordValue))
+                      ?? (FallbackKey3 is null ? null : Source.GetString(FallbackKey3, Telemetry, validator, recordValue));
 
-            public StringAccessor(HasKeys keys, bool recordValue)
+            // We have a valid value
+            if (result is { Result: { } value, IsValid: true })
             {
-                _keys = keys;
-                _recordValue = recordValue;
+                return value;
             }
 
-            public string? Get() => Get(getDefaultValue: null, validator: null);
-
-            public string Get(string defaultValue) => Get(defaultValue, validator: null);
-
-            public string? Get(Func<string, bool> validator) => Get(getDefaultValue: null, validator);
-
-            public string Get(string defaultValue, Func<string, bool>? validator)
-                => Get(() => defaultValue, validator);
-
-            [return: NotNullIfNotNull(nameof(getDefaultValue))]
-            public string? Get(Func<string>? getDefaultValue, Func<string, bool>? validator)
+            // don't have a valid value
+            if (getDefaultValue is null)
             {
-                var result = _keys.Source.GetString(_keys.Key, _keys.Telemetry, validator, _recordValue)
-                          ?? (_keys.FallbackKey1 is null ? null : _keys.Source.GetString(_keys.FallbackKey1, _keys.Telemetry, validator, _recordValue))
-                          ?? (_keys.FallbackKey2 is null ? null : _keys.Source.GetString(_keys.FallbackKey2, _keys.Telemetry, validator, _recordValue))
-                          ?? (_keys.FallbackKey3 is null ? null : _keys.Source.GetString(_keys.FallbackKey3, _keys.Telemetry, validator, _recordValue));
-
-                // We have a valid value
-                if (result is { Result: { } value, IsValid: true })
-                {
-                    return value;
-                }
-
-                // don't have a valid value
-                if (getDefaultValue is null)
-                {
-                    return null;
-                }
-
-                var defaultValue = getDefaultValue();
-                _keys.Telemetry.Record(_keys.Key, defaultValue, _recordValue, ConfigurationOrigins.Default);
-                return defaultValue;
-            }
-
-            [return: NotNullIfNotNull(nameof(getDefaultValue))]
-            public T? GetAs<T>(Func<T>? getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
-            {
-                var result = _keys.Source.GetAs<T>(_keys.Key, _keys.Telemetry, converter, validator, _recordValue)
-                          ?? (_keys.FallbackKey1 is null ? null : _keys.Source.GetAs<T>(_keys.FallbackKey1, _keys.Telemetry, converter, validator, _recordValue))
-                          ?? (_keys.FallbackKey2 is null ? null : _keys.Source.GetAs<T>(_keys.FallbackKey2, _keys.Telemetry, converter, validator, _recordValue))
-                          ?? (_keys.FallbackKey3 is null ? null : _keys.Source.GetAs<T>(_keys.FallbackKey3, _keys.Telemetry, converter, validator, _recordValue));
-
-                // We have a valid value
-                if (result is { Result: { } value, IsValid: true })
-                {
-                    return value;
-                }
-
-                // don't have a valid value
-                if (getDefaultValue is null)
-                {
-                    return default;
-                }
-
-                var defaultValue = getDefaultValue();
-                _keys.Telemetry.Record(_keys.Key, defaultValue?.ToString(), _recordValue, ConfigurationOrigins.Default);
-                return defaultValue!;
-            }
-        }
-
-        internal readonly struct BoolAccessor
-        {
-            private readonly HasKeys _keys;
-
-            public BoolAccessor(HasKeys keys)
-            {
-                _keys = keys;
-            }
-
-            public bool? Get() => Get(getDefaultValue: null, validator: null);
-
-            public bool Get(bool defaultValue) => Get(() => defaultValue, validator: null).Value;
-
-            public bool? Get(Func<bool, bool> validator) => Get(null, validator);
-
-            public bool Get(bool defaultValue, Func<bool, bool>? validator)
-                => Get(() => defaultValue, validator).Value;
-
-            [return: NotNullIfNotNull(nameof(getDefaultValue))] // This doesn't work with nullables, but it still expresses intent
-            public bool? Get(Func<bool>? getDefaultValue, Func<bool, bool>? validator)
-            {
-                var result = _keys.Source.GetBool(_keys.Key, _keys.Telemetry, validator)
-                          ?? (_keys.FallbackKey1 is null ? null : _keys.Source.GetBool(_keys.FallbackKey1, _keys.Telemetry, validator))
-                          ?? (_keys.FallbackKey2 is null ? null : _keys.Source.GetBool(_keys.FallbackKey2, _keys.Telemetry, validator))
-                          ?? (_keys.FallbackKey3 is null ? null : _keys.Source.GetBool(_keys.FallbackKey3, _keys.Telemetry, validator));
-
-                // We have a valid value
-                if (result is { Result: { } value, IsValid: true })
-                {
-                    return value;
-                }
-
-                // don't have a default value
-                if (getDefaultValue is null)
-                {
-                    return null;
-                }
-
-                var defaultValue = getDefaultValue();
-                _keys.Telemetry.Record(_keys.Key, defaultValue, ConfigurationOrigins.Default);
-                return defaultValue;
-            }
-        }
-
-        internal readonly struct Int32Accessor
-        {
-            private readonly HasKeys _keys;
-
-            public Int32Accessor(HasKeys keys)
-            {
-                _keys = keys;
-            }
-
-            public int? Get() => Get(defaultValue: null, validator: null);
-
-            public int Get(int defaultValue) => Get(defaultValue, validator: null).Value;
-
-            public int? Get(Func<int, bool> validator) => Get(null, validator);
-
-            [return: NotNullIfNotNull(nameof(defaultValue))] // This doesn't work with nullables, but it still expresses intent
-            public int? Get(int? defaultValue, Func<int, bool>? validator)
-            {
-                var result = _keys.Source.GetInt32(_keys.Key, _keys.Telemetry, validator)
-                          ?? (_keys.FallbackKey1 is null ? null : _keys.Source.GetInt32(_keys.FallbackKey1, _keys.Telemetry, validator))
-                          ?? (_keys.FallbackKey2 is null ? null : _keys.Source.GetInt32(_keys.FallbackKey2, _keys.Telemetry, validator))
-                          ?? (_keys.FallbackKey3 is null ? null : _keys.Source.GetInt32(_keys.FallbackKey3, _keys.Telemetry, validator));
-
-                // We have a valid value
-                if (result is { Result: { } value, IsValid: true })
-                {
-                    return value;
-                }
-
-                // don't have a default value
-                if (defaultValue is null)
-                {
-                    return null;
-                }
-
-                _keys.Telemetry.Record(_keys.Key, defaultValue.Value, ConfigurationOrigins.Default);
-                return defaultValue.Value;
-            }
-        }
-
-        internal readonly struct DictionaryAccessor
-        {
-            private readonly HasKeys _keys;
-
-            public DictionaryAccessor(HasKeys keys)
-            {
-                _keys = keys;
-            }
-
-            public IDictionary<string, string>? Get() => Get(allowOptionalMappings: false);
-
-            public IDictionary<string, string>? Get(bool allowOptionalMappings)
-            {
-                // TODO: Handle/allow default values + validation?
-                var result = _keys.Source.GetDictionary(_keys.Key, _keys.Telemetry, validator: null, allowOptionalMappings)
-                          ?? (_keys.FallbackKey1 is null ? null : _keys.Source.GetDictionary(_keys.FallbackKey1, _keys.Telemetry, validator: null, allowOptionalMappings))
-                          ?? (_keys.FallbackKey2 is null ? null : _keys.Source.GetDictionary(_keys.FallbackKey2, _keys.Telemetry, validator: null, allowOptionalMappings))
-                          ?? (_keys.FallbackKey3 is null ? null : _keys.Source.GetDictionary(_keys.FallbackKey3, _keys.Telemetry, validator: null, allowOptionalMappings));
-
-                // We have a valid value
-                if (result is { Result: { } value, IsValid: true })
-                {
-                    return value;
-                }
-
-                // Horrible that we have to stringify the dictionary, but that's all that's available in the telemetry api
-                // _keys.Telemetry.Record(_keys.Key, string.Join(", ", defaultValue.Select(kvp => $"{kvp.Key}:{kvp.Value}")), ConfigurationOrigins.Default);
-                // return defaultValue;
                 return null;
             }
+
+            var defaultValue = getDefaultValue();
+            Telemetry.Record(Key, defaultValue, recordValue, ConfigurationOrigins.Default);
+            return defaultValue;
         }
 
-        internal readonly struct DoubleAccessor
+        [return: NotNullIfNotNull(nameof(getDefaultValue))]
+        public T? GetAs<T>(Func<T>? getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
         {
-            private readonly HasKeys _keys;
+            var result = Source.GetAs<T>(Key, Telemetry, converter, validator, recordValue: true)
+                      ?? (FallbackKey1 is null ? null : Source.GetAs<T>(FallbackKey1, Telemetry, converter, validator, recordValue: true))
+                      ?? (FallbackKey2 is null ? null : Source.GetAs<T>(FallbackKey2, Telemetry, converter, validator, recordValue: true))
+                      ?? (FallbackKey3 is null ? null : Source.GetAs<T>(FallbackKey3, Telemetry, converter, validator, recordValue: true));
 
-            public DoubleAccessor(HasKeys keys)
+            // We have a valid value
+            if (result is { Result: { } value, IsValid: true })
             {
-                _keys = keys;
+                return value;
             }
 
-            public double? Get() => Get(defaultValue: null, validator: null);
-
-            public double Get(double defaultValue) => Get(defaultValue, validator: null).Value;
-
-            public double? Get(Func<double, bool> validator) => Get(null, validator);
-
-            [return: NotNullIfNotNull(nameof(defaultValue))]
-            public double? Get(double? defaultValue, Func<double, bool>? validator)
+            // don't have a valid value
+            if (getDefaultValue is null)
             {
-                var result = _keys.Source.GetDouble(_keys.Key, _keys.Telemetry, validator)
-                          ?? (_keys.FallbackKey1 is null ? null : _keys.Source.GetDouble(_keys.FallbackKey1, _keys.Telemetry, validator))
-                          ?? (_keys.FallbackKey2 is null ? null : _keys.Source.GetDouble(_keys.FallbackKey2, _keys.Telemetry, validator))
-                          ?? (_keys.FallbackKey3 is null ? null : _keys.Source.GetDouble(_keys.FallbackKey3, _keys.Telemetry, validator));
-
-                // We have a valid value
-                if (result is { Result: { } value, IsValid: true })
-                {
-                    return value;
-                }
-
-                // don't have a default value
-                if (defaultValue is null)
-                {
-                    return null;
-                }
-
-                _keys.Telemetry.Record(_keys.Key, defaultValue.Value, ConfigurationOrigins.Default);
-                return defaultValue.Value;
+                return default;
             }
+
+            var defaultValue = getDefaultValue();
+            Telemetry.Record(Key, defaultValue?.ToString(), recordValue: true, ConfigurationOrigins.Default);
+            return defaultValue!;
+        }
+
+        // ****************
+        // Bool accessors
+        // ****************
+        public bool? AsBool() => AsBool(getDefaultValue: null, validator: null);
+
+        public bool AsBool(bool defaultValue) => AsBool(() => defaultValue, validator: null).Value;
+
+        public bool? AsBool(Func<bool, bool> validator) => AsBool(null, validator);
+
+        public bool AsBool(bool defaultValue, Func<bool, bool>? validator)
+            => AsBool(() => defaultValue, validator).Value;
+
+        [return: NotNullIfNotNull(nameof(getDefaultValue))] // This doesn't work with nullables, but it still expresses intent
+        public bool? AsBool(Func<bool>? getDefaultValue, Func<bool, bool>? validator)
+        {
+            var result = Source.GetBool(Key, Telemetry, validator)
+                      ?? (FallbackKey1 is null ? null : Source.GetBool(FallbackKey1, Telemetry, validator))
+                      ?? (FallbackKey2 is null ? null : Source.GetBool(FallbackKey2, Telemetry, validator))
+                      ?? (FallbackKey3 is null ? null : Source.GetBool(FallbackKey3, Telemetry, validator));
+
+            // We have a valid value
+            if (result is { Result: { } value, IsValid: true })
+            {
+                return value;
+            }
+
+            // don't have a default value
+            if (getDefaultValue is null)
+            {
+                return null;
+            }
+
+            var defaultValue = getDefaultValue();
+            Telemetry.Record(Key, defaultValue, ConfigurationOrigins.Default);
+            return defaultValue;
+        }
+
+        // ****************
+        // Int32 accessors
+        // ****************
+        public int? AsInt32() => AsInt32(defaultValue: null, validator: null);
+
+        public int AsInt32(int defaultValue) => AsInt32(defaultValue, validator: null).Value;
+
+        public int? AsInt32(Func<int, bool> validator) => AsInt32(null, validator);
+
+        [return: NotNullIfNotNull(nameof(defaultValue))] // This doesn't work with nullables, but it still expresses intent
+        public int? AsInt32(int? defaultValue, Func<int, bool>? validator)
+        {
+            var result = Source.GetInt32(Key, Telemetry, validator)
+                      ?? (FallbackKey1 is null ? null : Source.GetInt32(FallbackKey1, Telemetry, validator))
+                      ?? (FallbackKey2 is null ? null : Source.GetInt32(FallbackKey2, Telemetry, validator))
+                      ?? (FallbackKey3 is null ? null : Source.GetInt32(FallbackKey3, Telemetry, validator));
+
+            // We have a valid value
+            if (result is { Result: { } value, IsValid: true })
+            {
+                return value;
+            }
+
+            // don't have a default value
+            if (defaultValue is null)
+            {
+                return null;
+            }
+
+            Telemetry.Record(Key, defaultValue.Value, ConfigurationOrigins.Default);
+            return defaultValue.Value;
+        }
+
+        public double? AsDouble() => AsDouble(defaultValue: null, validator: null);
+
+        public double AsDouble(double defaultValue) => AsDouble(defaultValue, validator: null).Value;
+
+        public double? AsDouble(Func<double, bool> validator) => AsDouble(null, validator);
+
+        [return: NotNullIfNotNull(nameof(defaultValue))]
+        public double? AsDouble(double? defaultValue, Func<double, bool>? validator)
+        {
+            var result = Source.GetDouble(Key, Telemetry, validator)
+                      ?? (FallbackKey1 is null ? null : Source.GetDouble(FallbackKey1, Telemetry, validator))
+                      ?? (FallbackKey2 is null ? null : Source.GetDouble(FallbackKey2, Telemetry, validator))
+                      ?? (FallbackKey3 is null ? null : Source.GetDouble(FallbackKey3, Telemetry, validator));
+
+            // We have a valid value
+            if (result is { Result: { } value, IsValid: true })
+            {
+                return value;
+            }
+
+            // don't have a default value
+            if (defaultValue is null)
+            {
+                return null;
+            }
+
+            Telemetry.Record(Key, defaultValue.Value, ConfigurationOrigins.Default);
+            return defaultValue.Value;
+        }
+
+        // ****************
+        // Dictionary accessors
+        // ****************
+        public IDictionary<string, string>? AsDictionary() => AsDictionary(allowOptionalMappings: false);
+
+        public IDictionary<string, string>? AsDictionary(bool allowOptionalMappings)
+        {
+            // TODO: Handle/allow default values + validation?
+            var result = Source.GetDictionary(Key, Telemetry, validator: null, allowOptionalMappings)
+                      ?? (FallbackKey1 is null ? null : Source.GetDictionary(FallbackKey1, Telemetry, validator: null, allowOptionalMappings))
+                      ?? (FallbackKey2 is null ? null : Source.GetDictionary(FallbackKey2, Telemetry, validator: null, allowOptionalMappings))
+                      ?? (FallbackKey3 is null ? null : Source.GetDictionary(FallbackKey3, Telemetry, validator: null, allowOptionalMappings));
+
+            // We have a valid value
+            if (result is { Result: { } value, IsValid: true })
+            {
+                return value;
+            }
+
+            // Horrible that we have to stringify the dictionary, but that's all that's available in the telemetry api
+            // _keys.Telemetry.Record(_keys.Key, string.Join(", ", defaultValue.Select(kvp => $"{kvp.Key}:{kvp.Value}")), ConfigurationOrigins.Default);
+            // return defaultValue;
+            return null;
         }
     }
 }

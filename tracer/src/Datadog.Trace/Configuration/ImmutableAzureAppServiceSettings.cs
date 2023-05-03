@@ -36,7 +36,7 @@ namespace Datadog.Trace.Configuration
             source ??= NullConfigurationSource.Instance;
             // TODO: This is retrieved from other places too... need to work out how to not replace config
             var config = new ConfigurationBuilder(source, telemetry);
-            var apiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString().Get();
+            var apiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
             if (string.IsNullOrEmpty(apiKey))
             {
                 Log.Error("The Azure Site Extension will not work if you have not configured DD_API_KEY.");
@@ -45,17 +45,17 @@ namespace Datadog.Trace.Configuration
 
             // Azure App Services Basis
             SubscriptionId = GetSubscriptionId(source, telemetry);
-            ResourceGroup = config.WithKeys(ConfigurationKeys.AzureAppService.ResourceGroupKey).AsString().Get();
-            SiteName = config.WithKeys(ConfigurationKeys.AzureAppService.SiteNameKey).AsString().Get();
+            ResourceGroup = config.WithKeys(ConfigurationKeys.AzureAppService.ResourceGroupKey).AsString();
+            SiteName = config.WithKeys(ConfigurationKeys.AzureAppService.SiteNameKey).AsString();
             ResourceId = CompileResourceId();
 
-            InstanceId = config.WithKeys(ConfigurationKeys.AzureAppService.InstanceIdKey).AsString().Get("unknown");
-            InstanceName = config.WithKeys(ConfigurationKeys.AzureAppService.InstanceNameKey).AsString().Get("unknown");
-            OperatingSystem = config.WithKeys(ConfigurationKeys.AzureAppService.OperatingSystemKey).AsString().Get("unknown");
-            SiteExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey).AsString().Get("unknown");
+            InstanceId = config.WithKeys(ConfigurationKeys.AzureAppService.InstanceIdKey).AsString("unknown");
+            InstanceName = config.WithKeys(ConfigurationKeys.AzureAppService.InstanceNameKey).AsString("unknown");
+            OperatingSystem = config.WithKeys(ConfigurationKeys.AzureAppService.OperatingSystemKey).AsString("unknown");
+            SiteExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey).AsString("unknown");
 
-            FunctionsWorkerRuntime = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey).AsString().Get();
-            FunctionsExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey).AsString().Get();
+            FunctionsWorkerRuntime = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey).AsString();
+            FunctionsExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey).AsString();
 
             if (FunctionsWorkerRuntime is not null || FunctionsExtensionVersion is not null)
             {
@@ -84,9 +84,9 @@ namespace Datadog.Trace.Configuration
 
             Runtime = FrameworkDescription.Instance.Name;
 
-            DebugModeEnabled = config.WithKeys(Configuration.ConfigurationKeys.DebugEnabled).AsBool().Get(false);
-            CustomTracingEnabled = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomTracing).AsBool().Get(false);
-            NeedsDogStatsD = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomMetrics).AsBool().Get(false);
+            DebugModeEnabled = config.WithKeys(Configuration.ConfigurationKeys.DebugEnabled).AsBool(false);
+            CustomTracingEnabled = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomTracing).AsBool(false);
+            NeedsDogStatsD = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomMetrics).AsBool(false);
         }
 
         public bool DebugModeEnabled { get; }
@@ -170,8 +170,7 @@ namespace Datadog.Trace.Configuration
         {
             var websiteOwner = new ConfigurationBuilder(source, telemetry)
                               .WithKeys(ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey)
-                              .AsString()
-                              .Get(websiteOwner => websiteOwner.IndexOf('+') > 0);
+                              .AsString(websiteOwner => websiteOwner.IndexOf('+') > 0);
 
             if (!string.IsNullOrWhiteSpace(websiteOwner))
             {

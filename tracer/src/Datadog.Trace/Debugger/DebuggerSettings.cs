@@ -27,38 +27,33 @@ namespace Datadog.Trace.Debugger
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
 
-            Enabled = config.WithKeys(ConfigurationKeys.Debugger.Enabled).AsBool().Get(false);
+            Enabled = config.WithKeys(ConfigurationKeys.Debugger.Enabled).AsBool(false);
 
             MaximumDepthOfMembersToCopy = config
                                          .WithKeys(ConfigurationKeys.Debugger.MaxDepthToSerialize)
-                                         .AsInt32()
-                                         .Get(DefaultMaxDepthToSerialize, maxDepth => maxDepth > 0)
+                                         .AsInt32(DefaultMaxDepthToSerialize, maxDepth => maxDepth > 0)
                                          .Value;
 
             MaxSerializationTimeInMilliseconds = config
                                                 .WithKeys(ConfigurationKeys.Debugger.MaxTimeToSerialize)
-                                                .AsInt32()
-                                                .Get(
+                                                .AsInt32(
                                                      DefaultMaxSerializationTimeInMilliseconds,
                                                      serializationTimeThreshold => serializationTimeThreshold > 0)
                                                 .Value;
 
             UploadBatchSize = config
                              .WithKeys(ConfigurationKeys.Debugger.UploadBatchSize)
-                             .AsInt32()
-                             .Get(DefaultUploadBatchSize, batchSize => batchSize > 0)
+                             .AsInt32(DefaultUploadBatchSize, batchSize => batchSize > 0)
                              .Value;
 
             DiagnosticsIntervalSeconds = config
                                         .WithKeys(ConfigurationKeys.Debugger.DiagnosticsInterval)
-                                        .AsInt32()
-                                        .Get(DefaultDiagnosticsIntervalSeconds, interval => interval > 0)
+                                        .AsInt32(DefaultDiagnosticsIntervalSeconds, interval => interval > 0)
                                         .Value;
 
             UploadFlushIntervalMilliseconds = config
                                              .WithKeys(ConfigurationKeys.Debugger.UploadFlushInterval)
-                                             .AsInt32()
-                                             .Get(DefaultUploadFlushIntervalMilliseconds, flushInterval => flushInterval >= 0)
+                                             .AsInt32(DefaultUploadFlushIntervalMilliseconds, flushInterval => flushInterval >= 0)
                                              .Value;
         }
 

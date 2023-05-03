@@ -58,8 +58,7 @@ internal class GlobalConfigurationSource
             // if environment variable is not set, look for default file name in the current directory
             var configurationFileName = new ConfigurationBuilder(configurationSource, telemetry)
                                        .WithKeys(ConfigurationKeys.ConfigurationFileName, "DD_DOTNET_TRACER_CONFIG_FILE")
-                                       .AsString()
-                                       .Get(
+                                       .AsString(
                                             getDefaultValue: () => Path.Combine(baseDirectory ?? GetCurrentDirectory(), "datadog.json"),
                                             validator: null);
 

@@ -101,38 +101,34 @@ namespace Datadog.Trace.Configuration
 
             // Get values from the config
             var config = new ConfigurationBuilder(source, telemetry);
-            var traceAgentUrl = config.WithKeys(ConfigurationKeys.AgentUri).AsString().Get();
-            var tracesPipeName = config.WithKeys(ConfigurationKeys.TracesPipeName).AsString().Get();
-            var tracesUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.TracesUnixDomainSocketPath).AsString().Get();
+            var traceAgentUrl = config.WithKeys(ConfigurationKeys.AgentUri).AsString();
+            var tracesPipeName = config.WithKeys(ConfigurationKeys.TracesPipeName).AsString();
+            var tracesUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.TracesUnixDomainSocketPath).AsString();
 
             var agentHost = config
                            .WithKeys(ConfigurationKeys.AgentHost, "DD_TRACE_AGENT_HOSTNAME", "DATADOG_TRACE_AGENT_HOSTNAME")
-                           .AsString()
-                           .Get();
+                           .AsString();
 
             var agentPort = config
                            .WithKeys(ConfigurationKeys.AgentPort, "DATADOG_TRACE_AGENT_PORT")
-                           .AsInt32()
-                           .Get();
+                           .AsInt32();
 
-            var dogStatsdPort = config.WithKeys(ConfigurationKeys.DogStatsdPort).AsInt32().Get(0);
-            var metricsPipeName = config.WithKeys(ConfigurationKeys.MetricsPipeName).AsString().Get();
-            var metricsUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.MetricsUnixDomainSocketPath).AsString().Get();
+            var dogStatsdPort = config.WithKeys(ConfigurationKeys.DogStatsdPort).AsInt32(0);
+            var metricsPipeName = config.WithKeys(ConfigurationKeys.MetricsPipeName).AsString();
+            var metricsUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.MetricsUnixDomainSocketPath).AsString();
 
             ConfigureTraceTransport(traceAgentUrl, tracesPipeName, agentHost, agentPort, tracesUnixDomainSocketPath);
             ConfigureMetricsTransport(traceAgentUrl, agentHost, dogStatsdPort, metricsPipeName, metricsUnixDomainSocketPath);
 
             TracesPipeTimeoutMs = config
                                  .WithKeys(ConfigurationKeys.TracesPipeTimeoutMs)
-                                 .AsInt32()
-                                 .Get(500, value => value > 0)
+                                 .AsInt32(500, value => value > 0)
                                  .Value;
 
-            PartialFlushEnabled = config.WithKeys(ConfigurationKeys.PartialFlushEnabled).AsBool().Get(false);
+            PartialFlushEnabled = config.WithKeys(ConfigurationKeys.PartialFlushEnabled).AsBool(false);
             PartialFlushMinSpans = config
                                   .WithKeys(ConfigurationKeys.PartialFlushMinSpans)
-                                  .AsInt32()
-                                  .Get(500, value => value > 0).Value;
+                                  .AsInt32(500, value => value > 0).Value;
         }
 
         /// <summary>

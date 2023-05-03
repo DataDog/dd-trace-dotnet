@@ -71,41 +71,34 @@ namespace Datadog.Trace.Configuration
 
             Environment = config
                          .WithKeys(ConfigurationKeys.Environment)
-                         .AsString()
-                         .Get();
+                         .AsString();
 
             ServiceName = config
                          .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
-                         .AsString()
-                         .Get();
+                         .AsString();
 
             ServiceVersion = config
                             .WithKeys(ConfigurationKeys.ServiceVersion)
-                            .AsString()
-                            .Get();
+                            .AsString();
 
             GitCommitSha = config
                           .WithKeys(ConfigurationKeys.GitCommitSha)
-                          .AsString()
-                          .Get();
+                          .AsString();
 
             GitRepositoryUrl = config
                               .WithKeys(ConfigurationKeys.GitRepositoryUrl)
-                              .AsString()
-                              .Get();
+                              .AsString();
 
             GitMetadataEnabled = config
                                 .WithKeys(ConfigurationKeys.GitMetadataEnabled)
-                                .AsBool()
-                                .Get(defaultValue: true);
+                                .AsBool(defaultValue: true);
 
             TraceEnabled = config
                           .WithKeys(ConfigurationKeys.TraceEnabled)
-                          .AsBool()
-                          .Get(defaultValue: true);
+                          .AsBool(defaultValue: true);
 
             var disabledIntegrationNames = config.WithKeys(ConfigurationKeys.DisabledIntegrations)
-                                                               .AsString().Get()
+                                                               .AsString()
                                                               ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
                                            Enumerable.Empty<string>();
 
@@ -116,22 +109,20 @@ namespace Datadog.Trace.Configuration
             Exporter = new ExporterSettings(source, Telemetry);
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
-            AnalyticsEnabled = config.WithKeys(ConfigurationKeys.GlobalAnalyticsEnabled).AsBool()
-                                                   .Get(defaultValue: false);
+            AnalyticsEnabled = config.WithKeys(ConfigurationKeys.GlobalAnalyticsEnabled)
+                                                   .AsBool(defaultValue: false);
 #pragma warning restore 618
 
 #pragma warning disable 618 // this parameter has been replaced but may still be used
             MaxTracesSubmittedPerSecond = config
                                          .WithKeys(ConfigurationKeys.TraceRateLimit, ConfigurationKeys.MaxTracesSubmittedPerSecond)
 #pragma warning restore 618
-                                         .AsInt32()
-                                         .Get(defaultValue: 100);
+                                         .AsInt32(defaultValue: 100);
 
             GlobalTags = config
                          // backwards compatibility for names used in the past
                         .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
                         .AsDictionary()
-                        .Get()
                          // Filter out tags with empty keys or empty values, and trim whitespace
                        ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                         .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim())
@@ -140,21 +131,18 @@ namespace Datadog.Trace.Configuration
 
             var inputHeaderTags = config
                                  .WithKeys(ConfigurationKeys.HeaderTags)
-                                 .AsDictionary()
-                                 .Get(allowOptionalMappings: true) ??
+                                 .AsDictionary(allowOptionalMappings: true) ??
                                   // default value (empty)
                                   new Dictionary<string, string>();
 
             var headerTagsNormalizationFixEnabled = config
                                                    .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
-                                                   .AsBool()
-                                                   .Get(defaultValue: true);
+                                                   .AsBool(defaultValue: true);
 
             // Filter out tags with empty keys or empty values, and trim whitespaces
             HeaderTags = InitializeHeaderTags(inputHeaderTags, headerTagsNormalizationFixEnabled);
             MetadataSchemaVersion = config
                                    .WithKeys(ConfigurationKeys.MetadataSchemaVersion)
-                                   .AsString()
                                    .GetAs(
                                         () => SchemaVersion.V0,
                                         converter: x => x switch
@@ -168,110 +156,92 @@ namespace Datadog.Trace.Configuration
             ServiceNameMappings = config
                                      .WithKeys(ConfigurationKeys.ServiceNameMappings)
                                      .AsDictionary()
-                                     .Get()
                                     ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                                     .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
             TracerMetricsEnabled = config
                                   .WithKeys(ConfigurationKeys.TracerMetricsEnabled)
-                                  .AsBool()
-                                  .Get(defaultValue: false);
+                                  .AsBool(defaultValue: false);
 
             StatsComputationEnabled = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
-                                     .AsBool()
-                                     .Get(defaultValue: false);
+                                     .AsBool(defaultValue: false);
 
-            StatsComputationInterval = config.WithKeys(ConfigurationKeys.StatsComputationInterval).AsInt32().Get(defaultValue: 10);
+            StatsComputationInterval = config.WithKeys(ConfigurationKeys.StatsComputationInterval).AsInt32(defaultValue: 10);
 
-            RuntimeMetricsEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsEnabled).AsBool().Get(defaultValue: false);
+            RuntimeMetricsEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsEnabled).AsBool(defaultValue: false);
 
-            CustomSamplingRules = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString().Get();
+            CustomSamplingRules = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString();
 
-            SpanSamplingRules = config.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString().Get();
+            SpanSamplingRules = config.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString();
 
-            GlobalSamplingRate = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble().Get();
+            GlobalSamplingRate = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble();
 
-            StartupDiagnosticLogEnabled = config.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBool().Get(defaultValue: true);
+            StartupDiagnosticLogEnabled = config.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBool(defaultValue: true);
 
             var httpServerErrorStatusCodes = config
                                             .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes)
-                                            .AsString()
-                                            .Get(defaultValue: "500-599");
+                                            .AsString(defaultValue: "500-599");
 
             HttpServerErrorStatusCodes = ParseHttpCodesToArray(httpServerErrorStatusCodes);
 
             var httpClientErrorStatusCodes = config
                                             .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes)
-                                            .AsString()
-                                            .Get(defaultValue: "400-499");
+                                            .AsString(defaultValue: "400-499");
 
             HttpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodes);
 
             TraceBufferSize = config
                              .WithKeys(ConfigurationKeys.BufferSize)
-                             .AsInt32()
-                             .Get(defaultValue: 1024 * 1024 * 10); // 10MB
+                             .AsInt32(defaultValue: 1024 * 1024 * 10); // 10MB
 
             TraceBatchInterval = config
                                 .WithKeys(ConfigurationKeys.SerializationBatchInterval)
-                                .AsInt32()
-                                .Get(defaultValue: 100);
+                                .AsInt32(defaultValue: 100);
 
             RouteTemplateResourceNamesEnabled = config
                                                .WithKeys(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
-                                               .AsBool()
-                                               .Get(defaultValue: true);
+                                               .AsBool(defaultValue: true);
 
             ExpandRouteTemplatesEnabled = config
                                          .WithKeys(ConfigurationKeys.ExpandRouteTemplatesEnabled)
-                                         .AsBool()
-                                         .Get(defaultValue: !RouteTemplateResourceNamesEnabled); // disabled by default if route template resource names enabled
+                                         .AsBool(defaultValue: !RouteTemplateResourceNamesEnabled); // disabled by default if route template resource names enabled
 
             KafkaCreateConsumerScopeEnabled = config
                                              .WithKeys(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
-                                             .AsBool()
-                                             .Get(defaultValue: true);
+                                             .AsBool(defaultValue: true);
 
             DelayWcfInstrumentationEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
-                                            .AsBool()
-                                            .Get(defaultValue: false);
+                                            .AsBool(defaultValue: false);
 
             WcfObfuscationEnabled = config
                                    .WithKeys(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled)
-                                   .AsBool()
-                                   .Get(defaultValue: true);
+                                   .AsBool(defaultValue: true);
 
             ObfuscationQueryStringRegex = config
                                          .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
-                                         .AsString()
-                                         .Get(defaultValue: DefaultObfuscationQueryStringRegex);
+                                         .AsString(defaultValue: DefaultObfuscationQueryStringRegex);
 
             QueryStringReportingEnabled = config
                                          .WithKeys(ConfigurationKeys.QueryStringReportingEnabled)
-                                         .AsBool()
-                                         .Get(defaultValue: true);
+                                         .AsBool(defaultValue: true);
 
             QueryStringReportingSize = config
                                       .WithKeys(ConfigurationKeys.QueryStringReportingSize)
-                                      .AsInt32()
-                                      .Get(defaultValue: 5000); // 5000 being the tag value length limit
+                                      .AsInt32(defaultValue: 5000); // 5000 being the tag value length limit
 
             ObfuscationQueryStringRegexTimeout = config
                                                 .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegexTimeout)
-                                                .AsDouble()
-                                                .Get(200, val1 => val1 is > 0).Value;
+                                                .AsDouble(200, val1 => val1 is > 0).Value;
 
             IsActivityListenerEnabled = config
                                        .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "DD_TRACE_ACTIVITY_LISTENER_ENABLED")
-                                       .AsBool()
-                                       .Get(false);
+                                       .AsBool(false);
 
             var propagationStyleInject = config
                                         .WithKeys(ConfigurationKeys.PropagationStyleInject, "DD_PROPAGATION_STYLE_INJECT", ConfigurationKeys.PropagationStyle)
-                                        .AsString()
-                                        .Get();
+                                        .AsString();
 
             PropagationStyleInject = TrimSplitString(propagationStyleInject, commaSeparator);
 
@@ -283,8 +253,7 @@ namespace Datadog.Trace.Configuration
 
             var propagationStyleExtract = config
                                          .WithKeys(ConfigurationKeys.PropagationStyleExtract, "DD_PROPAGATION_STYLE_EXTRACT", ConfigurationKeys.PropagationStyle)
-                                         .AsString()
-                                         .Get();
+                                         .AsString();
 
             PropagationStyleExtract = TrimSplitString(propagationStyleExtract, commaSeparator);
 
@@ -310,13 +279,11 @@ namespace Datadog.Trace.Configuration
 
             TraceMethods = config
                           .WithKeys(ConfigurationKeys.TraceMethods)
-                          .AsString()
-                          .Get(string.Empty);
+                          .AsString(string.Empty);
 
             var grpcTags = config
                           .WithKeys(ConfigurationKeys.GrpcTags)
-                          .AsDictionary()
-                          .Get(allowOptionalMappings: true)
+                          .AsDictionary(allowOptionalMappings: true)
                            // default value (empty)
                         ?? new Dictionary<string, string>();
 
@@ -325,36 +292,30 @@ namespace Datadog.Trace.Configuration
 
             OutgoingTagPropagationHeaderMaxLength = config
                                                    .WithKeys(ConfigurationKeys.TagPropagation.HeaderMaxLength)
-                                                   .AsInt32()
-                                                   .Get(
+                                                   .AsInt32(
                                                         Tagging.TagPropagation.OutgoingTagPropagationHeaderMaxLength,
                                                         x => x is >= 0 and <= Tagging.TagPropagation.OutgoingTagPropagationHeaderMaxLength)
                                                    .Value;
 
             IpHeader = config
                       .WithKeys(ConfigurationKeys.IpHeader, ConfigurationKeys.AppSec.CustomIpHeader)
-                      .AsString()
-                      .Get();
+                      .AsString();
 
             IpHeaderEnabled = config
                              .WithKeys(ConfigurationKeys.IpHeaderEnabled)
-                             .AsBool()
-                             .Get(false);
+                             .AsBool(false);
 
             IsDataStreamsMonitoringEnabled = config
                                             .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
-                                            .AsBool()
-                                            .Get(false);
+                                            .AsBool(false);
 
             IsRareSamplerEnabled = config
                                   .WithKeys(ConfigurationKeys.RareSamplerEnabled)
-                                  .AsBool()
-                                  .Get(false);
+                                  .AsBool(false);
 
             IsRunningInAzureAppService = config
                                         .WithKeys(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)
-                                        .AsBool()
-                                        .Get(false);
+                                        .AsBool(false);
             if (IsRunningInAzureAppService)
             {
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, Telemetry);
@@ -366,8 +327,7 @@ namespace Datadog.Trace.Configuration
 
             var urlSubstringSkips = config
                                    .WithKeys(ConfigurationKeys.HttpClientExcludedUrlSubstrings)
-                                   .AsString()
-                                   .Get(
+                                   .AsString(
                                         IsRunningInAzureAppService ? ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions :
                                         Serverless.Metadata is { IsRunningInLambda: true } m ? m.DefaultHttpClientExclusions : string.Empty);
 
@@ -377,7 +337,6 @@ namespace Datadog.Trace.Configuration
 
             DbmPropagationMode = config
                                 .WithKeys(ConfigurationKeys.DbmPropagationMode)
-                                .AsString()
                                 .GetAs(
                                      () => DbmPropagationLevel.Disabled,
                                      converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationLevel>.Failure(),
@@ -385,12 +344,10 @@ namespace Datadog.Trace.Configuration
 
             TraceId128BitGenerationEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled)
-                                            .AsBool()
-                                            .Get(false);
+                                            .AsBool(false);
             TraceId128BitLoggingEnabled = config
                                          .WithKeys(ConfigurationKeys.FeatureFlags.TraceId128BitLoggingEnabled)
-                                         .AsBool()
-                                         .Get(false);
+                                         .AsBool(false);
         }
 
         internal IConfigurationTelemetry Telemetry { get; }

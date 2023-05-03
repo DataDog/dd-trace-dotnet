@@ -28,8 +28,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 #pragma warning disable CS0618
                               .WithKeys(ConfigurationKeys.Rcm.PollInterval, ConfigurationKeys.Rcm.PollIntervalInternal)
 #pragma warning restore CS0618
-                              .AsInt32()
-                              .Get(DefaultPollIntervalMilliseconds, pollInterval => pollInterval is > 0 and <= 5000);
+                              .AsInt32(DefaultPollIntervalMilliseconds, pollInterval => pollInterval is > 0 and <= 5000);
 
             PollInterval = TimeSpan.FromMilliseconds(pollInterval.Value);
         }

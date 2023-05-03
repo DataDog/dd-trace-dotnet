@@ -22,26 +22,23 @@ internal class IastSettings
     public IastSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
         var config = new ConfigurationBuilder(source, telemetry);
-        WeakCipherAlgorithms = config.WithKeys(ConfigurationKeys.Iast.WeakCipherAlgorithms).AsString().Get(WeakCipherAlgorithmsDefault);
+        WeakCipherAlgorithms = config.WithKeys(ConfigurationKeys.Iast.WeakCipherAlgorithms).AsString(WeakCipherAlgorithmsDefault);
         WeakCipherAlgorithmsArray = WeakCipherAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
-        WeakHashAlgorithms = config.WithKeys(ConfigurationKeys.Iast.WeakHashAlgorithms).AsString().Get(WeakHashAlgorithmsDefault);
+        WeakHashAlgorithms = config.WithKeys(ConfigurationKeys.Iast.WeakHashAlgorithms).AsString(WeakHashAlgorithmsDefault);
         WeakHashAlgorithmsArray = WeakHashAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
-        Enabled = config.WithKeys(ConfigurationKeys.Iast.Enabled).AsBool().Get(false);
-        DeduplicationEnabled = config.WithKeys(ConfigurationKeys.Iast.IsIastDeduplicationEnabled).AsBool().Get(true);
+        Enabled = config.WithKeys(ConfigurationKeys.Iast.Enabled).AsBool(false);
+        DeduplicationEnabled = config.WithKeys(ConfigurationKeys.Iast.IsIastDeduplicationEnabled).AsBool(true);
         RequestSampling = config
                          .WithKeys(ConfigurationKeys.Iast.RequestSampling)
-                         .AsInt32()
-                         .Get(RequestSamplingDefault, x => x is > 0 and <= 100)
+                         .AsInt32(RequestSamplingDefault, x => x is > 0 and <= 100)
                          .Value;
         MaxConcurrentRequests = config
                                .WithKeys(ConfigurationKeys.Iast.MaxConcurrentRequests)
-                               .AsInt32()
-                               .Get(MaxConcurrentRequestDefault, x => x > 0)
+                               .AsInt32(MaxConcurrentRequestDefault, x => x > 0)
                                .Value;
         VulnerabilitiesPerRequest = config
                                    .WithKeys(ConfigurationKeys.Iast.VulnerabilitiesPerRequest)
-                                   .AsInt32()
-                                   .Get(VulnerabilitiesPerRequestDefault, x => x > 0)
+                                   .AsInt32(VulnerabilitiesPerRequestDefault, x => x > 0)
                                    .Value;
     }
 

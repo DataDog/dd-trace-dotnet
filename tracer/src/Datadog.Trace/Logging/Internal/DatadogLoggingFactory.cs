@@ -27,7 +27,6 @@ internal static class DatadogLoggingFactory
         var logSinkOptions = new ConfigurationBuilder(source, telemetry)
                             .WithKeys(ConfigurationKeys.LogSinks)
                             .AsString()
-                            .Get()
                            ?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
         FileLoggingConfiguration? fileConfig = null;
@@ -38,8 +37,7 @@ internal static class DatadogLoggingFactory
 
         var rateLimit = new ConfigurationBuilder(source, telemetry)
                        .WithKeys(ConfigurationKeys.LogRateLimit)
-                       .AsInt32()
-                       .Get(DefaultRateLimit, x => x >= 0)
+                       .AsInt32(DefaultRateLimit, x => x >= 0)
                        .Value;
 
         return new DatadogLoggingConfiguration(rateLimit, fileConfig);
@@ -137,11 +135,11 @@ internal static class DatadogLoggingFactory
 
     private static string GetLogDirectory(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
-        var logDirectory = new ConfigurationBuilder(source, telemetry).WithKeys(ConfigurationKeys.LogDirectory).AsString().Get();
+        var logDirectory = new ConfigurationBuilder(source, telemetry).WithKeys(ConfigurationKeys.LogDirectory).AsString();
         if (string.IsNullOrEmpty(logDirectory))
         {
 #pragma warning disable 618 // ProfilerLogPath is deprecated but still supported
-            var nativeLogFile = new ConfigurationBuilder(source, telemetry).WithKeys(ConfigurationKeys.ProfilerLogPath).AsString().Get();
+            var nativeLogFile = new ConfigurationBuilder(source, telemetry).WithKeys(ConfigurationKeys.ProfilerLogPath).AsString();
 #pragma warning restore 618
 
             if (!string.IsNullOrEmpty(nativeLogFile))
@@ -215,7 +213,6 @@ internal static class DatadogLoggingFactory
         // get file details
         var maxLogFileSize = new ConfigurationBuilder(source, telemetry)
                             .WithKeys(ConfigurationKeys.MaxLogFileSize)
-                            .AsString()
                             .GetAs(
                                  () => DefaultMaxLogFileSize,
                                  converter: x => long.TryParse(x, out var maxLogSize)
@@ -225,8 +222,7 @@ internal static class DatadogLoggingFactory
 
         var logFileRetentionDays = new ConfigurationBuilder(source, telemetry)
                                   .WithKeys(ConfigurationKeys.LogFileRetentionDays)
-                                  .AsInt32()
-                                  .Get(32, x => x >= 0)
+                                  .AsInt32(32, x => x >= 0)
                                   .Value;
 
         return new FileLoggingConfiguration(maxLogFileSize, logDirectory, logFileRetentionDays);

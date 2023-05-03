@@ -54,15 +54,13 @@ namespace Datadog.Trace.Telemetry
             // TODO: we already fetch this, so this will overwrite the telemetry.... Need a solution to that...
             var apiKey = config
                         .WithKeys(ConfigurationKeys.ApiKey)
-                        .AsRedactedString()
-                        .Get();
+                        .AsRedactedString();
 
             var haveApiKey = !string.IsNullOrEmpty(apiKey);
 
             var agentlessEnabled = config
                                   .WithKeys(ConfigurationKeys.Telemetry.AgentlessEnabled)
-                                  .AsBool()
-                                  .Get(
+                                  .AsBool(
                                        defaultValue: haveApiKey, // if there's an API key, we can use agentless mode by default, otherwise we can only use the agent
                                        validator: isEnabled =>
                                        {
@@ -77,15 +75,13 @@ namespace Datadog.Trace.Telemetry
 
             var agentProxyEnabled = config
                                    .WithKeys(ConfigurationKeys.Telemetry.AgentProxyEnabled)
-                                   .AsBool()
-                                   .Get(() => isAgentAvailable() ?? true, validator: null)
+                                   .AsBool(() => isAgentAvailable() ?? true, validator: null)
                                    .Value;
 
             // enabled by default if we have any transports
             var telemetryEnabled = config
                                   .WithKeys(ConfigurationKeys.Telemetry.Enabled)
-                                  .AsBool()
-                                  .Get(agentlessEnabled || agentProxyEnabled);
+                                  .AsBool(agentlessEnabled || agentProxyEnabled);
 
             AgentlessSettings? agentless = null;
             if (telemetryEnabled && agentlessEnabled)
@@ -93,16 +89,14 @@ namespace Datadog.Trace.Telemetry
                 // We have an API key, so try to send directly to intake
                 var agentlessUri = config
                                   .WithKeys(ConfigurationKeys.Telemetry.Uri)
-                                  .AsString()
-                                  .Get(
+                                  .AsString(
                                        getDefaultValue: () =>
                                        {
                                            // use the default intake. Use DD_SITE if provided, otherwise use default
                                            // TODO: we already fetch this, so this will overwrite the telemetry.... Need a solution to that...
                                            var ddSite = config
                                                        .WithKeys(ConfigurationKeys.Site)
-                                                       .AsString()
-                                                       .Get(
+                                                       .AsString(
                                                             defaultValue: "datadoghq.com",
                                                             validator: siteFromEnv => !string.IsNullOrEmpty(siteFromEnv));
                                            return $"{TelemetryConstants.TelemetryIntakePrefix}.{ddSite}/";
@@ -129,8 +123,7 @@ namespace Datadog.Trace.Telemetry
 
             var heartbeatInterval = config
                                    .WithKeys(ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds)
-                                   .AsInt32()
-                                   .Get(defaultValue: 60, rawInterval => rawInterval is > 0 and <= 3600)
+                                   .AsInt32(defaultValue: 60, rawInterval => rawInterval is > 0 and <= 3600)
                                    .Value;
 
             return new TelemetrySettings(telemetryEnabled, configurationError, agentless, agentProxyEnabled, TimeSpan.FromSeconds(heartbeatInterval));

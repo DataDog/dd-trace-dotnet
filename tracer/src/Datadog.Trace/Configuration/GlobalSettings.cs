@@ -28,13 +28,11 @@ namespace Datadog.Trace.Configuration
         {
             DebugEnabled = new ConfigurationBuilder(source, telemetry)
                           .WithKeys(ConfigurationKeys.DebugEnabled)
-                          .AsBool()
-                          .Get(false);
+                          .AsBool(false);
 
             DiagnosticSourceEnabled = new ConfigurationBuilder(source, telemetry)
                                      .WithKeys(ConfigurationKeys.DiagnosticSourceEnabled)
-                                     .AsBool()
-                                     .Get(true);
+                                     .AsBool(true);
         }
 
         /// <summary>

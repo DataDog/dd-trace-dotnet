@@ -48,23 +48,20 @@ namespace Datadog.Trace.Configuration
                      .WithKeys(
                           string.Format(ConfigurationKeys.Integrations.Enabled, integrationName),
                           string.Format("DD_{0}_ENABLED", integrationName))
-                     .AsBool()
-                     .Get();
+                     .AsBool();
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = config
                               .WithKeys(
                                    string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName),
                                    string.Format("DD_{0}_ANALYTICS_ENABLED", integrationName))
-                              .AsBool()
-                              .Get();
+                              .AsBool();
 
             AnalyticsSampleRate = config
                                  .WithKeys(
                                       string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName),
                                       string.Format("DD_{0}_ANALYTICS_SAMPLE_RATE", integrationName))
-                                 .AsDouble()
-                                 .Get(1.0);
+                                 .AsDouble(1.0);
 #pragma warning restore 618
         }
 

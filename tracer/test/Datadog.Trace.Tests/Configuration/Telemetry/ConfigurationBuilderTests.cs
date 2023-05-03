@@ -43,8 +43,7 @@ public class ConfigurationBuilderTests
                 var expected = Naive(key);
                 var actual = new ConfigurationBuilder(_source, _telemetry)
                             .WithKeys(key)
-                            .AsString()
-                            .Get(Default);
+                            .AsString(Default);
                 actual.Should().Be(expected, $"using key '{key}'");
             }
 
@@ -61,8 +60,7 @@ public class ConfigurationBuilderTests
                 var expected = Naive(key);
                 var actual = new ConfigurationBuilder(_source, _telemetry)
                             .WithKeys(key)
-                            .AsString()
-                            .Get(Default, x => !string.IsNullOrEmpty(x));
+                            .AsString(Default, x => !string.IsNullOrEmpty(x));
                 actual.Should().Be(expected, $"using key '{key}'");
             }
 
@@ -108,8 +106,7 @@ public class ConfigurationBuilderTests
                 var expected = Naive(key);
                 var actual = new ConfigurationBuilder(_source, _telemetry)
                             .WithKeys(key)
-                            .AsBool()
-                            .Get(Default);
+                            .AsBool(Default);
                 actual.Should().Be(expected, $"using key '{key}'");
             }
 
@@ -126,8 +123,7 @@ public class ConfigurationBuilderTests
                 var expected = Naive(key);
                 var actual = new ConfigurationBuilder(_source, _telemetry)
                             .WithKeys(key)
-                            .AsBool()
-                            .Get(Default, x => x);
+                            .AsBool(Default, x => x);
                 actual.Should().Be(expected, $"using key '{key}'");
             }
 
@@ -176,8 +172,7 @@ public class ConfigurationBuilderTests
                 var expected = Naive(key);
                 var actual = new ConfigurationBuilder(_source, _telemetry)
                             .WithKeys(key)
-                            .AsInt32()
-                            .Get(Default);
+                            .AsInt32(Default);
                 actual.Should().Be(expected, $"using key '{key}'");
             }
 
@@ -194,8 +189,7 @@ public class ConfigurationBuilderTests
                 var expected = Naive(key);
                 var actual = new ConfigurationBuilder(_source, _telemetry)
                             .WithKeys(key)
-                            .AsInt32()
-                            .Get(Default, x => x > 0);
+                            .AsInt32(Default, x => x > 0);
                 actual.Should().Be(expected, $"using key '{key}'");
             }
 
@@ -238,8 +232,7 @@ public class ConfigurationBuilderTests
                 var expected = Naive(key);
                 var actual = new ConfigurationBuilder(_source, _telemetry)
                             .WithKeys(key)
-                            .AsDouble()
-                            .Get(Default);
+                            .AsDouble(Default);
                 actual.Should().Be(expected, $"using key '{key}'");
             }
 
@@ -256,8 +249,7 @@ public class ConfigurationBuilderTests
                 var expected = Naive(key);
                 var actual = new ConfigurationBuilder(_source, _telemetry)
                             .WithKeys(key)
-                            .AsDouble()
-                            .Get(Default, x => x > 0);
+                            .AsDouble(Default, x => x > 0);
                 actual.Should().Be(expected, $"using key '{key}'");
             }
 
@@ -302,8 +294,7 @@ public class ConfigurationBuilderTests
                 var expected = _source.GetDictionary(key, allowOptionalMappings);
                 var actual = new ConfigurationBuilder(_source, _telemetry)
                             .WithKeys(key)
-                            .AsDictionary()
-                            .Get(allowOptionalMappings);
+                            .AsDictionary(allowOptionalMappings);
                 if (expected is null)
                 {
                     actual.Should().BeNull();

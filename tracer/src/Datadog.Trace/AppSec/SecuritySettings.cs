@@ -27,35 +27,31 @@ namespace Datadog.Trace.AppSec
             var config = new ConfigurationBuilder(source, telemetry);
             BlockedHtmlTemplate = config
                                  .WithKeys(ConfigurationKeys.AppSec.HtmlBlockedTemplate)
-                                 .AsString()
-                                 .Get(SecurityConstants.BlockedHtmlTemplate);
+                                 .AsString(SecurityConstants.BlockedHtmlTemplate);
 
             BlockedJsonTemplate = config
                                  .WithKeys(ConfigurationKeys.AppSec.JsonBlockedTemplate)
-                                 .AsString()
-                                 .Get(SecurityConstants.BlockedJsonTemplate);
+                                 .AsString(SecurityConstants.BlockedJsonTemplate);
 
             // both should default to false
             var enabledEnvVar = config
                                .WithKeys(ConfigurationKeys.AppSec.Enabled)
-                               .AsBool()
-                               .Get();
+                               .AsBool();
 
             Enabled = enabledEnvVar ?? false;
             CanBeToggled = enabledEnvVar == null;
 
-            Rules = config.WithKeys(ConfigurationKeys.AppSec.Rules).AsString().Get();
-            CustomIpHeader = config.WithKeys(ConfigurationKeys.AppSec.CustomIpHeader).AsString().Get();
-            var extraHeaders = config.WithKeys(ConfigurationKeys.AppSec.ExtraHeaders).AsString().Get();
+            Rules = config.WithKeys(ConfigurationKeys.AppSec.Rules).AsString();
+            CustomIpHeader = config.WithKeys(ConfigurationKeys.AppSec.CustomIpHeader).AsString();
+            var extraHeaders = config.WithKeys(ConfigurationKeys.AppSec.ExtraHeaders).AsString();
             ExtraHeaders = !string.IsNullOrEmpty(extraHeaders) ? extraHeaders!.Split(',') : Array.Empty<string>();
-            KeepTraces = config.WithKeys(ConfigurationKeys.AppSec.KeepTraces).AsBool().Get(true);
+            KeepTraces = config.WithKeys(ConfigurationKeys.AppSec.KeepTraces).AsBool(true);
 
             // empty or junk values to default to 100, any number is valid, with zero or less meaning limit off
-            TraceRateLimit = config.WithKeys(ConfigurationKeys.AppSec.TraceRateLimit).AsInt32().Get(100);
+            TraceRateLimit = config.WithKeys(ConfigurationKeys.AppSec.TraceRateLimit).AsInt32(100);
 
             WafTimeoutMicroSeconds = (ulong)config
                                            .WithKeys(ConfigurationKeys.AppSec.WafTimeout)
-                                           .AsString()
                                            .GetAs<int>(
                                                 getDefaultValue: () => 100_000, // Default timeout of 100 ms, only extreme conditions should cause timeout
                                                 converter: ParseWafTimeout,
@@ -63,13 +59,11 @@ namespace Datadog.Trace.AppSec
 
             ObfuscationParameterKeyRegex = config
                                           .WithKeys(ConfigurationKeys.AppSec.ObfuscationParameterKeyRegex)
-                                          .AsString()
-                                          .Get(SecurityConstants.ObfuscationParameterKeyRegexDefault, x => !string.IsNullOrWhiteSpace(x));
+                                          .AsString(SecurityConstants.ObfuscationParameterKeyRegexDefault, x => !string.IsNullOrWhiteSpace(x));
 
             ObfuscationParameterValueRegex = config
                                             .WithKeys(ConfigurationKeys.AppSec.ObfuscationParameterValueRegex)
-                                            .AsString()
-                                            .Get(SecurityConstants.ObfuscationParameterValueRegexDefault, x => !string.IsNullOrWhiteSpace(x));
+                                            .AsString(SecurityConstants.ObfuscationParameterValueRegexDefault, x => !string.IsNullOrWhiteSpace(x));
         }
 
         public bool Enabled { get; }

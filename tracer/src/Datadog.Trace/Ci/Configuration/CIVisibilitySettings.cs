@@ -19,38 +19,38 @@ namespace Datadog.Trace.Ci.Configuration
         public CIVisibilitySettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
             var config = new ConfigurationBuilder(source, telemetry);
-            Enabled = config.WithKeys(ConfigurationKeys.CIVisibility.Enabled).AsBool().Get(false);
-            Agentless = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessEnabled).AsBool().Get(false);
-            Logs = config.WithKeys(ConfigurationKeys.CIVisibility.Logs).AsBool().Get(false);
-            ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString().Get();
-            ApplicationKey = config.WithKeys(ConfigurationKeys.ApplicationKey).AsRedactedString().Get();
-            Site = config.WithKeys(ConfigurationKeys.Site).AsString().Get("datadoghq.com");
-            AgentlessUrl = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessUrl).AsString().Get();
+            Enabled = config.WithKeys(ConfigurationKeys.CIVisibility.Enabled).AsBool(false);
+            Agentless = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessEnabled).AsBool(false);
+            Logs = config.WithKeys(ConfigurationKeys.CIVisibility.Logs).AsBool(false);
+            ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
+            ApplicationKey = config.WithKeys(ConfigurationKeys.ApplicationKey).AsRedactedString();
+            Site = config.WithKeys(ConfigurationKeys.Site).AsString("datadoghq.com");
+            AgentlessUrl = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessUrl).AsString();
 
             // By default intake payloads has a 5MB limit
             MaximumAgentlessPayloadSize = 5 * 1024 * 1024;
 
-            ProxyHttps = config.WithKeys(ConfigurationKeys.Proxy.ProxyHttps).AsString().Get();
-            var proxyNoProxy = config.WithKeys(ConfigurationKeys.Proxy.ProxyNoProxy).AsString().Get() ?? string.Empty;
+            ProxyHttps = config.WithKeys(ConfigurationKeys.Proxy.ProxyHttps).AsString();
+            var proxyNoProxy = config.WithKeys(ConfigurationKeys.Proxy.ProxyNoProxy).AsString() ?? string.Empty;
             ProxyNoProxy = proxyNoProxy.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
             // Intelligent Test Runner
-            IntelligentTestRunnerEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.IntelligentTestRunnerEnabled).AsBool().Get(true);
+            IntelligentTestRunnerEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.IntelligentTestRunnerEnabled).AsBool(true);
 
             // Tests skipping
-            TestsSkippingEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.TestsSkippingEnabled).AsBool().Get();
+            TestsSkippingEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.TestsSkippingEnabled).AsBool();
 
             // Code coverage
-            CodeCoverageEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverage).AsBool().Get();
-            CodeCoverageSnkFilePath = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageSnkFile).AsString().Get();
-            CodeCoveragePath = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoveragePath).AsString().Get();
-            CodeCoverageEnableJitOptimizations = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageEnableJitOptimizations).AsBool().Get(true);
+            CodeCoverageEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverage).AsBool();
+            CodeCoverageSnkFilePath = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageSnkFile).AsString();
+            CodeCoveragePath = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoveragePath).AsString();
+            CodeCoverageEnableJitOptimizations = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageEnableJitOptimizations).AsBool(true);
 
             // Git upload
-            GitUploadEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.GitUploadEnabled).AsBool().Get();
+            GitUploadEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.GitUploadEnabled).AsBool();
 
             // Force evp proxy
-            ForceAgentsEvpProxy = config.WithKeys(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy).AsBool().Get(false);
+            ForceAgentsEvpProxy = config.WithKeys(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy).AsBool(false);
         }
 
         /// <summary>
