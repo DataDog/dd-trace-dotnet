@@ -1409,14 +1409,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.8.8" },
                 new object[] { "6.9.12" },
                 new object[] { "6.10.9" },
-                new object[] { "8.0.33" },
+                new object[] { "8.0.32.1" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "6.7.9" },
                 new object[] { "6.8.8" },
                 new object[] { "6.9.12" },
                 new object[] { "6.10.9" },
-                new object[] { "8.0.33" },
+                new object[] { "8.0.32.1" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "6.7.9" },

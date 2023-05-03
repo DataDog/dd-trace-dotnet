@@ -582,11 +582,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
 #if NETCOREAPP2_1
                 new object[] { "6.10.9" },
-                new object[] { "8.0.33" },
+                new object[] { "8.0.32.1" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "6.10.9" },
-                new object[] { "8.0.33" },
+                new object[] { "8.0.32.1" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "6.10.9" },
