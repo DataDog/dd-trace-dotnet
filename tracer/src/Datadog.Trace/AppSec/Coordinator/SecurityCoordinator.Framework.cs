@@ -269,6 +269,7 @@ internal readonly partial struct SecurityCoordinator
         }
 
         // we will only hit this next line if we didn't throw
+        WriteAndEndResponse(blockingAction);
         return blockingAction;
     }
 
