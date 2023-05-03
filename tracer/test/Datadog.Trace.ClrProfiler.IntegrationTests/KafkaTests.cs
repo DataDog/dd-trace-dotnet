@@ -39,7 +39,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("Kafka", output)
         {
             SetServiceVersion("1.0.0");
-            EnableDebugMode();
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()

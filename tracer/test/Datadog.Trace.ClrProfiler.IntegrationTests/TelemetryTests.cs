@@ -30,7 +30,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "true");
             SetServiceVersion(ServiceVersion);
-            EnableDebugMode();
             _output = output;
         }
 
