@@ -75,13 +75,24 @@ namespace Datadog.Trace.AspNet
         {
         }
 
-        internal static void AddHeaderTagsFromHttpResponse(System.Web.HttpContext httpContext, Scope scope)
+        internal static void AddHeaderTagsFromHttpResponse(HttpContext httpContext, Scope scope)
         {
-            if (httpContext != null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders && !Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty())
+            if (!Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty())
+            {
+                WrapResponseHeadersAction(httpContext, () =>
+                {
+                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                });
+            }
+        }
+
+        private static void WrapResponseHeadersAction(HttpContext httpContext, Action wrappedAction)
+        {
+            if (httpContext != null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders)
             {
                 try
                 {
-                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    wrappedAction();
                 }
                 catch (PlatformNotSupportedException ex)
                 {
@@ -282,6 +293,10 @@ namespace Datadog.Trace.AspNet
                                 // path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
                                 var args = securityCoordinator.GetBasicRequestArgsForWaf();
                                 args.Add(AddressesConstants.RequestPathParams, securityCoordinator.GetPathParams());
+                                WrapResponseHeadersAction(app.Context, () =>
+                                {
+                                    args.Add(AddressesConstants.ResponseHeaderNoCookies, securityCoordinator.GetResponseHeadersForWaf());
+                                });
                                 securityCoordinator.CheckAndBlock(args);
                             }
 

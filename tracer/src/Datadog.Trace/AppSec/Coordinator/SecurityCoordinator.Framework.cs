@@ -221,31 +221,32 @@ internal readonly partial struct SecurityCoordinator
         {
             var reporting = MakeReportingFunction(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings);
 
-            var blocked = false;
+            BlockingAction? blockingAction = null;
             if (result.ShouldBlock)
             {
-                blocked = ChooseBlockingMethodAndBlock(result.Actions[0], reporting);
+                blockingAction = ChooseBlockingMethodAndBlock(result.Actions[0], reporting);
             }
 
-            reporting(blocked);
+            // here we assume if the we haven't blocked we'll have collected the correct status elsewhere
+            reporting(blockingAction?.StatusCode, result.ShouldBlock);
         }
     }
 
-    private Action<bool> MakeReportingFunction(string triggerData, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
+    private Action<int?, bool> MakeReportingFunction(string triggerData, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
     {
         var securityCoordinator = this;
-        return blocked =>
+        return (status, blocked) =>
         {
             if (blocked)
             {
                 securityCoordinator._httpTransport.MarkBlocked();
             }
 
-            securityCoordinator.Report(triggerData, aggregatedTotalRuntime, aggregatedTotalRuntimeWithBindings, blocked);
+            securityCoordinator.Report(triggerData, aggregatedTotalRuntime, aggregatedTotalRuntimeWithBindings, blocked, status);
         };
     }
 
-    private bool ChooseBlockingMethodAndBlock(string blockActionId, Action<bool> reporting)
+    private BlockingAction ChooseBlockingMethodAndBlock(string blockActionId, Action<int?, bool> reporting)
     {
         var blockingAction = _security.GetBlockingAction(blockActionId, new[] { _context.Request.Headers["Accept"] });
         var isWebApiRequest = _context.CurrentHandler?.GetType().FullName == WebApiControllerHandlerTypeFullname;
@@ -255,23 +256,23 @@ internal readonly partial struct SecurityCoordinator
             {
                 // in the normal case reporting will be by the caller function after we block
                 // in the webapi case we block with an exception, so can't report afterwards
-                reporting(true);
+                reporting(blockingAction.StatusCode, true);
                 throwException((HttpStatusCode)blockingAction.StatusCode, blockingAction.ResponseContent, blockingAction.ContentType);
             }
             else if (blockingAction.IsRedirect && _throwHttpResponseRedirectException.Value is { } throwRedirectException)
             {
                 // in the normal case reporting will be by the caller function after we block
                 // in the webapi case we block with an exception, so can't report afterwards
-                reporting(true);
+                reporting(blockingAction.StatusCode, true);
                 throwRedirectException((HttpStatusCode)blockingAction.StatusCode, blockingAction.RedirectLocation);
             }
         }
 
         // we will only hit this next line if we didn't throw
-        return WriteAndEndResponse(blockingAction);
+        return blockingAction;
     }
 
-    private bool WriteAndEndResponse(BlockingAction blockingAction)
+    private void WriteAndEndResponse(BlockingAction blockingAction)
     {
         var httpResponse = _context.Response;
         httpResponse.Clear();
@@ -302,8 +303,6 @@ internal readonly partial struct SecurityCoordinator
         httpResponse.Flush();
         httpResponse.Close();
         _context.ApplicationInstance.CompleteRequest();
-
-        return true;
     }
 
     public Dictionary<string, object> GetBasicRequestArgsForWaf()
@@ -384,6 +383,31 @@ internal readonly partial struct SecurityCoordinator
         }
 
         return dict;
+    }
+
+    public Dictionary<string, string[]> GetResponseHeadersForWaf()
+    {
+        var response = _context.Response;
+        var headersDic = new Dictionary<string, string[]>(response.Headers.Keys.Count);
+        var headerKeys = response.Headers.Keys;
+        foreach (string originalKey in headerKeys)
+        {
+            var keyForDictionary = originalKey ?? string.Empty;
+            if (!keyForDictionary.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
+            {
+                keyForDictionary = keyForDictionary.ToLowerInvariant();
+                if (!headersDic.ContainsKey(keyForDictionary))
+                {
+                    headersDic.Add(keyForDictionary, response.Headers.GetValues(originalKey));
+                }
+                else
+                {
+                    Log.Warning("Header {Key} couldn't be added as argument to the waf", keyForDictionary);
+                }
+            }
+        }
+
+        return headersDic;
     }
 
     internal class HttpTransport : HttpTransportBase
