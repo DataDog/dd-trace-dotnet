@@ -378,7 +378,7 @@ partial class Build
         {
             var azDoApi = $"https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds/{buildId}";
             using var client = new HttpClient();
-            using var stream = await client.GetStreamAsync(azDoApi + buildId);
+            using var stream = await client.GetStreamAsync(azDoApi);
             using var json = await JsonDocument.ParseAsync(stream);
             var triggerInfo = json.RootElement.GetProperty("triggerInfo");
             if (triggerInfo.TryGetProperty("scheduleName", out var scheduleNameElement))
