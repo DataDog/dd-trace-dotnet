@@ -159,8 +159,8 @@ namespace Datadog.Trace.Configuration
                                         () => SchemaVersion.V0,
                                         converter: x => x switch
                                         {
-                                            "v1" or "V1" => ParsingResult<SchemaVersion>.Success(SchemaVersion.V1),
-                                            "v0" or "V0" => ParsingResult<SchemaVersion>.Success(SchemaVersion.V0),
+                                            "v1" or "V1" => SchemaVersion.V1,
+                                            "v0" or "V0" => SchemaVersion.V0,
                                             _ => ParsingResult<SchemaVersion>.Failure(),
                                         },
                                         validator: null);
@@ -380,9 +380,7 @@ namespace Datadog.Trace.Configuration
                                 .AsString()
                                 .GetAs(
                                      () => DbmPropagationLevel.Disabled,
-                                     converter: x => ToDbmPropagationInput(x) is { } mode
-                                                         ? ParsingResult<DbmPropagationLevel>.Success(mode)
-                                                         : ParsingResult<DbmPropagationLevel>.Failure(),
+                                     converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationLevel>.Failure(),
                                      validator: null);
 
             TraceId128BitGenerationEnabled = config

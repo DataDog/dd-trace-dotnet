@@ -141,7 +141,7 @@ namespace Datadog.Trace.AppSec
             var numberStyles = NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite | NumberStyles.Any;
             if (int.TryParse(wafTimeoutString, numberStyles, CultureInfo.InvariantCulture, out var result))
             {
-                return ParsingResult<int>.Success(result);
+                return result;
             }
 
             wafTimeoutString = wafTimeoutString.Trim();
@@ -172,7 +172,7 @@ namespace Datadog.Trace.AppSec
 
             if (int.TryParse(intPart, numberStyles, CultureInfo.InvariantCulture, out result))
             {
-                return ParsingResult<int>.Success(result * multipler);
+                return result * multipler;
             }
 
             return ParsingResult<int>.Failure();

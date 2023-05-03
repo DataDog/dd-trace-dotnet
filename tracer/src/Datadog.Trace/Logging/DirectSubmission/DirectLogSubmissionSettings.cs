@@ -65,9 +65,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
                                              .AsString()
                                              .GetAs(
                                                   () => DefaultMinimumLevel,
-                                                  converter: x => DirectSubmissionLogLevelExtensions.Parse(x) is { } val
-                                                                      ? ParsingResult<DirectSubmissionLogLevel>.Success(val)
-                                                                      : ParsingResult<DirectSubmissionLogLevel>.Failure(),
+                                                  converter: x => DirectSubmissionLogLevelExtensions.Parse(x) ?? ParsingResult<DirectSubmissionLogLevel>.Failure(),
                                                   validator: null);
 
             var globalTags = config

@@ -23,6 +23,8 @@ internal readonly record struct ParsingResult<T>
     /// </summary>
     public bool IsValid { get; }
 
+    public static implicit operator ParsingResult<T>(T result) => Success(result);
+
     public static ParsingResult<T> Success(T result) => new(result, isValid: true);
 
     public static ParsingResult<T> Failure() => new(default, isValid: false);

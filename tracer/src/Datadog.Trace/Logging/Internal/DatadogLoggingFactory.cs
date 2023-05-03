@@ -219,7 +219,7 @@ internal static class DatadogLoggingFactory
                             .GetAs(
                                  () => DefaultMaxLogFileSize,
                                  converter: x => long.TryParse(x, out var maxLogSize)
-                                                     ? ParsingResult<long>.Success(maxLogSize)
+                                                     ? maxLogSize
                                                      : ParsingResult<long>.Failure(),
                                  validator: x => x >= 0);
 
