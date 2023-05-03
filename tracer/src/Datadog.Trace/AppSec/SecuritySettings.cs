@@ -134,7 +134,8 @@ namespace Datadog.Trace.AppSec
         {
             if (string.IsNullOrWhiteSpace(wafTimeoutString))
             {
-                return ReturnFailure(wafTimeoutString);
+                Log.Warning("Ignoring '{WafTimeoutKey}' of '{WafTimeoutString}' because it was zero or less", ConfigurationKeys.AppSec.WafTimeout, wafTimeoutString);
+                return ParsingResult<int>.Failure();
             }
 
             var numberStyles = NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite | NumberStyles.Any;
@@ -175,12 +176,6 @@ namespace Datadog.Trace.AppSec
             }
 
             return ParsingResult<int>.Failure();
-
-            static ParsingResult<int> ReturnFailure(string timeoutString)
-            {
-                Log.Warning("Ignoring '{WafTimeoutKey}' of '{WafTimeoutString}' because it was zero or less", ConfigurationKeys.AppSec.WafTimeout, timeoutString);
-                return ParsingResult<int>.Failure();
-            }
         }
     }
 }
