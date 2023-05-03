@@ -51,36 +51,33 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
             }
 
             string? profiler32Path, profiler64Path, ldPreload, loaderConfig;
+
+            // if monitoring home is not defined, then we try to locate it in the default path using relative path from the benchmark assembly.
+            monitoringHome ??= Path.Combine(
+                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty,
+                "..", "..", "..", "..", "..", "..", "..", "shared", "bin", "monitoring-home");
+
+            // clean the path
+            monitoringHome = Path.GetFullPath(monitoringHome);
+
             if (FrameworkDescription.Instance.IsWindows())
             {
-                // if monitoring home is not defined, then we try to locate it in the default path using relative path from the benchmark assembly.
-                monitoringHome ??= Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "..\\..\\..\\..\\..\\..\\..\\shared\\bin\\monitoring-home");
-                
-                // clean the path
-                monitoringHome = Path.GetFullPath(monitoringHome);
-                
                 // set required file paths
-                profiler32Path = Path.Combine(monitoringHome, "win-x86\\Datadog.Trace.ClrProfiler.Native.dll");
-                profiler64Path = Path.Combine(monitoringHome, "win-x64\\Datadog.Trace.ClrProfiler.Native.dll");
-                loaderConfig = Path.Combine(monitoringHome, "win-x64\\loader.conf");
+                profiler32Path = Path.Combine(monitoringHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll");
+                profiler64Path = Path.Combine(monitoringHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll");
+                loaderConfig = Path.Combine(monitoringHome, "win-x64", "loader.conf");
                 ldPreload = null;
             }
             else
             {
-                // if monitoring home is not defined, then we try to locate it in the default path using relative path from the benchmark assembly.
-                monitoringHome ??= Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../../../../../shared/bin/monitoring-home/");
-                
-                // clean the path
-                monitoringHome = Path.GetFullPath(monitoringHome);
-                
                 // set required file paths
                 profiler32Path = null;
-                profiler64Path = Path.Combine(monitoringHome, "linux-x64/Datadog.Trace.ClrProfiler.Native.so");
-                loaderConfig = Path.Combine(monitoringHome, "linux-x64/loader.conf");
-                ldPreload = Path.Combine(monitoringHome, "linux-x64/Datadog.Linux.ApiWrapper.x64.so");
+                profiler64Path = Path.Combine(monitoringHome, "linux-x64", "Datadog.Trace.ClrProfiler.Native.so");
+                loaderConfig = Path.Combine(monitoringHome, "linux-x64", "loader.conf");
+                ldPreload = Path.Combine(monitoringHome, "linux-x64", "Datadog.Linux.ApiWrapper.x64.so");
             }
 
-            if (profiler64Path is not null && !File.Exists(profiler64Path))
+            if (!File.Exists(profiler64Path))
             {
                 throw new FileNotFoundException(null, profiler64Path);
             }
@@ -90,7 +87,7 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
                 throw new FileNotFoundException(null, profiler32Path);
             }
             
-            if (loaderConfig is not null && !File.Exists(loaderConfig))
+            if (!File.Exists(loaderConfig))
             {
                 throw new FileNotFoundException(null, loaderConfig);
             }
@@ -123,21 +120,15 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
                 environment["CORECLR_PROFILER_PATH_32"] = profiler32Path;
             }
 
-            if (profiler64Path != null)
-            {
-                environment["COR_PROFILER_PATH_64"] = profiler64Path;
-                environment["CORECLR_PROFILER_PATH_64"] = profiler64Path;
-            }
+            environment["COR_PROFILER_PATH_64"] = profiler64Path;
+            environment["CORECLR_PROFILER_PATH_64"] = profiler64Path;
 
             if (ldPreload != null)
             {
                 environment["LD_PRELOAD"] = ldPreload;
             }
 
-            if (loaderConfig != null)
-            {
-                environment["DD_NATIVELOADER_CONFIGFILE"] = loaderConfig;
-            }
+            environment["DD_NATIVELOADER_CONFIGFILE"] = loaderConfig;
 
             environment["DD_TRACE_ENABLED"] = "0";
             environment["DD_PROFILING_ENABLED"] = "1";
