@@ -32,12 +32,10 @@ namespace Datadog.Trace
 
         public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
         {
-            var settings = tracer?.Settings;
-
             // TODO: Environment, ServiceVersion, GitCommitSha, and GitRepositoryUrl are stored on the TraceContext
             // even though they likely won't change for the lifetime of the process. We should consider moving them
             // elsewhere to reduce the memory usage.
-            if (settings is not null)
+            if (tracer?.Settings is { } settings)
             {
                 // these could be set from DD_ENV/DD_VERSION or from DD_TAGS
                 Environment = settings.Environment;
@@ -46,6 +44,14 @@ namespace Datadog.Trace
 
             Tracer = tracer;
             Tags = tags ?? new TraceTagCollection();
+        }
+
+        internal TraceContext(IDatadogTracer tracer, SpanContext parentSpanContext, int? samplingPriority = null)
+            : this(tracer, parentSpanContext.PropagatedTags)
+        {
+            Origin = parentSpanContext.Origin;
+            AdditionalW3CTraceState = parentSpanContext.AdditionalW3CTraceState;
+            SetSamplingPriority(samplingPriority);
         }
 
         public Span RootSpan { get; private set; }

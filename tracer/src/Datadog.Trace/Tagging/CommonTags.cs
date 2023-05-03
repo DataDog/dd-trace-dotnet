@@ -12,6 +12,9 @@ namespace Datadog.Trace.Tagging
         [Metric(Trace.Metrics.SamplingLimitDecision)]
         public double? SamplingLimitDecision { get; set; }
 
+        [Metric(Trace.Metrics.SamplingRuleDecision)]
+        public double? SamplingRuleDecision { get; set; }
+
         [Metric(Trace.Metrics.TracesKeepRate)]
         public double? TracesKeepRate { get; set; }
 

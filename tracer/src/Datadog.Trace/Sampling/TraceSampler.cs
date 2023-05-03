@@ -30,28 +30,24 @@ namespace Datadog.Trace.Sampling
 
         public SamplingDecision MakeSamplingDecision(Span span)
         {
-            var traceId = span.TraceId;
-
-            if (_rules.Count > 0)
+            for (var i = 0; i < _rules.Count; i++)
             {
-                foreach (var rule in _rules)
+                var rule = _rules[i];
+                if (rule.IsMatch(span))
                 {
-                    if (rule.IsMatch(span))
-                    {
-                        var sampleRate = rule.GetSamplingRate(span);
+                    var sampleRate = rule.GetSamplingRate(span);
 
-                        Log.Debug(
-                            "Matched on rule {RuleName}. Applying rate of {Rate} to trace id {TraceId}",
-                            rule.RuleName,
-                            sampleRate,
-                            traceId);
+                    Log.Debug(
+                        "Matched on rule {RuleName}. Applying rate of {Rate} to trace id {TraceId}",
+                        rule.RuleName,
+                        sampleRate,
+                        span.TraceId);
 
-                        return MakeSamplingDecision(span, sampleRate, rule.SamplingMechanism);
-                    }
+                    return MakeSamplingDecision(span, sampleRate, rule.SamplingMechanism);
                 }
             }
 
-            Log.Debug("No rules matched for trace {TraceId}", traceId);
+            Log.Debug("No rules matched for trace {TraceId}", span.TraceId);
             return SamplingDecision.Default;
         }
 

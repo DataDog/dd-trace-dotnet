@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -39,45 +40,44 @@ namespace Datadog.Trace.Sampling
         public float GetSamplingRate(Span span)
         {
             Log.Debug("Using the default sampling logic");
-            float defaultRate;
-
-            if (_sampleRates.Count == 0)
+            if (_sampleRates.Count > 0)
             {
-                // either we don't have sampling rate from the agent yet (cold start),
-                // or the only rate we received is for "service:,env:", which is not added to _sampleRates
-                defaultRate = _defaultSamplingRate ?? 1;
-                SetSamplingAgentDecision(span, defaultRate); // Keep it to ease investigations
-                return defaultRate;
+                return GetSamplingRateSlow(span);
             }
 
+            // either we don't have sampling rate from the agent yet (cold start),
+            // or the only rate we received is for "service:,env:", which is not added to _sampleRates
+            return SetSamplingAgentDecision(span, _defaultSamplingRate ?? 1); // Keep it to ease investigations
+        }
+
+        private float GetSamplingRateSlow(Span span)
+        {
             var env = span.Context.TraceContext.Environment;
             var service = span.ServiceName;
-
             var key = new SampleRateKey(service, env);
 
             if (_sampleRates.TryGetValue(key, out var sampleRate))
             {
-                SetSamplingAgentDecision(span, sampleRate);
-                return sampleRate;
+                return SetSamplingAgentDecision(span, sampleRate);
             }
 
             Log.Debug("Could not establish sample rate for trace {TraceId}. Using default rate instead: {Rate}", span.TraceId, _defaultSamplingRate);
+            return SetSamplingAgentDecision(span, _defaultSamplingRate ?? 1);
+        }
 
-            defaultRate = _defaultSamplingRate ?? 1;
-            SetSamplingAgentDecision(span, defaultRate);
-            return defaultRate;
-
-            static void SetSamplingAgentDecision(Span span, float sampleRate)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float SetSamplingAgentDecision(Span span, float sampleRate)
+        {
+            if (span.Tags is CommonTags commonTags)
             {
-                if (span.Tags is CommonTags commonTags)
-                {
-                    commonTags.SamplingAgentDecision = sampleRate;
-                }
-                else
-                {
-                    span.SetMetric(Metrics.SamplingAgentDecision, sampleRate);
-                }
+                commonTags.SamplingAgentDecision = sampleRate;
             }
+            else
+            {
+                span.SetMetric(Metrics.SamplingAgentDecision, sampleRate);
+            }
+
+            return sampleRate;
         }
 
         public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
