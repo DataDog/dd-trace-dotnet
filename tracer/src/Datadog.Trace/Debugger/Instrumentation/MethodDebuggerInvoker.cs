@@ -57,15 +57,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
             if (activeSpan != null)
             {
                 ref var methodMetadataInfo = ref state.MethodMetadataInfo;
-
-                if (Tracer.OrphanSpan.Value != null)
-                {
-                    var orphanSpan = Tracer.OrphanSpan.Value;
-                    orphanSpan.Tags.SetTag("source.file_path", methodMetadataInfo.FilePath);
-                    orphanSpan.Tags.SetTag("source.method_begin_line_number", methodMetadataInfo.MethodBeginLineNumber);
-                    orphanSpan.Tags.SetTag("source.method_end_line_number", methodMetadataInfo.MethodEndLineNumber);
-                }
-
                 activeSpan.Tags.SetTag("source.file_path", methodMetadataInfo.FilePath);
                 activeSpan.Tags.SetTag("source.method_begin_line_number", methodMetadataInfo.MethodBeginLineNumber);
                 activeSpan.Tags.SetTag("source.method_end_line_number", methodMetadataInfo.MethodEndLineNumber);
@@ -74,7 +65,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
             if (!state.SnapshotCreator.ProbeHasCondition &&
                 !state.ProbeData.Sampler.Sample())
             {
-                Tracer.OrphanSpan.Value = null;
                 return CreateInvalidatedDebuggerState();
             }
 

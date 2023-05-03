@@ -123,11 +123,6 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets a span that does not have user code associated with it
-        /// </summary>
-        internal static AsyncLocal<Span> OrphanSpan { get; } = new();
-
-        /// <summary>
         /// Gets or sets the global <see cref="Tracer"/> instance.
         /// Used by all automatic instrumentation and recommended
         /// as the entry point for manual instrumentation.
@@ -485,17 +480,11 @@ namespace Datadog.Trace
             {
                 span.SetTag(Tags.HasDebugInfo, bool.TrueString);
                 var nextSnapshotToBeUploaded = ProbeProcessor.NextSnapshot.Value;
-                var orphanSpanNextSnapshotToBeUploaded = string.Empty;
 
                 nextSnapshotToBeUploaded = nextSnapshotToBeUploaded.Replace("TO_BE_ADDED_SPAN_ID", span.SpanId.ToString())
                                                                    .Replace("TO_BE_ADDED_TRACE_ID", span.TraceId.ToString());
                 if (Debugger.LiveDebugger.Instance == null)
                 {
-                    if (!string.IsNullOrEmpty(orphanSpanNextSnapshotToBeUploaded))
-                    {
-                        _toBeUploadedSnapshots.TryEnqueue(orphanSpanNextSnapshotToBeUploaded);
-                    }
-
                     _toBeUploadedSnapshots.TryEnqueue(nextSnapshotToBeUploaded);
                 }
                 else
@@ -503,11 +492,6 @@ namespace Datadog.Trace
                     while (_toBeUploadedSnapshots.TryDequeue(out var snapshot))
                     {
                         Debugger.LiveDebugger.Instance.AddSnapshot("SpanOrigin", snapshot);
-                    }
-
-                    if (!string.IsNullOrEmpty(orphanSpanNextSnapshotToBeUploaded))
-                    {
-                        Debugger.LiveDebugger.Instance.AddSnapshot("SpanOrigin", orphanSpanNextSnapshotToBeUploaded);
                     }
 
                     Debugger.LiveDebugger.Instance.AddSnapshot("SpanOrigin", nextSnapshotToBeUploaded);
@@ -554,12 +538,6 @@ namespace Datadog.Trace
             if (firstNonUserCodeMethod == null || firstUserCodeMethod == null)
             {
                 // TODO LOG
-
-                if (OrphanSpan.Value == null)
-                {
-                    OrphanSpan.Value = span;
-                }
-
                 return;
             }
 

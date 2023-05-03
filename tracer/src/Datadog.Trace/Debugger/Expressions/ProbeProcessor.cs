@@ -397,20 +397,6 @@ namespace Datadog.Trace.Debugger.Expressions
                         }
 
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(ProbeInfo.ProbeId, ref info);
-
-                        // Handle orphan span
-                        var activeScope = Tracer.Instance.InternalActiveScope;
-                        var traceId = activeScope?.Span?.TraceId.ToString();
-                        var spanId = activeScope?.Span?.SpanId.ToString();
-                        if (traceId != null && spanId != null && Tracer.OrphanSpan.Value != null)
-                        {
-                            var orphanSpan = Tracer.OrphanSpan.Value;
-                            Tracer.OrphanSpan.Value = null;
-                            var orphanSnapshot = snapshot.Replace(traceId, orphanSpan.TraceId.ToString())
-                                                         .Replace(spanId, orphanSpan.SpanId.ToString());
-                            LiveDebugger.Instance.AddSnapshot(ProbeInfo.ProbeId, orphanSnapshot);
-                        }
-
                         LiveDebugger.Instance.AddSnapshot(ProbeInfo.ProbeId, snapshot);
                         snapshotCreator.Stop();
                         break;
