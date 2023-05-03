@@ -1,52 +1,66 @@
-// <copyright file="FakeRcm.cs" company="Datadog">
+// <copyright file="DynamicConfiguration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Configuration
 {
-    internal class FakeRcm
+    internal class DynamicConfiguration
     {
+        private const string ApmProductName = "APM_LIBRARY";
+
         public static void Initialize()
         {
-            var subscription = new Subscription(ConfigurationUpdated, "APM_LIBRARY");
+            var subscription = new Subscription(ConfigurationUpdated, ApmProductName);
 
             RcmSubscriptionManager.Instance.SubscribeToChanges(subscription);
         }
 
         private static IEnumerable<ApplyDetails> ConfigurationUpdated(Dictionary<string, List<RemoteConfiguration>> configByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)
         {
-            Console.WriteLine("ConfigurationUpdated");
-
-            if (configByProduct.TryGetValue("APM_LIBRARY", out var apmLibrary))
+            if (!configByProduct.TryGetValue(ApmProductName, out var apmLibrary))
             {
-                if (apmLibrary.Count == 1)
-                {
-                    var configurationSource = new JsonConfigurationSource(Encoding.UTF8.GetString(apmLibrary[0].Contents));
+                return Enumerable.Empty<ApplyDetails>();
+            }
 
-                    OnConfigurationChanged(configurationSource);
-                }
-                else
-                {
-                    Console.WriteLine($"Unexpected number of items in APM_LIBRARY: {apmLibrary.Count}");
-                }
+            if (apmLibrary.Count == 0)
+            {
+                return Enumerable.Empty<ApplyDetails>();
+            }
+
+            // TODO: To adjust when the actual path of the items will be known
+
+            IConfigurationSource configurationSource;
+
+            if (apmLibrary.Count == 1)
+            {
+                configurationSource = new JsonConfigurationSource(Encoding.UTF8.GetString(apmLibrary[0].Contents));
             }
             else
             {
-                Console.WriteLine("Missing APM_LIBRARY");
+                var compositeConfigurationSource = new CompositeConfigurationSource();
+
+                foreach (var item in apmLibrary)
+                {
+                    compositeConfigurationSource.Add(new JsonConfigurationSource(Encoding.UTF8.GetString(item.Contents)));
+                }
+
+                configurationSource = compositeConfigurationSource;
             }
 
+            OnConfigurationChanged(configurationSource);
+
+            // TODO: Are we supposed to acknowledge something?
             return Enumerable.Empty<ApplyDetails>();
         }
 
@@ -71,7 +85,7 @@ namespace Datadog.Trace
                 GlobalSamplingRate = settings.GetDouble("TraceSampleRate") ?? oldSettings.GlobalSamplingRate,
                 SpanSamplingRules = settings.GetString("SpanSamplingRules") ?? oldSettings.SpanSamplingRules,
                 LogsInjectionEnabled = settings.GetBool("LogsInjectionEnabled") ?? oldSettings.LogsInjectionEnabled,
-                HeaderTags = (headerTags as IReadOnlyDictionary<string, string>) ?? oldSettings.HeaderTags,
+                HeaderTags = headerTags as IReadOnlyDictionary<string, string> ?? oldSettings.HeaderTags,
                 ServiceNameMappings = serviceNames ?? oldSettings.ServiceNameMappings
             };
 
