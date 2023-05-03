@@ -3105,6 +3105,52 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
+    ///////////////////////////////////////////// AppDomain tokens
+    // Get a TypeRef for System.AppDomain
+    mdTypeRef system_appdomain_type_ref;
+    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.AppDomain"), &system_appdomain_type_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
+        return hr;
+    }
+
+    // Get a mdMemberRef for System.AppDomain.get_CurrentDomain()
+    COR_SIGNATURE appdomain_get_currentdomain_signature_start[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, 0, ELEMENT_TYPE_CLASS};
+    ULONG appdomain_get_currentdomain_signature_start_length = sizeof(appdomain_get_currentdomain_signature_start);
+    
+    BYTE system_appdomain_type_ref_compressed_token[4];
+    ULONG system_appdomain_type_ref_compressed_token_length = CorSigCompressToken(system_appdomain_type_ref, system_appdomain_type_ref_compressed_token);
+    
+    const auto appdomain_get_currentdomain_signature_length = appdomain_get_currentdomain_signature_start_length + system_appdomain_type_ref_compressed_token_length;
+    COR_SIGNATURE appdomain_get_currentdomain_signature[250];
+    memcpy(appdomain_get_currentdomain_signature, appdomain_get_currentdomain_signature_start, appdomain_get_currentdomain_signature_start_length);
+    memcpy(&appdomain_get_currentdomain_signature[appdomain_get_currentdomain_signature_start_length], system_appdomain_type_ref_compressed_token, system_appdomain_type_ref_compressed_token_length);
+    
+    mdMemberRef appdomain_get_currentdomain_member_ref;
+    hr = metadata_emit->DefineMemberRef(system_appdomain_type_ref, WStr("get_CurrentDomain"), appdomain_get_currentdomain_signature,
+                                            appdomain_get_currentdomain_signature_length, &appdomain_get_currentdomain_member_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
+        return hr;
+    }
+
+    // Get a mdMemberRef for System.AppDomain.get_IsFullyTrusted()
+    COR_SIGNATURE appdomain_get_isfullytrusted_signature[] = {IMAGE_CEE_CS_CALLCONV_HASTHIS, 0, ELEMENT_TYPE_BOOLEAN};
+
+    mdMemberRef appdomain_get_isfullytrusted_member_ref;
+    hr = metadata_emit->DefineMemberRef(system_appdomain_type_ref, WStr("get_IsFullyTrusted"),
+                                            appdomain_get_isfullytrusted_signature, sizeof(appdomain_get_isfullytrusted_signature),
+                                            &appdomain_get_isfullytrusted_member_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
+        return hr;
+    }
+    /////////////////////////////////////////////
+
+    
     /////////////////////////////////////////////
     // Add IL instructions into the void method
     ILRewriter rewriter_void(this->info_, nullptr, module_id, *ret_method_token);
@@ -3133,7 +3179,35 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     pNewInstr->m_opcode = CEE_RET;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-    // Step 1) Call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr,
+    // Step 1) Check if the assembly is loaded in a fully trusted domain.
+
+    // call System.AppDomain.get_CurrentDomain()
+    pNewInstr = rewriter_void.NewILInstr();
+    pNewInstr->m_opcode = CEE_CALL;
+    pNewInstr->m_Arg32 = appdomain_get_currentdomain_member_ref;
+    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+    // Set the false branch target for IsAlreadyLoaded()
+    pBranchFalseInstr->m_pTarget = pNewInstr;
+
+    // callvirt System.AppDomain.get_IsFullyTrusted()
+    pNewInstr = rewriter_void.NewILInstr();
+    pNewInstr->m_opcode = CEE_CALLVIRT;
+    pNewInstr->m_Arg32 = appdomain_get_isfullytrusted_member_ref;
+    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+    // check if the return of the method call is true or false
+    pNewInstr = rewriter_void.NewILInstr();
+    pNewInstr->m_opcode = CEE_BRTRUE_S;
+    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+    ILInstr* pBranchFalseInstr2 = pNewInstr;
+
+    // return if IsFullyTrusted is false
+    pNewInstr = rewriter_void.NewILInstr();
+    pNewInstr->m_opcode = CEE_RET;
+    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+    // Step 2) Call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr,
     // out int symbolsSize)
 
     // ldloca.s 0 : Load the address of the "assemblyPtr" variable (locals index 0)
@@ -3142,8 +3216,8 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     pNewInstr->m_Arg32 = 0;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-    // Set the false branch target
-    pBranchFalseInstr->m_pTarget = pNewInstr;
+    // Set the true branch target for AppDomain.CurrentDomain.IsFullyTrusted
+    pBranchFalseInstr2->m_pTarget = pNewInstr;
 
     // ldloca.s 1 : Load the address of the "assemblySize" variable (locals index 1)
     pNewInstr = rewriter_void.NewILInstr();
@@ -3170,7 +3244,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     pNewInstr->m_Arg32 = pinvoke_method_def;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-    // Step 2) Call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length) to populate the
+    // Step 3) Call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length) to populate the
     // managed assembly bytes
 
     // ldloc.1 : Load the "assemblySize" variable (locals index 1)
@@ -3217,7 +3291,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     pNewInstr->m_Arg32 = marshal_copy_member_ref;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-    // Step 3) Call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length) to populate the
+    // Step 4) Call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length) to populate the
     // symbols bytes
 
     // ldloc.3 : Load the "symbolsSize" variable (locals index 3)
@@ -3264,7 +3338,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     pNewInstr->m_Arg32 = marshal_copy_member_ref;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-    // Step 4) Call System.Reflection.Assembly System.Reflection.Assembly.Load(byte[], byte[]))
+    // Step 5) Call System.Reflection.Assembly System.Reflection.Assembly.Load(byte[], byte[]))
 
     // ldloc.s 4 : Load the "assemblyBytes" variable (locals index 4) for the first byte[] parameter of
     // AppDomain.Load(byte[], byte[])
@@ -3292,7 +3366,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     pNewInstr->m_Arg8 = 6;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-    // Step 4) Call instance method Assembly.CreateInstance("Datadog.Trace.ClrProfiler.Managed.Loader.Startup")
+    // Step 6) Call instance method Assembly.CreateInstance("Datadog.Trace.ClrProfiler.Managed.Loader.Startup")
 
     // ldloc.s 6 : Load the "loadedAssembly" variable (locals index 6) to call Assembly.CreateInstance
     pNewInstr = rewriter_void.NewILInstr();
