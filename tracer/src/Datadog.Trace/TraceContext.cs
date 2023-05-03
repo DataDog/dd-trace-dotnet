@@ -6,7 +6,6 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast;
@@ -23,7 +22,6 @@ namespace Datadog.Trace
 
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
         private readonly long _timestamp = Stopwatch.GetTimestamp();
-        private readonly object _syncRoot = new();
         private IastRequestContext _iastRequestContext;
 
         private ArrayBuilder<Span> _spans;
@@ -98,7 +96,7 @@ namespace Datadog.Trace
         {
             if (_iastRequestContext is null)
             {
-                lock (_syncRoot)
+                lock (this)
                 {
                     _iastRequestContext ??= new();
                 }
@@ -107,7 +105,7 @@ namespace Datadog.Trace
 
         public void AddSpan(Span span)
         {
-            lock (_syncRoot)
+            lock (this)
             {
                 if (RootSpan == null)
                 {
@@ -144,7 +142,7 @@ namespace Datadog.Trace
                 }
             }
 
-            lock (_syncRoot)
+            lock (this)
             {
                 _spans.Add(span);
                 _openSpans--;
@@ -182,7 +180,7 @@ namespace Datadog.Trace
         {
             ArraySegment<Span> spansToWrite;
 
-            lock (_syncRoot)
+            lock (this)
             {
                 spansToWrite = _spans.GetArray();
                 _spans = default;
