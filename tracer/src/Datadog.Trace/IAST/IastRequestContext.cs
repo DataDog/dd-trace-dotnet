@@ -8,7 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.Web;
+#if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
+#endif
 using System.Xml.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Logging;

@@ -15,6 +15,12 @@
     window.postData = function () {
         post("/data", "{\"field\": \"1.0\"}");
     }
+
+    window.GetCookieData = function (cookie1, cookie2, url) {
+        document.cookie = cookie1;
+        document.cookie = cookie2;
+        return fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin' });
+    }
 </script>
 
 <div class="container">
@@ -39,6 +45,9 @@
     <div>
         @Html.ActionLink("GET /iast/SqlQuery/{username}", "SqlQuery", "iast", new { username = "Vicent" }, null)
     </div>
+
+    <div><a href="javascript:GetCookieData('file=valor1','argumentLine=valor2','/Iast/ExecuteCommandFromCookie')">GET /ExecuteCommandFromCookie</a></div>
+
 
     <div>
         <p>

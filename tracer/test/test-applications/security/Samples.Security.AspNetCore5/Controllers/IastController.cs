@@ -85,6 +85,11 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("ExecuteCommand")]
         public IActionResult ExecuteCommand(string file, string argumentLine)
         {
+            return ExecuteCommandInternal(file, argumentLine);
+        }
+
+        private IActionResult ExecuteCommandInternal(string file, string argumentLine)
+        {
             try
             {
                 if (!string.IsNullOrEmpty(file))
@@ -200,6 +205,13 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
 
             return Content($"No query or username was provided");
+        }
+
+        [HttpGet("ExecuteCommandFromCookie")]
+        [Route("ExecuteCommandFromCookie")]
+        public IActionResult ExecuteCommandFromCookie()
+        {
+            return ExecuteCommandInternal(Request.Cookies["file"], Request.Cookies["argumentLine"]);
         }
 
         [HttpGet("GetFileContent")]
