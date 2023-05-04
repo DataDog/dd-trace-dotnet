@@ -253,6 +253,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("mongodb.query")
                 .IsPresent("out.host")
                 .IsPresent("out.port")
+                .IsPresent("peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "db.instance", "network.destination.name", "peer.service")
                 .Matches("component", "MongoDb")
                 .Matches("span.kind", "client"));
 
