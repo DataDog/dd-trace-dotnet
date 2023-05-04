@@ -24,16 +24,17 @@ namespace Datadog.Trace.TestHelpers
             DisallowEmpty
         }
 
-        public static IEnumerable<object[]> BooleanTestCases(bool? defaultValue)
-        {
-            yield return new object[] { "true", true };
-            yield return new object[] { "1", true };
-            yield return new object[] { "false", false };
-            yield return new object[] { "0", false };
-            yield return new object[] { "A", defaultValue };
-            yield return new object[] { null, defaultValue };
-            yield return new object[] { string.Empty, defaultValue };
-        }
+        public static TheoryData<string, bool?> BooleanTestCases(bool? defaultValue) 
+            => new TheoryData<string, bool?>
+            {
+                { "true", true },
+                { "1", true },
+                { "false", false },
+                { "0", false },
+                { "A", defaultValue },
+                { null, defaultValue },
+                { string.Empty, defaultValue },
+            };
 
         public static IEnumerable<object[]> Int32TestCases(int defaultValue)
         {

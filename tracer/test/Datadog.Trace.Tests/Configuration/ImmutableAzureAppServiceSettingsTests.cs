@@ -28,7 +28,9 @@ namespace Datadog.Trace.Tests.Configuration
         [Theory]
         [InlineData(null, null)]
         [InlineData("", null)]
+        [InlineData("  ", null)]
         [InlineData("test", "test")]
+        [InlineData("+test", null)]
         [InlineData("+", null)]
         [InlineData("test1+test2", "test1")]
         public void SubscriptionId(string value, string expected)
@@ -61,6 +63,7 @@ namespace Datadog.Trace.Tests.Configuration
 
         [Theory]
         [InlineData("Subscription", "Sitename", "Resourcegroup", "/subscriptions/subscription/resourcegroups/resourcegroup/providers/microsoft.web/sites/sitename")]
+        [InlineData("Subscription", "", "", "/subscriptions/subscription/resourcegroups//providers/microsoft.web/sites/")]
         [InlineData(null, "Sitename", "Resourcegroup", null)]
         [InlineData("Subscription", null, "Resourcegroup", null)]
         [InlineData("Subscription", "Sitename", null, null)]

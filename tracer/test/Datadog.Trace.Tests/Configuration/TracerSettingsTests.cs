@@ -213,6 +213,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("test", "error", "test")]
         [InlineData(null, "test", "test")]
         [InlineData("", "test", "")]
+        [InlineData(null, null, null)]
         public void ServiceName(string value, string legacyValue, string expected)
         {
             const string legacyServiceName = "DD_SERVICE_NAME";
@@ -518,7 +519,7 @@ namespace Datadog.Trace.Tests.Configuration
 
         [Theory]
         [MemberData(nameof(BooleanTestCases), true)]
-        public void RouteTemplateResKafkaCreateConsumerScopeEnabledourceNamesEnabled(string value, bool expected)
+        public void KafkaCreateConsumerScopeEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.KafkaCreateConsumerScopeEnabled, value));
             var settings = new TracerSettings(source);
