@@ -3,10 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Specialized;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
@@ -52,7 +52,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.HtmlBlockedTemplate, value));
             var settings = new SecuritySettings(source);
 
-            Assert.Equal(expected, settings.BlockedHtmlTemplate);
+            settings.BlockedHtmlTemplate.Should().Be(expected);
         }
 
         [Theory]
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.JsonBlockedTemplate, value));
             var settings = new SecuritySettings(source);
 
-            Assert.Equal(expected, settings.BlockedJsonTemplate);
+            settings.BlockedJsonTemplate.Should().Be(expected);
         }
 
         [Theory]
@@ -72,7 +72,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.Enabled, value));
             var settings = new SecuritySettings(source);
 
-            Assert.Equal(expected, settings.Enabled);
+            settings.Enabled.Should().Be(expected);
         }
 
         [Theory]
@@ -84,7 +84,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.Enabled, value));
             var settings = new SecuritySettings(source);
 
-            Assert.Equal(expected, settings.CanBeToggled);
+            settings.CanBeToggled.Should().Be(expected);
         }
 
         [Theory]
@@ -95,7 +95,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.Rules, value));
             var settings = new SecuritySettings(source);
 
-            Assert.Equal(expected, settings.Rules);
+            settings.Rules.Should().Be(expected);
         }
 
         [Theory]
@@ -105,7 +105,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.CustomIpHeader, value));
             var settings = new SecuritySettings(source);
 
-            Assert.Equal(expected, settings.CustomIpHeader);
+            settings.CustomIpHeader.Should().Be(expected);
         }
 
         [Theory]
@@ -118,7 +118,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.ExtraHeaders, value));
             var settings = new SecuritySettings(source);
 
-            Assert.Equal(expected, settings.ExtraHeaders);
+            settings.ExtraHeaders.Should().BeEquivalentTo(expected);
         }
 
         [Theory]
@@ -128,7 +128,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.KeepTraces, value));
             var settings = new SecuritySettings(source);
 
-            Assert.Equal(expected, settings.KeepTraces);
+            settings.KeepTraces.Should().Be(expected);
         }
 
         [Theory]
@@ -138,7 +138,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.TraceRateLimit, value));
             var settings = new SecuritySettings(source);
 
-            Assert.Equal(expected, settings.TraceRateLimit);
+            settings.TraceRateLimit.Should().Be(expected);
         }
 
         [Theory]
@@ -148,7 +148,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.ObfuscationParameterKeyRegex, value));
             var settings = new SecuritySettings(source);
 
-            Assert.Equal(expected, settings.ObfuscationParameterKeyRegex);
+            settings.ObfuscationParameterKeyRegex.Should().Be(expected);
         }
 
         [Theory]
@@ -158,7 +158,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.ObfuscationParameterValueRegex, value));
             var settings = new SecuritySettings(source);
 
-            Assert.Equal(expected, settings.ObfuscationParameterValueRegex);
+            settings.ObfuscationParameterValueRegex.Should().Be(expected);
         }
     }
 }

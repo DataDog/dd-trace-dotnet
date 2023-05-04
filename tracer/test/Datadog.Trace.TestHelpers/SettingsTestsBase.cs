@@ -45,6 +45,17 @@ namespace Datadog.Trace.TestHelpers
             yield return new object[] { string.Empty, defaultValue };
         }
 
+        public static IEnumerable<object[]> DoubleTestCases()
+        {
+            yield return new object[] { "1.5", 1.5d };
+            yield return new object[] { "1", 1.0d };
+            yield return new object[] { "0", 0.0d };
+            yield return new object[] { "-1", -1.0d };
+            yield return new object[] { "A", null };
+            yield return new object[] { null, null };
+            yield return new object[] { string.Empty, null };
+        }
+
         public static IEnumerable<object[]> StringTestCases()
         {
             yield return new object[] { "test", "test" };

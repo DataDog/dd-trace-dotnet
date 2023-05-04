@@ -17,7 +17,12 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
         private static NativeCallTargetDefinition[] callTargetDefinitions = null;
 
-        internal static LambdaMetadata Metadata { get; } = LambdaMetadata.Create();
+        internal static LambdaMetadata Metadata { get; private set; } = LambdaMetadata.Create();
+
+        internal static void SetMetadataTestsOnly(LambdaMetadata metadata)
+        {
+            Metadata = metadata;
+        }
 
         internal static void InitIfNeeded()
         {
@@ -175,7 +180,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             /// <summary>
             /// Gets the paths we don't want to trace when running in Lambda
             /// </summary>
-            internal string DefaultHttpClientExclusions { get; } = "/2018-06-01/runtime/invocation/".ToUpperInvariant();
+            internal string DefaultHttpClientExclusions { get; private set; } = "/2018-06-01/runtime/invocation/".ToUpperInvariant();
 
             public static LambdaMetadata Create(string extensionPath = ExtensionFullPath)
             {
@@ -202,6 +207,14 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
                 };
 
                 return new LambdaMetadata(isRunningInLambda: true, functionName, handlerName, serviceName);
+            }
+
+            internal static LambdaMetadata CreateForTests(bool isRunningInLambda, string functionName, string handlerName, string serviceName, string defaultHttpExclusions)
+            {
+                return new LambdaMetadata(isRunningInLambda, functionName, handlerName, serviceName)
+                {
+                    DefaultHttpClientExclusions = defaultHttpExclusions
+                };
             }
         }
     }
