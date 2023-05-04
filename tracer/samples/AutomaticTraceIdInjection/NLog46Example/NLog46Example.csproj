@@ -2,11 +2,12 @@
   
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFrameworks>net7.0;net462</TargetFrameworks>
+    <Platforms>AnyCPU;x64;x86</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Datadog.Trace" Version="2.29.0" />
+    <PackageReference Include="Datadog.Trace.Bundle" Version="2.29.0" />
     <PackageReference Include="NLog" Version="4.6.7" />
   </ItemGroup>
 

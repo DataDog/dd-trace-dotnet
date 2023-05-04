@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,11 +25,9 @@ namespace Datadog.Trace.TestHelpers
         public ProcessHelper(Process process, Action<string> onDataReceived = null, Action<string> onErrorReceived = null)
         {
             Task = Task.WhenAll(_outputTask.Task, _errorTask.Task);
-            process.OutputDataReceived += (_, e) => DrainOutput(e, _outputBuffer, _outputTask, onDataReceived);
-            process.ErrorDataReceived += (_, e) => DrainOutput(e, _errorBuffer, _errorTask, onErrorReceived ?? onDataReceived);
 
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            Task.Factory.StartNew(() => DrainOutput(process.StandardOutput, _outputBuffer, _outputTask, onDataReceived), TaskCreationOptions.LongRunning);
+            Task.Factory.StartNew(() => DrainOutput(process.StandardError, _errorBuffer, _errorTask, onErrorReceived ?? onDataReceived), TaskCreationOptions.LongRunning);
 
             Process = process;
         }
@@ -59,17 +58,22 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void DrainOutput(DataReceivedEventArgs e, StringBuilder buffer, TaskCompletionSource<bool> tcs, Action<string> onDataReceived)
+        private void DrainOutput(StreamReader stream, StringBuilder buffer, TaskCompletionSource<bool> tcs, Action<string> onDataReceived)
         {
-            if (e.Data == null)
+            while (stream.ReadLine() is { } line)
             {
-                tcs.TrySetResult(true);
+                buffer.AppendLine(line);
+
+                try
+                {
+                    onDataReceived(line);
+                }
+                catch (Exception)
+                {
+                }
             }
-            else
-            {
-                buffer.AppendLine(e.Data);
-                onDataReceived?.Invoke(e.Data);
-            }
+
+            tcs.TrySetResult(true);
         }
     }
 }

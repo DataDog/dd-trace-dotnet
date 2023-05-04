@@ -31,6 +31,7 @@
     <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.101.60 -->
     <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.101.60" />
 
+
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
     <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.100.124 -->
@@ -40,6 +41,7 @@
     <!-- Assembly: Microsoft.Azure.WebJobs.Host -->
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.37 -->
     <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.37" />
+
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
@@ -108,8 +110,8 @@
 
     <!-- Integration: Confluent.Kafka -->
     <!-- Assembly: Confluent.Kafka -->
-    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.1.0 -->
-    <PackageReference Include="Confluent.Kafka" Version="2.1.0" />
+    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.1.1 -->
+    <PackageReference Include="Confluent.Kafka" Version="2.1.1" />
 
     <!-- Integration: log4net -->
     <!-- Assembly: log4net -->

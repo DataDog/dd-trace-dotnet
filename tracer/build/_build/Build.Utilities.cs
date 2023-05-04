@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Net.Http;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Amazon.SimpleSystemsManagement.Model;
 using DiffMatchPatch;
@@ -14,7 +13,6 @@ using GenerateSpanDocumentation;
 using GeneratePackageVersions;
 using Honeypot;
 using Microsoft.TeamFoundation.Build.WebApi;
-using Microsoft.VisualBasic;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using Nuke.Common;
@@ -29,7 +27,7 @@ using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using Target = Nuke.Common.Target;
-using System.Runtime.InteropServices;
+using Logger = Serilog.Log;
 
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
@@ -114,7 +112,7 @@ partial class Build
             AddTracerEnvironmentVariables(envVars);
             AddExtraEnvVariables(envVars, ExtraEnvVars);
 
-            Logger.Info($"Running sample '{SampleName}' in IIS Express");
+            Logger.Information($"Running sample '{SampleName}' in IIS Express");
             IisExpress.Value(
                 arguments: $"/config:\"{IisExpressApplicationConfig}\" /site:{SampleName} /appPool:Clr4IntegratedAppPool",
                 environmentVariables: envVars);
@@ -135,12 +133,12 @@ partial class Build
             string project = Solution.GetProject(SampleName)?.Path;
             if (project is not null)
             {
-                Logger.Info($"Running sample '{SampleName}'");
+                Logger.Information($"Running sample '{SampleName}'");
             }
             else if (System.IO.File.Exists(SampleName))
             {
                 project = SampleName;
-                Logger.Info($"Running project '{SampleName}'");
+                Logger.Information($"Running project '{SampleName}'");
             }
             else
             {
@@ -252,7 +250,7 @@ partial class Build
           {
               var fileName = Path.GetFileNameWithoutExtension(source);
 
-              Logger.Info("Difference found in " + fileName);
+              Logger.Information("Difference found in " + fileName);
               var dmp = new diff_match_patch();
               var diff = dmp.diff_main(File.ReadAllText(source.ToString().Replace("received", "verified")), File.ReadAllText(source));
               dmp.diff_cleanupSemantic(diff);
@@ -261,7 +259,7 @@ partial class Build
               {
                   if (t.operation != Operation.EQUAL)
                   {
-                      Logger.Info(DiffToString(t));
+                      Logger.Information(DiffToString(t));
                   }
               }
           }
@@ -343,13 +341,13 @@ partial class Build
             var fileName = Path.GetFileNameWithoutExtension(source);
             if (!fileName.EndsWith("received"))
             {
-                Logger.Warn($"Skipping file '{source}' as filename did not end with 'received'");
+                Logger.Warning($"Skipping file '{source}' as filename did not end with 'received'");
                 continue;
             }
 
             if (fileName.Contains("VersionMismatchNewerNugetTests"))
             {
-                Logger.Warn("Updated snapshots contain a version mismatch test. You may need to upgrade your code in the Azure public feed.");
+                Logger.Warning("Updated snapshots contain a version mismatch test. You may need to upgrade your code in the Azure public feed.");
             }
 
             var trimmedName = fileName.Substring(0, fileName.Length - suffixLength);

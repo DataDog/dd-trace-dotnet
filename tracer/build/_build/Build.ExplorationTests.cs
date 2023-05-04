@@ -10,6 +10,7 @@ using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Git;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using Target = Nuke.Common.Target;
+using Logger = Serilog.Log;
 
 partial class Build
 {
@@ -56,19 +57,19 @@ partial class Build
 
     void SetUpExplorationTest_Debugger()
     {
-        Logger.Info($"Set up exploration test for debugger.");
+        Logger.Information($"Set up exploration test for debugger.");
         //TODO TBD
     }
 
     void SetUpExplorationTest_ContinuousProfiler()
     {
-        Logger.Info($"Prepare environment variables for continuous profiler.");
+        Logger.Information($"Prepare environment variables for continuous profiler.");
         //TODO TBD
     }
 
     void SetUpExplorationTest_Tracer()
     {
-        Logger.Info($"Prepare environment variables for tracer.");
+        Logger.Information($"Prepare environment variables for tracer.");
         //TODO TBD
     }
 
@@ -76,14 +77,14 @@ partial class Build
     {
         if (ExplorationTestName.HasValue)
         {
-            Logger.Info($"Provided exploration test name is {ExplorationTestName}.");
+            Logger.Information($"Provided exploration test name is {ExplorationTestName}.");
 
             var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
             GitCloneAndBuild(testDescription);
         }
         else
         {
-            Logger.Info($"Exploration test name is not provided. Running all of them.");
+            Logger.Information($"Exploration test name is not provided. Running all of them.");
 
             foreach (var testDescription in ExplorationTestDescription.GetAllExplorationTestDescriptions())
             {
@@ -174,14 +175,14 @@ partial class Build
     {
         if (ExplorationTestName.HasValue)
         {
-            Logger.Info($"Provided exploration test name is {ExplorationTestName}.");
+            Logger.Information($"Provided exploration test name is {ExplorationTestName}.");
 
             var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
             RunUnitTest(testDescription, envVariables);
         }
         else
         {
-            Logger.Info($"Exploration test name is not provided. Running all.");
+            Logger.Information($"Exploration test name is not provided. Running all.");
 
             foreach (var testDescription in ExplorationTestDescription.GetAllExplorationTestDescriptions())
             {
@@ -192,7 +193,7 @@ partial class Build
 
     void RunUnitTest(ExplorationTestDescription testDescription, Dictionary<string, string> envVariables)
     {
-        Logger.Info($"Running exploration test {testDescription.Name}.");
+        Logger.Information($"Running exploration test {testDescription.Name}.");
 
         if (Framework != null && !testDescription.IsFrameworkSupported(Framework))
         {
@@ -201,14 +202,14 @@ partial class Build
 
         if (testDescription.Name is global::ExplorationTestName.paket)
         {
-            Logger.Info("The Exploration Tests: paket, are disabled currently in CI because it fails due to poor environment isolation.");
+            Logger.Information("The Exploration Tests: paket, are disabled currently in CI because it fails due to poor environment isolation.");
             return;
         }
 
         if (ExplorationTestUseCase == global::ExplorationTestUseCase.Debugger &&
             testDescription.Name is global::ExplorationTestName.protobuf or global::ExplorationTestName.cake or global::ExplorationTestName.paket or global::ExplorationTestName.polly)
         {
-            Logger.Info("The Exploration Tests: protobuf, cake, paket, polly are disabled for the Live Debugger.");
+            Logger.Information("The Exploration Tests: protobuf, cake, paket, polly are disabled for the Live Debugger.");
             return;
         }
 
@@ -265,19 +266,19 @@ partial class Build
 
     void RunExplorationTestAssertions_Debugger()
     {
-        Logger.Info($"Running assertions tests for debugger.");
+        Logger.Information($"Running assertions tests for debugger.");
         //TODO TBD
     }
 
     void RunExplorationTestAssertions_ContinuousProfiler()
     {
-        Logger.Info($"Running assertions tests for profiler.");
+        Logger.Information($"Running assertions tests for profiler.");
         //TODO TBD
     }
 
     void RunExplorationTestAssertions_Tracer()
     {
-        Logger.Info($"Running assertions tests for tracer.");
+        Logger.Information($"Running assertions tests for tracer.");
         //TODO TBD
     }
 }

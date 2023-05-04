@@ -261,7 +261,11 @@
       "6.7.*",
       "6.*.*",
       "8.*.*"
-    ]
+    ],
+    "VersionConditions": [{
+      "MinVersion": "8.0.33",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
+    }]
   },
   {
     "IntegrationName": "MySqlConnector",

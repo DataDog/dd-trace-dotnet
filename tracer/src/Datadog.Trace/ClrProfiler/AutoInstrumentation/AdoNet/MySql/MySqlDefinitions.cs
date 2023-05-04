@@ -40,14 +40,24 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     DataReaderTaskType = "System.Threading.Tasks.Task`1<MySql.Data.MySqlClient.MySqlDataReader>",
     TargetMethodAttributes = new[]
     {
+        // int MySql.Data.MySqlClient.MySqlCommand.ExecuteNonQueryAsync(CancellationToken)
+        typeof(CommandExecuteNonQueryAsyncAttribute),
         // int MySql.Data.MySqlClient.MySqlCommand.ExecuteNonQuery()
         typeof(CommandExecuteNonQueryAttribute),
+        // Task<MySqlDataReader> MySql.Data.MySqlClient.MySqlCommand.ExecuteReaderAsync(CommandBehavior)
+        typeof(CommandExecuteReaderWithBehaviorAsyncAttribute),
+        // Task<MySqlDataReader> MySql.Data.MySqlClient.MySqlCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)
+        typeof(CommandExecuteReaderWithBehaviorAndCancellationAsyncAttribute),
+        // Task<MySqlDataReader> MySql.Data.MySqlClient.MySqlCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
+        typeof(CommandExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute),
         // MySqlDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteReader()
         typeof(CommandExecuteReaderAttribute),
         // MySqlDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteReader(CommandBehavior)
         typeof(CommandExecuteReaderWithBehaviorAttribute),
         // DbDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteDbDataReader(CommandBehavior)
         typeof(CommandExecuteDbDataReaderWithBehaviorAttribute),
+        // Task<object> MySql.Data.MySqlClient.MySqlCommand.ExecuteScalarAsync(CancellationToken)
+        typeof(CommandExecuteScalarAsyncAttribute),
         // object MySql.Data.MySqlClient.MySqlCommand.ExecuteScalar()
         typeof(CommandExecuteScalarAttribute),
     })]

@@ -12,7 +12,7 @@ namespace NLog40Example
             MappedDiagnosticsContext.Set("order-number", 1024.ToString());
             Logger.Info("Message before a trace.");
 
-            using (var scope = Tracer.Instance.StartActive("NLog45Example - Main()"))
+            using (var scope = Tracer.Instance.StartActive("NLog40Example - Main()"))
             {
                 Logger.Info("Message during a trace.");
             }

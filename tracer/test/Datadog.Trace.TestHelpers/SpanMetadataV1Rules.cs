@@ -253,7 +253,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsKafkaV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .MatchesOneOf(Name, "kafka.consume", "kafka.produce")
+                .MatchesOneOf(Name, "kafka.process", "kafka.send")
                 .Matches(Type, "queue"))
             .Metrics(s => s
                 .IsPresent("_dd.measured")
