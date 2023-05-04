@@ -33,7 +33,7 @@ public class SpanMessagePackFormatterTests
         }
 
         await tracer.ForceFlushAsync();
-        var traceChunks = mockApi.Wait(TimeSpan.FromSeconds(1));
+        var traceChunks = mockApi.Wait();
         var span = traceChunks[0][0];
         var tagValue = span.GetTag("_dd.p.tid");
 
