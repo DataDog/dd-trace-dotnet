@@ -22,6 +22,7 @@ namespace Datadog.Trace
 
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
         private readonly long _timestamp = Stopwatch.GetTimestamp();
+        private readonly object _syncRoot = new();
         private IastRequestContext _iastRequestContext;
 
         private ArrayBuilder<Span> _spans;
@@ -96,7 +97,7 @@ namespace Datadog.Trace
         {
             if (_iastRequestContext is null)
             {
-                lock (this)
+                lock (_syncRoot)
                 {
                     _iastRequestContext ??= new();
                 }
@@ -105,7 +106,7 @@ namespace Datadog.Trace
 
         public void AddSpan(Span span)
         {
-            lock (this)
+            lock (_syncRoot)
             {
                 if (RootSpan == null)
                 {
@@ -142,7 +143,7 @@ namespace Datadog.Trace
                 }
             }
 
-            lock (this)
+            lock (_syncRoot)
             {
                 _spans.Add(span);
                 _openSpans--;
@@ -180,7 +181,7 @@ namespace Datadog.Trace
         {
             ArraySegment<Span> spansToWrite;
 
-            lock (this)
+            lock (_syncRoot)
             {
                 spansToWrite = _spans.GetArray();
                 _spans = default;
