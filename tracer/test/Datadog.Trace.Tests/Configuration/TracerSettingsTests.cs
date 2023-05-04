@@ -659,8 +659,6 @@ namespace Datadog.Trace.Tests.Configuration
             }
         }
 
-        // TODO: DirectLogSubmissionSettings
-
         [Theory]
         [MemberData(nameof(StringTestCases), "", Strings.AllowEmpty)]
         public void TraceMethods(string value, string expected)
@@ -755,8 +753,6 @@ namespace Datadog.Trace.Tests.Configuration
 
             settings.IsRareSamplerEnabled.Should().Be(expected);
         }
-
-        // TODO: ImmutableAzureAppServiceSettings
 
         [Fact]
         public void DisableTracerIfNoApiKeyInAas()
