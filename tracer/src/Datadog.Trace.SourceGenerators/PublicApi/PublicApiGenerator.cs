@@ -98,6 +98,8 @@ public class PublicApiGenerator : IIncrementalGenerator
         bool hasMisconfiguredInput = false;
         int? publicApiGetter = null;
         int? publicApiSetter = null;
+        string? telemetryProperty = null;
+        string? telemetryConfigKey = null;
 
         foreach (AttributeData attributeData in fieldSymbol.GetAttributes())
         {
@@ -112,7 +114,7 @@ public class PublicApiGenerator : IIncrementalGenerator
                     break;
                 }
 
-                foreach (TypedConstant typedConstant in attributeData.ConstructorArguments)
+                foreach (TypedConstant typedConstant in args)
                 {
                     if (typedConstant.Kind == TypedConstantKind.Error)
                     {
@@ -135,6 +137,25 @@ public class PublicApiGenerator : IIncrementalGenerator
                     {
                         diagnostics ??= new List<DiagnosticInfo>();
                         diagnostics.Add(SetterOnReadonlyFieldDiagnostic.CreateInfo(attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                        hasMisconfiguredInput = true;
+                    }
+                }
+
+                if (args.Length > 3)
+                {
+                    telemetryProperty = args[2].Value as string;
+                    if (string.IsNullOrEmpty(telemetryProperty))
+                    {
+                        diagnostics ??= new List<DiagnosticInfo>();
+                        diagnostics.Add(EmptyStringDiagnostic.CreateInfo(attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                        hasMisconfiguredInput = true;
+                    }
+
+                    telemetryConfigKey = args[3].Value as string;
+                    if (string.IsNullOrEmpty(telemetryConfigKey))
+                    {
+                        diagnostics ??= new List<DiagnosticInfo>();
+                        diagnostics.Add(EmptyStringDiagnostic.CreateInfo(attributeData.ApplicationSyntaxReference?.GetSyntax()));
                         hasMisconfiguredInput = true;
                     }
                 }
@@ -175,7 +196,9 @@ public class PublicApiGenerator : IIncrementalGenerator
             publicApiGetter: publicApiGetter,
             publicApiSetter: publicApiSetter,
             returnType: fieldSymbol.Type.ToDisplayString(),
-            leadingTrivia: field.GetLeadingTrivia().ToFullString());
+            leadingTrivia: field.GetLeadingTrivia().ToFullString(),
+            telemetryProperty: telemetryProperty,
+            telemetryConfigKey: telemetryConfigKey);
 
         return new Result<(PublicApiProperty PropertyTag, bool IsValid)>((tag, true), errors);
     }
@@ -233,22 +256,6 @@ public class PublicApiGenerator : IIncrementalGenerator
         return string.Empty;
     }
 
-    internal readonly struct PartialClasses
-    {
-        public readonly string Namespace;
-        public readonly string ClassName;
-        public readonly ImmutableArray<PublicApiProperty> TagProperties;
-        public readonly ImmutableArray<PublicApiProperty> MetricProperties;
-
-        public PartialClasses(string nameSpace, string className, ImmutableArray<PublicApiProperty> tagProperties, ImmutableArray<PublicApiProperty> metricProperties)
-        {
-            Namespace = nameSpace;
-            ClassName = className;
-            TagProperties = tagProperties;
-            MetricProperties = metricProperties;
-        }
-    }
-
     internal readonly record struct PublicApiProperty
     {
         public readonly string Namespace;
@@ -259,8 +266,10 @@ public class PublicApiGenerator : IIncrementalGenerator
         public readonly string PropertyName;
         public readonly string ReturnType;
         public readonly string LeadingTrivia;
+        public readonly string? TelemetryProperty;
+        public readonly string? TelemetryConfigKey;
 
-        public PublicApiProperty(string nameSpace, string className, string fieldName, int? publicApiGetter, int? publicApiSetter, string propertyName, string returnType, string leadingTrivia)
+        public PublicApiProperty(string nameSpace, string className, string fieldName, int? publicApiGetter, int? publicApiSetter, string propertyName, string returnType, string leadingTrivia, string? telemetryProperty, string? telemetryConfigKey)
         {
             Namespace = nameSpace;
             ClassName = className;
@@ -270,6 +279,8 @@ public class PublicApiGenerator : IIncrementalGenerator
             PropertyName = propertyName;
             ReturnType = returnType;
             LeadingTrivia = leadingTrivia;
+            TelemetryProperty = telemetryProperty;
+            TelemetryConfigKey = telemetryConfigKey;
         }
     }
 }
