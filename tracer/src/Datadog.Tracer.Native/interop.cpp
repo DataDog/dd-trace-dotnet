@@ -7,6 +7,7 @@
 //---------------------------------------------------------------------------------------
 
 #include "cor_profiler.h"
+#include "logger.h"
 
 #ifndef _WIN32
 #include <dlfcn.h>
@@ -22,51 +23,105 @@ EXTERN_C BOOL STDAPICALLTYPE IsProfilerAttached()
 EXTERN_C VOID STDAPICALLTYPE GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
                                                         int* symbolsSize)
 {
-    return trace::profiler->GetAssemblyAndSymbolsBytes(pAssemblyArray, assemblySize, pSymbolsArray, symbolsSize);
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in GetAssemblyAndSymbolsBytes call. Tracer CLR Profiler was not initialized.");
+        return;
+    }
+
+    trace::profiler->GetAssemblyAndSymbolsBytes(pAssemblyArray, assemblySize, pSymbolsArray, symbolsSize);
 }
 
 EXTERN_C VOID STDAPICALLTYPE InitializeProfiler(WCHAR* id, trace::CallTargetDefinition* items, int size)
 {
-    return trace::profiler->InitializeProfiler(id, items, size);
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in InitializeProfiler call. Tracer CLR Profiler was not initialized.");
+        return;
+    }
+
+    trace::profiler->InitializeProfiler(id, items, size);
 }
 
 EXTERN_C VOID STDAPICALLTYPE RemoveCallTargetDefinitions(WCHAR* id, trace::CallTargetDefinition* items, int size)
 {
-    return trace::profiler->RemoveCallTargetDefinitions(id, items, size);
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in RemoveCallTargetDefinitions call. Tracer CLR Profiler was not initialized.");
+        return;
+    }
+
+    trace::profiler->RemoveCallTargetDefinitions(id, items, size);
 }
 
 EXTERN_C VOID STDAPICALLTYPE EnableByRefInstrumentation()
 {
-    return trace::profiler->EnableByRefInstrumentation();
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in EnableByRefInstrumentation call. Tracer CLR Profiler was not initialized.");
+        return;
+    }
+
+    trace::profiler->EnableByRefInstrumentation();
 }
 
 EXTERN_C VOID STDAPICALLTYPE EnableCallTargetStateByRef()
 {
-    return trace::profiler->EnableCallTargetStateByRef();
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in EnableCallTargetStateByRef call. Tracer CLR Profiler was not initialized.");
+        return;
+    }
+
+    trace::profiler->EnableCallTargetStateByRef();
 }
 
 EXTERN_C VOID STDAPICALLTYPE AddDerivedInstrumentations(WCHAR* id, trace::CallTargetDefinition* items, int size)
 {
-    return trace::profiler->AddDerivedInstrumentations(id, items, size);
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in AddDerivedInstrumentations call. Tracer CLR Profiler was not initialized.");
+        return;
+    }
+
+    trace::profiler->AddDerivedInstrumentations(id, items, size);
 }
 
 EXTERN_C VOID STDAPICALLTYPE AddInterfaceInstrumentations(WCHAR* id, trace::CallTargetDefinition* items, int size)
 {
-    return trace::profiler->AddInterfaceInstrumentations(id, items, size);
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in AddInterfaceInstrumentations call. Tracer CLR Profiler was not initialized.");
+        return;
+    }
+
+    trace::profiler->AddInterfaceInstrumentations(id, items, size);
 }
 
 EXTERN_C VOID STDAPICALLTYPE AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* integration_assembly_name_ptr,
                                                               WCHAR* integration_type_name_ptr)
 {
-    return trace::profiler->AddTraceAttributeInstrumentation(id, integration_assembly_name_ptr,
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in AddTraceAttributeInstrumentation call. Tracer CLR Profiler was not initialized.");
+        return;
+    }
+
+    trace::profiler->AddTraceAttributeInstrumentation(id, integration_assembly_name_ptr,
                                                              integration_type_name_ptr);
 }
 
 EXTERN_C VOID STDAPICALLTYPE InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_name_ptr,
                                                     WCHAR* integration_type_name_ptr, WCHAR* configuration_string_ptr)
 {
-    return trace::profiler->InitializeTraceMethods(id, integration_assembly_name_ptr, integration_type_name_ptr,
-                                                   configuration_string_ptr);
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in InitializeTraceMethods call. Tracer CLR Profiler was not initialized.");
+        return;
+    }
+
+    trace::profiler->InitializeTraceMethods(id, integration_assembly_name_ptr, integration_type_name_ptr,
+                                            configuration_string_ptr);
 }
 
 EXTERN_C VOID STDAPICALLTYPE InstrumentProbes(
@@ -79,22 +134,46 @@ EXTERN_C VOID STDAPICALLTYPE InstrumentProbes(
     debugger::DebuggerRemoveProbesDefinition* revertProbes,
     int revertProbesLength)
 {
-    return trace::profiler->InstrumentProbes(methodProbes, methodProbesLength, lineProbes, lineProbesLength, spanProbes, spanProbesLength, revertProbes, revertProbesLength);
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in InstrumentProbes call. Tracer CLR Profiler was not initialized.");
+        return;
+    }
+
+    trace::profiler->InstrumentProbes(methodProbes, methodProbesLength, lineProbes, lineProbesLength, spanProbes, spanProbesLength, revertProbes, revertProbesLength);
 }
 
 EXTERN_C int STDAPICALLTYPE GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses)
 {
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in GetProbesStatuses call. Tracer CLR Profiler was not initialized.");
+        return 0;
+    }
+
     return trace::profiler->GetProbesStatuses(probeIds, probeIdsLength, probeStatuses);
 }
 
 EXTERN_C VOID STDAPICALLTYPE DisableTracerCLRProfiler()
 {
-    return trace::profiler->DisableTracerCLRProfiler();
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in DisableTracerCLRProfiler call. Tracer CLR Profiler was not initialized.");
+        return;
+    }
+
+    trace::profiler->DisableTracerCLRProfiler();
 }
 
 EXTERN_C VOID STDAPICALLTYPE RegisterIastAspects(WCHAR** aspects, int aspectsLength)
 {
-    return trace::profiler->RegisterIastAspects(aspects, aspectsLength);
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in RegisterIastAspects call. Tracer CLR Profiler was not initialized.");
+        return;
+    }
+
+    trace::profiler->RegisterIastAspects(aspects, aspectsLength);
 }
 
 
