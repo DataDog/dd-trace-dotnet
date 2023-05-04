@@ -3175,14 +3175,14 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     pNewInstr = rewriter_void.NewILInstr();
     pNewInstr->m_opcode = CEE_BRFALSE_S;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-    ILInstr* pBranchFalseInstr = pNewInstr;
+    ILInstr* pIsNotAlreadyLoadedBranch = pNewInstr;
 
     // return if IsAlreadyLoaded is true
     pNewInstr = rewriter_void.NewILInstr();
     pNewInstr->m_opcode = CEE_RET;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-    ILInstr* pBranchTrueInstr = nullptr;
+    ILInstr* pIsFullyTrustedBranch = nullptr;
     if (appdomain_get_currentdomain_member_ref != mdMemberRefNil && appdomain_get_isfullytrusted_member_ref != mdMemberRefNil)
     {
         // Step 1) Check if the assembly is loaded in a fully trusted domain.
@@ -3194,7 +3194,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
         // Set the false branch target for IsAlreadyLoaded()
-        pBranchFalseInstr->m_pTarget = pNewInstr;
+        pIsNotAlreadyLoadedBranch->m_pTarget = pNewInstr;
 
         // callvirt System.AppDomain.get_IsFullyTrusted()
         pNewInstr = rewriter_void.NewILInstr();
@@ -3206,7 +3206,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         pNewInstr = rewriter_void.NewILInstr();
         pNewInstr->m_opcode = CEE_BRTRUE_S;
         rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-        pBranchTrueInstr = pNewInstr;
+        pIsFullyTrustedBranch = pNewInstr;
 
         // return if IsFullyTrusted is false
         pNewInstr = rewriter_void.NewILInstr();
@@ -3223,15 +3223,15 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     pNewInstr->m_Arg32 = 0;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-    if (pBranchTrueInstr != nullptr)
+    if (pIsFullyTrustedBranch != nullptr)
     {
         // Set the true branch target for AppDomain.CurrentDomain.IsFullyTrusted
-        pBranchTrueInstr->m_pTarget = pNewInstr;
+        pIsFullyTrustedBranch->m_pTarget = pNewInstr;
     }
     else
     {
         // Set the false branch target for IsAlreadyLoaded()
-        pBranchFalseInstr->m_pTarget = pNewInstr;
+        pIsNotAlreadyLoadedBranch->m_pTarget = pNewInstr;
     }
 
     // ldloca.s 1 : Load the address of the "assemblySize" variable (locals index 1)
