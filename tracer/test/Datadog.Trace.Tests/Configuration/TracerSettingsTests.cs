@@ -748,10 +748,10 @@ namespace Datadog.Trace.Tests.Configuration
         [MemberData(nameof(BooleanTestCases), false)]
         public void IsRunningInAzureAppService(string value, bool expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.RareSamplerEnabled, value));
+            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, value));
             var settings = new TracerSettings(source);
 
-            settings.IsRareSamplerEnabled.Should().Be(expected);
+            settings.IsRunningInAzureAppService.Should().Be(expected);
         }
 
         [Fact]
