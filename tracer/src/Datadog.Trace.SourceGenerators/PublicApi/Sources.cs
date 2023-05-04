@@ -26,7 +26,27 @@ internal class Sources
         internal class GeneratePublicApiAttribute : System.Attribute
         {
             /// <summary>
-            /// Initializes a new instance of the <see cref="PublicApiAttribute"/> class.
+            /// Initializes a new instance of the <see cref="GeneratePublicApiAttribute"/> class.
+            /// Adds a getter and a setter.
+            /// </summary>
+            /// <param name="getApiUsage">Gets the name of the public API used for the property getter</param>
+            /// <param name="setApiUsage">Gets the name of the public API used for the property setter</param>
+            /// <param name="telemetryProperty">Gets the name of the <see cref="Datadog.Trace.Configuration.Telemetry.IConfigurationTelemetry"/> property/field where updates to the configuration should be recorded</param>
+            /// <param name="telemetryKey">Gets the configuration key to use when recording the telemetry value</param>
+            public GeneratePublicApiAttribute(
+                Datadog.Trace.Telemetry.Metrics.PublicApiUsage getApiUsage,
+                Datadog.Trace.Telemetry.Metrics.PublicApiUsage setApiUsage,
+                string telemetryProperty,
+                string telemetryKey)
+            {
+                Getter = getApiUsage;
+                Setter = setApiUsage;
+                TelemetryProperty = telemetryProperty;
+                TelemetryKey = telemetryKey;
+            }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="GeneratePublicApiAttribute"/> class.
             /// Adds a getter and a setter.
             /// </summary>
             /// <param name="getApiUsage">Gets the name of the public API used for the property getter</param>
@@ -40,7 +60,7 @@ internal class Sources
             }
 
             /// <summary>
-            /// Initializes a new instance of the <see cref="PublicApiAttribute"/> class.
+            /// Initializes a new instance of the <see cref="GeneratePublicApiAttribute"/> class.
             /// Adds a getter only.
             /// </summary>
             /// <param name="getApiUsage">Gets the name of the public API used for the property getter. If null, no getter will be generated.</param>
@@ -58,6 +78,16 @@ internal class Sources
             /// Gets the name of the public API used for the setter
             /// </summary>
             public Datadog.Trace.Telemetry.Metrics.PublicApiUsage? Setter { get; }
+
+            /// <summary>
+            /// Gets the name of the public API used for the setter
+            /// </summary>
+            public string? TelemetryProperty { get; }
+
+            /// <summary>
+            /// Gets the name of the public API used for the setter
+            /// </summary>
+            public string? TelemetryKey { get; }
         }
 
         /// <summary>
@@ -117,13 +147,25 @@ internal class Sources
             {
                 sb.AppendLine(
                     $$"""
-                        set
-                        {
-                            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage){{property.PublicApiSetter}});
-                            {{property.FieldName}} = value;
-                        }
-                """);
+                            set
+                            {
+                                Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                                    (Datadog.Trace.Telemetry.Metrics.PublicApiUsage){{property.PublicApiSetter}});
+                    """);
+
+                if (property is { TelemetryProperty: { } prop, TelemetryConfigKey: { } config })
+                {
+                    sb.AppendLine(
+                        $$"""
+                                    {{prop}}.Record("{{config}}", value, recordValue: true, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+                        """);
+                }
+
+                sb.AppendLine(
+                    $$"""
+                                {{property.FieldName}} = value;
+                            }
+                    """);
             }
 
             sb.Append("    }");
