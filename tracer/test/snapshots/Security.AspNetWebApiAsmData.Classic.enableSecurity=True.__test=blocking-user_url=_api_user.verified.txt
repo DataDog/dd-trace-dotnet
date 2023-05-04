@@ -50,7 +50,7 @@
       _dd.agent_psr: 1.0,
       _dd.appsec.enabled: 1.0,
       _dd.appsec.event_rules.error_count: 0.0,
-      _dd.appsec.event_rules.loaded: 136.0,
+      _dd.appsec.event_rules.loaded: 144.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0

@@ -16,7 +16,7 @@
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
       http.url: http://localhost:00000/health,
-      http.useragent: Mistake Not... acunetix-product,
+      http.useragent: Mistake Not... Arachni/v,
       language: dotnet,
       span.kind: server
     }
@@ -35,7 +35,7 @@
       http.route: {controller}/{action}/{id},
       http.status_code: 200,
       http.url: http://localhost:00000/health,
-      http.useragent: Mistake Not... acunetix-product,
+      http.useragent: Mistake Not... Arachni/v,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
@@ -66,7 +66,7 @@
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
       http.url: http://localhost:00000/health,
-      http.useragent: Mistake Not... acunetix-product,
+      http.useragent: Mistake Not... Arachni/v,
       language: dotnet,
       span.kind: server
     }
@@ -85,7 +85,7 @@
       http.route: {controller}/{action}/{id},
       http.status_code: 200,
       http.url: http://localhost:00000/health,
-      http.useragent: Mistake Not... acunetix-product,
+      http.useragent: Mistake Not... Arachni/v,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
@@ -116,7 +116,7 @@
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
       http.url: http://localhost:00000/health,
-      http.useragent: Mistake Not... acunetix-product,
+      http.useragent: Mistake Not... Arachni/v,
       language: dotnet,
       span.kind: server
     }
@@ -135,7 +135,7 @@
       http.route: {controller}/{action}/{id},
       http.status_code: 200,
       http.url: http://localhost:00000/health,
-      http.useragent: Mistake Not... acunetix-product,
+      http.useragent: Mistake Not... Arachni/v,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
