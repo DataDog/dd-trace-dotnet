@@ -6,7 +6,7 @@ mkdir -p tracer/build_data/snapshots
 mkdir -p tracer/build_data/logs
 ```
 
-Download build artifact `linux-packages-debian/datadog-dotnet-apm_{currentversion}_amd64` and copy it to the artifacts folder created above.
+Download build artifact `linux-packages-centos7/datadog-dotnet-apm_{currentversion}_amd64.deb` and copy it to the artifacts folder created above.
 Set `SNAPSHOT_CI` to 0 in docker-compose.yml, in the test-agent target.
 
 Then run the following
@@ -19,6 +19,7 @@ docker pull ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest
 docker-compose build --build-arg DOTNETSDK_VERSION=7.0.101 --build-arg RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:6.0-bullseye-slim --build-arg PUBLISH_FRAMEWORK=net6.0 --build-arg INSTALL_CMD="dpkg -i ./datadog-dotnet-apm*_amd64.deb" smoke-tests
 
 # start the test-agent (you may get an error on Windows, just ignore it)
+# make sure to stop the Datadog agent on your machine so port 8126 is free
 docker-compose run --rm start-test-agent
 
 # start the session
