@@ -21,11 +21,17 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.AwsRegion)]
         public string Region { get; set; }
 
+        [Tag(Trace.Tags.TopLevelRegion)]
+        public string TopLevelRegion { get; set; }
+
         [Tag(Trace.Tags.AwsRequestId)]
         public string RequestId { get; set; }
 
         [Tag(Trace.Tags.AwsServiceName)]
         public string Service { get; set; }
+
+        [Tag(Trace.Tags.TopLevelServiceName)]
+        public string TopLevelServiceName { get; set; }
 
         [Tag(Trace.Tags.HttpMethod)]
         public string HttpMethod { get; set; }

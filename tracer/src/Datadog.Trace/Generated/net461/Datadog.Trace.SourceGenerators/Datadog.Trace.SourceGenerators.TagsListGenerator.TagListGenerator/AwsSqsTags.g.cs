@@ -10,6 +10,8 @@ namespace Datadog.Trace.Tagging
     {
         // QueueNameBytes = System.Text.Encoding.UTF8.GetBytes("aws.queue.name");
         private static readonly byte[] QueueNameBytes = new byte[] { 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 110, 97, 109, 101 };
+        // TopLevelQueueNameBytes = System.Text.Encoding.UTF8.GetBytes("queuename");
+        private static readonly byte[] TopLevelQueueNameBytes = new byte[] { 113, 117, 101, 117, 101, 110, 97, 109, 101 };
         // QueueUrlBytes = System.Text.Encoding.UTF8.GetBytes("aws.queue.url");
         private static readonly byte[] QueueUrlBytes = new byte[] { 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 117, 114, 108 };
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
@@ -20,6 +22,7 @@ namespace Datadog.Trace.Tagging
             return key switch
             {
                 "aws.queue.name" => QueueName,
+                "queuename" => TopLevelQueueName,
                 "aws.queue.url" => QueueUrl,
                 "span.kind" => SpanKind,
                 _ => base.GetTag(key),
@@ -32,6 +35,9 @@ namespace Datadog.Trace.Tagging
             {
                 case "aws.queue.name": 
                     QueueName = value;
+                    break;
+                case "queuename": 
+                    TopLevelQueueName = value;
                     break;
                 case "aws.queue.url": 
                     QueueUrl = value;
@@ -50,6 +56,11 @@ namespace Datadog.Trace.Tagging
             if (QueueName is not null)
             {
                 processor.Process(new TagItem<string>("aws.queue.name", QueueName, QueueNameBytes));
+            }
+
+            if (TopLevelQueueName is not null)
+            {
+                processor.Process(new TagItem<string>("queuename", TopLevelQueueName, TopLevelQueueNameBytes));
             }
 
             if (QueueUrl is not null)
@@ -71,6 +82,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("aws.queue.name (tag):")
                   .Append(QueueName)
+                  .Append(',');
+            }
+
+            if (TopLevelQueueName is not null)
+            {
+                sb.Append("queuename (tag):")
+                  .Append(TopLevelQueueName)
                   .Append(',');
             }
 

@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler
                new ("AWSSDK.Core", "Amazon.Runtime.Internal.RuntimePipeline", "InvokeSync",  new[] { "Amazon.Runtime.IResponseContext", "Amazon.Runtime.IExecutionContext" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeSyncIntegration"),
 
                 // AwsSns
-               new ("AWSSDK.SNS", "Amazon.SimpleNotificationService.AmazonSimpleNotificationServiceClient", "PublishAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SimpleNotificationService.Model.PublishResponse>", "Amazon.SimpleNotificationService.Model.PublishRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS.PublishAsyncIntegration"),
+               new ("AWSSDK.SimpleNotificationService", "Amazon.SimpleNotificationService.AmazonSimpleNotificationServiceClient", "PublishAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SimpleNotificationService.Model.PublishResponse>", "Amazon.SimpleNotificationService.Model.PublishRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS.PublishAsyncIntegration"),
 
                 // AwsSqs
                new ("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "CreateQueue",  new[] { "Amazon.SQS.Model.CreateQueueResponse", "Amazon.SQS.Model.CreateQueueRequest" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.CreateQueueIntegration"),

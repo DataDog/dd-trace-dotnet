@@ -16,10 +16,14 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] OperationBytes = new byte[] { 97, 119, 115, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110 };
         // RegionBytes = System.Text.Encoding.UTF8.GetBytes("aws.region");
         private static readonly byte[] RegionBytes = new byte[] { 97, 119, 115, 46, 114, 101, 103, 105, 111, 110 };
+        // TopLevelRegionBytes = System.Text.Encoding.UTF8.GetBytes("region");
+        private static readonly byte[] TopLevelRegionBytes = new byte[] { 114, 101, 103, 105, 111, 110 };
         // RequestIdBytes = System.Text.Encoding.UTF8.GetBytes("aws.requestId");
         private static readonly byte[] RequestIdBytes = new byte[] { 97, 119, 115, 46, 114, 101, 113, 117, 101, 115, 116, 73, 100 };
         // ServiceBytes = System.Text.Encoding.UTF8.GetBytes("aws.service");
         private static readonly byte[] ServiceBytes = new byte[] { 97, 119, 115, 46, 115, 101, 114, 118, 105, 99, 101 };
+        // TopLevelServiceNameBytes = System.Text.Encoding.UTF8.GetBytes("aws_service");
+        private static readonly byte[] TopLevelServiceNameBytes = new byte[] { 97, 119, 115, 95, 115, 101, 114, 118, 105, 99, 101 };
         // HttpMethodBytes = System.Text.Encoding.UTF8.GetBytes("http.method");
         private static readonly byte[] HttpMethodBytes = new byte[] { 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100 };
         // HttpUrlBytes = System.Text.Encoding.UTF8.GetBytes("http.url");
@@ -35,8 +39,10 @@ namespace Datadog.Trace.Tagging
                 "aws.agent" => AgentName,
                 "aws.operation" => Operation,
                 "aws.region" => Region,
+                "region" => TopLevelRegion,
                 "aws.requestId" => RequestId,
                 "aws.service" => Service,
+                "aws_service" => TopLevelServiceName,
                 "http.method" => HttpMethod,
                 "http.url" => HttpUrl,
                 "http.status_code" => HttpStatusCode,
@@ -54,11 +60,17 @@ namespace Datadog.Trace.Tagging
                 case "aws.region": 
                     Region = value;
                     break;
+                case "region": 
+                    TopLevelRegion = value;
+                    break;
                 case "aws.requestId": 
                     RequestId = value;
                     break;
                 case "aws.service": 
                     Service = value;
+                    break;
+                case "aws_service": 
+                    TopLevelServiceName = value;
                     break;
                 case "http.method": 
                     HttpMethod = value;
@@ -101,6 +113,11 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("aws.region", Region, RegionBytes));
             }
 
+            if (TopLevelRegion is not null)
+            {
+                processor.Process(new TagItem<string>("region", TopLevelRegion, TopLevelRegionBytes));
+            }
+
             if (RequestId is not null)
             {
                 processor.Process(new TagItem<string>("aws.requestId", RequestId, RequestIdBytes));
@@ -109,6 +126,11 @@ namespace Datadog.Trace.Tagging
             if (Service is not null)
             {
                 processor.Process(new TagItem<string>("aws.service", Service, ServiceBytes));
+            }
+
+            if (TopLevelServiceName is not null)
+            {
+                processor.Process(new TagItem<string>("aws_service", TopLevelServiceName, TopLevelServiceNameBytes));
             }
 
             if (HttpMethod is not null)
@@ -159,6 +181,13 @@ namespace Datadog.Trace.Tagging
                   .Append(',');
             }
 
+            if (TopLevelRegion is not null)
+            {
+                sb.Append("region (tag):")
+                  .Append(TopLevelRegion)
+                  .Append(',');
+            }
+
             if (RequestId is not null)
             {
                 sb.Append("aws.requestId (tag):")
@@ -170,6 +199,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("aws.service (tag):")
                   .Append(Service)
+                  .Append(',');
+            }
+
+            if (TopLevelServiceName is not null)
+            {
+                sb.Append("aws_service (tag):")
+                  .Append(TopLevelServiceName)
                   .Append(',');
             }
 

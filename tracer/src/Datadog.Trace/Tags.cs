@@ -335,7 +335,7 @@ namespace Datadog.Trace
         /// <summary>
         /// The top level service associated with the AWS SDK span.
         /// </summary>
-        internal const string TopLevelServiceName = "service";
+        internal const string TopLevelServiceName = "aws_service";
 
         /// <summary>
         /// The queue name associated with the AWS SDK span.

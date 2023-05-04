@@ -138,6 +138,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("aws.requestId")
                 .Matches("aws.service", "SQS")
                 .Matches("aws_service", "SQS")
+                .IsOptional("queuename")
                 .IsOptional("aws.queue.name")
                 .IsOptional("aws.queue.url")
                 .IsPresent("http.method")

@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
     public class AwsSnsTests : TracingIntegrationTest
     {
         public AwsSnsTests(ITestOutputHelper output)
-            : base("AWS.SNS", output)
+            : base("AWS.SimpleNotificationService", output)
         {
         }
 

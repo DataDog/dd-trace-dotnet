@@ -12,6 +12,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.AwsQueueName)]
         public string QueueName { get; set; }
 
+        [Tag(Trace.Tags.QueueName)]
+        public string TopLevelQueueName { get; set; }
+
         [Tag(Trace.Tags.AwsQueueUrl)]
         public string QueueUrl { get; set; }
 

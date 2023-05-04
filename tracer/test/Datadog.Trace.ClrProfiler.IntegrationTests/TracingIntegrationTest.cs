@@ -2,8 +2,9 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -28,6 +29,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (var span in spans)
             {
+                string tagsString = string.Join(", ", span.Tags.Select(kvp => $"{kvp.Key}: {kvp.Value}"));
+                Console.WriteLine($"The value of span tags is: {{{tagsString}}}");
+
                 var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
                 Assert.True(result.Success, result.ToString());
 
