@@ -89,15 +89,15 @@ public abstract class AspNetMvc5AsmRulesToggle : RcmBaseFramework, IClassFixture
         var agent = _iisFixture.Agent;
         var settings = VerifyHelper.GetSpanVerifierSettings();
         var fileId = nameof(TestGlobalRulesToggling) + Guid.NewGuid();
-        var spans1 = await SendRequestsAsync(agent, url, null, 1, 1, null, userAgent: "Arachni/v");
+        var spans1 = await SendRequestsAsync(agent, url, null, 1, 1, null, userAgent: "sql power injector");
 
         await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = null, OnMatch = new[] { "block" }, RulesTarget = JToken.Parse(@"[{'tags': {'confidence': '1'}}]") } } }, asmProduct, fileId) });
-        var spans2 = await SendRequestsAsync(agent, url, null, 1, 1, null, userAgent: "Arachni/v");
+        var spans2 = await SendRequestsAsync(agent, url, null, 1, 1, null, userAgent: "sql power injector");
 
         // reset
         fileId = nameof(TestGlobalRulesToggling) + Guid.NewGuid();
         await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = Array.Empty<RuleOverride>() }, asmProduct, fileId) });
-        var spans3 = await SendRequestsAsync(agent, url, null, 1, 1, null, userAgent: "Arachni/v");
+        var spans3 = await SendRequestsAsync(agent, url, null, 1, 1, null, userAgent: "sql power injector");
 
         var spans = new List<MockSpan>();
         spans.AddRange(spans1);

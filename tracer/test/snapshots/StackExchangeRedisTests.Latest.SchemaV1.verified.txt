@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -1473,15 +1473,9 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
     Resource: HINCRBYFLOAT,
     Service: Samples.StackExchange.Redis,
     Type: redis,
-    Error: 1,
     Tags: {
       component: StackExchangeRedis,
       env: integration_tests,
-      error.msg: ERR hash value is not a float,
-      error.stack:
-StackExchange.Redis.RedisServerException: ERR hash value is not a float
-at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server, T defaultValue),
-      error.type: StackExchange.Redis.RedisServerException,
       out.host: stackexchangeredis,
       out.port: 6379,
       redis.raw_command: HINCRBYFLOAT StackExchange.Redis.Database.Hash,
