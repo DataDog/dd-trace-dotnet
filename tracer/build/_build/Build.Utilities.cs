@@ -388,7 +388,7 @@ partial class Build
             }
             else
             {
-                Logger.Warning("Error calling Azdo API to check for debug run - triggerInfo.scheduleName not found");
+                // scheduleName not found - this will happen on PRs etc
                 return false;
             }
         }
