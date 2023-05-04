@@ -26,6 +26,16 @@ namespace AllocSimulator
             _threshold = GetNextThreshold();
         }
 
+        public string GetDescription()
+        {
+            throw new NotImplementedException();
+        }
+
+        public string GetName()
+        {
+            throw new NotImplementedException();
+        }
+
         public bool ShouldSample(long size)
         {
             _totalAllocatedAmount += (ulong)size;
