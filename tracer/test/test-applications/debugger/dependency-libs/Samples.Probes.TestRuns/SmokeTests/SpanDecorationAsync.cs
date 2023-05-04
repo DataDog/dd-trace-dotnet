@@ -23,7 +23,13 @@ namespace Samples.Probes.TestRuns.SmokeTests
         [MethodImpl(MethodImplOptions.NoInlining)]
         public async Task RunAsync()
         {
-            Console.WriteLine(await Method(nameof(RunAsync), nameof(RunAsync).GetHashCode()));
+            Console.WriteLine(await Annotate(nameof(RunAsync), nameof(RunAsync).GetHashCode()));
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        async Task<string> Annotate(string arg, int intArg)
+        {
+            return await Method(arg, intArg);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

@@ -303,22 +303,21 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private void CheckSpanDecoration(DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
         {
-            const string dynamicTags = "dynamic_tags.";
-
             if (evaluationResult.Decorations == null)
             {
                 return;
             }
 
+            const string dynamicPrefix = "_dd.dynamic.";
             for (int i = 0; i < evaluationResult.Decorations.Length; i++)
             {
                 var decoration = evaluationResult.Decorations[i];
-                var evaluationErrorTag = $"_dd.{dynamicTags}{decoration.TagName}.evaluation_error";
-                var probeIdTag = $"_dd.{dynamicTags}{decoration.TagName}.probe_id";
+                var evaluationErrorTag = $"{dynamicPrefix}{decoration.TagName}.evaluation_error";
+                var probeIdTag = $"{dynamicPrefix}{decoration.TagName}.probe_id";
                 switch (ProbeInfo.TargetSpan)
                 {
                     case TargetSpan.Root:
-                        Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(dynamicTags + decoration.TagName, decoration.Value);
+                        Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(decoration.TagName, decoration.Value);
                         Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(probeIdTag, ProbeInfo.ProbeId);
                         if (decoration.Errors?.Length > 0)
                         {
@@ -331,7 +330,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
                         break;
                     case TargetSpan.Active:
-                        Tracer.Instance.ScopeManager.Active.Span.SetTag(dynamicTags + decoration.TagName, decoration.Value);
+                        Tracer.Instance.ScopeManager.Active.Span.SetTag(decoration.TagName, decoration.Value);
                         Tracer.Instance.ScopeManager.Active.Span.SetTag(probeIdTag, ProbeInfo.ProbeId);
                         if (decoration.Errors?.Length > 0)
                         {

@@ -28,7 +28,13 @@ namespace Samples.Probes.TestRuns.SmokeTests
         [SpanOnMethodProbeTestData(skip:true)]
         public async Task RunAsync()
         {
-            Console.WriteLine(await Method(nameof(RunAsync), nameof(RunAsync).Length));
+            Console.WriteLine(await Annotate(nameof(RunAsync), nameof(RunAsync).Length));
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        async Task<string> Annotate(string arg, int intArg)
+        {
+            return await Method(arg, intArg);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

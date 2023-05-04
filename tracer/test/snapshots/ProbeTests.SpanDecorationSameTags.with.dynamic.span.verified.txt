@@ -8,12 +8,12 @@
     Tags: {
       component: trace,
       debugger.probeid: Guid_1,
-      dynamic_tags.SpanDecorationSameTags: 3,
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_2,
+      SpanDecorationSameTags: 3,
       version: 1.0.0,
-      _dd.dynamic_tags.SpanDecorationSameTags.probe_id: Guid_3,
+      _dd.dynamic.SpanDecorationSameTags.probe_id: Guid_3,
       _dd.p.dm: -0
     },
     Metrics: {

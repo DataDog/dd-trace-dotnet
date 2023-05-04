@@ -2,18 +2,16 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: trace.annotation,
+    Name: dd.dynamic.span,
     Resource: SpanDecorationError.Run,
     Service: Probes,
     Tags: {
       component: trace,
-      dynamic_tags.SpanDecorationError: Datadog.Trace.Debugger.Expressions.UndefinedValue,
+      debugger.probeid: Guid_1,
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       version: 1.0.0,
-      _dd.dynamic_tags.SpanDecorationError.evaluation_error: EvaluationError { Expression = this.error, Message = 'error' is not a member of type 'Samples.Probes.TestRuns.SmokeTests.SpanDecorationError' (Parameter 'propertyOrFieldName') },
-      _dd.dynamic_tags.SpanDecorationError.probe_id: Guid_2,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -22,6 +20,23 @@
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: trace.annotation,
+    Resource: SpanDecorationError.Annotate,
+    Service: Probes,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      SpanDecorationError: Datadog.Trace.Debugger.Expressions.UndefinedValue,
+      version: 1.0.0,
+      _dd.dynamic.SpanDecorationError.evaluation_error: EvaluationError { Expression = this.error, Message = 'error' is not a member of type 'Samples.Probes.TestRuns.SmokeTests.SpanDecorationError' (Parameter 'propertyOrFieldName') },
+      _dd.dynamic.SpanDecorationError.probe_id: Guid_3
     }
   }
 ]

@@ -23,7 +23,13 @@ namespace Samples.Probes.TestRuns.SmokeTests
         [SpanOnMethodProbeTestData]
         public void Run()
         {
-            Console.WriteLine(Method(nameof(Run), nameof(Run).Length));
+            Console.WriteLine(Annotate(nameof(Run), nameof(Run).Length));
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        string Annotate(string arg, int intArg)
+        {
+            return Method(arg, intArg);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

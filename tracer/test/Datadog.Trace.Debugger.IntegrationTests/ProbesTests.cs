@@ -210,7 +210,7 @@ public class ProbesTests : TestHelper
     [MemberData(nameof(SpanDecorationMemberData))]
     public async Task SpanDecorationTest(Type testType)
     {
-        var method = testType.FullName + "[Run]" + ";" + testType.FullName + "[RunAsync]";
+        var method = testType.FullName + "[Annotate]";
         SetEnvironmentVariable("DD_TRACE_METHODS", method);
         var testDescription = DebuggerTestHelper.SpecificTestDescription(testType);
         await RunMethodProbeTests(testDescription, false);
@@ -375,6 +375,7 @@ public class ProbesTests : TestHelper
         if (sample.Process.StartInfo.EnvironmentVariables.ContainsKey("DD_TRACE_METHODS"))
         {
             testNameSuffix = "with.trace.annotation";
+            expectedSpanCount++;
         }
         else
         {
@@ -393,22 +394,6 @@ public class ProbesTests : TestHelper
         var spans = agent.WaitForSpans(expectedSpanCount);
 
         Assert.Equal(expectedSpanCount, spans.Count);
-
-        var decorations = probeData.Where(DebuggerTestHelper.IsSpanDecorationProbe).SelectMany(sd => ((SpanDecorationMethodProbeTestDataAttribute)sd).Decorations).ToList();
-
-        /*
-        foreach (var span in spans)
-        {
-            var result = Result.FromSpan(span)
-                               .Properties(
-                                    s => s
-                                       .MatchesOneOf(_ => (nameof(span.Name), span.Name), "trace.annotation", "dd.dynamic.span"))
-                               .Tags(
-                                    s => s
-                                        .IsPresent($"dynamic_tags.{decorations.First().Key}")
-                                        .IsPresent($"_dd.dynamic_tags.{decorations.First().Key}.probe_id"));
-            Assert.True(result.Success, result.ToString());
-        } */
 
         await VerifyHelper.VerifySpans(spans, settings).DisableRequireUniquePrefix();
     }
