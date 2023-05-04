@@ -12,6 +12,11 @@ using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Iast.SensitiveData;
 
+/// <summary>
+/// Tokenizer for SSRF vulnerability
+/// It locates in a Url the authority part (user:pwd) and the values of the query parameters
+/// https://user:password@datadoghq.com:443/api/v1/test/123/?param1=pone -> https://?@datadoghq.com:443/api/v1/test/123/?param1=?
+/// </summary>
 internal class UrlTokenizer : ITokenizer
 {
     private const string AuthorityRegex = "^(?:[^:]+:)?//(?<AUTHORITY>[^@]+)@";

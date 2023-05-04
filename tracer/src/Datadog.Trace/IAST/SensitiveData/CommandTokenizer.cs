@@ -12,6 +12,11 @@ using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Iast.SensitiveData;
 
+/// <summary>
+/// Tokenizer for COMMAND_INJECTION
+/// It locates the parameters issued to a command being passed to the interpreter
+/// cmd echo “sensitive value”  -> cmd echo ?
+/// </summary>
 internal class CommandTokenizer : ITokenizer
 {
     private static Regex _pattern = new Regex(@"^(?:\s*(?:sudo|doas|cmd|cmd.exe)\s+)?\b\S+\b(.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);

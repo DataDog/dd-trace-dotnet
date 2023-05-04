@@ -12,6 +12,11 @@ using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Iast.SensitiveData;
 
+/// <summary>
+/// Tokenizer for LDAP_INJECTION vulnerability
+/// It locates all literals in a LDAP query, which may be multiple (las term after '=')
+/// ((objectCategory=group)(member=CN=Jon Brion,OU=Employees,DC=theitbros,DC=com)) -> ((objectCategory = group)(member = CN =?, OU =?, DC =?, DC =?))
+/// </summary>
 internal class LdapTokenizer : ITokenizer
 {
     private static Regex _pattern = new Regex(@"\(.*?(?:~=|=|<=|>=)(?<LITERAL>[^)]+)\)", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);

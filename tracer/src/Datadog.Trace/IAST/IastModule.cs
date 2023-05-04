@@ -142,6 +142,11 @@ internal static class IastModule
         return traceContext?.IastRequestContext;
     }
 
+    internal static VulnerabilityBatch GetVulnerabilityBatch()
+    {
+        return new VulnerabilityBatch(EvidenceRedactorLazy.Value);
+    }
+
     private static Scope? GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, bool taintedFromEvidenceRequired = false)
     {
         var tracer = Tracer.Instance;
@@ -217,7 +222,7 @@ internal static class IastModule
     private static Scope? AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)
     {
         // we either are not in a request or the distributed tracer returned a scope that cannot be casted to Scope and we cannot access the root span.
-        var batch = new VulnerabilityBatch(EvidenceRedactorLazy.Value);
+        var batch = GetVulnerabilityBatch();
         batch.Add(vulnerability);
 
         var tags = new IastTags()

@@ -12,6 +12,11 @@ using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Iast.SensitiveData;
 
+/// <summary>
+/// Tokenizer for SQL_INJECTION vulnerability
+/// It locates all the parameter literals in a SQLQuery
+/// SELECT id FROM users WHERE location = ‘Paris’ and ZipCode = 324502 -> SELECT id FROM users WHERE location = ‘?’ and ZipCode = ?
+/// </summary>
 internal class SqlInjectionTokenizer : ITokenizer
 {
     private const string StringLiteral = "'(?:''|[^'])*'";
