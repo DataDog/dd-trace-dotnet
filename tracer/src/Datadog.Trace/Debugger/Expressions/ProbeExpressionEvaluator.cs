@@ -216,6 +216,7 @@ internal class ProbeExpressionEvaluator
             var compiledDecorations = _compiledDecorations.Value;
             if (compiledDecorations == null)
             {
+                Log.Debug($"{nameof(ProbeExpressionEvaluator)}.{nameof(EvaluateSpanDecorations)}: {nameof(_compiledDecorations.Value)} is null");
                 return;
             }
 
@@ -226,11 +227,14 @@ internal class ProbeExpressionEvaluator
                     var when = compiledDecorations[i].Key.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members);
                     if (compiledDecorations[i].Key.Errors != null)
                     {
+                        Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", compiledDecorations[i].Key.Errors));
                         (result.Errors ??= new List<EvaluationError>()).AddRange(compiledDecorations[i].Key.Errors);
+                        continue;
                     }
 
                     if (!when)
                     {
+                        Log.Information($"{nameof(ProbeExpressionEvaluator)}.{nameof(EvaluateSpanDecorations)}: Skipping span decoration because the `when` expression was `false`");
                         continue;
                     }
                 }
@@ -253,6 +257,7 @@ internal class ProbeExpressionEvaluator
                         if (compiledExpressions[j].Errors != null)
                         {
                             errors = compiledExpressions[j].Errors;
+                            Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", errors));
                         }
 
                         resultBuilder.Add(new ExpressionEvaluationResult.DecorationResult { TagName = key, Value = value, Errors = errors });
@@ -260,6 +265,7 @@ internal class ProbeExpressionEvaluator
                     catch (Exception e)
                     {
                         var errors = new List<EvaluationError> { new() { Message = e.Message, Expression = GetRelevantExpression(compiledExpressions[j]) } };
+                        Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", errors));
                         if (compiledExpressions[j].Errors != null)
                         {
                             errors.AddRange(compiledExpressions[j].Errors);
@@ -275,6 +281,7 @@ internal class ProbeExpressionEvaluator
         catch (Exception e)
         {
             (result.Errors ??= new List<EvaluationError>()).Add(new EvaluationError { Expression = null, Message = e.Message });
+            Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), e.Message);
         }
     }
 
@@ -326,6 +333,7 @@ internal class ProbeExpressionEvaluator
     {
         if (SpanDecorations == null)
         {
+            Log.Debug($"{nameof(ProbeExpressionEvaluator)}.{nameof(CompileDecorations)}: {nameof(SpanDecorations)} is null");
             return null;
         }
 
@@ -351,6 +359,7 @@ internal class ProbeExpressionEvaluator
             compiledExpressions[i] = new KeyValuePair<CompiledExpression<bool>, CompiledExpression<string>[]>(when, compiledTags);
         }
 
+        Log.Debug($"{nameof(ProbeExpressionEvaluator)}.{nameof(CompileDecorations)}: Finished to compile span decorations");
         return compiledExpressions;
     }
 

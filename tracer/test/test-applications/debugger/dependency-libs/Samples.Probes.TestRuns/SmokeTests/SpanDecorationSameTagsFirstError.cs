@@ -1,9 +1,10 @@
 using System;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    public class SpanDecorationAndSpanProbeSameMethod : IRun
+    public class SpanDecorationSameTagsFirstError : IRun
     {
         private const string When = @"{
     ""gt"": [
@@ -12,22 +13,26 @@ namespace Samples.Probes.TestRuns.SmokeTests
     ]
 }";
 
-        private const string TagName = "SpanDecorationAndSpanProbeSameMethod";
+        private const string TagName = "SpanDecorationSameTagsFirstError";
 
         private const string Decoration = @"{
       ""ref"": ""arg""
 }";
 
+        private const string ErrorDecoration = @"{
+      ""ref"": ""error""
+}";
+
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        [SpanOnMethodProbeTestData]
         public void Run()
         {
             Console.WriteLine(Method(nameof(Run), nameof(Run).Length));
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [SpanOnMethodProbeTestData]
-        [SpanDecorationMethodProbeTestData(skip:true, whenJson: When, decorationJson: new[] { Decoration }, decorationTagName: new[] { TagName })]
+        [SpanDecorationMethodProbeTestData(whenJson: When, decorationJson: new[] { ErrorDecoration, Decoration }, decorationTagName: new[] { TagName, TagName })]
         string Method(string arg, int intArg)
         {
             var intLocal = nameof(Method).Length * 2;

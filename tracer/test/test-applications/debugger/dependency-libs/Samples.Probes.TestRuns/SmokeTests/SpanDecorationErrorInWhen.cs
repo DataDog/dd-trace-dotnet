@@ -12,7 +12,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
     ]
 }";
 
-        private const string TagName = "SpanDecorationArgsAndLocals";
+        private const string TagName = "SpanDecorationErrorInWhen";
 
         private const string Decoration = @"{
       ""ref"": ""arg""
@@ -23,14 +23,14 @@ namespace Samples.Probes.TestRuns.SmokeTests
         [SpanOnMethodProbeTestData]
         public void Run()
         {
-            Console.WriteLine(Method(nameof(Run), nameof(Run).GetHashCode()));
+            Console.WriteLine(Method(nameof(Run), nameof(Run).Length));
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [SpanDecorationMethodProbeTestData(whenJson: When, decorationJson: new[] { Decoration }, decorationTagName: new[] { TagName })]
         string Method(string arg, int intArg)
         {
-            var intLocal = nameof(Method).GetHashCode();
+            var intLocal = nameof(Method).Length * 2;
             if (intLocal > intArg)
             {
                 Console.WriteLine(intLocal);

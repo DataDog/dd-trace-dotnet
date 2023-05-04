@@ -1,0 +1,27 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: trace.annotation,
+    Resource: SpanDecorationSameTagsSecondError.Run,
+    Service: Probes,
+    Tags: {
+      component: trace,
+      dynamic_tags.SpanDecorationSameTagsSecondError: Datadog.Trace.Debugger.Expressions.UndefinedValue,
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0,
+      _dd.dynamic_tags.SpanDecorationSameTagsSecondError.evaluation_error: EvaluationError { Expression = this.error, Message = 'error' is not a member of type 'Samples.Probes.TestRuns.SmokeTests.SpanDecorationSameTagsSecondError' (Parameter 'propertyOrFieldName') },
+      _dd.dynamic_tags.SpanDecorationSameTagsSecondError.probe_id: Guid_2,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]

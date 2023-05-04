@@ -3,17 +3,18 @@
     TraceId: Id_1,
     SpanId: Id_2,
     Name: dd.dynamic.span,
-    Resource: SpanDecorationSameTagsError.RunAsync,
+    Resource: SpanDecorationError.Run,
     Service: Probes,
     Tags: {
       component: trace,
       debugger.probeid: Guid_1,
-      dynamic_tags.SpanDecorationSameTagsError: RunAsync,
+      dynamic_tags.SpanDecorationError: Datadog.Trace.Debugger.Expressions.UndefinedValue,
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_2,
       version: 1.0.0,
-      _dd.dynamic_tags.SpanDecorationSameTagsError.probe_id: Guid_3,
+      _dd.dynamic_tags.SpanDecorationError.evaluation_error: EvaluationError { Expression = this.error, Message = 'error' is not a member of type 'Samples.Probes.TestRuns.SmokeTests.SpanDecorationError' (Parameter 'propertyOrFieldName') },
+      _dd.dynamic_tags.SpanDecorationError.probe_id: Guid_3,
       _dd.p.dm: -0
     },
     Metrics: {

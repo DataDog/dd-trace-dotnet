@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    public class SpanDecorationSameTagsError : IAsyncRun
+    public class SpanDecorationSameTagsSecondError : IRun
     {
         private const string When = @"{
     ""gt"": [
@@ -13,7 +13,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
     ]
 }";
 
-        private const string TagName = "SpanDecorationSameTagsError";
+        private const string TagName = "SpanDecorationSameTagsSecondError";
 
         private const string Decoration = @"{
       ""ref"": ""arg""
@@ -26,20 +26,19 @@ namespace Samples.Probes.TestRuns.SmokeTests
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [SpanOnMethodProbeTestData]
-        public async Task RunAsync()
+        public void Run()
         {
-            Console.WriteLine(await Method(nameof(RunAsync), nameof(RunAsync).GetHashCode()));
+            Console.WriteLine(Method(nameof(Run), nameof(Run).Length));
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [SpanDecorationMethodProbeTestData(whenJson: When, decorationJson: new[] { ErrorDecoration, Decoration }, decorationTagName: new[] { TagName, TagName })]
-        async Task<string> Method(string arg, int intArg)
+        [SpanDecorationMethodProbeTestData(whenJson: When, decorationJson: new[] { Decoration, ErrorDecoration }, decorationTagName: new[] { TagName, TagName })]
+        string Method(string arg, int intArg)
         {
-            var intLocal = nameof(Method).GetHashCode();
+            var intLocal = nameof(Method).Length * 2;
             if (intLocal > intArg)
             {
                 Console.WriteLine(intLocal);
-                await Task.Delay(20);
             }
 
             return $"{arg} : {intLocal.ToString()}";

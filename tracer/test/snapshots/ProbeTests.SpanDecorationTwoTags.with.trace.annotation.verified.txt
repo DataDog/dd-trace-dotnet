@@ -1,0 +1,28 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: trace.annotation,
+    Resource: SpanDecorationTwoTags.Run,
+    Service: Probes,
+    Tags: {
+      component: trace,
+      dynamic_tags.SpanDecorationTwoTags: Run,
+      dynamic_tags.SpanDecorationTwoTags2: 3,
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0,
+      _dd.dynamic_tags.SpanDecorationTwoTags.probe_id: Guid_2,
+      _dd.dynamic_tags.SpanDecorationTwoTags2.probe_id: Guid_2,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]

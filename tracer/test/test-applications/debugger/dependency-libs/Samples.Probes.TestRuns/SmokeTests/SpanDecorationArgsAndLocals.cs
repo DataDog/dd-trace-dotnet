@@ -24,15 +24,14 @@ namespace Samples.Probes.TestRuns.SmokeTests
         [SpanOnMethodProbeTestData]
         public void Run()
         {
-            Thread.Sleep(5000);
-            Console.WriteLine(Method(nameof(Run), nameof(Run).GetHashCode()));
+            Console.WriteLine(Method(nameof(Run), nameof(Run).Length));
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [SpanDecorationMethodProbeTestData(whenJson: When, decorationJson: new[] { Decoration }, decorationTagName: new[] { TagName })]
         string Method(string arg, int intArg)
         {
-            var intLocal = nameof(Method).GetHashCode();
+            var intLocal = nameof(Method).Length * 2;
             if (intLocal > intArg)
             {
                 Console.WriteLine(intLocal);

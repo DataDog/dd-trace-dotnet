@@ -2,17 +2,20 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: trace.annotation,
-    Resource: SpanDecorationSameTags.Method,
+    Name: dd.dynamic.span,
+    Resource: SpanDecorationTwoTags.Run,
     Service: Probes,
     Tags: {
       component: trace,
-      dynamic_tags.SpanDecorationSameTags: -104963833,
+      debugger.probeid: Guid_1,
+      dynamic_tags.SpanDecorationTwoTags: Run,
+      dynamic_tags.SpanDecorationTwoTags2: 3,
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       version: 1.0.0,
-      _dd.dynamic_tags.SpanDecorationSameTags.probe_id: Guid_2,
+      _dd.dynamic_tags.SpanDecorationTwoTags.probe_id: Guid_3,
+      _dd.dynamic_tags.SpanDecorationTwoTags2.probe_id: Guid_3,
       _dd.p.dm: -0
     },
     Metrics: {
