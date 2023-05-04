@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Util;
@@ -87,7 +88,7 @@ namespace Datadog.Trace.Configuration
             HttpServerErrorStatusCodes = settings.HttpServerErrorStatusCodes;
             HttpClientErrorStatusCodes = settings.HttpClientErrorStatusCodes;
             MetadataSchemaVersion = settings.MetadataSchemaVersion;
-            ServiceNameMappings = new ServiceNames(settings.ServiceNameMappings, settings.MetadataSchemaVersion);
+            ServiceNameMappings = settings.ServiceNameMappings;
             TraceBufferSize = settings.TraceBufferSize;
             TraceBatchInterval = settings.TraceBatchInterval;
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
@@ -320,7 +321,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets configuration values for changing service names based on configuration
         /// </summary>
-        internal ServiceNames ServiceNameMappings { get; }
+        internal IDictionary<string, string>? ServiceNameMappings { get; }
 
         /// <summary>
         /// Gets a value indicating the size in bytes of the trace buffer
@@ -454,7 +455,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets the metadata schema version
         /// </summary>
-        internal string MetadataSchemaVersion { get; }
+        internal SchemaVersion MetadataSchemaVersion { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources
@@ -503,12 +504,29 @@ namespace Datadog.Trace.Configuration
 
         internal string GetServiceName(Tracer tracer, string serviceName)
         {
-            return ServiceNameMappings.GetServiceName(tracer.DefaultServiceName, serviceName);
+            if (ServiceNameMappings is not null && ServiceNameMappings.TryGetValue(serviceName, out var name))
+            {
+                return name;
+            }
+            else if (MetadataSchemaVersion != SchemaVersion.V0)
+            {
+                return tracer.DefaultServiceName;
+            }
+            else
+            {
+                return $"{tracer.DefaultServiceName}-{serviceName}";
+            }
         }
 
-        internal bool TryGetServiceName(string key, out string serviceName)
+        internal bool TryGetServiceName(string key, out string? serviceName)
         {
-            return ServiceNameMappings.TryGetServiceName(key, out serviceName);
+            if (ServiceNameMappings is not null && ServiceNameMappings.TryGetValue(key, out serviceName))
+            {
+                return true;
+            }
+
+            serviceName = null;
+            return false;
         }
     }
 }
