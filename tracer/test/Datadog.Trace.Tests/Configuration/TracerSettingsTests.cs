@@ -662,7 +662,7 @@ namespace Datadog.Trace.Tests.Configuration
         // TODO: DirectLogSubmissionSettings
 
         [Theory]
-        [MemberData(nameof(StringTestCases), "")]
+        [MemberData(nameof(StringTestCases), "", Strings.AllowEmpty)]
         public void TraceMethods(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.TraceMethods, value));
