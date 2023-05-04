@@ -16,6 +16,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -35,6 +38,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -54,6 +60,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -73,6 +82,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -92,6 +104,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -111,6 +126,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -130,6 +148,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -149,6 +170,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -168,6 +192,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -187,6 +214,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -206,6 +236,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -225,6 +258,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -244,6 +280,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -263,6 +302,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -282,6 +324,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -301,6 +346,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -320,6 +368,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -339,6 +390,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -358,6 +412,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -377,6 +434,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -396,6 +456,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -415,6 +478,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -434,6 +500,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -453,6 +522,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -472,6 +544,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -491,6 +566,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -510,6 +588,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -529,6 +610,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -548,6 +632,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -567,6 +654,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -586,6 +676,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -605,6 +698,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -624,6 +720,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -643,6 +742,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -662,6 +764,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -681,6 +786,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -700,6 +808,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -719,6 +830,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -738,6 +852,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -757,6 +874,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -776,6 +896,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -795,6 +918,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -814,6 +940,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -833,6 +962,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -852,6 +984,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -871,6 +1006,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -890,6 +1028,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -909,6 +1050,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -928,6 +1072,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -947,6 +1094,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -966,6 +1116,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -985,6 +1138,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1004,6 +1160,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1023,6 +1182,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1042,6 +1204,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1061,6 +1226,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1080,6 +1248,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1099,6 +1270,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1118,6 +1292,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1137,6 +1314,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1156,6 +1336,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1175,6 +1358,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1194,6 +1380,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1213,6 +1402,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1232,6 +1424,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1251,6 +1446,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1270,6 +1468,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1289,6 +1490,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1308,6 +1512,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1327,6 +1534,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1346,6 +1556,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1365,6 +1578,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1384,6 +1600,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1403,6 +1622,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1422,6 +1644,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1441,6 +1666,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1460,6 +1688,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1479,6 +1710,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1498,6 +1732,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1517,6 +1754,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1536,6 +1776,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1555,6 +1798,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1574,6 +1820,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1593,6 +1842,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1612,6 +1864,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1631,6 +1886,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1650,6 +1908,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1669,6 +1930,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1688,6 +1952,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1707,6 +1974,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1726,6 +1996,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1745,6 +2018,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1764,6 +2040,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1783,6 +2062,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1802,6 +2084,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1821,6 +2106,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1840,6 +2128,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1859,6 +2150,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1878,6 +2172,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1897,6 +2194,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1916,6 +2216,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1935,6 +2238,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1954,6 +2260,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1973,6 +2282,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1992,6 +2304,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2011,6 +2326,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2030,6 +2348,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2049,6 +2370,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2068,6 +2392,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2087,6 +2414,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2106,6 +2436,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2125,6 +2458,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2144,6 +2480,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2163,6 +2502,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2182,6 +2524,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2201,6 +2546,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2220,6 +2568,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2239,6 +2590,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2258,6 +2612,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2277,6 +2634,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2296,6 +2656,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2315,6 +2678,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2334,6 +2700,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2353,6 +2722,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2372,6 +2744,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2391,6 +2766,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2410,6 +2788,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2429,6 +2810,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2448,6 +2832,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2467,6 +2854,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2486,6 +2876,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2505,6 +2898,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2524,6 +2920,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2543,6 +2942,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2562,6 +2964,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2581,6 +2986,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2600,6 +3008,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2619,6 +3030,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2638,6 +3052,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2657,6 +3074,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2676,6 +3096,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2695,6 +3118,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2714,6 +3140,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2733,6 +3162,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2752,6 +3184,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2771,6 +3206,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2790,6 +3228,9 @@
       span.kind: client,
       version: 1.0.0,
       _dd.dbm_trace_injected: true
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   }
 ]

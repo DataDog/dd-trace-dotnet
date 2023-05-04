@@ -15,6 +15,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -33,6 +36,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -51,6 +57,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -69,6 +78,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -87,6 +99,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -105,6 +120,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -123,6 +141,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -141,6 +162,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -159,6 +183,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -177,6 +204,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -195,6 +225,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -213,6 +246,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -231,6 +267,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -249,6 +288,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -267,6 +309,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -285,6 +330,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -303,6 +351,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -321,6 +372,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -339,6 +393,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -357,6 +414,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -375,6 +435,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -393,6 +456,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -411,6 +477,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -429,6 +498,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -447,6 +519,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -465,6 +540,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -483,6 +561,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -501,6 +582,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -519,6 +603,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -537,6 +624,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -555,6 +645,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -573,6 +666,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -591,6 +687,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -609,6 +708,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -627,6 +729,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -645,6 +750,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -663,6 +771,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -681,6 +792,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -699,6 +813,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -717,6 +834,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -735,6 +855,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -753,6 +876,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -771,6 +897,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -789,6 +918,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -807,6 +939,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -825,6 +960,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -843,6 +981,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -861,6 +1002,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -879,6 +1023,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -897,6 +1044,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -915,6 +1065,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -933,6 +1086,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -951,6 +1107,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -969,6 +1128,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -987,6 +1149,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1005,6 +1170,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1023,6 +1191,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1041,6 +1212,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1059,6 +1233,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1077,6 +1254,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1095,6 +1275,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1113,6 +1296,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1131,6 +1317,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1149,6 +1338,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1167,6 +1359,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1185,6 +1380,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1203,6 +1401,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1221,6 +1422,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1239,6 +1443,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1257,6 +1464,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1275,6 +1485,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1293,6 +1506,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1311,6 +1527,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1329,6 +1548,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1347,6 +1569,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1365,6 +1590,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1383,6 +1611,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1401,6 +1632,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1419,6 +1653,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1437,6 +1674,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1455,6 +1695,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1473,6 +1716,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1491,6 +1737,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1509,6 +1758,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1527,6 +1779,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1545,6 +1800,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1563,6 +1821,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1581,6 +1842,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1599,6 +1863,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1617,6 +1884,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1635,6 +1905,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1653,6 +1926,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1671,6 +1947,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1689,6 +1968,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1707,6 +1989,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1725,6 +2010,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1743,6 +2031,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1761,6 +2052,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1779,6 +2073,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1797,6 +2094,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1815,6 +2115,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1833,6 +2136,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1851,6 +2157,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1869,6 +2178,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1887,6 +2199,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1905,6 +2220,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1923,6 +2241,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1941,6 +2262,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1959,6 +2283,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1977,6 +2304,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -1995,6 +2325,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2013,6 +2346,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2031,6 +2367,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2049,6 +2388,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2067,6 +2409,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2085,6 +2430,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2103,6 +2451,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2121,6 +2472,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2139,6 +2493,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2157,6 +2514,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2175,6 +2535,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2193,6 +2556,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2211,6 +2577,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2229,6 +2598,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2247,6 +2619,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2265,6 +2640,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2283,6 +2661,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2301,6 +2682,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2319,6 +2703,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2337,6 +2724,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2355,6 +2745,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2373,6 +2766,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2391,6 +2787,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2409,6 +2808,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2427,6 +2829,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2445,6 +2850,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2463,6 +2871,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2481,6 +2892,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2499,6 +2913,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2517,6 +2934,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2535,6 +2955,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2553,6 +2976,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2571,6 +2997,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2589,6 +3018,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2607,6 +3039,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2625,6 +3060,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   },
   {
@@ -2643,6 +3081,9 @@
       out.host: postgres,
       span.kind: client,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.measured: 1.0
     }
   }
 ]
