@@ -12,6 +12,16 @@ namespace AllocSimulator
 
         private long _totalAllocatedAmount;
 
+        public string GetDescription()
+        {
+            return $"Fixed 100 KB sampling";
+        }
+
+        public virtual string GetName()
+        {
+            return "Fixed";
+        }
+
         public bool ShouldSample(long size)
         {
             _totalAllocatedAmount += size;

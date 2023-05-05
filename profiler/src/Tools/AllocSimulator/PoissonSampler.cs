@@ -7,10 +7,13 @@ namespace AllocSimulator
 {
     public class PoissonSampler : ISampler
     {
+#pragma warning disable SA1401 // Fields should be private
+        protected float _meanPoisson;
+#pragma warning restore SA1401 // Fields should be private
+
         private Random _randomizer = new Random(DateTime.Now.Millisecond);
         private ulong _totalAllocatedAmount;
         private ulong _threshold;  // number of bytes until the next sample
-        private float _meanPoisson;
 
         public PoissonSampler(int meanPoisson)
         {
@@ -18,10 +21,20 @@ namespace AllocSimulator
             _threshold = GetNextThreshold();
         }
 
-        public bool ShouldSample(long size)
+        public virtual string GetDescription()
+        {
+            return $"Poisson {_meanPoisson} KB sampling";
+        }
+
+        public virtual string GetName()
+        {
+            return "Poisson";
+        }
+
+        public virtual bool ShouldSample(long size)
         {
             _totalAllocatedAmount += (ulong)size;
-            var shouldSample = _totalAllocatedAmount > _threshold;
+            var shouldSample = OnShouldSample(size);
 
             if (shouldSample)
             {
@@ -30,6 +43,11 @@ namespace AllocSimulator
             }
 
             return shouldSample;
+        }
+
+        public virtual bool OnShouldSample(long size)
+        {
+            return _totalAllocatedAmount > _threshold;
         }
 
         public ulong GetNextThreshold()
