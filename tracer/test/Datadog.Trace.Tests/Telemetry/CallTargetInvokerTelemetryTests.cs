@@ -146,6 +146,10 @@ namespace Datadog.Trace.Tests.Telemetry
             {
             }
 
+            public void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error)
+            {
+            }
+
             public void RecordIastSettings(IastSettings settings)
             {
             }
