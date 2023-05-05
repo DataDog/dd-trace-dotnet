@@ -66,14 +66,15 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             }
         }
 
-        internal delegate CallTargetReturn<TReturn> InvokeDelegate(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state);
+        internal delegate CallTargetReturn<TReturn> InvokeDelegate(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static CallTargetReturn<TReturn> Invoke(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        internal static CallTargetReturn<TReturn> Invoke(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state)
         {
-            if (_continuationGenerator != null)
+            var continuationGenerator = _continuationGenerator;
+            if (continuationGenerator != null)
             {
-                returnValue = _continuationGenerator.SetContinuation(instance, returnValue, exception, in state);
+                returnValue = continuationGenerator.SetContinuation(instance, returnValue, exception, ref state);
 
                 // Restore previous scope and the previous DistributedTrace if there is a continuation
                 // This is used to mimic the ExecutionContext copy from the StateMachine
@@ -86,8 +87,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
             if (_invokeDelegate != null)
             {
-                CallTargetReturn<TReturn> returnWrap = _invokeDelegate(instance, returnValue, exception, in state);
+                CallTargetReturn<TReturn> returnWrap = _invokeDelegate(instance, returnValue, exception, ref state);
                 returnValue = returnWrap.GetReturnValue();
+            }
+
+            if (continuationGenerator is null)
+            {
+                state.Release();
             }
 
             return new CallTargetReturn<TReturn>(returnValue);

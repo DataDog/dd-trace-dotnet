@@ -45,9 +45,9 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
             }
         }
 
-        public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state)
         {
-            return Resolver.ExecuteCallback(instance, returnValue, exception, in state);
+            return Resolver.ExecuteCallback(instance, returnValue, exception, ref state);
         }
 
         private class SyncCallbackHandler : CallbackHandler
@@ -61,11 +61,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 _preserveContext = preserveContext;
             }
 
-            public override TReturn ExecuteCallback(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            public override TReturn ExecuteCallback(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state)
             {
                 if (exception != null)
                 {
-                    _continuation(instance, default, exception, in state);
+                    _continuation(instance, default, exception, ref state);
                     return returnValue;
                 }
 
@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                         // *
                         // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
                         // *
-                        _continuation(target, default, ex, in state);
+                        _continuation(target, default, ex, ref state);
                     }
                     catch (Exception contEx)
                     {
@@ -101,7 +101,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                     // *
                     // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
                     // *
-                    _continuation(target, default, default, in state);
+                    _continuation(target, default, default, ref state);
                 }
                 catch (Exception contEx)
                 {
@@ -121,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 _preserveContext = preserveContext;
             }
 
-            public override TReturn ExecuteCallback(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            public override TReturn ExecuteCallback(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state)
             {
                 var previousValueTask = returnValue == null ? new ValueTask() : FromTReturn<ValueTask>(returnValue);
                 return ToTReturn(ContinuationAction(previousValueTask, instance, state, exception));
@@ -131,7 +131,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
             {
                 if (exception != null)
                 {
-                    await _asyncContinuation(target, default, exception, in state).ConfigureAwait(_preserveContext);
+                    await _asyncContinuation(target, default, exception, ref state).ConfigureAwait(_preserveContext);
                 }
 
                 try
@@ -145,12 +145,14 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                         // *
                         // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
                         // *
-                        await _asyncContinuation(target, default, ex, in state).ConfigureAwait(_preserveContext);
+                        await _asyncContinuation(target, default, ex, ref state).ConfigureAwait(_preserveContext);
                     }
                     catch (Exception contEx)
                     {
                         IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
                     }
+
+                    state.Release();
 
                     throw;
                 }
@@ -160,12 +162,14 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                     // *
                     // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
                     // *
-                    await _asyncContinuation(target, default, default, in state).ConfigureAwait(_preserveContext);
+                    await _asyncContinuation(target, default, default, ref state).ConfigureAwait(_preserveContext);
                 }
                 catch (Exception contEx)
                 {
                     IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
                 }
+
+                state.Release();
             }
         }
     }

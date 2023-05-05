@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget
 {
@@ -15,14 +16,9 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public readonly struct CallTargetState
+    public struct CallTargetState
     {
-        private readonly Scope _previousScope;
-        private readonly Scope _scope;
-        private readonly object _state;
-        private readonly DateTimeOffset? _startTime;
-
-        private readonly IReadOnlyDictionary<string, string> _previousDistributedSpanContext;
+        private CallTargetStateInternal _item;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CallTargetState"/> struct.
@@ -30,11 +26,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <param name="scope">Scope instance</param>
         internal CallTargetState(Scope scope)
         {
-            _previousScope = null;
-            _scope = scope;
-            _state = null;
-            _startTime = null;
-            _previousDistributedSpanContext = null;
+            var item = ObjectPool<CallTargetStateInternal>.Shared.Get();
+            item.PreviousScope = null;
+            item.Scope = scope;
+            item.State = null;
+            item.StartTime = null;
+            item.PreviousDistributedSpanContext = null;
+            _item = item;
         }
 
         /// <summary>
@@ -44,11 +42,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <param name="state">Object state instance</param>
         internal CallTargetState(Scope scope, object state)
         {
-            _previousScope = null;
-            _scope = scope;
-            _state = state;
-            _startTime = null;
-            _previousDistributedSpanContext = null;
+            var item = ObjectPool<CallTargetStateInternal>.Shared.Get();
+            item.PreviousScope = null;
+            item.Scope = scope;
+            item.State = state;
+            item.StartTime = null;
+            item.PreviousDistributedSpanContext = null;
+            _item = item;
         }
 
         /// <summary>
@@ -59,40 +59,44 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <param name="startTime">The intended start time of the scope, intended for scopes created in the OnMethodEnd handler</param>
         internal CallTargetState(Scope scope, object state, DateTimeOffset? startTime)
         {
-            _previousScope = null;
-            _scope = scope;
-            _state = state;
-            _startTime = startTime;
-            _previousDistributedSpanContext = null;
+            var item = ObjectPool<CallTargetStateInternal>.Shared.Get();
+            item.PreviousScope = null;
+            item.Scope = scope;
+            item.State = state;
+            item.StartTime = startTime;
+            item.PreviousDistributedSpanContext = null;
+            _item = item;
         }
 
         internal CallTargetState(Scope previousScope, IReadOnlyDictionary<string, string> previousDistributedSpanContext, CallTargetState state)
         {
-            _previousScope = previousScope;
-            _scope = state._scope;
-            _state = state._state;
-            _startTime = state._startTime;
-            _previousDistributedSpanContext = previousDistributedSpanContext;
+            var item = ObjectPool<CallTargetStateInternal>.Shared.Get();
+            item.PreviousScope = previousScope;
+            item.Scope = state._item.Scope;
+            item.State = state._item.State;
+            item.StartTime = state._item.StartTime;
+            item.PreviousDistributedSpanContext = previousDistributedSpanContext;
+            _item = item;
         }
 
         /// <summary>
         /// Gets the CallTarget BeginMethod scope
         /// </summary>
-        internal Scope Scope => _scope;
+        internal Scope Scope => _item.Scope;
 
         /// <summary>
         /// Gets the CallTarget BeginMethod state
         /// </summary>
-        public object State => _state;
+        public object State => _item.State;
 
         /// <summary>
         /// Gets the CallTarget state StartTime
         /// </summary>
-        public DateTimeOffset? StartTime => _startTime;
+        public DateTimeOffset? StartTime => _item.StartTime;
 
-        internal Scope PreviousScope => _previousScope;
+        internal Scope PreviousScope => _item.PreviousScope;
 
-        internal IReadOnlyDictionary<string, string> PreviousDistributedSpanContext => _previousDistributedSpanContext;
+        internal IReadOnlyDictionary<string, string> PreviousDistributedSpanContext => _item.PreviousDistributedSpanContext;
 
         /// <summary>
         /// Gets the default call target state (used by the native side to initialize the locals)
@@ -110,7 +114,32 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <returns>String value</returns>
         public override string ToString()
         {
-            return $"{typeof(CallTargetState).FullName}({_previousScope}, {_scope}, {_state})";
+            return $"{typeof(CallTargetState).FullName}({_item?.PreviousScope}, {_item?.Scope}, {_item?.State})";
         }
+
+        /// <summary>
+        /// Release internal data
+        /// </summary>
+        public void Release()
+        {
+            var item = _item;
+            _item = null;
+            item.PreviousScope = null;
+            item.Scope = null;
+            item.State = null;
+            item.StartTime = null;
+            item.PreviousDistributedSpanContext = null;
+            ObjectPool<CallTargetStateInternal>.Shared.Return(item);
+        }
+    }
+
+#pragma warning disable CS0649, SA1401
+    internal class CallTargetStateInternal
+    {
+        public Scope PreviousScope;
+        public Scope Scope;
+        public object State;
+        public DateTimeOffset? StartTime;
+        public IReadOnlyDictionary<string, string> PreviousDistributedSpanContext;
     }
 }

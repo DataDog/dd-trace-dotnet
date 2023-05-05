@@ -14,11 +14,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
     {
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContinuationGenerator<TTarget, TReturn>));
 
-        internal delegate object ObjectContinuationMethodDelegate(TTarget target, object returnValue, Exception exception, in CallTargetState state);
+        internal delegate object ObjectContinuationMethodDelegate(TTarget target, object returnValue, Exception exception, ref CallTargetState state);
 
-        internal delegate Task<object> AsyncObjectContinuationMethodDelegate(TTarget target, object returnValue, Exception exception, in CallTargetState state);
+        internal delegate Task<object> AsyncObjectContinuationMethodDelegate(TTarget target, object returnValue, Exception exception, ref CallTargetState state);
 
-        public abstract TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state);
+        public abstract TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected static TReturn ToTReturn<TFrom>(TFrom returnValue)
@@ -42,12 +42,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
         internal abstract class CallbackHandler
         {
-            public abstract TReturn ExecuteCallback(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state);
+            public abstract TReturn ExecuteCallback(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state);
         }
 
         internal class NoOpCallbackHandler : CallbackHandler
         {
-            public override TReturn ExecuteCallback(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            public override TReturn ExecuteCallback(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state)
             {
                 return returnValue;
             }
@@ -58,8 +58,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
     internal abstract class ContinuationGenerator<TTarget, TReturn, TResult> : ContinuationGenerator<TTarget, TReturn>
 #pragma warning restore SA1402
     {
-        internal delegate TResult ContinuationMethodDelegate(TTarget target, TResult returnValue, Exception exception, in CallTargetState state);
+        internal delegate TResult ContinuationMethodDelegate(TTarget target, TResult returnValue, Exception exception, ref CallTargetState state);
 
-        internal delegate Task<TResult> AsyncContinuationMethodDelegate(TTarget target, TResult returnValue, Exception exception, in CallTargetState state);
+        internal delegate Task<TResult> AsyncContinuationMethodDelegate(TTarget target, TResult returnValue, Exception exception, ref CallTargetState state);
     }
 }
