@@ -96,7 +96,9 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("ExecuteCommandFromCookie")]
         public ActionResult ExecuteCommandFromCookie()
         {
-            return ExecuteCommandInternal(Request.Cookies["file"].Value, Request.Cookies["argumentLine"].Value);
+            // we test two different ways of obtaining a cookie
+            var argumentValue = Request.Cookies["argumentLine"].Values[0];
+            return ExecuteCommandInternal(Request.Cookies["file"].Value, argumentValue);
         }
 
         [Route("GetFileContent")]

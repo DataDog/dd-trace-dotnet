@@ -4,9 +4,8 @@
 // </copyright>
 
 #if NETFRAMEWORK
-using System.IO;
+using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Security.IntegrationTests.IAST;
@@ -136,7 +135,26 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
                           .DisableRequireUniquePrefix();
     }
 
-    protected override string GetTestName() => _testName;
-}
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
+        [SkippableTheory]
+        [InlineData(AddressesConstants.RequestQuery, "/Iast/ExecuteCommandFromCookie")]
+        public async Task TestIastCookieTaintingRequest(string test, string url)
+        {
+            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+            var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, null);
+            AddCookies(new Dictionary<string, string>() { { "file", "file.txt" }, { "argumentLine", "arg1" } });
+            var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+            var filename = _enableIast ? "Iast.CookieTainting.AspNetMvc5.IastEnabled" : "Iast.CookieTainting.AspNetMvc5.IastDisabled";
+            var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+            settings.AddIastScrubbing();
+            await VerifyHelper.VerifySpans(spansFiltered, settings)
+                              .UseFileName(filename)
+                              .DisableRequireUniquePrefix();
+        }
 
+        protected override string GetTestName() => _testName;
+    }
+}
 #endif
