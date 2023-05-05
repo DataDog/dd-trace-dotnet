@@ -60,7 +60,7 @@ namespace Datadog.Trace
         /// </summary>
         internal string ResourceName
         {
-            get => _resourceName ?? OperationName;
+            get => _resourceName;
             set => _resourceName = value;
         }
 
@@ -419,6 +419,7 @@ namespace Datadog.Trace
 
         internal void Finish(TimeSpan duration)
         {
+            _resourceName ??= OperationName;
             if (Interlocked.CompareExchange(ref _isFinished, 1, 0) == 0)
             {
                 Duration = duration;
