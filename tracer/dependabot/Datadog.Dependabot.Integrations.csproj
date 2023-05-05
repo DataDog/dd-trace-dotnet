@@ -42,12 +42,6 @@
     <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.100.124 -->
     <PackageReference Include="AWSSDK.SQS" Version="3.7.100.124" />
 
-    <!-- Integration: Microsoft.Azure.WebJobs.Host -->
-    <!-- Assembly: Microsoft.Azure.WebJobs.Host -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.37 -->
-    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.37" />
-
-
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.33.0 -->
@@ -73,20 +67,10 @@
     <!-- Latest package https://www.nuget.org/packages/GraphQL.SystemReactive/4.8.0 -->
     <PackageReference Include="GraphQL.SystemReactive" Version="4.8.0" />
 
-    <!-- Integration: Grpc.AspNetCore.Server -->
-    <!-- Assembly: Grpc.AspNetCore.Server -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.52.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.52.0" />
-
     <!-- Integration: Grpc.Core -->
     <!-- Assembly: Grpc.Core -->
     <!-- Latest package https://www.nuget.org/packages/Grpc/2.46.6 -->
     <PackageReference Include="Grpc" Version="2.46.6" />
-
-    <!-- Integration: Grpc.Net.Client -->
-    <!-- Assembly: Grpc.Net.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.52.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.52.0" />
 
     <!-- Integration: HotChocolate.Execution -->
     <!-- Assembly: HotChocolate.Execution -->
