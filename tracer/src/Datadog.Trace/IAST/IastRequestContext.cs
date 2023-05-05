@@ -177,12 +177,14 @@ internal class IastRequestContext
     {
         foreach (string key in cookies.AllKeys)
         {
-            var values = cookies[key].Values.GetValues(key);
-            if (values is not null)
+            // cookies[key].Value is covered in the aspect
+
+            for (int i = 0; i < cookies[key].Values.Count; i++)
             {
-                foreach (string value in values)
+                var valueInCollection = cookies[key].Values[i];
+                if (valueInCollection is not null && valueInCollection is string valueInCollectionString)
                 {
-                    AddCookieData(key, value);
+                    AddCookieData(key, valueInCollectionString);
                 }
             }
         }
