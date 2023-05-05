@@ -83,24 +83,15 @@ namespace Datadog.Trace.TestHelpers
 
         public SpanTagAssertion<T> Matches(string tagName, T expectedValue)
         {
-            if (_tags == null)
-            {
-                _result.WithFailure("The _tags dictionary is null.");
-                return this;
-            }
-
             bool keyExists = _tags.TryGetValue(tagName, out T value);
             if (keyExists)
             {
                 _tags.Remove(tagName);
             }
 
-            if (!EqualityComparer<T>.Default.Equals(value, expectedValue))
+            if (!value.Equals(expectedValue))
             {
-                string expectedValueString = expectedValue == null ? "null" : expectedValue.ToString();
-                string valueString = value == null ? "null" : value.ToString();
-
-                _result.WithFailure(GenerateMatchesFailureString("tag", tagName, expectedValueString, valueString));
+                _result.WithFailure(GenerateMatchesFailureString("tag", tagName, expectedValue.ToString(), value.ToString()));
             }
 
             return this;

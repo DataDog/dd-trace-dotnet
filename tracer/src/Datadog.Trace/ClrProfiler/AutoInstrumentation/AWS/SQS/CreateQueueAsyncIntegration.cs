@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
             var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out AwsSqsTags tags);
             tags.QueueName = request.QueueName;
-            tags.TopLevelQueueName = request.QueueName;
+
             return new CallTargetState(scope);
         }
 

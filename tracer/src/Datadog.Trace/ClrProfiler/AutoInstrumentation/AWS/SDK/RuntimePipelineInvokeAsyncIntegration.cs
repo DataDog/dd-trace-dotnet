@@ -40,7 +40,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         internal static CallTargetState OnMethodBegin<TTarget, TExecutionContext>(TTarget instance, TExecutionContext executionContext)
             where TExecutionContext : IExecutionContext, IDuckType
         {
-            Console.WriteLine("foobar");
             if (executionContext.Instance is null)
             {
                 return CallTargetState.GetDefault();
@@ -50,7 +49,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
             if (scope?.Span.Tags is AwsSdkTags tags)
             {
                 tags.Region = executionContext.RequestContext.ClientConfig.RegionEndpoint?.SystemName;
-                tags.TopLevelRegion = executionContext.RequestContext.ClientConfig.RegionEndpoint?.SystemName;
             }
 
             return new CallTargetState(scope, state: executionContext);

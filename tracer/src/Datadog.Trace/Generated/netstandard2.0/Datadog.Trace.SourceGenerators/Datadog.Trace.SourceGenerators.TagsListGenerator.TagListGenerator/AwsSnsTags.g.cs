@@ -10,8 +10,6 @@ namespace Datadog.Trace.Tagging
     {
         // TopicNameBytes = System.Text.Encoding.UTF8.GetBytes("aws.topic.name");
         private static readonly byte[] TopicNameBytes = new byte[] { 97, 119, 115, 46, 116, 111, 112, 105, 99, 46, 110, 97, 109, 101 };
-        // TopLevelTopicNameBytes = System.Text.Encoding.UTF8.GetBytes("topicname");
-        private static readonly byte[] TopLevelTopicNameBytes = new byte[] { 116, 111, 112, 105, 99, 110, 97, 109, 101 };
         // TopicArnBytes = System.Text.Encoding.UTF8.GetBytes("aws.topic.arn");
         private static readonly byte[] TopicArnBytes = new byte[] { 97, 119, 115, 46, 116, 111, 112, 105, 99, 46, 97, 114, 110 };
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
@@ -22,7 +20,6 @@ namespace Datadog.Trace.Tagging
             return key switch
             {
                 "aws.topic.name" => TopicName,
-                "topicname" => TopLevelTopicName,
                 "aws.topic.arn" => TopicArn,
                 "span.kind" => SpanKind,
                 _ => base.GetTag(key),
@@ -35,9 +32,6 @@ namespace Datadog.Trace.Tagging
             {
                 case "aws.topic.name": 
                     TopicName = value;
-                    break;
-                case "topicname": 
-                    TopLevelTopicName = value;
                     break;
                 case "aws.topic.arn": 
                     TopicArn = value;
@@ -56,11 +50,6 @@ namespace Datadog.Trace.Tagging
             if (TopicName is not null)
             {
                 processor.Process(new TagItem<string>("aws.topic.name", TopicName, TopicNameBytes));
-            }
-
-            if (TopLevelTopicName is not null)
-            {
-                processor.Process(new TagItem<string>("topicname", TopLevelTopicName, TopLevelTopicNameBytes));
             }
 
             if (TopicArn is not null)
@@ -82,13 +71,6 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("aws.topic.name (tag):")
                   .Append(TopicName)
-                  .Append(',');
-            }
-
-            if (TopLevelTopicName is not null)
-            {
-                sb.Append("topicname (tag):")
-                  .Append(TopLevelTopicName)
                   .Append(',');
             }
 

@@ -43,7 +43,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 span.ResourceName = $"{SqsServiceName}.{operation}";
 
                 tags.Service = SqsServiceName;
-                tags.TopLevelServiceName = SqsServiceName;
                 tags.Operation = operation;
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
