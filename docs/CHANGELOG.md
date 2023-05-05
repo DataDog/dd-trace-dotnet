@@ -1,25 +1,86 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 2.30.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.30.0)
 
+## Summary
 
+- [Tracer] Adds support for 128-bit Trace IDs
+- [ASM] Adds custom rules support
+- [Continuous Profiler] Enables timestamps and GC events by default for timeline view
 
+> **Note**
+> The Datadog .NET Tracer does not support application running in partial trust.
 
+## Changes
 
+### Tracer
+* [Tracing] add support for 128-bit trace ids (#3744)
+* Change the ownership of the RuntimeMetrics statsd instance (#4060)
+* Make ModuleMetadata thread-safe (#4061)
+* Update `MessagePack` to 1.9.11 (#4078)
+* Reduce allocations in sampling mechanism tagging (#4085)
+* [Tracer] Add interfaces to standardize operation name and service name calculations across schema versions (#4088)
+* Add support for MySql.Data 8.0.33 (#4109)
 
+### CI Visibility
+* [CI Visibility] Rename Intelligent Test Runner tag names (#3909)
+* [CI Visibility] Update ci specs and add codefresh support (#4049)
+* [CI Visibility] Add support for importing code coverage from cobertura and opencover format to the test session. (#4069)
 
+### ASM
+* [ASM] Update waf and custom rules (#4053)
+* [ASM] Add methods to location json (#4063)
+* [ASM] Fix ip resolution: some local ips weren't seen as local (#4067)
+* [ASM] Add custom rules support (#4077)
+* [ASM] Add IAST instrumented tests ownership to ASM (#4087)
+* [ASM] Update WAF (#4112)
 
+### Continuous Profiler
+* [Profiler] Enable timestamps and GC events by default for timeline view (#3982)
+* [Profiler] Make sure the memory dump is copied when a profiler test failed (#4047)
+* Fix rare and random crash on linux (#4055)
+* Investigate failing test on alpine (#4073)
+* [Profiler] Fix race for endpoint profiling (#4079)
+* [Profiler/Windows] Release HANDLE when Managed thread dies (#4089)
 
+### Fixes
+* Remove support for partial trust environment (#4083)
+* Add `EditorBrowsableState.Never` to types that should never be invoked (#4091)
 
+### Build / Test
+* [IAST] Enable deduplication tests on net7  (#3973)
+* Enable crash dumps on Windows (#3975)
+* [Tracer] Update samples for log collection, agentless logging, and logs trace ID correlation (#3994)
+* Update Nuke build to latest (#4000)
+* [Test Package Versions Bump] Updating package versions (#4013)
+* [Tracer] Attribute Schema configuration: Create distinct v0 and v1 span metadata rules (#4031)
+* Update dockerfile to build native code with clang-16 (#4036)
+* Add checksums for release artifacts (#4041)
+* Replace Datadog.Trace.OSX.sln with a solution filter (#4048)
+* [Tracer] Comprehensive package version testing fixes (#4057)
+* Fix CI Visibility source root in Docker based test (#4059)
+* InstrumentationVerification should override the log folder only if enabled (#4066)
+* Setup python3.9 for system tests (#4070)
+* Add `obj` as a folder exception in the static analysis workflow. (#4071)
+* Add debuglink to linux native lib to ease debugging experience (#4072)
+* Add jetbrains diagnoser to Benchmark tests (#4074)
+* Reduce the pressure on threadpool in the tests (#4086)
+* Option to add Datadog Profiler to the BenchmarkDotNet tests (#4094)
+* [Test Package Versions Bump] Updating package versions (#4096)
+* Fix BenchmarkDotNet tests build warnings (#4110)
+* Allow forcing code coverage in CI (#4113)
+* Stop the flake (#4114)
 
+### Miscellaneous
+* RCM refactoring from event model to subscriptions (#3983)
+* [Tracer] Improvement: Make the ServiceNames immutable (#4043)
+* Bump spdlog version (#4044)
+* Exclude more high-cardinality dependencies from telemetry (#4050)
+* Update Minimum required SDK version in Readme (#4092)
+* Skip injecting loader on partial trust (#4108)
+* Add `trace::profiler` null check (#4116)
 
-
-
-
-
-
-
-
-
+[Changes since 2.29.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.29.0...v2.30.0)
 
 
 ## [Release 2.29.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.29.0)
@@ -58,7 +119,8 @@ Fixes the following issues:
 * Fix BadImageFormatException that occurred when trace annotations were used in conjunction with DD_TRACE_DEBUG (#4045)
 
 
-[Changes since 2.28.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.28.0...v2.29.0)
+[Changes since 2.28.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.28.0...v2.29.0)
+
 
 ## [Release 2.28.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.28.0)
 
@@ -154,7 +216,8 @@ Also the tracer now supports
 * Fix the log level and remove redundant info (#3991)
 
 
-[Changes since 2.27.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.27.0...v2.28.0)
+[Changes since 2.27.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.27.0...v2.28.0)
+
 
 ## [Release 2.27.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.27.0)
 
@@ -228,7 +291,8 @@ Tracer
 * Fix native compilation warning (#3932)
 
 
-[Changes since 2.26.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.26.0...v2.27.0)
+[Changes since 2.26.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.26.0...v2.27.0)
+
 
 ## [Release 2.26.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.26.0)
 
