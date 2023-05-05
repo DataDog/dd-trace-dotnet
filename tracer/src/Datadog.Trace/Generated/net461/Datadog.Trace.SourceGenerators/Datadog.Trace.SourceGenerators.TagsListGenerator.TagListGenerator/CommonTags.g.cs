@@ -3,17 +3,30 @@
 
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
+using System;
 
 namespace Datadog.Trace.Tagging
 {
     partial class CommonTags
     {
-        // SamplingLimitDecisionBytes = System.Text.Encoding.UTF8.GetBytes("_dd.limit_psr");
-        private static readonly byte[] SamplingLimitDecisionBytes = new byte[] { 95, 100, 100, 46, 108, 105, 109, 105, 116, 95, 112, 115, 114 };
-        // TracesKeepRateBytes = System.Text.Encoding.UTF8.GetBytes("_dd.tracer_kr");
-        private static readonly byte[] TracesKeepRateBytes = new byte[] { 95, 100, 100, 46, 116, 114, 97, 99, 101, 114, 95, 107, 114 };
-        // SamplingAgentDecisionBytes = System.Text.Encoding.UTF8.GetBytes("_dd.agent_psr");
-        private static readonly byte[] SamplingAgentDecisionBytes = new byte[] { 95, 100, 100, 46, 97, 103, 101, 110, 116, 95, 112, 115, 114 };
+        // SamplingLimitDecisionBytes = MessagePack.Serialize("_dd.limit_psr");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SamplingLimitDecisionBytes => new byte[] { 173, 95, 100, 100, 46, 108, 105, 109, 105, 116, 95, 112, 115, 114 };
+#else
+        private static readonly byte[] SamplingLimitDecisionBytes = new byte[] { 173, 95, 100, 100, 46, 108, 105, 109, 105, 116, 95, 112, 115, 114 };
+#endif
+        // TracesKeepRateBytes = MessagePack.Serialize("_dd.tracer_kr");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> TracesKeepRateBytes => new byte[] { 173, 95, 100, 100, 46, 116, 114, 97, 99, 101, 114, 95, 107, 114 };
+#else
+        private static readonly byte[] TracesKeepRateBytes = new byte[] { 173, 95, 100, 100, 46, 116, 114, 97, 99, 101, 114, 95, 107, 114 };
+#endif
+        // SamplingAgentDecisionBytes = MessagePack.Serialize("_dd.agent_psr");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SamplingAgentDecisionBytes => new byte[] { 173, 95, 100, 100, 46, 97, 103, 101, 110, 116, 95, 112, 115, 114 };
+#else
+        private static readonly byte[] SamplingAgentDecisionBytes = new byte[] { 173, 95, 100, 100, 46, 97, 103, 101, 110, 116, 95, 112, 115, 114 };
+#endif
 
         public override double? GetMetric(string key)
         {

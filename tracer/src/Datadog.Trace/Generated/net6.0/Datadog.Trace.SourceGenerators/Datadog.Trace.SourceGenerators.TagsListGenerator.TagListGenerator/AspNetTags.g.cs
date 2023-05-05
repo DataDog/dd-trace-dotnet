@@ -3,21 +3,42 @@
 
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
+using System;
 
 namespace Datadog.Trace.Tagging
 {
     partial class AspNetTags
     {
-        // AspNetRouteBytes = System.Text.Encoding.UTF8.GetBytes("aspnet.route");
-        private static readonly byte[] AspNetRouteBytes = new byte[] { 97, 115, 112, 110, 101, 116, 46, 114, 111, 117, 116, 101 };
-        // AspNetControllerBytes = System.Text.Encoding.UTF8.GetBytes("aspnet.controller");
-        private static readonly byte[] AspNetControllerBytes = new byte[] { 97, 115, 112, 110, 101, 116, 46, 99, 111, 110, 116, 114, 111, 108, 108, 101, 114 };
-        // AspNetActionBytes = System.Text.Encoding.UTF8.GetBytes("aspnet.action");
-        private static readonly byte[] AspNetActionBytes = new byte[] { 97, 115, 112, 110, 101, 116, 46, 97, 99, 116, 105, 111, 110 };
-        // AspNetAreaBytes = System.Text.Encoding.UTF8.GetBytes("aspnet.area");
-        private static readonly byte[] AspNetAreaBytes = new byte[] { 97, 115, 112, 110, 101, 116, 46, 97, 114, 101, 97 };
-        // HttpRouteBytes = System.Text.Encoding.UTF8.GetBytes("http.route");
-        private static readonly byte[] HttpRouteBytes = new byte[] { 104, 116, 116, 112, 46, 114, 111, 117, 116, 101 };
+        // AspNetRouteBytes = MessagePack.Serialize("aspnet.route");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> AspNetRouteBytes => new byte[] { 172, 97, 115, 112, 110, 101, 116, 46, 114, 111, 117, 116, 101 };
+#else
+        private static readonly byte[] AspNetRouteBytes = new byte[] { 172, 97, 115, 112, 110, 101, 116, 46, 114, 111, 117, 116, 101 };
+#endif
+        // AspNetControllerBytes = MessagePack.Serialize("aspnet.controller");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> AspNetControllerBytes => new byte[] { 177, 97, 115, 112, 110, 101, 116, 46, 99, 111, 110, 116, 114, 111, 108, 108, 101, 114 };
+#else
+        private static readonly byte[] AspNetControllerBytes = new byte[] { 177, 97, 115, 112, 110, 101, 116, 46, 99, 111, 110, 116, 114, 111, 108, 108, 101, 114 };
+#endif
+        // AspNetActionBytes = MessagePack.Serialize("aspnet.action");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> AspNetActionBytes => new byte[] { 173, 97, 115, 112, 110, 101, 116, 46, 97, 99, 116, 105, 111, 110 };
+#else
+        private static readonly byte[] AspNetActionBytes = new byte[] { 173, 97, 115, 112, 110, 101, 116, 46, 97, 99, 116, 105, 111, 110 };
+#endif
+        // AspNetAreaBytes = MessagePack.Serialize("aspnet.area");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> AspNetAreaBytes => new byte[] { 171, 97, 115, 112, 110, 101, 116, 46, 97, 114, 101, 97 };
+#else
+        private static readonly byte[] AspNetAreaBytes = new byte[] { 171, 97, 115, 112, 110, 101, 116, 46, 97, 114, 101, 97 };
+#endif
+        // HttpRouteBytes = MessagePack.Serialize("http.route");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> HttpRouteBytes => new byte[] { 170, 104, 116, 116, 112, 46, 114, 111, 117, 116, 101 };
+#else
+        private static readonly byte[] HttpRouteBytes = new byte[] { 170, 104, 116, 116, 112, 46, 114, 111, 117, 116, 101 };
+#endif
 
         public override string? GetTag(string key)
         {

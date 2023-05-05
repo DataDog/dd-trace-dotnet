@@ -3,23 +3,48 @@
 
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
+using System;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 {
     partial class RedisTags
     {
-        // DatabaseIndexBytes = System.Text.Encoding.UTF8.GetBytes("db.redis.database_index");
-        private static readonly byte[] DatabaseIndexBytes = new byte[] { 100, 98, 46, 114, 101, 100, 105, 115, 46, 100, 97, 116, 97, 98, 97, 115, 101, 95, 105, 110, 100, 101, 120 };
-        // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
-        private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // RawCommandBytes = System.Text.Encoding.UTF8.GetBytes("redis.raw_command");
-        private static readonly byte[] RawCommandBytes = new byte[] { 114, 101, 100, 105, 115, 46, 114, 97, 119, 95, 99, 111, 109, 109, 97, 110, 100 };
-        // HostBytes = System.Text.Encoding.UTF8.GetBytes("out.host");
-        private static readonly byte[] HostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
-        // PortBytes = System.Text.Encoding.UTF8.GetBytes("out.port");
-        private static readonly byte[] PortBytes = new byte[] { 111, 117, 116, 46, 112, 111, 114, 116 };
+        // DatabaseIndexBytes = MessagePack.Serialize("db.redis.database_index");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> DatabaseIndexBytes => new byte[] { 183, 100, 98, 46, 114, 101, 100, 105, 115, 46, 100, 97, 116, 97, 98, 97, 115, 101, 95, 105, 110, 100, 101, 120 };
+#else
+        private static readonly byte[] DatabaseIndexBytes = new byte[] { 183, 100, 98, 46, 114, 101, 100, 105, 115, 46, 100, 97, 116, 97, 98, 97, 115, 101, 95, 105, 110, 100, 101, 120 };
+#endif
+        // SpanKindBytes = MessagePack.Serialize("span.kind");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
+        // InstrumentationNameBytes = MessagePack.Serialize("component");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
+        // RawCommandBytes = MessagePack.Serialize("redis.raw_command");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> RawCommandBytes => new byte[] { 177, 114, 101, 100, 105, 115, 46, 114, 97, 119, 95, 99, 111, 109, 109, 97, 110, 100 };
+#else
+        private static readonly byte[] RawCommandBytes = new byte[] { 177, 114, 101, 100, 105, 115, 46, 114, 97, 119, 95, 99, 111, 109, 109, 97, 110, 100 };
+#endif
+        // HostBytes = MessagePack.Serialize("out.host");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> HostBytes => new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#else
+        private static readonly byte[] HostBytes = new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#endif
+        // PortBytes = MessagePack.Serialize("out.port");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> PortBytes => new byte[] { 168, 111, 117, 116, 46, 112, 111, 114, 116 };
+#else
+        private static readonly byte[] PortBytes = new byte[] { 168, 111, 117, 116, 46, 112, 111, 114, 116 };
+#endif
 
         public override string? GetTag(string key)
         {

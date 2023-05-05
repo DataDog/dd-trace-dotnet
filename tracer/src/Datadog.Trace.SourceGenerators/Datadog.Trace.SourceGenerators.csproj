@@ -3,7 +3,12 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <Nullable>enable</Nullable>
     <IsRoslynComponent>true</IsRoslynComponent>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
+  </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Datadog.Trace\ClrProfiler\InstrumentationCategory.cs" Link="InstrumentationDefinitions\InstrumentationCategory.cs" />
     <Compile Include="..\Datadog.Trace\ClrProfiler\DefinitionsIdAttribute.cs" Link="InstrumentationDefinitions\DefinitionsIdAttribute.cs" />
@@ -18,9 +23,260 @@
     <Compile Include="..\Datadog.Trace\IAST\Helpers\StringExtensions.cs" Link="AspectsDefinitions\StringExtensions.cs" />
     <Compile Include="..\Datadog.Trace\IAST\VulnerabilityType.cs" Link="AspectsDefinitions\VulnerabilityType.cs" />
     <Compile Include="..\Datadog.Trace\IAST\VulnerabilityTypeName.cs" Link="AspectsDefinitions\VulnerabilityTypeName.cs" />
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Attributes.cs">
+      <Link>MessagePack\Attributes.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\BitOperations.cs">
+      <Link>MessagePack\BitOperations.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\FloatBits.cs">
+      <Link>MessagePack\FloatBits.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\CollectionFormatter.cs">
+      <Link>MessagePack\Formatters\CollectionFormatter.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\CollectionHelpers`2.cs">
+      <Link>MessagePack\Formatters\CollectionHelpers`2.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\DictionaryFormatter.cs">
+      <Link>MessagePack\Formatters\DictionaryFormatter.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\DynamicObjectTypeFallbackFormatter.cs">
+      <Link>MessagePack\Formatters\DynamicObjectTypeFallbackFormatter.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\EnumAsStringFormatter.cs">
+      <Link>MessagePack\Formatters\EnumAsStringFormatter.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\ForceSizePrimitiveFormatter.cs">
+      <Link>MessagePack\Formatters\ForceSizePrimitiveFormatter.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\IgnoreFormatter.cs">
+      <Link>MessagePack\Formatters\IgnoreFormatter.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\IMessagePackFormatter.cs">
+      <Link>MessagePack\Formatters\IMessagePackFormatter.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\MultiDimentionalArrayFormatter.cs">
+      <Link>MessagePack\Formatters\MultiDimentionalArrayFormatter.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\NullableFormatter.cs">
+      <Link>MessagePack\Formatters\NullableFormatter.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\OldSpecFormatter.cs">
+      <Link>MessagePack\Formatters\OldSpecFormatter.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\PrimitiveFormatter.cs">
+      <Link>MessagePack\Formatters\PrimitiveFormatter.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\PrimitiveObjectFormatter.cs">
+      <Link>MessagePack\Formatters\PrimitiveObjectFormatter.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\StandardClassLibraryFormatter.cs">
+      <Link>MessagePack\Formatters\StandardClassLibraryFormatter.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\TupleFormatter.cs">
+      <Link>MessagePack\Formatters\TupleFormatter.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\TypelessFormatter.cs">
+      <Link>MessagePack\Formatters\TypelessFormatter.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\UnsafeBinaryFormatters.cs">
+      <Link>MessagePack\Formatters\UnsafeBinaryFormatters.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\ValueTupleFormatter.cs">
+      <Link>MessagePack\Formatters\ValueTupleFormatter.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\HashCode.cs">
+      <Link>MessagePack\HashCode.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\IFormatterResolver.cs">
+      <Link>MessagePack\IFormatterResolver.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\IMessagePackSerializationCallbackReceiver.cs">
+      <Link>MessagePack\IMessagePackSerializationCallbackReceiver.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Internal\ArrayPool.cs">
+      <Link>MessagePack\Internal\ArrayPool.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Internal\AsymmetricKeyHashTable.cs">
+      <Link>MessagePack\Internal\AsymmetricKeyHashTable.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Internal\AutomataDictionary.cs">
+      <Link>MessagePack\Internal\AutomataDictionary.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Internal\ByteArrayComparer.cs">
+      <Link>MessagePack\Internal\ByteArrayComparer.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Internal\ByteArrayStringHashTable.cs">
+      <Link>MessagePack\Internal\ByteArrayStringHashTable.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Internal\DynamicAssembly.cs">
+      <Link>MessagePack\Internal\DynamicAssembly.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Internal\ExpressionUtility.cs">
+      <Link>MessagePack\Internal\ExpressionUtility.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Internal\FarmHash.cs">
+      <Link>MessagePack\Internal\FarmHash.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Internal\GuidBits.cs">
+      <Link>MessagePack\Internal\GuidBits.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Internal\ILGeneratorExtensions.cs">
+      <Link>MessagePack\Internal\ILGeneratorExtensions.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Internal\ReflectionExtensions.cs">
+      <Link>MessagePack\Internal\ReflectionExtensions.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Internal\ThreadsafeTypeKeyHashTable.cs">
+      <Link>MessagePack\Internal\ThreadsafeTypeKeyHashTable.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Internal\TinyJsonReader.cs">
+      <Link>MessagePack\Internal\TinyJsonReader.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Internal\UnsafeMemory.cs">
+      <Link>MessagePack\Internal\UnsafeMemory.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Internal\UnsafeMemory.Low.cs">
+      <Link>MessagePack\Internal\UnsafeMemory.Low.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\LZ4\Codec\LZ4Codec.cs">
+      <Link>MessagePack\LZ4\Codec\LZ4Codec.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\LZ4\Codec\LZ4Codec.Helper.cs">
+      <Link>MessagePack\LZ4\Codec\LZ4Codec.Helper.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\LZ4\Codec\LZ4Codec.Safe.cs">
+      <Link>MessagePack\LZ4\Codec\LZ4Codec.Safe.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\LZ4\Codec\LZ4Codec.Safe32.Dirty.cs">
+      <Link>MessagePack\LZ4\Codec\LZ4Codec.Safe32.Dirty.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\LZ4\Codec\LZ4Codec.Safe64.Dirty.cs">
+      <Link>MessagePack\LZ4\Codec\LZ4Codec.Safe64.Dirty.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\LZ4\Codec\LZ4Codec.Unsafe.cs">
+      <Link>MessagePack\LZ4\Codec\LZ4Codec.Unsafe.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\LZ4\Codec\LZ4Codec.Unsafe32.Dirty.cs">
+      <Link>MessagePack\LZ4\Codec\LZ4Codec.Unsafe32.Dirty.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\LZ4\Codec\LZ4Codec.Unsafe64.Dirty.cs">
+      <Link>MessagePack\LZ4\Codec\LZ4Codec.Unsafe64.Dirty.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\LZ4\LZ4MessagePackSerializer.cs">
+      <Link>MessagePack\LZ4\LZ4MessagePackSerializer.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\LZ4\LZ4MessagePackSerializer.JSON.cs">
+      <Link>MessagePack\LZ4\LZ4MessagePackSerializer.JSON.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\LZ4\LZ4MessagePackSerializer.NonGeneric.cs">
+      <Link>MessagePack\LZ4\LZ4MessagePackSerializer.NonGeneric.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\LZ4\LZ4MessagePackSerializer.Typeless.cs">
+      <Link>MessagePack\LZ4\LZ4MessagePackSerializer.Typeless.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\MessagePackBinary.cs">
+      <Link>MessagePack\MessagePackBinary.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\MessagePackCode.cs">
+      <Link>MessagePack\MessagePackCode.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\MessagePackSecurity.cs">
+      <Link>MessagePack\MessagePackSecurity.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\MessagePackSerializer.cs">
+      <Link>MessagePack\MessagePackSerializer.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\MessagePackSerializer.Json.cs">
+      <Link>MessagePack\MessagePackSerializer.Json.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\MessagePackSerializer.NonGeneric.cs">
+      <Link>MessagePack\MessagePackSerializer.NonGeneric.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\MessagePackSerializer.Typeless.cs">
+      <Link>MessagePack\MessagePackSerializer.Typeless.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Nil.cs">
+      <Link>MessagePack\Nil.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Resolvers\AttributeFormatterResolver.cs">
+      <Link>MessagePack\Resolvers\AttributeFormatterResolver.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Resolvers\BuiltinResolver.cs">
+      <Link>MessagePack\Resolvers\BuiltinResolver.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Resolvers\CompositeResolver.cs">
+      <Link>MessagePack\Resolvers\CompositeResolver.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Resolvers\ContractlessReflectionObjectResolver.cs">
+      <Link>MessagePack\Resolvers\ContractlessReflectionObjectResolver.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Resolvers\DynamicEnumAsStringResolver.cs">
+      <Link>MessagePack\Resolvers\DynamicEnumAsStringResolver.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Resolvers\DynamicEnumResolver.cs">
+      <Link>MessagePack\Resolvers\DynamicEnumResolver.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Resolvers\DynamicGenericResolver.cs">
+      <Link>MessagePack\Resolvers\DynamicGenericResolver.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Resolvers\DynamicObjectResolver.cs">
+      <Link>MessagePack\Resolvers\DynamicObjectResolver.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Resolvers\DynamicUnionResolver.cs">
+      <Link>MessagePack\Resolvers\DynamicUnionResolver.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Resolvers\NativeDateTimeResolver.cs">
+      <Link>MessagePack\Resolvers\NativeDateTimeResolver.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Resolvers\OldSpecResolver.cs">
+      <Link>MessagePack\Resolvers\OldSpecResolver.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Resolvers\PrimitiveObjectResolver.cs">
+      <Link>MessagePack\Resolvers\PrimitiveObjectResolver.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Resolvers\StandardResolver.cs">
+      <Link>MessagePack\Resolvers\StandardResolver.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Resolvers\TypelessContractlessStandardResolver.cs">
+      <Link>MessagePack\Resolvers\TypelessContractlessStandardResolver.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Resolvers\TypelessObjectResolver.cs">
+      <Link>MessagePack\Resolvers\TypelessObjectResolver.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Resolvers\UnsafeBinaryResolver.cs">
+      <Link>MessagePack\Resolvers\UnsafeBinaryResolver.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace\Vendors\MessagePack\StringEncoding.cs">
+      <Link>MessagePack\StringEncoding.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.4.0" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\ForceSizePrimitiveFormatter.tt">
+      <Link>MessagePack\Formatters\ForceSizePrimitiveFormatter.tt</Link>
+    </Content>
+    <Content Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\PrimitiveFormatter.tt">
+      <Link>MessagePack\Formatters\PrimitiveFormatter.tt</Link>
+    </Content>
+    <Content Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\TupleFormatter.tt">
+      <Link>MessagePack\Formatters\TupleFormatter.tt</Link>
+    </Content>
+    <Content Include="..\Datadog.Trace\Vendors\MessagePack\Formatters\ValueTupleFormatter.tt">
+      <Link>MessagePack\Formatters\ValueTupleFormatter.tt</Link>
+    </Content>
+    <Content Include="..\Datadog.Trace\Vendors\MessagePack\Internal\UnsafeMemory.tt">
+      <Link>MessagePack\Internal\UnsafeMemory.tt</Link>
+    </Content>
+    <Content Include="..\Datadog.Trace\Vendors\MessagePack\MessagePack.csproj.txt">
+      <Link>MessagePack\MessagePack.csproj.txt</Link>
+    </Content>
+    <Content Include="..\Datadog.Trace\Vendors\MessagePack\_last_downloaded_source_url.txt">
+      <Link>MessagePack\_last_downloaded_source_url.txt</Link>
+    </Content>
   </ItemGroup>
 </Project>
