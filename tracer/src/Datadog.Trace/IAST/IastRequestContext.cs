@@ -173,18 +173,21 @@ internal class IastRequestContext
         }
     }
 
-    private void AddRequestCookies(HttpCookieCollection cookies)
+    private void AddRequestCookies(HttpCookieCollection? cookies)
     {
-        foreach (string key in cookies.AllKeys)
+        if (cookies?.AllKeys is not null)
         {
-            // cookies[key].Value is covered in the aspect
-
-            for (int i = 0; i < cookies[key].Values.Count; i++)
+            foreach (string key in cookies.AllKeys)
             {
-                var valueInCollection = cookies[key].Values[i];
-                if (valueInCollection is not null && valueInCollection is string valueInCollectionString)
+                // cookies[key].Value is covered in the aspect
+
+                for (int i = 0; i < cookies[key].Values.Count; i++)
                 {
-                    AddCookieData(key, valueInCollectionString);
+                    var valueInCollection = cookies[key].Values[i];
+                    if (valueInCollection is not null && valueInCollection is string valueInCollectionString)
+                    {
+                        AddCookieData(key, valueInCollectionString);
+                    }
                 }
             }
         }
@@ -232,11 +235,14 @@ internal class IastRequestContext
         }
     }
 
-    private void AddRequestCookies(IRequestCookieCollection cookies)
+    private void AddRequestCookies(IRequestCookieCollection? cookies)
     {
-        foreach (var cookie in cookies)
+        if (cookies is not null)
         {
-            AddCookieData(cookie.Key, cookie.Value);
+            foreach (var cookie in cookies)
+            {
+                AddCookieData(cookie.Key, cookie.Value);
+            }
         }
     }
 
