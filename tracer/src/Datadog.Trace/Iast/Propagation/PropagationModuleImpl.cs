@@ -19,21 +19,23 @@ internal static class PropagationModuleImpl
     {
         try
         {
-            if (input is null)
+            if (string.IsNullOrEmpty(input))
             {
                 return;
             }
 
             var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
+            if (iastContext is null)
             {
                 return;
             }
 
             var taintedObjects = iastContext.GetTaintedObjects();
+#pragma warning disable CS8604 // Possible null reference argument.
             var taintedSelf = taintedObjects.Get(input);
+#pragma warning restore CS8604 // Possible null reference argument.
 
-            if (taintedSelf == null)
+            if (taintedSelf is null)
             {
                 taintedObjects.TaintInputString(input, source);
             }
