@@ -5,6 +5,7 @@
 
 using System;
 using System.Globalization;
+using System.Threading;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
@@ -25,7 +26,8 @@ namespace Datadog.Trace
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
-        private readonly object _lock = new();
+        private int _isFinished;
+        private string _resourceName;
 
         internal Span(SpanContext context, DateTimeOffset? start)
             : this(context, start, null)
@@ -56,7 +58,11 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets or sets the resource name
         /// </summary>
-        internal string ResourceName { get; set; }
+        internal string ResourceName
+        {
+            get => _resourceName ?? OperationName;
+            set => _resourceName = value;
+        }
 
         /// <summary>
         /// Gets or sets the type of request this span represents (ex: web, db).
@@ -113,7 +119,11 @@ namespace Datadog.Trace
 
         internal TimeSpan Duration { get; private set; }
 
-        internal bool IsFinished { get; private set; }
+        internal bool IsFinished
+        {
+            get => _isFinished == 1;
+            private set => _isFinished = value ? 1 : 0;
+        }
 
         internal bool IsRootSpan => Context.TraceContext?.RootSpan == this;
 
@@ -409,26 +419,14 @@ namespace Datadog.Trace
 
         internal void Finish(TimeSpan duration)
         {
-            var shouldCloseSpan = false;
-            lock (_lock)
+            if (Interlocked.CompareExchange(ref _isFinished, 1, 0) == 0)
             {
-                ResourceName ??= OperationName;
-
-                if (!IsFinished)
+                Duration = duration;
+                if (Duration < TimeSpan.Zero)
                 {
-                    Duration = duration;
-                    if (Duration < TimeSpan.Zero)
-                    {
-                        Duration = TimeSpan.Zero;
-                    }
-
-                    IsFinished = true;
-                    shouldCloseSpan = true;
+                    Duration = TimeSpan.Zero;
                 }
-            }
 
-            if (shouldCloseSpan)
-            {
                 Context.TraceContext.CloseSpan(this);
 
                 if (IsLogLevelDebugEnabled)
