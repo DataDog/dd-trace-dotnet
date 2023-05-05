@@ -1,4 +1,4 @@
-﻿// <copyright file="DirectLogSubmissionSettings.cs" company="Datadog">
+// <copyright file="DirectLogSubmissionSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,14 +18,14 @@ namespace Datadog.Trace.Logging.DirectSubmission
     /// </summary>
     internal class DirectLogSubmissionSettings
     {
-        private const string DefaultSource = "csharp";
+        internal const string DefaultSource = "csharp";
+        internal const DirectSubmissionLogLevel DefaultMinimumLevel = DirectSubmissionLogLevel.Information;
+        internal const int DefaultBatchSizeLimit = 1000;
+        internal const int DefaultQueueSizeLimit = 100_000;
+        internal const int DefaultBatchPeriodSeconds = 2;
         private const string IntakePrefix = "https://http-intake.logs.";
         private const string DefaultSite = "datadoghq.com";
         private const string IntakeSuffix = ":443";
-        private const DirectSubmissionLogLevel DefaultMinimumLevel = DirectSubmissionLogLevel.Information;
-        private const int DefaultBatchSizeLimit = 1000;
-        private const int DefaultQueueSizeLimit = 100_000;
-        private const int DefaultBatchPeriodSeconds = 2;
 
         public DirectLogSubmissionSettings()
             : this(source: null)

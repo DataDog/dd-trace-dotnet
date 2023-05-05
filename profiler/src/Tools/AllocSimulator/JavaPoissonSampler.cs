@@ -26,6 +26,16 @@ namespace AllocSimulator
             _threshold = GetNextThreshold();
         }
 
+        public string GetDescription()
+        {
+            throw new NotImplementedException("The current implementation is a port of Java but does not work");
+        }
+
+        public string GetName()
+        {
+            throw new NotImplementedException("The current implementation is a port of Java but does not work");
+        }
+
         public bool ShouldSample(long size)
         {
             _totalAllocatedAmount += (ulong)size;
