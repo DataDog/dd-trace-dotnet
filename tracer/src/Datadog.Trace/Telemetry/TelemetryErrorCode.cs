@@ -1,4 +1,4 @@
-// <copyright file="ConfigurationTelemetryErrorCode.cs" company="Datadog">
+﻿// <copyright file="TelemetryErrorCode.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,9 +6,9 @@
 #nullable enable
 using System.ComponentModel;
 
-namespace Datadog.Trace.Configuration.Telemetry;
+namespace Datadog.Trace.Telemetry;
 
-internal enum ConfigurationTelemetryErrorCode
+internal enum TelemetryErrorCode
 {
     /// <summary>
     /// No error, should not be used
@@ -44,4 +44,16 @@ internal enum ConfigurationTelemetryErrorCode
 
     [Description("Error parsing value")]
     ParsingCustomError = 10,
+
+    [Description("Error configuring Tracer")]
+    TracerConfigurationError = 11,
+
+    [Description("Error configuring AppSec")]
+    AppsecConfigurationError = 12,
+
+    [Description("Error configuring Continuous Profiler")]
+    ContinuousProfilerConfigurationError = 13,
+
+    [Description("Error configuring Dynamic Instrumentation")]
+    DynamicInstrumentationConfigurationError = 14,
 }

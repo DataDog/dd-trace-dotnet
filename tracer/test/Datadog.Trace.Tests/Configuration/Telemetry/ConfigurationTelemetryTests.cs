@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Telemetry;
 using FluentAssertions;
 using Xunit;
 
@@ -23,12 +24,12 @@ public class ConfigurationTelemetryTests
         {
             new("string1", null, ConfigurationOrigins.Code, Interlocked.Increment(ref i)),
             new("string2", "value", ConfigurationOrigins.AppConfig, Interlocked.Increment(ref i)),
-            new("string3", "value", ConfigurationOrigins.DdConfig, Interlocked.Increment(ref i), error: ConfigurationTelemetryErrorCode.FailedValidation),
+            new("string3", "value", ConfigurationOrigins.DdConfig, Interlocked.Increment(ref i), error: TelemetryErrorCode.FailedValidation),
             new("string4", "overridden", ConfigurationOrigins.RemoteConfig, Interlocked.Increment(ref i)),
             new("string4", "newvalue", ConfigurationOrigins.EnvVars, Interlocked.Increment(ref i)),
             new("redacted1", null, ConfigurationOrigins.Code, Interlocked.Increment(ref i), recordValue: false),
             new("redacted2", "value", ConfigurationOrigins.AppConfig, Interlocked.Increment(ref i), recordValue: false),
-            new("redacted3", "value", ConfigurationOrigins.DdConfig, Interlocked.Increment(ref i), recordValue: false, ConfigurationTelemetryErrorCode.FailedValidation),
+            new("redacted3", "value", ConfigurationOrigins.DdConfig, Interlocked.Increment(ref i), recordValue: false, TelemetryErrorCode.FailedValidation),
             new("redacted4", "overridden", ConfigurationOrigins.RemoteConfig, Interlocked.Increment(ref i), recordValue: false),
             new("redacted4", "newvalue", ConfigurationOrigins.EnvVars, Interlocked.Increment(ref i), recordValue: false),
         };
@@ -117,7 +118,7 @@ public class ConfigurationTelemetryTests
             SeqId = entry.SeqId;
         }
 
-        public ConfigDto(string name, object value, ConfigurationOrigins origin, long seqId, bool recordValue = true, ConfigurationTelemetryErrorCode? error = null)
+        public ConfigDto(string name, object value, ConfigurationOrigins origin, long seqId, bool recordValue = true, TelemetryErrorCode? error = null)
         {
             Name = name;
             Value = value;
@@ -135,7 +136,7 @@ public class ConfigurationTelemetryTests
 
         public ConfigurationOrigins Origin { get; set; }
 
-        public ConfigurationTelemetryErrorCode? Error { get; set; }
+        public TelemetryErrorCode? Error { get; set; }
 
         public long SeqId { get; set; }
     }

@@ -7,6 +7,7 @@
 
 using System.Collections.Concurrent;
 using System.Threading;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration.Telemetry;
 
@@ -24,19 +25,19 @@ internal class ConfigurationTelemetry : IConfigurationTelemetry
         Double
     }
 
-    public void Record(string key, string? value, bool recordValue, ConfigurationOrigins origin, ConfigurationTelemetryErrorCode? error = null)
+    public void Record(string key, string? value, bool recordValue, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
         => _entries.Enqueue(
             recordValue
                 ? ConfigurationTelemetryEntry.String(key, value, origin, error)
                 : ConfigurationTelemetryEntry.Redacted(key, origin, error));
 
-    public void Record(string key, bool value, ConfigurationOrigins origin, ConfigurationTelemetryErrorCode? error = null)
+    public void Record(string key, bool value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
         => _entries.Enqueue(ConfigurationTelemetryEntry.Bool(key, value, origin, error));
 
-    public void Record(string key, double value, ConfigurationOrigins origin, ConfigurationTelemetryErrorCode? error = null)
+    public void Record(string key, double value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
         => _entries.Enqueue(ConfigurationTelemetryEntry.Number(key, value, origin, error));
 
-    public void Record(string key, int value, ConfigurationOrigins origin, ConfigurationTelemetryErrorCode? error = null)
+    public void Record(string key, int value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
         => _entries.Enqueue(ConfigurationTelemetryEntry.Number(key, value, origin, error));
 
     // TODO: finalize public API
@@ -46,7 +47,7 @@ internal class ConfigurationTelemetry : IConfigurationTelemetry
     public class ConfigurationTelemetryEntry
     {
         // internal for testing
-        private ConfigurationTelemetryEntry(string key, ConfigurationOrigins origin, ConfigurationTelemetryEntryType type, ConfigurationTelemetryErrorCode? error, string? stringValue = null, bool? boolValue = null, int? intValue = null, double? doubleValue = null)
+        private ConfigurationTelemetryEntry(string key, ConfigurationOrigins origin, ConfigurationTelemetryEntryType type, TelemetryErrorCode? error, string? stringValue = null, bool? boolValue = null, int? intValue = null, double? doubleValue = null)
         {
             Key = key;
             Origin = origin;
@@ -63,7 +64,7 @@ internal class ConfigurationTelemetry : IConfigurationTelemetry
 
         public ConfigurationOrigins Origin { get; }
 
-        public ConfigurationTelemetryErrorCode? Error { get; }
+        public TelemetryErrorCode? Error { get; }
 
         public long SeqId { get; }
 
@@ -77,19 +78,19 @@ internal class ConfigurationTelemetry : IConfigurationTelemetry
 
         public double? DoubleValue { get; }
 
-        public static ConfigurationTelemetryEntry String(string key, string? value, ConfigurationOrigins origin, ConfigurationTelemetryErrorCode? error)
+        public static ConfigurationTelemetryEntry String(string key, string? value, ConfigurationOrigins origin, TelemetryErrorCode? error)
             => new(key, origin, ConfigurationTelemetryEntryType.String, error, stringValue: value);
 
-        public static ConfigurationTelemetryEntry Redacted(string key, ConfigurationOrigins origin, ConfigurationTelemetryErrorCode? error)
+        public static ConfigurationTelemetryEntry Redacted(string key, ConfigurationOrigins origin, TelemetryErrorCode? error)
             => new(key, origin, ConfigurationTelemetryEntryType.Redacted, error, stringValue: null);
 
-        public static ConfigurationTelemetryEntry Bool(string key, bool value, ConfigurationOrigins origin, ConfigurationTelemetryErrorCode? error)
+        public static ConfigurationTelemetryEntry Bool(string key, bool value, ConfigurationOrigins origin, TelemetryErrorCode? error)
             => new(key, origin, ConfigurationTelemetryEntryType.Bool, error, boolValue: value);
 
-        public static ConfigurationTelemetryEntry Number(string key, int value, ConfigurationOrigins origin, ConfigurationTelemetryErrorCode? error)
+        public static ConfigurationTelemetryEntry Number(string key, int value, ConfigurationOrigins origin, TelemetryErrorCode? error)
             => new(key, origin, ConfigurationTelemetryEntryType.Int, error, intValue: value);
 
-        public static ConfigurationTelemetryEntry Number(string key, double value, ConfigurationOrigins origin, ConfigurationTelemetryErrorCode? error)
+        public static ConfigurationTelemetryEntry Number(string key, double value, ConfigurationOrigins origin, TelemetryErrorCode? error)
             => new(key, origin, ConfigurationTelemetryEntryType.Double, error, doubleValue: value);
     }
 }

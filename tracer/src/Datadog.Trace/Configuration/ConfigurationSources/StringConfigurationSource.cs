@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration
 {
@@ -178,7 +179,7 @@ namespace Datadog.Trace.Configuration
                 return ConfigurationResult<string>.Valid(value);
             }
 
-            telemetry.Record(key, value, recordValue, Origin, ConfigurationTelemetryErrorCode.FailedValidation);
+            telemetry.Record(key, value, recordValue, Origin, TelemetryErrorCode.FailedValidation);
             return ConfigurationResult<string>.Invalid(value);
         }
 
@@ -200,11 +201,11 @@ namespace Datadog.Trace.Configuration
                     return ConfigurationResult<int>.Valid(result);
                 }
 
-                telemetry.Record(key, result, Origin, ConfigurationTelemetryErrorCode.FailedValidation);
+                telemetry.Record(key, result, Origin, TelemetryErrorCode.FailedValidation);
                 return ConfigurationResult<int>.Invalid(result);
             }
 
-            telemetry.Record(key, value, recordValue: true, Origin, ConfigurationTelemetryErrorCode.ParsingInt32Error);
+            telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.ParsingInt32Error);
             return null;
         }
 
@@ -226,11 +227,11 @@ namespace Datadog.Trace.Configuration
                     return ConfigurationResult<double>.Valid(result);
                 }
 
-                telemetry.Record(key, result, Origin, ConfigurationTelemetryErrorCode.FailedValidation);
+                telemetry.Record(key, result, Origin, TelemetryErrorCode.FailedValidation);
                 return ConfigurationResult<double>.Invalid(result);
             }
 
-            telemetry.Record(key, value, recordValue: true, Origin, ConfigurationTelemetryErrorCode.ParsingDoubleError);
+            telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.ParsingDoubleError);
             return null;
         }
 
@@ -253,11 +254,11 @@ namespace Datadog.Trace.Configuration
                     return ConfigurationResult<bool>.Valid(result.Value);
                 }
 
-                telemetry.Record(key, result.Value, Origin, ConfigurationTelemetryErrorCode.FailedValidation);
+                telemetry.Record(key, result.Value, Origin, TelemetryErrorCode.FailedValidation);
                 return ConfigurationResult<bool>.Invalid(result.Value);
             }
 
-            telemetry.Record(key, value, recordValue: true, Origin, ConfigurationTelemetryErrorCode.ParsingBooleanError);
+            telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.ParsingBooleanError);
             return null;
         }
 
@@ -280,11 +281,11 @@ namespace Datadog.Trace.Configuration
                     return ConfigurationResult<T>.Valid(result.Result);
                 }
 
-                telemetry.Record(key, value, recordValue, Origin, ConfigurationTelemetryErrorCode.FailedValidation);
+                telemetry.Record(key, value, recordValue, Origin, TelemetryErrorCode.FailedValidation);
                 return ConfigurationResult<T>.Invalid(result.Result);
             }
 
-            telemetry.Record(key, value, recordValue, Origin, ConfigurationTelemetryErrorCode.ParsingCustomError);
+            telemetry.Record(key, value, recordValue, Origin, TelemetryErrorCode.ParsingCustomError);
             return null;
         }
 
@@ -316,7 +317,7 @@ namespace Datadog.Trace.Configuration
                 return ConfigurationResult<IDictionary<string, string>>.Valid(result);
             }
 
-            telemetry.Record(key, value, recordValue: true, Origin, ConfigurationTelemetryErrorCode.FailedValidation);
+            telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
             return ConfigurationResult<IDictionary<string, string>>.Invalid(result);
         }
     }

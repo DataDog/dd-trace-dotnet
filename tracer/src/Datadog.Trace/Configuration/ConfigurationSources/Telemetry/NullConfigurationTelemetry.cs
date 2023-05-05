@@ -5,25 +5,27 @@
 
 #nullable enable
 
+using Datadog.Trace.Telemetry;
+
 namespace Datadog.Trace.Configuration.Telemetry;
 
 internal class NullConfigurationTelemetry : IConfigurationTelemetry
 {
     public static readonly NullConfigurationTelemetry Instance = new();
 
-    public void Record(string key, string? value, bool recordValue, ConfigurationOrigins origin, ConfigurationTelemetryErrorCode? error = null)
+    public void Record(string key, string? value, bool recordValue, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
     {
     }
 
-    public void Record(string key, bool value, ConfigurationOrigins origin, ConfigurationTelemetryErrorCode? error = null)
+    public void Record(string key, bool value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
     {
     }
 
-    public void Record(string key, double value, ConfigurationOrigins origin, ConfigurationTelemetryErrorCode? error = null)
+    public void Record(string key, double value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
     {
     }
 
-    public void Record(string key, int value, ConfigurationOrigins origin, ConfigurationTelemetryErrorCode? error = null)
+    public void Record(string key, int value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
     {
     }
 }

@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration;
@@ -38,7 +39,7 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
             return ConfigurationResult<string>.Valid(result);
         }
 
-        telemetry.Record(key, result, recordValue, ConfigurationOrigins.Code, ConfigurationTelemetryErrorCode.FailedValidation);
+        telemetry.Record(key, result, recordValue, ConfigurationOrigins.Code, TelemetryErrorCode.FailedValidation);
         return ConfigurationResult<string>.Invalid(result);
     }
 
@@ -58,7 +59,7 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
             return ConfigurationResult<int>.Valid(result.Value);
         }
 
-        telemetry.Record(key, result.Value, ConfigurationOrigins.Code, ConfigurationTelemetryErrorCode.FailedValidation);
+        telemetry.Record(key, result.Value, ConfigurationOrigins.Code, TelemetryErrorCode.FailedValidation);
         return ConfigurationResult<int>.Invalid(result.Value);
     }
 
@@ -78,7 +79,7 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
             return ConfigurationResult<double>.Valid(result.Value);
         }
 
-        telemetry.Record(key, result.Value, ConfigurationOrigins.Code, ConfigurationTelemetryErrorCode.FailedValidation);
+        telemetry.Record(key, result.Value, ConfigurationOrigins.Code, TelemetryErrorCode.FailedValidation);
         return ConfigurationResult<double>.Invalid(result.Value);
     }
 
@@ -98,7 +99,7 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
             return ConfigurationResult<bool>.Valid(result.Value);
         }
 
-        telemetry.Record(key, result.Value, ConfigurationOrigins.Code, ConfigurationTelemetryErrorCode.FailedValidation);
+        telemetry.Record(key, result.Value, ConfigurationOrigins.Code, TelemetryErrorCode.FailedValidation);
         return ConfigurationResult<bool>.Invalid(result.Value);
     }
 
@@ -141,7 +142,7 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
             return ConfigurationResult<IDictionary<string, string>>.Valid(result);
         }
 
-        telemetry.Record(key, stringifiedDictionary, recordValue: true, ConfigurationOrigins.Code, ConfigurationTelemetryErrorCode.FailedValidation);
+        telemetry.Record(key, stringifiedDictionary, recordValue: true, ConfigurationOrigins.Code, TelemetryErrorCode.FailedValidation);
         return ConfigurationResult<IDictionary<string, string>>.Invalid(result);
     }
 
@@ -165,11 +166,11 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
                 return ConfigurationResult<T>.Valid(result.Result);
             }
 
-            telemetry.Record(key, value, recordValue, ConfigurationOrigins.Code, ConfigurationTelemetryErrorCode.FailedValidation);
+            telemetry.Record(key, value, recordValue, ConfigurationOrigins.Code, TelemetryErrorCode.FailedValidation);
             return ConfigurationResult<T>.Invalid(result.Result);
         }
 
-        telemetry.Record(key, value, recordValue, ConfigurationOrigins.Code, ConfigurationTelemetryErrorCode.ParsingCustomError);
+        telemetry.Record(key, value, recordValue, ConfigurationOrigins.Code, TelemetryErrorCode.ParsingCustomError);
         return null;
     }
 }

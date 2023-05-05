@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Telemetry;
 using FluentAssertions;
 using Xunit;
 
@@ -295,19 +296,19 @@ public class CompositeConfigurationSourceTests
     {
         public Dictionary<string, int> Accesses { get; } = new();
 
-        public void Record(string key, string value, bool recordValue, ConfigurationOrigins origin, ConfigurationTelemetryErrorCode? error = null)
+        public void Record(string key, string value, bool recordValue, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
             => IncrementAccess(key);
 
-        public void Record(string key, bool value, ConfigurationOrigins origin, ConfigurationTelemetryErrorCode? error = null)
+        public void Record(string key, bool value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
             => IncrementAccess(key);
 
-        public void Record(string key, double value, ConfigurationOrigins origin, ConfigurationTelemetryErrorCode? error = null)
+        public void Record(string key, double value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
             => IncrementAccess(key);
 
-        public void Record(string key, int value, ConfigurationOrigins origin, ConfigurationTelemetryErrorCode? error = null)
+        public void Record(string key, int value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
             => IncrementAccess(key);
 
-        public void SetErrorOnCurrentEntry(string key, ConfigurationTelemetryErrorCode error)
+        public void SetErrorOnCurrentEntry(string key, TelemetryErrorCode error)
         {
         }
 
