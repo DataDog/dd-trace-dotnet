@@ -51,18 +51,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             var scope = AwsSnsCommon.CreateScope(Tracer.Instance, Operation, out AwsSnsTags tags);
             tags.TopicArn = requestProxy.TopicArn;
 
-            // Extract the region from the TopicArn
-            // Example TopicArn: arn:aws:sns:us-east-1:123456789012:MyTopic
-            if (!string.IsNullOrEmpty(tags.TopicArn))
-            {
-                var parts = tags.TopicArn.Split(':');
-                Console.WriteLine("we made it");
-                if (parts.Length > 2)
-                {
-                    tags.TopLevelRegion = parts[3];
-                }
-            }
-
             if (scope?.Span.Context != null)
             {
                 ContextPropagation.InjectHeadersIntoMessage<TPublishRequest>(requestProxy, scope.Span.Context);
