@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
 using System.Collections.Specialized;
 using Datadog.Trace.Configuration;
+using Xunit;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -24,7 +24,7 @@ namespace Datadog.Trace.TestHelpers
             DisallowEmpty
         }
 
-        public static TheoryData<string, bool?> BooleanTestCases(bool? defaultValue) 
+        public static TheoryData<string, bool?> BooleanTestCases(bool? defaultValue)
             => new TheoryData<string, bool?>
             {
                 { "true", true },
@@ -36,40 +36,44 @@ namespace Datadog.Trace.TestHelpers
                 { string.Empty, defaultValue },
             };
 
-        public static IEnumerable<object[]> Int32TestCases(int defaultValue)
-        {
-            yield return new object[] { "1", 1 };
-            yield return new object[] { "0", 0 };
-            yield return new object[] { "-1", -1 };
-            yield return new object[] { "A", defaultValue };
-            yield return new object[] { null, defaultValue };
-            yield return new object[] { string.Empty, defaultValue };
-        }
+        public static TheoryData<string, int?> Int32TestCases(int defaultValue)
+            => new TheoryData<string, int?>
+            {
+                { "1", 1 },
+                { "0", 0 },
+                { "-1", -1 },
+                { "A", defaultValue },
+                { null, defaultValue },
+                { string.Empty, defaultValue }
+            };
 
-        public static IEnumerable<object[]> DoubleTestCases()
-        {
-            yield return new object[] { "1.5", 1.5d };
-            yield return new object[] { "1", 1.0d };
-            yield return new object[] { "0", 0.0d };
-            yield return new object[] { "-1", -1.0d };
-            yield return new object[] { "A", null };
-            yield return new object[] { null, null };
-            yield return new object[] { string.Empty, null };
-        }
+        public static TheoryData<string, double?> DoubleTestCases()
+            => new TheoryData<string, double?>
+            {
+                { "1.5", 1.5d },
+                { "1", 1.0d },
+                { "0", 0.0d },
+                { "-1", -1.0d },
+                { "A", null },
+                { null, null },
+                { string.Empty, null }
+            };
 
-        public static IEnumerable<object[]> StringTestCases()
-        {
-            yield return new object[] { "test", "test" };
-            yield return new object[] { null, null };
-            yield return new object[] { string.Empty, string.Empty };
-        }
+        public static TheoryData<string, string> StringTestCases()
+            => new TheoryData<string, string>
+            {
+                { "test", "test" },
+                { null, null },
+                { string.Empty, string.Empty }
+            };
 
-        public static IEnumerable<object[]> StringTestCases(string defaultValue, Strings emptyStringBehavior)
-        {
-            yield return new object[] { "test", "test" };
-            yield return new object[] { null, defaultValue };
-            yield return new object[] { string.Empty, emptyStringBehavior == Strings.AllowEmpty ? string.Empty : defaultValue };
-        }
+        public static TheoryData<string, string> StringTestCases(string defaultValue, Strings emptyStringBehavior)
+            => new TheoryData<string, string>
+            {
+                { "test", "test" },
+                { null, defaultValue },
+                { string.Empty, emptyStringBehavior == Strings.AllowEmpty ? string.Empty : defaultValue }
+            };
 
         protected static IConfigurationSource CreateConfigurationSource(params (string Key, string Value)[] values)
         {
