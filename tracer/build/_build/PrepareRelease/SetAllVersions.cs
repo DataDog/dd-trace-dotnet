@@ -73,6 +73,11 @@ namespace PrepareRelease
             return Regex.Replace(text, $"<PackageReference Include=\"Datadog.Trace\" Version=\"{VersionPattern(withPrereleasePostfix: true)}\" />", $"<PackageReference Include=\"Datadog.Trace\" Version=\"{VersionString(withPrereleasePostfix: true)}\" />", RegexOptions.Singleline);
         }
 
+        private string DatadogTraceBundleNugetDependencyVersionReplace(string text)
+        {
+            return Regex.Replace(text, $"<PackageReference Include=\"Datadog.Trace.Bundle\" Version=\"{VersionPattern(withPrereleasePostfix: true)}\" />", $"<PackageReference Include=\"Datadog.Trace.Bundle\" Version=\"{VersionString(withPrereleasePostfix: true)}\" />", RegexOptions.Singleline);
+        }
+
         private string NugetVersionReplace(string text)
         {
             return Regex.Replace(text, $"<Version>{VersionPattern(withPrereleasePostfix: true)}</Version>", $"<Version>{VersionString(withPrereleasePostfix: true)}</Version>", RegexOptions.Singleline);
@@ -179,22 +184,22 @@ namespace PrepareRelease
                 // Sample application package updates
                 SynchronizeVersion(
                     "samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",
-                    DatadogTraceNugetDependencyVersionReplace);
+                    DatadogTraceBundleNugetDependencyVersionReplace);
                 SynchronizeVersion(
                     "samples/AutomaticTraceIdInjection/Log4NetExample/Log4NetExample.csproj",
-                    DatadogTraceNugetDependencyVersionReplace);
+                    DatadogTraceBundleNugetDependencyVersionReplace);
                 SynchronizeVersion(
                     "samples/AutomaticTraceIdInjection/NLog40Example/NLog40Example.csproj",
-                    DatadogTraceNugetDependencyVersionReplace);
+                    DatadogTraceBundleNugetDependencyVersionReplace);
                 SynchronizeVersion(
                     "samples/AutomaticTraceIdInjection/NLog45Example/NLog45Example.csproj",
-                    DatadogTraceNugetDependencyVersionReplace);
+                    DatadogTraceBundleNugetDependencyVersionReplace);
                 SynchronizeVersion(
                     "samples/AutomaticTraceIdInjection/NLog46Example/NLog46Example.csproj",
-                    DatadogTraceNugetDependencyVersionReplace);
+                    DatadogTraceBundleNugetDependencyVersionReplace);
                 SynchronizeVersion(
                     "samples/AutomaticTraceIdInjection/SerilogExample/SerilogExample.csproj",
-                    DatadogTraceNugetDependencyVersionReplace);
+                    DatadogTraceBundleNugetDependencyVersionReplace);
 
                 // Dockerfile updates
                 SynchronizeVersion(

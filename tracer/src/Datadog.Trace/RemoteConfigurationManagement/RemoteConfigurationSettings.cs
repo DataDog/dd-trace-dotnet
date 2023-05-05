@@ -12,7 +12,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal class RemoteConfigurationSettings
     {
-        private const int DefaultPollIntervalMilliseconds = 5000;
+        internal const int DefaultPollIntervalMilliseconds = 5000;
 
         public RemoteConfigurationSettings()
             : this(configurationSource: null)

@@ -11,11 +11,11 @@ namespace Datadog.Trace.Iast.Settings;
 
 internal class IastSettings
 {
-    public static readonly string WeakCipherAlgorithmsDefault = "DES,TRIPLEDES,RC2";
-    public static readonly string WeakHashAlgorithmsDefault = "HMACMD5,MD5,HMACSHA1,SHA1";
-    public static readonly int VulnerabilitiesPerRequestDefault = 2;
-    public static readonly int MaxConcurrentRequestDefault = 2;
-    public static readonly int RequestSamplingDefault = 30;
+    public const string WeakCipherAlgorithmsDefault = "DES,TRIPLEDES,RC2";
+    public const string WeakHashAlgorithmsDefault = "HMACMD5,MD5,HMACSHA1,SHA1";
+    public const int VulnerabilitiesPerRequestDefault = 2;
+    public const int MaxConcurrentRequestDefault = 2;
+    public const int RequestSamplingDefault = 30;
 
     public IastSettings(IConfigurationSource source)
     {
