@@ -84,7 +84,7 @@ internal static class SecurityCoordinatorHelpers
         }
     }
 
-    internal static void CheckBody(this Security security, HttpContext context, Span span, object body)
+    internal static object? CheckBody(this Security security, HttpContext context, Span span, object body)
     {
         var transport = new SecurityCoordinator.HttpTransport(context);
         if (!transport.IsBlocked)
@@ -94,7 +94,11 @@ internal static class SecurityCoordinatorHelpers
             var args = new Dictionary<string, object> { { AddressesConstants.RequestBody, keysAndValues } };
             var result = securityCoordinator.RunWaf(args);
             securityCoordinator.CheckAndBlock(result);
+
+            return keysAndValues;
         }
+
+        return null;
     }
 }
 #endif

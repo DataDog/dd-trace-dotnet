@@ -45,11 +45,15 @@ internal class IastRequestContext
         }
     }
 
-    internal void AddRequestBody(object body)
+    internal void AddRequestBody(object body, object? bodyExtracted)
     {
         try
         {
-            var bodyExtracted = ObjectExtractor.Extract(body);
+            if (bodyExtracted is null)
+            {
+                bodyExtracted = ObjectExtractor.Extract(body);
+            }
+
             AddExtractedBody(bodyExtracted, null);
         }
         catch
