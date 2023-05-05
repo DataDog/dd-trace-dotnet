@@ -51,6 +51,7 @@ namespace Datadog.Trace.Tagging
             {
                 processor.Process(new TagItem<string>("aws.topic.name", TopicName, TopicNameBytes));
             }
+
             if (TopicArn is not null)
             {
                 processor.Process(new TagItem<string>("aws.topic.arn", TopicArn, TopicArnBytes));

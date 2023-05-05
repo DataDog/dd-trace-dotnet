@@ -43,7 +43,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
                 span.ResourceName = $"{SnsServiceName}.{operation}";
 
                 tags.Service = SnsServiceName;
-                tags.TopLevelServiceName = SnsServiceName;
                 tags.Operation = operation;
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
