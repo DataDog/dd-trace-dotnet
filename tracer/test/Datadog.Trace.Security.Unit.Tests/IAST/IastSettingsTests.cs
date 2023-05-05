@@ -99,7 +99,7 @@ public class IastSettingsTests : SettingsTestsBase
         var settings = new IastSettings(source);
 
         settings.WeakCipherAlgorithms.Should().Be(expected);
-        settings.WeakCipherAlgorithmsArray.Should().BeEquivalentTo(expected.Split(','));
+        settings.WeakCipherAlgorithmsArray.Should().BeEquivalentTo(expected.Split(new[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries));
     }
 
     [Theory]
@@ -110,7 +110,7 @@ public class IastSettingsTests : SettingsTestsBase
         var settings = new IastSettings(source);
 
         settings.WeakHashAlgorithms.Should().Be(expected);
-        settings.WeakHashAlgorithmsArray.Should().BeEquivalentTo(expected.Split(','));
+        settings.WeakHashAlgorithmsArray.Should().BeEquivalentTo(expected.Split(new[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries));
     }
 
     [Theory]
