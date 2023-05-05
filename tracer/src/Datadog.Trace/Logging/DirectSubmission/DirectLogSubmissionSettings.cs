@@ -37,7 +37,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             DirectLogSubmissionHost = config
                                      .WithKeys(ConfigurationKeys.DirectLogSubmission.Host)
-                                     .AsString(HostMetadata.Instance.Hostname);
+                                     .AsString(HostMetadata.Instance.Hostname ?? string.Empty);
             DirectLogSubmissionSource = config
                                        .WithKeys(ConfigurationKeys.DirectLogSubmission.Source)
                                        .AsString(DefaultSource);
