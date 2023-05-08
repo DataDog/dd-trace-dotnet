@@ -27,22 +27,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { string.Empty },
 #else
 #if NETCOREAPP2_1
-                new object[] { "3.7.101" },
+                new object[] { "3.7.102.1" },
 #endif
 #if NETCOREAPP3_0
-                new object[] { "3.7.101" },
+                new object[] { "3.7.102.1" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "3.7.101" },
+                new object[] { "3.7.102.1" },
 #endif
 #if NET5_0
-                new object[] { "3.7.101" },
+                new object[] { "3.7.102.1" },
 #endif
 #if NET6_0
-                new object[] { "3.7.101" },
+                new object[] { "3.7.102.1" },
 #endif
 #if NET7_0
-                new object[] { "3.7.101" },
+                new object[] { "3.7.102.1" },
 #endif
 #endif
             };
@@ -55,22 +55,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { string.Empty },
 #else
 #if NETCOREAPP2_1
-                new object[] { "3.7.101.61" },
+                new object[] { "3.7.101.62" },
 #endif
 #if NETCOREAPP3_0
-                new object[] { "3.7.101.61" },
+                new object[] { "3.7.101.62" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "3.7.101.61" },
+                new object[] { "3.7.101.62" },
 #endif
 #if NET5_0
-                new object[] { "3.7.101.61" },
+                new object[] { "3.7.101.62" },
 #endif
 #if NET6_0
-                new object[] { "3.7.101.61" },
+                new object[] { "3.7.101.62" },
 #endif
 #if NET7_0
-                new object[] { "3.7.101.61" },
+                new object[] { "3.7.101.62" },
 #endif
 #endif
             };
@@ -1009,19 +1009,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { string.Empty },
 #else
 #if NETCOREAPP3_0
-                new object[] { "2.52.0" },
+                new object[] { "2.53.0" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "2.52.0" },
+                new object[] { "2.53.0" },
 #endif
 #if NET5_0
-                new object[] { "2.52.0" },
+                new object[] { "2.53.0" },
 #endif
 #if NET6_0
-                new object[] { "2.52.0" },
+                new object[] { "2.53.0" },
 #endif
 #if NET7_0
-                new object[] { "2.52.0" },
+                new object[] { "2.53.0" },
 #endif
 #endif
             };
