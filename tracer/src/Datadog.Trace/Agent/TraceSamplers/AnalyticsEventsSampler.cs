@@ -18,7 +18,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
 
                 if (span.GetMetric(Tags.Analytics) is { } rate)
                 {
-                    return SamplingHelpers.SampleByRate(span.TraceId128.Lower, rate);
+                    return SamplingHelpers.SampleByRate(span.TraceId128, rate);
                 }
             }
 

@@ -201,6 +201,26 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();
         }
+
+        [SkippableFact]
+        [Trait("Category", "ArmUnsupported")]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestIastPathTraversalRequest()
+        {
+            var filename = IastEnabled ? "Iast.PathTraversal.AspNetCore5.IastEnabled" : "Iast.PathTraversal.AspNetCore5.IastDisabled";
+            var url = "/Iast/GetFileContent?file=nonexisting.txt";
+            IncludeAllHttpSpans = true;
+            await TryStartApp();
+            var agent = Fixture.Agent;
+            var spans = await SendRequestsAsync(agent, new string[] { url });
+            var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddIastScrubbing();
+            await VerifyHelper.VerifySpans(spansFiltered, settings)
+                              .UseFileName(filename)
+                              .DisableRequireUniquePrefix();
+        }
     }
 
     public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>

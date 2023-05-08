@@ -283,24 +283,22 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void ExtractAndInject_W3C_PreserveOriginalTraceId()
         {
-            var traceId = "0af7651916cd43dd8448eb211c80319c";
-            var spanId = "00f067aa0ba902b7";
-            var expectedTraceParent = $"00-{traceId}-{spanId}-01";
+            const string traceId = "0af7651916cd43dd8448eb211c80319c";
+            const string spanId = "00f067aa0ba902b7";
+            const string expectedTraceParent = $"00-{traceId}-{spanId}-01";
             var headers = new Mock<IHeadersCollection>();
             headers.Setup(h => h.GetValues("traceparent"))
                    .Returns(new[] { expectedTraceParent });
 
+            var expectedTraceId = new TraceId(0x0af7651916cd43dd, 0x8448eb211c80319c);
+            const ulong expectedSpanId = 0x00f067aa0ba902b7UL;
+
             var result = Propagator.Extract(headers.Object);
 
-            // 64 bits verify
-            var expectedTraceId = 9532127138774266268UL;
-            var expectedSpanId = 67667974448284343UL;
-            Assert.Equal(expectedTraceId, result.TraceId);
-            Assert.Equal(expectedSpanId, result.SpanId);
-
-            // Check truncation
-            var truncatedTraceId64 = expectedTraceId.ToString("x16");
-            Assert.Equal(truncatedTraceId64, traceId.Substring(16));
+            result.Should().NotBeNull();
+            result!.TraceId128.Should().Be(expectedTraceId);
+            result.TraceId.Should().Be(expectedTraceId.Lower);
+            result.SpanId.Should().Be(expectedSpanId);
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>();
@@ -314,8 +312,8 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void ExtractAndInject_B3_PreserveOriginalTraceId()
         {
-            var traceId = "0af7651916cd43dd8448eb211c80319c";
-            var spanId = "00f067aa0ba902b7";
+            const string traceId = "0af7651916cd43dd8448eb211c80319c";
+            const string spanId = "00f067aa0ba902b7";
 
             var headers = new Mock<IHeadersCollection>();
             headers.Setup(h => h.GetValues("x-b3-traceid"))
@@ -324,17 +322,16 @@ namespace Datadog.Trace.Tests.Propagators
                    .Returns(new[] { spanId });
             headers.Setup(h => h.GetValues("x-b3-sampled"))
                    .Returns(new[] { "1" });
+
+            var expectedTraceId = new TraceId(0x0af7651916cd43dd, 0x8448eb211c80319c);
+            const ulong expectedSpanId = 0x00f067aa0ba902b7UL;
+
             var result = Propagator.Extract(headers.Object);
 
-            // 64 bits verify
-            var expectedTraceId = 9532127138774266268UL;
-            var expectedSpanId = 67667974448284343UL;
-            Assert.Equal(expectedTraceId, result.TraceId);
-            Assert.Equal(expectedSpanId, result.SpanId);
-
-            // Check truncation
-            var truncatedTraceId64 = expectedTraceId.ToString("x16");
-            Assert.Equal(truncatedTraceId64, traceId.Substring(16));
+            result.Should().NotBeNull();
+            result!.TraceId128.Should().Be(expectedTraceId);
+            result.TraceId.Should().Be(expectedTraceId.Lower);
+            result.SpanId.Should().Be(expectedSpanId);
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>();
@@ -352,24 +349,19 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void ExtractAndInject_B3SingleHeader_PreserveOriginalTraceId()
         {
-            var traceId = "0af7651916cd43dd8448eb211c80319c";
-            var spanId = "00f067aa0ba902b7";
-            var expectedTraceParent = $"{traceId}-{spanId}-1";
+            const string traceId = "0af7651916cd43dd8448eb211c80319c";
+            const string spanId = "00f067aa0ba902b7";
+            const string expectedTraceParent = $"{traceId}-{spanId}-1";
             var headers = new Mock<IHeadersCollection>();
             headers.Setup(h => h.GetValues("b3"))
                    .Returns(new[] { expectedTraceParent });
 
             var result = Propagator.Extract(headers.Object);
 
-            // 64 bits verify
-            var expectedTraceId = 9532127138774266268UL;
-            var expectedSpanId = 67667974448284343UL;
-            Assert.Equal(expectedTraceId, result.TraceId);
+            var expectedTraceId = new TraceId(0x0af7651916cd43ddUL, 0x8448eb211c80319cUL);
+            const ulong expectedSpanId = 0x00f067aa0ba902b7UL;
+            Assert.Equal(expectedTraceId, result!.TraceId128);
             Assert.Equal(expectedSpanId, result.SpanId);
-
-            // Check truncation
-            var truncatedTraceId64 = expectedTraceId.ToString("x16");
-            Assert.Equal(truncatedTraceId64, traceId.Substring(16));
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>();
