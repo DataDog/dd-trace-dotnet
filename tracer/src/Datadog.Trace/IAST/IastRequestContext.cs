@@ -183,8 +183,7 @@ internal class IastRequestContext
 
                 for (int i = 0; i < cookies[key].Values.Count; i++)
                 {
-                    var valueInCollection = cookies[key].Values[i];
-                    if (valueInCollection is not null && valueInCollection is string valueInCollectionString)
+                    if (cookies[key].Values[i] is string valueInCollectionString)
                     {
                         AddCookieData(key, valueInCollectionString);
                     }
