@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Sampling
 {
@@ -61,7 +62,10 @@ namespace Datadog.Trace.Sampling
                 return sampleRate;
             }
 
-            Log.Debug("Could not establish sample rate for trace {TraceId}. Using default rate instead: {Rate}", span.TraceId, _defaultSamplingRate);
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("Could not establish sample rate for trace {TraceId}. Using default rate instead: {Rate}", span.Context.RawTraceId, _defaultSamplingRate);
+            }
 
             defaultRate = _defaultSamplingRate ?? 1;
             SetSamplingAgentDecision(span, defaultRate);
