@@ -87,5 +87,26 @@ namespace Samples.Security.AspNetCore5.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.InternalServerError, IastControllerHelper.ToFormattedString(ex));
             }
         }
+
+        [Route("GetFileContent")]
+        public ActionResult GetFileContent(string file)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(file))
+                {
+                    var result = System.IO.File.ReadAllText(file);
+                    return Content($"file content: " + result);
+                }
+                else
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, $"No file was provided");
+                }
+            }
+            catch
+            {
+                return Content("The provided file could not be opened");
+            }
+        }
     }
 }

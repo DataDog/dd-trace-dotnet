@@ -8,5 +8,9 @@ namespace AllocSimulator
     public interface ISampler
     {
         public bool ShouldSample(long size);
+
+        public string GetDescription();
+
+        public string GetName();
     }
 }

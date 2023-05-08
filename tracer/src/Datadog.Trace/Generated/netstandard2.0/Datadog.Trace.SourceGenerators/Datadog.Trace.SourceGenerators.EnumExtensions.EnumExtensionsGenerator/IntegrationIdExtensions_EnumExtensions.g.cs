@@ -72,6 +72,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.HashAlgorithm => nameof(Datadog.Trace.Configuration.IntegrationId.HashAlgorithm),
             Datadog.Trace.Configuration.IntegrationId.SymmetricAlgorithm => nameof(Datadog.Trace.Configuration.IntegrationId.SymmetricAlgorithm),
             Datadog.Trace.Configuration.IntegrationId.OpenTelemetry => nameof(Datadog.Trace.Configuration.IntegrationId.OpenTelemetry),
+            Datadog.Trace.Configuration.IntegrationId.PathTraversal => nameof(Datadog.Trace.Configuration.IntegrationId.PathTraversal),
             _ => value.ToString(),
         };
 
@@ -131,6 +132,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.HashAlgorithm,
             Datadog.Trace.Configuration.IntegrationId.SymmetricAlgorithm,
             Datadog.Trace.Configuration.IntegrationId.OpenTelemetry,
+            Datadog.Trace.Configuration.IntegrationId.PathTraversal,
         };
 
     /// <summary>
@@ -190,5 +192,6 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.HashAlgorithm),
             nameof(Datadog.Trace.Configuration.IntegrationId.SymmetricAlgorithm),
             nameof(Datadog.Trace.Configuration.IntegrationId.OpenTelemetry),
+            nameof(Datadog.Trace.Configuration.IntegrationId.PathTraversal),
         };
 }

@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -689,8 +690,10 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal void FinalizeSnapshot(string methodName, string typeFullName, string probeFilePath)
         {
             var activeScope = Tracer.Instance.InternalActiveScope;
-            var traceId = activeScope?.Span?.TraceId.ToString();
-            var spanId = activeScope?.Span?.SpanId.ToString();
+
+            // TODO: support 128-bit trace ids?
+            var traceId = activeScope?.Span.TraceId128.Lower.ToString(CultureInfo.InvariantCulture);
+            var spanId = activeScope?.Span.SpanId.ToString(CultureInfo.InvariantCulture);
 
             AddStackInfo()
             .EndSnapshot()
