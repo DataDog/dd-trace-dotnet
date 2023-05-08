@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -23,6 +24,7 @@ namespace Datadog.Trace.Configuration
     public class ImmutableTracerSettings
     {
         private readonly DomainMetadata _domainMetadata;
+        private readonly Dictionary<string, string> _serviceNameCache = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImmutableTracerSettings"/> class
@@ -508,13 +510,21 @@ namespace Datadog.Trace.Configuration
             {
                 return name;
             }
-            else if (MetadataSchemaVersion != SchemaVersion.V0)
+
+            if (MetadataSchemaVersion != SchemaVersion.V0)
             {
                 return tracer.DefaultServiceName;
             }
-            else
+
+            lock (_serviceNameCache)
             {
-                return $"{tracer.DefaultServiceName}-{serviceName}";
+                if (!_serviceNameCache.TryGetValue(serviceName, out var finalServiceName))
+                {
+                    finalServiceName = $"{tracer.DefaultServiceName}-{serviceName}";
+                    _serviceNameCache[serviceName] = finalServiceName;
+                }
+
+                return finalServiceName;
             }
         }
 
