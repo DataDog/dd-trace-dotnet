@@ -17,7 +17,7 @@ namespace Datadog.Trace.Iast.Aspects.System;
 [AspectClass("mscorlib,netstandard,System.Private.CoreLib,System.Runtime", AspectFilter.StringOptimization)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public partial class StringAspects
+public class StringAspects
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StringAspects));
 
@@ -241,6 +241,7 @@ public partial class StringAspects
         return StringModuleImpl.OnStringConcat(new StringConcatParams(param1, param2, param3, param4), string.Concat(param1, param2, param3, param4));
     }
 
+#if NETFRAMEWORK
     /// <summary>
     /// String.Concat aspect
     /// </summary>
@@ -254,36 +255,7 @@ public partial class StringAspects
     {
         return StringModuleImpl.OnStringConcat(new StringConcatParams(param1?.ToString(), param2?.ToString(), param3?.ToString(), param4?.ToString()), string.Concat(param1, param2, param3, param4));
     }
-
-    /// <summary>
-    /// String.Concat aspect
-    /// </summary>
-    /// <param name="param1"> First param </param>
-    /// <param name="param2"> Second param </param>
-    /// <param name="param3"> Third param </param>
-    /// <param name="param4"> Fourth param </param>
-    /// <param name="param5"> Fifth param </param>
-    /// <returns> String.Concat(param1, param2, param3, param4, param5) </returns>
-    [AspectMethodReplace("System.String::Concat(System.String,System.String,System.String,System.String,System.String)", AspectFilter.StringLiterals)]
-    public static string Concat(string param1, string param2, string param3, string param4, string param5)
-    {
-        return StringModuleImpl.OnStringConcat(new StringConcatParams(param1, param2, param3, param4, param5), string.Concat(param1, param2, param3, param4, param5));
-    }
-
-    /// <summary>
-    /// String.Concat aspect
-    /// </summary>
-    /// <param name="param1"> First param </param>
-    /// <param name="param2"> Second param </param>
-    /// <param name="param3"> Third param </param>
-    /// <param name="param4"> Fourth param </param>
-    /// <param name="param5"> Fifth param </param>
-    /// <returns> String.Concat(param1, param2, param3, param4, param5) </returns>
-    [AspectMethodReplace("System.String::Concat(System.Object,System.Object,System.Object,System.Object,System.Object)")]
-    public static string Concat(object param1, object param2, object param3, object param4, object param5)
-    {
-        return StringModuleImpl.OnStringConcat(new StringConcatParams(param1?.ToString(), param2?.ToString(), param3?.ToString(), param4?.ToString(), param5?.ToString()), string.Concat(param1, param2, param3, param4, param5));
-    }
+#endif
 
     /// <summary>
     /// String.Concat aspect
