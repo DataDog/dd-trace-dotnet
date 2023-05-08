@@ -8,15 +8,19 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.Agent;
+using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Tagging;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Configuration
 {
-    public class TracerSettingsTests
+    public class TracerSettingsTests : SettingsTestsBase
     {
         private readonly Mock<IAgentWriter> _writerMock;
         private readonly Mock<ITraceSampler> _samplerMock;
@@ -192,6 +196,645 @@ namespace Datadog.Trace.Tests.Configuration
         public void SetServerHttpCodes()
         {
             SetAndValidateStatusCodes((s, c) => s.SetHttpServerErrorStatusCodes(c), s => s.HttpServerErrorStatusCodes);
+        }
+
+        [Theory]
+        [MemberData(nameof(StringTestCases))]
+        public void Environment(string value, string expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.Environment, value));
+            var settings = new TracerSettings(source);
+
+            settings.Environment.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("test", null, "test")]
+        [InlineData("test", "error", "test")]
+        [InlineData(null, "test", "test")]
+        [InlineData("", "test", "")]
+        [InlineData(null, null, null)]
+        public void ServiceName(string value, string legacyValue, string expected)
+        {
+            const string legacyServiceName = "DD_SERVICE_NAME";
+
+            var source = CreateConfigurationSource((ConfigurationKeys.ServiceName, value), (legacyServiceName, legacyValue));
+            var settings = new TracerSettings(source);
+
+            settings.ServiceName.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(StringTestCases))]
+        public void ServiceVersion(string value, string expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.ServiceVersion, value));
+            var settings = new TracerSettings(source);
+
+            settings.ServiceVersion.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(StringTestCases))]
+        public void GitCommitSha(string value, string expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.GitCommitSha, value));
+            var settings = new TracerSettings(source);
+
+            settings.GitCommitSha.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(StringTestCases))]
+        public void GitRepositoryUrl(string value, string expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.GitRepositoryUrl, value));
+            var settings = new TracerSettings(source);
+
+            settings.GitRepositoryUrl.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), true)]
+        public void GitMetadataEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.GitMetadataEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.GitMetadataEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(null, true, new string[0])]
+        [InlineData(null, false, new[] { "OpenTelemetry" })]
+        [InlineData("", true, new string[0])]
+        [InlineData("test", false, new[] { "test", "OpenTelemetry" })]
+        [InlineData("test1;TEST1;test2", true, new[] { "test1", "test2" })]
+        public void DisabledIntegrationNames(string value, bool isOpenTelemetryEnabled, string[] expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.DisabledIntegrations, value),
+                (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, isOpenTelemetryEnabled ? "1" : "0"));
+            var settings = new TracerSettings(source);
+
+            settings.DisabledIntegrationNames.Should().BeEquivalentTo(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void AnalyticsEnabled(string value, bool expected)
+        {
+#pragma warning disable 618 // App analytics is deprecated, but still used
+            var source = CreateConfigurationSource((ConfigurationKeys.GlobalAnalyticsEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.AnalyticsEnabled.Should().Be(expected);
+#pragma warning restore 618
+        }
+
+        [Fact]
+        public void Integrations()
+        {
+            // Further testing is done in IntegrationSettingsTests
+            var source = CreateConfigurationSource(
+                ($"DD_{IntegrationRegistry.Names[1]}_ENABLED", "0"),
+                ($"DD_{IntegrationRegistry.Names[2]}_ENABLED", "1"));
+
+            var settings = new TracerSettings(source);
+
+            settings.Integrations[IntegrationRegistry.Names[0]].Enabled.Should().BeNull();
+            settings.Integrations[IntegrationRegistry.Names[1]].Enabled.Should().BeFalse();
+            settings.Integrations[IntegrationRegistry.Names[2]].Enabled.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("10", null, 10)]
+        [InlineData("10", "50", 10)]
+        [InlineData(null, "10", 10)]
+        [InlineData("", "10", 10)]
+        [InlineData("", "", 100)]
+        [InlineData("A", "A", 100)]
+        public void MaxTracesSubmittedPerSecond(string value, string legacyValue, int expected)
+        {
+#pragma warning disable 618 // this parameter has been replaced but may still be used
+            var source = CreateConfigurationSource((ConfigurationKeys.TraceRateLimit, value), (ConfigurationKeys.MaxTracesSubmittedPerSecond, legacyValue));
+            var settings = new TracerSettings(source);
+
+            settings.MaxTracesSubmittedPerSecond.Should().Be(expected);
+#pragma warning restore 618
+        }
+
+        [Theory]
+        [InlineData("key1:value1,key2:value2", "key3:value3", new[] { "key1:value1", "key2:value2" })]
+        [InlineData("key1 :value1,invalid,key2: value2", "key3:value3", new[] { "key1:value1", "key2:value2" })]
+        [InlineData("invalid", "key1:value1,key2:value2", new string[0])]
+        [InlineData(null, "key1:value1,key2:value2", new[] { "key1:value1", "key2:value2" })]
+        [InlineData("", "key1:value1,key2:value2", new string[0])]
+        [InlineData("", "", new string[0])]
+        [InlineData("invalid", "invalid", new string[0])]
+        public void GlobalTags(string value, string legacyValue, string[] expected)
+        {
+            const string legacyGlobalTagsKey = "DD_TRACE_GLOBAL_TAGS";
+
+            var source = CreateConfigurationSource((ConfigurationKeys.GlobalTags, value), (legacyGlobalTagsKey, legacyValue));
+            var settings = new TracerSettings(source);
+
+            settings.GlobalTags.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
+        }
+
+        [Theory]
+        [InlineData("key1:value1,key2:value2", true, new[] { "key1:value1", "key2:value2" })]
+        [InlineData("key1 :value1,empty,key2: value2", true, new[] { "key1:value1", "empty:", "key2:value2" })]
+        [InlineData(null, true, new string[0])]
+        [InlineData("", true, new string[0])]
+        [InlineData("key1 :val.ue1?", false, new[] { "key1:val_ue1_" })]
+        [InlineData("key1 :val.ue1?", true, new[] { "key1:val.ue1_" })]
+        public void HeaderTags(string value, bool normalizationFixEnabled, string[] expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.HeaderTags, value),
+                (ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled, normalizationFixEnabled ? "1" : "0"));
+            var settings = new TracerSettings(source);
+
+            settings.HeaderTags.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
+        }
+
+        [Theory]
+        [InlineData("v1", SchemaVersion.V1)]
+        [InlineData("V1", SchemaVersion.V1)]
+        [InlineData("", SchemaVersion.V0)]
+        [InlineData(null, SchemaVersion.V0)]
+        [InlineData("v1 ", SchemaVersion.V0)]
+        public void MetadataSchemaVersion(string value, object expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.MetadataSchemaVersion, value));
+            var settings = new TracerSettings(source);
+
+            settings.MetadataSchemaVersion.Should().Be((SchemaVersion)expected);
+        }
+
+        [Theory]
+        [InlineData("key1:value1,key2:value2", new[] { "key1:value1", "key2:value2" })]
+        [InlineData("key1 :value1,invalid,key2: value2", new[] { "key1:value1", "key2:value2" })]
+        [InlineData("invalid", new string[0])]
+        [InlineData(null, null)]
+        [InlineData("", new string[0])]
+        public void ServiceNameMappings(string value, string[] expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.ServiceNameMappings, value));
+            var settings = new TracerSettings(source);
+
+            settings.ServiceNameMappings.Should().BeEquivalentTo(expected?.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void TracerMetricsEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.TracerMetricsEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.TracerMetricsEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void StatsComputationEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.StatsComputationEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.StatsComputationEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(Int32TestCases), 10)]
+        public void StatsComputationInterval(string value, int expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.StatsComputationInterval, value));
+            var settings = new TracerSettings(source);
+
+            settings.StatsComputationInterval.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void RuntimeMetricsEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.RuntimeMetricsEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.RuntimeMetricsEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(StringTestCases))]
+        public void CustomSamplingRules(string value, string expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.CustomSamplingRules, value));
+            var settings = new TracerSettings(source);
+
+            settings.CustomSamplingRules.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(StringTestCases))]
+        public void SpanSamplingRules(string value, string expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.SpanSamplingRules, value));
+            var settings = new TracerSettings(source);
+
+            settings.SpanSamplingRules.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(DoubleTestCases))]
+        public void GlobalSamplingRate(string value, double? expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.GlobalSamplingRate, value));
+            var settings = new TracerSettings(source);
+
+            settings.GlobalSamplingRate.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), true)]
+        public void StartupDiagnosticLogEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.StartupDiagnosticLogEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.StartupDiagnosticLogEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(Int32TestCases), 1024 * 1024 * 10)]
+        public void TraceBufferSize(string value, int expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.BufferSize, value));
+            var settings = new TracerSettings(source);
+
+            settings.TraceBufferSize.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(Int32TestCases), 100)]
+        public void TraceBatchInterval(string value, int expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.SerializationBatchInterval, value));
+            var settings = new TracerSettings(source);
+
+            settings.TraceBatchInterval.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), true)]
+        public void RouteTemplateResourceNamesEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.RouteTemplateResourceNamesEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("1", "1", true)]
+        [InlineData("true", "1", true)]
+        [InlineData("0", "1", false)]
+        [InlineData("false", "1", false)]
+        [InlineData("invalid", "1", false)]
+        [InlineData("invalid", "0", true)]
+        [InlineData("", "0", true)]
+        [InlineData(null, "0", true)]
+        [InlineData(null, null, false)]
+        public void ExpandRouteTemplatesEnabled(string value, string fallbackValue, bool expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.ExpandRouteTemplatesEnabled, value),
+                (ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, fallbackValue));
+            var settings = new TracerSettings(source);
+
+            settings.ExpandRouteTemplatesEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), true)]
+        public void KafkaCreateConsumerScopeEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.KafkaCreateConsumerScopeEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.KafkaCreateConsumerScopeEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void DelayWcfInstrumentationEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.DelayWcfInstrumentationEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), true)]
+        public void WcfObfuscationEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.WcfObfuscationEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(StringTestCases), TracerSettings.DefaultObfuscationQueryStringRegex, Strings.AllowEmpty)]
+        public void ObfuscationQueryStringRegex(string value, string expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.ObfuscationQueryStringRegex, value));
+            var settings = new TracerSettings(source);
+
+            settings.ObfuscationQueryStringRegex.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), true)]
+        public void QueryStringReportingEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.QueryStringReportingEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.QueryStringReportingEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(Int32TestCases), 5000)]
+        public void QueryStringReportingSize(string value, int expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.QueryStringReportingSize, value));
+            var settings = new TracerSettings(source);
+
+            settings.QueryStringReportingSize.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("1.5", 1.5d)]
+        [InlineData("-1", 200)]
+        [InlineData("", 200)]
+        [InlineData(null, 200)]
+        [InlineData("invalid", 200)]
+        public void ObfuscationQueryStringRegexTimeout(string value, double expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.ObfuscationQueryStringRegexTimeout, value));
+            var settings = new TracerSettings(source);
+
+            settings.ObfuscationQueryStringRegexTimeout.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("1", "0", true)]
+        [InlineData("0", "0", false)]
+        [InlineData("true", "1", true)]
+        [InlineData("false", "1", false)]
+        [InlineData(null, "1", true)]
+        [InlineData(null, "true", true)]
+        [InlineData(null, "0", false)]
+        [InlineData(null, "false", false)]
+        [InlineData(null, null, false)]
+        [InlineData("", "", false)]
+        public void IsActivityListenerEnabled(string value, string fallbackValue, bool expected)
+        {
+            const string fallbackKey = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
+
+            var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, value), (fallbackKey, fallbackValue));
+            var settings = new TracerSettings(source);
+
+            settings.IsActivityListenerEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("test1,, ,test2", "test3,, ,test4", "test5,, ,test6", new[] { "test1", "test2" })]
+        [InlineData("", "test3,, ,test4", "test5,, ,test6", new[] { "tracecontext", "Datadog" })]
+        [InlineData(null, "test3,, ,test4", "test5,, ,test6", new[] { "test3", "test4" })]
+        [InlineData(null, null, "test5,, ,test6", new[] { "test5", "test6" })]
+        [InlineData(null, null, null, new[] { "tracecontext", "Datadog" })]
+        public void PropagationStyleInject(string value, string legacyValue, string fallbackValue, string[] expected)
+        {
+            const string legacyKey = "DD_PROPAGATION_STYLE_INJECT";
+
+            foreach (var isActivityListenerEnabled in new[] { true, false })
+            {
+                var source = CreateConfigurationSource(
+                    (ConfigurationKeys.PropagationStyleInject, value),
+                    (legacyKey, legacyValue),
+                    (ConfigurationKeys.PropagationStyle, fallbackValue),
+                    (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, isActivityListenerEnabled ? "1" : "0"));
+
+                var settings = new TracerSettings(source);
+
+                settings.PropagationStyleInject.Should().BeEquivalentTo(isActivityListenerEnabled ? expected.Concat("tracecontext") : expected);
+            }
+        }
+
+        [Theory]
+        [InlineData("test1,, ,test2", "test3,, ,test4", "test5,, ,test6", new[] { "test1", "test2" })]
+        [InlineData("", "test3,, ,test4", "test5,, ,test6", new[] { "tracecontext", "Datadog" })]
+        [InlineData(null, "test3,, ,test4", "test5,, ,test6", new[] { "test3", "test4" })]
+        [InlineData(null, null, "test5,, ,test6", new[] { "test5", "test6" })]
+        [InlineData(null, null, null, new[] { "tracecontext", "Datadog" })]
+        public void PropagationStyleExtract(string value, string legacyValue, string fallbackValue, string[] expected)
+        {
+            const string legacyKey = "DD_PROPAGATION_STYLE_EXTRACT";
+
+            foreach (var isActivityListenerEnabled in new[] { true, false })
+            {
+                var source = CreateConfigurationSource(
+                    (ConfigurationKeys.PropagationStyleExtract, value),
+                    (legacyKey, legacyValue),
+                    (ConfigurationKeys.PropagationStyle, fallbackValue),
+                    (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, isActivityListenerEnabled ? "1" : "0"));
+
+                var settings = new TracerSettings(source);
+
+                settings.PropagationStyleExtract.Should().BeEquivalentTo(isActivityListenerEnabled ? expected.Concat("tracecontext") : expected);
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(StringTestCases), "", Strings.AllowEmpty)]
+        public void TraceMethods(string value, string expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.TraceMethods, value));
+            var settings = new TracerSettings(source);
+
+            settings.TraceMethods.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("key1:value1,key2:value2", new[] { "key1:value1", "key2:value2" })]
+        [InlineData("key1 :value1,empty,key2: value2", new[] { "key1:value1", "empty:", "key2:value2" })]
+        [InlineData(null, new string[0])]
+        [InlineData("", new string[0])]
+        [InlineData("key1 :val.ue1?", new[] { "key1:val.ue1_" })]
+        public void GrpcTags(string value, string[] expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.GrpcTags, value));
+            var settings = new TracerSettings(source);
+
+            settings.GrpcTags.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
+        }
+
+        [Theory]
+        [InlineData("", TagPropagation.OutgoingTagPropagationHeaderMaxLength)]
+        [InlineData(null, TagPropagation.OutgoingTagPropagationHeaderMaxLength)]
+        [InlineData("invalid", TagPropagation.OutgoingTagPropagationHeaderMaxLength)]
+        [InlineData("512", 512)]
+        [InlineData("513", TagPropagation.OutgoingTagPropagationHeaderMaxLength)]
+        [InlineData("0", 0)]
+        [InlineData("-1", TagPropagation.OutgoingTagPropagationHeaderMaxLength)]
+        public void OutgoingTagPropagationHeaderMaxLength(string value, int expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.TagPropagation.HeaderMaxLength, value));
+            var settings = new TracerSettings(source);
+
+            settings.OutgoingTagPropagationHeaderMaxLength.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("test1", "test2", "test1")]
+        [InlineData(null, "test2", "test2")]
+        [InlineData("", "test2", "")]
+        [InlineData(null, null, null)]
+        public void IpHeader(string value, string fallbackValue, string expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.IpHeader, value),
+                (ConfigurationKeys.AppSec.CustomIpHeader, fallbackValue));
+            var settings = new TracerSettings(source);
+
+            settings.IpHeader.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void IpHeaderEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.IpHeaderEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.IpHeaderEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void IsDataStreamsMonitoringEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.DataStreamsMonitoring.Enabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.IsDataStreamsMonitoringEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void IsRareSamplerEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.RareSamplerEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.IsRareSamplerEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void IsRunningInAzureAppService(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, value));
+            var settings = new TracerSettings(source);
+
+            settings.IsRunningInAzureAppService.Should().Be(expected);
+        }
+
+        [Fact]
+        public void DisableTracerIfNoApiKeyInAas()
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1"));
+            var settings = new TracerSettings(source);
+
+            settings.TraceEnabled.Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData("test1,, ,test2", false, false, new[] { "TEST1", "TEST2" })]
+        [InlineData("test1,, ,test2", true, true, new[] { "TEST1", "TEST2" })]
+        [InlineData(null, true, true, new[] { "azuredefault" })]
+        [InlineData(null, false, true, new[] { "SERVERLESS" })]
+        [InlineData(null, false, false, new string[0])]
+        [InlineData("", true, true, new string[0])]
+        public void HttpClientExcludedUrlSubstrings(string value, bool isRunningInAppService, bool isRunningInLambda, string[] expected)
+        {
+            if (expected.Length == 1 && expected[0] == "azuredefault")
+            {
+                expected = ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions.Split(',').Select(s => s.Trim()).ToArray();
+            }
+
+            var oldMetadata = Serverless.Metadata;
+
+            try
+            {
+                var source = CreateConfigurationSource(
+                    (ConfigurationKeys.HttpClientExcludedUrlSubstrings, value),
+                    (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, isRunningInAppService ? "1" : "0"));
+
+                if (isRunningInLambda)
+                {
+                    var metadata = Serverless.LambdaMetadata.CreateForTests(true, "functionName", "handlerName", "serviceName", "serverless");
+                    Serverless.SetMetadataTestsOnly(metadata);
+                }
+
+                var settings = new TracerSettings(source);
+
+                settings.HttpClientExcludedUrlSubstrings.Should().BeEquivalentTo(expected);
+            }
+            finally
+            {
+                Serverless.SetMetadataTestsOnly(oldMetadata);
+            }
+        }
+
+        [Theory]
+        [InlineData("", DbmPropagationLevel.Disabled)]
+        [InlineData(null, DbmPropagationLevel.Disabled)]
+        [InlineData("invalid", DbmPropagationLevel.Disabled)]
+        [InlineData("Disabled", DbmPropagationLevel.Disabled)]
+        [InlineData("full", DbmPropagationLevel.Full)]
+        [InlineData("SERVICE", DbmPropagationLevel.Service)]
+        public void DbmPropagationMode(string value, object expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.DbmPropagationMode, value));
+            var settings = new TracerSettings(source);
+
+            settings.DbmPropagationMode.Should().Be((DbmPropagationLevel)expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void TraceId128BitGenerationEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.TraceId128BitGenerationEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void TraceId128BitLoggingEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.TraceId128BitLoggingEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.TraceId128BitLoggingEnabled.Should().Be(expected);
         }
 
         private void SetAndValidateStatusCodes(Action<TracerSettings, IEnumerable<int>> setStatusCodes, Func<TracerSettings, bool[]> getStatusCodes)

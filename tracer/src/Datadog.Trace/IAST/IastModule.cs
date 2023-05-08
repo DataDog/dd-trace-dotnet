@@ -23,8 +23,22 @@ internal static class IastModule
     private const string OperationNameWeakCipher = "weak_cipher";
     private const string OperationNameSqlInjection = "sql_injection";
     private const string OperationNameCommandInjection = "command_injection";
+    private const string OperationNamePathTraversal = "path_traversal";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static IastSettings iastSettings = Iast.Instance.Settings;
+
+    public static Scope? OnPathTraversal(string evidence)
+    {
+        try
+        {
+            return GetScope(evidence, IntegrationId.PathTraversal, VulnerabilityTypeName.PathTraversal, OperationNamePathTraversal, true);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for path traversal.");
+            return null;
+        }
+    }
 
     public static Scope? OnSqlQuery(string query, IntegrationId integrationId)
     {
