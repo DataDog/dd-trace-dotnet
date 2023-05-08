@@ -134,6 +134,13 @@ namespace Datadog.Trace
                     iastRequestContext.AddIastVulnerabilitiesToSpan(span);
                     OverheadController.Instance.ReleaseRequest();
                 }
+                else
+                {
+                    if (Iast.Iast.Instance.Settings.Enabled)
+                    {
+                        IastRequestContext.AddIastDisabledToSpan(span);
+                    }
+                }
             }
 
             lock (_rootSpan)
