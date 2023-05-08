@@ -8,7 +8,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Reflection;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Iast;
+using FluentAssertions;
 using Moq;
 using Xunit;
 
@@ -91,5 +93,161 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
             Assert.NotNull(iastContext.GetTainted(value3));
         }
 #endif
+
+        [Fact]
+        public void GivenAnIastRequestContext_WhenAddRequestBody_ValuesAreTainted()
+        {
+            IastRequestContext iastContext = new();
+            BodyClassTest sample = new();
+            string value = "value1";
+            sample.Value = value;
+            var extracted = ObjectExtractor.Extract(sample);
+
+            iastContext.AddRequestBody(sample, extracted);
+            iastContext.GetTainted(value).Should().NotBeNull();
+        }
+
+        [Fact]
+        public void GivenAnIastRequestContext_WhenAddRequestBody_ValuesAreTainted2()
+        {
+            IastRequestContext iastContext = new();
+            BodyClassTest sample = new();
+            sample.BodyClassTestProperty = new();
+            string value = "value1";
+            sample.BodyClassTestProperty.Value = value;
+            var extracted = ObjectExtractor.Extract(sample);
+
+            iastContext.AddRequestBody(sample, extracted);
+            iastContext.GetTainted(value).Should().NotBeNull();
+        }
+
+        [Fact]
+        public void GivenAnIastRequestContext_WhenAddRequestBody_ValuesAreTainted3()
+        {
+            IastRequestContext iastContext = new();
+            BodyClassTest sample = new();
+            sample.BodyClassTestProperty = new();
+            string value = "value1";
+            sample.BodyClassTestProperty.ValueList.Add(value);
+            var extracted = ObjectExtractor.Extract(sample);
+
+            iastContext.AddRequestBody(sample, extracted);
+            iastContext.GetTainted(value).Should().NotBeNull();
+        }
+
+        [Fact]
+        public void GivenAnIastRequestContext_WhenAddRequestBody_ValuesAreTainted4()
+        {
+            IastRequestContext iastContext = new();
+            BodyClassTest sample = new();
+            sample.BodyClassTestProperty = new();
+            string value = "value1";
+            sample.BodyClassTestProperty.ValueListObject.Add(value);
+            var extracted = ObjectExtractor.Extract(sample);
+
+            iastContext.AddRequestBody(sample, extracted);
+            iastContext.GetTainted(value).Should().NotBeNull();
+        }
+
+        [Fact]
+        public void GivenAnIastRequestContext_WhenAddRequestBody_ValuesAreTainted5()
+        {
+            IastRequestContext iastContext = new();
+            BodyClassTest sample = new();
+            sample.BodyClassTestProperty = new();
+            string value = "value1";
+            sample.BodyClassTestProperty.ValueDicObject.Add("key", value);
+            var extracted = ObjectExtractor.Extract(sample);
+
+            iastContext.AddRequestBody(sample, extracted);
+            iastContext.GetTainted(value).Should().NotBeNull();
+        }
+
+        [Fact]
+        public void GivenAnIastRequestContext_WhenAddRequestBody_ValuesAreTainted6()
+        {
+            IastRequestContext iastContext = new();
+            BodyClassTest sample = new();
+            sample.BodyClassTestProperty = new();
+            string value = "value1";
+            sample.BodyClassTestProperty.ValueDicObject.Add(value, "values");
+            var extracted = ObjectExtractor.Extract(sample);
+
+            iastContext.AddRequestBody(sample, extracted);
+            iastContext.GetTainted(value).Should().NotBeNull();
+        }
+
+        [Fact]
+        public void GivenAnIastRequestContext_WhenAddRequestBody_ValuesAreTainted7()
+        {
+            IastRequestContext iastContext = new();
+            BodyClassTest sample = new();
+            sample.BodyClassTestProperty = new();
+            string value = "value1";
+            sample.BodyClassTestProperty.ValueDicObject.Add("key", new List<string> { value });
+            var extracted = ObjectExtractor.Extract(sample);
+
+            iastContext.AddRequestBody(sample, extracted);
+            iastContext.GetTainted(value).Should().NotBeNull();
+        }
+
+        [Fact]
+        public void GivenAnIastRequestContext_WhenAddRequestBody_ValuesAreTainted8()
+        {
+            IastRequestContext iastContext = new();
+            BodyClassTest sample = new();
+            sample.BodyClassTestProperty = new();
+            string value = "value1";
+            sample.BodyClassTestProperty.ValueDic.Add("key", value);
+            var extracted = ObjectExtractor.Extract(sample);
+
+            iastContext.AddRequestBody(sample, extracted);
+            iastContext.GetTainted(value).Should().NotBeNull();
+        }
+
+        [Fact]
+        public void GivenAnIastRequestContext_WhenAddRequestBody_ValuesAreTainted9()
+        {
+            IastRequestContext iastContext = new();
+            BodyClassTest sample = new();
+            sample.BodyClassTestProperty = new();
+            string value = "value1";
+            sample.BodyClassTestProperty.ValueDic.Add(value, "values");
+            var extracted = ObjectExtractor.Extract(sample);
+
+            iastContext.AddRequestBody(sample, extracted);
+            iastContext.GetTainted(value).Should().NotBeNull();
+        }
+
+        [Fact]
+        public void GivenAnIastRequestContext_WhenAddRequestBody_ValuesAreTainted10()
+        {
+            IastRequestContext iastContext = new();
+            BodyClassTest sample = new();
+            sample.BodyClassTestProperty = new();
+            string value = "value1";
+            sample.BodyClassTestProperty.ObjectArray[1] = value;
+            var extracted = ObjectExtractor.Extract(sample);
+
+            iastContext.AddRequestBody(sample, extracted);
+            iastContext.GetTainted(value).Should().NotBeNull();
+        }
+
+        private class BodyClassTest
+        {
+            public string Value { get; set; }
+
+            public List<string> ValueList { get; set; } = new();
+
+            public List<object> ValueListObject { get; set; } = new();
+
+            public Dictionary<string, string> ValueDic { get; set; } = new();
+
+            public Dictionary<object, object> ValueDicObject { get; set; } = new();
+
+            public object[] ObjectArray { get; set; } = new object[2];
+
+            public BodyClassTest BodyClassTestProperty { get; set; } = null;
+        }
     }
 }
