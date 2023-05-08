@@ -21,6 +21,11 @@
     <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/6.0.1 -->
     <PackageReference Include="Aerospike.Client" Version="6.0.1" />
 
+    <!-- Integration: System.Web.Mvc -->
+    <!-- Assembly: System.Web.Mvc -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNet.Mvc/5.2.9 -->
+    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.9" />
+
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
     <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.106.32 -->
@@ -221,6 +226,11 @@
     <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis.StrongName/1.2.6 -->
     <PackageReference Include="StackExchange.Redis.StrongName" Version="1.2.6" />
 
+    <!-- Integration: System.ServiceModel -->
+    <!-- Assembly: System.ServiceModel -->
+    <!-- Latest package https://www.nuget.org/packages/System.ServiceModel.Http/4.10.2 -->
+    <PackageReference Include="System.ServiceModel.Http" Version="4.10.2" />
+
     <!-- Integration: System.Net.Requests -->
     <!-- Assembly: System.Net.Requests -->
     <!-- Latest package https://www.nuget.org/packages/System.Net.Requests/4.3.0 -->
@@ -235,6 +245,21 @@
     <!-- Assembly: xunit.execution.dotnet -->
     <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.4.2 -->
     <PackageReference Include="xunit.extensibility.execution" Version="2.4.2" />
+
+    <!-- Integration: Microsoft.Azure.WebJobs.Host -->
+    <!-- Assembly: Microsoft.Azure.WebJobs.Host -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.37 -->
+    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.37" />
+
+    <!-- Integration: Grpc.AspNetCore.Server -->
+    <!-- Assembly: Grpc.AspNetCore.Server -->
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.52.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.52.0" />
+
+    <!-- Integration: Grpc.Net.Client -->
+    <!-- Assembly: Grpc.Net.Client -->
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.52.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.52.0" />
 
     <!-- Integration: Microsoft.AspNetCore.Mvc.Core -->
     <!-- Assembly: Microsoft.AspNetCore.Mvc.Core -->
