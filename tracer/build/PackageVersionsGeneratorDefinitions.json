@@ -17,7 +17,7 @@
   },
   {
     "IntegrationName": "AwsSns",
-    "SampleProjectName": "Samples.AWS.SQS",
+    "SampleProjectName": "Samples.AWS.SimpleNotificationService",
     "NugetPackageSearchName": "AWSSDK.SimpleNotificationService",
     "MinVersion": "3.0.0",
     "MaxVersionExclusive": "3.8.0",
