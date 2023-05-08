@@ -32,12 +32,14 @@ internal static class PropagationModuleImpl
 
             var taintedObjects = iastContext.GetTaintedObjects();
 #pragma warning disable CS8604 // Possible null reference argument.
-            var taintedSelf = taintedObjects.Get(input);
+            var taintedSelf = taintedObjects?.Get(input);
 #pragma warning restore CS8604 // Possible null reference argument.
 
             if (taintedSelf is null)
             {
-                taintedObjects.TaintInputString(input, source);
+#pragma warning disable CS8604 // Possible null reference argument.
+                taintedObjects?.TaintInputString(input, source);
+#pragma warning restore CS8604 // Possible null reference argument.
             }
         }
         catch (Exception err)
