@@ -265,6 +265,10 @@ public class IastInstrumentationUnitTests : TestHelper
             // special case
             "System.IO.File::ReadLinesAsync(System.String, System.Threading.CancellationToken)"
 #endif
+#if NETCOREAPP2_1
+            // special case
+            "System.IO.File Move(System.String, System.String, Boolean)"
+#endif
         };
 
         CheckAllAspectHaveACorrespondingMethod(typeof(File), aspectsToExclude);
@@ -297,7 +301,16 @@ public class IastInstrumentationUnitTests : TestHelper
 #endif
         };
         TestMethodOverloads(typeof(FileInfo), null, overloadsToExclude, true);
-        CheckAllAspectHaveACorrespondingMethod(typeof(FileInfo));
+
+        var aspectsToExclude = new List<string>()
+        {
+#if NETCOREAPP2_1
+            // special case
+            "void MoveTo(System.String, Boolean)"
+#endif
+        };
+
+        CheckAllAspectHaveACorrespondingMethod(typeof(FileInfo), aspectsToExclude);
     }
 
     [SkippableFact]
