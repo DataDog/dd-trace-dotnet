@@ -720,7 +720,6 @@ public class ProbesTests : TestHelper
 
     private void SetDebuggerEnvironment(MockTracerAgent agent)
     {
-        SetEnvironmentVariable("DD_WRITE_INSTRUMENTATION_TO_DISK", "1");
         SetEnvironmentVariable(ConfigurationKeys.ServiceName, EnvironmentHelper.SampleName);
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "1");
