@@ -21,9 +21,10 @@ namespace Samples.Probes.TestRuns.SmokeTests
 
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        [SpanOnMethodProbeTestData]
         public async Task RunAsync()
         {
-            Console.WriteLine(await Annotate(nameof(RunAsync), nameof(RunAsync).GetHashCode()));
+            Console.WriteLine(await Annotate(nameof(RunAsync), nameof(RunAsync).Length));
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -33,10 +34,10 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [SpanDecorationMethodProbeTestData(skip:true, whenJson: When, decorationJson: new[] { Decoration }, decorationTagName: new[] { TagName })]
+        [SpanDecorationMethodProbeTestData(whenJson: When, decorationJson: new[] { Decoration }, decorationTagName: new[] { TagName })]
         async Task<string> Method(string arg, int intArg)
         {
-            var intLocal = nameof(Method).GetHashCode() + arg.GetHashCode();
+            var intLocal = nameof(Method).Length * 2;
             if (intLocal > intArg)
             {
                 Console.WriteLine(intLocal);

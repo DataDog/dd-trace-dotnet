@@ -25,7 +25,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
 
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [SpanOnMethodProbeTestData(skip:true)]
+        [SpanOnMethodProbeTestData]
         public async Task RunAsync()
         {
             Console.WriteLine(await Annotate(nameof(RunAsync), nameof(RunAsync).Length));
@@ -38,7 +38,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [SpanDecorationMethodProbeTestData(skip:true, whenJson: When, decorationJson: new[] { ErrorDecoration, Decoration }, decorationTagName: new[] { TagName, TagName })]
+        [SpanDecorationMethodProbeTestData(whenJson: When, decorationJson: new[] { ErrorDecoration, Decoration }, decorationTagName: new[] { TagName, TagName })]
         async Task<string> Method(string arg, int intArg)
         {
             var intLocal = nameof(Method).Length * 2;

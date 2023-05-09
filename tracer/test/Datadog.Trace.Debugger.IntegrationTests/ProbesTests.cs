@@ -369,20 +369,18 @@ public class ProbesTests : TestHelper
 
     private async Task VerifySpanDecorationResults(DebuggerSampleProcessHelper sample, ProbeTestDescription testDescription, ProbeAttributeBase[] probeData, MockTracerAgent agent, bool isMultiPhase, int phaseNumber)
     {
-        var expectedSpanCount = probeData.Count(DebuggerTestHelper.IsSpanDecorationProbe);
-
+        int expectedSpanCount;
         string testNameSuffix;
         if (sample.Process.StartInfo.EnvironmentVariables.ContainsKey("DD_TRACE_METHODS"))
         {
             testNameSuffix = "with.trace.annotation";
-            expectedSpanCount++;
+            expectedSpanCount = 2;
         }
         else
         {
             testNameSuffix = "with.dynamic.span";
+            expectedSpanCount = 1;
         }
-
-        Assert.True(expectedSpanCount > 0);
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{40}"), "GUID");
