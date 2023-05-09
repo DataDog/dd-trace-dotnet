@@ -37,6 +37,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                     propagatorSringBuilder.Append($",{SqlCommentVersion}='{Uri.EscapeDataString(versionTag)}'");
                 }
 
+                // For SqlServer we don't inject the traceparent yet to not affect performance since this DB generates a new plan for any query changes
                 if (propagationStyle == DbmPropagationLevel.Full && integrationId is not IntegrationId.SqlClient)
                 {
                     propagatorSringBuilder.Append($",{W3CTraceContextPropagator.TraceParentHeaderName}='{W3CTraceContextPropagator.CreateTraceParentHeader(context)}'*/");
