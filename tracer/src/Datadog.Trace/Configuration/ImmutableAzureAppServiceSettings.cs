@@ -170,7 +170,7 @@ namespace Datadog.Trace.Configuration
         {
             var websiteOwner = new ConfigurationBuilder(source, telemetry)
                               .WithKeys(ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey)
-                              .AsString(websiteOwner => websiteOwner.IndexOf('+') > 0);
+                              .AsString(websiteOwner => !string.IsNullOrWhiteSpace(websiteOwner));
 
             if (!string.IsNullOrWhiteSpace(websiteOwner))
             {
