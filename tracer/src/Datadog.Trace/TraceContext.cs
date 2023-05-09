@@ -94,7 +94,7 @@ namespace Datadog.Trace
 
         internal void EnableIastInRequest()
         {
-            if (_iastRequestContext is null)
+            if (Volatile.Read(ref _iastRequestContext) is null)
             {
                 Interlocked.CompareExchange(ref _iastRequestContext, new(), null);
             }

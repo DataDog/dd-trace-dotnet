@@ -27,7 +27,6 @@ namespace Datadog.Trace
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
         private int _isFinished;
-        private string _resourceName;
 
         internal Span(SpanContext context, DateTimeOffset? start)
             : this(context, start, null)
@@ -58,11 +57,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets or sets the resource name
         /// </summary>
-        internal string ResourceName
-        {
-            get => _resourceName;
-            set => _resourceName = value;
-        }
+        internal string ResourceName { get; set; }
 
         /// <summary>
         /// Gets or sets the type of request this span represents (ex: web, db).
@@ -419,7 +414,7 @@ namespace Datadog.Trace
 
         internal void Finish(TimeSpan duration)
         {
-            _resourceName ??= OperationName;
+            ResourceName ??= OperationName;
             if (Interlocked.CompareExchange(ref _isFinished, 1, 0) == 0)
             {
                 Duration = duration;

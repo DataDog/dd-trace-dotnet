@@ -24,7 +24,7 @@ namespace Datadog.Trace.Configuration
     public class ImmutableTracerSettings
     {
         private readonly DomainMetadata _domainMetadata;
-        private readonly Dictionary<string, string> _serviceNameCache = new();
+        private readonly ConcurrentDictionary<string, string> _serviceNameCache = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImmutableTracerSettings"/> class
@@ -516,16 +516,13 @@ namespace Datadog.Trace.Configuration
                 return tracer.DefaultServiceName;
             }
 
-            lock (_serviceNameCache)
+            if (!_serviceNameCache.TryGetValue(serviceName, out var finalServiceName))
             {
-                if (!_serviceNameCache.TryGetValue(serviceName, out var finalServiceName))
-                {
-                    finalServiceName = $"{tracer.DefaultServiceName}-{serviceName}";
-                    _serviceNameCache[serviceName] = finalServiceName;
-                }
-
-                return finalServiceName;
+                finalServiceName = $"{tracer.DefaultServiceName}-{serviceName}";
+                _serviceNameCache.TryAdd(serviceName, finalServiceName);
             }
+
+            return finalServiceName;
         }
 
         internal bool TryGetServiceName(string key, out string? serviceName)
