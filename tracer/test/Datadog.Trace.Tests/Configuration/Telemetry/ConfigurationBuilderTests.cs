@@ -7,6 +7,7 @@ using System;
 using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using FluentAssertions;
 using Xunit;
@@ -74,6 +75,99 @@ public class ConfigurationBuilderTests
 
                 return Default;
             }
+        }
+    }
+
+    public class GetAsTests
+    {
+        private const string Default = "40CFDD4B-2CB0-4B18-94CC-6A5E9F44A323";
+        private readonly Guid _default = Guid.Parse(Default);
+
+        private readonly Func<string, ParsingResult<Guid>> _converter =
+            x => Guid.TryParse(x, out var result) ? result : ParsingResult<Guid>.Failure();
+
+        private readonly Func<string, ParsingResult<Guid?>> _nullableConverter =
+            x => Guid.TryParse(x, out var result) ? result : ParsingResult<Guid?>.Failure();
+
+        private readonly NullConfigurationTelemetry _telemetry = new();
+
+        [Theory]
+        [InlineData("539F5206-2F28-4F34-9E05-AD7FA78B9705", "539F5206-2F28-4F34-9E05-AD7FA78B9705")]
+        [InlineData(null, Default)]
+        [InlineData("", Default)]
+        [InlineData("invalid", Default)]
+        public void GetAs_ReturnsTheExpectedValue(string value, string expected)
+        {
+            var collection = new NameValueCollection { { "key", value } };
+            var source = new NameValueConfigurationSource(collection);
+
+            var actual = new ConfigurationBuilder(source, _telemetry)
+                        .WithKeys("key")
+                        .GetAs<Guid>(
+                             getDefaultValue: () => _default,
+                             validator: null,
+                             converter: _converter);
+
+            actual.Should().Be(Guid.Parse(expected));
+        }
+
+        [Theory]
+        [InlineData("539F5206-2F28-4F34-9E05-AD7FA78B9705", "539F5206-2F28-4F34-9E05-AD7FA78B9705")]
+        [InlineData(null, Default)]
+        [InlineData("", Default)]
+        [InlineData("invalid", Default)]
+        public void GetAs_ReturnsTheExpectedValueWithNullableGuid(string value, string expected)
+        {
+            var collection = new NameValueCollection { { "key", value } };
+            var source = new NameValueConfigurationSource(collection);
+
+            var actual = new ConfigurationBuilder(source, _telemetry)
+                        .WithKeys("key")
+                        .GetAs<Guid?>(
+                             getDefaultValue: () => _default,
+                             validator: null,
+                             converter: _nullableConverter);
+
+            actual.Should().Be(Guid.Parse(expected));
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("invalid")]
+        public void GetAs_ReturnsNullWhenCantParseAndNoDefault(string value)
+        {
+            var collection = new NameValueCollection { { "key", value } };
+            var source = new NameValueConfigurationSource(collection);
+
+            var actual = new ConfigurationBuilder(source, _telemetry)
+                        .WithKeys("key")
+                        .GetAs(
+                             getDefaultValue: null,
+                             validator: null,
+                             converter: _nullableConverter);
+
+            actual.Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData("539F5206-2F28-4F34-9E05-AD7FA78B9705", Default)]
+        [InlineData("D2681B55-0E58-4192-B4D9-09584163E949", "D2681B55-0E58-4192-B4D9-09584163E949")]
+        [InlineData("55911B24-EE69-45FC-AB84-D912F31DEEB9", Default)]
+        [InlineData("C3B639AB-28F8-401E-B9C7-D0D36C3B55FF", "C3B639AB-28F8-401E-B9C7-D0D36C3B55FF")]
+        public void GetAs_ReturnsDefaultWhenValidationFails(string value, string expected)
+        {
+            var collection = new NameValueCollection { { "key", value } };
+            var source = new NameValueConfigurationSource(collection);
+
+            var actual = new ConfigurationBuilder(source, _telemetry)
+                        .WithKeys("key")
+                        .GetAs<Guid>(
+                             getDefaultValue: () => _default,
+                             validator: x => x.ToString()[0] != '5',
+                             converter: _converter);
+
+            actual.Should().Be(expected);
         }
     }
 
