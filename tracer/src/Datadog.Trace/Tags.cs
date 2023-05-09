@@ -297,6 +297,11 @@ namespace Datadog.Trace
         internal const string AmqpDeliveryMode = "amqp.delivery_mode";
 
         /// <summary>
+        /// The bootstrap servers as defined in producer or consumer config
+        /// </summary>
+        internal const string KafkaBootstrapServers = "messaging.kafka.bootstrap.servers";
+
+        /// <summary>
         /// The partition associated with a record
         /// </summary>
         internal const string KafkaPartition = "kafka.partition";

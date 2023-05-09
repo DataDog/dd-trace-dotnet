@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -20,7 +21,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         private static bool _headersInjectionEnabled = true;
         private static string[] defaultProduceEdgeTags = new[] { "direction:out", "type:kafka" };
 
-        internal static Scope CreateProducerScope(Tracer tracer, ITopicPartition topicPartition, bool isTombstone, bool finishOnClose)
+        internal static Scope CreateProducerScope(
+            Tracer tracer,
+            object producer,
+            ITopicPartition topicPartition,
+            bool isTombstone,
+            bool finishOnClose)
         {
             Scope scope = null;
 
@@ -44,7 +50,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 string serviceName = tracer.Schema.Messaging.GetOutboundServiceName(MessagingType);
 
-                var tags = new KafkaTags(SpanKinds.Producer);
+                KafkaTags tags = tracer.Schema.Version switch
+                {
+                    SchemaVersion.V0 => new KafkaTags(SpanKinds.Producer),
+                    _ => new KafkaV1Tags(SpanKinds.Producer),
+                };
 
                 scope = tracer.StartActiveInternal(
                     operationName,
@@ -60,6 +70,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 if (topicPartition?.Partition is not null && !topicPartition.Partition.IsSpecial)
                 {
                     tags.Partition = (topicPartition?.Partition).ToString();
+                }
+
+                if (ProducerCache.TryGetProducer(producer, out var bootstrapServers))
+                {
+                    tags.BootstrapServers = bootstrapServers;
                 }
 
                 if (isTombstone)
@@ -141,7 +156,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 string serviceName = tracer.Schema.Messaging.GetInboundServiceName(MessagingType);
 
-                var tags = new KafkaTags(SpanKinds.Consumer);
+                KafkaTags tags = tracer.Schema.Version switch
+                {
+                    SchemaVersion.V0 => new KafkaTags(SpanKinds.Consumer),
+                    _ => new KafkaV1Tags(SpanKinds.Consumer),
+                };
 
                 scope = tracer.StartActiveInternal(operationName, parent: propagatedContext, tags: tags, serviceName: serviceName);
 
@@ -161,9 +180,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Offset = offset.ToString();
                 }
 
-                if (ConsumerGroupHelper.TryGetConsumerGroup(consumer, out var groupId))
+                if (ConsumerGroupHelper.TryGetConsumerGroup(consumer, out var groupId, out var bootstrapServers))
                 {
                     tags.ConsumerGroup = groupId;
+                    tags.BootstrapServers = bootstrapServers;
                 }
 
                 if (message is not null && message.Timestamp.Type != 0)
