@@ -23,7 +23,7 @@ public class FileInfoAspect
     [AspectMethodInsertBefore("System.IO.FileInfo::.ctor(System.String)")]
     [AspectMethodInsertBefore("System.IO.FileInfo::CopyTo(System.String)")]
     [AspectMethodInsertBefore("System.IO.FileInfo::CopyTo(System.String,System.Boolean)", 1)]
-#if NETCOREAPP3_0_OR_GREATER
+#if NETSTANDARD || NETCOREAPP3_0_OR_GREATER
     [AspectMethodInsertBefore("System.IO.FileInfo::MoveTo(System.String,System.Boolean)", 1)]
 #endif
     [AspectMethodInsertBefore("System.IO.FileInfo::MoveTo(System.String)")]
