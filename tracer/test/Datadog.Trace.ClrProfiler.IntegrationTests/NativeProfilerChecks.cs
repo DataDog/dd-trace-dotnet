@@ -17,7 +17,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base(new EnvironmentHelper("Datadog.Tracer.Native.Checks", typeof(TestHelper), output, samplesDirectory: Path.Combine("test", "test-applications", "instrumentation"), prependSamplesToAppName: false), output)
         {
             SetServiceVersion("1.0.0");
-            EnableDebugMode();
         }
 
         [SkippableFact]
