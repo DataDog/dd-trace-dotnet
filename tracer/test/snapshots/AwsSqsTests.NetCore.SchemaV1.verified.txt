@@ -40,7 +40,6 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
-      queuename: MyAsyncSQSQueue,
       span.kind: client
     }
   },
@@ -65,7 +64,6 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
-      queuename: MyAsyncSQSQueue2,
       span.kind: client
     }
   },

@@ -40,7 +40,6 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
-      queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -69,7 +68,6 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
-      queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
