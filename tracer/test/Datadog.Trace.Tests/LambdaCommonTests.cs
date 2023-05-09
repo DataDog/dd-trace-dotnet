@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests
 
             scope.Should().NotBeNull();
             scope.Span.TraceId128.Should().Be((TraceId)1234);
-            scope.Span.TraceId.Should().Be(1234);
+            ((ISpan)scope.Span).TraceId.Should().Be(1234);
             scope.Span.SpanId.Should().BeGreaterThan(0);
         }
 
@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tests
 
             scope.Should().NotBeNull();
             scope.Span.TraceId128.Should().BeGreaterThan(TraceId.Zero);
-            scope.Span.TraceId.Should().BeGreaterThan(0);
+            ((ISpan)scope.Span).TraceId.Should().BeGreaterThan(0);
             scope.Span.SpanId.Should().BeGreaterThan(0);
             scope.Span.Context.TraceContext.SamplingPriority.Should().Be(-1);
         }
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tests
 
             scope.Should().NotBeNull();
             scope.Span.TraceId128.Should().Be((TraceId)1234);
-            scope.Span.TraceId.Should().Be(1234);
+            ((ISpan)scope.Span).TraceId.Should().Be(1234);
             scope.Span.SpanId.Should().BeGreaterThan(0);
             scope.Span.Context.TraceContext.SamplingPriority.Should().Be(-1);
         }
@@ -68,7 +68,7 @@ namespace Datadog.Trace.Tests
 
             scope.Should().NotBeNull();
             scope.Span.TraceId128.Should().BeGreaterThan((TraceId.Zero));
-            scope.Span.TraceId.Should().BeGreaterThan(0);
+            ((ISpan)scope.Span).TraceId.Should().BeGreaterThan(0);
             scope.Span.SpanId.Should().BeGreaterThan(0);
         }
 

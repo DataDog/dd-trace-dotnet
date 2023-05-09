@@ -45,7 +45,7 @@ namespace Datadog.Trace
 
                 Log.Debug(
                     "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{TagsType}])",
-                    new object[] { SpanId, Context.ParentId, TraceId, Tags, tagsType });
+                    new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, Tags, tagsType });
             }
         }
 
@@ -142,10 +142,12 @@ namespace Datadog.Trace
         public override string ToString()
         {
             var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-            sb.AppendLine($"TraceId64: {Context.TraceId}");
+            sb.AppendLine($"TraceId64: {Context.TraceId128.Lower}");
             sb.AppendLine($"TraceId128: {Context.TraceId128}");
+            sb.AppendLine($"RawTraceId: {Context.RawTraceId}");
             sb.AppendLine($"ParentId: {Context.ParentId}");
             sb.AppendLine($"SpanId: {Context.SpanId}");
+            sb.AppendLine($"RawSpanId: {Context.RawSpanId}");
             sb.AppendLine($"Origin: {Context.Origin}");
             sb.AppendLine($"ServiceName: {ServiceName}");
             sb.AppendLine($"OperationName: {OperationName}");
@@ -429,7 +431,7 @@ namespace Datadog.Trace
                 {
                     Log.Debug(
                         "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])",
-                        new object[] { SpanId, Context.ParentId, TraceId, ServiceName, ResourceName, OperationName, Tags });
+                        new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, ServiceName, ResourceName, OperationName, Tags });
                 }
             }
         }

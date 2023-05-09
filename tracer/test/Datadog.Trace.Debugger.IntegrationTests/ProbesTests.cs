@@ -68,7 +68,6 @@ public class ProbesTests : TestHelper
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
     {
         SetServiceVersion("1.0.0");
-        EnableDebugMode();
     }
 
     public static IEnumerable<object[]> UdsMemberData =>

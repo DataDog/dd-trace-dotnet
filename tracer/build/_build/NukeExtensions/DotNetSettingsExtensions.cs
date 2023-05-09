@@ -46,6 +46,9 @@ internal static partial class DotNetSettingsExtensions
             : settings.SetProperty("Platform", GetTargetPlatform(platform));
     }
 
+    public static DotNetTestSettings SetIsDebugRun(this DotNetTestSettings settings, bool isDebugRun)
+        => settings.When(isDebugRun, c => c.SetProcessEnvironmentVariable("DD_TRACE_DEBUG", "1"));
+
     private static string GetTargetPlatform(MSBuildTargetPlatform platform) =>
         platform == MSBuildTargetPlatform.MSIL ? "AnyCPU" : platform.ToString();
 

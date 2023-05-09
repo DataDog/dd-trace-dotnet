@@ -175,6 +175,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the 64-bit trace id, or the lower 64 bits of a 128-bit trace id.
         /// </summary>
+        [PublicApi]
         public ulong TraceId => TraceId128.Lower;
 
         /// <summary>
