@@ -38,8 +38,8 @@
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.102.1 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.102.1" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.100.124 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.100.124" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
@@ -133,8 +133,8 @@
 
     <!-- Integration: MySqlConnector -->
     <!-- Assembly: MySqlConnector -->
-    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/2.2.6 -->
-    <PackageReference Include="MySqlConnector" Version="2.2.6" />
+    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/2.2.5 -->
+    <PackageReference Include="MySqlConnector" Version="2.2.5" />
 
     <!-- Integration: NLog -->
     <!-- Assembly: NLog -->
@@ -238,13 +238,13 @@
 
     <!-- Integration: Grpc.AspNetCore.Server -->
     <!-- Assembly: Grpc.AspNetCore.Server -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.53.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.53.0" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.52.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.52.0" />
 
     <!-- Integration: Grpc.Net.Client -->
     <!-- Assembly: Grpc.Net.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.53.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.53.0" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.52.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.52.0" />
 
     <!-- Integration: Microsoft.AspNetCore.Mvc.Core -->
     <!-- Assembly: Microsoft.AspNetCore.Mvc.Core -->
