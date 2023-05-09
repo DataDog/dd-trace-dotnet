@@ -9,6 +9,7 @@ using System.Numerics;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
@@ -27,7 +28,9 @@ public class LiveDebuggerTests
     [Fact]
     public async Task DebuggerEnabled_ServicesCalled()
     {
-        var settings = DebuggerSettings.FromSource(new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.Enabled, "1" }, }));
+        var settings = DebuggerSettings.FromSource(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.Enabled, "1" }, }),
+            NullConfigurationTelemetry.Instance);
 
         var discoveryService = new DiscoveryServiceMock();
         var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
@@ -47,7 +50,9 @@ public class LiveDebuggerTests
     [Fact]
     public async Task DebuggerDisabled_ServicesNotCalled()
     {
-        var settings = DebuggerSettings.FromSource(new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.Enabled, "0" }, }));
+        var settings = DebuggerSettings.FromSource(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.Enabled, "0" }, }),
+            NullConfigurationTelemetry.Instance);
 
         var discoveryService = new DiscoveryServiceMock();
         var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();

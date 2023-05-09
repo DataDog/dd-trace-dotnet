@@ -39,7 +39,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("Kafka", output)
         {
             SetServiceVersion("1.0.0");
-            EnableDebugMode();
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -72,11 +71,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             allSpans.Should().HaveCountGreaterOrEqualTo(TotalExpectedSpanCount);
             ValidateIntegrationSpans(allSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
-            var allProducerSpans = allSpans.Where(x => x.Name == "kafka.produce").ToList();
+            var outboundOperationName = metadataSchemaVersion == "v0" ? "kafka.produce" : "kafka.send";
+            var inboundOperationName = metadataSchemaVersion == "v0" ? "kafka.consume" : "kafka.process";
+
+            var allProducerSpans = allSpans.Where(x => x.Name == outboundOperationName).ToList();
             var successfulProducerSpans = allProducerSpans.Where(x => x.Error == 0).ToList();
             var errorProducerSpans = allProducerSpans.Where(x => x.Error > 0).ToList();
 
-            var allConsumerSpans = allSpans.Where(x => x.Name == "kafka.consume").ToList();
+            var allConsumerSpans = allSpans.Where(x => x.Name == inboundOperationName).ToList();
             var successfulConsumerSpans = allConsumerSpans.Where(x => x.Error == 0).ToList();
             var errorConsumerSpans = allConsumerSpans.Where(x => x.Error > 0).ToList();
 

@@ -6,6 +6,7 @@ using BenchmarkDotNet.Running;
 using Datadog.Trace.BenchmarkDotNet;
 using BenchmarkDotNet.Exporters.Json;
 using BenchmarkDotNet.Filters;
+using Benchmarks.Trace.DatadogProfiler;
 using Benchmarks.Trace.Jetbrains;
 
 namespace Benchmarks.Trace
@@ -22,6 +23,7 @@ namespace Benchmarks.Trace
             const string jetBrainsDotTrace = "-jetbrains:dottrace";
             const string jetBrainsDotTraceTimeline = "-jetbrains:dottrace:timeline";
             const string jetBrainsDotMemory = "-jetbrains:dotmemory";
+            const string datadogProfiler = "-datadog:profiler";
 
             if (args?.Any(a => a == jetBrainsDotTrace) == true)
             {
@@ -40,6 +42,12 @@ namespace Benchmarks.Trace
                 Console.WriteLine("Setting Jetbrains memory collection... (could take time downloading collector binaries)");
                 args = args.Where(a => a != jetBrainsDotMemory).ToArray();
                 config = config.WithJetbrains(JetbrainsProduct.Memory);
+            }
+            else if (args?.Any(a => a == datadogProfiler) == true)
+            {
+                Console.WriteLine("Setting Datadog Profiler...");
+                args = args.Where(a => a != datadogProfiler).ToArray();
+                config = config.WithDatadogProfiler();
             }
             
             config = config.WithDatadog()

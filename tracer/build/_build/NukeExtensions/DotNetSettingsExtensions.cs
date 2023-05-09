@@ -46,6 +46,9 @@ internal static partial class DotNetSettingsExtensions
             : settings.SetProperty("Platform", GetTargetPlatform(platform));
     }
 
+    public static DotNetTestSettings SetIsDebugRun(this DotNetTestSettings settings, bool isDebugRun)
+        => settings.When(isDebugRun, c => c.SetProcessEnvironmentVariable("DD_TRACE_DEBUG", "1"));
+
     private static string GetTargetPlatform(MSBuildTargetPlatform platform) =>
         platform == MSBuildTargetPlatform.MSIL ? "AnyCPU" : platform.ToString();
 
@@ -92,6 +95,11 @@ internal static partial class DotNetSettingsExtensions
         return settings.SetProperty("BuildProjectReferences", false);
     }
 
+    public static DotNetMSBuildSettings EnableNoDependencies(this DotNetMSBuildSettings settings)
+    {
+        return settings.SetProperty("BuildProjectReferences", false);
+    }
+
     public static DotNetTestSettings EnableCrashDumps(this DotNetTestSettings settings, MiniDumpType dumpType = MiniDumpType.MiniDumpWithFullMemory)
     {
         if (bool.Parse(Environment.GetEnvironmentVariable("enable_crash_dumps") ?? "false"))
@@ -107,7 +115,7 @@ internal static partial class DotNetSettingsExtensions
     public static DotNetTestSettings EnableTrxLogOutput(this DotNetTestSettings settings, string resultsDirectory)
     {
         return settings
-            .SetLogger("trx")
+            .SetLoggers("trx")
             .SetResultsDirectory(resultsDirectory);
     }
 

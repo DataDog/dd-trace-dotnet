@@ -4,10 +4,14 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -17,7 +21,11 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast;
 
 public class IastInstrumentationUnitTests : TestHelper
 {
-    private List<Type> _notInstrumentedTypes = new List<Type>() { typeof(ReadOnlyMemory<char>), typeof(ReadOnlySpan<char>), typeof(char*), typeof(bool), typeof(char), typeof(ushort), typeof(ulong), typeof(uint), typeof(int), typeof(byte), typeof(sbyte), typeof(short), typeof(long), typeof(double), typeof(decimal), typeof(float) };
+    private List<Type> _taintedTypes = new List<Type>()
+    {
+        typeof(string), typeof(StringBuilder), typeof(object), typeof(char[]), typeof(object[]), typeof(IEnumerable),
+        typeof(string[]), typeof(HashAlgorithm), typeof(SymmetricAlgorithm)
+    };
 
     public IastInstrumentationUnitTests(ITestOutputHelper output)
         : base("InstrumentedTests", output)
@@ -29,7 +37,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestStringBuilderToStringMethodsAspectCover()
     {
-        TestMethodOverloads("System.Text.StringBuilder", "ToString", null, null);
+        TestMethodOverloads(typeof(StringBuilder), "ToString", null);
     }
 
     [SkippableFact]
@@ -37,8 +45,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestStringBuilderAppendLineMethodsAspectCover()
     {
-        var overloadsToExclude = new List<string>() { "System.Text.StringBuilder AppendLine()", "System.Text.StringBuilder AppendLine(AppendInterpolatedStringHandler ByRef)", "System.Text.StringBuilder AppendLine(System.IFormatProvider, AppendInterpolatedStringHandler ByRef)" };
-        TestMethodOverloads("System.Text.StringBuilder", "AppendLine", overloadsToExclude, null);
+        TestMethodOverloads(typeof(StringBuilder), "AppendLine", null, true);
     }
 
     [SkippableFact]
@@ -46,8 +53,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestStringBuilderAppendMethodsAspectCover()
     {
-        var overloadsToExclude = new List<string>() { "System.Text.StringBuilder Append(AppendInterpolatedStringHandler ByRef)", "System.Text.StringBuilder Append(System.IFormatProvider, AppendInterpolatedStringHandler ByRef)" };
-        TestMethodOverloads("System.Text.StringBuilder", "Append", overloadsToExclude, _notInstrumentedTypes);
+        TestMethodOverloads(typeof(StringBuilder), "Append");
     }
 
     [SkippableFact]
@@ -55,7 +61,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestStringBuilderConstructorMethodsAspectCover()
     {
-        TestMethodOverloads("System.Text.StringBuilder", ".ctor", null, null);
+        TestMethodOverloads(typeof(StringBuilder), ".ctor", null, true);
     }
 
     [SkippableFact]
@@ -63,7 +69,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestJoinMethodsAspectCover()
     {
-        TestMethodOverloads("System.String", "Join", null, null);
+        TestMethodOverloads(typeof(string), "Join");
     }
 
     [SkippableFact]
@@ -71,7 +77,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestToUpperMethodsAspectCover()
     {
-        TestMethodOverloads("System.String", "ToUpper", null, null);
+        TestMethodOverloads(typeof(string), "ToUpper");
     }
 
     [SkippableFact]
@@ -79,7 +85,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestToUpperInvariantMethodsAspectCover()
     {
-        TestMethodOverloads("System.String", "ToUpperInvariant", null, null);
+        TestMethodOverloads(typeof(string), "ToUpperInvariant");
     }
 
     [SkippableFact]
@@ -87,7 +93,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestToLowerArrayMethodsAspectCover()
     {
-        TestMethodOverloads("System.String", "ToLower", null, null);
+        TestMethodOverloads(typeof(string), "ToLower");
     }
 
     [SkippableFact]
@@ -95,7 +101,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestToLowerInvariantMethodsAspectCover()
     {
-        TestMethodOverloads("System.String", "ToLowerInvariant", null, null);
+        TestMethodOverloads(typeof(string), "ToLowerInvariant");
     }
 
     [SkippableFact]
@@ -103,7 +109,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestInsertMethodsAspectCover()
     {
-        TestMethodOverloads("System.String", "Insert", null, null);
+        TestMethodOverloads(typeof(string), "Insert");
     }
 
     [SkippableFact]
@@ -111,7 +117,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestRemoveMethodsAspectCover()
     {
-        TestMethodOverloads("System.String", "Remove", null, null);
+        TestMethodOverloads(typeof(string), "Remove");
     }
 
     [SkippableFact]
@@ -119,7 +125,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestToCharArrayMethodsAspectCover()
     {
-        TestMethodOverloads("System.String", "ToCharArray", null, null);
+        TestMethodOverloads(typeof(string), "ToCharArray");
     }
 
     [SkippableFact]
@@ -127,7 +133,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestTrimStartMethodsAspectCover()
     {
-        TestMethodOverloads("System.String", "TrimStart", null, null);
+        TestMethodOverloads(typeof(string), "TrimStart");
     }
 
     [SkippableFact]
@@ -135,7 +141,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestTrimEndMethodsAspectCover()
     {
-        TestMethodOverloads("System.String", "TrimEnd", null, null);
+        TestMethodOverloads(typeof(string), "TrimEnd");
     }
 
     [SkippableFact]
@@ -143,7 +149,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestTrimMethodsAspectCover()
     {
-        TestMethodOverloads("System.String", "Trim", null, null);
+        TestMethodOverloads(typeof(string), "Trim");
     }
 
     [SkippableFact]
@@ -151,7 +157,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public void TestSubstringMethodsAspectCover()
     {
-        TestMethodOverloads("System.String", "Substring", null, null);
+        TestMethodOverloads(typeof(string), "Substring");
     }
 
     [SkippableFact]
@@ -160,7 +166,167 @@ public class IastInstrumentationUnitTests : TestHelper
     public void TestConcatMethodsAspectCover()
     {
         var overloadsToExclude = new List<string>() { "System.String Concat(System.Object)" };
-        TestMethodOverloads("System.String", "Concat", overloadsToExclude, _notInstrumentedTypes);
+        TestMethodOverloads(typeof(string), "Concat", overloadsToExclude);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestAllStringAspectsHaveACorrespondingMethod()
+    {
+        CheckAllAspectHaveACorrespondingMethod(typeof(string));
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestAllStringBuilderAspectsHaveACorrespondingMethod()
+    {
+        CheckAllAspectHaveACorrespondingMethod(typeof(StringBuilder));
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestDirectoryClassMethodsAspectCover()
+    {
+        // load System.Io assembly
+        _ = new System.IO.FileInfo("dummy");
+
+        var overloadsToExclude = new List<string>()
+        {
+            // These methods are not vulnerable or, after evaluation, were considered to report more false positives than actual vulnerabilities
+            "Boolean Exists(System.String)",
+            "void SetCreationTime(System.String, System.DateTime)",
+            "void SetCreationTimeUtc(System.String, System.DateTime)",
+            "System.DateTime GetCreationTime(System.String)",
+            "System.DateTime GetCreationTimeUtc(System.String)",
+            "void SetLastWriteTime(System.String, System.DateTime)",
+            "void SetLastWriteTimeUtc(System.String, System.DateTime)",
+            "void SetLastAccessTime(System.String, System.DateTime)",
+            "void SetLastAccessTimeUtc(System.String, System.DateTime)",
+            "System.DateTime GetLastWriteTime(System.String)",
+            "System.DateTime GetLastWriteTimeUtc(System.String)",
+            "System.DateTime GetLastAccessTime(System.String)",
+            "System.DateTime GetLastAccessTimeUtc(System.String)",
+            "System.IO.FileSystemInfo CreateSymbolicLink(System.String, System.String)",
+            "System.IO.FileSystemInfo ResolveLinkTarget(System.String, Boolean)",
+            "System.IO.DirectoryInfo GetParent(System.String)",
+#if NETFRAMEWORK
+            "System.Security.AccessControl.DirectorySecurity GetAccessControl(System.String)",
+            "System.Security.AccessControl.DirectorySecurity GetAccessControl(System.String, System.Security.AccessControl.AccessControlSections)"
+#endif
+        };
+        TestMethodOverloads(typeof(Directory), null, overloadsToExclude, true);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestFileClassMethodsAspectCover()
+    {
+        var overloadsToExclude = new List<string>()
+        {
+            "Boolean Exists(System.String)",
+            "void SetCreationTime(System.String, System.DateTime)",
+            "void SetCreationTimeUtc(System.String, System.DateTime)",
+            "System.DateTime GetCreationTime(System.String)",
+            "System.DateTime GetCreationTimeUtc(System.String)",
+            "void SetLastAccessTime(System.String, System.DateTime)",
+            "void SetLastAccessTimeUtc(System.String, System.DateTime)",
+            "System.DateTime GetLastAccessTime(System.String)",
+            "System.DateTime GetLastAccessTimeUtc(System.String)",
+            "void SetLastWriteTime(System.String, System.DateTime)",
+            "void SetLastWriteTimeUtc(System.String, System.DateTime)",
+            "System.DateTime GetLastWriteTime(System.String)",
+            "System.DateTime GetLastWriteTimeUtc(System.String)",
+            "System.IO.FileAttributes GetAttributes(System.String)",
+            "void Encrypt(System.String)",
+            "void Decrypt(System.String)",
+            "System.IO.FileSystemInfo CreateSymbolicLink(System.String, System.String)",
+            "System.IO.FileSystemInfo ResolveLinkTarget(System.String, Boolean)",
+            "System.IO.UnixFileMode GetUnixFileMode(System.String)",
+            "void SetUnixFileMode(System.String, System.IO.UnixFileMode)",
+#if NETFRAMEWORK
+            "System.Security.AccessControl.FileSecurity GetAccessControl(System.String)",
+            "System.Security.AccessControl.FileSecurity GetAccessControl(System.String, System.Security.AccessControl.AccessControlSections)",
+            "void SetAccessControl(System.String, System.Security.AccessControl.FileSecurity)"
+#endif
+#if NETCOREAPP3_0
+            // special case
+            "System.IO.File Move(System.String, System.String, Boolean)"
+#endif
+        };
+        TestMethodOverloads(typeof(File), null, overloadsToExclude, true);
+
+        var aspectsToExclude = new List<string>()
+        {
+#if NET6_0
+            // special case
+            "System.IO.File::ReadLinesAsync(System.String, System.Threading.CancellationToken)"
+#endif
+        };
+
+        CheckAllAspectHaveACorrespondingMethod(typeof(File), aspectsToExclude);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestDirectoryInfoClassMethodsAspectCover()
+    {
+        var overloadsToExclude = new List<string>()
+        {
+            "void CreateAsSymbolicLink(System.String)"
+        };
+        TestMethodOverloads(typeof(DirectoryInfo), null, overloadsToExclude, true);
+        CheckAllAspectHaveACorrespondingMethod(typeof(DirectoryInfo));
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestFileInfoClassMethodsAspectCover()
+    {
+        var overloadsToExclude = new List<string>()
+        {
+            "void CreateAsSymbolicLink(System.String)",
+#if NETCOREAPP3_0
+            // special case
+            "void MoveTo(System.String, Boolean)"
+#endif
+        };
+        TestMethodOverloads(typeof(FileInfo), null, overloadsToExclude, true);
+        CheckAllAspectHaveACorrespondingMethod(typeof(FileInfo));
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestFileStreamClassMethodsAspectCover()
+    {
+        var overloadsToExclude = new List<string>() { };
+        TestMethodOverloads(typeof(FileStream), ".ctor", overloadsToExclude);
+        CheckAllAspectHaveACorrespondingMethod(typeof(FileStream));
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestStreamReaderClassMethodsAspectCover()
+    {
+        var overloadsToExclude = new List<string>() { };
+        TestMethodOverloads(typeof(StreamReader), ".ctor", overloadsToExclude);
+        CheckAllAspectHaveACorrespondingMethod(typeof(StreamReader));
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestStreamWriterClassMethodsAspectCover()
+    {
+        TestMethodOverloads(typeof(StreamWriter), ".ctor");
+        CheckAllAspectHaveACorrespondingMethod(typeof(StreamWriter));
     }
 
     [SkippableFact]
@@ -181,6 +347,7 @@ public class IastInstrumentationUnitTests : TestHelper
             }
 #endif
             SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests"));
+            SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "0");
             ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);
             processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
         }
@@ -203,11 +370,10 @@ public class IastInstrumentationUnitTests : TestHelper
         }
 
         return signature.Replace(" ", string.Empty).Replace("[T]", string.Empty).Replace("<!!0>", string.Empty)
-            .Replace("[", "<").Replace("]", ">").Replace(",...", string.Empty).Replace("(Char", "(System.Char").Replace(",Int32", ",System.Int32")
-            .Replace(",Char", ",System.Char").Replace("(Int32", "(System.Int32");
+            .Replace("[", "<").Replace("]", ">").Replace(",...", string.Empty).Replace("System.", string.Empty);
     }
 
-    private bool MethodShouldBeChecked(MethodInfo method, List<Type> typesToExclude)
+    private bool MethodShouldBeChecked(MethodBase method)
     {
         var parameters = method.GetParameters();
 
@@ -218,7 +384,7 @@ public class IastInstrumentationUnitTests : TestHelper
 
         foreach (var parameter in parameters)
         {
-            if (typesToExclude?.Contains(parameter.ParameterType) != true)
+            if (_taintedTypes.Contains(parameter.ParameterType))
             {
                 return true;
             }
@@ -227,22 +393,58 @@ public class IastInstrumentationUnitTests : TestHelper
         return false;
     }
 
-    private void TestMethodOverloads(string typeToCheck, string methodToCheck, List<string> overloadsToExclude, List<Type> typesToExclude)
+    private void TestMethodOverloads(Type typeToCheck, string methodToCheck, List<string> overloadsToExclude = null, bool excludeParameterlessMethods = false)
     {
         var overloadsToExcludeNormalized = overloadsToExclude?.Select(NormalizeName).ToList();
         var aspects = ClrProfiler.AspectDefinitions.Aspects.ToList();
-        var type = Type.GetType(typeToCheck);
-        type.Should().NotBeNull();
-        var typeMethods = type?.GetMethods().Where(x => x.Name == methodToCheck);
+        List<MethodBase> typeMethods = new();
+        typeMethods.AddRange(string.IsNullOrEmpty(methodToCheck) ?
+            typeToCheck?.GetMethods().Where(x => x.IsPublic && !x.IsVirtual) :
+            typeToCheck?.GetMethods().Where(x => x.Name == methodToCheck));
+
+        if (methodToCheck == ".ctor" || string.IsNullOrEmpty(methodToCheck))
+        {
+            typeMethods.AddRange(typeToCheck.GetConstructors().Where(x => x.IsPublic));
+        }
+
+        typeMethods = typeMethods.Where(x => !((x.IsStatic || excludeParameterlessMethods) && x.GetParameters().Count() == 0)).ToList();
         typeMethods.Should().NotBeNull();
+        typeMethods.Should().HaveCountGreaterThan(0);
 
         foreach (var method in typeMethods)
         {
             var methodSignature = NormalizeName(method.ToString());
-            if (MethodShouldBeChecked(method, typesToExclude) && overloadsToExcludeNormalized?.Contains(methodSignature) != true)
+            if (MethodShouldBeChecked(method) && overloadsToExcludeNormalized?.Contains(methodSignature) != true)
             {
-                var isCovered = aspects.Any(x => NormalizeName(x).Contains(methodSignature));
+                var isCovered = aspects.Any(x => NormalizeName(x).Contains(methodSignature) && x.Contains(typeToCheck.FullName));
                 isCovered.Should().BeTrue(method.ToString() + " is not covered");
+            }
+        }
+    }
+
+    private void CheckAllAspectHaveACorrespondingMethod(Type typeToCheck, List<string> aspectsToExclude = null)
+    {
+        var aspectsToExcludeNormalized = aspectsToExclude?.Select(NormalizeName).ToList();
+
+        foreach (var aspect in ClrProfiler.AspectDefinitions.Aspects)
+        {
+            if (aspectsToExcludeNormalized?.FirstOrDefault(x => NormalizeName(x).Contains(x)) is null)
+            {
+                var index = aspect.IndexOf("::");
+                if (index > 0)
+                {
+                    var index2 = aspect.IndexOf("\"");
+                    var aspectType = aspect.Substring(index2 + 1, index - index2 - 1);
+                    List<MethodBase> typeMethods = new();
+                    typeMethods.AddRange(typeToCheck.GetMethods().Where(x => x.IsPublic).ToList());
+                    typeMethods.AddRange(typeToCheck.GetConstructors().Where(x => x.IsPublic).ToList());
+
+                    if (typeToCheck.FullName == aspectType)
+                    {
+                        var correspondingMethod = typeMethods.FirstOrDefault(x => NormalizeName(aspect).Contains(NormalizeName(x.ToString())));
+                        correspondingMethod.Should().NotBeNull(aspect + " is not used");
+                    }
+                }
             }
         }
     }

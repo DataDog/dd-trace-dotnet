@@ -232,14 +232,11 @@ namespace Datadog.Trace.Tests.Propagators
             const ulong expectedSpanId = 0x00f067aa0ba902b7UL;
 
             var result = B3Propagator.Extract(headers.Object);
+
             result.Should().NotBeNull();
             result!.TraceId128.Should().Be(expectedTraceId);
             result.TraceId.Should().Be(expectedTraceId.Lower);
             result.SpanId.Should().Be(expectedSpanId);
-
-            // Check truncation
-            var truncatedTraceId64 = expectedTraceId.Lower.ToString("x16");
-            traceId.Substring(16).Should().Be(truncatedTraceId64);
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>(MockBehavior.Strict);

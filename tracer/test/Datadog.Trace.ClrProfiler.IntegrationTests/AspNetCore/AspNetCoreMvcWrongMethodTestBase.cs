@@ -27,7 +27,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
             this.fixture = fixture;
             _testName = testName;
-            EnableDebugMode();
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>

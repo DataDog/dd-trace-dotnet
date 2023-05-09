@@ -23,8 +23,22 @@ internal static class IastModule
     private const string OperationNameWeakCipher = "weak_cipher";
     private const string OperationNameSqlInjection = "sql_injection";
     private const string OperationNameCommandInjection = "command_injection";
+    private const string OperationNamePathTraversal = "path_traversal";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static IastSettings iastSettings = Iast.Instance.Settings;
+
+    public static Scope? OnPathTraversal(string evidence)
+    {
+        try
+        {
+            return GetScope(evidence, IntegrationId.PathTraversal, VulnerabilityTypeName.PathTraversal, OperationNamePathTraversal, true);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for path traversal.");
+            return null;
+        }
+    }
 
     public static Scope? OnSqlQuery(string query, IntegrationId integrationId)
     {
@@ -160,7 +174,15 @@ internal static class IastModule
 
         // Sometimes we do not have the file/line but we have the method/class.
         var filename = frameInfo.StackFrame?.GetFileName();
-        var vulnerability = new Vulnerability(vulnerabilityType, new Location(filename ?? GetMethodName(frameInfo.StackFrame), filename != null ? frameInfo.StackFrame?.GetFileLineNumber() : null, currentSpan?.SpanId), new Evidence(evidenceValue, tainted?.Ranges));
+        var vulnerability = new Vulnerability(
+            vulnerabilityType,
+            new Location(
+                stackFile: filename,
+                methodName: string.IsNullOrEmpty(filename) ? frameInfo.StackFrame?.GetMethod()?.Name : null,
+                line: !string.IsNullOrEmpty(filename) ? frameInfo.StackFrame?.GetFileLineNumber() : null,
+                spanId: currentSpan?.SpanId,
+                methodTypeName: string.IsNullOrEmpty(filename) ? GetMethodTypeName(frameInfo.StackFrame) : null),
+            new Evidence(evidenceValue, tainted?.Ranges));
 
         if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
@@ -196,20 +218,9 @@ internal static class IastModule
         return scope;
     }
 
-    private static string? GetMethodName(StackFrame? frame)
+    private static string? GetMethodTypeName(StackFrame? frame)
     {
-        var method = frame?.GetMethod();
-        var declaringType = method?.DeclaringType;
-        var namespaceName = declaringType?.Namespace;
-        var typeName = declaringType?.Name;
-        var methodName = method?.Name;
-
-        if (methodName == null || typeName == null || namespaceName == null)
-        {
-            return null;
-        }
-
-        return $"{namespaceName}.{typeName}::{methodName}";
+        return frame?.GetMethod()?.DeclaringType?.FullName;
     }
 
     private static bool InvalidHashAlgorithm(string algorithm)

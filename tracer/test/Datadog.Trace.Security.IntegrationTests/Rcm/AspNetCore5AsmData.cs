@@ -185,7 +185,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         public AspNetCore5AsmDataBlockingUser(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableSecurity, string testName)
             : base(fixture, outputHelper, enableSecurity, testName: testName)
         {
-            this.EnableDebugMode();
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
         }
 

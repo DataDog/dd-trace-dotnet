@@ -17,11 +17,36 @@ namespace Datadog.Trace.Tagging
     {
         private List<KeyValuePair<string, string>>? _tags;
         private string? _cachedPropagationHeader;
+        private string? _samplingMechanismValue;
 
-        public TraceTagCollection(
-            List<KeyValuePair<string, string>>? tags = null,
-            string? cachedPropagationHeader = null)
+        public TraceTagCollection()
         {
+        }
+
+        public TraceTagCollection(List<KeyValuePair<string, string>>? tags, string? cachedPropagationHeader)
+        {
+            if (tags?.Count > 0)
+            {
+                lock (tags)
+                {
+                    KeyValuePair<string, string>? samplingMechanismPair = null;
+                    foreach (var item in tags)
+                    {
+                        if (item.Key == Trace.Tags.Propagated.DecisionMaker)
+                        {
+                            samplingMechanismPair = item;
+                            break;
+                        }
+                    }
+
+                    if (samplingMechanismPair != null)
+                    {
+                        tags.Remove(samplingMechanismPair.Value);
+                        _samplingMechanismValue = samplingMechanismPair.Value.Value;
+                    }
+                }
+            }
+
             _tags = tags;
             _cachedPropagationHeader = cachedPropagationHeader;
         }
@@ -29,9 +54,7 @@ namespace Datadog.Trace.Tagging
         /// <summary>
         /// Gets the number of elements contained in the <see cref="TraceTagCollection"/>.
         /// </summary>
-        public int Count => _tags?.Count ?? 0;
-
-        public IReadOnlyList<KeyValuePair<string, string>> Tags => ToArray();
+        public int Count => (_tags?.Count ?? 0) + (_samplingMechanismValue != null ? 1 : 0);
 
         /// <summary>
         /// Adds a new tag to the collection.
@@ -79,6 +102,17 @@ namespace Datadog.Trace.Tagging
             if (value == null)
             {
                 return RemoveTag(name);
+            }
+
+            if (name == Trace.Tags.Propagated.DecisionMaker)
+            {
+                if (_samplingMechanismValue != null && !replaceIfExists)
+                {
+                    return false;
+                }
+
+                _samplingMechanismValue = value;
+                return true;
             }
 
             var tags = _tags;
@@ -140,6 +174,12 @@ namespace Datadog.Trace.Tagging
                 ThrowHelper.ThrowArgumentNullException(nameof(name));
             }
 
+            if (name == Trace.Tags.Propagated.DecisionMaker)
+            {
+                _samplingMechanismValue = null;
+                return true;
+            }
+
             var tags = _tags;
             if (tags == null || tags.Count == 0)
             {
@@ -175,6 +215,11 @@ namespace Datadog.Trace.Tagging
             if (name == null!)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(name));
+            }
+
+            if (name == Trace.Tags.Propagated.DecisionMaker)
+            {
+                return _samplingMechanismValue;
             }
 
             var tags = _tags;
@@ -238,25 +283,15 @@ namespace Datadog.Trace.Tagging
             return _cachedPropagationHeader ??= TagPropagation.ToHeader(this, maximumHeaderLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
         }
 
-        public KeyValuePair<string, string>[] ToArray()
-        {
-            var tags = _tags;
-
-            if (tags == null || tags.Count == 0)
-            {
-                return Array.Empty<KeyValuePair<string, string>>();
-            }
-
-            lock (tags)
-            {
-                return tags.ToArray();
-            }
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Enumerate<TTagEnumerator>(ref TTagEnumerator tagEnumerator)
             where TTagEnumerator : struct, ITagEnumerator
         {
+            if (_samplingMechanismValue != null)
+            {
+                tagEnumerator.Next(new KeyValuePair<string, string>(Trace.Tags.Propagated.DecisionMaker, _samplingMechanismValue));
+            }
+
             var tags = _tags;
             if (tags is null || tags.Count == 0)
             {

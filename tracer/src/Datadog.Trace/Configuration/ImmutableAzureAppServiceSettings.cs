@@ -6,10 +6,9 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
-using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
 
 namespace Datadog.Trace.Configuration
 {
@@ -27,22 +26,17 @@ namespace Datadog.Trace.Configuration
         public static readonly string DefaultHttpClientExclusions = "logs.datadoghq, services.visualstudio, applicationinsights.azure, blob.core.windows.net/azure-webjobs, azurewebsites.net/admin, /azure-webjobs-hosts/".ToUpperInvariant();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ImmutableAzureAppServiceSettings"/> class with default values.
-        /// </summary>
-        public ImmutableAzureAppServiceSettings()
-            : this(null)
-        {
-        }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="ImmutableAzureAppServiceSettings"/> class
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        public ImmutableAzureAppServiceSettings(IConfigurationSource? source)
+        /// <param name="telemetry"><see cref="IConfigurationTelemetry"/> instance for recording telemetry</param>
+        public ImmutableAzureAppServiceSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {
             source ??= NullConfigurationSource.Instance;
-            var apiKey = source.GetString(Configuration.ConfigurationKeys.ApiKey);
+            // TODO: This is retrieved from other places too... need to work out how to not replace config
+            var config = new ConfigurationBuilder(source, telemetry);
+            var apiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
             if (string.IsNullOrEmpty(apiKey))
             {
                 Log.Error("The Azure Site Extension will not work if you have not configured DD_API_KEY.");
@@ -50,18 +44,18 @@ namespace Datadog.Trace.Configuration
             }
 
             // Azure App Services Basis
-            SubscriptionId = GetSubscriptionId(source);
-            ResourceGroup = source.GetString(ConfigurationKeys.AzureAppService.ResourceGroupKey);
-            SiteName = source.GetString(ConfigurationKeys.AzureAppService.SiteNameKey);
+            SubscriptionId = GetSubscriptionId(source, telemetry);
+            ResourceGroup = config.WithKeys(ConfigurationKeys.AzureAppService.ResourceGroupKey).AsString();
+            SiteName = config.WithKeys(ConfigurationKeys.AzureAppService.SiteNameKey).AsString();
             ResourceId = CompileResourceId();
 
-            InstanceId = source.GetString(ConfigurationKeys.AzureAppService.InstanceIdKey) ?? "unknown";
-            InstanceName = source.GetString(ConfigurationKeys.AzureAppService.InstanceNameKey) ?? "unknown";
-            OperatingSystem = source.GetString(ConfigurationKeys.AzureAppService.OperatingSystemKey) ?? "unknown";
-            SiteExtensionVersion = source.GetString(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey) ?? "unknown";
+            InstanceId = config.WithKeys(ConfigurationKeys.AzureAppService.InstanceIdKey).AsString("unknown");
+            InstanceName = config.WithKeys(ConfigurationKeys.AzureAppService.InstanceNameKey).AsString("unknown");
+            OperatingSystem = config.WithKeys(ConfigurationKeys.AzureAppService.OperatingSystemKey).AsString("unknown");
+            SiteExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey).AsString("unknown");
 
-            FunctionsWorkerRuntime = source.GetString(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey);
-            FunctionsExtensionVersion = source.GetString(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey);
+            FunctionsWorkerRuntime = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey).AsString();
+            FunctionsExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey).AsString();
 
             if (FunctionsWorkerRuntime is not null || FunctionsExtensionVersion is not null)
             {
@@ -90,9 +84,9 @@ namespace Datadog.Trace.Configuration
 
             Runtime = FrameworkDescription.Instance.Name;
 
-            DebugModeEnabled = source.GetString(Configuration.ConfigurationKeys.DebugEnabled)?.ToBoolean() ?? false;
-            CustomTracingEnabled = source.GetString(ConfigurationKeys.AzureAppService.AasEnableCustomTracing)?.ToBoolean() ?? false;
-            NeedsDogStatsD = source.GetString(ConfigurationKeys.AzureAppService.AasEnableCustomMetrics)?.ToBoolean() ?? false;
+            DebugModeEnabled = config.WithKeys(Configuration.ConfigurationKeys.DebugEnabled).AsBool(false);
+            CustomTracingEnabled = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomTracing).AsBool(false);
+            NeedsDogStatsD = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomMetrics).AsBool(false);
         }
 
         public bool DebugModeEnabled { get; }
@@ -172,9 +166,12 @@ namespace Datadog.Trace.Configuration
             return resourceId;
         }
 
-        private string? GetSubscriptionId(IConfigurationSource source)
+        private string? GetSubscriptionId(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
-            var websiteOwner = source.GetString(ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey);
+            var websiteOwner = new ConfigurationBuilder(source, telemetry)
+                              .WithKeys(ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey)
+                              .AsString(websiteOwner => !string.IsNullOrWhiteSpace(websiteOwner));
+
             if (!string.IsNullOrWhiteSpace(websiteOwner))
             {
                 var plusSplit = websiteOwner!.Split('+');

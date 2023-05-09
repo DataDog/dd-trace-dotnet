@@ -37,7 +37,7 @@
       "parent_id": 1,
       "type": "web",
       "meta": {
-        "_dd.appsec.waf.version": "1.9.0",
+        "_dd.appsec.waf.version": "1.10.0",
         "_dd.runtime_family": "dotnet",
         "aspnet_core.route": "api/values",
         "component": "aspnet_core",
@@ -56,7 +56,7 @@
       "metrics": {
         "_dd.appsec.enabled": 1.0,
         "_dd.appsec.event_rules.error_count": 0.0,
-        "_dd.appsec.event_rules.loaded": 136.0,
+        "_dd.appsec.event_rules.loaded": 144.0,
         "_dd.top_level": 1.0,
         "_dd.tracer_kr": 0.0,
         "_sampling_priority_v1": 2.0,

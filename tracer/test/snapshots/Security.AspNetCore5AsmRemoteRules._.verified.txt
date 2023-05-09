@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -75,7 +75,6 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.appsec.event_rules.version: 2.22.222,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290-new","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.query","highlight":["[$slice]"],"key_path":["[$slice]"],"value":"[$slice]"}]}]}]},
       _dd.origin: appsec,
       _dd.p.dm: -0,
@@ -122,7 +121,6 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.appsec.event_rules.version: 3.33.333,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290-new","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.query","highlight":["[$slice]"],"key_path":["[$slice]"],"value":"[$slice]"}]}]}]},
       _dd.origin: appsec,
       _dd.p.dm: -0,

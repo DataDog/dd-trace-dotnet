@@ -1,178 +1,5 @@
 [assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/DataDog/dd-trace-dotnet.git")]
 
-namespace Datadog.Trace
-{
-    public sealed class AgentProcessManagerLoader
-    {
-        public AgentProcessManagerLoader() { }
-    }
-    public static class CorrelationIdentifier
-    {
-        public static string Env { get; }
-        public static string Service { get; }
-        public static ulong SpanId { get; }
-        public static ulong TraceId { get; }
-        public static string Version { get; }
-    }
-    public static class HttpHeaderNames
-    {
-        [System.Obsolete]
-        public const string DatadogTags = "x-datadog-tags";
-        public const string Origin = "x-datadog-origin";
-        public const string ParentId = "x-datadog-parent-id";
-        public const string SamplingPriority = "x-datadog-sampling-priority";
-        public const string TraceId = "x-datadog-trace-id";
-        public const string TracingEnabled = "x-datadog-tracing-enabled";
-        public const string UserAgent = "User-Agent";
-    }
-    public interface IScope : System.IDisposable
-    {
-        Datadog.Trace.ISpan Span { get; }
-        void Close();
-    }
-    public interface ISpan : System.IDisposable
-    {
-        Datadog.Trace.ISpanContext Context { get; }
-        bool Error { get; set; }
-        string OperationName { get; set; }
-        string ResourceName { get; set; }
-        string ServiceName { get; set; }
-        ulong SpanId { get; }
-        ulong TraceId { get; }
-        string Type { get; set; }
-        void Finish();
-        void Finish(System.DateTimeOffset finishTimestamp);
-        string GetTag(string key);
-        void SetException(System.Exception exception);
-        Datadog.Trace.ISpan SetTag(string key, string value);
-    }
-    public interface ISpanContext
-    {
-        string ServiceName { get; }
-        ulong SpanId { get; }
-        ulong TraceId { get; }
-    }
-    public interface ISpanContextExtractor
-    {
-        Datadog.Trace.ISpanContext? Extract<TCarrier>(TCarrier carrier, System.Func<TCarrier, string, System.Collections.Generic.IEnumerable<string?>> getter);
-    }
-    public interface ITracer
-    {
-        Datadog.Trace.IScope ActiveScope { get; }
-        Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
-        Datadog.Trace.IScope StartActive(string operationName);
-        Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.SpanCreationSettings settings);
-    }
-    public enum SamplingPriority
-    {
-        UserReject = -1,
-        AutoReject = 0,
-        AutoKeep = 1,
-        UserKeep = 2,
-    }
-    public class SpanContext : Datadog.Trace.ISpanContext, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>>, System.Collections.Generic.IReadOnlyCollection<System.Collections.Generic.KeyValuePair<string, string>>, System.Collections.Generic.IReadOnlyDictionary<string, string>, System.Collections.IEnumerable
-    {
-        public static readonly Datadog.Trace.ISpanContext None;
-        public SpanContext(ulong? traceId, ulong spanId, Datadog.Trace.SamplingPriority? samplingPriority = default, string serviceName = null) { }
-        public Datadog.Trace.ISpanContext Parent { get; }
-        public ulong? ParentId { get; }
-        public string ServiceName { get; set; }
-        public ulong SpanId { get; }
-        public ulong TraceId { get; }
-    }
-    public class SpanContextExtractor : Datadog.Trace.ISpanContextExtractor
-    {
-        public SpanContextExtractor() { }
-        public Datadog.Trace.ISpanContext? Extract<TCarrier>(TCarrier carrier, System.Func<TCarrier, string, System.Collections.Generic.IEnumerable<string?>> getter) { }
-    }
-    public struct SpanCreationSettings
-    {
-        public bool? FinishOnClose { get; set; }
-        public Datadog.Trace.ISpanContext Parent { get; set; }
-        public System.DateTimeOffset? StartTime { get; set; }
-    }
-    public static class SpanExtensions
-    {
-        public static void SetUser(this Datadog.Trace.ISpan span, Datadog.Trace.UserDetails userDetails) { }
-    }
-    public static class SpanKinds
-    {
-        public const string Client = "client";
-        public const string Consumer = "consumer";
-        public const string Internal = "internal";
-        public const string Producer = "producer";
-        public const string Server = "server";
-    }
-    public static class SpanTypes
-    {
-        public const string Benchmark = "benchmark";
-        public const string Build = "build";
-        public const string Custom = "custom";
-        public const string Db = "db";
-        public const string Http = "http";
-        public const string Queue = "queue";
-        public const string Serverless = "serverless";
-        public const string Sql = "sql";
-        public const string Test = "test";
-        public const string Web = "web";
-    }
-    public static class Tags
-    {
-        public const string DbName = "db.name";
-        public const string DbType = "db.type";
-        public const string DbUser = "db.user";
-        public const string Env = "env";
-        public const string ErrorMsg = "error.msg";
-        public const string ErrorStack = "error.stack";
-        public const string ErrorType = "error.type";
-        public const string HttpMethod = "http.method";
-        public const string HttpRequestHeadersHost = "http.request.headers.host";
-        public const string HttpStatusCode = "http.status_code";
-        public const string HttpUrl = "http.url";
-        public const string InstrumentationName = "component";
-        public const string InstrumentedMethod = "instrumented.method";
-        public const string Language = "language";
-        public const string ManualDrop = "manual.drop";
-        public const string ManualKeep = "manual.keep";
-        public const string MessageSize = "message.size";
-        public const string OutHost = "out.host";
-        public const string OutPort = "out.port";
-        public const string SamplingPriority = "sampling.priority";
-        public const string SpanKind = "span.kind";
-        public const string SqlQuery = "sql.query";
-        public const string SqlRows = "sql.rows";
-        public const string Version = "version";
-    }
-    public class Tracer : Datadog.Trace.ITracer
-    {
-        [System.Obsolete("This API is deprecated. Use Tracer.Instance to obtain a Tracer instance to create" +
-            " spans.")]
-        public Tracer() { }
-        [System.Obsolete(@"This API is deprecated, as it replaces the global settings for all Tracer instances in the application. If you were using this API to configure the global Tracer.Instance in code, use the static Tracer.Configure() to replace the global Tracer settings for the application")]
-        public Tracer(Datadog.Trace.Configuration.TracerSettings settings) { }
-        public Datadog.Trace.IScope ActiveScope { get; }
-        public string DefaultServiceName { get; }
-        public Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
-        [set: System.Obsolete("Use Tracer.Configure to configure the global Tracer instance in code.")]
-        public static Datadog.Trace.Tracer Instance { get; set; }
-        protected override void Finalize() { }
-        public System.Threading.Tasks.Task ForceFlushAsync() { }
-        public Datadog.Trace.IScope StartActive(string operationName) { }
-        public Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.SpanCreationSettings settings) { }
-        public static void Configure(Datadog.Trace.Configuration.TracerSettings settings) { }
-    }
-    public struct UserDetails
-    {
-        public UserDetails(string id) { }
-        public string? Email { get; set; }
-        public string Id { get; set; }
-        public string? Name { get; set; }
-        public bool PropagateId { get; set; }
-        public string? Role { get; set; }
-        public string? Scope { get; set; }
-        public string? SessionId { get; set; }
-    }
-}
 namespace Datadog.Trace.AppSec
 {
     public static class EventTrackingSdk
@@ -343,13 +170,6 @@ namespace Datadog.Trace.Ci.Coverage.Metadata
         protected ModuleCoverageMetadata() { }
     }
 }
-namespace Datadog.Trace.ClrProfiler
-{
-    public sealed class InstrumentationLoader
-    {
-        public InstrumentationLoader() { }
-    }
-}
 namespace Datadog.Trace.Configuration
 {
     public class CompositeConfigurationSource : Datadog.Trace.Configuration.IConfigurationSource, System.Collections.Generic.IEnumerable<Datadog.Trace.Configuration.IConfigurationSource>, System.Collections.IEnumerable
@@ -488,6 +308,7 @@ namespace Datadog.Trace.Configuration
         public virtual int? GetInt32(string key) { }
         public abstract string? GetString(string key);
         public static System.Collections.Generic.IDictionary<string, string>? ParseCustomKeyValues(string? data) { }
+        [return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull("data")]
         public static System.Collections.Generic.IDictionary<string, string>? ParseCustomKeyValues(string? data, bool allowOptionalMappings) { }
     }
     public class TracerSettings
@@ -523,6 +344,175 @@ namespace Datadog.Trace.Configuration
         public void SetServiceNameMappings(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> mappings) { }
         public static Datadog.Trace.Configuration.CompositeConfigurationSource CreateDefaultConfigurationSource() { }
         public static Datadog.Trace.Configuration.TracerSettings FromDefaultSources() { }
+    }
+}
+namespace Datadog.Trace
+{
+    public static class CorrelationIdentifier
+    {
+        public static string Env { get; }
+        public static string Service { get; }
+        public static ulong SpanId { get; }
+        public static ulong TraceId { get; }
+        public static string Version { get; }
+    }
+    public static class HttpHeaderNames
+    {
+        [System.Obsolete]
+        public const string DatadogTags = "x-datadog-tags";
+        public const string Origin = "x-datadog-origin";
+        public const string ParentId = "x-datadog-parent-id";
+        public const string SamplingPriority = "x-datadog-sampling-priority";
+        public const string TraceId = "x-datadog-trace-id";
+        public const string TracingEnabled = "x-datadog-tracing-enabled";
+        public const string UserAgent = "User-Agent";
+    }
+    public interface IScope : System.IDisposable
+    {
+        Datadog.Trace.ISpan Span { get; }
+        void Close();
+    }
+    public interface ISpan : System.IDisposable
+    {
+        Datadog.Trace.ISpanContext Context { get; }
+        bool Error { get; set; }
+        string OperationName { get; set; }
+        string ResourceName { get; set; }
+        string ServiceName { get; set; }
+        ulong SpanId { get; }
+        ulong TraceId { get; }
+        string Type { get; set; }
+        void Finish();
+        void Finish(System.DateTimeOffset finishTimestamp);
+        string GetTag(string key);
+        void SetException(System.Exception exception);
+        Datadog.Trace.ISpan SetTag(string key, string value);
+    }
+    public interface ISpanContext
+    {
+        string ServiceName { get; }
+        ulong SpanId { get; }
+        ulong TraceId { get; }
+    }
+    public interface ISpanContextExtractor
+    {
+        Datadog.Trace.ISpanContext? Extract<TCarrier>(TCarrier carrier, System.Func<TCarrier, string, System.Collections.Generic.IEnumerable<string?>> getter);
+    }
+    public interface ITracer
+    {
+        Datadog.Trace.IScope ActiveScope { get; }
+        Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
+        Datadog.Trace.IScope StartActive(string operationName);
+        Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.SpanCreationSettings settings);
+    }
+    public enum SamplingPriority
+    {
+        UserReject = -1,
+        AutoReject = 0,
+        AutoKeep = 1,
+        UserKeep = 2,
+    }
+    public class SpanContext : Datadog.Trace.ISpanContext, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>>, System.Collections.Generic.IReadOnlyCollection<System.Collections.Generic.KeyValuePair<string, string>>, System.Collections.Generic.IReadOnlyDictionary<string, string>, System.Collections.IEnumerable
+    {
+        public static readonly Datadog.Trace.ISpanContext None;
+        public SpanContext(ulong? traceId, ulong spanId, Datadog.Trace.SamplingPriority? samplingPriority = default, string serviceName = null) { }
+        public Datadog.Trace.ISpanContext Parent { get; }
+        public ulong? ParentId { get; }
+        public string ServiceName { get; set; }
+        public ulong SpanId { get; }
+        public ulong TraceId { get; }
+    }
+    public class SpanContextExtractor : Datadog.Trace.ISpanContextExtractor
+    {
+        public SpanContextExtractor() { }
+        public Datadog.Trace.ISpanContext? Extract<TCarrier>(TCarrier carrier, System.Func<TCarrier, string, System.Collections.Generic.IEnumerable<string?>> getter) { }
+    }
+    public struct SpanCreationSettings
+    {
+        public bool? FinishOnClose { get; set; }
+        public Datadog.Trace.ISpanContext Parent { get; set; }
+        public System.DateTimeOffset? StartTime { get; set; }
+    }
+    public static class SpanExtensions
+    {
+        public static void SetUser(this Datadog.Trace.ISpan span, Datadog.Trace.UserDetails userDetails) { }
+    }
+    public static class SpanKinds
+    {
+        public const string Client = "client";
+        public const string Consumer = "consumer";
+        public const string Internal = "internal";
+        public const string Producer = "producer";
+        public const string Server = "server";
+    }
+    public static class SpanTypes
+    {
+        public const string Benchmark = "benchmark";
+        public const string Build = "build";
+        public const string Custom = "custom";
+        public const string Db = "db";
+        public const string Http = "http";
+        public const string Queue = "queue";
+        public const string Serverless = "serverless";
+        public const string Sql = "sql";
+        public const string Test = "test";
+        public const string Web = "web";
+    }
+    public static class Tags
+    {
+        public const string DbName = "db.name";
+        public const string DbType = "db.type";
+        public const string DbUser = "db.user";
+        public const string Env = "env";
+        public const string ErrorMsg = "error.msg";
+        public const string ErrorStack = "error.stack";
+        public const string ErrorType = "error.type";
+        public const string HttpMethod = "http.method";
+        public const string HttpRequestHeadersHost = "http.request.headers.host";
+        public const string HttpStatusCode = "http.status_code";
+        public const string HttpUrl = "http.url";
+        public const string InstrumentationName = "component";
+        public const string InstrumentedMethod = "instrumented.method";
+        public const string Language = "language";
+        public const string ManualDrop = "manual.drop";
+        public const string ManualKeep = "manual.keep";
+        public const string MessageSize = "message.size";
+        public const string OutHost = "out.host";
+        public const string OutPort = "out.port";
+        public const string SamplingPriority = "sampling.priority";
+        public const string SpanKind = "span.kind";
+        public const string SqlQuery = "sql.query";
+        public const string SqlRows = "sql.rows";
+        public const string Version = "version";
+    }
+    public class Tracer : Datadog.Trace.ITracer
+    {
+        [System.Obsolete("This API is deprecated. Use Tracer.Instance to obtain a Tracer instance to create" +
+            " spans.")]
+        public Tracer() { }
+        [System.Obsolete(@"This API is deprecated, as it replaces the global settings for all Tracer instances in the application. If you were using this API to configure the global Tracer.Instance in code, use the static Tracer.Configure() to replace the global Tracer settings for the application")]
+        public Tracer(Datadog.Trace.Configuration.TracerSettings settings) { }
+        public Datadog.Trace.IScope ActiveScope { get; }
+        public string DefaultServiceName { get; }
+        public Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
+        [set: System.Obsolete("Use Tracer.Configure to configure the global Tracer instance in code.")]
+        public static Datadog.Trace.Tracer Instance { get; set; }
+        protected override void Finalize() { }
+        public System.Threading.Tasks.Task ForceFlushAsync() { }
+        public Datadog.Trace.IScope StartActive(string operationName) { }
+        public Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.SpanCreationSettings settings) { }
+        public static void Configure(Datadog.Trace.Configuration.TracerSettings settings) { }
+    }
+    public struct UserDetails
+    {
+        public UserDetails(string id) { }
+        public string? Email { get; set; }
+        public string Id { get; set; }
+        public string? Name { get; set; }
+        public bool PropagateId { get; set; }
+        public string? Role { get; set; }
+        public string? Scope { get; set; }
+        public string? SessionId { get; set; }
     }
 }
 namespace Datadog.Trace.ExtensionMethods

@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Xunit.Abstractions;
 
@@ -43,7 +44,7 @@ namespace Datadog.Trace.TestHelpers
             _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
             _output = output;
             MonitoringHome = GetMonitoringHomePath();
-            LogDirectory = DatadogLoggingFactory.GetLogDirectory();
+            LogDirectory = DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance);
 
             var parts = _targetFramework.FrameworkName.Split(',');
             _runtime = parts[0];

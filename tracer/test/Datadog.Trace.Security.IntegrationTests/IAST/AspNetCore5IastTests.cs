@@ -88,7 +88,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
     public abstract class AspNetCore5IastTestsVariableVulnerabilityPerRequestIastEnabled : AspNetCore5IastTests
     {
         public AspNetCore5IastTestsVariableVulnerabilityPerRequestIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, int vulnerabilitiesPerRequest)
-            : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastTestsEnabled", isIastDeduplicationEnabled: true, samplingRate: 100, vulnerabilitiesPerRequest: vulnerabilitiesPerRequest)
+            : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastTestsEnabled", isIastDeduplicationEnabled: false, samplingRate: 100, vulnerabilitiesPerRequest: vulnerabilitiesPerRequest)
         {
         }
 
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
     public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsFullSampling
     {
         public AspNetCore5IastTestsFullSamplingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastTestsEnabled")
+            : base(fixture, outputHelper, enableIast: true, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsEnabled")
         {
         }
     }
@@ -189,6 +189,26 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         {
             var filename = IastEnabled ? "Iast.CommandInjection.AspNetCore5.IastEnabled" : "Iast.CommandInjection.AspNetCore5.IastDisabled";
             var url = "/Iast/ExecuteCommand?file=nonexisting.exe&argumentLine=arg1";
+            IncludeAllHttpSpans = true;
+            await TryStartApp();
+            var agent = Fixture.Agent;
+            var spans = await SendRequestsAsync(agent, new string[] { url });
+            var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddIastScrubbing();
+            await VerifyHelper.VerifySpans(spansFiltered, settings)
+                              .UseFileName(filename)
+                              .DisableRequireUniquePrefix();
+        }
+
+        [SkippableFact]
+        [Trait("Category", "ArmUnsupported")]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestIastPathTraversalRequest()
+        {
+            var filename = IastEnabled ? "Iast.PathTraversal.AspNetCore5.IastEnabled" : "Iast.PathTraversal.AspNetCore5.IastDisabled";
+            var url = "/Iast/GetFileContent?file=nonexisting.txt";
             IncludeAllHttpSpans = true;
             await TryStartApp();
             var agent = Fixture.Agent;

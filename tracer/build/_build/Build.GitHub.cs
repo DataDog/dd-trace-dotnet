@@ -31,6 +31,7 @@ using static Octokit.GraphQL.Variable;
 using Environment = System.Environment;
 using Milestone = Octokit.Milestone;
 using Release = Octokit.Release;
+using Logger = Serilog.Log;
 
 partial class Build
 {
@@ -235,7 +236,7 @@ partial class Build
             }
             catch(Exception ex)
             {
-                Logger.Warn($"An error happened while updating the labels on the PR: {ex}");
+                Logger.Warning($"An error happened while updating the labels on the PR: {ex}");
             }
 
             Console.WriteLine($"PR labels updated");
@@ -271,7 +272,7 @@ partial class Build
                     }
                     catch(Exception ex)
                     {
-                        Logger.Warn($"There was an error trying to check labels: {ex}");
+                        Logger.Warning($"There was an error trying to check labels: {ex}");
                     }
                 }
                 return updatedLabels;
@@ -280,7 +281,7 @@ partial class Build
            LabbelerConfiguration GetLabellerConfiguration()
            {
                var labellerConfigYaml = RootDirectory / ".github" / "labeller.yml";
-               Logger.Info($"Reading {labellerConfigYaml} YAML file");
+               Logger.Information($"Reading {labellerConfigYaml} YAML file");
                var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
                                  .WithNamingConvention(CamelCaseNamingConvention.Instance)
                                  .IgnoreUnmatchedProperties()
@@ -452,7 +453,7 @@ partial class Build
                 expectedFileChanges.Insert(0, "docs/CHANGELOG.md");
             }
 
-            Logger.Info("Verifying that all expected files changed...");
+            Logger.Information("Verifying that all expected files changed...");
             var changes = GitTasks.Git("diff --name-only");
             var stagedChanges = GitTasks.Git("diff --name-only --staged");
 
@@ -780,7 +781,7 @@ partial class Build
                 }
 
                 var checksumLine = $"{Convert.ToHexString(buffer)} {Path.GetFileName(path)}";
-                Logger.Info(checksumLine);
+                Logger.Information(checksumLine);
                 checksums.Add(checksumLine);
             }
 
@@ -862,7 +863,7 @@ partial class Build
          {
              if (!int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber))
              {
-                 Logger.Warn("No PR_NUMBER variable found. Skipping benchmark comparison");
+                 Logger.Warning("No PR_NUMBER variable found. Skipping benchmark comparison");
                  return;
              }
 
@@ -935,14 +936,14 @@ partial class Build
 
              var markdown = CompareThroughput.GetMarkdown(sources);
 
-             Logger.Info("Markdown build complete, writing report");
+             Logger.Information("Markdown build complete, writing report");
 
              // save the report so we can upload it as an atefact for prosperity
              await File.WriteAllTextAsync(throughputDir / "throughput_report.md", markdown);
 
              if(isPr)
              {
-                 Logger.Info("Updating PR comment on GitHub");
+                 Logger.Information("Updating PR comment on GitHub");
                  await HideCommentsInPullRequest(prNumber, "## Throughput/Crank Report");
                  await PostCommentToPullRequest(prNumber, markdown);
              }
@@ -1038,14 +1039,14 @@ partial class Build
 
              var markdown = CompareExecutionTime.GetMarkdown(sources);
 
-             Logger.Info("Markdown build complete, writing report");
+             Logger.Information("Markdown build complete, writing report");
 
              // save the report so we can upload it as an atefact for prosperity
              await File.WriteAllTextAsync(executionDir / "execution_time_report.md", markdown);
 
              if(isPr)
              {
-                 Logger.Info("Updating PR comment on GitHub");
+                 Logger.Information("Updating PR comment on GitHub");
                  await HideCommentsInPullRequest(prNumber, "## Execution-Time Benchmarks Report");
                  await PostCommentToPullRequest(prNumber, markdown);
              }
@@ -1152,7 +1153,7 @@ partial class Build
                 }
                 catch (Exception ex)
                 {
-                    Logger.Warn($"Error minimising comment with ID {issueComment.Id}: {ex}");
+                    Logger.Warning($"Error minimising comment with ID {issueComment.Id}: {ex}");
                 }
             }
 
@@ -1160,7 +1161,7 @@ partial class Build
         }
         catch (Exception ex)
         {
-            Logger.Warn($"There was an error trying to minimise old comments with prefix '{prefix}': {ex}");
+            Logger.Warning($"There was an error trying to minimise old comments with prefix '{prefix}': {ex}");
         }
     }
 
@@ -1382,7 +1383,7 @@ partial class Build
             }
 
 
-            Logger.Info($"Finding build for commit sha: {commitSha}");
+            Logger.Information($"Finding build for commit sha: {commitSha}");
             var build = builds
                 .FirstOrDefault(b => string.Equals(b.SourceVersion, commitSha, StringComparison.OrdinalIgnoreCase));
             if (build is null)
@@ -1407,7 +1408,7 @@ partial class Build
                                     .FirstOrDefault(x => x.Type == OutputType.Std)
                                     .Text;
 
-                Logger.Info($"Looking for builds for {commitSha}");
+                Logger.Information($"Looking for builds for {commitSha}");
 
                 foreach (var build in builds)
                 {
@@ -1438,7 +1439,7 @@ partial class Build
                             buildId: buildId,
                             artifactName: artifactName);
 
-            Logger.Info("Release artifacts found, downloading...");
+            Logger.Information("Release artifacts found, downloading...");
             await DownloadAzureArtifact(OutputDirectory, artifact, AzureDevopsToken);
 
             return artifact;
@@ -1459,12 +1460,12 @@ partial class Build
             testedCommit = GitTasks.Git($"rev-parse HEAD").FirstOrDefault().Text;
             if(string.IsNullOrEmpty(testedCommit))
             {
-                Logger.Warn("No OriginalCommitId variable found and unable to infer commit. Skipping throughput comparison");
+                Logger.Warning("No OriginalCommitId variable found and unable to infer commit. Skipping throughput comparison");
                 return null;
             }
             else
             {
-                Logger.Info($"No OriginalCommitId variable found. Using inferred commit {testedCommit}");
+                Logger.Information($"No OriginalCommitId variable found. Using inferred commit {testedCommit}");
             }
         }
 

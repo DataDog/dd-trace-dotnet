@@ -6,31 +6,40 @@
 #nullable enable
 
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Iast.Settings;
 
 internal class IastSettings
 {
-    public static readonly string WeakCipherAlgorithmsDefault = "DES,TRIPLEDES,RC2";
-    public static readonly string WeakHashAlgorithmsDefault = "HMACMD5,MD5,HMACSHA1,SHA1";
-    public static readonly int VulnerabilitiesPerRequestDefault = 2;
-    public static readonly int MaxConcurrentRequestDefault = 2;
-    public static readonly int RequestSamplingDefault = 30;
+    public const string WeakCipherAlgorithmsDefault = "DES,TRIPLEDES,RC2";
+    public const string WeakHashAlgorithmsDefault = "HMACMD5,MD5,HMACSHA1,SHA1";
+    public const int VulnerabilitiesPerRequestDefault = 2;
+    public const int MaxConcurrentRequestDefault = 2;
+    public const int RequestSamplingDefault = 30;
 
-    public IastSettings(IConfigurationSource source)
+    public IastSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
-        WeakCipherAlgorithms = source.GetString(ConfigurationKeys.Iast.WeakCipherAlgorithms) ?? WeakCipherAlgorithmsDefault;
+        var config = new ConfigurationBuilder(source, telemetry);
+        WeakCipherAlgorithms = config.WithKeys(ConfigurationKeys.Iast.WeakCipherAlgorithms).AsString(WeakCipherAlgorithmsDefault);
         WeakCipherAlgorithmsArray = WeakCipherAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
-        WeakHashAlgorithms = source.GetString(ConfigurationKeys.Iast.WeakHashAlgorithms) ?? WeakHashAlgorithmsDefault;
+        WeakHashAlgorithms = config.WithKeys(ConfigurationKeys.Iast.WeakHashAlgorithms).AsString(WeakHashAlgorithmsDefault);
         WeakHashAlgorithmsArray = WeakHashAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
-        Enabled = (source.GetBool(ConfigurationKeys.Iast.Enabled) ?? false);
-        DeduplicationEnabled = source.GetBool(ConfigurationKeys.Iast.IsIastDeduplicationEnabled) ?? true;
-        RequestSampling = source.GetInt32(ConfigurationKeys.Iast.RequestSampling) is { } requestSampling and > 0 and <= 100
-            ? requestSampling : RequestSamplingDefault;
-        MaxConcurrentRequests = source.GetInt32(ConfigurationKeys.Iast.MaxConcurrentRequests) is { } concurrentRequests and > 0
-            ? concurrentRequests : MaxConcurrentRequestDefault;
-        VulnerabilitiesPerRequest = source.GetInt32(ConfigurationKeys.Iast.VulnerabilitiesPerRequest) is { } vulnerabilities and > 0
-            ? vulnerabilities : VulnerabilitiesPerRequestDefault;
+        Enabled = config.WithKeys(ConfigurationKeys.Iast.Enabled).AsBool(false);
+        DeduplicationEnabled = config.WithKeys(ConfigurationKeys.Iast.IsIastDeduplicationEnabled).AsBool(true);
+        RequestSampling = config
+                         .WithKeys(ConfigurationKeys.Iast.RequestSampling)
+                         .AsInt32(RequestSamplingDefault, x => x is > 0 and <= 100)
+                         .Value;
+        MaxConcurrentRequests = config
+                               .WithKeys(ConfigurationKeys.Iast.MaxConcurrentRequests)
+                               .AsInt32(MaxConcurrentRequestDefault, x => x > 0)
+                               .Value;
+        VulnerabilitiesPerRequest = config
+                                   .WithKeys(ConfigurationKeys.Iast.VulnerabilitiesPerRequest)
+                                   .AsInt32(VulnerabilitiesPerRequestDefault, x => x > 0)
+                                   .Value;
     }
 
     public bool Enabled { get; set; }
@@ -53,6 +62,6 @@ internal class IastSettings
 
     public static IastSettings FromDefaultSources()
     {
-        return new IastSettings(GlobalConfigurationSource.Instance);
+        return new IastSettings(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
     }
 }

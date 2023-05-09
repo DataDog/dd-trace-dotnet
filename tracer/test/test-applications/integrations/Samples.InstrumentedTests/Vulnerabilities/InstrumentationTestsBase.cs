@@ -49,6 +49,7 @@ public class InstrumentationTestsBase
     private static MethodInfo _evidenceProperty = _vulnerabilityType.GetProperty("Evidence", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _locationProperty = _vulnerabilityType.GetProperty("Location", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _pathProperty = _locationType.GetProperty("Path", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _methodProperty = _locationType.GetProperty("Method", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _getTaintedObjectsMethod = _taintedObjectsType.GetMethod("Get", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _taintInputStringMethod = _taintedObjectsType.GetMethod("TaintInputString", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _taintMethod = _taintedObjectsType.GetMethod("Taint", BindingFlags.Instance | BindingFlags.Public);
@@ -158,7 +159,11 @@ public class InstrumentationTestsBase
         var vulnerability = GetGeneratedVulnerabilities()[0];
         var locationProperty = _locationProperty.Invoke(vulnerability, Array.Empty<object>());
         var path = _pathProperty.Invoke(locationProperty, Array.Empty<object>());
-        path.ToString().Should().Contain(location);
+
+        if (!string.IsNullOrEmpty(path as string))
+        {
+            path.ToString().Should().Contain(location, "Incorrect path: " + path);
+        }
     }
 
     private List<object> GetGeneratedVulnerabilities()

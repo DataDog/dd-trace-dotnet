@@ -69,7 +69,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
             SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
             SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
-            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
             DisableObfuscationQueryString();
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
 
@@ -93,6 +92,24 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
             var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
             var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
             var filename = _enableIast ? "Iast.SqlInjection.AspNetMvc5.IastEnabled" : "Iast.SqlInjection.AspNetMvc5.IastDisabled";
+            var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+            settings.AddIastScrubbing();
+            await VerifyHelper.VerifySpans(spansFiltered, settings)
+                              .UseFileName(filename)
+                              .DisableRequireUniquePrefix();
+        }
+
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
+        [SkippableTheory]
+        [InlineData(AddressesConstants.RequestQuery, "/Iast/GetFileContent?file=nonexisting.txt", null)]
+        public async Task TestIastPathTraversalRequest(string test, string url, string body)
+        {
+            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+            var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+            var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+            var filename = _enableIast ? "Iast.PathTraversal.AspNetMvc5.IastEnabled" : "Iast.PathTraversal.AspNetMvc5.IastDisabled";
             var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
             settings.AddIastScrubbing();
             await VerifyHelper.VerifySpans(spansFiltered, settings)
