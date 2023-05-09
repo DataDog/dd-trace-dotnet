@@ -6,6 +6,7 @@
 
 using System.Collections.Generic;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Tools.Runner.Checks
 {
@@ -17,6 +18,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
         {
             _dictionary = dictionary;
         }
+
+        internal override ConfigurationOrigins Origin => ConfigurationOrigins.Code;
 
         public override string? GetString(string key)
         {

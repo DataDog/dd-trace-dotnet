@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.Internal.Configuration;
 using Datadog.Trace.Util;
@@ -267,10 +268,9 @@ namespace Datadog.Trace.Tests.Logging
             // make sure we can't write to it
             IsDirectoryWritable(directory).Should().BeFalse();
 
-            var config = DatadogLoggingFactory.GetConfiguration(new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.LogDirectory, directory }
-            }));
+            var config = DatadogLoggingFactory.GetConfiguration(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.LogDirectory, directory } }),
+                NullConfigurationTelemetry.Instance);
             var logger = DatadogLoggingFactory.CreateFromConfiguration(config, DomainMetadata.Instance);
             logger.Should().NotBeNull();
 

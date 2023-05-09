@@ -13,7 +13,7 @@ namespace Datadog.Trace.Telemetry
 {
     internal class TelemetryFactory
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Datadog.Trace.Telemetry.TelemetryFactory>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryFactory>();
 
         private static readonly ConfigurationTelemetryCollector Configuration = new();
         private static readonly DependencyTelemetryCollector Dependencies = new();
@@ -21,7 +21,7 @@ namespace Datadog.Trace.Telemetry
 
         internal static ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings)
         {
-            var settings = TelemetrySettings.FromDefaultSources();
+            var settings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
             if (settings.TelemetryEnabled)
             {
                 try

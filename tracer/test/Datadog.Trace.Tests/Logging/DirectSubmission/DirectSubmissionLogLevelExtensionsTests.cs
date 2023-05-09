@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
 
             foreach (var value in allValues)
             {
-                var parsed = DirectSubmissionLogLevelExtensions.Parse(value.ToString(), defaultLevel: (DirectSubmissionLogLevel)123);
+                var parsed = DirectSubmissionLogLevelExtensions.Parse(value.ToString());
                 parsed.Should().Be(value);
             }
         }
@@ -52,8 +52,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         [InlineData("verbose")]
         public void Parse_ReturnsExpectedForKnownValues(string value)
         {
-            var defaultValue = (DirectSubmissionLogLevel)123;
-            var parsed = DirectSubmissionLogLevelExtensions.Parse(value, defaultValue);
+            var parsed = DirectSubmissionLogLevelExtensions.Parse(value);
             parsed.Should().Be(DirectSubmissionLogLevel.Verbose);
         }
 
@@ -62,11 +61,10 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         [InlineData(null)]
         [InlineData("INVALID")]
         [InlineData("NOT_A_LEVEL")]
-        public void Parse_ReturnsDefaultForUnknownValues(string value)
+        public void Parse_ReturnsNullForUnknownValues(string value)
         {
-            var defaultValue = (DirectSubmissionLogLevel)123;
-            var parsed = DirectSubmissionLogLevelExtensions.Parse(value, defaultValue);
-            parsed.Should().Be(defaultValue);
+            var parsed = DirectSubmissionLogLevelExtensions.Parse(value);
+            parsed.Should().BeNull();
         }
     }
 }

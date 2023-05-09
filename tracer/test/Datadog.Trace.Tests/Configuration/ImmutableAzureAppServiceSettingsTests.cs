@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -20,7 +21,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void IsUnsafeToTrace(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.ApiKey, value));
-            var settings = new ImmutableAzureAppServiceSettings(source);
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.IsUnsafeToTrace.Should().Be(expected);
         }
@@ -36,7 +37,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void SubscriptionId(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey, value));
-            var settings = new ImmutableAzureAppServiceSettings(source);
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.SubscriptionId.Should().Be(expected);
         }
@@ -46,7 +47,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void ResourceGroup(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.ResourceGroupKey, value));
-            var settings = new ImmutableAzureAppServiceSettings(source);
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.ResourceGroup.Should().Be(expected);
         }
@@ -56,7 +57,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void SiteName(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.SiteNameKey, value));
-            var settings = new ImmutableAzureAppServiceSettings(source);
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.SiteName.Should().Be(expected);
         }
@@ -75,7 +76,7 @@ namespace Datadog.Trace.Tests.Configuration
                 (ConfigurationKeys.AzureAppService.ResourceGroupKey, resourceGroup),
                 (ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey, subscriptionId));
 
-            var settings = new ImmutableAzureAppServiceSettings(source);
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.ResourceId.Should().Be(expected);
         }
@@ -85,7 +86,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void InstanceId(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.InstanceIdKey, value));
-            var settings = new ImmutableAzureAppServiceSettings(source);
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.InstanceId.Should().Be(expected);
         }
@@ -95,7 +96,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void InstanceName(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.InstanceNameKey, value));
-            var settings = new ImmutableAzureAppServiceSettings(source);
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.InstanceName.Should().Be(expected);
         }
@@ -105,7 +106,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void OperatingSystem(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.OperatingSystemKey, value));
-            var settings = new ImmutableAzureAppServiceSettings(source);
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.OperatingSystem.Should().Be(expected);
         }
@@ -115,7 +116,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void SiteExtensionVersion(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.SiteExtensionVersionKey, value));
-            var settings = new ImmutableAzureAppServiceSettings(source);
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.SiteExtensionVersion.Should().Be(expected);
         }
@@ -125,7 +126,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void FunctionsWorkerRuntime(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, value));
-            var settings = new ImmutableAzureAppServiceSettings(source);
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.FunctionsWorkerRuntime.Should().Be(expected);
         }
@@ -135,7 +136,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void FunctionsExtensionVersion(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, value));
-            var settings = new ImmutableAzureAppServiceSettings(source);
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.FunctionsExtensionVersion.Should().Be(expected);
         }
@@ -149,7 +150,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, functionsWorkerRuntime),
                 (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, functionsExtensionVersion));
-            var settings = new ImmutableAzureAppServiceSettings(source);
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.AzureContext.Should().Be((AzureContext)expected);
         }
@@ -158,7 +159,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void Runtime()
         {
             var source = CreateConfigurationSource();
-            var settings = new ImmutableAzureAppServiceSettings(source);
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.Runtime.Should().Be(FrameworkDescription.Instance.Name);
         }
@@ -168,7 +169,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void DebugModeEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DebugEnabled, value));
-            var settings = new ImmutableAzureAppServiceSettings(source);
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.DebugModeEnabled.Should().Be(expected);
         }
@@ -178,7 +179,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void CustomTracingEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.AasEnableCustomTracing, value));
-            var settings = new ImmutableAzureAppServiceSettings(source);
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.CustomTracingEnabled.Should().Be(expected);
         }
@@ -188,7 +189,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void NeedsDogStatsD(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.AasEnableCustomMetrics, value));
-            var settings = new ImmutableAzureAppServiceSettings(source);
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.NeedsDogStatsD.Should().Be(expected);
         }

@@ -19,6 +19,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.Sampling;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Util;
 using Spectre.Console;
@@ -294,7 +295,7 @@ namespace Datadog.Trace.Tools.Runner
             var configurationSource = new CompositeConfigurationSource()
             {
                 GlobalConfigurationSource.Instance,
-                new NameValueConfigurationSource(env)
+                new NameValueConfigurationSource(env, ConfigurationOrigins.EnvVars)
             };
 
             var tracerSettings = new TracerSettings(configurationSource);

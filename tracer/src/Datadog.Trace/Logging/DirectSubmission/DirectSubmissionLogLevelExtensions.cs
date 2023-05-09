@@ -29,7 +29,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 _ => Unknown,
             };
 
-        public static DirectSubmissionLogLevel Parse(string? value, DirectSubmissionLogLevel defaultLevel)
+        public static DirectSubmissionLogLevel? Parse(string? value)
             => value?.ToUpperInvariant() switch
             {
                 "TRACE" => DirectSubmissionLogLevel.Verbose,
@@ -41,7 +41,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 "ERROR" => DirectSubmissionLogLevel.Error,
                 "CRITICAL" => DirectSubmissionLogLevel.Fatal,
                 "FATAL" => DirectSubmissionLogLevel.Fatal,
-                _ => defaultLevel
+                _ => null
             };
     }
 }

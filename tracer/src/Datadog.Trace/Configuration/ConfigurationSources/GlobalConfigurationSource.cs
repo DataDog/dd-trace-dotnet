@@ -8,6 +8,8 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration;
 
@@ -35,7 +37,7 @@ internal class GlobalConfigurationSource
 
 #if NETFRAMEWORK
             // on .NET Framework only, also read from app.config/web.config
-            new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings)
+            new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings, ConfigurationOrigins.AppConfig)
 #endif
         };
 
@@ -51,15 +53,19 @@ internal class GlobalConfigurationSource
     {
         try
         {
+            var telemetry = TelemetryFactoryV2.GetConfigTelemetry();
+
             // if environment variable is not set, look for default file name in the current directory
-            var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
-                                        configurationSource.GetString("DD_DOTNET_TRACER_CONFIG_FILE") ??
-                                        Path.Combine(baseDirectory ?? GetCurrentDirectory() ?? Directory.GetCurrentDirectory(), "datadog.json");
+            var configurationFileName = new ConfigurationBuilder(configurationSource, telemetry)
+                                       .WithKeys(ConfigurationKeys.ConfigurationFileName, "DD_DOTNET_TRACER_CONFIG_FILE")
+                                       .AsString(
+                                            getDefaultValue: () => Path.Combine(baseDirectory ?? GetCurrentDirectory(), "datadog.json"),
+                                            validator: null);
 
             if (string.Equals(Path.GetExtension(configurationFileName), ".JSON", StringComparison.OrdinalIgnoreCase) &&
                 File.Exists(configurationFileName))
             {
-                jsonConfigurationSource = JsonConfigurationSource.FromFile(configurationFileName);
+                jsonConfigurationSource = JsonConfigurationSource.FromFile(configurationFileName, ConfigurationOrigins.DdConfig);
                 return true;
             }
         }
@@ -82,8 +88,8 @@ internal class GlobalConfigurationSource
         Instance = CreateDefaultConfigurationSource();
     }
 
-    private static string? GetCurrentDirectory()
+    private static string GetCurrentDirectory()
     {
-        return AppDomain.CurrentDomain.BaseDirectory;
+        return AppDomain.CurrentDomain.BaseDirectory ?? Directory.GetCurrentDirectory();
     }
 }

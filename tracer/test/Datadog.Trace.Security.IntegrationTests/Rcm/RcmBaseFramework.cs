@@ -5,6 +5,7 @@
 
 using System.IO;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -24,5 +25,5 @@ public class RcmBaseFramework : AspNetBase, IClassFixture<AspNetCoreTestFixture>
         SetEnvironmentVariable(ConfigurationKeys.LogDirectory, LogDirectory);
     }
 
-    protected string LogDirectory => Path.Combine(DatadogLoggingFactory.GetLogDirectory(), $"{GetType().Name}Logs");
+    protected string LogDirectory => Path.Combine(DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance), $"{GetType().Name}Logs");
 }
