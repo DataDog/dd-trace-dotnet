@@ -188,7 +188,7 @@ internal static class IastModule
         {
             if (isRequest)
             {
-                traceContext?.IastRequestContext.AddVulnerability(vulnerability);
+                traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
                 return null;
             }
             else
