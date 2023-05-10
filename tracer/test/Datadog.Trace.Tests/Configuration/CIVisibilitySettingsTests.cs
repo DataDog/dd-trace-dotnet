@@ -5,6 +5,7 @@
 
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -18,7 +19,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void Enabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.Enabled, value));
-            var settings = new CIVisibilitySettings(source);
+            var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.Enabled.Should().Be(expected);
         }
@@ -28,7 +29,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void Agentless(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.AgentlessEnabled, value));
-            var settings = new CIVisibilitySettings(source);
+            var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.Agentless.Should().Be(expected);
         }
@@ -38,7 +39,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void Logs(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.Logs, value));
-            var settings = new CIVisibilitySettings(source);
+            var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.Logs.Should().Be(expected);
         }
@@ -48,7 +49,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void ApiKey(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.ApiKey, value));
-            var settings = new CIVisibilitySettings(source);
+            var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.ApiKey.Should().Be(expected);
         }
@@ -58,7 +59,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void ApplicationKey(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.ApplicationKey, value));
-            var settings = new CIVisibilitySettings(source);
+            var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.ApplicationKey.Should().Be(expected);
         }
@@ -68,7 +69,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void Site(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.Site, value));
-            var settings = new CIVisibilitySettings(source);
+            var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.Site.Should().Be(expected);
         }
@@ -78,7 +79,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void AgentlessUrl(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.AgentlessUrl, value));
-            var settings = new CIVisibilitySettings(source);
+            var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.AgentlessUrl.Should().Be(expected);
         }
@@ -87,7 +88,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void MaximumAgentlessPayloadSize()
         {
             var source = CreateConfigurationSource();
-            var settings = new CIVisibilitySettings(source);
+            var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.MaximumAgentlessPayloadSize.Should().Be(5 * 1024 * 1024);
         }
@@ -97,7 +98,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void ProxyHttps(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.Proxy.ProxyHttps, value));
-            var settings = new CIVisibilitySettings(source);
+            var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.ProxyHttps.Should().Be(expected);
         }
@@ -110,7 +111,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void ProxyNoProxy(string value, string[] expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.Proxy.ProxyNoProxy, value));
-            var settings = new CIVisibilitySettings(source);
+            var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.ProxyNoProxy.Should().BeEquivalentTo(expected);
         }
@@ -120,7 +121,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void IntelligentTestRunnerEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.IntelligentTestRunnerEnabled, value));
-            var settings = new CIVisibilitySettings(source);
+            var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.IntelligentTestRunnerEnabled.Should().Be(expected);
         }
@@ -130,7 +131,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void TestsSkippingEnabled(string value, bool? expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.TestsSkippingEnabled, value));
-            var settings = new CIVisibilitySettings(source);
+            var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.TestsSkippingEnabled.Should().Be(expected);
         }
@@ -140,7 +141,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void CodeCoverageEnabled(string value, bool? expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.CodeCoverage, value));
-            var settings = new CIVisibilitySettings(source);
+            var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.CodeCoverageEnabled.Should().Be(expected);
         }
@@ -150,7 +151,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void CodeCoverageSnkFilePath(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.CodeCoverageSnkFile, value));
-            var settings = new CIVisibilitySettings(source);
+            var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.CodeCoverageSnkFilePath.Should().Be(expected);
         }
@@ -160,7 +161,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void CodeCoveragePath(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.CodeCoveragePath, value));
-            var settings = new CIVisibilitySettings(source);
+            var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.CodeCoveragePath.Should().Be(expected);
         }
@@ -170,7 +171,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void CodeCoverageEnableJitOptimizations(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.CodeCoverageEnableJitOptimizations, value));
-            var settings = new CIVisibilitySettings(source);
+            var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.CodeCoverageEnableJitOptimizations.Should().Be(expected);
         }
@@ -180,7 +181,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void GitUploadEnabled(string value, bool? expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.GitUploadEnabled, value));
-            var settings = new CIVisibilitySettings(source);
+            var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.GitUploadEnabled.Should().Be(expected);
         }
@@ -190,7 +191,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void ForceAgentsEvpProxy(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy, value));
-            var settings = new CIVisibilitySettings(source);
+            var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.ForceAgentsEvpProxy.Should().Be(expected);
         }

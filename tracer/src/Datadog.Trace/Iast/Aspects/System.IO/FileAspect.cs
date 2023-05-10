@@ -94,7 +94,7 @@ public class FileAspect
     [AspectMethodInsertBefore("System.IO.File::Copy(System.String,System.String)", new int[] { 0, 1 })]
     [AspectMethodInsertBefore("System.IO.File::Copy(System.String,System.String,System.Boolean)", new int[] { 1, 2 })]
     [AspectMethodInsertBefore("System.IO.File::Move(System.String,System.String)", new int[] { 0, 1 })]
-#if NETCOREAPP3_0_OR_GREATER
+#if !NETFRAMEWORK
     [AspectMethodInsertBefore("System.IO.File::Move(System.String,System.String,System.Boolean)", new int[] { 1, 2 })]
 #endif
     [AspectMethodInsertBefore("System.IO.File::Replace(System.String,System.String,System.String)", new int[] { 0, 1, 2 })]

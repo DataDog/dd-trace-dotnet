@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Globalization;
 using System.Net;
 
 using Datadog.Trace.Agent.Transports;
@@ -39,12 +40,14 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             var request = WebRequest.Create(Uri + EndInvocationPath);
             request.Method = "POST";
             request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
-            if (scope != null)
-            {
-                request.Headers.Set(HttpHeaderNames.TraceId, scope.Span.TraceId.ToString());
-                request.Headers.Set(HttpHeaderNames.SpanId, scope.Span.SpanId.ToString());
 
-                if (scope.Span.Context.TraceContext?.SamplingPriority is { } samplingPriority)
+            if (scope is { Span: var span })
+            {
+                // TODO: add support for 128-bit trace ids in serverless
+                request.Headers.Set(HttpHeaderNames.TraceId, span.TraceId128.Lower.ToString(CultureInfo.InvariantCulture));
+                request.Headers.Set(HttpHeaderNames.SpanId, span.SpanId.ToString(CultureInfo.InvariantCulture));
+
+                if (span.Context.TraceContext?.SamplingPriority is { } samplingPriority)
                 {
                     request.Headers.Set(HttpHeaderNames.SamplingPriority, samplingPriority.ToString());
                 }

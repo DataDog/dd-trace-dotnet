@@ -41,7 +41,6 @@ public class DeduplicationTests : TestHelper
             instrumented = false;
         }
 
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
         SetEnvironmentVariable("DD_IAST_ENABLED", "1");
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", deduplicationEnabled.ToString());
         SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory));

@@ -6,7 +6,10 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration
 {
@@ -22,9 +25,15 @@ namespace Datadog.Trace.Configuration
         /// Initializes a new instance of the <see cref="IntegrationSettingsCollection"/> class.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
+        [PublicApi]
         public IntegrationSettingsCollection(IConfigurationSource source)
+            : this(source, TelemetryFactoryV2.GetConfigTelemetry())
         {
-            _settings = GetIntegrationSettings(source);
+        }
+
+        internal IntegrationSettingsCollection(IConfigurationSource source, IConfigurationTelemetry telemetry)
+        {
+            _settings = GetIntegrationSettings(source, telemetry);
         }
 
         internal IntegrationSettings[] Settings => _settings;
@@ -48,11 +57,12 @@ namespace Datadog.Trace.Configuration
                     "Returning default settings, changes will not be saved",
                     integrationName);
 
-                return new IntegrationSettings(integrationName, source: null);
+                // Use null telemetry as no telemetry will be recorded for "incorrect" values like this
+                return new IntegrationSettings(integrationName, source: null, NullConfigurationTelemetry.Instance);
             }
         }
 
-        private static IntegrationSettings[] GetIntegrationSettings(IConfigurationSource source)
+        private static IntegrationSettings[] GetIntegrationSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
             var integrations = new IntegrationSettings[IntegrationRegistry.Names.Length];
 
@@ -62,7 +72,7 @@ namespace Datadog.Trace.Configuration
 
                 if (name != null)
                 {
-                    integrations[i] = new IntegrationSettings(name, source);
+                    integrations[i] = new IntegrationSettings(name, source, telemetry);
                 }
             }
 

@@ -86,7 +86,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             ddTraceMethodsString += ";Samples.TraceAnnotations.ExtensionMethods[ExtensionMethodForTestType,ExtensionMethodForTestTypeGeneric,ExtensionMethodForTestTypeTypeStruct];System.Net.Http.HttpRequestMessage[set_Method]";
 
             SetEnvironmentVariable("DD_TRACE_METHODS", ddTraceMethodsString);
-            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
             // Don't bother with telemetry when two assemblies are loaded because we could get unreliable results
             MockTelemetryAgent<TelemetryData> telemetry = _twoAssembliesLoaded ? null : this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())

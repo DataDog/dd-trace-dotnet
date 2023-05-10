@@ -27,7 +27,6 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
         : base("DataStreams.RabbitMQ", output)
     {
         SetServiceVersion("1.0.0");
-        EnableDebugMode();
     }
 
     [SkippableTheory]

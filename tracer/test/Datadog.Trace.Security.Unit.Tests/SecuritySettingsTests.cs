@@ -5,6 +5,7 @@
 
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -23,7 +24,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void WafTimeoutInvalid(string value)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.WafTimeout, value));
-            var settings = new SecuritySettings(source);
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
 
             Assert.Equal(100_000ul, settings.WafTimeoutMicroSeconds);
         }
@@ -40,7 +41,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void WafTimeoutValid(string value, ulong expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.WafTimeout, value));
-            var settings = new SecuritySettings(source);
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
 
             Assert.Equal(expected, settings.WafTimeoutMicroSeconds);
         }
@@ -50,7 +51,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void BlockedHtmlTemplate(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.HtmlBlockedTemplate, value));
-            var settings = new SecuritySettings(source);
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.BlockedHtmlTemplate.Should().Be(expected);
         }
@@ -60,7 +61,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void BlockedJsonTemplate(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.JsonBlockedTemplate, value));
-            var settings = new SecuritySettings(source);
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.BlockedJsonTemplate.Should().Be(expected);
         }
@@ -70,7 +71,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void Enabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.Enabled, value));
-            var settings = new SecuritySettings(source);
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.Enabled.Should().Be(expected);
         }
@@ -82,7 +83,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void CanBeToggled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.Enabled, value));
-            var settings = new SecuritySettings(source);
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.CanBeToggled.Should().Be(expected);
         }
@@ -93,7 +94,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void Rules(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.Rules, value));
-            var settings = new SecuritySettings(source);
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.Rules.Should().Be(expected);
         }
@@ -103,7 +104,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void CustomIpHeader(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.CustomIpHeader, value));
-            var settings = new SecuritySettings(source);
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.CustomIpHeader.Should().Be(expected);
         }
@@ -116,7 +117,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void ExtraHeaders(string value, string[] expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.ExtraHeaders, value));
-            var settings = new SecuritySettings(source);
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.ExtraHeaders.Should().BeEquivalentTo(expected);
         }
@@ -126,7 +127,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void KeepTraces(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.KeepTraces, value));
-            var settings = new SecuritySettings(source);
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.KeepTraces.Should().Be(expected);
         }
@@ -136,7 +137,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TraceRateLimit(string value, int expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.TraceRateLimit, value));
-            var settings = new SecuritySettings(source);
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.TraceRateLimit.Should().Be(expected);
         }
@@ -146,7 +147,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void ObfuscationParameterKeyRegex(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.ObfuscationParameterKeyRegex, value));
-            var settings = new SecuritySettings(source);
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.ObfuscationParameterKeyRegex.Should().Be(expected);
         }
@@ -156,7 +157,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void ObfuscationParameterValueRegex(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.ObfuscationParameterValueRegex, value));
-            var settings = new SecuritySettings(source);
+            var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.ObfuscationParameterValueRegex.Should().Be(expected);
         }

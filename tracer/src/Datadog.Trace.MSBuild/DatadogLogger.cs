@@ -256,34 +256,32 @@ namespace Datadog.Trace.MSBuild
                 int context = e.BuildEventContext.ProjectContextId;
                 if (_projects.TryGetValue(context, out Span projectSpan))
                 {
-                    string correlation = $"[{CorrelationIdentifier.TraceIdKey}={projectSpan.TraceId},{CorrelationIdentifier.SpanIdKey}={projectSpan.SpanId}]";
                     string message = e.Message;
                     string type = $"{e.SenderName?.ToUpperInvariant()} ({e.Code}) Error";
                     string code = e.Code;
-                    int? lineNumber = e.LineNumber > 0 ? (int?)e.LineNumber : null;
-                    int? columnNumber = e.ColumnNumber > 0 ? (int?)e.ColumnNumber : null;
-                    int? endLineNumber = e.EndLineNumber > 0 ? (int?)e.EndLineNumber : null;
-                    int? endColumnNumber = e.EndColumnNumber > 0 ? (int?)e.EndColumnNumber : null;
+                    int? lineNumber = e.LineNumber > 0 ? e.LineNumber : null;
+                    int? columnNumber = e.ColumnNumber > 0 ? e.ColumnNumber : null;
+                    int? endLineNumber = e.EndLineNumber > 0 ? e.EndLineNumber : null;
+                    int? endColumnNumber = e.EndColumnNumber > 0 ? e.EndColumnNumber : null;
                     string projectFile = e.ProjectFile;
-                    string filePath = null;
-                    string stack = null;
                     string subCategory = e.Subcategory;
 
                     projectSpan.Error = true;
                     projectSpan.SetTag(BuildTags.ErrorMessage, message);
                     projectSpan.SetTag(BuildTags.ErrorType, type);
                     projectSpan.SetTag(BuildTags.ErrorCode, code);
-                    projectSpan.SetTag(BuildTags.ErrorStartLine, lineNumber.ToString());
-                    projectSpan.SetTag(BuildTags.ErrorStartColumn, columnNumber.ToString());
+                    projectSpan.SetTag(BuildTags.ErrorStartLine, lineNumber?.ToString(CultureInfo.InvariantCulture) ?? string.Empty);
+                    projectSpan.SetTag(BuildTags.ErrorStartColumn, columnNumber?.ToString(CultureInfo.InvariantCulture) ?? string.Empty);
                     projectSpan.SetTag(BuildTags.ErrorProjectFile, projectFile);
 
                     if (!string.IsNullOrEmpty(e.File))
                     {
-                        filePath = Path.Combine(Path.GetDirectoryName(projectFile), e.File);
+                        var filePath = Path.Combine(Path.GetDirectoryName(projectFile), e.File);
                         projectSpan.SetTag(BuildTags.ErrorFile, filePath);
+
                         if (lineNumber.HasValue && lineNumber != 0)
                         {
-                            stack = $" at Source code in {filePath}:line {e.LineNumber}";
+                            var stack = $" at Source code in {filePath}:line {e.LineNumber}";
                             projectSpan.SetTag(BuildTags.ErrorStack, stack);
                         }
                     }
@@ -324,30 +322,9 @@ namespace Datadog.Trace.MSBuild
                 Log.Debug("Warning Raised");
 
                 int context = e.BuildEventContext.ProjectContextId;
+
                 if (_projects.TryGetValue(context, out Span projectSpan))
                 {
-                    string correlation = $"[{CorrelationIdentifier.TraceIdKey}={projectSpan.TraceId},{CorrelationIdentifier.SpanIdKey}={projectSpan.SpanId}]";
-                    string message = e.Message;
-                    string type = $"{e.SenderName?.ToUpperInvariant()} ({e.Code}) Warning";
-                    string code = e.Code;
-                    int? lineNumber = e.LineNumber > 0 ? (int?)e.LineNumber : null;
-                    int? columnNumber = e.ColumnNumber > 0 ? (int?)e.ColumnNumber : null;
-                    int? endLineNumber = e.EndLineNumber > 0 ? (int?)e.EndLineNumber : null;
-                    int? endColumnNumber = e.EndColumnNumber > 0 ? (int?)e.EndColumnNumber : null;
-                    string projectFile = e.ProjectFile;
-                    string filePath = null;
-                    string stack = null;
-                    string subCategory = e.Subcategory;
-
-                    if (!string.IsNullOrEmpty(e.File))
-                    {
-                        filePath = Path.Combine(Path.GetDirectoryName(projectFile), e.File);
-                        if (lineNumber.HasValue && lineNumber != 0)
-                        {
-                            stack = $" at Source code in {filePath}:line {e.LineNumber}";
-                        }
-                    }
-
                     _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Warning, e.Message, projectSpan));
                 }
             }
