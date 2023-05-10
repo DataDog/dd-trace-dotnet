@@ -12,7 +12,7 @@ namespace Datadog.Trace.Iast;
 
 internal static class StackWalker
 {
-    public static readonly string[] ExcludeSpanGenerationTypes = { "Datadog.Trace.Debugger.Helpers.StringExtensions", "Microsoft.AspNetCore.Razor.Language.StreamSourceDocument" };
+    public static readonly string[] ExcludeSpanGenerationTypes = { "Datadog.Trace.Debugger.Helpers.StringExtensions", "Microsoft.AspNetCore.Razor.Language.StreamSourceDocument", "System.Security.IdentityHelper" };
     public static readonly string[] AssemblyNamesToSkip =
     {
         "Datadog.Trace",
@@ -32,7 +32,8 @@ internal static class StackWalker
         "System.Security.Cryptography.Primitives",
         "System.Data.SqlClient",
         "System.Data.SQLite",
-        "System.Diagnostics.Process"
+        "System.Diagnostics.Process",
+        "System.Configuration.ConfigurationManager"
     };
 
     private const int DefaultSkipFrames = 2;

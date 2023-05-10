@@ -23,6 +23,7 @@ public class EFCoreSqliteTests : InstrumentationTestsBase
     string queryUnsafe;
     SQLiteParameter titleParam;
     protected string taintedTitle = "CLR via C#";
+    protected string taintedTitleInjection = "s' or '1' = '1";
     private ApplicationDbSqlLiteContext db;
 
     public EFCoreSqliteTests()
@@ -36,6 +37,7 @@ public class EFCoreSqliteTests : InstrumentationTestsBase
         }
 
         AddTainted(taintedTitle);
+        AddTainted(taintedTitleInjection);
         CommandUnsafeText = "Update Books set title= title where title ='" + taintedTitle + "'";
         queryUnsafe = "SELECT * from Books where title like '" + taintedTitle + "'";
         titleParam = new SQLiteParameter("@title", taintedTitle);
@@ -235,8 +237,14 @@ public class EFCoreSqliteTests : InstrumentationTestsBase
     [Fact]
     public void GivenEntityFrameworkSqlite_WhenCallingExecuteReaderWithTainted_VulnerabilityIsReported2()
     {
-        EntityCommand query = GetEntityCommand();
-        query.ExecuteReader(CommandBehavior.SequentialAccess);
+        EntityCommand query = GetEntityCommand(taintedTitleInjection);
+        var result = query.ExecuteReader(CommandBehavior.SequentialAccess);
+        int rowCount = 0;
+
+        while (result.Read())
+        {
+            rowCount++;
+        }
         AssertVulnerable();
     }
 
@@ -272,10 +280,19 @@ public class EFCoreSqliteTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-    private EntityCommand GetEntityCommand()
+    private EntityCommand GetEntityCommand(string title = null)
     {
-        var queryString = "SELECT b.Title FROM ApplicationDbSqlLiteContext.Books AS b where b.Title ='" + taintedTitle + "'";
-        var adapter = (IObjectContextAdapter)db;
+        var queryString = string.Empty;
+
+        if (title == null)
+        {
+            queryString = "SELECT b.Title FROM ApplicationDbSqlLiteContext.Books AS b where b.Title ='" + taintedTitle + "'";
+        }
+        else
+        {
+            queryString = "SELECT b.Title FROM ApplicationDbSqlLiteContext.Books AS b where b.Title ='" + title + "'";
+        }
+            var adapter = (IObjectContextAdapter)db;
         var objectContext = adapter.ObjectContext;
         EntityConnection conn = (EntityConnection)objectContext.Connection;
         conn.Open();
