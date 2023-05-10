@@ -29,12 +29,28 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.115.5" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.115.5" />
   </ItemGroup>
 
   <ItemGroup>
     <None Update="xunit.runner.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
+    <PackageReference Include="EntityFramework" Version="6.4.4" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="1.1.6" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SQLite" Version="1.1.6" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0' OR '$(TargetFramework)'=='net5.0'">
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SQLite" Version="5.0.8" />
   </ItemGroup>
 
 </Project>
