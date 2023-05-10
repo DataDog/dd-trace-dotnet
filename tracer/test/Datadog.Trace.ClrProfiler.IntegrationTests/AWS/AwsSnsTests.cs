@@ -47,10 +47,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
 #if NETFRAMEWORK
-                var expectedCount = 2;
+                var expectedCount = 3;
                 var frameworkName = "NetFramework";
 #else
-                var expectedCount = 2;
+                var expectedCount = 3;
                 var frameworkName = "NetCore";
 #endif
                 var spans = agent.WaitForSpans(expectedCount);

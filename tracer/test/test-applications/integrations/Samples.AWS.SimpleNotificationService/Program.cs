@@ -17,6 +17,7 @@ namespace Samples.AWS.SNS
             string message = "Hello, SNS!";
 
             await PublishMessageAsync(snsClient, topicArn, message);
+            await DeleteTopicAsync(snsClient, topicArn);
         }
 
         private static AmazonSimpleNotificationServiceClient GetAmazonSimpleNotificationServiceClient()
@@ -43,30 +44,13 @@ namespace Samples.AWS.SNS
 
         private static async Task<string> GetOrCreateTopicAsync(AmazonSimpleNotificationServiceClient snsClient, string topicName)
         {
-            var listTopicsRequest = new ListTopicsRequest();
-            ListTopicsResponse listTopicsResponse;
-
-            do
-            {
-                listTopicsResponse = await snsClient.ListTopicsAsync(listTopicsRequest);
-
-                foreach (var topic in listTopicsResponse.Topics)
-                {
-                    if (topic.TopicArn.EndsWith($":{topicName}", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return topic.TopicArn;
-                    }
-                }
-
-                listTopicsRequest.NextToken = listTopicsResponse.NextToken;
-            } while (listTopicsResponse.NextToken != null);
-
-            // Topic not found, create a new one
+            // Create the topic. This is a no-op if the topic has already been created.
             var createTopicRequest = new CreateTopicRequest { Name = topicName };
             var createTopicResponse = await snsClient.CreateTopicAsync(createTopicRequest);
 
             return createTopicResponse.TopicArn;
         }
+
         private static async Task PublishMessageAsync(AmazonSimpleNotificationServiceClient snsClient, string topicArn, string message)
         {
             var request = new PublishRequest
@@ -78,6 +62,14 @@ namespace Samples.AWS.SNS
             var response = await snsClient.PublishAsync(request);
 
             Console.WriteLine($"Message published. Message ID: {response.MessageId}");
+        }
+
+        private static async Task DeleteTopicAsync(AmazonSimpleNotificationServiceClient snsClient, string topicArn)
+        {
+            var deleteTopicRequest = new DeleteTopicRequest { TopicArn = topicArn };
+            await snsClient.DeleteTopicAsync(deleteTopicRequest);
+
+            Console.WriteLine($"Topic deleted. Topic ARN: {topicArn}");
         }
     }
 }
