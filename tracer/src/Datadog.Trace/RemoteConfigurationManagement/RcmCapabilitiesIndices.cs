@@ -34,6 +34,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         public const uint AsmUserBlockingUInt32 = 1 << 7;
         public static readonly BigInteger AsmUserBlocking = new(AsmUserBlockingUInt32);
 
+        public const uint AsmCustomRulesUInt32 = 1 << 8;
+        public static readonly BigInteger AsmCustomRules = new(AsmUserBlockingUInt32);
+
         public const uint AsmCustomBlockingResponseUInt32 = 1 << 9;
         public static readonly BigInteger AsmCustomBlockingResponse = new(AsmCustomBlockingResponseUInt32);
 #pragma warning restore SA1203 // Constants should appear before fields
