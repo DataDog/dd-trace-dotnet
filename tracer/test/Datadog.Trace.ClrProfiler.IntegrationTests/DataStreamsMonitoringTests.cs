@@ -29,7 +29,6 @@ public class DataStreamsMonitoringTests : TestHelper
         : base("DataStreams.Kafka", output)
     {
         SetServiceVersion("1.0.0");
-        EnableDebugMode();
     }
 
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>

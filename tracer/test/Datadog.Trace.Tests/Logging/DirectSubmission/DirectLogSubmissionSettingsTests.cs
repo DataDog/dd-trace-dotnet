@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
@@ -129,7 +130,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             }
 
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.Host, value));
-            var settings = new DirectLogSubmissionSettings(source);
+            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.DirectLogSubmissionHost.Should().Be(expected);
         }
@@ -139,7 +140,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         public void DirectLogSubmissionSource(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.Source, value));
-            var settings = new DirectLogSubmissionSettings(source);
+            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.DirectLogSubmissionSource.Should().Be(expected);
         }
@@ -151,7 +152,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         public void DirectLogSubmissionMinimumLevel(string value, object expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.MinimumLevel, value));
-            var settings = new DirectLogSubmissionSettings(source);
+            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.DirectLogSubmissionMinimumLevel.Should().Be((DirectSubmissionLogLevel)expected);
         }
@@ -163,7 +164,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         public void DirectLogSubmissionEnabledIntegrations(string value, string[] expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.EnabledIntegrations, value));
-            var settings = new DirectLogSubmissionSettings(source);
+            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.DirectLogSubmissionEnabledIntegrations.Should().BeEquivalentTo(expected);
         }
@@ -178,7 +179,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         public void DirectLogSubmissionBatchSizeLimit(string value, int expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.BatchSizeLimit, value));
-            var settings = new DirectLogSubmissionSettings(source);
+            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.DirectLogSubmissionBatchSizeLimit.Should().Be(expected);
         }
@@ -193,7 +194,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         public void DirectLogSubmissionQueueSizeLimit(string value, int expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.QueueSizeLimit, value));
-            var settings = new DirectLogSubmissionSettings(source);
+            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.DirectLogSubmissionQueueSizeLimit.Should().Be(expected);
         }
@@ -208,7 +209,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         public void DirectLogSubmissionBatchPeriod(string value, int expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds, value));
-            var settings = new DirectLogSubmissionSettings(source);
+            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.DirectLogSubmissionBatchPeriod.Should().Be(TimeSpan.FromSeconds(expected));
         }
@@ -218,7 +219,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         public void ApiKey(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.ApiKey, value));
-            var settings = new DirectLogSubmissionSettings(source);
+            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.ApiKey.Should().Be(expected);
         }
@@ -228,7 +229,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         public void LogsInjectionEnabled(string value, bool? expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.LogsInjectionEnabled, value));
-            var settings = new DirectLogSubmissionSettings(source);
+            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.LogsInjectionEnabled.Should().Be(expected);
         }

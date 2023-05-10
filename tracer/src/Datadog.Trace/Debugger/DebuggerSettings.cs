@@ -5,6 +5,8 @@
 
 #nullable enable
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Debugger
 {
@@ -20,44 +22,39 @@ namespace Datadog.Trace.Debugger
         private const int DefaultDiagnosticsIntervalSeconds = 5;
         private const int DefaultUploadFlushIntervalMilliseconds = 0;
 
-        public DebuggerSettings()
-            : this(configurationSource: null)
+        public DebuggerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {
-        }
+            source ??= NullConfigurationSource.Instance;
+            var config = new ConfigurationBuilder(source, telemetry);
 
-        public DebuggerSettings(IConfigurationSource? configurationSource)
-        {
-            Enabled = configurationSource?.GetBool(ConfigurationKeys.Debugger.Enabled) ?? false;
+            Enabled = config.WithKeys(ConfigurationKeys.Debugger.Enabled).AsBool(false);
 
-            var maxDepth = configurationSource?.GetInt32(ConfigurationKeys.Debugger.MaxDepthToSerialize);
-            MaximumDepthOfMembersToCopy =
-                maxDepth is null or <= 0
-                    ? DefaultMaxDepthToSerialize
-                    : maxDepth.Value;
+            MaximumDepthOfMembersToCopy = config
+                                         .WithKeys(ConfigurationKeys.Debugger.MaxDepthToSerialize)
+                                         .AsInt32(DefaultMaxDepthToSerialize, maxDepth => maxDepth > 0)
+                                         .Value;
 
-            var serializationTimeThreshold = configurationSource?.GetInt32(ConfigurationKeys.Debugger.MaxTimeToSerialize);
-            MaxSerializationTimeInMilliseconds =
-                serializationTimeThreshold is null or <= 0
-                    ? DefaultMaxSerializationTimeInMilliseconds
-                    : serializationTimeThreshold.Value;
+            MaxSerializationTimeInMilliseconds = config
+                                                .WithKeys(ConfigurationKeys.Debugger.MaxTimeToSerialize)
+                                                .AsInt32(
+                                                     DefaultMaxSerializationTimeInMilliseconds,
+                                                     serializationTimeThreshold => serializationTimeThreshold > 0)
+                                                .Value;
 
-            var batchSize = configurationSource?.GetInt32(ConfigurationKeys.Debugger.UploadBatchSize);
-            UploadBatchSize =
-                batchSize is null or <= 0
-                    ? DefaultUploadBatchSize
-                    : batchSize.Value;
+            UploadBatchSize = config
+                             .WithKeys(ConfigurationKeys.Debugger.UploadBatchSize)
+                             .AsInt32(DefaultUploadBatchSize, batchSize => batchSize > 0)
+                             .Value;
 
-            var interval = configurationSource?.GetInt32(ConfigurationKeys.Debugger.DiagnosticsInterval);
-            DiagnosticsIntervalSeconds =
-                interval is null or <= 0
-                    ? DefaultDiagnosticsIntervalSeconds
-                    : interval.Value;
+            DiagnosticsIntervalSeconds = config
+                                        .WithKeys(ConfigurationKeys.Debugger.DiagnosticsInterval)
+                                        .AsInt32(DefaultDiagnosticsIntervalSeconds, interval => interval > 0)
+                                        .Value;
 
-            var flushInterval = configurationSource?.GetInt32(ConfigurationKeys.Debugger.UploadFlushInterval);
-            UploadFlushIntervalMilliseconds =
-                flushInterval is null or < 0
-                    ? DefaultUploadFlushIntervalMilliseconds
-                    : flushInterval.Value;
+            UploadFlushIntervalMilliseconds = config
+                                             .WithKeys(ConfigurationKeys.Debugger.UploadFlushInterval)
+                                             .AsInt32(DefaultUploadFlushIntervalMilliseconds, flushInterval => flushInterval >= 0)
+                                             .Value;
         }
 
         public bool Enabled { get; }
@@ -72,14 +69,14 @@ namespace Datadog.Trace.Debugger
 
         public int UploadFlushIntervalMilliseconds { get; }
 
-        public static DebuggerSettings FromSource(IConfigurationSource source)
+        public static DebuggerSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
-            return new DebuggerSettings(source);
+            return new DebuggerSettings(source, telemetry);
         }
 
         public static DebuggerSettings FromDefaultSource()
         {
-            return FromSource(GlobalConfigurationSource.Instance);
+            return FromSource(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
         }
     }
 }

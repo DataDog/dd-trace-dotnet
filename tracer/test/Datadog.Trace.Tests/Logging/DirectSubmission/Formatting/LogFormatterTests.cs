@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
@@ -206,7 +207,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
                         subscriptionId: "8c500027-5f00-400e-8f00-60000000000f",
                         deploymentId: "AzureExampleSiteName",
                         planResourceGroup: "apm-dotnet",
-                        siteResourceGroup: "apm-dotnet-site-resource-group"));
+                        siteResourceGroup: "apm-dotnet-site-resource-group"),
+                    NullConfigurationTelemetry.Instance);
             }
         }
 

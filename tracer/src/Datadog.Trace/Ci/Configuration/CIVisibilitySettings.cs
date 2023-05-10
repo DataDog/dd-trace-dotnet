@@ -7,6 +7,8 @@
 using System;
 using System.Threading;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Ci.Configuration
 {
@@ -14,40 +16,41 @@ namespace Datadog.Trace.Ci.Configuration
     {
         private TracerSettings? _tracerSettings;
 
-        public CIVisibilitySettings(IConfigurationSource source)
+        public CIVisibilitySettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
-            Enabled = source.GetBool(ConfigurationKeys.CIVisibility.Enabled) ?? false;
-            Agentless = source.GetBool(ConfigurationKeys.CIVisibility.AgentlessEnabled) ?? false;
-            Logs = source.GetBool(ConfigurationKeys.CIVisibility.Logs) ?? false;
-            ApiKey = source.GetString(ConfigurationKeys.ApiKey);
-            ApplicationKey = source.GetString(ConfigurationKeys.ApplicationKey);
-            Site = source.GetString(ConfigurationKeys.Site) ?? "datadoghq.com";
-            AgentlessUrl = source.GetString(ConfigurationKeys.CIVisibility.AgentlessUrl);
+            var config = new ConfigurationBuilder(source, telemetry);
+            Enabled = config.WithKeys(ConfigurationKeys.CIVisibility.Enabled).AsBool(false);
+            Agentless = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessEnabled).AsBool(false);
+            Logs = config.WithKeys(ConfigurationKeys.CIVisibility.Logs).AsBool(false);
+            ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
+            ApplicationKey = config.WithKeys(ConfigurationKeys.ApplicationKey).AsRedactedString();
+            Site = config.WithKeys(ConfigurationKeys.Site).AsString("datadoghq.com");
+            AgentlessUrl = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessUrl).AsString();
 
             // By default intake payloads has a 5MB limit
             MaximumAgentlessPayloadSize = 5 * 1024 * 1024;
 
-            ProxyHttps = source.GetString(ConfigurationKeys.Proxy.ProxyHttps);
-            var proxyNoProxy = source.GetString(ConfigurationKeys.Proxy.ProxyNoProxy) ?? string.Empty;
+            ProxyHttps = config.WithKeys(ConfigurationKeys.Proxy.ProxyHttps).AsString();
+            var proxyNoProxy = config.WithKeys(ConfigurationKeys.Proxy.ProxyNoProxy).AsString() ?? string.Empty;
             ProxyNoProxy = proxyNoProxy.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
             // Intelligent Test Runner
-            IntelligentTestRunnerEnabled = source.GetBool(ConfigurationKeys.CIVisibility.IntelligentTestRunnerEnabled) ?? true;
+            IntelligentTestRunnerEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.IntelligentTestRunnerEnabled).AsBool(true);
 
             // Tests skipping
-            TestsSkippingEnabled = source.GetBool(ConfigurationKeys.CIVisibility.TestsSkippingEnabled);
+            TestsSkippingEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.TestsSkippingEnabled).AsBool();
 
             // Code coverage
-            CodeCoverageEnabled = source.GetBool(ConfigurationKeys.CIVisibility.CodeCoverage);
-            CodeCoverageSnkFilePath = source.GetString(ConfigurationKeys.CIVisibility.CodeCoverageSnkFile);
-            CodeCoveragePath = source.GetString(ConfigurationKeys.CIVisibility.CodeCoveragePath);
-            CodeCoverageEnableJitOptimizations = source.GetBool(ConfigurationKeys.CIVisibility.CodeCoverageEnableJitOptimizations) ?? true;
+            CodeCoverageEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverage).AsBool();
+            CodeCoverageSnkFilePath = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageSnkFile).AsString();
+            CodeCoveragePath = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoveragePath).AsString();
+            CodeCoverageEnableJitOptimizations = config.WithKeys(ConfigurationKeys.CIVisibility.CodeCoverageEnableJitOptimizations).AsBool(true);
 
             // Git upload
-            GitUploadEnabled = source.GetBool(ConfigurationKeys.CIVisibility.GitUploadEnabled);
+            GitUploadEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.GitUploadEnabled).AsBool();
 
             // Force evp proxy
-            ForceAgentsEvpProxy = source.GetBool(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy) ?? false;
+            ForceAgentsEvpProxy = config.WithKeys(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy).AsBool(false);
         }
 
         /// <summary>
@@ -147,7 +150,7 @@ namespace Datadog.Trace.Ci.Configuration
 
         public static CIVisibilitySettings FromDefaultSources()
         {
-            return new CIVisibilitySettings(GlobalConfigurationSource.Instance);
+            return new CIVisibilitySettings(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
         }
 
         internal void SetCodeCoverageEnabled(bool value)
@@ -178,7 +181,7 @@ namespace Datadog.Trace.Ci.Configuration
 
         private TracerSettings InitializeTracerSettings()
         {
-            var tracerSettings = new TracerSettings(GlobalConfigurationSource.Instance);
+            var tracerSettings = new TracerSettings(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
 
             if (Logs)
             {

@@ -8,6 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Agent;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration
 {
@@ -21,8 +23,9 @@ namespace Datadog.Trace.Configuration
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
+        [PublicApi]
         public ImmutableExporterSettings(IConfigurationSource source)
-            : this(new ExporterSettings(source))
+            : this(new ExporterSettings(source, TelemetryFactoryV2.GetConfigTelemetry()))
         {
         }
 
