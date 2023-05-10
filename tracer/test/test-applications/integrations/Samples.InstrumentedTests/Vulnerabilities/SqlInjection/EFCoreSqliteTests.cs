@@ -16,6 +16,7 @@ public class EFCoreSqliteTests : EFCoreBaseTests
     }
 
         AddTainted(taintedTitle);
+        AddTainted(taintedTitleInjection);
         CommandUnsafeText = "Update Books set title= title where title ='" + taintedTitle + "'";
         queryUnsafe = "SELECT * from Books where title like '" + taintedTitle + "'";
         titleParam = new SQLiteParameter("@title", taintedTitle);
