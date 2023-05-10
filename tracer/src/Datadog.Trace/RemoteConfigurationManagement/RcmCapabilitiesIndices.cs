@@ -35,7 +35,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         public static readonly BigInteger AsmUserBlocking = new(AsmUserBlockingUInt32);
 
         public const uint AsmCustomRulesUInt32 = 1 << 8;
-        public static readonly BigInteger AsmCustomRules = new(AsmUserBlockingUInt32);
+        public static readonly BigInteger AsmCustomRules = new(AsmCustomRulesUInt32);
 
         public const uint AsmCustomBlockingResponseUInt32 = 1 << 9;
         public static readonly BigInteger AsmCustomBlockingResponse = new(AsmCustomBlockingResponseUInt32);
