@@ -26,7 +26,7 @@ internal class IastRequestContext
     private bool _routedParametersAdded = false;
     private bool _querySourcesAdded = false;
 
-    internal static void AddIastDisabledToSpan(Span span)
+    internal static void AddIastDisabledFlagToSpan(Span span)
     {
         span.Tags.SetTag(Tags.IastEnabled, "0");
     }
