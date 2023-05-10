@@ -4,64 +4,450 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Telemetry;
 using FluentAssertions;
+using Newtonsoft.Json;
 using Xunit;
+using Entry = Datadog.Trace.Configuration.Telemetry.ConfigurationTelemetry.ConfigurationTelemetryEntry;
 
 namespace Datadog.Trace.Tests.Configuration;
 
 public class ConfigurationBuilderTests
 {
-    public class StringTests
+    public interface IConfigurationSourceFactory
+    {
+        IConfigurationSource GetSource(IDictionary<string, object> collection);
+    }
+
+    public class NameValueCollectionTests
+    {
+        public class Factory : IConfigurationSourceFactory
+        {
+            public IConfigurationSource GetSource(IDictionary<string, object> values)
+            {
+                var data = new NameValueCollection();
+                foreach (var kvp in values)
+                {
+                    data.Add(kvp.Key, kvp.Value?.ToString());
+                }
+
+                return new NameValueConfigurationSource(data);
+            }
+        }
+
+        public class StringTests : StringTestsBase
+        {
+            public StringTests()
+                : base(new Factory())
+            {
+            }
+        }
+
+        public class GetAsTests : GetAsTestsBase
+        {
+            public GetAsTests()
+                : base(new Factory())
+            {
+            }
+        }
+
+        public class BoolTests : BoolTestsBase
+        {
+            public BoolTests()
+                : base(new Factory())
+            {
+            }
+        }
+
+        public class Int32Tests : Int32TestsBase
+        {
+            public Int32Tests()
+                : base(new Factory())
+            {
+            }
+        }
+
+        public class DoubleTests : DoubleTestsBase
+        {
+            public DoubleTests()
+                : base(new Factory())
+            {
+            }
+        }
+
+        public class DictionaryTests : DictionaryTestsBase
+        {
+            public DictionaryTests()
+                : base(new Factory())
+            {
+            }
+        }
+    }
+
+    public class JsonTests
+    {
+        private const string Key = "key";
+
+        private static void TestTelemetryHelper<T>(object value, List<Entry> expectedTelemetry, Func<IConfigurationSource, IConfigurationTelemetry, T> runBuilder)
+        {
+            var telemetry = new ConfigurationTelemetry();
+            var source = new Factory().GetSource(new Dictionary<string, object> { { Key, value } });
+            try
+            {
+                var result = runBuilder(source, telemetry);
+            }
+            catch (Exception)
+            {
+                // Don't care as we're looking at telemetry
+            }
+
+            telemetry
+               .GetLatest()
+               .OrderBy(x => x.SeqId)
+               .Should()
+               .BeEquivalentTo(
+                    expectedTelemetry.Select(
+                        x => new
+                        {
+                            x.Error,
+                            x.Key,
+                            x.Origin,
+                            x.Type,
+                            x.BoolValue,
+                            x.DoubleValue,
+                            x.IntValue,
+                            x.StringValue
+                        })); // Ignore seqId for comparison
+        }
+
+        public class Factory : IConfigurationSourceFactory
+        {
+            public IConfigurationSource GetSource(IDictionary<string, object> collection)
+                => new JsonConfigurationSource(JsonConvert.SerializeObject(collection), ConfigurationOrigins.Code);
+        }
+
+        public class StringTests : StringTestsBase
+        {
+            private const string Default = "some value";
+
+            public StringTests()
+                : base(new Factory())
+            {
+            }
+
+            [Theory]
+            [InlineData(123)]
+            [InlineData(true)]
+            [InlineData(-12.23)]
+            [InlineData("Testing")]
+            [InlineData("-23.3")]
+            [InlineData("False")]
+            [InlineData(null)]
+            [InlineData("")]
+            [InlineData("  ")]
+            public void RecordsTelemetryCorrectly(object value)
+            {
+                var expectedTelemetry = value switch
+                {
+                    "" => new List<Entry>
+                    {
+                        Entry.String(Key, string.Empty, ConfigurationOrigins.Code, error: TelemetryErrorCode.FailedValidation),
+                        Entry.String(Key, Default, ConfigurationOrigins.Default, error: null),
+                    },
+                    string s => new List<Entry>
+                    {
+                        Entry.String(Key, s, ConfigurationOrigins.Code, error: null),
+                    },
+                    null => new()
+                    {
+                        Entry.String(Key, Default, ConfigurationOrigins.Default, error: null),
+                    },
+                    { } i => new List<Entry>
+                    {
+                        Entry.String(Key, i.ToString(), ConfigurationOrigins.Code, error: null),
+                    },
+                };
+
+                TestTelemetryHelper(
+                    value,
+                    expectedTelemetry,
+                    (source, telemetry) => new ConfigurationBuilder(source, telemetry)
+                                          .WithKeys(Key)
+                                          .AsString(Default, x => !string.IsNullOrEmpty(x)));
+            }
+        }
+
+        public class GetAsTests : GetAsTestsBase
+        {
+            public GetAsTests()
+                : base(new Factory())
+            {
+            }
+        }
+
+        public class BoolTests : BoolTestsBase
+        {
+            public BoolTests()
+                : base(new Factory())
+            {
+            }
+
+            [Theory]
+            [InlineData(true)]
+            [InlineData(false)]
+            [InlineData("true")]
+            [InlineData("false")]
+            [InlineData("True")]
+            [InlineData("False")]
+            [InlineData(null)]
+            [InlineData("")]
+            [InlineData("Not a bool")]
+            public void RecordsTelemetryCorrectly(object value)
+            {
+                var expectedTelemetry = value switch
+                {
+                    true or "True" or "true" => new List<Entry>()
+                    {
+                        Entry.Bool(Key, true, ConfigurationOrigins.Code, error: null),
+                    },
+                    false or "False" or "false" => new()
+                    {
+                        Entry.Bool(Key, false, ConfigurationOrigins.Code, TelemetryErrorCode.FailedValidation),
+                        Entry.Bool(Key, true, ConfigurationOrigins.Default, error: null),
+                    },
+                    null => new()
+                    {
+                        Entry.Bool(Key, true, ConfigurationOrigins.Default, error: null),
+                    },
+                    string x1 => new()
+                    {
+                        Entry.String(Key, x1, ConfigurationOrigins.Code, TelemetryErrorCode.JsonBooleanError),
+                    },
+                    _ => throw new InvalidOperationException("Unexpected value " + value),
+                };
+
+                TestTelemetryHelper(
+                    value,
+                    expectedTelemetry,
+                    (source, telemetry) => new ConfigurationBuilder(source, telemetry)
+                                          .WithKeys(Key)
+                                          .AsBool(true, x => x));
+            }
+        }
+
+        public class Int32Tests : Int32TestsBase
+        {
+            private const int Default = 42;
+
+            public Int32Tests()
+                : base(new Factory())
+            {
+            }
+
+            [Theory]
+            [InlineData(123)]
+            [InlineData(-123)]
+            [InlineData(0)]
+            [InlineData(12.23)]
+            [InlineData(-12.23)]
+            [InlineData("123")]
+            [InlineData("23.3")]
+            [InlineData("False")]
+            [InlineData(null)]
+            [InlineData("")]
+            public void RecordsTelemetryCorrectly(object value)
+            {
+                var expectedTelemetry = value switch
+                {
+                    int i and > 0 => new List<Entry>
+                    {
+                        Entry.Number(Key, i, ConfigurationOrigins.Code, error: null),
+                    },
+                    "123" => new List<Entry> // Note the implicit conversion, but not for 23.3!
+                    {
+                        Entry.Number(Key, 123, ConfigurationOrigins.Code, error: null),
+                    },
+                    int i => new List<Entry>
+                    {
+                        Entry.Number(Key, i, ConfigurationOrigins.Code, error: TelemetryErrorCode.FailedValidation),
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
+                    },
+                    double d and > 0 => new List<Entry> // Note the implicit conversion!
+                    {
+                        Entry.Number(Key, (int)d, ConfigurationOrigins.Code, error: null),
+                    },
+                    double d => new List<Entry> // Note the implicit conversion!
+                    {
+                        Entry.Number(Key, (int)d, ConfigurationOrigins.Code, error: TelemetryErrorCode.FailedValidation),
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
+                    },
+                    null => new()
+                    {
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
+                    },
+                    string x1 => new()
+                    {
+                        Entry.String(Key, x1, ConfigurationOrigins.Code, TelemetryErrorCode.JsonInt32Error),
+                    },
+                    _ => throw new InvalidOperationException("Unexpected value " + value),
+                };
+
+                TestTelemetryHelper(
+                    value,
+                    expectedTelemetry,
+                    (source, telemetry) => new ConfigurationBuilder(source, telemetry)
+                                          .WithKeys(Key)
+                                          .AsInt32(Default, x => x > 0));
+            }
+        }
+
+        public class DoubleTests : DoubleTestsBase
+        {
+            private const double Default = 42.0;
+
+            public DoubleTests()
+                : base(new Factory())
+            {
+            }
+
+            [Theory]
+            [InlineData(123)]
+            [InlineData(-123)]
+            [InlineData(0)]
+            [InlineData(0.0)]
+            [InlineData(12.23)]
+            [InlineData(-12.23)]
+            [InlineData("123")]
+            [InlineData("23.3")]
+            [InlineData("-23.3")]
+            [InlineData("False")]
+            [InlineData(null)]
+            [InlineData("")]
+            public void RecordsTelemetryCorrectly(object value)
+            {
+                var expectedTelemetry = value switch
+                {
+                    int i and > 0 => new List<Entry>
+                    {
+                        Entry.Number(Key, (double)i, ConfigurationOrigins.Code, error: null),
+                    },
+                    int i => new List<Entry>
+                    {
+                        Entry.Number(Key, (double)i, ConfigurationOrigins.Code, error: TelemetryErrorCode.FailedValidation),
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
+                    },
+                    double d and > 0 => new List<Entry>
+                    {
+                        Entry.Number(Key, d, ConfigurationOrigins.Code, error: null),
+                    },
+                    double d => new List<Entry> // Note the implicit conversion!
+                    {
+                        Entry.Number(Key, d, ConfigurationOrigins.Code, error: TelemetryErrorCode.FailedValidation),
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
+                    },
+                    string s when double.TryParse(s, out var d) && d > 0 => new List<Entry>
+                    {
+                        Entry.Number(Key, d, ConfigurationOrigins.Code, error: null),
+                    },
+                    string s when double.TryParse(s, out var d) => new List<Entry>
+                    {
+                        Entry.Number(Key, d, ConfigurationOrigins.Code, error: TelemetryErrorCode.FailedValidation),
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
+                    },
+                    null => new()
+                    {
+                        Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
+                    },
+                    string x => new()
+                    {
+                        Entry.String(Key, x, ConfigurationOrigins.Code, TelemetryErrorCode.JsonDoubleError),
+                    },
+                    _ => throw new InvalidOperationException("Unexpected value " + value),
+                };
+
+                TestTelemetryHelper(
+                    value,
+                    expectedTelemetry,
+                    (source, telemetry) => new ConfigurationBuilder(source, telemetry)
+                                          .WithKeys(Key)
+                                          .AsDouble(Default, x => x > 0));
+            }
+        }
+
+        public class DictionaryTests : DictionaryTestsBase
+        {
+            public DictionaryTests()
+                : base(new Factory())
+            {
+            }
+        }
+
+        public class DictionaryObjectTests : DictionaryObjectTestsBase
+        {
+            public DictionaryObjectTests()
+                : base(new Factory())
+            {
+            }
+        }
+    }
+
+    public abstract class StringTestsBase
     {
         private const string Default = "Some default";
-        private readonly NameValueCollection _collection;
-        private readonly NameValueConfigurationSource _source;
+        private readonly IConfigurationSource _source;
+        private readonly Dictionary<string, object> _collection;
         private readonly NullConfigurationTelemetry _telemetry = new();
 
-        public StringTests()
+        public StringTestsBase(IConfigurationSourceFactory factory)
         {
-            _collection = new NameValueCollection()
+            _collection = new Dictionary<string, object>
             {
                 { "key", "value" },
                 { "key_with_null_value", null },
                 { "key_with_empty_value", string.Empty },
+                { "key_integer", 123 },
+                { "key_bool", true },
+                { "key_double", -12.23 },
             };
-            _source = new NameValueConfigurationSource(_collection);
+            _source = factory.GetSource(_collection);
         }
 
         [Fact]
-        public void GetString_WorksTheSameAsNaiveApproachWithDefault()
+        public void GetString_WorksTheSameAsNaiveApproach()
         {
-            var keys = _collection.AllKeys.Concat(new[] { "unknown" });
+            var keys = _collection.Keys.Concat(new[] { "unknown" });
 
             foreach (var key in keys)
             {
                 var expected = Naive(key);
-                var actual = new ConfigurationBuilder(_source, _telemetry)
-                            .WithKeys(key)
-                            .AsString(Default);
+                var actual = Builder(key);
                 actual.Should().Be(expected, $"using key '{key}'");
             }
 
             string Naive(string key) => _source.GetString(key) ?? Default;
+
+            string Builder(string key)
+                => new ConfigurationBuilder(_source, _telemetry)
+                  .WithKeys(key)
+                  .AsString(Default);
         }
 
         [Fact]
         public void GetString_WorksTheSameAsNaiveApproachWithValidation()
         {
-            var keys = _collection.AllKeys.Concat(new[] { "unknown" });
+            var keys = _collection.Keys.Concat(new[] { "unknown" });
 
             foreach (var key in keys)
             {
                 var expected = Naive(key);
-                var actual = new ConfigurationBuilder(_source, _telemetry)
-                            .WithKeys(key)
-                            .AsString(Default, x => !string.IsNullOrEmpty(x));
+                var actual = Builder(key);
                 actual.Should().Be(expected, $"using key '{key}'");
             }
 
@@ -75,12 +461,18 @@ public class ConfigurationBuilderTests
 
                 return Default;
             }
+
+            string Builder(string key)
+                => new ConfigurationBuilder(_source, _telemetry)
+                  .WithKeys(key)
+                  .AsString(Default, x => !string.IsNullOrEmpty(x));
         }
     }
 
-    public class GetAsTests
+    public abstract class GetAsTestsBase
     {
         private const string Default = "40CFDD4B-2CB0-4B18-94CC-6A5E9F44A323";
+        private readonly IConfigurationSourceFactory _factory;
         private readonly Guid _default = Guid.Parse(Default);
 
         private readonly Func<string, ParsingResult<Guid>> _converter =
@@ -91,6 +483,11 @@ public class ConfigurationBuilderTests
 
         private readonly NullConfigurationTelemetry _telemetry = new();
 
+        protected GetAsTestsBase(IConfigurationSourceFactory factory)
+        {
+            _factory = factory;
+        }
+
         [Theory]
         [InlineData("539F5206-2F28-4F34-9E05-AD7FA78B9705", "539F5206-2F28-4F34-9E05-AD7FA78B9705")]
         [InlineData(null, Default)]
@@ -98,8 +495,8 @@ public class ConfigurationBuilderTests
         [InlineData("invalid", Default)]
         public void GetAs_ReturnsTheExpectedValue(string value, string expected)
         {
-            var collection = new NameValueCollection { { "key", value } };
-            var source = new NameValueConfigurationSource(collection);
+            var collection = new Dictionary<string, object> { { "key", value } };
+            var source = _factory.GetSource(collection);
 
             var actual = new ConfigurationBuilder(source, _telemetry)
                         .WithKeys("key")
@@ -118,8 +515,8 @@ public class ConfigurationBuilderTests
         [InlineData("invalid", Default)]
         public void GetAs_ReturnsTheExpectedValueWithNullableGuid(string value, string expected)
         {
-            var collection = new NameValueCollection { { "key", value } };
-            var source = new NameValueConfigurationSource(collection);
+            var collection = new Dictionary<string, object> { { "key", value } };
+            var source = _factory.GetSource(collection);
 
             var actual = new ConfigurationBuilder(source, _telemetry)
                         .WithKeys("key")
@@ -137,8 +534,8 @@ public class ConfigurationBuilderTests
         [InlineData("invalid")]
         public void GetAs_ReturnsNullWhenCantParseAndNoDefault(string value)
         {
-            var collection = new NameValueCollection { { "key", value } };
-            var source = new NameValueConfigurationSource(collection);
+            var collection = new Dictionary<string, object> { { "key", value } };
+            var source = _factory.GetSource(collection);
 
             var actual = new ConfigurationBuilder(source, _telemetry)
                         .WithKeys("key")
@@ -157,8 +554,8 @@ public class ConfigurationBuilderTests
         [InlineData("C3B639AB-28F8-401E-B9C7-D0D36C3B55FF", "C3B639AB-28F8-401E-B9C7-D0D36C3B55FF")]
         public void GetAs_ReturnsDefaultWhenValidationFails(string value, string expected)
         {
-            var collection = new NameValueCollection { { "key", value } };
-            var source = new NameValueConfigurationSource(collection);
+            var collection = new Dictionary<string, object> { { "key", value } };
+            var source = _factory.GetSource(collection);
 
             var actual = new ConfigurationBuilder(source, _telemetry)
                         .WithKeys("key")
@@ -171,53 +568,53 @@ public class ConfigurationBuilderTests
         }
     }
 
-    public class BoolTests
+    public abstract class BoolTestsBase
     {
         private const bool Default = true;
-        private readonly NameValueCollection _collection;
-        private readonly NameValueConfigurationSource _source;
+        private readonly Dictionary<string, object> _collection;
+        private readonly IConfigurationSource _source;
         private readonly NullConfigurationTelemetry _telemetry = new();
 
-        public BoolTests()
+        public BoolTestsBase(IConfigurationSourceFactory factory)
         {
-            _collection = new NameValueCollection()
+            _collection = new Dictionary<string, object>
             {
-                { "key_True", "true" },
-                { "key_False", "false" },
+                { "key_True", true },
+                { "key_False", false },
                 { "key_with_null_value", null },
                 { "key_with_empty_value", string.Empty },
             };
-            _source = new NameValueConfigurationSource(_collection);
+            _source = factory.GetSource(_collection);
         }
 
         [Fact]
         public void GetBool_WorksTheSameAsNaiveApproachWithDefault()
         {
-            var keys = _collection.AllKeys.Concat(new[] { "unknown" });
+            var keys = _collection.Keys.Concat(new[] { "unknown" });
 
             foreach (var key in keys)
             {
-                var expected = Naive(key);
-                var actual = new ConfigurationBuilder(_source, _telemetry)
-                            .WithKeys(key)
-                            .AsBool(Default);
+                var expected = Result<bool>.Try(() => Naive(key));
+                var actual = Result<bool>.Try(() => Builder(key));
                 actual.Should().Be(expected, $"using key '{key}'");
             }
 
             bool Naive(string key) => _source.GetBool(key) ?? Default;
+
+            bool Builder(string key) => new ConfigurationBuilder(_source, _telemetry)
+                                       .WithKeys(key)
+                                       .AsBool(Default);
         }
 
         [Fact]
         public void GetBool_WorksTheSameAsNaiveApproachWithValidation()
         {
-            var keys = _collection.AllKeys.Concat(new[] { "unknown" });
+            var keys = _collection.Keys.Concat(new[] { "unknown" });
 
             foreach (var key in keys)
             {
-                var expected = Naive(key);
-                var actual = new ConfigurationBuilder(_source, _telemetry)
-                            .WithKeys(key)
-                            .AsBool(Default, x => x);
+                var expected = Result<bool>.Try(() => Naive(key));
+                var actual = Result<bool>.Try(() => Builder(key));
                 actual.Should().Be(expected, $"using key '{key}'");
             }
 
@@ -232,58 +629,71 @@ public class ConfigurationBuilderTests
 
                 return Default;
             }
+
+            bool Builder(string key)
+            {
+                return new ConfigurationBuilder(_source, _telemetry)
+                      .WithKeys(key)
+                      .AsBool(Default, x => x);
+            }
         }
     }
 
-    public class Int32Tests
+    public abstract class Int32TestsBase
     {
         private const int Default = 42;
-        private readonly NameValueCollection _collection;
-        private readonly NameValueConfigurationSource _source;
+        private readonly Dictionary<string, object> _collection;
+        private readonly IConfigurationSource _source;
         private readonly NullConfigurationTelemetry _telemetry = new();
 
-        public Int32Tests()
+        public Int32TestsBase(IConfigurationSourceFactory factory)
         {
-            _collection = new NameValueCollection()
+            _collection = new Dictionary<string, object>()
             {
-                { "key", "123" },
-                { "negative", "-123" },
-                { "zero", "0" },
+                { "key", 123 },
+                { "negative", -123 },
+                { "key_double", 12.3 },
+                { "negative_double", -12.3 },
+                { "key_string", "123" },
+                { "negative_string", "-123" },
+                { "key_string_double", "12.3" },
+                { "negative_string_double", "-12.3" },
+                { "zero", 0 },
                 { "invalid", "fdsfds" },
                 { "key_with_null_value", null },
                 { "key_with_empty_value", string.Empty },
             };
-            _source = new NameValueConfigurationSource(_collection);
+            _source = factory.GetSource(_collection);
         }
 
         [Fact]
         public void GetInt32_WorksTheSameAsNaiveApproachWithDefault()
         {
-            var keys = _collection.AllKeys.Concat(new[] { "unknown" });
+            var keys = _collection.Keys.Concat(new[] { "unknown" });
 
             foreach (var key in keys)
             {
-                var expected = Naive(key);
-                var actual = new ConfigurationBuilder(_source, _telemetry)
-                            .WithKeys(key)
-                            .AsInt32(Default);
+                var expected = Result<int>.Try(() => Naive(key));
+                var actual = Result<int>.Try(() => Builder(key));
                 actual.Should().Be(expected, $"using key '{key}'");
             }
 
             int Naive(string key) => _source.GetInt32(key) ?? Default;
+
+            int Builder(string key) => new ConfigurationBuilder(_source, _telemetry)
+                                      .WithKeys(key)
+                                      .AsInt32(Default);
         }
 
         [Fact]
         public void GetInt32_WorksTheSameAsNaiveApproachWithValidation()
         {
-            var keys = _collection.AllKeys.Concat(new[] { "unknown" });
+            var keys = _collection.Keys.Concat(new[] { "unknown" });
 
             foreach (var key in keys)
             {
-                var expected = Naive(key);
-                var actual = new ConfigurationBuilder(_source, _telemetry)
-                            .WithKeys(key)
-                            .AsInt32(Default, x => x > 0);
+                var expected = Result<int>.Try(() => Naive(key));
+                var actual = Result<int>.Try(() => Builder(key).Value);
                 actual.Should().Be(expected, $"using key '{key}'");
             }
 
@@ -292,58 +702,77 @@ public class ConfigurationBuilderTests
                 var value = _source.GetInt32(key);
                 return value is > 0 ? value.Value : Default;
             }
+
+            int? Builder(string key)
+            {
+                return new ConfigurationBuilder(_source, _telemetry)
+                      .WithKeys(key)
+                      .AsInt32(Default, x => x > 0);
+            }
         }
     }
 
-    public class DoubleTests
+    public abstract class DoubleTestsBase
     {
         private const double Default = 42.0;
-        private readonly NameValueCollection _collection;
-        private readonly NameValueConfigurationSource _source;
+        private readonly Dictionary<string, object> _collection;
+        private readonly IConfigurationSource _source;
         private readonly NullConfigurationTelemetry _telemetry = new();
 
-        public DoubleTests()
+        public DoubleTestsBase(IConfigurationSourceFactory factory)
         {
-            _collection = new NameValueCollection()
+            _collection = new Dictionary<string, object>()
             {
-                { "key", "1.23" },
-                { "negative", "-12.3" },
-                { "zero", "0" },
+                { "key", 1.23 },
+                { "integer", 1 },
+                { "negative", -12.3 },
+                { "negative_integer", -12 },
+                { "zero", 0.0 },
+                { "zero_integer", 0 },
+                { "key_string", "1.23" },
+                { "integer_string", "1" },
+                { "negative_string", "-12.3" },
+                { "negative_integer_string", "-12" },
+                { "zero_string", "0.0" },
+                { "zero_integer_string", "0" },
                 { "invalid", "fdsfds" },
                 { "key_with_null_value", null },
                 { "key_with_empty_value", string.Empty },
             };
-            _source = new NameValueConfigurationSource(_collection);
+            _source = factory.GetSource(_collection);
         }
 
         [Fact]
-        public void GetInt32_WorksTheSameAsNaiveApproachWithDefault()
+        public void GetDouble_WorksTheSameAsNaiveApproachWithDefault()
         {
-            var keys = _collection.AllKeys.Concat(new[] { "unknown" });
+            var keys = _collection.Keys.Concat(new[] { "unknown" });
 
             foreach (var key in keys)
             {
-                var expected = Naive(key);
-                var actual = new ConfigurationBuilder(_source, _telemetry)
-                            .WithKeys(key)
-                            .AsDouble(Default);
+                var expected = Result<double>.Try(() => Naive(key));
+                var actual = Result<double>.Try(() => Builder(key));
                 actual.Should().Be(expected, $"using key '{key}'");
             }
 
             double Naive(string key) => _source.GetDouble(key) ?? Default;
+
+            double Builder(string key)
+            {
+                return new ConfigurationBuilder(_source, _telemetry)
+                      .WithKeys(key)
+                      .AsDouble(Default);
+            }
         }
 
         [Fact]
-        public void GetInt32_WorksTheSameAsNaiveApproachWithValidation()
+        public void GetDouble_WorksTheSameAsNaiveApproachWithValidation()
         {
-            var keys = _collection.AllKeys.Concat(new[] { "unknown" });
+            var keys = _collection.Keys.Concat(new[] { "unknown" });
 
             foreach (var key in keys)
             {
-                var expected = Naive(key);
-                var actual = new ConfigurationBuilder(_source, _telemetry)
-                            .WithKeys(key)
-                            .AsDouble(Default, x => x > 0);
+                var expected = Result<double>.Try(() => Naive(key));
+                var actual = Result<double>.Try(() => Builder(key).Value);
                 actual.Should().Be(expected, $"using key '{key}'");
             }
 
@@ -352,18 +781,25 @@ public class ConfigurationBuilderTests
                 var value = _source.GetDouble(key);
                 return value is > 0 ? value.Value : Default;
             }
+
+            double? Builder(string key)
+            {
+                return new ConfigurationBuilder(_source, _telemetry)
+                      .WithKeys(key)
+                      .AsDouble(Default, x => x > 0);
+            }
         }
     }
 
-    public class DictionaryTests
+    public abstract class DictionaryTestsBase
     {
-        private readonly NameValueCollection _collection;
-        private readonly NameValueConfigurationSource _source;
+        private readonly Dictionary<string, object> _collection;
+        private readonly IConfigurationSource _source;
         private readonly NullConfigurationTelemetry _telemetry = new();
 
-        public DictionaryTests()
+        public DictionaryTestsBase(IConfigurationSourceFactory factory)
         {
-            _collection = new NameValueCollection()
+            _collection = new Dictionary<string, object>()
             {
                 { "key_no_spaces", "key1:value1,key2:value2,key3:value3" },
                 { "key_with_spaces", "key1:value1, key2:value2, key3:value3" },
@@ -373,7 +809,7 @@ public class ConfigurationBuilderTests
                 { "key_with_null_value", null },
                 { "key_with_empty_value", string.Empty },
             };
-            _source = new NameValueConfigurationSource(_collection);
+            _source = factory.GetSource(_collection);
         }
 
         [Theory]
@@ -381,7 +817,7 @@ public class ConfigurationBuilderTests
         [InlineData(false)]
         public void GetDictionary_WorksTheSameAsNaiveApproachWithDefault(bool allowOptionalMappings)
         {
-            var keys = _collection.AllKeys.Concat(new[] { "unknown" });
+            var keys = _collection.Keys.Concat(new[] { "unknown" });
 
             foreach (var key in keys)
             {
@@ -398,6 +834,130 @@ public class ConfigurationBuilderTests
                     actual.Should().Equal(expected, $"using key '{key}'");
                 }
             }
+        }
+    }
+
+    public abstract class DictionaryObjectTestsBase
+    {
+        private readonly Dictionary<string, object> _collection;
+        private readonly IConfigurationSource _source;
+        private readonly NullConfigurationTelemetry _telemetry = new();
+
+        public DictionaryObjectTestsBase(IConfigurationSourceFactory factory)
+        {
+            _collection = new Dictionary<string, object>()
+            {
+                { "key", new Dictionary<string, object> { { "key1", "value1" }, { "key2", "value2" }, { "key3", "value3" } } },
+                { "single_value", new Dictionary<string, object> { { "key1", "value1" } } },
+                { "empty", new Dictionary<string, object>() },
+                { "missing_values", new Dictionary<string, object> { { "key1", null }, { "key2", string.Empty }, { "key3", "value3" } } },
+                { "key_with_null_value", null },
+            };
+            _source = factory.GetSource(_collection);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void GetDictionary_WorksTheSameAsNaiveApproachWithDefault(bool allowOptionalMappings)
+        {
+            var keys = _collection.Keys.Concat(new[] { "unknown" });
+
+            foreach (var key in keys)
+            {
+                var expected = _source.GetDictionary(key, allowOptionalMappings);
+                var actual = new ConfigurationBuilder(_source, _telemetry)
+                            .WithKeys(key)
+                            .AsDictionary(allowOptionalMappings);
+                if (expected is null)
+                {
+                    actual.Should().BeNull();
+                }
+                else
+                {
+                    actual.Should().Equal(expected, $"using key '{key}'");
+                }
+            }
+        }
+    }
+
+    public class Result<T>
+    {
+        public Result(T value)
+        {
+            Value = value;
+            IsSuccess = true;
+            Error = null;
+        }
+
+        public Result(Exception error)
+        {
+            Error = error;
+            IsSuccess = false;
+        }
+
+        public bool IsSuccess { get; }
+
+        public T Value { get; }
+
+        public Exception Error { get; }
+
+        public static implicit operator Result<T>(T result) => Success(result);
+
+        public static Result<T> Success(T value) => new(value);
+
+        public static Result<T> Failure(Exception ex) => new(ex);
+
+        public static Result<T> Try(Func<T> function)
+        {
+            try
+            {
+                return function();
+            }
+            catch (Exception ex)
+            {
+                return Failure(ex);
+            }
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != this.GetType())
+            {
+                return false;
+            }
+
+            return Equals((Result<T>)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = IsSuccess.GetHashCode();
+                hashCode = (hashCode * 397) ^ EqualityComparer<T>.Default.GetHashCode(Value);
+                hashCode = (hashCode * 397) ^ (Error?.GetType() != null ? Error.GetType().GetHashCode() : 0);
+                return hashCode;
+            }
+        }
+
+        protected bool Equals(Result<T> other)
+        {
+            return IsSuccess == other.IsSuccess
+                && ((Value is null && other.Value is null)
+                 || (Value?.Equals(other.Value) ?? false))
+                && ((Error is null && other.Error is null)
+                 || (Error?.GetType() == other.Error?.GetType()));
         }
     }
 }
