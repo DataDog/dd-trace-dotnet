@@ -882,11 +882,13 @@ internal class IntelligentTestRunnerClient
 
     public readonly struct SettingsResponse
     {
+#pragma warning disable CS0649 // Readonly field is never assigned to - this is created using JSON deserialization
         [JsonProperty("code_coverage")]
         public readonly bool? CodeCoverage;
 
         [JsonProperty("tests_skipping")]
         public readonly bool? TestsSkipping;
+#pragma warning restore CS0649
     }
 
     private class ObjectPackFilesResult
