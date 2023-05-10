@@ -397,6 +397,7 @@ namespace Datadog.Trace.AppSec
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusion, _noLocalRules);
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmRequestBlocking, _noLocalRules);
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmResponseBlocking, _noLocalRules);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomRules, _noLocalRules);
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _noLocalRules);
                 });
         }
