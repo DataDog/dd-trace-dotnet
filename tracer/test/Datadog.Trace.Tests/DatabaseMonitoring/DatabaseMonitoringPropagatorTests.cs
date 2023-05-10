@@ -31,19 +31,22 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
         }
 
         [Theory]
-        [InlineData("100", SamplingPriorityValues.UserKeep, "")]
-        [InlineData("string100", SamplingPriorityValues.UserKeep, "")]
-        [InlineData("disabled", SamplingPriorityValues.UserKeep, "")]
-        [InlineData("Service", SamplingPriorityValues.AutoReject, "/*dddbs='Test.Service-mysql',ddps='Test.Service'*/")]
-        [InlineData("fUll", SamplingPriorityValues.AutoKeep, "/*dddbs='Test.Service-mysql',ddps='Test.Service',traceparent='00-00000000000000006172c1c9a829c71c-05a5f7b5320d6e4d-01'*/")]
-        [InlineData("full", SamplingPriorityValues.UserReject, "/*dddbs='Test.Service-mysql',ddps='Test.Service',traceparent='00-00000000000000006172c1c9a829c71c-05a5f7b5320d6e4d-00'*/")]
-        public void ExpectedCommentInjected(string propagationMode, int? samplingPriority, string expectedComment)
+        [InlineData("string100", SamplingPriorityValues.UserKeep, "npgsql", "", "")]
+        [InlineData("full", SamplingPriorityValues.UserKeep, "sqlite", "", "")]
+        [InlineData("disabled", SamplingPriorityValues.UserKeep, "sqlclient", "", "")]
+        [InlineData("Service", SamplingPriorityValues.AutoReject, "npgsql", "Test.Service-postgres", "/*dddbs='Test.Service-postgres',ddps='Test.Service'*/")]
+        [InlineData("full", SamplingPriorityValues.UserReject, "sqlclient", "Test.Service-sql-server", "/*dddbs='Test.Service-sql-server',ddps='Test.Service'*/")]
+        [InlineData("fUlL", SamplingPriorityValues.AutoKeep, "mysql", "Test.Service-mysql", "/*dddbs='Test.Service-mysql',ddps='Test.Service',traceparent='00-00000000000000006172c1c9a829c71c-05a5f7b5320d6e4d-01'*/")]
+        public void ExpectedCommentInjected(string propagationMode, int? samplingPriority, string integration, string dbServiceName, string expectedComment)
         {
             DbmPropagationLevel dbmPropagationLevel;
             Enum.TryParse(propagationMode, true, out dbmPropagationLevel);
 
-            var context = new SpanContext(traceId: (TraceId)7021887840877922076, spanId: 407003698947780173, samplingPriority: samplingPriority, serviceName: "Test.Service-mysql", "origin");
-            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(dbmPropagationLevel, "Test.Service", context);
+            IntegrationId integrationId;
+            Enum.TryParse(integration, true, out integrationId);
+
+            var context = new SpanContext(traceId: (TraceId)7021887840877922076, spanId: 407003698947780173, samplingPriority: samplingPriority, serviceName: dbServiceName, "origin");
+            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(dbmPropagationLevel, "Test.Service", context, integrationId);
 
             returnedComment.Should().Be(expectedComment);
         }
@@ -61,7 +64,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             span.Context.TraceContext.ServiceVersion = version;
             span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
 
-            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(DbmPropagationLevel.Service, "Test.Service", span.Context);
+            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(DbmPropagationLevel.Service, "Test.Service", span.Context, IntegrationId.MySql);
 
             returnedComment.Should().Be(expectedComment);
         }
@@ -78,7 +81,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             span.Context.TraceContext.ServiceVersion = version;
             span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
 
-            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(DbmPropagationLevel.Service, service, span.Context);
+            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(DbmPropagationLevel.Service, service, span.Context, IntegrationId.MySql);
 
             returnedComment.Should().Be(expectedComment);
         }
