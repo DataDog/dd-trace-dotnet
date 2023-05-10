@@ -499,6 +499,7 @@ db.name | No
 db.type | `sql-server`
 out.host | Yes
 span.kind | `client`
+_dd.dbm_trace_injected | No
 
 ## Wcf
 ### Span properties

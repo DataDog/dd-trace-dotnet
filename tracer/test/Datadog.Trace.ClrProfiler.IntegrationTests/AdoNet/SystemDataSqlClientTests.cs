@@ -5,15 +5,20 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
+    [UsesVerify]
     public class SystemDataSqlClientTests : TracingIntegrationTest
     {
         public SystemDataSqlClientTests(ITestOutputHelper output)
@@ -25,7 +30,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         public static IEnumerable<object[]> GetEnabledConfig()
             => from packageVersionArray in PackageVersions.SystemDataSqlClient
                from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
+               from propagation in new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion, propagation };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlClient(metadataSchemaVersion);
 
@@ -33,8 +39,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void SubmitsTraces(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
         {
+            SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
+
             // ALWAYS: 98 spans
             // - SqlCommand: 21 spans (3 groups * 7 spans)
             // - DbCommand:  42 spans (6 groups * 7 spans)
@@ -67,9 +75,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
 
-            Assert.Equal(expectedSpanCount, spans.Count);
+            spans.Count.Should().Be(expectedSpanCount);
             ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
             telemetry.AssertIntegrationEnabled(IntegrationId.SqlClient);
+
+            // Testing that spans yield the expected output when using DBM
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
+            settings.AddSimpleScrubber("out.host: (localdb)\\MSSQLLocalDB", "out.host: sqlserver");
+            settings.AddSimpleScrubber("out.host: sqledge_arm64", "out.host: sqlserver");
+
+            var fileName = nameof(SystemDataSqlClientTests) + $".Schema{metadataSchemaVersion.ToUpper()}";
+
+            fileName = fileName + (dbmPropagation switch
+            {
+                "service" or "full" => ".enabled",
+                _ => ".disabled",
+            });
+
+            await VerifyHelper.VerifySpans(spans, settings)
+                .DisableRequireUniquePrefix()
+                .UseFileName(fileName);
         }
 
         [SkippableFact]
