@@ -15,6 +15,12 @@ public class EFCoreSqliteTests : EFCoreBaseTests
         titleParam = new SqliteParameter("@title", taintedTitle);
     }
 
+        AddTainted(taintedTitle);
+        CommandUnsafeText = "Update Books set title= title where title ='" + taintedTitle + "'";
+        queryUnsafe = "SELECT * from Books where title like '" + taintedTitle + "'";
+        titleParam = new SQLiteParameter("@title", taintedTitle);
+    }
+
     [Fact]
     public void GivenAProcess_WhenStartTaintedProcess_ThenLocationIsCorrect()
     {
