@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
+namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
 public class SystemDataSqLiteTests : InstrumentationTestsBase, IDisposable
 {

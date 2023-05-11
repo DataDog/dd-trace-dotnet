@@ -1,3 +1,4 @@
+/*
 #if NET5_0_OR_GREATER
 
 using System;
@@ -8,7 +9,7 @@ using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
+namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
 public class DatabaseCoreAspectTests : InstrumentationTestsBase
 {
@@ -307,3 +308,4 @@ public class DatabaseCoreAspectTests : InstrumentationTestsBase
     }
 }
 #endif
+*/

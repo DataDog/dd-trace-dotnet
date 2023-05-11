@@ -500,7 +500,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.NetActivitySdk", "t
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Owin.Iis.WebApi2", "tracer\test\test-applications\aspnet\Samples.Owin.Iis.WebApi2\Samples.Owin.Iis.WebApi2.csproj", "{B417E258-A21F-4546-B78F-8A7A4879472A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.BenchmarkDotNet.Tests", "tracer\test\Datadog.Trace.BenchmarkDotNet.Tests\Datadog.Trace.BenchmarkDotNet.Tests.csproj", "{CC549AFF-0EC0-4AD4-93E3-F05C8A74F4D9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.BenchmarkDotNet.Tests", "tracer\test\Datadog.Trace.BenchmarkDotNet.Tests\Datadog.Trace.BenchmarkDotNet.Tests.csproj", "{CC549AFF-0EC0-4AD4-93E3-F05C8A74F4D9}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.InstrumentedTests", "tracer\test\test-applications\integrations\Samples.InstrumentedTests\Samples.InstrumentedTests.csproj", "{64E32F7A-8989-480E-AFE7-3BD343424F6A}"
 EndProject
@@ -1411,6 +1411,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{3c6dd42e-9214-4747-92ba-78de29aace59}*SharedItemsImports = 4
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{472dba92-4fea-4b9a-ba70-0e97b942e12d}*SharedItemsImports = 5
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{65492dd4-ccd9-437a-b383-e7eb7ab872d2}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{6d86109f-b7c9-477d-86d7-45735a3a0818}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{7b0822f6-80de-4b49-8125-93975678d0d5}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{99a62ccf-8e7f-4d57-8383-d38c371c8087}*SharedItemsImports = 4

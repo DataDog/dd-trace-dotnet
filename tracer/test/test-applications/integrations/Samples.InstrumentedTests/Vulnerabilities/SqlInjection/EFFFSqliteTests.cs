@@ -15,7 +15,7 @@ using System.Threading;
 using FluentAssertions;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
+namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 public class EFFFSqliteTests : InstrumentationTestsBase
 {
     string CommandUnsafeText;

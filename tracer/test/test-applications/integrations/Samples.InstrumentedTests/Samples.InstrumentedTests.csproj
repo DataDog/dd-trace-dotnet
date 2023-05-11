@@ -46,11 +46,13 @@
   <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="1.1.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SQLite" Version="1.1.6" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="1.1.6" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0' OR '$(TargetFramework)'=='net5.0'">
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SQLite" Version="5.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="5.0.8" />
   </ItemGroup>
 
 </Project>
