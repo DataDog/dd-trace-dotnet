@@ -13,7 +13,7 @@ internal static partial class MetricTagsExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 101;
+    public const int Length = 102;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags"/> value.
@@ -127,6 +127,7 @@ internal static partial class MetricTagsExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName_HashAlgorithm => "integrations_name:hashalgorithm",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName_SymmetricAlgorithm => "integrations_name:symmetricalgorithm",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName_OpenTelemetry => "integrations_name:opentelemetry",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName_AwsLambda => "integrations_name:aws_lambda",
             _ => value.ToString(),
         };
 
@@ -241,6 +242,7 @@ internal static partial class MetricTagsExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName_HashAlgorithm,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName_SymmetricAlgorithm,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName_OpenTelemetry,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName_AwsLambda,
         };
 
     /// <summary>
@@ -355,6 +357,7 @@ internal static partial class MetricTagsExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName_HashAlgorithm),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName_SymmetricAlgorithm),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName_OpenTelemetry),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName_AwsLambda),
         };
 
     /// <summary>
@@ -469,5 +472,6 @@ internal static partial class MetricTagsExtensions
             "integrations_name:hashalgorithm",
             "integrations_name:symmetricalgorithm",
             "integrations_name:opentelemetry",
+            "integrations_name:aws_lambda",
         };
 }

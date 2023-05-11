@@ -136,6 +136,7 @@ internal enum MetricTags
     [Description("integrations_name:hashalgorithm")]IntegrationName_HashAlgorithm,
     [Description("integrations_name:symmetricalgorithm")]IntegrationName_SymmetricAlgorithm,
     [Description("integrations_name:opentelemetry")]IntegrationName_OpenTelemetry,
+    [Description("integrations_name:aws_lambda")]IntegrationName_AwsLambda,
 
     // Integration Component
     // TODO Add these
