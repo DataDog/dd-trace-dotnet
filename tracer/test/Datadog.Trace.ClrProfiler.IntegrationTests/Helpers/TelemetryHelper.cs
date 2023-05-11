@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
@@ -29,40 +31,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return telemetry;
         }
 
-        public static TelemetryData AssertIntegrationEnabled(this MockTelemetryAgent<TelemetryData> telemetry, IntegrationId integrationId)
+        public static void AssertIntegrationEnabled(this MockTelemetryAgent<TelemetryData> telemetry, IntegrationId integrationId)
         {
-            return telemetry.AssertIntegration(integrationId, enabled: true, autoEnabled: true);
+            telemetry.AssertIntegration(integrationId, enabled: true, autoEnabled: true);
         }
 
-        public static TelemetryData AssertIntegrationDisabled(this MockTelemetryAgent<TelemetryData> telemetry, IntegrationId integrationId)
+        public static void AssertIntegrationDisabled(this MockTelemetryAgent<TelemetryData> telemetry, IntegrationId integrationId)
         {
-            return telemetry.AssertIntegration(integrationId, enabled: false, autoEnabled: true);
+            telemetry.AssertIntegration(integrationId, enabled: false, autoEnabled: true);
         }
 
-        public static TelemetryData AssertIntegrationEnabled(this MockTracerAgent mockAgent, IntegrationId integrationId)
-        {
-            return mockAgent.AssertIntegration(integrationId, enabled: true, autoEnabled: true);
-        }
-
-        public static TelemetryData AssertIntegrationDisabled(this MockTracerAgent mockAgent, IntegrationId integrationId)
-        {
-            return mockAgent.AssertIntegration(integrationId, enabled: false, autoEnabled: true);
-        }
-
-        public static TelemetryData AssertIntegration(this MockTracerAgent mockAgent, IntegrationId integrationId, bool enabled, bool? autoEnabled)
+        public static void AssertIntegrationEnabled(this MockTracerAgent mockAgent, IntegrationId integrationId)
         {
             mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).RequestType == TelemetryRequestTypes.AppClosing);
 
             var allData = mockAgent.Telemetry.Cast<TelemetryData>().ToArray();
-            return AssertIntegration(allData, integrationId, enabled, autoEnabled);
+            AssertIntegration(allData, integrationId, true, true);
         }
 
-        public static TelemetryData AssertIntegration(this MockTelemetryAgent<TelemetryData> telemetry, IntegrationId integrationId, bool enabled, bool? autoEnabled)
+        public static void AssertIntegration(this MockTelemetryAgent<TelemetryData> telemetry, IntegrationId integrationId, bool enabled, bool? autoEnabled)
         {
             telemetry.WaitForLatestTelemetry(x => x.RequestType == TelemetryRequestTypes.AppClosing);
 
             var allData = telemetry.Telemetry.ToArray();
-            return AssertIntegration(allData, integrationId, enabled, autoEnabled);
+            AssertIntegration(allData, integrationId, enabled, autoEnabled);
         }
 
         public static TelemetryData AssertConfiguration(this MockTracerAgent mockAgent, string key, object value = null)
@@ -83,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static TelemetryData AssertConfiguration(this MockTelemetryAgent<TelemetryData> telemetry, string key) => telemetry.AssertConfiguration(key, value: null);
 
-        private static TelemetryData AssertConfiguration(TelemetryData[] allData, string key, object value = null)
+        internal static TelemetryData AssertConfiguration(ICollection<TelemetryData> allData, string key, object value = null)
         {
             var (latestConfigurationData, configurationPayload) =
                 allData
@@ -110,33 +102,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return latestConfigurationData;
         }
 
-        private static TelemetryData AssertIntegration(TelemetryData[] allData, IntegrationId integrationId, bool enabled, bool? autoEnabled)
+        internal static void AssertIntegration(ICollection<TelemetryData> allData, IntegrationId integrationId, bool enabled, bool? autoEnabled)
         {
             allData.Should().ContainSingle(x => x.RequestType == TelemetryRequestTypes.AppClosing);
 
-            var (latestIntegrationsData, integrationsPayload) =
+            // as integrations only include the diff, we need to reconstruct the "latest" data ourselves
+            var latestIntegrations = new ConcurrentDictionary<string, IntegrationTelemetryData>();
+            var integrationsPayloads =
                 allData
                    .Where(
                         x => x.RequestType == TelemetryRequestTypes.AppStarted
                           || x.RequestType == TelemetryRequestTypes.AppIntegrationsChanged)
                    .OrderByDescending(x => x.SeqId)
                    .Select(
-                        data =>
-                        {
-                            var integrations = data.Payload is AppStartedPayload payload
-                                                   ? payload.Integrations
-                                                   : ((AppIntegrationsChangedPayload)data.Payload).Integrations;
-                            return (data, integrations);
-                        })
-                   .FirstOrDefault(x => x.integrations is not null);
+                        data => data.Payload is AppStartedPayload payload
+                                    ? payload.Integrations
+                                    : ((AppIntegrationsChangedPayload)data.Payload).Integrations);
 
-            latestIntegrationsData.Should().NotBeNull();
-            integrationsPayload.Should().NotBeNull();
+            // only keep the latest version of integration data
+            foreach (var integrationsPayload in integrationsPayloads)
+            {
+                foreach (var integrationEntry in integrationsPayload)
+                {
+                    latestIntegrations.TryAdd(integrationEntry.Name, integrationEntry);
+                }
+            }
 
-            var integration = integrationsPayload
-               .FirstOrDefault(x => x.Name == integrationId.ToString());
+            latestIntegrations.Should().NotBeEmpty();
 
-            integration.Should().NotBeNull();
+            var integration = latestIntegrations.Should().ContainKey(integrationId.ToString()).WhoseValue;
+
             integration.Enabled.Should().Be(enabled, $"{integration.Name} should only be enabled if we generate a span");
             if (autoEnabled.HasValue)
             {
@@ -144,8 +139,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             integration.Error.Should().BeNullOrEmpty();
-
-            return latestIntegrationsData;
         }
     }
 }
