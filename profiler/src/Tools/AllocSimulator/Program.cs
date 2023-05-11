@@ -28,24 +28,130 @@ namespace AllocSimulator
 
                 if (string.IsNullOrEmpty(allocDirectory))
                 {
-                    SimulateAllocations(allocFile, meanPoisson, sampling1, sampling2);
-                    return;
+                    if (string.IsNullOrEmpty(allocFile))
+                    {
+                        throw new InvalidOperationException("Missing allocations file...");
+                    }
+
+                    var extension = Path.GetExtension(allocFile);
+                    if ((extension == ".alloc") || (extension == ".balloc"))
+                    {
+                        SimulateAllocations(allocFile, meanPoisson, sampling1, sampling2);
+                        return;
+                    }
+
+                    if (extension == ".pprof")
+                    {
+                        DumpProfile(allocFile);
+                        return;
+                    }
                 }
 
                 foreach (var filename in Directory.GetFiles(allocDirectory, "*.alloc"))
                 {
                     SimulateAllocations(filename, meanPoisson, sampling1, sampling2);
                 }
+
+                foreach (var filename in Directory.GetFiles(allocDirectory, "*.balloc"))
+                {
+                    SimulateAllocations(filename, meanPoisson, sampling1, sampling2);
+                }
             }
             catch (InvalidOperationException x)
             {
-                Console.WriteLine("AllocSimulator [-m Poisson mean] [-d directory] [-c x y with 1, 2, or 3 for x or y]");
+                Console.WriteLine("AllocSimulator <allocations recording file .balloc or .alloc> [-m Poisson mean] [-d directory] [-c x y with 1, 2, or 3 for x or y] ");
                 Console.WriteLine("   for -c, 1 = Fixed 100 KB threshold");
                 Console.WriteLine("           2 = Poisson");
                 Console.WriteLine("           3 = Poisson after 8 KB allocation context");
                 Console.WriteLine("----------------------------------------------------");
                 Console.WriteLine($"Error: {x.Message}");
             }
+        }
+
+        // if both .balloc and .pprof files exist, compare them
+        // else if only .pprof exist, dump the allocations (should be sampled)
+        private static void DumpProfile(string filename)
+        {
+            try
+            {
+                // get allocations from the .pprof
+                var profile = ProfileAllocations.Load(filename);
+                var sampledAllocations = profile.GetAllocations().ToList();
+
+                // get the recorded allocations if any
+#pragma warning disable CS8604 // Possible null reference argument.
+                var recordedAllocationsFile = Path.Combine(
+                    Path.GetDirectoryName(filename),
+                    Path.GetFileNameWithoutExtension(filename)) + ".balloc";
+#pragma warning restore CS8604 // Possible null reference argument.
+
+                // just dump the sampleds allocations if no recording
+                if (!File.Exists(recordedAllocationsFile))
+                {
+                    Console.WriteLine($"Dumping allocations from {filename}");
+                    foreach (var allocation in sampledAllocations.OrderBy(alloc => alloc.Size))
+                    {
+                        Console.WriteLine($"{allocation.Count,8} | {allocation.Size,12} - {allocation.Type}");
+                    }
+
+                    return;
+                }
+
+                Console.WriteLine($"Comparing allocations between {filename} and {recordedAllocationsFile}");
+                Console.WriteLine("---------------------------------------------");
+                IAllocProvider provider = new BinaryFileAllocProvider(recordedAllocationsFile);
+                var realAllocations = AggregateAllocations(provider.GetAllocations());
+                foreach (var realAllocation in realAllocations.OrderBy(alloc => alloc.Size))
+                {
+                    Console.WriteLine($"{realAllocation.Count,9} | {realAllocation.Size,13} - {realAllocation.Type}");
+
+                    var sampled = sampledAllocations.FirstOrDefault(a => (a.Type.EndsWith(realAllocation.Type)));
+                    if (sampled != null)
+                    {
+                        Console.WriteLine($"{sampled.Count,9} | {sampled.Size,13}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"        ~ |-----------------^");
+                    }
+
+                    Console.WriteLine();
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception x)
+            {
+                throw new InvalidOperationException(x.Message);
+            }
+        }
+
+        private static IEnumerable<AllocInfo> AggregateAllocations(IEnumerable<AllocInfo> allocations)
+        {
+            Dictionary<string, AllocInfo> perTypeAllocations = new Dictionary<string, AllocInfo>(256);
+
+            foreach (var alloc in allocations)
+            {
+                var type = alloc.Type;
+                if (!perTypeAllocations.TryGetValue(type, out var info))
+                {
+                    info = new AllocInfo()
+                    {
+                        Type = type,
+                        Size = 0,
+                        Count = 0
+                    };
+
+                    perTypeAllocations[type] = info;
+                }
+
+                info.Size += alloc.Size;
+                info.Count += 1;
+            }
+
+            return perTypeAllocations.Values;
         }
 
         private static void GetSampler(SamplingMode samplingMode, out ISampler sampler, out IUpscaler upscaler, int meanPoisson, int allocationContextSize)
@@ -110,16 +216,18 @@ namespace AllocSimulator
                 Console.WriteLine($"   {sampler1.GetDescription()}");
                 Engine engine1 = new Engine(provider, sampler1, upscaler1);
                 engine1.Run();
-                var realAllocations1 = engine1.GetAllocations();
-                var sampledAllocations1 = upscaler1.GetAllocs().ToList();
+                var realAllocations = engine1.GetAllocations();
+                var sampledAllocations1 = upscaler1.GetSampledAllocs().ToList();
+                var upscaledAllocations1 = upscaler1.GetUpscaledAllocs().ToList();
 
                 Console.WriteLine($"   {sampler2.GetDescription()}");
                 Engine engine2 = new Engine(provider, sampler2, upscaler2);
                 engine2.Run();
-                var sampledAllocations2 = upscaler2.GetAllocs().ToList();
+                var upscaledAllocations2 = upscaler2.GetUpscaledAllocs().ToList();
+                var sampledAllocations2 = upscaler2.GetSampledAllocs().ToList();
 
                 Console.WriteLine("---------------------------------------------");
-                foreach (var realAllocation1 in realAllocations1.OrderBy(alloc => { return alloc.Size; }))
+                foreach (var realAllocation1 in realAllocations.OrderBy(alloc => { return alloc.Size; }))
                 {
                     var realKey = $"{realAllocation1.Type}+{realAllocation1.Key}";              // V--- use realKey when key is used
                     Console.WriteLine($"{realAllocation1.Count,9} | {realAllocation1.Size,13} - {realAllocation1.Type}");
@@ -129,28 +237,33 @@ namespace AllocSimulator
                     float countRatio2 = 0;
                     float sizeRatio2 = 0;
 
+                    var upscaled2 = upscaledAllocations2.FirstOrDefault(a => (realKey == $"{a.Type}+{a.Key}"));
                     var sampled2 = sampledAllocations2.FirstOrDefault(a => (realKey == $"{a.Type}+{a.Key}"));
-                    if (sampled2 != null)
+                    if (upscaled2 != null)
                     {
-                        countRatio2 = -(float)(realAllocation1.Count - sampled2.Count) / (float)realAllocation1.Count;
-                        sizeRatio2 = -(float)(realAllocation1.Size - sampled2.Size) / (float)realAllocation1.Size;
+                        countRatio2 = -(float)(realAllocation1.Count - upscaled2.Count) / (float)realAllocation1.Count;
+                        sizeRatio2 = -(float)(realAllocation1.Size - upscaled2.Size) / (float)realAllocation1.Size;
                     }
 
+                    var upscaled1 = upscaledAllocations1.FirstOrDefault(a => (realKey == $"{a.Type}+{a.Key}"));
                     var sampled1 = sampledAllocations1.FirstOrDefault(a => (realKey == $"{a.Type}+{a.Key}"));
-                    if (sampled1 != null)
+                    if (upscaled1 != null)
                     {
-                        countRatio1 = -(float)(realAllocation1.Count - sampled1.Count) / (float)realAllocation1.Count;
-                        sizeRatio1 = -(float)(realAllocation1.Size - sampled1.Size) / (float)realAllocation1.Size;
+                        countRatio1 = -(float)(realAllocation1.Count - upscaled1.Count) / (float)realAllocation1.Count;
+                        sizeRatio1 = -(float)(realAllocation1.Size - upscaled1.Size) / (float)realAllocation1.Size;
                     }
 
-                    if (sampled1 != null)
+                    if (upscaled1 != null)
                     {
-                        if ((sampled2 == null) | (Math.Abs(sizeRatio1) < Math.Abs(sizeRatio2)))
+                        if ((upscaled2 == null) | (Math.Abs(sizeRatio1) < Math.Abs(sizeRatio2)))
                         {
                             Console.ForegroundColor = ConsoleColor.Blue;
                         }
 
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
                         Console.WriteLine($"{sampled1.Count,9} | {sampled1.Size,13}  {sampler1.GetName()}");
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+                        Console.WriteLine($"{upscaled1.Count,9} | {upscaled1.Size,13}  {sampler1.GetName()}");
                         Console.WriteLine($"{countRatio1,9:P1} | {sizeRatio1,13:P1}");
                         Console.ForegroundColor = ConsoleColor.Gray;
                     }
@@ -159,14 +272,17 @@ namespace AllocSimulator
                         Console.WriteLine($"        ~ |------{sampler1.GetName()}------^");
                     }
 
-                    if (sampled2 != null)
+                    if (upscaled2 != null)
                     {
-                        if ((sampled1 == null) | (Math.Abs(sizeRatio2) < Math.Abs(sizeRatio1)))
+                        if ((upscaled1 == null) | (Math.Abs(sizeRatio2) < Math.Abs(sizeRatio1)))
                         {
                             Console.ForegroundColor = ConsoleColor.Green;
                         }
 
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
                         Console.WriteLine($"{sampled2.Count,9} | {sampled2.Size,13}  {sampler2.GetName()}");
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+                        Console.WriteLine($"{upscaled2.Count,9} | {upscaled2.Size,13}  {sampler2.GetName()}");
                         Console.WriteLine($"{countRatio2,9:P1} | {sizeRatio2,13:P1}");
                         Console.ForegroundColor = ConsoleColor.Gray;
                     }
