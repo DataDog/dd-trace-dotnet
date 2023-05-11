@@ -27,7 +27,7 @@ public class CommandInjectionTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenAProcess_WhenStartTaintedProcess_ThenLocationIsCorrect()
+    public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
     {
         TestProcessCall(() => Process.Start(new ProcessStartInfo(taintedProcessName) { UseShellExecute = true }));
         AssertLocation(nameof(CommandInjectionTests));

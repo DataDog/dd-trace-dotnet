@@ -16,7 +16,7 @@ using FluentAssertions;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
-public class EFCoreSqliteTests : InstrumentationTestsBase
+public class EFFFSqliteTests : InstrumentationTestsBase
 {
     string CommandUnsafeText;
     readonly string CommandSafe = "Update Books set title= title where title = @title";
@@ -26,7 +26,7 @@ public class EFCoreSqliteTests : InstrumentationTestsBase
     protected string taintedTitleInjection = "s' or '1' = '1";
     private ApplicationDbSqlLiteContext db;
 
-    public EFCoreSqliteTests()
+    public EFFFSqliteTests()
     {
         var connection = SqliteDDBBCreator.CreateDatabase();
         db = new ApplicationDbSqlLiteContext(connection);
@@ -44,9 +44,9 @@ public class EFCoreSqliteTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenAProcess_WhenStartTaintedProcess_ThenLocationIsCorrect()
+    public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
     {
-        AssertLocation(nameof(EFCoreSqliteTests));
+        AssertLocation(nameof(EFFFSqliteTests));
     }
 
     [Fact]

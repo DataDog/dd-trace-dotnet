@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Data.SQLite;
+using System.Text;
 using System.Threading;
 using Xunit;
 
@@ -32,11 +33,17 @@ public class SystemDataSqLiteTests : InstrumentationTestsBase, IDisposable
     }
 
     [Fact]
+    public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
+    {
+        AssertLocation(nameof(SystemDataSqLiteTests));
+    }
+
+    [Fact]
     // [ExpectedException(typeof(InvalidOperationException))]
 
     public void GivenASystemDataSQLiteCommand_WhenCallingExecuteNonQueryWithTainted_VulnerabilityIsReported1()
     {
-        new SQLiteCommand(taintedQuery).ExecuteNonQuery();
+        Assert.Throws<InvalidOperationException>(() => new SQLiteCommand(taintedQuery).ExecuteNonQuery());
         AssertVulnerable();
     }
 
