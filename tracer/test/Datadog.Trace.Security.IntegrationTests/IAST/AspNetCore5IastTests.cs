@@ -174,7 +174,6 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     }
 
         [SkippableFact]
-        [Trait("Category", "ArmUnsupported")]
         [Trait("RunOnWindows", "True")]
         public async Task TestRequestBodyTaintingRazor()
         {
@@ -193,7 +192,6 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         }
 
         [SkippableTheory]
-        [Trait("Category", "ArmUnsupported")]
         [Trait("RunOnWindows", "True")]
         [InlineData("{\"Query\": \"SELECT Surname from Persons where name='Vicent'\"}")]
         [InlineData("{\"InnerQuery\": {\"Arguments\": [\"SELECT Surname from Persons where name='Vicent'\"]}}")]
@@ -263,7 +261,6 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     }
 
     [SkippableFact]
-    [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     public async Task TestIastPathTraversalRequest()
     {
