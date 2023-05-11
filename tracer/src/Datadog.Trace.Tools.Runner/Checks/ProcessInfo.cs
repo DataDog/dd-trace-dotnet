@@ -13,6 +13,7 @@ using System.Management;
 using System.Runtime.InteropServices;
 using System.Xml.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Tools.Runner.Checks
 {
@@ -107,11 +108,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         internal string? GetProcessLogDirectory()
         {
-            var logDirectory = Configuration?.GetString(ConfigurationKeys.LogDirectory);
+            var config = new ConfigurationBuilder(Configuration ?? NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
+
+            var logDirectory = config.WithKeys(ConfigurationKeys.LogDirectory).AsString();
             if (logDirectory == null)
             {
 #pragma warning disable 618 // ProfilerLogPath is deprecated but still supported
-                var nativeLogFile = Configuration?.GetString(ConfigurationKeys.ProfilerLogPath);
+                var nativeLogFile = config.WithKeys(ConfigurationKeys.ProfilerLogPath).AsString();
 #pragma warning restore 618
                 if (!string.IsNullOrEmpty(nativeLogFile))
                 {
