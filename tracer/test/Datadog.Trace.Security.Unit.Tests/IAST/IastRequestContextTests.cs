@@ -20,7 +20,7 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
     {
         private static string _value = "value1";
 
-        public static IEnumerable<object[]> GetTestData()
+        public static IEnumerable<object[]> GetRequestBodyTestData()
         {
             yield return new object[] { new BodyClassTest() { Value = _value } };
             yield return new object[] { new BodyClassTest { BodyClassTestProperty = new() { Value = _value } } };
@@ -111,7 +111,7 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
 #endif
 
         [Theory]
-        [MemberData(nameof(GetTestData))]
+        [MemberData(nameof(GetRequestBodyTestData))]
         public void GivenAnIastRequestContext_WhenAddRequestBody_ValuesAreTainted(BodyClassTest sample)
         {
             IastRequestContext iastContext = new();
