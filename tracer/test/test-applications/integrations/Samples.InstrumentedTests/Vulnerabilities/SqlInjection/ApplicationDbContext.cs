@@ -4,7 +4,7 @@ using System.Data.Entity.Core.Common;
 using System.Data.SQLite;
 using System.Data.SQLite.EF6;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
+namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 public class ApplicationDbSqlLiteContext : DbContext
 {
     public class SQLiteConfiguration : DbConfiguration

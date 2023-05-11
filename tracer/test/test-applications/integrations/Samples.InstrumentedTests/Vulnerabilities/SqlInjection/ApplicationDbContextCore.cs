@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Data.Common;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
+namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
 public class ApplicationDbContextCore : DbContext
 {
@@ -28,7 +28,7 @@ public class ApplicationDbContextCore : DbContext
         : base(options)
     {
     }
-    /*
+    
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
         if (!isSqlLite)
@@ -54,7 +54,7 @@ public class ApplicationDbContextCore : DbContext
             }
         }
     }
-    */
+    
     public static DbConnection OpenConnection(Type connectionType)
     {
         int numAttempts = 3;
@@ -81,6 +81,7 @@ public class ApplicationDbContextCore : DbContext
         throw new Exception($"Unable to open connection to connection string {connectionString} after {numAttempts} attempts");
     }
 
-    public DbSet<Book> Books { get; set; }
+    public Microsoft.EntityFrameworkCore.DbSet<Book> Books { get; set; }
+
 }
 #endif

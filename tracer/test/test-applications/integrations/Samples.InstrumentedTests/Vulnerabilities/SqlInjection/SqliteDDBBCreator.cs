@@ -1,5 +1,5 @@
 using System.Data.SQLite;
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
+namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
 internal class SqliteDDBBCreator
 {

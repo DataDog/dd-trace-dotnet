@@ -1,3 +1,15 @@
 <?xml version="1.0" encoding="utf-8" ?> 
 <RunSettings><RunConfiguration><EnvironmentVariables> 
+<CORECLR_ENABLE_PROFILING>1</CORECLR_ENABLE_PROFILING> 
+<CORECLR_PROFILER>{846F5F1C-F9AE-4B07-969E-05C26BC060D8}</CORECLR_PROFILER> 
+<CORECLR_PROFILER_PATH_64>C:\CommonFolder\shared\repos\dd-trace-5\tracer\test\test-applications\integrations\Samples.InstrumentedTests\..\..\..\..\..\shared\bin\monitoring-home\win-x64\Datadog.Trace.ClrProfiler.Native.dll</CORECLR_PROFILER_PATH_64> 
+<CORECLR_PROFILER_PATH_32>C:\CommonFolder\shared\repos\dd-trace-5\tracer\test\test-applications\integrations\Samples.InstrumentedTests\..\..\..\..\..\shared\bin\monitoring-home\win-x86\Datadog.Trace.ClrProfiler.Native.dll</CORECLR_PROFILER_PATH_32> 
+<COR_ENABLE_PROFILING>1</COR_ENABLE_PROFILING> 
+<COR_PROFILER>{846F5F1C-F9AE-4B07-969E-05C26BC060D8}</COR_PROFILER> 
+<COR_PROFILER_PATH_64>C:\CommonFolder\shared\repos\dd-trace-5\tracer\test\test-applications\integrations\Samples.InstrumentedTests\..\..\..\..\..\shared\bin\monitoring-home\win-x64\Datadog.Trace.ClrProfiler.Native.dll</COR_PROFILER_PATH_64> 
+<COR_PROFILER_PATH_32>C:\CommonFolder\shared\repos\dd-trace-5\tracer\test\test-applications\integrations\Samples.InstrumentedTests\..\..\..\..\..\shared\bin\monitoring-home\win-x86\Datadog.Trace.ClrProfiler.Native.dll</COR_PROFILER_PATH_32> 
+<DD_DOTNET_TRACER_HOME>C:\CommonFolder\shared\repos\dd-trace-5\tracer\test\test-applications\integrations\Samples.InstrumentedTests\..\..\..\..\..\shared\bin\monitoring-home</DD_DOTNET_TRACER_HOME> 
+<DD_VERSION>1.0.0</DD_VERSION> 
+<DD_TRACE_DEBUG>1</DD_TRACE_DEBUG> 
+<DD_IAST_ENABLED>1</DD_IAST_ENABLED> 
 </EnvironmentVariables></RunConfiguration></RunSettings> 

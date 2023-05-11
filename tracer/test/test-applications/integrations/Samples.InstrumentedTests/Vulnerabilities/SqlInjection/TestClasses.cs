@@ -1,6 +1,6 @@
 using System;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
+namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 public class FormatProviderForTest : IFormatProvider, ICustomFormatter
 {
     public string Format(string format, object arg, IFormatProvider formatProvider)
