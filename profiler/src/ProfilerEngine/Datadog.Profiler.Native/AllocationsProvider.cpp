@@ -52,6 +52,9 @@ AllocationsProvider::AllocationsProvider(
     _sampledAllocationsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_sampled_allocations");
     _sampledAllocationsSizeMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_sampled_allocations_size");
     _totalAllocationsSizeMetric = metricsRegistry.GetOrRegister<SumMetric>("dotnet_total_allocations_size");
+
+    // disable sub sampling when recording allocations
+    _shouldSubSample = !_pConfiguration->IsAllocationRecorderEnabled();
 }
 
 
@@ -66,7 +69,8 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     _allocationsSizeMetric->Add((double_t)objectSize);
     _totalAllocationsSizeMetric->Add((double_t)allocationAmount);
 
-    if ((_sampleLimit > 0) && (!_sampler.Sample()))
+    // remove sampling when recording allocations
+    if (_shouldSubSample && (_sampleLimit > 0) && (!_sampler.Sample()))
     {
         return;
     }
