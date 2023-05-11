@@ -3196,6 +3196,16 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     pALNewInstr->m_opcode = CEE_RET;
     rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
 
+    if (IsDumpILRewriteEnabled())
+    {
+        mdToken token = 0;
+        TypeInfo typeInfo{};
+        shared::WSTRING methodName = WStr("IsAlreadyLoaded");
+        FunctionInfo caller(token, methodName, typeInfo, MethodSignature(), FunctionMethodSignature());
+        Logger::Info(
+            GetILCodes("*** GenerateVoidILStartupMethod() IsAlreadyLoaded Code: ", &rewriter_already_loaded, caller, metadata_import));
+    }
+
     hr = rewriter_already_loaded.Export();
     if (FAILED(hr))
     {
@@ -3468,7 +3478,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         shared::WSTRING methodName = WStr("__DDVoidMethodCall__");
         FunctionInfo caller(token, methodName, typeInfo, MethodSignature(), FunctionMethodSignature());
         Logger::Info(
-            GetILCodes("*** GenerateVoidILStartupMethod(): Modified Code: ", &rewriter_void, caller, metadata_import));
+            GetILCodes("*** GenerateVoidILStartupMethod() __DDVoidMethodCall__ Code: ", &rewriter_void, caller, metadata_import));
     }
 
     hr = rewriter_void.Export();
