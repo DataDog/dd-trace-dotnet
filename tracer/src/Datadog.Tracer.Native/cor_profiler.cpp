@@ -3728,6 +3728,14 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
         }
     }
 #endif
+
+    /*
+    const auto newAssemblyArraySize = *assemblySize + 24;
+    BYTE* newAssemblyArray = new BYTE[newAssemblyArraySize];
+    memcpy(&newAssemblyArray[24], *pAssemblyArray, *assemblySize);
+    *((INT32*) &newAssemblyArray[16]) = *assemblySize;
+    *pAssemblyArray = newAssemblyArray + 8;
+    */
 }
 
 // ***
