@@ -18,14 +18,12 @@ namespace Datadog.Trace.Telemetry
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryDataBuilder>();
         private int _sequence = 0;
 
-        public TelemetryData?[] BuildTelemetryData(
+        public TelemetryData[] BuildTelemetryData(
             ApplicationTelemetryData? application,
             HostTelemetryData? host,
             ICollection<TelemetryValue>? configuration,
             ICollection<DependencyTelemetryData>? dependencies,
-            ICollection<IntegrationTelemetryData>? integrations,
-            ICollection<MetricData>? metricData,
-            ICollection<DistributionMetricData>? distributionMetricData)
+            ICollection<IntegrationTelemetryData>? integrations)
         {
             if (application is null)
             {
@@ -37,28 +35,6 @@ namespace Datadog.Trace.Telemetry
                 ThrowHelper.ThrowArgumentNullException(nameof(host));
             }
 
-            TelemetryData? metrics = null;
-            if (metricData is not null)
-            {
-                Log.Debug("Metrics updated, sending generate-metrics");
-                metrics = GetRequest(
-                    application,
-                    host,
-                    TelemetryRequestTypes.GenerateMetrics,
-                    new GenerateMetricsPayload(metricData));
-            }
-
-            TelemetryData? distributionMetrics = null;
-            if (distributionMetricData is not null)
-            {
-                Log.Debug("Distribution Metrics updated, sending distributions");
-                distributionMetrics = GetRequest(
-                    application,
-                    host,
-                    TelemetryRequestTypes.Distributions,
-                    new DistributionsPayload(distributionMetricData));
-            }
-
             if (configuration is not null)
             {
                 Log.Debug("App initialized, sending app-started");
@@ -67,7 +43,7 @@ namespace Datadog.Trace.Telemetry
                     dependencies: dependencies,
                     integrations: integrations);
 
-                return new[] { metrics, distributionMetrics, GetRequest(application, host, TelemetryRequestTypes.AppStarted, payload) };
+                return new[] { GetRequest(application, host, TelemetryRequestTypes.AppStarted, payload) };
             }
 
             if (dependencies is not null && integrations is not null)
@@ -79,8 +55,6 @@ namespace Datadog.Trace.Telemetry
 
                 return new[]
                 {
-                    metrics,
-                    distributionMetrics,
                     GetRequest(application, host, TelemetryRequestTypes.AppDependenciesLoaded, depsPayload),
                     GetRequest(application, host, TelemetryRequestTypes.AppIntegrationsChanged, integrationsPayload),
                 };
@@ -91,7 +65,7 @@ namespace Datadog.Trace.Telemetry
                 Log.Debug("Integrations updated, sending app-integrations-change");
                 var payload = new AppIntegrationsChangedPayload(integrations: integrations);
 
-                return new[] { metrics, distributionMetrics, GetRequest(application, host, TelemetryRequestTypes.AppIntegrationsChanged, payload), };
+                return new[] { GetRequest(application, host, TelemetryRequestTypes.AppIntegrationsChanged, payload), };
             }
 
             if (dependencies is not null)
@@ -99,23 +73,11 @@ namespace Datadog.Trace.Telemetry
                 Log.Debug("Dependencies updated, sending app-dependencies-loaded");
                 var payload = new AppDependenciesLoadedPayload(dependencies: dependencies);
 
-                return new[] { metrics, distributionMetrics, GetRequest(application, host, TelemetryRequestTypes.AppDependenciesLoaded, payload), };
+                return new[] { GetRequest(application, host, TelemetryRequestTypes.AppDependenciesLoaded, payload), };
             }
 
-            if (metrics is null && distributionMetrics is null)
-            {
-                Log.Debug("No changes in telemetry");
-                return Array.Empty<TelemetryData>();
-            }
-
-            if (metrics is null)
-            {
-                return new[] { distributionMetrics };
-            }
-
-            return distributionMetrics is null
-                       ? new[] { metrics }
-                       : new[] { metrics, distributionMetrics };
+            Log.Debug("No changes in telemetry");
+            return Array.Empty<TelemetryData>();
         }
 
         public TelemetryData BuildAppClosingTelemetryData(ApplicationTelemetryData? application, HostTelemetryData? host)

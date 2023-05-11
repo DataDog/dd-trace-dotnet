@@ -40,7 +40,6 @@ namespace Datadog.Trace.Telemetry
                         Configuration,
                         Dependencies,
                         Integrations,
-                        TelemetryMetrics.Instance,
                         transportManager,
                         TelemetryConstants.DefaultFlushInterval,
                         settings.HeartbeatInterval);

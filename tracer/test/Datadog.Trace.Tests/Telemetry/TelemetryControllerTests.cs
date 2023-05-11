@@ -32,7 +32,6 @@ namespace Datadog.Trace.Tests.Telemetry
                 new ConfigurationTelemetryCollector(),
                 new DependencyTelemetryCollector(),
                 new IntegrationTelemetryCollector(),
-                NullMetricsTelemetryCollector.Instance,
                 transportManager,
                 _refreshInterval,
                 _heartbeatInterval);
@@ -53,7 +52,6 @@ namespace Datadog.Trace.Tests.Telemetry
                 new ConfigurationTelemetryCollector(),
                 new DependencyTelemetryCollector(),
                 new IntegrationTelemetryCollector(),
-                NullMetricsTelemetryCollector.Instance,
                 transportManager,
                 _refreshInterval,
                 _heartbeatInterval);
@@ -71,7 +69,6 @@ namespace Datadog.Trace.Tests.Telemetry
                 new ConfigurationTelemetryCollector(),
                 new DependencyTelemetryCollector(),
                 new IntegrationTelemetryCollector(),
-                NullMetricsTelemetryCollector.Instance,
                 transportManager,
                 _refreshInterval,
                 _heartbeatInterval);
@@ -106,7 +103,6 @@ namespace Datadog.Trace.Tests.Telemetry
                 new ConfigurationTelemetryCollector(),
                 new DependencyTelemetryCollector(),
                 new IntegrationTelemetryCollector(),
-                NullMetricsTelemetryCollector.Instance,
                 transportManager,
                 flushInterval: TimeSpan.FromMinutes(1),
                 heartBeatInterval: heartBeatInterval);
@@ -152,7 +148,6 @@ namespace Datadog.Trace.Tests.Telemetry
                 new ConfigurationTelemetryCollector(),
                 new DependencyTelemetryCollector(),
                 new IntegrationTelemetryCollector(),
-                NullMetricsTelemetryCollector.Instance,
                 transportManager,
                 _refreshInterval,
                 _heartbeatInterval);
