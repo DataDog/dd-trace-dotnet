@@ -308,7 +308,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 return;
             }
 
-            const string dynamicPrefix = "_dd.dynamic.";
+            const string dynamicPrefix = "_dd.di.";
             for (int i = 0; i < evaluationResult.Decorations.Length; i++)
             {
                 var decoration = evaluationResult.Decorations[i];
