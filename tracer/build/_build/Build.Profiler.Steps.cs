@@ -18,6 +18,7 @@ using Nuke.Common.Utilities;
 using System.Collections;
 using System.Threading.Tasks;
 using Logger = Serilog.Log;
+using Nuke.Common.Utilities.Collections;
 
 partial class Build
 {
@@ -199,9 +200,9 @@ partial class Build
         .After(BuildProfilerSamples)
         .Description("Run the profiler container tests")
         .Requires(() => IsLinux && !IsArm64)
-        .Executes(() =>
+        .Executes(async () =>
         {
-            BuildAndRunProfilerIntegrationTestsInternal("(Category=CpuLimitTest)");
+            await BuildAndRunProfilerIntegrationTestsInternal("(Category=CpuLimitTest)");
         });
 
     Target BuildAndRunProfilerIntegrationTests => _ => _
@@ -397,11 +398,12 @@ partial class Build
     Target RunClangTidyProfilerLinux => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsLinux)
-        .Executes(() =>
+        .Executes(async () =>
         {
             EnsureExistingDirectory(ProfilerBuildDataDirectory);
 
             var (arch, ext) = GetUnixArchitectureAndExtension();
+            var outputFile = ProfilerBuildDataDirectory / $"linux-profiler-clang-tidy-{arch}.txt";
 
             CMake.Value(
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DRUN_ANALYSIS=1 -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
@@ -410,7 +412,14 @@ partial class Build
             CMake.Value(
                 arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target all-profiler");
 
-            RunClangTidy.Value($"-j {Environment.ProcessorCount} -checks=\"{ClangTidyChecks}\" -p {NativeBuildDirectory}", logOutput: false);
+            var output = RunClangTidy.Value($"-j {Environment.ProcessorCount} -checks=\"{ClangTidyChecks}\" -p {NativeBuildDirectory}", logOutput: false);
+
+            await using var file = new StreamWriter(outputFile);
+
+            foreach (var line in output)
+            {
+                await file.WriteLineAsync(line.Text);
+            }
         });
 
     Target RunCppCheckProfilerLinux => _ => _

@@ -10,6 +10,9 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Telemetry;
 using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
 
 namespace Datadog.Trace.Configuration
@@ -23,6 +26,7 @@ namespace Datadog.Trace.Configuration
         /// Allows overriding of file system access for tests.
         /// </summary>
         private readonly Func<string, bool> _fileExists;
+        private readonly IConfigurationTelemetry _telemetry;
 
         private int _partialFlushMinSpans;
         private Uri _agentUri;
@@ -60,8 +64,9 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Initializes a new instance of the <see cref="ExporterSettings"/> class with default values.
         /// </summary>
+        [PublicApi]
         public ExporterSettings()
-            : this(null)
+            : this(null, TelemetryFactoryV2.GetConfigTelemetry())
         {
         }
 
@@ -70,8 +75,14 @@ namespace Datadog.Trace.Configuration
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
+        [PublicApi]
         public ExporterSettings(IConfigurationSource? source)
-            : this(source, File.Exists)
+            : this(source, File.Exists, TelemetryFactoryV2.GetConfigTelemetry())
+        {
+        }
+
+        internal ExporterSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
+            : this(source, File.Exists, telemetry)
         {
         }
 
@@ -79,40 +90,45 @@ namespace Datadog.Trace.Configuration
         /// Initializes a new instance of the <see cref="ExporterSettings"/> class.
         /// Direct use in tests only.
         /// </summary>
-        internal ExporterSettings(IConfigurationSource? source, Func<string, bool> fileExists)
+        internal ExporterSettings(IConfigurationSource? source, Func<string, bool> fileExists, IConfigurationTelemetry telemetry)
         {
             _fileExists = fileExists;
+            _telemetry = telemetry;
 
             ValidationWarnings = new List<string>();
 
             source ??= NullConfigurationSource.Instance;
 
             // Get values from the config
-            var traceAgentUrl = source.GetString(ConfigurationKeys.AgentUri);
-            var tracesPipeName = source.GetString(ConfigurationKeys.TracesPipeName);
-            var tracesUnixDomainSocketPath = source.GetString(ConfigurationKeys.TracesUnixDomainSocketPath);
+            var config = new ConfigurationBuilder(source, telemetry);
+            var traceAgentUrl = config.WithKeys(ConfigurationKeys.AgentUri).AsString();
+            var tracesPipeName = config.WithKeys(ConfigurationKeys.TracesPipeName).AsString();
+            var tracesUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.TracesUnixDomainSocketPath).AsString();
 
-            var tracesPipeTimeoutMs = source.GetInt32(ConfigurationKeys.TracesPipeTimeoutMs) ?? 0;
-            var agentHost = source.GetString(ConfigurationKeys.AgentHost) ??
-                        // backwards compatibility for names used in the past
-                        source.GetString("DD_TRACE_AGENT_HOSTNAME") ??
-                        source.GetString("DATADOG_TRACE_AGENT_HOSTNAME");
+            var agentHost = config
+                           .WithKeys(ConfigurationKeys.AgentHost, "DD_TRACE_AGENT_HOSTNAME", "DATADOG_TRACE_AGENT_HOSTNAME")
+                           .AsString();
 
-            var agentPort = source.GetInt32(ConfigurationKeys.AgentPort) ??
-                        // backwards compatibility for names used in the past
-                        source.GetInt32("DATADOG_TRACE_AGENT_PORT");
+            var agentPort = config
+                           .WithKeys(ConfigurationKeys.AgentPort, "DATADOG_TRACE_AGENT_PORT")
+                           .AsInt32();
 
-            var dogStatsdPort = source.GetInt32(ConfigurationKeys.DogStatsdPort) ?? 0;
-            var metricsPipeName = source.GetString(ConfigurationKeys.MetricsPipeName);
-            var metricsUnixDomainSocketPath = source.GetString(ConfigurationKeys.MetricsUnixDomainSocketPath);
-            var partialFlushMinSpans = source.GetInt32(ConfigurationKeys.PartialFlushMinSpans);
+            var dogStatsdPort = config.WithKeys(ConfigurationKeys.DogStatsdPort).AsInt32(0);
+            var metricsPipeName = config.WithKeys(ConfigurationKeys.MetricsPipeName).AsString();
+            var metricsUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.MetricsUnixDomainSocketPath).AsString();
 
             ConfigureTraceTransport(traceAgentUrl, tracesPipeName, agentHost, agentPort, tracesUnixDomainSocketPath);
             ConfigureMetricsTransport(traceAgentUrl, agentHost, dogStatsdPort, metricsPipeName, metricsUnixDomainSocketPath);
 
-            TracesPipeTimeoutMs = tracesPipeTimeoutMs > 0 ? tracesPipeTimeoutMs : 500;
-            PartialFlushEnabled = source.GetBool(ConfigurationKeys.PartialFlushEnabled) ?? false;
-            PartialFlushMinSpans = partialFlushMinSpans > 0 ? partialFlushMinSpans.Value : 500;
+            TracesPipeTimeoutMs = config
+                                 .WithKeys(ConfigurationKeys.TracesPipeTimeoutMs)
+                                 .AsInt32(500, value => value > 0)
+                                 .Value;
+
+            PartialFlushEnabled = config.WithKeys(ConfigurationKeys.PartialFlushEnabled).AsBool(false);
+            PartialFlushMinSpans = config
+                                  .WithKeys(ConfigurationKeys.PartialFlushMinSpans)
+                                  .AsInt32(500, value => value > 0).Value;
         }
 
         /// <summary>

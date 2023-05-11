@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -39,6 +40,7 @@ namespace Datadog.Trace.Tests.Configuration
         public static IEnumerable<object[]> GetGlobalDefaultTestData()
         {
             yield return new object[] { CreateGlobalFunc(s => s.DebugEnabled), false };
+            yield return new object[] { CreateGlobalFunc(s => s.DiagnosticSourceEnabled), true };
         }
 
         public static IEnumerable<object[]> GetGlobalTestData()
@@ -254,7 +256,7 @@ namespace Datadog.Trace.Tests.Configuration
         [MemberData(nameof(GetGlobalDefaultTestData))]
         public void GlobalDefaultSetting(Func<GlobalSettings, object> settingGetter, object expectedValue)
         {
-            var settings = new GlobalSettings();
+            var settings = new GlobalSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             object actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
         }
@@ -269,7 +271,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var collection = new NameValueCollection { { key, value } };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var settings = new GlobalSettings(source);
+            var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance);
             object actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
         }
@@ -286,7 +288,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             // save original value so we can restore later
             Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
-            var settings = new GlobalSettings(source);
+            var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance);
 
             object actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);

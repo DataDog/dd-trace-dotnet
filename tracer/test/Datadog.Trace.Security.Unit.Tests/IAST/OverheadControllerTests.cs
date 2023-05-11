@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Iast.Settings;
 using Xunit;
@@ -20,7 +21,7 @@ public class OverheadControllerTests
         {
             { ConfigurationKeys.Iast.RequestSampling, 50 }
         });
-        var instance = new OverheadController(new IastSettings(settings));
+        var instance = new OverheadController(new IastSettings(settings, NullConfigurationTelemetry.Instance));
         Assert.True(instance.AcquireRequest());
         Assert.False(instance.AcquireRequest());
         Assert.True(instance.AcquireRequest());
@@ -34,7 +35,7 @@ public class OverheadControllerTests
         {
             { ConfigurationKeys.Iast.RequestSampling, 100 }
         });
-        var instance = new OverheadController(new IastSettings(settings));
+        var instance = new OverheadController(new IastSettings(settings, NullConfigurationTelemetry.Instance));
         Assert.True(instance.AcquireRequest());
         Assert.True(instance.AcquireRequest());
         instance.ReleaseRequest();
@@ -50,7 +51,7 @@ public class OverheadControllerTests
         {
             { ConfigurationKeys.Iast.RequestSampling, 25 }
         });
-        var instance = new OverheadController(new IastSettings(settings));
+        var instance = new OverheadController(new IastSettings(settings, NullConfigurationTelemetry.Instance));
         Assert.True(instance.AcquireRequest());
         Assert.False(instance.AcquireRequest());
         Assert.False(instance.AcquireRequest());
@@ -65,7 +66,7 @@ public class OverheadControllerTests
             { ConfigurationKeys.Iast.MaxConcurrentRequests, 1 },
             { ConfigurationKeys.Iast.RequestSampling, 100 }
         });
-        var instance = new OverheadController(new IastSettings(settings));
+        var instance = new OverheadController(new IastSettings(settings, NullConfigurationTelemetry.Instance));
         Assert.True(instance.AcquireRequest());
         Assert.False(instance.AcquireRequest());
         Assert.False(instance.AcquireRequest());
@@ -81,7 +82,7 @@ public class OverheadControllerTests
             { ConfigurationKeys.Iast.MaxConcurrentRequests, 2 },
             { ConfigurationKeys.Iast.RequestSampling, 100 }
         });
-        var instance = new OverheadController(new IastSettings(settings));
+        var instance = new OverheadController(new IastSettings(settings, NullConfigurationTelemetry.Instance));
         Assert.True(instance.AcquireRequest());
         Assert.True(instance.AcquireRequest());
         Assert.False(instance.AcquireRequest());
@@ -97,7 +98,7 @@ public class OverheadControllerTests
             { ConfigurationKeys.Iast.MaxConcurrentRequests, 2 },
             { ConfigurationKeys.Iast.RequestSampling, 50 }
         });
-        var instance = new OverheadController(new IastSettings(settings));
+        var instance = new OverheadController(new IastSettings(settings, NullConfigurationTelemetry.Instance));
         Assert.True(instance.AcquireRequest());
         Assert.False(instance.AcquireRequest());
         Assert.True(instance.AcquireRequest());

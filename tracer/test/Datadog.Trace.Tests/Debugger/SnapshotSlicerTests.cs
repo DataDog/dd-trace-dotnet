@@ -6,6 +6,7 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Snapshots;
 using Newtonsoft.Json.Linq;
@@ -61,10 +62,9 @@ namespace Datadog.Trace.Tests.Debugger
 
         private SnapshotSlicer GetSlicer(int maxDepth, int maxSize)
         {
-            var settings = new DebuggerSettings(new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.Debugger.MaxDepthToSerialize, maxDepth.ToString() },
-            }));
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.MaxDepthToSerialize, maxDepth.ToString() }, }),
+                NullConfigurationTelemetry.Instance);
 
             return SnapshotSlicer.Create(settings, maxSize);
         }

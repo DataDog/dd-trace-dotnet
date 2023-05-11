@@ -9,6 +9,7 @@ using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.TestHelpers;
@@ -38,7 +39,7 @@ public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 
     protected bool? EnableSecurity { get; }
 
-    protected string LogDirectory => Path.Combine(DatadogLoggingFactory.GetLogDirectory(), $"{GetType().Name}Logs");
+    protected string LogDirectory => Path.Combine(DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance), $"{GetType().Name}Logs");
 
     public override void Dispose()
     {

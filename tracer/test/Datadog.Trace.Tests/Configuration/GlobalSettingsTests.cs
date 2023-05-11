@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -17,7 +18,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void DebugEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DebugEnabled, value));
-            var settings = new GlobalSettings(source);
+            var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.DebugEnabled.Should().Be(expected);
         }
@@ -27,7 +28,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void DiagnosticSourceEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DiagnosticSourceEnabled, value));
-            var settings = new GlobalSettings(source);
+            var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.DiagnosticSourceEnabled.Should().Be(expected);
         }

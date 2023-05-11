@@ -51,8 +51,11 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         [InlineData(null)]
         public void InvalidApiKeyIsInvalid(string apiKey)
         {
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(Defaults));
-            tracerSettings.LogSubmissionSettings.ApiKey = apiKey;
+            var nameValueCollection = new NameValueCollection(Defaults);
+            nameValueCollection[ConfigurationKeys.ApiKey] = apiKey;
+
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(nameValueCollection));
+
             var logSettings = ImmutableDirectLogSubmissionSettings.Create(tracerSettings);
 
             logSettings.IsEnabled.Should().BeFalse();

@@ -19,6 +19,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Telemetry;
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
 namespace Datadog.Trace.AppSec
@@ -95,7 +96,7 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
-                _settings ??= new(source: null);
+                _settings ??= new(source: null, TelemetryFactoryV2.GetConfigTelemetry());
                 _configurationStatus ??= new ConfigurationStatus(string.Empty);
                 Log.Error(ex, "DDAS-0001-01: AppSec could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
             }
@@ -396,6 +397,7 @@ namespace Datadog.Trace.AppSec
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusion, _noLocalRules);
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmRequestBlocking, _noLocalRules);
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmResponseBlocking, _noLocalRules);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomRules, _noLocalRules);
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _noLocalRules);
                 });
         }

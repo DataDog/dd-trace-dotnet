@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.TestHelpers;
@@ -26,7 +27,7 @@ public class LogEntryWatcher : IDisposable
 
     public LogEntryWatcher(string logFilePattern, string logDirectory = null)
     {
-        var logPath = logDirectory ?? DatadogLoggingFactory.GetLogDirectory();
+        var logPath = logDirectory ?? DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance);
         _fileWatcher = new FileSystemWatcher { Path = logPath, Filter = logFilePattern, EnableRaisingEvents = true };
         _readers = new();
 
