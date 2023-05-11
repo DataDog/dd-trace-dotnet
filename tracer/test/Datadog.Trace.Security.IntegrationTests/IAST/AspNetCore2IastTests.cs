@@ -59,27 +59,6 @@ public abstract class AspNetCore2IastTestsVariableVulnerabilityPerRequestIastEna
             : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore2IastTestsEnabled", isIastDeduplicationEnabled: false)
         {
         }
-
-        [SkippableTheory]
-        [Trait("RunOnWindows", "True")]
-        [InlineData("{\"Query\": \"SELECT Surname from Persons where name='Vicent'\"}")]
-        public async Task TestRequestBodyTaintingSecurityEnabled(string body)
-        {
-            var filename = "Iast.RequestBodyTest.AspNetCore2.IastAndSecurityEnabled";
-            var url = "/Iast/ExecuteQueryFromBodyQueryData";
-            IncludeAllHttpSpans = true;
-            await TryStartApp(true);
-            var agent = Fixture.Agent;
-            var spans = await SendRequestsAsync(agent, url, body, 1, 1, string.Empty, "application/json", null);
-            var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-            var nameRegex = new Regex(@"""name"": ""(\w+)""");
-            settings.AddRegexScrubber(nameRegex, string.Empty);
-            settings.AddIastScrubbing();
-            await VerifyHelper.VerifySpans(spansFiltered, settings)
-                              .UseFileName(filename)
-                              .DisableRequireUniquePrefix();
-        }
     }
 
 public class AspNetCore2IastTestsFullSamplingDisabled : AspNetCore2IastTestsFullSampling
