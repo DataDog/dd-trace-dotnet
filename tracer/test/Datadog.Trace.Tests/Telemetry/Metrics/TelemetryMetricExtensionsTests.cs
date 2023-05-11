@@ -28,7 +28,7 @@ public class TelemetryMetricExtensionsTests
     public void MustHaveMetricNameForAllValues(int api, string metricName)
     {
         _ = api;
-        metricName.Should().NotBeNull();
+        metricName.Should().NotBeNullOrEmpty();
     }
 
     [Theory]

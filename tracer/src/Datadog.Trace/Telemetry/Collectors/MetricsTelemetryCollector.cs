@@ -391,16 +391,18 @@ internal class MetricsTelemetryCollector : IMetricsTelemetryCollector
 
         public List<string> GetTags()
         {
-            var list = new List<string>(3) { Tag1.ToStringFast(), };
+            // Relies on the fact that we don't set Tag3's value unless we've set Tag2
+            var capacity = Tag3.HasValue ? 3 : Tag2.HasValue ? 2 : 1;
+            var list = new List<string>(capacity) { Tag1.ToStringFast(), };
 
             if (Tag2.HasValue)
             {
                 list.Add(Tag2.Value.ToStringFast());
-            }
 
-            if (Tag3.HasValue)
-            {
-                list.Add(Tag3.Value.ToStringFast());
+                if (Tag3.HasValue)
+                {
+                    list.Add(Tag3.Value.ToStringFast());
+                }
             }
 
             return list;
