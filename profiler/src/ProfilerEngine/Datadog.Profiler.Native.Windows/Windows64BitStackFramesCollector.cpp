@@ -343,7 +343,6 @@ bool Windows64BitStackFramesCollector::SuspendTargetThreadImplementation(Managed
 
         if (msgBuffer != NULL)
         {
-            Log::Info("GetLastError: ", (LPTSTR)msgBuffer);
             Log::Info("Windows64BitStackFramesCollector::SuspendTargetThreadImplementation() SuspendThread() returned -1.",
                       " CLR tid=0x", std::hex, pThreadInfo->GetClrThreadId(), "; OS tid=", std::dec, pThreadInfo->GetOsThreadId(), "(", errorCode, ") : ",
                       (LPTSTR)msgBuffer);
