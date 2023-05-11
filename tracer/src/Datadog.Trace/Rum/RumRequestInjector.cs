@@ -101,13 +101,43 @@ internal sealed class RumRequestInjector
         // Restore the original response body stream
         httpContext.Response.Body = (Stream)httpContext.Items["DD_RUM_ResponseBodyStream"];
 
+        RumInjectionPointStruct pointStruct = new();
         // Scan the html using the shared library
-        var scanResult = Scan(html);
+        var status = Scan(html, ref pointStruct);
+        if (status != RumInjectionPointStatus.FOUND_STOP)
+        {
+            // No injection point found
+            return;
+        }
 
-        var test = Marshal.PtrToStringAuto(scanResult.MatchRule);
+        var match_rule = Marshal.PtrToStringAuto(pointStruct.MatchRule);
 
-        // Concat the html and the script
-        var result = html + scanResult;
+        var stringToInject = @"<script
+            src=""https://www.datadoghq-browser-agent.com/us1/v4/datadog-rum.js""
+                type=""text/javascript"">
+                    </script>
+                    <script>
+                    window.DD_RUM && window.DD_RUM.init({
+                    clientToken: 'pub426331ddcec4d0e207b237aed0acd474',
+                    applicationId: 'd511fe75-d5cf-4fa0-9a68-bc8ab8dd1ccc',
+                    site: 'datadoghq.com',
+                    service: 'test-app-flavien',
+                    env: 'flavien',
+                    // Specify a version number to identify the deployed version of your application in Datadog 
+                    // version: '1.0.0',
+                    sessionSampleRate: 100,
+                    sessionReplaySampleRate: 20,
+                    trackUserInteractions: true,
+                    trackResources: true,
+                    trackLongTasks: true,
+                    defaultPrivacyLevel: 'mask-user-input',
+                });
+            window.DD_RUM &&
+                window.DD_RUM.startSessionReplayRecording();
+         </script>";
+
+        // Insert the script at the good position
+        var result = html.Insert(pointStruct.Position, stringToInject);
 
         // Add the changes to the response body
         var bytes = Encoding.UTF8.GetBytes(result);
@@ -115,22 +145,14 @@ internal sealed class RumRequestInjector
     }
 
     // Scan the html using the shared library
-    private RumScanResultStruct Scan(string html)
+    private RumInjectionPointStatus Scan(string html, ref RumInjectionPointStruct pointStruct)
     {
-        RumScanResultStruct retNative = default;
         if (_rumLibraryInvoker == null)
         {
-            return retNative;
+            return RumInjectionPointStatus.ABORT;
         }
 
-        RumScanStatus status = _rumLibraryInvoker.Scan(ref retNative, html);
-        if (status != RumScanStatus.SCAN_MATCH)
-        {
-            // logs happened during the process of scanning
-            return retNative;
-        }
-
-        return retNative;
+        return _rumLibraryInvoker.Scan(html, ref pointStruct);
     }
 }
 #endif

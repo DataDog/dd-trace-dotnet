@@ -1,13 +1,14 @@
-// <copyright file="RumScanStatus.cs" company="Datadog">
+// <copyright file="RumInjectionPointStatus.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 namespace Datadog.Trace.Rum;
 
-internal enum RumScanStatus
+internal enum RumInjectionPointStatus
 {
-    SCAN_MATCH = 0,
-    SCAN_NO_MATCH = 1,
-    SCAN_ERROR = 2,
+    FOUND_STOP = 0,
+    ABORT = 1,
+    EOF_REACHED = 2,
+    CONTINUE_OK = 3,
 }

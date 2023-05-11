@@ -30,7 +30,7 @@ internal class RumLibraryInvoker
         _scanDelegate = GetDelegateForNativeFunction<ScanDelegate>(libraryHandle, "scan");
     }
 
-    private delegate RumScanStatus ScanDelegate(ref RumScanResultStruct result, string document);
+    private delegate RumInjectionPointStatus ScanDelegate(string html, ref RumInjectionPointStruct pointStruct);
 
     internal bool ExportErrorHappened { get; private set; }
 
@@ -38,7 +38,7 @@ internal class RumLibraryInvoker
     {
         var fd = FrameworkDescription.Instance;
 
-        var libName = "libdocumentScan.dylib";
+        var libName = "libscanrum.dylib";
         var runtimeIds = LibraryLocationHelper.GetRuntimeIds(fd);
 
         // libName or runtimeIds being null means platform is not supported
@@ -46,7 +46,7 @@ internal class RumLibraryInvoker
         IntPtr libraryHandle;
         if (libName != null && runtimeIds != null)
         {
-            var paths = new List<string>() { "/Users/flavien.darche/Documents/rum-document-scan/cmake-build-debug/" };
+            var paths = new List<string>() { "/Users/flavien.darche/Documents/rum-document-scan/cmake-build-debug/src/" };
             if (!LibraryLocationHelper.TryLoadLibraryFromPaths(libName, paths, out libraryHandle))
             {
                 return LibraryInitializationResult.FromLibraryLoadError();
@@ -86,5 +86,5 @@ internal class RumLibraryInvoker
     private T GetDelegateForNativeFunction<T>(IntPtr handle, string functionName)
         where T : Delegate => GetDelegateForNativeFunction<T>(handle, functionName, out _);
 
-    internal RumScanStatus Scan(ref RumScanResultStruct result, string document) => _scanDelegate(ref result, document);
+    internal RumInjectionPointStatus Scan(string document, ref RumInjectionPointStruct pointStruct) => _scanDelegate(document, ref pointStruct);
 }
