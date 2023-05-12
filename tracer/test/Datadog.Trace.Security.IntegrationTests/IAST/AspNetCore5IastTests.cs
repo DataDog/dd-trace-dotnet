@@ -174,6 +174,54 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     }
 
     [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestRequestBodyTaintingRazor()
+    {
+        var filename = IastEnabled ? "Iast.RequestBodyTestRazor.AspNetCore5.IastEnabled" : "Iast.RequestBodyTestRazor.AspNetCore5.IastDisabled";
+        var url = "/DataRazorIastPage";
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, url, "property=Execute&property3=2&Property2=nonexisting.exe", 1, 1, string.Empty, "application/x-www-form-urlencoded", null);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+    }
+
+    [SkippableTheory]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [InlineData("{\"Query\": \"SELECT Surname from Persons where name='Vicent'\"}")]
+    [InlineData("{\"InnerQuery\": {\"Arguments\": [\"SELECT Surname from Persons where name='Vicent'\"]}}")]
+    [InlineData("{\"Arguments\": [\"SELECT Surname from Persons where name='Vicent'\", \"SELECT Surname from Persons where name='Mark'\"]}")]
+    [InlineData("{\"StringMap\": {\"query1\": \"SELECT Surname from Persons where name='Vicent'\",\"query2\": \"temp\"}}")]
+    [InlineData("{\"StringMap\": {\"\": \"\",\"query2\": \"SELECT Surname from Persons where name='Vicent'\"}}")]
+    [InlineData("{\"StringMap\": {\"SELECT Surname from Persons where name='Vicent'\": \"\"}}")]
+    [InlineData("{\"StringArrayArguments\": [\"SELECT Surname from Persons where name='Vicent'\", \"SELECT Surname from Persons where name='Mark'\"]}")]
+    public async Task TestRequestBodyTainting(string body)
+    {
+        var filename = IastEnabled ? "Iast.RequestBodyTest.AspNetCore5.IastEnabled" : "Iast.RequestBodyTest.AspNetCore5.IastDisabled";
+        var url = "/Iast/ExecuteQueryFromBodyQueryData";
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, url, body, 1, 1, string.Empty, "application/json", null);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        var nameRegex = new Regex(@"""name"": ""(\w+)""");
+        settings.AddRegexScrubber(nameRegex, string.Empty);
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+    }
+
+    [SkippableFact]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     public async Task TestIastSqlInjectionRequest()
@@ -195,7 +243,6 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     }
 
     [SkippableFact]
-    [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     public async Task TestIastCommandInjectionRequest()
     {
@@ -216,7 +263,6 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     }
 
     [SkippableFact]
-    [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     public async Task TestIastPathTraversalRequest()
     {
