@@ -1,17 +1,18 @@
-/*
 #if NET5_0_OR_GREATER
 
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
-public class DatabaseCoreAspectTests : InstrumentationTestsBase
+public class DatabaseCoreAspectTests : InstrumentationTestsBase, IDisposable
 {
     protected string taintedTitle = "Think_Python";
     protected string notTaintedValue = "nottainted";
@@ -28,14 +29,8 @@ public class DatabaseCoreAspectTests : InstrumentationTestsBase
 
     public DatabaseCoreAspectTests()
     {
-        // connectionString = SqlServerInitializer.InitDatabase();
-        // dbContext = new ApplicationDbContextCore(connectionString, false);
-
-        // var connectionString = SqliteDDBBCreator.CreateDatabase();
-        var connection = ApplicationDbContextCore.OpenConnection(typeof(SqlConnection));
+        var connection = SqlDDBBCreator.Create();
         dbContext = new ApplicationDbContextCore(connection, false);
-        // db = new ApplicationDbSqlLiteContext(connection);
-
         AddTainted(taintedTitle);
         titleParam = new SqlParameter("@title", taintedTitle);
         queryUnsafe = "Select * from dbo.Books where title ='" + taintedTitle + "'";
@@ -293,19 +288,5 @@ public class DatabaseCoreAspectTests : InstrumentationTestsBase
         (from c in dbContext.Books where c.Title == taintedTitle select c).ToList();
         AssertNotVulnerable();
     }
-
-    [Fact]
-    public void GivenADatabaseCore_WhenRetrievingFromDatabase_Tainted()
-    {
-        var title = dbContext.Books.First().Title;
-        AssertTainted(title);
-    }
-
-    [Fact]
-    public void GivenADatabaseCore_WhenRetrievingFromDatabase_IsTainted2()
-    {
-        AssertTainted(dbContext.Books.Where(x => x.Title != "w").First().Title);
-    }
 }
 #endif
-*/
