@@ -25,6 +25,7 @@ public class AspNetCore5IastAsm : RcmBase
     }
 
     [SkippableFact]
+    [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     public async Task TestRequestBodyTaintingSecurityEnabled()
     {

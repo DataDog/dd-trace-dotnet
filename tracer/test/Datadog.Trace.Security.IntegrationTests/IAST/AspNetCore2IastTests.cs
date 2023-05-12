@@ -132,6 +132,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         }
 
         [SkippableTheory]
+        [Trait("Category", "ArmUnsupported")]
         [Trait("RunOnWindows", "True")]
         [InlineData("{\"Query\": \"SELECT Surname from Persons where name='Vicent'\"}")]
         [InlineData("{\"InnerQuery\": {\"Arguments\": [\"SELECT Surname from Persons where name='Vicent'\"]}}")]
@@ -158,7 +159,8 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
                               .DisableRequireUniquePrefix();
         }
 
-[SkippableFact]
+    [SkippableFact]
+    [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     public async Task TestIastSqlInjectionRequest()
     {
