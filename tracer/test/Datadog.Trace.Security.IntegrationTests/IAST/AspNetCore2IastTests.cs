@@ -53,6 +53,14 @@ public abstract class AspNetCore2IastTestsVariableVulnerabilityPerRequestIastEna
     }
 }
 
+public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullSampling
+{
+    public AspNetCore2IastTestsFullSamplingEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+        : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore2IastTestsEnabled", isIastDeduplicationEnabled: false)
+    {
+    }
+}
+
 public class AspNetCore2IastTestsFullSamplingDisabled : AspNetCore2IastTestsFullSampling
 {
     public AspNetCore2IastTestsFullSamplingDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
