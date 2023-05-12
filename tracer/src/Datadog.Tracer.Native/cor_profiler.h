@@ -125,8 +125,7 @@ public:
 
     bool IsAttached() const;
 
-    void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
-                                    int* symbolsSize) ;
+    void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, BYTE** pSymbolsArray) ;
 
     //
     // ICorProfilerCallback methods

@@ -2821,6 +2821,51 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         }
     }
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Get a TypeRef for System.RuntimeTypeHandle
+    mdTypeRef system_runtime_type_handle_type_ref;
+    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.RuntimeTypeHandle"), &system_runtime_type_handle_type_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName:System.RuntimeTypeHandle failed");
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Get a TypeSpec for System.Byte[]
+    mdTypeSpec system_byte_array_type_ref;
+    COR_SIGNATURE system_byte_array_signature[2] = { ELEMENT_TYPE_SZARRAY, ELEMENT_TYPE_U1 };
+    hr = metadata_emit->GetTokenFromTypeSpec(system_byte_array_signature, sizeof(system_byte_array_signature), &system_byte_array_type_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: GetTokenFromTypeSpec failed");
+        return hr;
+    }
+
+    auto typespecs = EnumTypeSpecs(metadata_import);
+    auto typespecsIterator = typespecs.begin();
+    while (typespecsIterator != typespecs.end())
+    {
+        const mdTypeSpec currentTypeSpec = *typespecsIterator;
+
+        PCCOR_SIGNATURE currentSignature = new COR_SIGNATURE [20];
+        ULONG currentLength;
+        hr = metadata_import->GetTypeSpecFromToken(currentTypeSpec, &currentSignature, &currentLength);
+        if (FAILED(hr))
+        {
+            Logger::Warn("GenerateVoidILStartupMethod: GetTypeSpecFromToken failed");
+            return hr;
+        }
+
+        Logger::Warn("Token: ", HexStr(currentTypeSpec), " : ", HexStr(currentSignature, currentLength));
+
+        delete[] currentSignature;
+        typespecsIterator = ++typespecsIterator;
+    }
+
+    Logger::Warn("Single: ", system_runtime_type_handle_type_ref, " HEX: ", shared::HexStr(system_runtime_type_handle_type_ref));
+    Logger::Warn("Array: ", system_byte_array_type_ref, " HEX: ", shared::HexStr(system_byte_array_type_ref));
+
     // ****************************************************************************************************************
     // Member Refs
     // ****************************************************************************************************************
@@ -2912,7 +2957,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Create method signature for AppDomain.CurrentDomain and (AppDomain)obj.IsFullyTrusted (on .NET Framework only)
+    // Create method definition for AppDomain.CurrentDomain and (AppDomain)obj.IsFullyTrusted (on .NET Framework only)
 
     mdMemberRef appdomain_get_currentdomain_member_ref = mdMemberRefNil;
     mdMemberRef appdomain_get_isfullytrusted_member_ref = mdMemberRefNil;
@@ -2951,6 +2996,35 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
             Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef:get_IsFullyTrusted failed");
             return hr;
         }
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Get MemberRef for System.RuntimeTypeHandle.get_Value
+    mdMemberRef system_runtimetypehandle_get_value_member_ref;
+    COR_SIGNATURE system_runtimetypehandle_get_value_signature[] = {IMAGE_CEE_CS_CALLCONV_HASTHIS, 0, ELEMENT_TYPE_I };
+    hr = metadata_emit->DefineMemberRef(system_runtime_type_handle_type_ref, WStr("get_Value"),
+                                        system_runtimetypehandle_get_value_signature, sizeof(system_runtimetypehandle_get_value_signature),
+                                        &system_runtimetypehandle_get_value_member_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef:get_Value failed");
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Get a MemberRef for System.Runtime.InteropServices.Marshal.WriteIntPtr(IntPtr, IntPtr)
+    mdMemberRef marshal_writeintptr_member_ref;
+    COR_SIGNATURE marshal_writeintptr_signature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
+                                                     2,                             // Number of parameters
+                                                     ELEMENT_TYPE_VOID,
+                                                     ELEMENT_TYPE_I,                // List of parameter types
+                                                     ELEMENT_TYPE_I };
+    hr = metadata_emit->DefineMemberRef(marshal_type_ref, WStr("WriteIntPtr"), marshal_writeintptr_signature,
+                                        sizeof(marshal_writeintptr_signature), &marshal_writeintptr_member_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef:WriteIntPtr failed");
+        return hr;
     }
 
     // ****************************************************************************************************************
@@ -3014,23 +3088,18 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Define a method on the managed side that will PInvoke into the profiler method:
-    // C++: void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray, int*
-    // symbolsSize) C#: static extern void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out
-    // IntPtr symbolsPtr, out int symbolsSize)
+    // C++: void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, BYTE** pSymbolsArray)
+    // C#: static extern void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out IntPtr symbolsPtr)
 
     mdMethodDef pinvoke_method_def;
     COR_SIGNATURE get_assembly_bytes_signature[] = {
         IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
-        4,                             // Number of parameters
+        2,                             // Number of parameters
         ELEMENT_TYPE_VOID,             // Return type
         ELEMENT_TYPE_BYREF,            // List of parameter types
         ELEMENT_TYPE_I,
         ELEMENT_TYPE_BYREF,
-        ELEMENT_TYPE_I4,
-        ELEMENT_TYPE_BYREF,
         ELEMENT_TYPE_I,
-        ELEMENT_TYPE_BYREF,
-        ELEMENT_TYPE_I4,
     };
     hr = metadata_emit->DefineMethod(new_type_def, WStr("GetAssemblyAndSymbolsBytes"),
                                      mdStatic | mdPinvokeImpl | mdHideBySig, get_assembly_bytes_signature,
@@ -3069,9 +3138,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Define IsAlreadyLoaded() method
-    //
-
-    //
     // Define a new static method IsAlreadyLoaded on the new type that has a bool return type and takes no arguments;
     //
     mdMethodDef alreadyLoadedMethodToken;
@@ -3105,26 +3171,63 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Define a new static method ref byte[] GetUnmanagedArray(ref IntPtr value) to reinterpret a pointer as an array
+
+    mdMethodDef getUnmanagedArrayMethodToken;
+    BYTE get_unmanaged_array_signature[] = {
+        IMAGE_CEE_CS_CALLCONV_DEFAULT,
+        1,
+        ELEMENT_TYPE_BYREF,
+        ELEMENT_TYPE_SZARRAY,
+        ELEMENT_TYPE_U1,
+        ELEMENT_TYPE_BYREF,
+        ELEMENT_TYPE_I,
+    };
+    hr = metadata_emit->DefineMethod(new_type_def, WStr("GetUnmanagedArray"), mdStatic | mdPrivate, get_unmanaged_array_signature,
+                                     sizeof(get_unmanaged_array_signature), 0, 0, &getUnmanagedArrayMethodToken);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMethod:GetUnmanagedArray failed");
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Define a new static method void FixUnmanagedArrayToken(IntPtr value) to write the method table value in the unmanaged pointer
+
+    mdMethodDef fixUnmanagedArrayMethodToken;
+    BYTE fix_unmanaged_array_signature[] = {
+        IMAGE_CEE_CS_CALLCONV_DEFAULT,
+        1,
+        ELEMENT_TYPE_VOID,
+        ELEMENT_TYPE_I,
+    };
+
+    hr = metadata_emit->DefineMethod(new_type_def, WStr("FixUnmanagedArrayToken"), mdStatic | mdPrivate, fix_unmanaged_array_signature,
+                                     sizeof(fix_unmanaged_array_signature), 0, 0, &fixUnmanagedArrayMethodToken);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMethod:FixUnmanagedArrayToken failed");
+        return hr;
+    }
+
     // ****************************************************************************************************************
     // Locals signature
     // ****************************************************************************************************************
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Generate a locals signature defined in the following way:
     //   [0] System.IntPtr ("assemblyPtr" - address of assembly bytes)
-    //   [1] System.Int32  ("assemblySize" - size of assembly bytes)
-    //   [2] System.IntPtr ("symbolsPtr" - address of symbols bytes)
-    //   [3] System.Int32  ("symbolsSize" - size of symbols bytes)
-    //   [4] System.Byte[] ("assemblyBytes" - managed byte array for assembly)
-    //   [5] System.Byte[] ("symbolsBytes" - managed byte array for symbols)
-    //   [6] class System.Reflection.Assembly ("loadedAssembly" - assembly instance to save loaded assembly)
+    //   [1] System.IntPtr ("symbolsPtr" - address of symbols bytes)
+    //   [2] System.Byte[] ("assemblyBytes" - managed byte array for assembly)
+    //   [3] System.Byte[] ("symbolsBytes" - managed byte array for symbols)
+    //   [4] class System.Reflection.Assembly ("loadedAssembly" - assembly instance to save loaded assembly)
     mdSignature locals_signature_token;
-    COR_SIGNATURE locals_signature[15] = {
+    COR_SIGNATURE locals_signature[11] = {
         IMAGE_CEE_CS_CALLCONV_LOCAL_SIG, // Calling convention
-        7,                               // Number of variables
+        5,                               // Number of variables
         ELEMENT_TYPE_I,                  // List of variable types
-        ELEMENT_TYPE_I4,
         ELEMENT_TYPE_I,
-        ELEMENT_TYPE_I4,
         ELEMENT_TYPE_SZARRAY,
         ELEMENT_TYPE_U1,
         ELEMENT_TYPE_SZARRAY,
@@ -3132,8 +3235,24 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         ELEMENT_TYPE_CLASS
         // insert compressed token for System.Reflection.Assembly TypeRef here
     };
-    CorSigCompressToken(system_reflection_assembly_type_ref, &locals_signature[11]);
+    CorSigCompressToken(system_reflection_assembly_type_ref, &locals_signature[9]);
     hr = metadata_emit->GetTokenFromSig(locals_signature, sizeof(locals_signature), &locals_signature_token);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: Unable to generate locals signature. ModuleID=", module_id);
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Locals signature for FixUnmanagedArrayToken method
+    mdSignature  fix_unmanaged_array_locals_signature_token;
+    COR_SIGNATURE fix_unmanaged_array_locals_signature[5] = {
+        IMAGE_CEE_CS_CALLCONV_LOCAL_SIG,
+        1,
+        ELEMENT_TYPE_VALUETYPE,
+    };
+    CorSigCompressToken(system_runtime_type_handle_type_ref, &fix_unmanaged_array_locals_signature[3]);
+    hr = metadata_emit->GetTokenFromSig(fix_unmanaged_array_locals_signature, sizeof(fix_unmanaged_array_locals_signature), &fix_unmanaged_array_locals_signature_token);
     if (FAILED(hr))
     {
         Logger::Warn("GenerateVoidILStartupMethod: Unable to generate locals signature. ModuleID=", module_id);
@@ -3143,6 +3262,77 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     // ****************************************************************************************************************
     // IL instructions
     // ****************************************************************************************************************
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Add IL instructions into the FixUnmanagedArrayToken method
+    ILRewriter rewriter_fix_unmanaged_array(this->info_, nullptr, module_id, fixUnmanagedArrayMethodToken);
+    rewriter_fix_unmanaged_array.InitializeTiny();
+    rewriter_fix_unmanaged_array.SetTkLocalVarSig(fix_unmanaged_array_locals_signature_token);
+
+    ILRewriterWrapper rewriterwrapper_fix_unmanaged_array(&rewriter_fix_unmanaged_array);
+    rewriterwrapper_fix_unmanaged_array.SetILPosition(rewriter_fix_unmanaged_array.GetILList()->m_pNext);
+
+    // ldarg_0 : Load the argument (IntPtr)
+    rewriterwrapper_fix_unmanaged_array.LoadArgument(0);
+    // Load TypeHandle for byte[]
+    rewriterwrapper_fix_unmanaged_array.LoadToken(system_byte_array_type_ref);
+    // Store TypeHandle into the local
+    rewriterwrapper_fix_unmanaged_array.StLocal(0);
+    // Load the address of the local
+    rewriterwrapper_fix_unmanaged_array.LoadLocalAddress(0);
+    // Call get_Value() from the TypeHandle
+    rewriterwrapper_fix_unmanaged_array.CallMember(system_runtimetypehandle_get_value_member_ref, false);
+    // Call Marshal.WriteIntPtr(IntPtr, IntPtr)
+    rewriterwrapper_fix_unmanaged_array.CallMember(marshal_writeintptr_member_ref, false);
+    // Return the value
+    rewriterwrapper_fix_unmanaged_array.Return();
+
+    if (IsDumpILRewriteEnabled())
+    {
+        mdToken token = 0;
+        TypeInfo typeInfo{};
+        shared::WSTRING methodName = WStr("FixUnmanagedArrayToken");
+        FunctionInfo caller(token, methodName, typeInfo, MethodSignature(), FunctionMethodSignature());
+        Logger::Info(
+            GetILCodes("*** GenerateVoidILStartupMethod() FixUnmanagedArrayToken Code: ", &rewriter_fix_unmanaged_array, caller, metadata_import));
+    }
+
+    hr = rewriter_fix_unmanaged_array.Export();
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: Call to ILRewriter.Export() failed for ModuleID=", module_id);
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Add IL instructions into the GetUnmanagedArray method
+    ILRewriter rewriter_get_unmanaged_array(this->info_, nullptr, module_id, getUnmanagedArrayMethodToken);
+    rewriter_get_unmanaged_array.InitializeTiny();
+
+    ILRewriterWrapper rewriterwrapper_get_unmanaged_array(&rewriter_get_unmanaged_array);
+    rewriterwrapper_get_unmanaged_array.SetILPosition(rewriter_get_unmanaged_array.GetILList()->m_pNext);
+
+    // Load the argument (ref to IntPtr)
+    rewriterwrapper_get_unmanaged_array.LoadArgument(0);
+    // Return the value
+    rewriterwrapper_get_unmanaged_array.Return();
+
+    if (IsDumpILRewriteEnabled())
+    {
+        mdToken token = 0;
+        TypeInfo typeInfo{};
+        shared::WSTRING methodName = WStr("GetUnmanagedArray");
+        FunctionInfo caller(token, methodName, typeInfo, MethodSignature(), FunctionMethodSignature());
+        Logger::Info(
+            GetILCodes("*** GenerateVoidILStartupMethod() GetUnmanagedArray Code: ", &rewriter_get_unmanaged_array, caller, metadata_import));
+    }
+
+    hr = rewriter_get_unmanaged_array.Export();
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: Call to ILRewriter.Export() failed for ModuleID=", module_id);
+        return hr;
+    }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Add IL instructions into the IsAlreadyLoaded method
@@ -3274,8 +3464,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
     }
 
-    // Step 2) Call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr,
-    // out int symbolsSize)
+    // Step 2) Call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out IntPtr symbolsPtr)
 
     // ldloca.s 0 : Load the address of the "assemblyPtr" variable (locals index 0)
     pNewInstr = rewriter_void.NewILInstr();
@@ -3294,139 +3483,90 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         pIsNotAlreadyLoadedBranch->m_pTarget = pNewInstr;
     }
 
-    // ldloca.s 1 : Load the address of the "assemblySize" variable (locals index 1)
+    // ldloca.s 1 : Load the address of the "symbolsPtr" variable (locals index 1)
     pNewInstr = rewriter_void.NewILInstr();
     pNewInstr->m_opcode = CEE_LDLOCA_S;
     pNewInstr->m_Arg32 = 1;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-    // ldloca.s 2 : Load the address of the "symbolsPtr" variable (locals index 2)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOCA_S;
-    pNewInstr->m_Arg32 = 2;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    // ldloca.s 3 : Load the address of the "symbolsSize" variable (locals index 3)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOCA_S;
-    pNewInstr->m_Arg32 = 3;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    // call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int
-    // symbolsSize)
+    // call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out IntPtr symbolsPtr)
     pNewInstr = rewriter_void.NewILInstr();
     pNewInstr->m_opcode = CEE_CALL;
     pNewInstr->m_Arg32 = pinvoke_method_def;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-    // Step 3) Call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length) to populate the
-    // managed assembly bytes
+    // Step 3) Fix the methodTable in the assemblyPtr and reinterpret the IntPtr as a Byte array.
 
-    // ldloc.1 : Load the "assemblySize" variable (locals index 1)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_1;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    // newarr System.Byte : Create a new Byte[] to hold a managed copy of the assembly data
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_NEWARR;
-    pNewInstr->m_Arg32 = byte_type_ref;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    // stloc.s 4 : Assign the Byte[] to the "assemblyBytes" variable (locals index 4)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_STLOC_S;
-    pNewInstr->m_Arg8 = 4;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    // ldloc.0 : Load the "assemblyPtr" variable (locals index 0)
     pNewInstr = rewriter_void.NewILInstr();
     pNewInstr->m_opcode = CEE_LDLOC_0;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-    // ldloc.s 4 : Load the "assemblyBytes" variable (locals index 4)
     pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_S;
-    pNewInstr->m_Arg8 = 4;
+    pNewInstr->m_opcode = CEE_CALL;
+    pNewInstr->m_Arg32 = fixUnmanagedArrayMethodToken;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-    // ldc.i4.0 : Load the integer 0 for the Marshal.Copy startIndex parameter
     pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDC_I4_0;
+    pNewInstr->m_opcode = CEE_LDLOCA_S;
+    pNewInstr->m_Arg32 = 0;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-    // ldloc.1 : Load the "assemblySize" variable (locals index 1) for the Marshal.Copy length parameter
+    pNewInstr = rewriter_void.NewILInstr();
+    pNewInstr->m_opcode = CEE_CALL;
+    pNewInstr->m_Arg32 = getUnmanagedArrayMethodToken;
+    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+    pNewInstr = rewriter_void.NewILInstr();
+    pNewInstr->m_opcode = CEE_LDIND_REF;
+    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+    pNewInstr = rewriter_void.NewILInstr();
+    pNewInstr->m_opcode = CEE_STLOC_S;
+    pNewInstr->m_Arg8 = 2;
+    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+    // Step 4) Fix the methodTable in the symbolsPtr and reinterpret the IntPtr as a Byte array.
+
     pNewInstr = rewriter_void.NewILInstr();
     pNewInstr->m_opcode = CEE_LDLOC_1;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-    // call Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length)
     pNewInstr = rewriter_void.NewILInstr();
     pNewInstr->m_opcode = CEE_CALL;
-    pNewInstr->m_Arg32 = marshal_copy_member_ref;
+    pNewInstr->m_Arg32 = fixUnmanagedArrayMethodToken;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-    // Step 4) Call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length) to populate the
-    // symbols bytes
-
-    // ldloc.3 : Load the "symbolsSize" variable (locals index 3)
     pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_3;
+    pNewInstr->m_opcode = CEE_LDLOCA_S;
+    pNewInstr->m_Arg32 = 1;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-    // newarr System.Byte : Create a new Byte[] to hold a managed copy of the symbols data
     pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_NEWARR;
-    pNewInstr->m_Arg32 = byte_type_ref;
+    pNewInstr->m_opcode = CEE_CALL;
+    pNewInstr->m_Arg32 = getUnmanagedArrayMethodToken;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-    // stloc.s 5 : Assign the Byte[] to the "symbolsBytes" variable (locals index 5)
+    pNewInstr = rewriter_void.NewILInstr();
+    pNewInstr->m_opcode = CEE_LDIND_REF;
+    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
     pNewInstr = rewriter_void.NewILInstr();
     pNewInstr->m_opcode = CEE_STLOC_S;
-    pNewInstr->m_Arg8 = 5;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    // ldloc.2 : Load the "symbolsPtr" variables (locals index 2)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_2;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    // ldloc.s 5 : Load the "symbolsBytes" variable (locals index 5)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_S;
-    pNewInstr->m_Arg8 = 5;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    // ldc.i4.0 : Load the integer 0 for the Marshal.Copy startIndex parameter
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDC_I4_0;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    // ldloc.3 : Load the "symbolsSize" variable (locals index 3) for the Marshal.Copy length parameter
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_3;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    // call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_CALL;
-    pNewInstr->m_Arg32 = marshal_copy_member_ref;
+    pNewInstr->m_Arg8 = 3;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
     // Step 5) Call System.Reflection.Assembly System.Reflection.Assembly.Load(byte[], byte[]))
 
-    // ldloc.s 4 : Load the "assemblyBytes" variable (locals index 4) for the first byte[] parameter of
+    // ldloc.s 4 : Load the "assemblyBytes" variable (locals index 2) for the first byte[] parameter of
     // AppDomain.Load(byte[], byte[])
     pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_S;
-    pNewInstr->m_Arg8 = 4;
+    pNewInstr->m_opcode = CEE_LDLOC_2;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-    // ldloc.s 5 : Load the "symbolsBytes" variable (locals index 5) for the second byte[] parameter of
+    // ldloc.s 5 : Load the "symbolsBytes" variable (locals index 3) for the second byte[] parameter of
     // AppDomain.Load(byte[], byte[])
     pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_S;
-    pNewInstr->m_Arg8 = 5;
+    pNewInstr->m_opcode = CEE_LDLOC_3;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
     // call System.Reflection.Assembly System.Reflection.Assembly.Load(uint8[], uint8[])
@@ -3435,18 +3575,18 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     pNewInstr->m_Arg32 = appdomain_load_member_ref;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-    // stloc.s 6 : Assign the System.Reflection.Assembly object to the "loadedAssembly" variable (locals index 6)
+    // stloc.s 6 : Assign the System.Reflection.Assembly object to the "loadedAssembly" variable (locals index 4)
     pNewInstr = rewriter_void.NewILInstr();
     pNewInstr->m_opcode = CEE_STLOC_S;
-    pNewInstr->m_Arg8 = 6;
+    pNewInstr->m_Arg8 = 4;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
     // Step 6) Call instance method Assembly.CreateInstance("Datadog.Trace.ClrProfiler.Managed.Loader.Startup")
 
-    // ldloc.s 6 : Load the "loadedAssembly" variable (locals index 6) to call Assembly.CreateInstance
+    // ldloc.s 6 : Load the "loadedAssembly" variable (locals index 4) to call Assembly.CreateInstance
     pNewInstr = rewriter_void.NewILInstr();
     pNewInstr->m_opcode = CEE_LDLOC_S;
-    pNewInstr->m_Arg8 = 6;
+    pNewInstr->m_Arg8 = 4;
     rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
     // ldstr "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"
@@ -3670,9 +3810,11 @@ extern uint8_t pdb_start[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader
 extern uint8_t pdb_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_end");
 #endif
 
-void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
-                                             int* symbolsSize) 
+void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, BYTE** pSymbolsArray)
 {
+    int assemblySize;
+    int symbolsSize;
+
 #ifdef _WIN32
     HINSTANCE hInstance = DllHandle;
     LPCWSTR dllLpName;
@@ -3691,18 +3833,18 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
 
     HRSRC hResAssemblyInfo = FindResource(hInstance, dllLpName, L"ASSEMBLY");
     HGLOBAL hResAssembly = LoadResource(hInstance, hResAssemblyInfo);
-    *assemblySize = SizeofResource(hInstance, hResAssemblyInfo);
+    assemblySize = SizeofResource(hInstance, hResAssemblyInfo);
     *pAssemblyArray = (LPBYTE) LockResource(hResAssembly);
 
     HRSRC hResSymbolsInfo = FindResource(hInstance, symbolsLpName, L"SYMBOLS");
     HGLOBAL hResSymbols = LoadResource(hInstance, hResSymbolsInfo);
-    *symbolsSize = SizeofResource(hInstance, hResSymbolsInfo);
+    symbolsSize = SizeofResource(hInstance, hResSymbolsInfo);
     *pSymbolsArray = (LPBYTE) LockResource(hResSymbols);
 #elif LINUX
-    *assemblySize = dll_end - dll_start;
+    assemblySize = dll_end - dll_start;
     *pAssemblyArray = (BYTE*) dll_start;
 
-    *symbolsSize = pdb_end - pdb_start;
+    symbolsSize = pdb_end - pdb_start;
     *pSymbolsArray = (BYTE*) pdb_start;
 #else
     const unsigned int imgCount = _dyld_image_count();
@@ -3717,25 +3859,27 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
 
             unsigned long dllSize;
             const auto dllData = getsectiondata(header, "binary", "dll", &dllSize);
-            *assemblySize = dllSize;
+            assemblySize = dllSize;
             *pAssemblyArray = (BYTE*) dllData;
 
             unsigned long pdbSize;
             const auto pdbData = getsectiondata(header, "binary", "pdb", &pdbSize);
-            *symbolsSize = pdbSize;
+            symbolsSize = pdbSize;
             *pSymbolsArray = (BYTE*) pdbData;
             break;
         }
     }
 #endif
 
-    /*
-    const auto newAssemblyArraySize = *assemblySize + 24;
-    BYTE* newAssemblyArray = new BYTE[newAssemblyArraySize];
-    memcpy(&newAssemblyArray[24], *pAssemblyArray, *assemblySize);
-    *((INT32*) &newAssemblyArray[16]) = *assemblySize;
+    BYTE* newAssemblyArray = new BYTE[assemblySize + 24];
+    memcpy(&newAssemblyArray[24], *pAssemblyArray, assemblySize);
+    *((INT32*) &newAssemblyArray[16]) = assemblySize;
     *pAssemblyArray = newAssemblyArray + 8;
-    */
+
+    BYTE* newSymbolsArray = new BYTE[symbolsSize + 24];
+    memcpy(&newSymbolsArray[24], *pSymbolsArray, symbolsSize);
+    *((INT32*) &newSymbolsArray[16]) = symbolsSize;
+    *pSymbolsArray = newSymbolsArray + 8;
 }
 
 // ***
