@@ -28,14 +28,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         /// </summary>
         static Startup()
         {
-            var managedProfilerDirectory = ResolveManagedProfilerDirectory();
-            if (managedProfilerDirectory is null)
+            ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
+            if (ManagedProfilerDirectory is null)
             {
-                StartupLogger.Log("Managed profiler directory doesn't exist. Bailing out.", ManagedProfilerDirectory);
+                StartupLogger.Log("Managed profiler directory doesn't exist. Automatic instrumentation will be disabled");
                 return;
             }
-
-            ManagedProfilerDirectory = managedProfilerDirectory;
             StartupLogger.Debug("Resolving managed profiler directory to: {0}", ManagedProfilerDirectory);
 
             try

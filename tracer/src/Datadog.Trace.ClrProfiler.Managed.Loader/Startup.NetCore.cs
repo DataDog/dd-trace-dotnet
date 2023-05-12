@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             if (!Directory.Exists(fullPath))
             {
-                StartupLogger.Log($"The managed profiler directory cannot be found at {fullPath}. It seems that the tracer hasn't been properly setup. DD_DOTNET_TRACER_HOME value was: {tracerHomeDirectory} ");
+                StartupLogger.Log($"The tracer home directory cannot be found at '{fullPath}', based on the DD_DOTNET_TRACER_HOME value '{tracerHomeDirectory}'");
                 return null;
             }
 
@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return null;
         }
 
-        private static bool IsDatadogAssembly(string path, out Assembly? cachedAssembly)
+        private static bool IsDatadogAssembly(string path, [NotNullWhen(true)] out Assembly? cachedAssembly)
         {
             for (var i = 0; i < _assemblies!.Length; i++)
             {

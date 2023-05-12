@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var fullPath = Path.Combine(tracerHomeDirectory, "net461");
             if (!Directory.Exists(fullPath))
             {
-                StartupLogger.Log($"The managed profiler directory cannot be found at {fullPath}. It seems that the tracer hasn't been properly setup. DD_DOTNET_TRACER_HOME value was: {tracerHomeDirectory}. ");
+                StartupLogger.Log($"The tracer home directory cannot be found at '{fullPath}', based on the DD_DOTNET_TRACER_HOME value '{tracerHomeDirectory}'");
                 return null;
             }
 
