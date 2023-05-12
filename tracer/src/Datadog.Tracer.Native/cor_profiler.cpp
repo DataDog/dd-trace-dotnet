@@ -3041,9 +3041,10 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     mdMethodDef pinvoke_method_def;
     COR_SIGNATURE get_assembly_bytes_signature[] = {
         IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
-        2,                             // Number of parameters
+        3,                             // Number of parameters
         ELEMENT_TYPE_VOID,             // Return type
-        ELEMENT_TYPE_BYREF,            // List of parameter types
+        ELEMENT_TYPE_I,                // List of parameter types
+        ELEMENT_TYPE_BYREF,
         ELEMENT_TYPE_I,
         ELEMENT_TYPE_BYREF,
         ELEMENT_TYPE_I,
@@ -3147,13 +3148,16 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     // Generate a locals signature defined in the following way:
     //   [0] System.IntPtr ("assemblyPtr" - address of assembly bytes)
     //   [1] System.IntPtr ("symbolsPtr" - address of symbols bytes)
+    //   [2] System.RuntimeTypeHandle (byte[] typehandle value)
     mdSignature locals_signature_token;
-    COR_SIGNATURE locals_signature[] = {
+    COR_SIGNATURE locals_signature[7] = {
         IMAGE_CEE_CS_CALLCONV_LOCAL_SIG, // Calling convention
-        2,                               // Number of variables
+        3,                               // Number of variables
         ELEMENT_TYPE_I,                  // List of variable types
         ELEMENT_TYPE_I,
+        ELEMENT_TYPE_VALUETYPE,
     };
+    CorSigCompressToken(system_runtime_type_handle_type_ref, &locals_signature[5]);
     hr = metadata_emit->GetTokenFromSig(locals_signature, sizeof(locals_signature), &locals_signature_token);
     if (FAILED(hr))
     {
@@ -3296,19 +3300,28 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         rewriterwrapper_void.Return();
     }
 
-    // Step 2) Call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out IntPtr symbolsPtr)
+    // Step 2) Call void GetAssemblyAndSymbolsBytes(IntPtr typeHandle, out IntPtr assemblyPtr, out IntPtr symbolsPtr)
+
+    // Load TypeHandle for byte[]
+    const auto loadTokenInstr = rewriterwrapper_void.LoadToken(system_byte_array_type_ref);
+    // Store TypeHandle into the local
+    rewriterwrapper_void.StLocal(2);
+    // Load the address of the local
+    rewriterwrapper_void.LoadLocalAddress(2);
+    // Call get_Value() from the TypeHandle returning a IntPtr
+    rewriterwrapper_void.CallMember(system_runtimetypehandle_get_value_member_ref, false);
 
     // ldloca.s 0 : Load the address of the "assemblyPtr" variable (locals index 0)
-    const auto loadAsmPtrInstr = rewriterwrapper_void.LoadLocalAddress(0);
+    rewriterwrapper_void.LoadLocalAddress(0);
     if (pIsFullyTrustedBranch != nullptr)
     {
         // Set the true branch target for AppDomain.CurrentDomain.IsFullyTrusted
-        pIsFullyTrustedBranch->m_pTarget = loadAsmPtrInstr;
+        pIsFullyTrustedBranch->m_pTarget = loadTokenInstr;
     }
     else
     {
         // Set the false branch target for IsAlreadyLoaded()
-        pIsNotAlreadyLoadedBranch->m_pTarget = loadAsmPtrInstr;
+        pIsNotAlreadyLoadedBranch->m_pTarget = loadTokenInstr;
     }
 
     // ldloca.s 1 : Load the address of the "symbolsPtr" variable (locals index 1)
@@ -3547,7 +3560,7 @@ extern uint8_t pdb_start[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader
 extern uint8_t pdb_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_end");
 #endif
 
-void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, BYTE** pSymbolsArray)
+void CorProfiler::GetAssemblyAndSymbolsBytes(void* typeHandle, BYTE** pAssemblyArray, BYTE** pSymbolsArray)
 {
     int assemblySize;
     int symbolsSize;
