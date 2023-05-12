@@ -51,12 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
 
                 string serviceName = tracer.Schema.Messaging.GetOutboundServiceName(MessagingType);
-
-                KafkaTags tags = tracer.Schema.Version switch
-                {
-                    SchemaVersion.V0 => new KafkaTags(SpanKinds.Producer),
-                    _ => new KafkaV1Tags(SpanKinds.Producer),
-                };
+                KafkaTags tags = tracer.Schema.Messaging.CreateKafkaTags(SpanKinds.Producer);
 
                 scope = tracer.StartActiveInternal(
                     operationName,
