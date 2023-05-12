@@ -35,14 +35,14 @@ public class KafkaConsumerConstructorIntegration
 
             foreach (var kvp in consumer.Config)
             {
-                if (string.Equals(kvp.Key, "group.id", StringComparison.Ordinal))
+                if (string.Equals(kvp.Key, KafkaHelper.GroupIdKey, StringComparison.Ordinal))
                 {
                     if (!string.IsNullOrEmpty(kvp.Value))
                     {
                         groupId = kvp.Value;
                     }
                 }
-                else if (string.Equals(kvp.Key, "bootstrap.servers", StringComparison.Ordinal))
+                else if (string.Equals(kvp.Key, KafkaHelper.BootstrapServersKey, StringComparison.Ordinal))
                 {
                     if (!string.IsNullOrEmpty(kvp.Value))
                     {

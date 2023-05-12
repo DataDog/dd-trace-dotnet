@@ -32,11 +32,11 @@ public class KafkaProducerConstructorIntegration
         {
             foreach (var kvp in consumer.Config)
             {
-                if (string.Equals(kvp.Key, "bootstrap.servers", StringComparison.Ordinal))
+                if (string.Equals(kvp.Key, KafkaHelper.BootstrapServersKey, StringComparison.Ordinal))
                 {
                     if (!string.IsNullOrEmpty(kvp.Value))
                     {
-                        // Save the map between this consumer and a consumer group
+                        // Save the map between this producer and its bootstrap server config
                         ProducerCache.AddProducer(instance, kvp.Value);
                         return CallTargetState.GetDefault();
                     }
