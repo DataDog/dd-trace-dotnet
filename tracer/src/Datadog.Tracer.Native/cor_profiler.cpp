@@ -3325,9 +3325,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     ILRewriterWrapper rewriterwrapper_already_loaded(&rewriter_already_loaded);
     rewriterwrapper_already_loaded.SetILPosition(rewriter_already_loaded.GetILList()->m_pNext);
 
-    ILInstr* pALFirstInstr = rewriter_already_loaded.GetILList()->m_pNext;
-    ILInstr* pALNewInstr = nullptr;
-
     // ldsflda _isAssemblyLoaded : Load the address of the "_isAssemblyLoaded" static var
     rewriterwrapper_already_loaded.LoadFieldAddress(isAssemblyLoadedFieldToken, true);
     // ldc.i4.1 : Load the constant 1 (int) to the stack
@@ -3362,32 +3359,21 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Add IL instructions into the void method
-
     ILRewriter rewriter_void(this->info_, nullptr, module_id, *ret_method_token);
     rewriter_void.InitializeTiny();
     rewriter_void.SetTkLocalVarSig(locals_signature_token);
 
-    ILInstr* pFirstInstr = rewriter_void.GetILList()->m_pNext;
-    ILInstr* pNewInstr = nullptr;
+    ILRewriterWrapper rewriterwrapper_void(&rewriter_void);
+    rewriterwrapper_void.SetILPosition(rewriter_void.GetILList()->m_pNext);
 
     // Step 0) Check if the assembly was already loaded
 
     // call bool IsAlreadyLoaded()
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_CALL;
-    pNewInstr->m_Arg32 = alreadyLoadedMethodToken;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterwrapper_void.CallMember(alreadyLoadedMethodToken, false);
     // check if the return of the method call is true or false
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_BRFALSE_S;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-    ILInstr* pIsNotAlreadyLoadedBranch = pNewInstr;
-
+    ILInstr* pIsNotAlreadyLoadedBranch = rewriterwrapper_void.CreateInstr(CEE_BRFALSE_S);
     // return if IsAlreadyLoaded is true
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_RET;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+    rewriterwrapper_void.Return();
 
     ILInstr* pIsFullyTrustedBranch = nullptr;
     if (appdomain_get_currentdomain_member_ref != mdMemberRefNil && appdomain_get_isfullytrusted_member_ref != mdMemberRefNil)
@@ -3395,178 +3381,77 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         // Step 1) Check if the assembly is loaded in a fully trusted domain.
 
         // call System.AppDomain.get_CurrentDomain()
-        pNewInstr = rewriter_void.NewILInstr();
-        pNewInstr->m_opcode = CEE_CALL;
-        pNewInstr->m_Arg32 = appdomain_get_currentdomain_member_ref;
-        rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-        // Set the false branch target for IsAlreadyLoaded()
-        pIsNotAlreadyLoadedBranch->m_pTarget = pNewInstr;
-
+        // and set the false branch target for IsAlreadyLoaded()
+        pIsNotAlreadyLoadedBranch->m_pTarget = rewriterwrapper_void.CallMember(appdomain_get_currentdomain_member_ref, false);
         // callvirt System.AppDomain.get_IsFullyTrusted()
-        pNewInstr = rewriter_void.NewILInstr();
-        pNewInstr->m_opcode = CEE_CALLVIRT;
-        pNewInstr->m_Arg32 = appdomain_get_isfullytrusted_member_ref;
-        rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+        rewriterwrapper_void.CallMember(appdomain_get_isfullytrusted_member_ref, true);
         // check if the return of the method call is true or false
-        pNewInstr = rewriter_void.NewILInstr();
-        pNewInstr->m_opcode = CEE_BRTRUE_S;
-        rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-        pIsFullyTrustedBranch = pNewInstr;
-
+        pIsFullyTrustedBranch = rewriterwrapper_void.CreateInstr(CEE_BRTRUE_S);
         // return if IsFullyTrusted is false
-        pNewInstr = rewriter_void.NewILInstr();
-        pNewInstr->m_opcode = CEE_RET;
-        rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+        rewriterwrapper_void.Return();
     }
 
     // Step 2) Call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out IntPtr symbolsPtr)
 
     // ldloca.s 0 : Load the address of the "assemblyPtr" variable (locals index 0)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOCA_S;
-    pNewInstr->m_Arg32 = 0;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    const auto loadAsmPtrInstr = rewriterwrapper_void.LoadLocalAddress(0);
     if (pIsFullyTrustedBranch != nullptr)
     {
         // Set the true branch target for AppDomain.CurrentDomain.IsFullyTrusted
-        pIsFullyTrustedBranch->m_pTarget = pNewInstr;
+        pIsFullyTrustedBranch->m_pTarget = loadAsmPtrInstr;
     }
     else
     {
         // Set the false branch target for IsAlreadyLoaded()
-        pIsNotAlreadyLoadedBranch->m_pTarget = pNewInstr;
+        pIsNotAlreadyLoadedBranch->m_pTarget = loadAsmPtrInstr;
     }
 
     // ldloca.s 1 : Load the address of the "symbolsPtr" variable (locals index 1)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOCA_S;
-    pNewInstr->m_Arg32 = 1;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterwrapper_void.LoadLocalAddress(1);
     // call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out IntPtr symbolsPtr)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_CALL;
-    pNewInstr->m_Arg32 = pinvoke_method_def;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+    rewriterwrapper_void.CallMember(pinvoke_method_def, false);
 
     // Step 3) Fix the methodTable in the assemblyPtr and reinterpret the IntPtr as a Byte array.
 
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_0;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_CALL;
-    pNewInstr->m_Arg32 = fixUnmanagedArrayMethodToken;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOCA_S;
-    pNewInstr->m_Arg32 = 0;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_CALL;
-    pNewInstr->m_Arg32 = getUnmanagedArrayMethodToken;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDIND_REF;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_STLOC_S;
-    pNewInstr->m_Arg8 = 2;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+    rewriterwrapper_void.LoadLocal(0);
+    rewriterwrapper_void.CallMember(fixUnmanagedArrayMethodToken, false);
+    rewriterwrapper_void.LoadLocalAddress(0);
+    rewriterwrapper_void.CallMember(getUnmanagedArrayMethodToken, false);
+    rewriterwrapper_void.CreateInstr(CEE_LDIND_REF);
+    rewriterwrapper_void.StLocal(2);
 
     // Step 4) Fix the methodTable in the symbolsPtr and reinterpret the IntPtr as a Byte array.
 
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_1;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_CALL;
-    pNewInstr->m_Arg32 = fixUnmanagedArrayMethodToken;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOCA_S;
-    pNewInstr->m_Arg32 = 1;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_CALL;
-    pNewInstr->m_Arg32 = getUnmanagedArrayMethodToken;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDIND_REF;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_STLOC_S;
-    pNewInstr->m_Arg8 = 3;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+    rewriterwrapper_void.LoadLocal(1);
+    rewriterwrapper_void.CallMember(fixUnmanagedArrayMethodToken, false);
+    rewriterwrapper_void.LoadLocalAddress(1);
+    rewriterwrapper_void.CallMember(getUnmanagedArrayMethodToken, false);
+    rewriterwrapper_void.CreateInstr(CEE_LDIND_REF);
+    rewriterwrapper_void.StLocal(3);
 
     // Step 5) Call System.Reflection.Assembly System.Reflection.Assembly.Load(byte[], byte[]))
 
-    // ldloc.s 4 : Load the "assemblyBytes" variable (locals index 2) for the first byte[] parameter of
-    // AppDomain.Load(byte[], byte[])
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_2;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
-    // ldloc.s 5 : Load the "symbolsBytes" variable (locals index 3) for the second byte[] parameter of
-    // AppDomain.Load(byte[], byte[])
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_3;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    // ldloc.s 4 : Load the "assemblyBytes" variable (locals index 2) for the first byte[] parameter
+    rewriterwrapper_void.LoadLocal(2);
+    // ldloc.s 5 : Load the "symbolsBytes" variable (locals index 3) for the second byte[] parameter
+    rewriterwrapper_void.LoadLocal(3);
     // call System.Reflection.Assembly System.Reflection.Assembly.Load(uint8[], uint8[])
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_CALL;
-    pNewInstr->m_Arg32 = appdomain_load_member_ref;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterwrapper_void.CallMember(appdomain_load_member_ref, false);
     // stloc.s 6 : Assign the System.Reflection.Assembly object to the "loadedAssembly" variable (locals index 4)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_STLOC_S;
-    pNewInstr->m_Arg8 = 4;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+    rewriterwrapper_void.StLocal(4);
 
     // Step 6) Call instance method Assembly.CreateInstance("Datadog.Trace.ClrProfiler.Managed.Loader.Startup")
 
     // ldloc.s 6 : Load the "loadedAssembly" variable (locals index 4) to call Assembly.CreateInstance
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDLOC_S;
-    pNewInstr->m_Arg8 = 4;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterwrapper_void.LoadLocal(4);
     // ldstr "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_LDSTR;
-    pNewInstr->m_Arg32 = load_helper_token;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterwrapper_void.LoadStr(load_helper_token);
     // callvirt System.Object System.Reflection.Assembly.CreateInstance(string)
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_CALLVIRT;
-    pNewInstr->m_Arg32 = assembly_create_instance_member_ref;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterwrapper_void.CallMember(assembly_create_instance_member_ref, true);
     // pop the returned object
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_POP;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
+    rewriterwrapper_void.Pop();
     // return
-    pNewInstr = rewriter_void.NewILInstr();
-    pNewInstr->m_opcode = CEE_RET;
-    rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+    rewriterwrapper_void.Return();
 
     if (IsDumpILRewriteEnabled())
     {
