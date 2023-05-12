@@ -567,10 +567,13 @@ namespace Datadog.Trace.TestHelpers
             {
                 try
                 {
+                    var apiVersion = request.Headers.GetValue(TelemetryConstants.ApiVersionHeader);
+                    var requestType = request.Headers.GetValue(TelemetryConstants.RequestTypeHeader);
+
                     var body = ReadStreamBody(request);
                     using var stream = new MemoryStream(body);
 
-                    var telemetry = MockTelemetryAgent<TelemetryData>.DeserializeResponse(stream);
+                    var telemetry = MockTelemetryAgent.DeserializeResponse(stream, apiVersion, requestType);
                     Telemetry.Push(telemetry);
 
                     lock (this)
