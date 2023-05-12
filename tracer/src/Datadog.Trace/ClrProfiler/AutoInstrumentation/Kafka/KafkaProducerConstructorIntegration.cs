@@ -38,7 +38,7 @@ public class KafkaProducerConstructorIntegration
                     {
                         // Save the map between this producer and its bootstrap server config
                         ProducerCache.AddProducer(instance, kvp.Value);
-                        return CallTargetState.GetDefault();
+                        return new CallTargetState(scope: null, state: instance);
                     }
                 }
             }
@@ -51,9 +51,9 @@ public class KafkaProducerConstructorIntegration
     {
         // This method is called in the Producer constructor, so if we have an exception
         // the consumer won't be created, so no point recording it.
-        if (exception is not null)
+        if (exception is not null && state is { State: { } producer })
         {
-            ProducerCache.RemoveProducer(instance);
+            ProducerCache.RemoveProducer(producer);
         }
 
         return CallTargetReturn.GetDefault();

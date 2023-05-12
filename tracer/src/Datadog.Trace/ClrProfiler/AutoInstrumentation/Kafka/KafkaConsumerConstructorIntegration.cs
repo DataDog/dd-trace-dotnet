@@ -55,6 +55,7 @@ public class KafkaConsumerConstructorIntegration
             {
                 // Save the map between this consumer and a consumer group
                 ConsumerGroupHelper.SetConsumerGroup(instance, groupId, bootstrapServers);
+                return new CallTargetState(scope: null, state: instance);
             }
         }
 
@@ -65,9 +66,9 @@ public class KafkaConsumerConstructorIntegration
     {
         // This method is called in the Consumer constructor, so if we have an exception
         // the consumer won't be created, so no point recording it.
-        if (exception is not null)
+        if (exception is not null && state is { State: { } consumer })
         {
-            ConsumerGroupHelper.RemoveConsumerGroup(instance);
+            ConsumerGroupHelper.RemoveConsumerGroup(consumer);
         }
 
         return CallTargetReturn.GetDefault();
