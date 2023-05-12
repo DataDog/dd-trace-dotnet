@@ -113,7 +113,7 @@ namespace Datadog.Trace
         ///   <li>peer.service when the tag was set by the user</li>
         /// </ul>
         /// </summary>
-        public const string PeerServiceSource = "_dd.peer.service.source";
+        internal const string PeerServiceSource = "_dd.peer.service.source";
 
         /// <summary>
         /// The hostname of a outgoing server connection.
