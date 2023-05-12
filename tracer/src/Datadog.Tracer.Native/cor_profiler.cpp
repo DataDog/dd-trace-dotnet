@@ -3195,18 +3195,12 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     // Generate a locals signature defined in the following way:
     //   [0] System.IntPtr ("assemblyPtr" - address of assembly bytes)
     //   [1] System.IntPtr ("symbolsPtr" - address of symbols bytes)
-    //   [2] System.Byte[] ("assemblyBytes" - managed byte array for assembly)
-    //   [3] System.Byte[] ("symbolsBytes" - managed byte array for symbols)
     mdSignature locals_signature_token;
     COR_SIGNATURE locals_signature[] = {
         IMAGE_CEE_CS_CALLCONV_LOCAL_SIG, // Calling convention
-        4,                               // Number of variables
+        2,                               // Number of variables
         ELEMENT_TYPE_I,                  // List of variable types
         ELEMENT_TYPE_I,
-        ELEMENT_TYPE_SZARRAY,
-        ELEMENT_TYPE_U1,
-        ELEMENT_TYPE_SZARRAY,
-        ELEMENT_TYPE_U1,
     };
     hr = metadata_emit->GetTokenFromSig(locals_signature, sizeof(locals_signature), &locals_signature_token);
     if (FAILED(hr))
@@ -3414,7 +3408,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     rewriterwrapper_void.LoadLocalAddress(0);
     rewriterwrapper_void.CallMember(getUnmanagedArrayMethodToken, false);
     rewriterwrapper_void.CreateInstr(CEE_LDIND_REF);
-    rewriterwrapper_void.StLocal(2);
 
     // Step 4) Fix the methodTable in the symbolsPtr and reinterpret the IntPtr as a Byte array.
 
@@ -3423,14 +3416,9 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     rewriterwrapper_void.LoadLocalAddress(1);
     rewriterwrapper_void.CallMember(getUnmanagedArrayMethodToken, false);
     rewriterwrapper_void.CreateInstr(CEE_LDIND_REF);
-    rewriterwrapper_void.StLocal(3);
 
     // Step 5) Call System.Reflection.Assembly System.Reflection.Assembly.Load(byte[], byte[]))
 
-    // ldloc.s 4 : Load the "assemblyBytes" variable (locals index 2) for the first byte[] parameter
-    rewriterwrapper_void.LoadLocal(2);
-    // ldloc.s 5 : Load the "symbolsBytes" variable (locals index 3) for the second byte[] parameter
-    rewriterwrapper_void.LoadLocal(3);
     // call System.Reflection.Assembly System.Reflection.Assembly.Load(uint8[], uint8[])
     rewriterwrapper_void.CallMember(appdomain_load_member_ref, false);
 
