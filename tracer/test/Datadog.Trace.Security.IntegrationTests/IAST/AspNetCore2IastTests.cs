@@ -117,6 +117,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
     public async Task TestRequestBodyTaintingRazor()
     {
         var filename = IastEnabled ? "Iast.RequestBodyTestRazor.AspNetCore2.IastEnabled" : "Iast.RequestBodyTestRazor.AspNetCore2.IastDisabled";
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         var url = "/DataRazorIastPage";
         IncludeAllHttpSpans = true;
         await TryStartApp();
@@ -143,6 +144,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
     public async Task TestRequestBodyTainting(string body)
     {
         var filename = IastEnabled ? "Iast.RequestBodyTest.AspNetCore2.IastEnabled" : "Iast.RequestBodyTest.AspNetCore2.IastDisabled";
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         var url = "/Iast/ExecuteQueryFromBodyQueryData";
         IncludeAllHttpSpans = true;
         await TryStartApp();

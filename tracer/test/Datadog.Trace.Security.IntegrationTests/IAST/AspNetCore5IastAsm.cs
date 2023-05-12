@@ -34,6 +34,7 @@ public class AspNetCore5IastAsm : RcmBase
         SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "false");
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
+        SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, "false");
 
         var url = "/Iast/ExecuteQueryFromBodyQueryData";
         var body = "{\"Query\": \"SELECT Surname from Persons where name='Vicent'\"}";

@@ -179,6 +179,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     {
         var filename = IastEnabled ? "Iast.RequestBodyTestRazor.AspNetCore5.IastEnabled" : "Iast.RequestBodyTestRazor.AspNetCore5.IastDisabled";
         var url = "/DataRazorIastPage";
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
@@ -205,6 +206,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     {
         var filename = IastEnabled ? "Iast.RequestBodyTest.AspNetCore5.IastEnabled" : "Iast.RequestBodyTest.AspNetCore5.IastDisabled";
         var url = "/Iast/ExecuteQueryFromBodyQueryData";
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
