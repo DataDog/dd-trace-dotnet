@@ -354,6 +354,14 @@ namespace Datadog.Trace.TestHelpers
             SetEnvironmentVariable(ConfigurationKeys.Iast.Enabled, enable.ToString().ToLower());
         }
 
+        public void EnableEvidenceRedaction(bool? enable = null)
+        {
+            if (enable != null)
+            {
+                SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, enable.ToString().ToLower());
+            }
+        }
+
         public void DisableObfuscationQueryString()
         {
             SetEnvironmentVariable(ConfigurationKeys.ObfuscationQueryStringRegex, string.Empty);
