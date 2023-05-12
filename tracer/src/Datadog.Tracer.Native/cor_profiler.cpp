@@ -2777,16 +2777,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Get a TypeRef for System.Byte
-    mdTypeRef byte_type_ref;
-    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Byte"), &byte_type_ref);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName:System.Byte failed");
-        return hr;
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Get a TypeRef for System.Runtime.InteropServices.Marshal
     mdTypeRef marshal_type_ref;
     hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Runtime.InteropServices.Marshal"),
@@ -2863,25 +2853,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     if (FAILED(hr))
     {
         Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef:CompareExchange failed");
-        return hr;
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Get a MemberRef for System.Runtime.InteropServices.Marshal.Copy(IntPtr, Byte[], int, int)
-    mdMemberRef marshal_copy_member_ref;
-    COR_SIGNATURE marshal_copy_signature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
-                                              4,                             // Number of parameters
-                                              ELEMENT_TYPE_VOID,             // Return type
-                                              ELEMENT_TYPE_I,                // List of parameter types
-                                              ELEMENT_TYPE_SZARRAY,
-                                              ELEMENT_TYPE_U1,
-                                              ELEMENT_TYPE_I4,
-                                              ELEMENT_TYPE_I4};
-    hr = metadata_emit->DefineMemberRef(marshal_type_ref, WStr("Copy"), marshal_copy_signature,
-                                        sizeof(marshal_copy_signature), &marshal_copy_member_ref);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef:Copy failed");
         return hr;
     }
 
@@ -3113,25 +3084,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Define IsAlreadyLoaded() method
-    // Define a new static method IsAlreadyLoaded on the new type that has a bool return type and takes no arguments;
-    //
-    mdMethodDef alreadyLoadedMethodToken;
-    BYTE already_loaded_signature[] = {
-        IMAGE_CEE_CS_CALLCONV_DEFAULT,
-        0,
-        ELEMENT_TYPE_BOOLEAN,
-    };
-    hr = metadata_emit->DefineMethod(new_type_def, WStr("IsAlreadyLoaded"), mdStatic | mdPrivate,
-                                     already_loaded_signature, sizeof(already_loaded_signature), 0, 0,
-                                     &alreadyLoadedMethodToken);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineMethod:IsAlreadyLoaded failed");
-        return hr;
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Define a new static method __DDVoidMethodCall__ on the new type that has a void return type and takes no
     // arguments
     BYTE initialize_signature[] = {
@@ -3301,53 +3253,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Add IL instructions into the IsAlreadyLoaded method
-    //
-    //  static int _isAssemblyLoaded = 0;
-    //
-    //  public static bool IsAlreadyLoaded() {
-    //      return Interlocked.CompareExchange(ref _isAssemblyLoaded, 1, 0) == 1;
-    //  }
-    //
-    ILRewriter rewriter_already_loaded(this->info_, nullptr, module_id, alreadyLoadedMethodToken);
-    rewriter_already_loaded.InitializeTiny();
-
-    ILRewriterWrapper rewriterwrapper_already_loaded(&rewriter_already_loaded);
-    rewriterwrapper_already_loaded.SetILPosition(rewriter_already_loaded.GetILList()->m_pNext);
-
-    // ldsflda _isAssemblyLoaded : Load the address of the "_isAssemblyLoaded" static var
-    rewriterwrapper_already_loaded.LoadFieldAddress(isAssemblyLoadedFieldToken, true);
-    // ldc.i4.1 : Load the constant 1 (int) to the stack
-    rewriterwrapper_already_loaded.LoadInt32(1);
-    // ldc.i4.0 : Load the constant 0 (int) to the stack
-    rewriterwrapper_already_loaded.LoadInt32(0);
-    // call int Interlocked.CompareExchange(ref int, int, int) method
-    rewriterwrapper_already_loaded.CallMember(interlocked_compare_member_ref, false);
-    // ldc.i4.1 : Load the constant 1 (int) to the stack
-    rewriterwrapper_already_loaded.LoadInt32(1);
-    // ceq : Compare equality from two values from the stack
-    rewriterwrapper_already_loaded.CreateInstr(CEE_CEQ);
-    // ret : Return the value of the comparison
-    rewriterwrapper_already_loaded.Return();
-
-    if (IsDumpILRewriteEnabled())
-    {
-        mdToken token = 0;
-        TypeInfo typeInfo{};
-        shared::WSTRING methodName = WStr("IsAlreadyLoaded");
-        FunctionInfo caller(token, methodName, typeInfo, MethodSignature(), FunctionMethodSignature());
-        Logger::Info(
-            GetILCodes("*** GenerateVoidILStartupMethod() IsAlreadyLoaded Code: ", &rewriter_already_loaded, caller, metadata_import));
-    }
-
-    hr = rewriter_already_loaded.Export();
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: Call to ILRewriter.Export() failed for ModuleID=", module_id);
-        return hr;
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Add IL instructions into the void method
     ILRewriter rewriter_void(this->info_, nullptr, module_id, *ret_method_token);
     rewriter_void.InitializeTiny();
@@ -3358,8 +3263,18 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
 
     // Step 0) Check if the assembly was already loaded
 
-    // call bool IsAlreadyLoaded()
-    rewriterwrapper_void.CallMember(alreadyLoadedMethodToken, false);
+    // ldsflda _isAssemblyLoaded : Load the address of the "_isAssemblyLoaded" static var
+    rewriterwrapper_void.LoadFieldAddress(isAssemblyLoadedFieldToken, true);
+    // ldc.i4.1 : Load the constant 1 (int) to the stack
+    rewriterwrapper_void.LoadInt32(1);
+    // ldc.i4.0 : Load the constant 0 (int) to the stack
+    rewriterwrapper_void.LoadInt32(0);
+    // call int Interlocked.CompareExchange(ref int, int, int) method
+    rewriterwrapper_void.CallMember(interlocked_compare_member_ref, false);
+    // ldc.i4.1 : Load the constant 1 (int) to the stack
+    rewriterwrapper_void.LoadInt32(1);
+    // ceq : Compare equality from two values from the stack
+    rewriterwrapper_void.CreateInstr(CEE_CEQ);
     // check if the return of the method call is true or false
     ILInstr* pIsNotAlreadyLoadedBranch = rewriterwrapper_void.CreateInstr(CEE_BRFALSE_S);
     // return if IsAlreadyLoaded is true
