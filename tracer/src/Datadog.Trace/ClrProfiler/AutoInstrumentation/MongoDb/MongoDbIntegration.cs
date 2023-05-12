@@ -97,11 +97,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
             string operationName = tracer.Schema.Database.GetOperationName(DatabaseType);
             string serviceName = tracer.Schema.Database.GetServiceName(DatabaseType);
-            MongoDbTags tags = tracer.Schema.Version switch
-            {
-                SchemaVersion.V0 => new MongoDbTags(),
-                _ => new MongoDbV1Tags(),
-            };
+            MongoDbTags tags = tracer.Schema.Database.CreateMongoDbTags();
 
             Scope scope = null;
 
