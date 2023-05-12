@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = MockTracerAgent.Create(Output, useTelemetry: true);
             Output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
 
-            using var telemetry = new MockTelemetryAgent<TelemetryData>();
+            using var telemetry = new MockTelemetryAgent();
             Output.WriteLine($"Assigned port {telemetry.Port} for the telemetry port.");
             EnableAgentlessTelemetry(telemetry.Port);
 
@@ -193,7 +193,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             AssertService(mockAgent.Telemetry.Cast<TelemetryData>(), expectedServiceName, expectedServiceVersion);
         }
 
-        private static void AssertService(MockTelemetryAgent<TelemetryData> telemetry, string expectedServiceName, string expectedServiceVersion)
+        private static void AssertService(MockTelemetryAgent telemetry, string expectedServiceName, string expectedServiceVersion)
         {
             telemetry.WaitForLatestTelemetry(x => x.RequestType == TelemetryRequestTypes.AppStarted);
             AssertService(telemetry.Telemetry, expectedServiceName, expectedServiceVersion);

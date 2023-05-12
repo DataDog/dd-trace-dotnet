@@ -16,19 +16,12 @@ using System.Threading.Tasks;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
 namespace Datadog.Trace.TestHelpers
 {
-    public class MockTelemetryAgent<T> : IDisposable
+    internal class MockTelemetryAgent : IDisposable
     {
-        // Needs to be kept in sync with JsonTelemetryTransport.SerializerSettings, but with the additional converter
-        private static readonly JsonSerializer Serializer = JsonSerializer.Create(new JsonSerializerSettings
-        {
-            NullValueHandling = JsonTelemetryTransport.SerializerSettings.NullValueHandling,
-            ContractResolver = JsonTelemetryTransport.SerializerSettings.ContractResolver,
-            Converters = new List<JsonConverter> { new PayloadConverter() },
-        });
-
         private readonly HttpListener _listener;
         private readonly Thread _listenerThread;
 
@@ -90,7 +83,7 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         public int Port { get; }
 
-        public ConcurrentStack<T> Telemetry { get; } = new();
+        public ConcurrentStack<TelemetryData> Telemetry { get; } = new();
 
         public IImmutableList<NameValueCollection> RequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
@@ -103,14 +96,14 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="timeoutInMilliseconds">The timeout</param>
         /// <param name="sleepTime">The time between checks</param>
         /// <returns>The telemetry that satisfied <paramref name="hasExpectedValues"/></returns>
-        public T WaitForLatestTelemetry(
-            Func<T, bool> hasExpectedValues,
+        public TelemetryData WaitForLatestTelemetry(
+            Func<TelemetryData, bool> hasExpectedValues,
             int timeoutInMilliseconds = 5000,
             int sleepTime = 200)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
 
-            T latest = default;
+            TelemetryData latest = default;
             while (DateTime.UtcNow < deadline)
             {
                 if (Telemetry.TryPeek(out latest) && hasExpectedValues(latest))
@@ -129,13 +122,16 @@ namespace Datadog.Trace.TestHelpers
             _listener?.Close();
         }
 
-        internal static T DeserializeResponse(Stream inputStream)
+        internal static TelemetryData DeserializeResponse(Stream inputStream, string apiVersion, string requestType)
         {
-            T telemetry;
-            using (var sr = new StreamReader(inputStream))
-            using (var jsonTextReader = new JsonTextReader(sr))
+            var serializer = TelemetryConverter.GetSerializer(apiVersion, requestType);
+            TelemetryData telemetry;
+            using var sr = new StreamReader(inputStream);
+            var text = sr.ReadToEnd();
+            var tr = new StringReader(text);
+            using (var jsonTextReader = new JsonTextReader(tr))
             {
-                telemetry = Serializer.Deserialize<T>(jsonTextReader);
+                telemetry = serializer.Deserialize<TelemetryData>(jsonTextReader);
             }
 
             return telemetry;
@@ -150,7 +146,10 @@ namespace Datadog.Trace.TestHelpers
         {
             OnRequestReceived(ctx);
 
-            var telemetry = DeserializeResponse(ctx.Request.InputStream);
+            var apiVersion = ctx.Request.Headers[TelemetryConstants.ApiVersionHeader];
+            var requestType = ctx.Request.Headers[TelemetryConstants.RequestTypeHeader];
+
+            var telemetry = DeserializeResponse(ctx.Request.InputStream, apiVersion, requestType);
             Telemetry.Push(telemetry);
 
             lock (this)
@@ -195,33 +194,134 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        internal class PayloadConverter : JsonConverter
+        internal class TelemetryConverter
+        {
+            private static readonly Dictionary<string, JsonSerializer> V1Serializers;
+
+            static TelemetryConverter()
+            {
+                V1Serializers = new()
+                {
+                    { TelemetryRequestTypes.AppStarted, CreateSerializer<AppStartedPayload>() },
+                    { TelemetryRequestTypes.AppDependenciesLoaded, CreateSerializer<AppDependenciesLoadedPayload>() },
+                    { TelemetryRequestTypes.AppIntegrationsChanged, CreateSerializer<AppIntegrationsChangedPayload>() },
+                    { TelemetryRequestTypes.GenerateMetrics, CreateSerializer<GenerateMetricsPayload>() },
+                    { TelemetryRequestTypes.AppClosing, CreateNullPayloadSerializer() },
+                    { TelemetryRequestTypes.AppHeartbeat, CreateNullPayloadSerializer() },
+                };
+            }
+
+            public static JsonSerializer GetSerializer(string apiVersion, string requestType)
+            {
+                if (apiVersion == TelemetryConstants.ApiVersion)
+                {
+                    if (V1Serializers.TryGetValue(requestType, out var serializer))
+                    {
+                        return serializer;
+                    }
+                }
+
+                throw new Exception($"Unknown {apiVersion} telemetry request type {requestType} ");
+            }
+
+            // Needs to be kept in sync with JsonTelemetryTransport.SerializerSettings, but with the additional converter
+            private static JsonSerializer CreateSerializer<TPayload>() =>
+                JsonSerializer.Create(new JsonSerializerSettings
+                {
+                    NullValueHandling = JsonTelemetryTransport.SerializerSettings.NullValueHandling,
+                    ContractResolver = JsonTelemetryTransport.SerializerSettings.ContractResolver,
+                    Converters = new List<JsonConverter> { new PayloadConverter<TPayload>(), new IntegrationTelemetryDataConverter() },
+                });
+
+            private static JsonSerializer CreateNullPayloadSerializer() =>
+                JsonSerializer.Create(new JsonSerializerSettings
+                {
+                    NullValueHandling = JsonTelemetryTransport.SerializerSettings.NullValueHandling,
+                    ContractResolver = JsonTelemetryTransport.SerializerSettings.ContractResolver,
+                });
+        }
+
+        private class PayloadConverter<TPayload> : JsonConverter
+        {
+            public override bool CanConvert(Type objectType)
+                => objectType == typeof(IPayload);
+
+            // use the default serialization - it works fine
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+                => serializer.Serialize(writer, value);
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+                => serializer.Deserialize<TPayload>(reader);
+        }
+
+        private class IntegrationTelemetryDataConverter : JsonConverter
         {
             public override bool CanConvert(Type objectType)
             {
-                return objectType == typeof(IPayload);
+                return objectType == typeof(IntegrationTelemetryData);
             }
 
+            // use the default serialization - it works fine
             public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-            {
-                // use the default serialization - it works fine
-                serializer.Serialize(writer, value);
-            }
+                => serializer.Serialize(writer, value);
 
             public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
             {
-                object payload = serializer.Deserialize<AppStartedPayload>(reader);
+                // This is a pain, but for some reason Json.NET refuses to deserialize it otherwise
+                string name = null;
+                bool? enabled = null;
+                bool? autoEnabled = null;
+                string error = null;
 
-                payload ??= serializer.Deserialize<AppDependenciesLoadedPayload>(reader);
-                payload ??= serializer.Deserialize<AppIntegrationsChangedPayload>(reader);
-                payload ??= serializer.Deserialize<GenerateMetricsPayload>(reader);
+                var contractResolver = (DefaultContractResolver)serializer.ContractResolver;
+                var nameProperty = contractResolver.GetResolvedPropertyName(nameof(IntegrationTelemetryData.Name));
+                var errorProperty = contractResolver.GetResolvedPropertyName(nameof(IntegrationTelemetryData.Error));
+                var enabledProperty = contractResolver.GetResolvedPropertyName(nameof(IntegrationTelemetryData.Enabled));
+                var autoEnabledProperty = contractResolver.GetResolvedPropertyName(nameof(IntegrationTelemetryData.AutoEnabled));
 
-                if (payload is null)
+                while (reader.Read())
                 {
-                    throw new Exception("Unknown IPayload type");
+                    if (reader.TokenType != JsonToken.PropertyName)
+                    {
+                        break;
+                    }
+
+                    var propertyName = (string)reader.Value;
+                    if (!reader.Read())
+                    {
+                        continue;
+                    }
+
+                    if (nameProperty.Equals(propertyName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        name = serializer.Deserialize<string>(reader);
+                        continue;
+                    }
+
+                    if (errorProperty.Equals(propertyName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        error = serializer.Deserialize<string>(reader);
+                        continue;
+                    }
+
+                    if (enabledProperty.Equals(propertyName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        enabled = serializer.Deserialize<bool>(reader);
+                        continue;
+                    }
+
+                    if (autoEnabledProperty.Equals(propertyName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        autoEnabled = serializer.Deserialize<bool>(reader);
+                    }
                 }
 
-                return payload;
+                if (name is null || enabled is null)
+                {
+                    throw new InvalidDataException($"Missing properties {nameProperty} and {enabledProperty} in serialized {nameof(IntegrationTelemetryData)}");
+                }
+
+                return new IntegrationTelemetryData(name, enabled.Value, autoEnabled, error);
             }
         }
     }

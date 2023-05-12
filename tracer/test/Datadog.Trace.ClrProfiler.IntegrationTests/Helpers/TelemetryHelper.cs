@@ -15,10 +15,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     internal static class TelemetryHelper
     {
-        public static MockTelemetryAgent<TelemetryData> ConfigureTelemetry(this TestHelper helper)
+        public static MockTelemetryAgent ConfigureTelemetry(this TestHelper helper)
         {
             int telemetryPort = TcpPortProvider.GetOpenPort();
-            var telemetry = new MockTelemetryAgent<TelemetryData>(telemetryPort);
+            var telemetry = new MockTelemetryAgent(telemetryPort);
 
             helper.SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "true");
             helper.SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED", "true");
@@ -31,12 +31,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return telemetry;
         }
 
-        public static void AssertIntegrationEnabled(this MockTelemetryAgent<TelemetryData> telemetry, IntegrationId integrationId)
+        public static void AssertIntegrationEnabled(this MockTelemetryAgent telemetry, IntegrationId integrationId)
         {
             telemetry.AssertIntegration(integrationId, enabled: true, autoEnabled: true);
         }
 
-        public static void AssertIntegrationDisabled(this MockTelemetryAgent<TelemetryData> telemetry, IntegrationId integrationId)
+        public static void AssertIntegrationDisabled(this MockTelemetryAgent telemetry, IntegrationId integrationId)
         {
             telemetry.AssertIntegration(integrationId, enabled: false, autoEnabled: true);
         }
@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             AssertIntegration(allData, integrationId, true, true);
         }
 
-        public static void AssertIntegration(this MockTelemetryAgent<TelemetryData> telemetry, IntegrationId integrationId, bool enabled, bool? autoEnabled)
+        public static void AssertIntegration(this MockTelemetryAgent telemetry, IntegrationId integrationId, bool enabled, bool? autoEnabled)
         {
             telemetry.WaitForLatestTelemetry(x => x.RequestType == TelemetryRequestTypes.AppClosing);
 
@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return AssertConfiguration(allData, key, value);
         }
 
-        public static TelemetryData AssertConfiguration(this MockTelemetryAgent<TelemetryData> telemetry, string key, object value)
+        public static TelemetryData AssertConfiguration(this MockTelemetryAgent telemetry, string key, object value)
         {
             telemetry.WaitForLatestTelemetry(x => x.RequestType == TelemetryRequestTypes.AppStarted);
 
@@ -73,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return AssertConfiguration(allData, key, value);
         }
 
-        public static TelemetryData AssertConfiguration(this MockTelemetryAgent<TelemetryData> telemetry, string key) => telemetry.AssertConfiguration(key, value: null);
+        public static TelemetryData AssertConfiguration(this MockTelemetryAgent telemetry, string key) => telemetry.AssertConfiguration(key, value: null);
 
         internal static TelemetryData AssertConfiguration(ICollection<TelemetryData> allData, string key, object value = null)
         {
