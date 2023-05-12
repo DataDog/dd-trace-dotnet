@@ -433,8 +433,8 @@ namespace Datadog.Trace.Agent
                         Interlocked.Increment(ref _droppedP0Traces); // increment since we are sampling out the entire trace
                         var spansDropped = spans.Count - singleSpanSamplingSpans.Count;
                         Interlocked.Add(ref _droppedP0Spans, spansDropped);
-                        TelemetryMetrics.Instance.Record(Count.SpanDropped, MetricTags.DropReason_SingleSpanSampling, spansDropped);
                         spans = new ArraySegment<Span>(singleSpanSamplingSpans.ToArray());
+                    // TODO: Add telemetry metrics to record single span sampling
                     }
                 }
             }
