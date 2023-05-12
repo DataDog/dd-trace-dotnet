@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 
+#nullable enable
+
 namespace Datadog.Trace.ClrProfiler.Managed.Loader
 {
     /// <summary>
@@ -16,11 +18,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        private static CachedAssembly[] _assemblies;
+        private static CachedAssembly[]? _assemblies;
 
         internal static System.Runtime.Loader.AssemblyLoadContext DependencyLoadContext { get; } = new ManagedProfilerAssemblyLoadContext();
 
-        private static string ResolveManagedProfilerDirectory()
+        private static string? ResolveManagedProfilerDirectory()
         {
             string tracerFrameworkDirectory = "netstandard2.0";
 
@@ -35,6 +37,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
             var fullPath = Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory);
 
+            if (!Directory.Exists(fullPath))
+            {
+                StartupLogger.Log($"The managed profiler directory cannot be found at {fullPath}. It seems that the tracer hasn't been properly setup. DD_DOTNET_TRACER_HOME value was: {tracerHomeDirectory} ");
+                return null;
+            }
+
             // We use the List/Array approach due the number of files in the tracer home folder (7 in netstandard, 2 netcoreapp3.1+)
             var assemblies = new List<CachedAssembly>();
             foreach (var file in Directory.EnumerateFiles(fullPath, "*.dll", SearchOption.TopDirectoryOnly))
@@ -42,18 +50,18 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 assemblies.Add(new CachedAssembly(file, null));
             }
 
-            _assemblies = assemblies.ToArray();
-            StartupLogger.Debug("Total number of assemblies: {0}", _assemblies.Length);
+            _assemblies = assemblies.ToArray()!;
+            StartupLogger.Debug("Total number of assemblies: {0}", _assemblies!.Length);
 
             return fullPath;
         }
 
-        private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
+        private static Assembly? AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
         {
             return ResolveAssembly(args.Name);
         }
 
-        private static Assembly ResolveAssembly(string name)
+        private static Assembly? ResolveAssembly(string name)
         {
             var assemblyName = new AssemblyName(name);
             StartupLogger.Debug("Assembly Resolve event received for: {0}", name);
@@ -101,11 +109,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return null;
         }
 
-        private static bool IsDatadogAssembly(string path, out Assembly cachedAssembly)
+        private static bool IsDatadogAssembly(string path, out Assembly? cachedAssembly)
         {
-            for (var i = 0; i < _assemblies.Length; i++)
+            for (var i = 0; i < _assemblies!.Length; i++)
             {
-                var assembly = _assemblies[i];
+                var assembly = _assemblies![i];
                 if (assembly.Path == path)
                 {
                     cachedAssembly = assembly.Assembly;
@@ -119,11 +127,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         private static void SetDatadogAssembly(string path, Assembly cachedAssembly)
         {
-            for (var i = 0; i < _assemblies.Length; i++)
+            for (var i = 0; i < _assemblies!.Length; i++)
             {
-                if (_assemblies[i].Path == path)
+                if (_assemblies![i].Path == path)
                 {
-                    _assemblies[i] = new CachedAssembly(path, cachedAssembly);
+                    _assemblies![i] = new CachedAssembly(path, cachedAssembly);
                     break;
                 }
             }
@@ -132,9 +140,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private readonly struct CachedAssembly
         {
             public readonly string Path;
-            public readonly Assembly Assembly;
+            public readonly Assembly? Assembly;
 
-            public CachedAssembly(string path, Assembly assembly)
+            public CachedAssembly(string path, Assembly? assembly)
             {
                 Path = path;
                 Assembly = assembly;

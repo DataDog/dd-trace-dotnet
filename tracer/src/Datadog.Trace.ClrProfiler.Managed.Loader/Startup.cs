@@ -28,7 +28,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         /// </summary>
         static Startup()
         {
-            ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
+            var managedProfilerDirectory = ResolveManagedProfilerDirectory();
+            if (managedProfilerDirectory is null)
+            {
+                StartupLogger.Log("Managed profiler directory doesn't exist. Bailing out.", ManagedProfilerDirectory);
+                return;
+            }
+
+            ManagedProfilerDirectory = managedProfilerDirectory;
             StartupLogger.Debug("Resolving managed profiler directory to: {0}", ManagedProfilerDirectory);
 
             try
@@ -67,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
         }
 
-        internal static string ManagedProfilerDirectory { get; }
+        internal static string? ManagedProfilerDirectory { get; }
 
         private static void TryInvokeManagedMethod(string typeName, string methodName, string? loaderHelperTypeName = null)
         {
