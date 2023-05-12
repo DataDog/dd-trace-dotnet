@@ -3197,21 +3197,17 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     //   [1] System.IntPtr ("symbolsPtr" - address of symbols bytes)
     //   [2] System.Byte[] ("assemblyBytes" - managed byte array for assembly)
     //   [3] System.Byte[] ("symbolsBytes" - managed byte array for symbols)
-    //   [4] class System.Reflection.Assembly ("loadedAssembly" - assembly instance to save loaded assembly)
     mdSignature locals_signature_token;
-    COR_SIGNATURE locals_signature[11] = {
+    COR_SIGNATURE locals_signature[] = {
         IMAGE_CEE_CS_CALLCONV_LOCAL_SIG, // Calling convention
-        5,                               // Number of variables
+        4,                               // Number of variables
         ELEMENT_TYPE_I,                  // List of variable types
         ELEMENT_TYPE_I,
         ELEMENT_TYPE_SZARRAY,
         ELEMENT_TYPE_U1,
         ELEMENT_TYPE_SZARRAY,
         ELEMENT_TYPE_U1,
-        ELEMENT_TYPE_CLASS
-        // insert compressed token for System.Reflection.Assembly TypeRef here
     };
-    CorSigCompressToken(system_reflection_assembly_type_ref, &locals_signature[9]);
     hr = metadata_emit->GetTokenFromSig(locals_signature, sizeof(locals_signature), &locals_signature_token);
     if (FAILED(hr))
     {
@@ -3437,13 +3433,9 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     rewriterwrapper_void.LoadLocal(3);
     // call System.Reflection.Assembly System.Reflection.Assembly.Load(uint8[], uint8[])
     rewriterwrapper_void.CallMember(appdomain_load_member_ref, false);
-    // stloc.s 6 : Assign the System.Reflection.Assembly object to the "loadedAssembly" variable (locals index 4)
-    rewriterwrapper_void.StLocal(4);
 
     // Step 6) Call instance method Assembly.CreateInstance("Datadog.Trace.ClrProfiler.Managed.Loader.Startup")
 
-    // ldloc.s 6 : Load the "loadedAssembly" variable (locals index 4) to call Assembly.CreateInstance
-    rewriterwrapper_void.LoadLocal(4);
     // ldstr "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"
     rewriterwrapper_void.LoadStr(load_helper_token);
     // callvirt System.Object System.Reflection.Assembly.CreateInstance(string)
