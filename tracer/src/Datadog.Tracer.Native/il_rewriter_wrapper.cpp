@@ -115,10 +115,17 @@ ILInstr* ILRewriterWrapper::LoadArgumentRef(const UINT16 index) const
     return pNewInstr;
 }
 
-ILInstr* ILRewriterWrapper::LoadFieldAddress(const mdFieldDef field_def) const
+ILInstr* ILRewriterWrapper::LoadFieldAddress(const mdFieldDef field_def, bool isStatic) const
 {
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
-    pNewInstr->m_opcode = CEE_LDFLDA;
+    if (isStatic)
+    {
+        pNewInstr->m_opcode = CEE_LDSFLDA;
+    }
+    else
+    {
+        pNewInstr->m_opcode = CEE_LDFLDA;
+    }
     pNewInstr->m_Arg32 = field_def;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
     return pNewInstr;

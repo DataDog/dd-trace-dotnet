@@ -2842,30 +2842,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
-    auto typespecs = EnumTypeSpecs(metadata_import);
-    auto typespecsIterator = typespecs.begin();
-    while (typespecsIterator != typespecs.end())
-    {
-        const mdTypeSpec currentTypeSpec = *typespecsIterator;
-
-        PCCOR_SIGNATURE currentSignature = new COR_SIGNATURE [20];
-        ULONG currentLength;
-        hr = metadata_import->GetTypeSpecFromToken(currentTypeSpec, &currentSignature, &currentLength);
-        if (FAILED(hr))
-        {
-            Logger::Warn("GenerateVoidILStartupMethod: GetTypeSpecFromToken failed");
-            return hr;
-        }
-
-        Logger::Warn("Token: ", HexStr(currentTypeSpec), " : ", HexStr(currentSignature, currentLength));
-
-        delete[] currentSignature;
-        typespecsIterator = ++typespecsIterator;
-    }
-
-    Logger::Warn("Single: ", system_runtime_type_handle_type_ref, " HEX: ", shared::HexStr(system_runtime_type_handle_type_ref));
-    Logger::Warn("Array: ", system_byte_array_type_ref, " HEX: ", shared::HexStr(system_byte_array_type_ref));
-
     // ****************************************************************************************************************
     // Member Refs
     // ****************************************************************************************************************
@@ -3346,45 +3322,26 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     ILRewriter rewriter_already_loaded(this->info_, nullptr, module_id, alreadyLoadedMethodToken);
     rewriter_already_loaded.InitializeTiny();
 
+    ILRewriterWrapper rewriterwrapper_already_loaded(&rewriter_already_loaded);
+    rewriterwrapper_already_loaded.SetILPosition(rewriter_already_loaded.GetILList()->m_pNext);
+
     ILInstr* pALFirstInstr = rewriter_already_loaded.GetILList()->m_pNext;
     ILInstr* pALNewInstr = nullptr;
 
     // ldsflda _isAssemblyLoaded : Load the address of the "_isAssemblyLoaded" static var
-    pALNewInstr = rewriter_already_loaded.NewILInstr();
-    pALNewInstr->m_opcode = CEE_LDSFLDA;
-    pALNewInstr->m_Arg32 = isAssemblyLoadedFieldToken;
-    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
+    rewriterwrapper_already_loaded.LoadFieldAddress(isAssemblyLoadedFieldToken, true);
     // ldc.i4.1 : Load the constant 1 (int) to the stack
-    pALNewInstr = rewriter_already_loaded.NewILInstr();
-    pALNewInstr->m_opcode = CEE_LDC_I4_1;
-    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
+    rewriterwrapper_already_loaded.LoadInt32(1);
     // ldc.i4.0 : Load the constant 0 (int) to the stack
-    pALNewInstr = rewriter_already_loaded.NewILInstr();
-    pALNewInstr->m_opcode = CEE_LDC_I4_0;
-    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
+    rewriterwrapper_already_loaded.LoadInt32(0);
     // call int Interlocked.CompareExchange(ref int, int, int) method
-    pALNewInstr = rewriter_already_loaded.NewILInstr();
-    pALNewInstr->m_opcode = CEE_CALL;
-    pALNewInstr->m_Arg32 = interlocked_compare_member_ref;
-    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
+    rewriterwrapper_already_loaded.CallMember(interlocked_compare_member_ref, false);
     // ldc.i4.1 : Load the constant 1 (int) to the stack
-    pALNewInstr = rewriter_already_loaded.NewILInstr();
-    pALNewInstr->m_opcode = CEE_LDC_I4_1;
-    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
+    rewriterwrapper_already_loaded.LoadInt32(1);
     // ceq : Compare equality from two values from the stack
-    pALNewInstr = rewriter_already_loaded.NewILInstr();
-    pALNewInstr->m_opcode = CEE_CEQ;
-    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
+    rewriterwrapper_already_loaded.CreateInstr(CEE_CEQ);
     // ret : Return the value of the comparison
-    pALNewInstr = rewriter_already_loaded.NewILInstr();
-    pALNewInstr->m_opcode = CEE_RET;
-    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
+    rewriterwrapper_already_loaded.Return();
 
     if (IsDumpILRewriteEnabled())
     {
