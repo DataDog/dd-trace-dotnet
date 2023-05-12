@@ -350,6 +350,7 @@ public class IastInstrumentationUnitTests : TestHelper
         using (var agent = EnvironmentHelper.GetMockAgent())
         {
             EnableIast(true);
+            EnableEvidenceRedaction(false);
             string arguments = string.Empty;
 #if NET462
             arguments = @" /Framework:"".NETFramework,Version=v4.6.2"" ";

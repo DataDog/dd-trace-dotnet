@@ -36,7 +36,7 @@ internal class IastRequestContext
     {
         lock (_vulnerabilityLock)
         {
-            _vulnerabilityBatch ??= new();
+            _vulnerabilityBatch ??= IastModule.GetVulnerabilityBatch();
             _vulnerabilityBatch.Add(vulnerability);
         }
     }
