@@ -11,6 +11,7 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Spectre.Console;
 
 using static Datadog.Trace.Tools.Runner.Checks.Resources;
@@ -21,7 +22,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
     {
         public static Task<bool> RunAsync(ProcessInfo process)
         {
-            var settings = new ExporterSettings(process.Configuration);
+            var settings = new ExporterSettings(process.Configuration, NullConfigurationTelemetry.Instance);
 
             var url = settings.AgentUri.ToString();
 
