@@ -35,7 +35,6 @@ public class AspNetCore5IastAsm : RcmBase
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
 
-        // IncludeAllHttpSpans = true;
         var url = "/Iast/ExecuteQueryFromBodyQueryData";
         var body = "{\"Query\": \"SELECT Surname from Persons where name='Vicent'\"}";
         await TryStartApp();
