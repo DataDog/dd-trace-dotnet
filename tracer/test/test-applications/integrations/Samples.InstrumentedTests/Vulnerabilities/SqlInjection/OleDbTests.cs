@@ -1,10 +1,11 @@
+using System;
 using System.Data;
 using System.Data.OleDb;
 using System.Threading;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
-public class OleDbTests : InstrumentationTestsBase
+public class OleDbTests : InstrumentationTestsBase, IDisposable
 {
     protected string taintedValue = "tainted";
     protected string notTaintedValue = "nottainted";
@@ -19,19 +20,15 @@ public class OleDbTests : InstrumentationTestsBase
 
     public OleDbTests()
     {
-        // connectionString = "Provider=SQLOLEDB;" + SqlServerInitializer.InitDatabase();
-#if NETCOREAPP2_1_OR_GREATER
-        var connection = MicrosoftDataSqliteDdbbCreator.Create();
-        dbConnection = new OleDbConnection(connectionString);
+        var dbConnection = OleDDBBCreator.Create();
         dbConnection.Open();
         AddTainted(taintedValue);
-#endif
         CommandUnsafe = "SELECT * from Persons where Name like '" + taintedValue + "'";
         CommandUnsafe2 = "Update Persons set Name = Name where Name ='" + taintedValue + "'";
         CommandSafe = "SELECT * from Persons where Name like 'nottainted'";
     }
 
-    public void OleDbTestCleanup()
+    public void Dispose()
     {
         dbConnection?.Close();
         dbConnection = null;
