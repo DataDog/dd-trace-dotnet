@@ -2777,17 +2777,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Get a TypeRef for System.Runtime.InteropServices.Marshal
-    mdTypeRef marshal_type_ref;
-    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Runtime.InteropServices.Marshal"),
-                                            &marshal_type_ref);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName:System.Runtime.InteropServices.Marshal failed");
-        return hr;
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Get a TypeRef for System.Reflection.Assembly
     mdTypeRef system_reflection_assembly_type_ref;
     hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Reflection.Assembly"),
@@ -2958,22 +2947,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Get a MemberRef for System.Runtime.InteropServices.Marshal.WriteIntPtr(IntPtr, IntPtr)
-    mdMemberRef marshal_writeintptr_member_ref;
-    COR_SIGNATURE marshal_writeintptr_signature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
-                                                     2,                             // Number of parameters
-                                                     ELEMENT_TYPE_VOID,
-                                                     ELEMENT_TYPE_I,                // List of parameter types
-                                                     ELEMENT_TYPE_I };
-    hr = metadata_emit->DefineMemberRef(marshal_type_ref, WStr("WriteIntPtr"), marshal_writeintptr_signature,
-                                        sizeof(marshal_writeintptr_signature), &marshal_writeintptr_member_ref);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef:WriteIntPtr failed");
-        return hr;
-    }
-
     // ****************************************************************************************************************
     // String Defs
     // ****************************************************************************************************************
@@ -3121,25 +3094,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Define a new static method void FixUnmanagedArrayToken(IntPtr value) to write the method table value in the unmanaged pointer
-
-    mdMethodDef fixUnmanagedArrayMethodToken;
-    BYTE fix_unmanaged_array_signature[] = {
-        IMAGE_CEE_CS_CALLCONV_DEFAULT,
-        1,
-        ELEMENT_TYPE_VOID,
-        ELEMENT_TYPE_I,
-    };
-
-    hr = metadata_emit->DefineMethod(new_type_def, WStr("FixUnmanagedArrayToken"), mdStatic | mdPrivate, fix_unmanaged_array_signature,
-                                     sizeof(fix_unmanaged_array_signature), 0, 0, &fixUnmanagedArrayMethodToken);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineMethod:FixUnmanagedArrayToken failed");
-        return hr;
-    }
-
     // ****************************************************************************************************************
     // Locals signature
     // ****************************************************************************************************************
@@ -3165,66 +3119,9 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Locals signature for FixUnmanagedArrayToken method
-    mdSignature  fix_unmanaged_array_locals_signature_token;
-    COR_SIGNATURE fix_unmanaged_array_locals_signature[5] = {
-        IMAGE_CEE_CS_CALLCONV_LOCAL_SIG,
-        1,
-        ELEMENT_TYPE_VALUETYPE,
-    };
-    CorSigCompressToken(system_runtime_type_handle_type_ref, &fix_unmanaged_array_locals_signature[3]);
-    hr = metadata_emit->GetTokenFromSig(fix_unmanaged_array_locals_signature, sizeof(fix_unmanaged_array_locals_signature), &fix_unmanaged_array_locals_signature_token);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: Unable to generate locals signature. ModuleID=", module_id);
-        return hr;
-    }
-
     // ****************************************************************************************************************
     // IL instructions
     // ****************************************************************************************************************
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Add IL instructions into the FixUnmanagedArrayToken method
-    ILRewriter rewriter_fix_unmanaged_array(this->info_, nullptr, module_id, fixUnmanagedArrayMethodToken);
-    rewriter_fix_unmanaged_array.InitializeTiny();
-    rewriter_fix_unmanaged_array.SetTkLocalVarSig(fix_unmanaged_array_locals_signature_token);
-
-    ILRewriterWrapper rewriterwrapper_fix_unmanaged_array(&rewriter_fix_unmanaged_array);
-    rewriterwrapper_fix_unmanaged_array.SetILPosition(rewriter_fix_unmanaged_array.GetILList()->m_pNext);
-
-    // ldarg_0 : Load the argument (IntPtr)
-    rewriterwrapper_fix_unmanaged_array.LoadArgument(0);
-    // Load TypeHandle for byte[]
-    rewriterwrapper_fix_unmanaged_array.LoadToken(system_byte_array_type_ref);
-    // Store TypeHandle into the local
-    rewriterwrapper_fix_unmanaged_array.StLocal(0);
-    // Load the address of the local
-    rewriterwrapper_fix_unmanaged_array.LoadLocalAddress(0);
-    // Call get_Value() from the TypeHandle
-    rewriterwrapper_fix_unmanaged_array.CallMember(system_runtimetypehandle_get_value_member_ref, false);
-    // Call Marshal.WriteIntPtr(IntPtr, IntPtr)
-    rewriterwrapper_fix_unmanaged_array.CallMember(marshal_writeintptr_member_ref, false);
-    // Return the value
-    rewriterwrapper_fix_unmanaged_array.Return();
-
-    if (IsDumpILRewriteEnabled())
-    {
-        mdToken token = 0;
-        TypeInfo typeInfo{};
-        shared::WSTRING methodName = WStr("FixUnmanagedArrayToken");
-        FunctionInfo caller(token, methodName, typeInfo, MethodSignature(), FunctionMethodSignature());
-        Logger::Info(
-            GetILCodes("*** GenerateVoidILStartupMethod() FixUnmanagedArrayToken Code: ", &rewriter_fix_unmanaged_array, caller, metadata_import));
-    }
-
-    hr = rewriter_fix_unmanaged_array.Export();
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: Call to ILRewriter.Export() failed for ModuleID=", module_id);
-        return hr;
-    }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Add IL instructions into the GetUnmanagedArray method
@@ -3329,18 +3226,14 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     // call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out IntPtr symbolsPtr)
     rewriterwrapper_void.CallMember(pinvoke_method_def, false);
 
-    // Step 3) Fix the methodTable in the assemblyPtr and reinterpret the IntPtr as a Byte array.
+    // Step 3) Reinterpret the assembly IntPtr as a Byte array.
 
-    rewriterwrapper_void.LoadLocal(0);
-    rewriterwrapper_void.CallMember(fixUnmanagedArrayMethodToken, false);
     rewriterwrapper_void.LoadLocalAddress(0);
     rewriterwrapper_void.CallMember(getUnmanagedArrayMethodToken, false);
     rewriterwrapper_void.CreateInstr(CEE_LDIND_REF);
 
-    // Step 4) Fix the methodTable in the symbolsPtr and reinterpret the IntPtr as a Byte array.
+    // Step 4) Reinterpret the symbols IntPtr as a Byte array.
 
-    rewriterwrapper_void.LoadLocal(1);
-    rewriterwrapper_void.CallMember(fixUnmanagedArrayMethodToken, false);
     rewriterwrapper_void.LoadLocalAddress(1);
     rewriterwrapper_void.CallMember(getUnmanagedArrayMethodToken, false);
     rewriterwrapper_void.CreateInstr(CEE_LDIND_REF);
@@ -3623,11 +3516,13 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(void* typeHandle, BYTE** pAssemblyA
 
     BYTE* newAssemblyArray = new BYTE[assemblySize + 24];
     memcpy(&newAssemblyArray[24], *pAssemblyArray, assemblySize);
+    *((INT64*) &newAssemblyArray[8]) = reinterpret_cast<INT64>(typeHandle);
     *((INT32*) &newAssemblyArray[16]) = assemblySize;
     *pAssemblyArray = newAssemblyArray + 8;
 
     BYTE* newSymbolsArray = new BYTE[symbolsSize + 24];
     memcpy(&newSymbolsArray[24], *pSymbolsArray, symbolsSize);
+    *((INT64*) &newSymbolsArray[8]) = reinterpret_cast<INT64>(typeHandle);
     *((INT32*) &newSymbolsArray[16]) = symbolsSize;
     *pSymbolsArray = newSymbolsArray + 8;
 }
