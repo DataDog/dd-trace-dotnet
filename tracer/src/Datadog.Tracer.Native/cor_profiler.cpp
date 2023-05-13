@@ -3514,6 +3514,7 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(void* typeHandle, BYTE** pAssemblyA
     }
 #endif
 
+#ifdef BIT64
     BYTE* newAssemblyArray = new BYTE[assemblySize + 24];
     memcpy(&newAssemblyArray[24], *pAssemblyArray, assemblySize);
     *((INT64*) &newAssemblyArray[8]) = reinterpret_cast<INT64>(typeHandle);
@@ -3525,6 +3526,20 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(void* typeHandle, BYTE** pAssemblyA
     *((INT64*) &newSymbolsArray[8]) = reinterpret_cast<INT64>(typeHandle);
     *((INT32*) &newSymbolsArray[16]) = symbolsSize;
     *pSymbolsArray = newSymbolsArray + 8;
+#else
+    BYTE* newAssemblyArray = new BYTE[assemblySize + 12];
+    memcpy(&newAssemblyArray[12], *pAssemblyArray, assemblySize);
+    *((INT32*) &newAssemblyArray[4]) = reinterpret_cast<INT32>(typeHandle);
+    *((INT32*) &newAssemblyArray[8]) = assemblySize;
+    *pAssemblyArray = newAssemblyArray + 4;
+
+    BYTE* newSymbolsArray = new BYTE[symbolsSize + 12];
+    memcpy(&newSymbolsArray[12], *pSymbolsArray, symbolsSize);
+    *((INT32*) &newSymbolsArray[4]) = reinterpret_cast<INT32>(typeHandle);
+    *((INT32*) &newSymbolsArray[8]) = symbolsSize;
+    *pSymbolsArray = newSymbolsArray + 4;
+#endif
+
 }
 
 // ***
