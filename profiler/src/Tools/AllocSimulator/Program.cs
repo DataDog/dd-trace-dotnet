@@ -3,15 +3,25 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+
 namespace AllocSimulator
 {
     public class Program
     {
         private enum SamplingMode
         {
+            None = 0,
             Fixed = 1,
             Poisson = 2,
             PoissonWithAllocationContext = 3
+        }
+
+        private enum UpscalingMode
+        {
+            None = 0,
+            Fixed = 1,
+            Poisson = 2,
         }
 
         public static void Main(string[] args)
@@ -24,7 +34,9 @@ namespace AllocSimulator
                     out string allocDirectory,
                     out int meanPoisson,
                     out SamplingMode sampling1,
-                    out SamplingMode sampling2);
+                    out SamplingMode sampling2,
+                    out UpscalingMode upscalingMode
+                    );
 
                 if (string.IsNullOrEmpty(allocDirectory))
                 {
@@ -42,7 +54,7 @@ namespace AllocSimulator
 
                     if (extension == ".pprof")
                     {
-                        DumpProfile(allocFile);
+                        DumpProfile(allocFile, upscalingMode, meanPoisson);
                         return;
                     }
                 }
@@ -59,10 +71,11 @@ namespace AllocSimulator
             }
             catch (InvalidOperationException x)
             {
-                Console.WriteLine("AllocSimulator <allocations recording file .balloc or .alloc> [-m Poisson mean] [-d directory] [-c x y with 1, 2, or 3 for x or y] ");
-                Console.WriteLine("   for -c, 1 = Fixed 100 KB threshold");
-                Console.WriteLine("           2 = Poisson");
-                Console.WriteLine("           3 = Poisson after 8 KB allocation context");
+                Console.WriteLine("AllocSimulator <allocations recording file .balloc or .alloc> [-m Poisson mean] [-d directory] [-c x y with 1, 2, or 3 for x or y] [-u x with 1, 2, or 3 for x]");
+                Console.WriteLine("   -u is supported only when comparing .pprof and .balloc");
+                Console.WriteLine("   for -c and -u, 1 = Fixed 100 KB threshold");
+                Console.WriteLine("                  2 = Poisson");
+                Console.WriteLine("                  3 = Poisson after 8 KB allocation context");
                 Console.WriteLine("----------------------------------------------------");
                 Console.WriteLine($"Error: {x.Message}");
             }
@@ -70,13 +83,15 @@ namespace AllocSimulator
 
         // if both .balloc and .pprof files exist, compare them
         // else if only .pprof exist, dump the allocations (should be sampled)
-        private static void DumpProfile(string filename)
+        // if upcaling mode is provided, compute the upscaled value
+        private static void DumpProfile(string filename, UpscalingMode upscalingMode, int meanPoisson)
         {
             try
             {
                 // get allocations from the .pprof
                 var profile = ProfileAllocations.Load(filename);
                 var sampledAllocations = profile.GetAllocations().ToList();
+                var totalSampledBytes = sampledAllocations.Sum(alloc => alloc.Size);
 
                 // get the recorded allocations if any
 #pragma warning disable CS8604 // Possible null reference argument.
@@ -99,16 +114,44 @@ namespace AllocSimulator
 
                 Console.WriteLine($"Comparing allocations between {filename} and {recordedAllocationsFile}");
                 Console.WriteLine("---------------------------------------------");
+                IUpscaler upscaler = null;
+                if (upscalingMode == UpscalingMode.Poisson)
+                {
+                    upscaler = new PoissonUpscaler(meanPoisson);
+                }
+
                 IAllocProvider provider = new BinaryFileAllocProvider(recordedAllocationsFile);
-                var realAllocations = AggregateAllocations(provider.GetAllocations());
-                foreach (var realAllocation in realAllocations.OrderBy(alloc => alloc.Size))
+                var realAllocations = AggregateAllocations(provider.GetAllocations()).OrderBy(alloc => alloc.Size).ToList();
+                var totalAllocatedBytes = realAllocations.Sum(alloc => alloc.Size);
+                foreach (var realAllocation in realAllocations)
                 {
                     Console.WriteLine($"{realAllocation.Count,9} | {realAllocation.Size,13} - {realAllocation.Type}");
+
+                    float countRatio = 0;
+                    float sizeRatio = 0;
 
                     var sampled = sampledAllocations.FirstOrDefault(a => (a.Type.EndsWith(realAllocation.Type)));
                     if (sampled != null)
                     {
                         Console.WriteLine($"{sampled.Count,9} | {sampled.Size,13}");
+
+                        AllocInfo upscaled = new AllocInfo();
+                        if (upscaler != null)
+                        {
+                            // Poisson
+                            upscaler.Upscale(sampled, ref upscaled);
+                        }
+                        else
+                        {
+                            // Fixed
+                            upscaled.Size = (long)((sampled.Size * totalAllocatedBytes) / totalSampledBytes);
+                            upscaled.Count = (int)((sampled.Count * totalAllocatedBytes) / totalSampledBytes);
+                        }
+
+                        countRatio = -(float)(realAllocation.Count - upscaled.Count) / (float)realAllocation.Count;
+                        sizeRatio = -(float)(realAllocation.Size - upscaled.Size) / (float)realAllocation.Size;
+                        Console.WriteLine($"{upscaled.Count,9} | {upscaled.Size,13}  {((upscalingMode == UpscalingMode.Fixed) ? "Fixed" : "Poisson")}");
+                        Console.WriteLine($"{countRatio,9:P1} | {sizeRatio,13:P1}");
                     }
                     else
                     {
@@ -308,13 +351,15 @@ namespace AllocSimulator
             out string allocDirectory,
             out int meanPoisson,
             out SamplingMode sampling1,
-            out SamplingMode sampling2)
+            out SamplingMode sampling2,
+            out UpscalingMode upscalingMode)
         {
             allocFile = string.Empty;
             allocDirectory = string.Empty;
             meanPoisson = 512;  // 512 KB is the mean of the distribution for Java
             sampling1 = SamplingMode.Fixed;
             sampling2 = SamplingMode.PoissonWithAllocationContext;
+            upscalingMode = UpscalingMode.None;
 
             SamplingMode GetSamplingMode(string[] args, int i)
             {
@@ -341,6 +386,31 @@ namespace AllocSimulator
                     throw new InvalidOperationException($"Missing sampling mode on the command line...");
                 }
             }
+            UpscalingMode GetUpscalingMode(string[] args, int i)
+            {
+                if (i < args.Length)
+                {
+                    if (!int.TryParse(args[i], out int val))
+                    {
+                        throw new InvalidOperationException($"Invalid comparison = {args[i]}");
+                    }
+                    else
+                    {
+                        if ((val > 2) || (val < 1))
+                        {
+                            throw new InvalidOperationException($"Invalid comparison = {args[i]} (must be 1 or 2)");
+                        }
+                        else
+                        {
+                            return (UpscalingMode)val;
+                        }
+                    }
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Missing upscaling mode on the command line...");
+                }
+            }
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -357,6 +427,17 @@ namespace AllocSimulator
 
                     i++;
                     sampling2 = GetSamplingMode(args, i);
+                }
+                else
+                if ("-u".Equals(arg, StringComparison.OrdinalIgnoreCase))
+                {
+                    // should provide the upscaling mode
+                    //  1 = fixed threshold
+                    //  2 = Poisson threshold
+                    //  3 = Poisson threshold after allocation context
+                    //
+                    i++;
+                    upscalingMode = GetUpscalingMode(args, i);
                 }
                 else
                 if ("-m".Equals(arg, StringComparison.OrdinalIgnoreCase))
@@ -388,3 +469,5 @@ namespace AllocSimulator
         }
     }
 }
+
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.

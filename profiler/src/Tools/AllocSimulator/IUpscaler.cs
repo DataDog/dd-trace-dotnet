@@ -12,5 +12,8 @@ namespace AllocSimulator
         public IEnumerable<AllocInfo> GetUpscaledAllocs();
 
         public IEnumerable<AllocInfo> GetSampledAllocs();
+
+        public void Upscale(AllocInfo sampled, ref AllocInfo upscaled);
+
     }
 }
