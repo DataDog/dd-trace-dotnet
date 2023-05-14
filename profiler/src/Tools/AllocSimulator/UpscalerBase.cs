@@ -83,6 +83,11 @@ namespace AllocSimulator
             }
         }
 
+        public void Upscale(AllocInfo sampled, ref AllocInfo upscaled)
+        {
+            OnUpscale(sampled, ref upscaled);
+        }
+
         protected abstract void OnUpscale(AllocInfo sampled, ref AllocInfo upscaled);
     }
 }
