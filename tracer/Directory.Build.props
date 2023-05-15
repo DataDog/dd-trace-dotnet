@@ -16,9 +16,11 @@
 
   <!-- StyleCop -->
   <ItemGroup>
+    <!--
     <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.*" PrivateAssets="all" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Link="stylecop.json" />
     <Compile Include="$(MSBuildThisFileDirectory)GlobalSuppressions.cs" Link="GlobalSuppressions.solution.cs" />
+    -->
   </ItemGroup>
 
   <!-- Deterministic builds -->
@@ -30,7 +32,7 @@
   <PropertyGroup>
     <SolutionDir Condition="'$(SolutionDir)'==''">$(MSBuildThisFileDirectory)..\</SolutionDir>
   </PropertyGroup>
-  
+
   <!-- OS Detection Properties -->
   <PropertyGroup>
     <IsWindows Condition="'$(OS)' == 'Windows_NT'">true</IsWindows>
@@ -49,5 +51,5 @@
       </PropertyGroup>
     </Otherwise>
   </Choose>
-  
+
 </Project>
