@@ -7,10 +7,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
+using FluentAssertions;
 using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
@@ -101,6 +101,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         }
 
                         value = value.Replace(".000", string.Empty);
+                    }
+
+                    if (spanDataItem.Key == CommonTags.CINodeLabels)
+                    {
+                        var labelsExpected = Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<string[]>(
+                            spanDataItem.Value);
+                        Array.Sort(labelsExpected);
+
+                        var labelsActual =
+                            Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<string[]>(value);
+                        Array.Sort(labelsActual);
+
+                        labelsActual.Should().Equal(labelsExpected);
+                        continue;
                     }
 
                     Assert.Equal(spanDataItem.Value, value);

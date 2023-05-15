@@ -9,7 +9,6 @@ using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
@@ -24,8 +23,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly IDatadogLogger _log = DatadogLogging.GetLoggerFor(typeof(WafLibraryInvoker));
         private readonly GetVersionDelegate _getVersionField;
         private readonly InitDelegate _initField;
-        private readonly UpdateRuleDelegate _updateRuleField;
-        private readonly UpdateRuleDelegate _toggleRulesField;
         private readonly InitContextDelegate _initContextField;
         private readonly RunDelegate _runField;
         private readonly DestroyDelegate _destroyField;
@@ -44,6 +41,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly IntPtr _freeObjectFuncField;
         private readonly FreeRulesetInfoDelegate _rulesetInfoFreeField;
         private readonly SetupLogCallbackDelegate _setupLogCallbackField;
+        private readonly UpdateDelegate _updateField;
         private string _version = null;
 
         private WafLibraryInvoker(IntPtr libraryHandle)
@@ -53,6 +51,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _initContextField = GetDelegateForNativeFunction<InitContextDelegate>(libraryHandle, "ddwaf_context_init");
             _runField = GetDelegateForNativeFunction<RunDelegate>(libraryHandle, "ddwaf_run");
             _destroyField = GetDelegateForNativeFunction<DestroyDelegate>(libraryHandle, "ddwaf_destroy");
+            _updateField = GetDelegateForNativeFunction<UpdateDelegate>(libraryHandle, "ddwaf_update");
             _contextDestroyField = GetDelegateForNativeFunction<ContextDestroyDelegate>(libraryHandle, "ddwaf_context_destroy");
             _objectInvalidField = GetDelegateForNativeFunction<ObjectInvalidDelegate>(libraryHandle, "ddwaf_object_invalid");
             _objectStringLengthField = GetDelegateForNativeFunction<ObjectStringLengthDelegate>(libraryHandle, "ddwaf_object_stringl");
@@ -69,8 +68,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _freeResultField = GetDelegateForNativeFunction<FreeResultDelegate>(libraryHandle, "ddwaf_result_free");
             _rulesetInfoFreeField = GetDelegateForNativeFunction<FreeRulesetInfoDelegate>(libraryHandle, "ddwaf_ruleset_info_free");
             _getVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(libraryHandle, "ddwaf_get_version");
-            _updateRuleField = GetDelegateForNativeFunction<UpdateRuleDelegate>(libraryHandle, "ddwaf_update_rule_data");
-            _toggleRulesField = GetDelegateForNativeFunction<UpdateRuleDelegate>(libraryHandle, "ddwaf_toggle_rules");
             // setup logging
             var setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(libraryHandle, "ddwaf_set_log_cb");
             // convert to a delegate and attempt to pin it by assigning it to  field
@@ -84,13 +81,13 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate void FreeResultDelegate(ref DdwafResultStruct output);
 
-        private delegate void FreeRulesetInfoDelegate(ref DdwafRuleSetInfoStruct output);
+        private delegate void FreeRulesetInfoDelegate(DdwafRuleSetInfo output);
 
-        private delegate IntPtr InitDelegate(IntPtr wafRule, ref DdwafConfigStruct config, ref DdwafRuleSetInfoStruct ruleSetInfo);
+        private delegate IntPtr InitDelegate(IntPtr wafRule, ref DdwafConfigStruct config, DdwafRuleSetInfo ruleSetInfo);
 
-        private delegate DDWAF_RET_CODE UpdateRuleDelegate(IntPtr powerwafHandle, IntPtr data);
+        private delegate IntPtr UpdateDelegate(IntPtr oldWafHandle, IntPtr wafRule, DdwafRuleSetInfo ruleSetInfo);
 
-        private delegate IntPtr InitContextDelegate(IntPtr powerwafHandle);
+        private delegate IntPtr InitContextDelegate(IntPtr wafHandle);
 
         private delegate DDWAF_RET_CODE RunDelegate(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs);
 
@@ -192,11 +189,16 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return _version;
         }
 
-        internal IntPtr Init(IntPtr wafRule, ref DdwafConfigStruct config, ref DdwafRuleSetInfoStruct ruleSetInfo) => _initField(wafRule, ref config, ref ruleSetInfo);
+        internal IntPtr Init(IntPtr wafRule, ref DdwafConfigStruct config, DdwafRuleSetInfo ruleSetInfo) => _initField(wafRule, ref config, ruleSetInfo);
 
-        internal DDWAF_RET_CODE UpdateRuleData(IntPtr powerwafHandle, IntPtr data) => _updateRuleField(powerwafHandle, data);
-
-        internal DDWAF_RET_CODE ToggleRules(IntPtr powerwafHandle, IntPtr data) => _toggleRulesField(powerwafHandle, data);
+        /// <summary>
+        /// Only give a non null ruleSetInfo when updating rules. When updating rules overrides, rules datas, the ruleSetInfo will return no error and no diagnostics, even if there are, it's misleading, so give null in this case.
+        /// </summary>
+        /// <param name="oldWafHandle">current waf handle</param>
+        /// <param name="wafData">a pointer to the new waf data (rules or overrides or other)</param>
+        /// <param name="ruleSetInfo">errors and diagnostics of the update, only for valid for new rules</param>
+        /// <returns>the new waf handle, if error, will be a nullptr</returns>
+        internal IntPtr Update(IntPtr oldWafHandle, IntPtr wafData, DdwafRuleSetInfo ruleSetInfo) => _updateField(oldWafHandle, wafData, ruleSetInfo);
 
         internal IntPtr InitContext(IntPtr powerwafHandle) => _initContextField(powerwafHandle);
 
@@ -256,7 +258,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         /// Only this function needs to be called on DdwafRuleSetInfoStruct, no need to dispose the Errors object inside because waf takes care of it
         /// </summary>
         /// <param name="output">the ruleset info structure</param>
-        internal void RuleSetInfoFree(ref DdwafRuleSetInfoStruct output) => _rulesetInfoFreeField(ref output);
+        internal void RuleSetInfoFree(DdwafRuleSetInfo output) => _rulesetInfoFreeField(output);
 
         private void LoggingCallback(
             DDWAF_LOG_LEVEL level,

@@ -28,7 +28,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationManager));
         private static readonly object LockObject = new object();
-        private static readonly ConcurrentQueue<Action<RemoteConfigurationManager>> _initializationQueue = new ConcurrentQueue<Action<RemoteConfigurationManager>>();
+        private static readonly ConcurrentQueue<Action<RemoteConfigurationManager>> _initializationQueue = new();
 
         private readonly string _id;
         private readonly RcmClientTracer _rcmTracer;
@@ -36,13 +36,17 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private readonly IRemoteConfigurationApi _remoteConfigurationApi;
         private readonly IGitMetadataTagsProvider _gitMetadataTagsProvider;
         private readonly TimeSpan _pollInterval;
+        private readonly IRcmSubscriptionManager _subscriptionManager;
 
         private readonly CancellationTokenSource _cancellationSource;
-        private readonly ConcurrentDictionary<string, Product> _products;
 
-        private BigInteger _capabilities = new();
+        /// <summary>
+        /// Key is the path
+        /// </summary>
+        private readonly Dictionary<string, RemoteConfigurationCache> _appliedConfigurations = new();
 
-        private int _rootVersion;
+        private readonly int _rootVersion;
+        private BigInteger _capabilities;
         private int _targetsVersion;
         private string? _lastPollError;
         private bool _isPollingStarted;
@@ -56,7 +60,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             string id,
             RcmClientTracer rcmTracer,
             TimeSpan pollInterval,
-            IGitMetadataTagsProvider gitMetadataTagsProvider)
+            IGitMetadataTagsProvider gitMetadataTagsProvider,
+            IRcmSubscriptionManager subscriptionManager)
         {
             _discoveryService = discoveryService;
             _remoteConfigurationApi = remoteConfigurationApi;
@@ -68,14 +73,14 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             _rootVersion = 1;
             _targetsVersion = 0;
             _lastPollError = null;
+            _subscriptionManager = subscriptionManager;
             _cancellationSource = new CancellationTokenSource();
-            _products = new ConcurrentDictionary<string, Product>();
             discoveryService.SubscribeToChanges(SetRcmEnabled);
         }
 
         public static RemoteConfigurationManager? Instance { get; private set; }
 
-        public static RemoteConfigurationManager Create(IDiscoveryService discoveryService, IRemoteConfigurationApi remoteConfigurationApi, RemoteConfigurationSettings settings, string serviceName, ImmutableTracerSettings tracerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
+        public static RemoteConfigurationManager Create(IDiscoveryService discoveryService, IRemoteConfigurationApi remoteConfigurationApi, RemoteConfigurationSettings settings, string serviceName, ImmutableTracerSettings tracerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IRcmSubscriptionManager subscriptionManager)
         {
             var tags = GetTags(settings, tracerSettings);
             lock (LockObject)
@@ -86,7 +91,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     id: settings.Id,
                     rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, TraceUtil.NormalizeTag(tracerSettings.Environment), tracerSettings.ServiceVersion, tags),
                     pollInterval: settings.PollInterval,
-                    gitMetadataTagsProvider);
+                    gitMetadataTagsProvider,
+                    subscriptionManager);
             }
 
             while (_initializationQueue.TryDequeue(out var action))
@@ -161,9 +167,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             while (!_cancellationSource.IsCancellationRequested)
             {
                 var isRcmEnabled = Volatile.Read(ref _isRcmEnabled);
-                var isProductRegistered = _products.Any();
 
-                if (isRcmEnabled && isProductRegistered)
+                if (isRcmEnabled && _subscriptionManager.HasAnySubscription)
                 {
                     await Poll().ConfigureAwait(false);
                     _lastPollError = null;
@@ -178,16 +183,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     // We are shutting down, so don't do anything about it
                 }
             }
-        }
-
-        public void RegisterProduct(Product product)
-        {
-            _products.TryAdd(product.Name, product);
-        }
-
-        public void UnregisterProduct(string productName)
-        {
-            _products.TryRemove(productName, out _);
         }
 
         public void OnShutdown()
@@ -212,14 +207,12 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         {
             try
             {
-                var products = _products.ToDictionary(pair => pair.Key, pair => pair.Value);
-
-                var request = BuildRequest(products);
+                var request = BuildRequest();
                 var response = await _remoteConfigurationApi.GetConfigs(request).ConfigureAwait(false);
 
                 if (response?.Targets?.Signed != null)
                 {
-                    ProcessResponse(response, products);
+                    ProcessResponse(response);
                     _targetsVersion = response.Targets.Signed.Version;
                     _backendClientState = response.Targets.Signed.Custom?.OpaqueBackendState;
                 }
@@ -230,14 +223,12 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
         }
 
-        private GetRcmRequest BuildRequest(IDictionary<string, Product> products)
+        private GetRcmRequest BuildRequest()
         {
-            var appliedConfigurations = products.Values.SelectMany(pair => pair.AppliedConfigurations.Values);
-
             var cachedTargetFiles = new List<RcmCachedTargetFile>();
             var configStates = new List<RcmConfigState>();
-
-            foreach (var cache in appliedConfigurations)
+            var appliedConfigs = _appliedConfigurations.Values;
+            foreach (var cache in appliedConfigs)
             {
                 cachedTargetFiles.Add(new RcmCachedTargetFile(cache.Path.Path, cache.Length, cache.Hashes.Select(kp => new RcmCachedTargetFileHash(kp.Key, kp.Value)).ToList()));
                 configStates.Add(new RcmConfigState(cache.Path.Id, cache.Version, cache.Path.Product, cache.ApplyState, cache.Error));
@@ -251,12 +242,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             var capabilitiesArray = _capabilities.ToByteArray();
             Array.Reverse(capabilitiesArray);
 #endif
-
             var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, _lastPollError != null, _lastPollError, _backendClientState);
-            var rcmClient = new RcmClient(_id, products.Keys, _rcmTracer, rcmState, capabilitiesArray);
+            var rcmClient = new RcmClient(_id, _subscriptionManager.ProductKeys, _rcmTracer, rcmState, capabilitiesArray);
             EnrichTagsWithGitMetadata(rcmClient.ClientTracer.Tags);
             var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
-
             return rcmRequest;
         }
 
@@ -282,106 +271,113 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             _gitMetadataAddedToRequestTags = true;
         }
 
-        private void ProcessResponse(GetRcmResponse response, IDictionary<string, Product> products)
+        private void ProcessResponse(GetRcmResponse response)
         {
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                string description = response.TargetFiles.Count > 0 ?
-                                        "with the following paths: " + string.Join(",", response.TargetFiles.Select(t => t.Path)) :
-                                        "that is empty.";
+                var description = response.TargetFiles.Count > 0
+                                      ? "with the following paths: " + string.Join(",", response.TargetFiles.Select(t => t.Path))
+                                      : "that is empty.";
                 Log.Debug("Received Remote Configuration response {ResponseDescription}.", description);
             }
 
-            var actualConfigPath =
-                response
-                   .ClientConfigs
-                   .Select(RemoteConfigurationPath.FromPath)
-                   .ToDictionary(path => path.Path);
+            var configByProducts = new Dictionary<string, List<RemoteConfiguration>>();
+            var receivedPaths = new List<string>();
 
-            var changedConfigurationsByProduct = GetChangedConfigurations()
-               .GroupBy(config => config.Path.Product);
-
-            // copy products
-            foreach (var productGroup in changedConfigurationsByProduct)
+            // handle new configurations
+            foreach (var clientConfig in response.ClientConfigs)
             {
-                var product = products[productGroup.Key];
-
-                try
-                {
-                    var configurations = productGroup.ToList();
-                    product.AssignConfigs(configurations);
-                }
-                catch (Exception e)
-                {
-                    Log.Warning(e, "Failed to apply remote configurations for product {Product}", product?.Name);
-                }
-            }
-
-            foreach (var product in products.Values)
-            {
-                try
-                {
-                    var removedConfigurations = GetRemovedConfigurations(product);
-                    if (removedConfigurations is null)
-                    {
-                        continue;
-                    }
-
-                    product.RemoveConfigs(removedConfigurations);
-                    foreach (var removedConfiguration in removedConfigurations)
-                    {
-                        product.AppliedConfigurations.Remove(removedConfiguration.Path.Path);
-                    }
-                }
-                catch (Exception e)
-                {
-                    Log.Warning(e, "Failed to remove remote configurations");
-                }
-            }
-
-            IEnumerable<RemoteConfiguration> GetChangedConfigurations()
-            {
+                var remoteConfigurationPath = RemoteConfigurationPath.FromPath(clientConfig);
+                receivedPaths.Add(remoteConfigurationPath.Path);
                 var signed = response.Targets.Signed.Targets;
-                var targetFiles = (response.TargetFiles ?? Enumerable.Empty<RcmFile>()).ToDictionary(f => f.Path, f => f);
+                var targetFiles =
+                    (response.TargetFiles ?? Enumerable.Empty<RcmFile>()).ToDictionary(f => f.Path, f => f);
 
-                foreach (var kp in actualConfigPath)
+                if (!signed.TryGetValue(remoteConfigurationPath.Path, out var signedTarget))
                 {
-                    if (!signed.TryGetValue(kp.Key, out var signedTarget))
-                    {
-                        ThrowHelper.ThrowException($"Missing config {kp.Key} in targets");
-                    }
+                    ThrowHelper.ThrowException($"Missing config {remoteConfigurationPath.Path} in targets");
+                }
 
-                    if (!products.TryGetValue(kp.Value.Product, out var product))
-                    {
-                        ThrowHelper.ThrowException($"Received config {kp.Key} for a product that was not requested");
-                    }
+                if (!_subscriptionManager.ProductKeys.Contains(remoteConfigurationPath.Product))
+                {
+                    Log.Warning("Received config {RemoteConfigurationPath} for a product that was not requested", remoteConfigurationPath);
+                    continue;
+                }
 
-                    var isConfigApplied = product.AppliedConfigurations.TryGetValue(kp.Key, out var appliedConfig) && appliedConfig.Hashes.SequenceEqual(signedTarget.Hashes);
-                    if (isConfigApplied)
-                    {
-                        continue;
-                    }
+                var isConfigApplied =
+                    _appliedConfigurations.TryGetValue(remoteConfigurationPath.Path, out var appliedConfig) &&
+                    appliedConfig.Hashes.SequenceEqual(signedTarget.Hashes);
+                if (isConfigApplied)
+                {
+                    continue;
+                }
 
-                    yield return new RemoteConfiguration(kp.Value, targetFiles[kp.Key].Raw, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom.V);
+                if (!targetFiles.TryGetValue(remoteConfigurationPath.Path, out var targetFile))
+                {
+                    ThrowHelper.ThrowException($"Missing config {remoteConfigurationPath.Path} in target files");
+                }
+
+                var remoteConfigurationCache = new RemoteConfigurationCache(remoteConfigurationPath, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom.V);
+                _appliedConfigurations[remoteConfigurationCache.Path.Path] = remoteConfigurationCache;
+
+                var remoteConfiguration = new RemoteConfiguration(remoteConfigurationPath, targetFile.Raw, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom.V);
+                if (!configByProducts.ContainsKey(remoteConfigurationPath.Product))
+                {
+                    configByProducts[remoteConfigurationPath.Product] = new List<RemoteConfiguration>();
+                }
+
+                configByProducts[remoteConfigurationPath.Product].Add(remoteConfiguration);
+            }
+
+            Dictionary<string, List<RemoteConfigurationPath>> removedConfigsByProduct = new();
+            // handle removed configurations
+            foreach (var appliedConfiguration in _appliedConfigurations)
+            {
+                if (receivedPaths.Contains(appliedConfiguration.Key))
+                {
+                    continue;
+                }
+
+                if (!removedConfigsByProduct.ContainsKey(appliedConfiguration.Value.Path.Product))
+                {
+                    removedConfigsByProduct[appliedConfiguration.Value.Path.Product] =
+                        new List<RemoteConfigurationPath>();
+                }
+
+                removedConfigsByProduct[appliedConfiguration.Value.Path.Product].Add(appliedConfiguration.Value.Path);
+            }
+
+            // update applied configurations after removal
+            foreach (var removedConfig in removedConfigsByProduct.Values)
+            {
+                foreach (var value in removedConfig)
+                {
+                    _appliedConfigurations.Remove(value.Path);
                 }
             }
 
-            List<RemoteConfigurationCache>? GetRemovedConfigurations(Product product)
+            var results = _subscriptionManager.Update(configByProducts, removedConfigsByProduct);
+
+            if (results != null)
             {
-                List<RemoteConfigurationCache>? removed = null;
-
-                foreach (var appliedConfiguration in product.AppliedConfigurations)
+                foreach (var result in results)
                 {
-                    if (actualConfigPath.ContainsKey(appliedConfiguration.Key))
+                    switch (result.ApplyState)
                     {
-                        continue;
+                        case ApplyStates.UNACKNOWLEDGED:
+                            // Do nothing
+                            break;
+                        case ApplyStates.ACKNOWLEDGED:
+                            _appliedConfigurations[result.Filename].Applied();
+                            break;
+                        case ApplyStates.ERROR:
+                            _appliedConfigurations[result.Filename].ErrorOccured(result.Error);
+                            break;
+                        default:
+                            Log.Warning("Unexpected ApplyState: {ApplyState}", result.ApplyState);
+                            break;
                     }
-
-                    removed ??= new List<RemoteConfigurationCache>();
-                    removed.Add(appliedConfiguration.Value);
                 }
-
-                return removed;
             }
         }
 

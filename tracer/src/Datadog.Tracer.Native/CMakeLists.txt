@@ -5,7 +5,7 @@ cmake_policy(SET CMP0015 NEW)
 # Project definition
 # ******************************************************
 
-project("Datadog.Tracer.Native" VERSION 2.25.0)
+project("Datadog.Tracer.Native" VERSION 2.31.0)
 
 # ******************************************************
 # Environment detection
@@ -108,7 +108,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 # ******************************************************
 
 # Sets compiler options
-add_compile_options(-std=c++17 -fPIC -fms-extensions -fvisibility=hidden)
+add_compile_options(-std=c++17 -fPIC -fms-extensions -fvisibility=hidden -g)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 if (ISMACOS)
@@ -195,7 +195,6 @@ if (ISMACOS)
     target_link_libraries("Datadog.Tracer.Native.static"
         managed-loader-objs
         coreclr
-        fmt-lib
         re2-lib
         spdlog-headers
         ${CMAKE_DL_LIBS}
@@ -205,7 +204,6 @@ elseif(ISLINUX)
     target_link_libraries("Datadog.Tracer.Native.static"
         managed-loader-objs
         coreclr
-        fmt-lib
         re2-lib
         spdlog-headers
         managed-loader-objs
@@ -215,7 +213,7 @@ elseif(ISLINUX)
     )
 endif()
 
-add_dependencies("Datadog.Tracer.Native.static" fmt-lib coreclr re2-lib spdlog-headers managed-loader-objs)
+add_dependencies("Datadog.Tracer.Native.static" coreclr re2-lib spdlog-headers managed-loader-objs)
 
 # ******************************************************
 # Define shared target

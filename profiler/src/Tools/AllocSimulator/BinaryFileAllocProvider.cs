@@ -139,7 +139,6 @@ namespace AllocSimulator
                     pos += 8;  // skip the read 2 x 4 bytes
                 }
             }
-
         }
     }
 }

@@ -8,11 +8,10 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.RcmModels.AsmData;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.AppSec.Rcm;
+using Datadog.Trace.AppSec.Rcm.Models.AsmData;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -91,13 +90,12 @@ public abstract class AspNetMvc5AsmData : RcmBaseFramework, IClassFixture<IisFix
         var acknowledgedId = nameof(TestBlockedRequestIp) + Guid.NewGuid();
         var acknowledgedId2 = nameof(TestBlockedRequestIp) + Guid.NewGuid();
 
-        var product = new AsmDataProduct();
-        _iisFixture.Agent.SetupRcm(
+        var productName = RcmProducts.AsmData;
+        var response = _iisFixture.Agent.SetupRcm(
             Output,
-            new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, acknowledgedId), (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, acknowledgedId2), },
-            product.Name);
+            new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, productName, acknowledgedId), ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, productName, acknowledgedId2) });
 
-        await _iisFixture.Agent.WaitRcmRequestAndReturnLast(appliedServiceNames: new[] { acknowledgedId, acknowledgedId2 });
+        var request = await _iisFixture.Agent.WaitRcmRequestAndReturnMatchingRequest(response);
 
         var spanAfterAsmData = await SendRequestsAsync(_iisFixture.Agent, url);
         var spans = new List<MockSpan>();
@@ -119,15 +117,12 @@ public abstract class AspNetMvc5AsmData : RcmBaseFramework, IClassFixture<IisFix
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(parameters: new object[] { test, sanitisedUrl });
             var spanBeforeAsmData = await SendRequestsAsync(_iisFixture.Agent, url);
-            var acknowledgedId = nameof(TestBlockedRequestUser) + Guid.NewGuid();
 
-            var product = new AsmDataProduct();
-            _iisFixture.Agent.SetupRcm(
+            var response = _iisFixture.Agent.SetupRcm(
                 Output,
-                new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_users", Type = "data_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = "user3" } } } } }, acknowledgedId) },
-                product.Name);
+                new[] { ((object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_users", Type = "data_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = "user3" } } } } }, RcmProducts.AsmData, nameof(TestBlockedRequestUser)) });
 
-            await _iisFixture.Agent.WaitRcmRequestAndReturnLast(appliedServiceNames: new[] { acknowledgedId });
+            await _iisFixture.Agent.WaitRcmRequestAndReturnMatchingRequest(response);
 
             var spanAfterAsmData = await SendRequestsAsync(_iisFixture.Agent, url);
             var spans = new List<MockSpan>();

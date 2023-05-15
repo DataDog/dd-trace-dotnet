@@ -6,18 +6,17 @@
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Sampling
 {
     internal class TraceSampler : ITraceSampler
     {
-        private const ulong KnuthFactor = 1_111_111_111_111_111_111;
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceSampler>();
 
         private readonly IRateLimiter _limiter;
-        private readonly DefaultSamplingRule _defaultRule = new DefaultSamplingRule();
-        private readonly List<ISamplingRule> _rules = new List<ISamplingRule>();
+        private readonly DefaultSamplingRule _defaultRule = new();
+        private readonly List<ISamplingRule> _rules = new();
 
         public TraceSampler(IRateLimiter limiter)
         {
@@ -32,8 +31,6 @@ namespace Datadog.Trace.Sampling
 
         public SamplingDecision MakeSamplingDecision(Span span)
         {
-            var traceId = span.TraceId;
-
             if (_rules.Count > 0)
             {
                 foreach (var rule in _rules)
@@ -42,18 +39,25 @@ namespace Datadog.Trace.Sampling
                     {
                         var sampleRate = rule.GetSamplingRate(span);
 
-                        Log.Debug(
-                            "Matched on rule {RuleName}. Applying rate of {Rate} to trace id {TraceId}",
-                            rule.RuleName,
-                            sampleRate,
-                            traceId);
+                        if (Log.IsEnabled(LogEventLevel.Debug))
+                        {
+                            Log.Debug(
+                                "Matched on rule {RuleName}. Applying rate of {Rate} to trace id {TraceId}",
+                                rule.RuleName,
+                                sampleRate,
+                                span.Context.RawTraceId);
+                        }
 
                         return MakeSamplingDecision(span, sampleRate, rule.SamplingMechanism);
                     }
                 }
             }
 
-            Log.Debug("No rules matched for trace {TraceId}", traceId);
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("No rules matched for trace {TraceId}", span.Context.RawTraceId);
+            }
+
             return SamplingDecision.Default;
         }
 
@@ -79,8 +83,8 @@ namespace Datadog.Trace.Sampling
 
         private SamplingDecision MakeSamplingDecision(Span span, float rate, int mechanism)
         {
-            // make a sampling decision as a function of traceId and sampling rate
-            var sample = SamplingHelpers.SampleByRate(span.TraceId, rate);
+            // make a sampling decision as a function of traceId and sampling rate.
+            var sample = SamplingHelpers.SampleByRate(span.TraceId128, rate);
 
             var priority = mechanism switch
                            {

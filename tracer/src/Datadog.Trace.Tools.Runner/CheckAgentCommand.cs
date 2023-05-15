@@ -8,6 +8,7 @@ using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Tools.Runner.Checks;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -23,13 +24,13 @@ namespace Datadog.Trace.Tools.Runner
             if (settings.Url == null)
             {
                 // Try to autodetect the agent settings
-                configuration = new ExporterSettings(new EnvironmentConfigurationSource());
+                configuration = new ExporterSettings(new EnvironmentConfigurationSource(), NullConfigurationTelemetry.Instance);
 
                 AnsiConsole.WriteLine("No Agent URL provided, using environment variables");
             }
             else
             {
-                configuration = new ExporterSettings { AgentUri = new Uri(settings.Url) };
+                configuration = new ExporterSettings(source: null, NullConfigurationTelemetry.Instance) { AgentUri = new Uri(settings.Url) };
             }
 
             var result = await AgentConnectivityCheck.RunAsync(new ImmutableExporterSettings(configuration)).ConfigureAwait(false);

@@ -17,7 +17,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         public class Test<T> where T : IGeneric
         {
             [MethodImpl(MethodImplOptions.NoInlining)]
-            [MethodProbeTestData("System.Collections.Generic.List`1<Samples.Probes.TestRuns.SmokeTests`1<!0>>", new[] { "!!0" })]
+            [LogMethodProbeTestData("System.Collections.Generic.List`1<Samples.Probes.TestRuns.SmokeTests`1<!0>>", new[] { "!!0" })]
             public List<Test<T>> Method<K>(K k) where K : IGeneric
             {
                 var @string = k.ToString();

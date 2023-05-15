@@ -6,6 +6,8 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <vector>
+
 #include "Log.h"
 #include "OpSysTools.h"
 
@@ -50,6 +52,7 @@ public:
     CollectorBase<TRawSample>(
         const char* name,
         uint32_t valueOffset,
+        std::size_t nbValues,
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAppDomainStore,
@@ -64,6 +67,11 @@ public:
         _pThreadsCpuManager{pThreadsCpuManager},
         _isTimestampsAsLabelEnabled{pConfiguration->IsTimestampsAsLabelEnabled()}
     {
+        _valueOffsets.reserve(nbValues);
+        for (auto i = _valueOffset; i < _valueOffset + nbValues; i++)
+        {
+            _valueOffsets.push_back(i);
+        }
     }
 
 // interfaces implementation
@@ -102,11 +110,7 @@ public:
         auto sample = std::make_shared<Sample>(rawSample.Timestamp, runtimeId == nullptr ? std::string_view() : std::string_view(runtimeId), rawSample.Stack.size());
         if (rawSample.LocalRootSpanId != 0 && rawSample.SpanId != 0)
         {
-            // TODO: libdatadog needs to be updated in order to support numeric root span id for endpoint profiling
-            // -> keep it as a string until then
-            // sample->AddNumericLabel(NumericLabel{Sample::LocalRootSpanIdLabel, rawSample.LocalRootSpanId});
-            sample->AddLabel(Label{Sample::LocalRootSpanIdLabel, std::to_string(rawSample.LocalRootSpanId)});
-
+            sample->AddNumericLabel(NumericLabel{Sample::LocalRootSpanIdLabel, rawSample.LocalRootSpanId});
             sample->AddNumericLabel(NumericLabel{Sample::SpanIdLabel, rawSample.SpanId});
         }
 
@@ -135,6 +139,11 @@ protected:
     uint64_t GetCurrentTimestamp()
     {
         return OpSysTools::GetHighPrecisionTimestamp();
+    }
+
+    std::vector<std::uintptr_t> const& GetValueOffsets() const
+    {
+        return _valueOffsets;
     }
 
 private:
@@ -220,11 +229,11 @@ private:
         // Deal with fake stack frames like for garbage collections since the Stack will be empty
         for (auto const& instructionPointer : rawSample.Stack)
         {
-            auto [isResolved, moduleName, frame] = _pFrameStore->GetFrame(instructionPointer);
+            auto [isResolved, frame] = _pFrameStore->GetFrame(instructionPointer);
 
             if (isResolved)
             {
-                sample->AddFrame(moduleName, frame);
+                sample->AddFrame(frame);
             }
         }
     }
@@ -244,4 +253,5 @@ private:
 
     std::mutex _rawSamplesLock;
     std::list<TRawSample> _collectedSamples;
+    std::vector<std::uintptr_t> _valueOffsets;
 };

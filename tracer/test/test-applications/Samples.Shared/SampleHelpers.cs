@@ -19,10 +19,11 @@ namespace Samples
         private static readonly Type CorrelationIdentifierType = Type.GetType("Datadog.Trace.CorrelationIdentifier, Datadog.Trace");
         private static readonly Type SpanCreationSettingsType = Type.GetType("Datadog.Trace.SpanCreationSettings, Datadog.Trace");
         private static readonly Type SpanContextType = Type.GetType("Datadog.Trace.SpanContext, Datadog.Trace");
-        private static readonly Type TracerSettingsType = Type.GetType("Datadog.Trace.TracerSettings, Datadog.Trace.Configuration");
+        private static readonly Type TracerSettingsType = Type.GetType("Datadog.Trace.Configuration.TracerSettings, Datadog.Trace");
         private static readonly Type TracerConstantsType = Type.GetType("Datadog.Trace.TracerConstants, Datadog.Trace");
+        private static readonly PropertyInfo GetTracerManagerProperty = TracerType?.GetProperty("TracerManager", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo GetNativeTracerVersionMethod = InstrumentationType?.GetMethod("GetNativeTracerVersion");
-        private static readonly MethodInfo GetTracerInstance = TracerType?.GetProperty("Instance")?.GetMethod;
+        private static readonly MethodInfo GetTracerInstance = TracerType?.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)?.GetMethod;
         private static readonly MethodInfo StartActiveMethod = TracerType?.GetMethod("StartActive", types: new[] { typeof(string) });
         private static readonly MethodInfo StartActiveWithContextMethod;
         private static readonly MethodInfo ExtractMethod = SpanContextExtractorType?.GetMethod("Extract");
@@ -33,12 +34,13 @@ namespace Samples
         private static readonly MethodInfo TraceIdProperty = SpanContextType?.GetProperty("TraceId")?.GetMethod;
         private static readonly MethodInfo SpanIdProperty = SpanContextType?.GetProperty("SpanId")?.GetMethod;
         private static readonly MethodInfo SpanProperty = ScopeType?.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
+        private static readonly MethodInfo SpanContextProperty = SpanType?.GetProperty("Context", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
         private static readonly MethodInfo CorrelationIdentifierTraceIdProperty = CorrelationIdentifierType?.GetProperty("TraceId", BindingFlags.Public | BindingFlags.Static)?.GetMethod;
         private static readonly MethodInfo SetResourceNameProperty = SpanType?.GetProperty("ResourceName", BindingFlags.NonPublic | BindingFlags.Instance)?.SetMethod;
         private static readonly MethodInfo SetTagMethod = SpanType?.GetMethod("SetTag", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo SetExceptionMethod = SpanType?.GetMethod("SetException", BindingFlags.NonPublic | BindingFlags.Instance);
-        private static readonly MethodInfo FromDefaultSourcesMethod = TracerSettingsType?.GetMethod("FromDefaultSources", BindingFlags.NonPublic | BindingFlags.Instance);
-        private static readonly MethodInfo SetService = TracerSettingsType?.GetProperty("Service")?.SetMethod;
+        private static readonly MethodInfo FromDefaultSourcesMethod = TracerSettingsType?.GetMethod("FromDefaultSources", BindingFlags.Public | BindingFlags.Static);
+        private static readonly MethodInfo SetServiceName = TracerSettingsType?.GetProperty("ServiceName")?.SetMethod;
         private static readonly FieldInfo TracerThreePartVersionField = TracerConstantsType?.GetField("ThreePartVersion");
 
 
@@ -66,7 +68,7 @@ namespace Samples
                 return;
             }
             var tracerSettings = FromDefaultSourcesMethod.Invoke(null, Array.Empty<object>());
-            SetService.Invoke(tracerSettings, new object[] { serviceName });
+            SetServiceName.Invoke(tracerSettings, new object[] { serviceName });
 
             var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
             ConfigureMethod.Invoke(tracer, new object[] { tracerSettings });
@@ -185,6 +187,20 @@ namespace Samples
             spanId = (ulong) SpanIdProperty.Invoke(parentScope, null);
         }
 
+        public static ulong GetTraceId(IDisposable scope)
+        {
+            var span = SpanProperty.Invoke(scope, Array.Empty<object>());
+            var context = SpanContextProperty.Invoke(span, Array.Empty<object>());
+            return (ulong) TraceIdProperty.Invoke(context, Array.Empty<object>());
+        }
+
+        public static ulong GetSpanId(IDisposable scope)
+        {
+            var span = SpanProperty.Invoke(scope, Array.Empty<object>());
+            var context = SpanContextProperty.Invoke(span, Array.Empty<object>());
+            return (ulong) SpanIdProperty.Invoke(context, Array.Empty<object>());
+        }
+
         public static Task ForceTracerFlushAsync()
         {
             if (GetTracerInstance is null || ForceFlushAsyncMethod is null)
@@ -285,6 +301,37 @@ namespace Samples
                           select new KeyValuePair<string, string>(key, value);
 
             return envVars.ToList();
+        }
+
+        public static Task WaitForDiscoveryService()
+        {
+            var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
+
+            if (tracer == null)
+            {
+                return Task.CompletedTask;
+            }
+
+            var tracerManager = GetTracerManagerProperty?.GetValue(tracer);
+
+            if (tracerManager == null)
+            {
+                return Task.CompletedTask;
+            }
+
+            var discoveryService = tracerManager.GetType()
+               .GetProperty("DiscoveryService", BindingFlags.Public | BindingFlags.Instance)
+               ?.GetValue(tracerManager);
+
+            if (discoveryService == null)
+            {
+                return Task.CompletedTask;
+            }
+
+            var result = InstrumentationType?.GetMethod("WaitForDiscoveryService", BindingFlags.NonPublic | BindingFlags.Static)
+               ?.Invoke(null, new[] { discoveryService });
+
+            return result as Task ?? Task.CompletedTask;
         }
 
         class NoOpDisposable : IDisposable

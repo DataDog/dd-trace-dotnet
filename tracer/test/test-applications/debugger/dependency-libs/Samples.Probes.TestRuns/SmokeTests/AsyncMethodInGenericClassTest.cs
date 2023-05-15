@@ -19,7 +19,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
     internal class GenericClass<T>
     {
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData]
+        [LogMethodProbeTestData]
         public async Task Run(T t)
         {
             var def = default(T);

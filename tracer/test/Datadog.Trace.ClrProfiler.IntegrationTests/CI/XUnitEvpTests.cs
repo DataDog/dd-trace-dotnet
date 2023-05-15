@@ -317,7 +317,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
         private static void CheckCIEnvironmentValuesDecoration(MockCIVisibilityTest targetTest)
         {
-            var context = new SpanContext(null, null, null, null);
+            var context = new SpanContext(parent: null, traceContext: null, serviceName: null);
             var span = new Span(context, DateTimeOffset.UtcNow);
             CIEnvironmentValues.Instance.DecorateSpan(span);
 
@@ -364,13 +364,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
         private static void CheckRuntimeValues(MockCIVisibilityTest targetTest)
         {
-            FrameworkDescription framework = FrameworkDescription.Instance;
-
-            AssertTargetSpanEqual(targetTest, CommonTags.RuntimeName, framework.Name);
-            AssertTargetSpanEqual(targetTest, CommonTags.RuntimeVersion, framework.ProductVersion);
-            AssertTargetSpanEqual(targetTest, CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
-            AssertTargetSpanEqual(targetTest, CommonTags.OSArchitecture, framework.OSArchitecture);
-            AssertTargetSpanEqual(targetTest, CommonTags.OSPlatform, framework.OSPlatform);
+            AssertTargetSpanExists(targetTest, CommonTags.RuntimeName);
+            AssertTargetSpanExists(targetTest, CommonTags.RuntimeVersion);
+            AssertTargetSpanExists(targetTest, CommonTags.RuntimeArchitecture);
+            AssertTargetSpanExists(targetTest, CommonTags.OSArchitecture);
+            AssertTargetSpanExists(targetTest, CommonTags.OSPlatform);
             AssertTargetSpanEqual(targetTest, CommonTags.OSVersion, CIVisibility.GetOperatingSystemVersion());
         }
 

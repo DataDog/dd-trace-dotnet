@@ -9,6 +9,7 @@ using System.Numerics;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
@@ -27,48 +28,46 @@ public class LiveDebuggerTests
     [Fact]
     public async Task DebuggerEnabled_ServicesCalled()
     {
-        var settings = DebuggerSettings.FromSource(new NameValueConfigurationSource(new()
-        {
-            { ConfigurationKeys.Debugger.Enabled, "1" },
-        }));
+        var settings = DebuggerSettings.FromSource(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.Enabled, "1" }, }),
+            NullConfigurationTelemetry.Instance);
 
         var discoveryService = new DiscoveryServiceMock();
-        var managerMock = new RemoteConfigurationManagerMock();
+        var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create("env", "version");
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, managerMock, lineProbeResolver, debuggerSink, probeStatusPoller, updater);
+        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, debuggerSink, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         await debugger.InitializeAsync();
 
         probeStatusPoller.Called.Should().BeTrue();
         debuggerSink.Called.Should().BeTrue();
-        managerMock.Products.ContainsKey(LiveDebugger.Instance.Product.Name).Should().BeTrue();
+        rcmSubscriptionManagerMock.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().BeTrue();
     }
 
     [Fact]
     public async Task DebuggerDisabled_ServicesNotCalled()
     {
-        var settings = DebuggerSettings.FromSource(new NameValueConfigurationSource(new()
-        {
-            { ConfigurationKeys.Debugger.Enabled, "0" },
-        }));
+        var settings = DebuggerSettings.FromSource(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.Enabled, "0" }, }),
+            NullConfigurationTelemetry.Instance);
 
         var discoveryService = new DiscoveryServiceMock();
-        var managerMock = new RemoteConfigurationManagerMock();
+        var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create(string.Empty, string.Empty);
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, managerMock, lineProbeResolver, debuggerSink, probeStatusPoller, updater);
+        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, debuggerSink, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         await debugger.InitializeAsync();
 
         lineProbeResolver.Called.Should().BeFalse();
         debuggerSink.Called.Should().BeFalse();
         probeStatusPoller.Called.Should().BeFalse();
-        managerMock.Products.ContainsKey(LiveDebugger.Instance.Product.Name).Should().BeFalse();
+        rcmSubscriptionManagerMock.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().BeFalse();
     }
 
     private class DiscoveryServiceMock : IDiscoveryService
@@ -78,14 +77,15 @@ public class LiveDebuggerTests
         public void SubscribeToChanges(Action<AgentConfiguration> callback)
         {
             Called = true;
-            callback(new AgentConfiguration(
-                         configurationEndpoint: "configurationEndpoint",
-                         debuggerEndpoint: "debuggerEndpoint",
-                         agentVersion: "agentVersion",
-                         statsEndpoint: "traceStatsEndpoint",
-                         dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
-                         eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
-                         clientDropP0: false));
+            callback(
+                new AgentConfiguration(
+                    configurationEndpoint: "configurationEndpoint",
+                    debuggerEndpoint: "debuggerEndpoint",
+                    agentVersion: "agentVersion",
+                    statsEndpoint: "traceStatsEndpoint",
+                    dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
+                    eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
+                    clientDropP0: false));
         }
 
         public void RemoveSubscription(Action<AgentConfiguration> callback)
@@ -95,26 +95,55 @@ public class LiveDebuggerTests
         public Task DisposeAsync() => Task.CompletedTask;
     }
 
+    private class RcmSubscriptionManagerMock : IRcmSubscriptionManager
+    {
+        public bool HasAnySubscription { get; }
+
+        public ICollection<string> ProductKeys { get; } = new List<string>();
+
+        public void SubscribeToChanges(ISubscription subscription)
+        {
+            foreach (var productKey in subscription.ProductKeys)
+            {
+                ProductKeys.Add(productKey);
+            }
+        }
+
+        public void Replace(ISubscription oldSubscription, ISubscription newSubscription)
+        {
+            foreach (var productKey in oldSubscription.ProductKeys)
+            {
+                ProductKeys.Remove(productKey);
+            }
+
+            foreach (var productKey in newSubscription.ProductKeys)
+            {
+                ProductKeys.Add(productKey);
+            }
+        }
+
+        public void Unsubscribe(ISubscription subscription)
+        {
+            foreach (var productKey in subscription.ProductKeys)
+            {
+                ProductKeys.Remove(productKey);
+            }
+        }
+
+        public List<ApplyDetails> Update(Dictionary<string, List<RemoteConfiguration>> configByProducts, Dictionary<string, List<RemoteConfigurationPath>> removedConfigsByProduct)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     private class RemoteConfigurationManagerMock : IRemoteConfigurationManager
     {
         internal bool Called { get; private set; }
-
-        internal Dictionary<string, Product> Products { get; private set; } = new();
 
         public Task StartPollingAsync()
         {
             Called = true;
             return Task.CompletedTask;
-        }
-
-        public void RegisterProduct(Product product)
-        {
-            Products.Add(product.Name, product);
-        }
-
-        public void UnregisterProduct(string productName)
-        {
-            Products.Remove(productName);
         }
 
         public void SetCapability(BigInteger index, bool available)

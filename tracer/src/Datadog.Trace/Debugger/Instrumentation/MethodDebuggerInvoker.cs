@@ -39,18 +39,18 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             if (!MethodMetadataCollection.Instance.TryCreateNonAsyncMethodMetadataIfNotExists(methodMetadataIndex, in methodHandle, in typeHandle))
             {
-                Log.Warning("BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {Type}, instance type name = {Name}, methodMetadaId = {MethodMetadataIndex}, probeId = {ProbeId}", typeof(TTarget), instance?.GetType().Name, methodMetadataIndex, probeId);
+                Log.Warning("BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {Type}, instance type name = {Name}, methodMetadaId = {MethodMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, methodMetadataIndex, probeId });
                 return CreateInvalidatedDebuggerState();
             }
 
             ref var probeData = ref ProbeDataCollection.Instance.TryCreateProbeDataIfNotExists(probeMetadataIndex, probeId);
             if (probeData.IsEmpty())
             {
-                Log.Warning("BeginMethod_StartMarker: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId);
+                Log.Warning("BeginMethod_StartMarker: Failed to receive the ProbeData associated with the executing probe. type = {Type}, instance type name = {Name}, probeMetadataIndex = {ProbeMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, probeMetadataIndex, probeId });
                 return CreateInvalidatedDebuggerState();
             }
 
-            var state = new MethodDebuggerState(probeId/* probeIds[i] */, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, ref probeData, instance);
+            var state = new MethodDebuggerState(probeId/* probeIds[i] */, scope: default, methodMetadataIndex, ref probeData, instance);
 
             var activeSpan = Tracer.Instance.InternalActiveScope?.Span;
 
@@ -75,6 +75,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 state.IsActive = false;
             }
 
+            state.SnapshotCreator.StartSampling();
             return state;
         }
 
@@ -90,6 +91,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
+            state.SnapshotCreator.StopSampling();
             var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
                                        state.MethodMetadataInfo.ParameterNames.Length > 0 ||
                                        !state.MethodMetadataInfo.Method.IsStatic;
@@ -102,6 +104,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             state.HasLocalsOrReturnValue = false;
+            state.SnapshotCreator.StartSampling();
         }
 
         /// <summary>
@@ -119,6 +122,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
+            state.SnapshotCreator.StopSampling();
             var paramName = state.MethodMetadataInfo.ParameterNames[index];
             var captureInfo = new CaptureInfo<TArg>(value: arg, methodState: MethodState.LogArg, name: paramName, memberKind: ScopeMemberKind.Argument);
 
@@ -128,6 +132,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             state.HasLocalsOrReturnValue = false;
+            state.SnapshotCreator.StartSampling();
         }
 
         /// <summary>
@@ -145,9 +150,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
+            state.SnapshotCreator.StopSampling();
             var localVariableNames = state.MethodMetadataInfo.LocalVariableNames;
             if (!TryGetLocalName(index, localVariableNames, out var localName))
             {
+                state.SnapshotCreator.StartSampling();
                 return;
             }
 
@@ -159,6 +166,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             state.HasLocalsOrReturnValue = true;
+            state.SnapshotCreator.StartSampling();
         }
 
         /// <summary>
@@ -177,6 +185,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return DebuggerReturn.GetDefault();
             }
 
+            state.SnapshotCreator.StopSampling();
             state.MethodPhase = EvaluateAt.Exit;
 
             var captureInfo = new CaptureInfo<Exception>(value: exception, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.ExitStart, memberKind: ScopeMemberKind.Exception, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
@@ -186,6 +195,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 state.IsActive = false;
             }
 
+            state.SnapshotCreator.StartSampling();
             return DebuggerReturn.GetDefault();
         }
 
@@ -207,6 +217,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return new DebuggerReturn<TReturn>(returnValue);
             }
 
+            state.SnapshotCreator.StopSampling();
             state.MethodPhase = EvaluateAt.Exit;
 
             if (exception != null)
@@ -228,6 +239,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 state.HasLocalsOrReturnValue = true;
             }
 
+            state.SnapshotCreator.StartSampling();
             return new DebuggerReturn<TReturn>(returnValue);
         }
 
@@ -243,6 +255,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
+            state.SnapshotCreator.StopSampling();
             var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
                                        state.MethodMetadataInfo.ParameterNames.Length > 0 ||
                                        !state.MethodMetadataInfo.Method.IsStatic;

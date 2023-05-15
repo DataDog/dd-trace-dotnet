@@ -27,6 +27,7 @@
 #include "Configuration.h"
 #include "ContentionProvider.h"
 #include "CpuTimeProvider.h"
+#include "DebugInfoStore.h"
 #include "EnabledProfilers.h"
 #include "EnvironmentVariables.h"
 #include "ExceptionsProvider.h"
@@ -107,7 +108,9 @@ bool CorProfilerCallback::InitializeServices()
 
     _pAppDomainStore = std::make_unique<AppDomainStore>(_pCorProfilerInfo);
 
-    _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo, _pConfiguration.get());
+    _pDebugInfoStore = std::make_unique<DebugInfoStore>(_pCorProfilerInfo, _pConfiguration.get());
+
+    _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo, _pConfiguration.get(), _pDebugInfoStore.get());
 
     // Create service instances
     _pThreadsCpuManager = RegisterService<ThreadsCpuManager>();
@@ -337,6 +340,15 @@ bool CorProfilerCallback::InitializeServices()
         _metricsRegistry,
         _pAllocationsRecorder.get()
         );
+
+    if (_pContentionProvider != nullptr)
+    {
+        _pExporter->RegisterUpscaleProvider(_pContentionProvider);
+    }
+    if (_pExceptionsProvider != nullptr)
+    {
+        _pExporter->RegisterUpscaleProvider(_pExceptionsProvider);
+    }
 
     _pSamplesCollector = RegisterService<SamplesCollector>(
         _pConfiguration.get(),

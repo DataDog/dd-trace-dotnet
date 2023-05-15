@@ -24,7 +24,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             _inProcess = inProcess;
             _enableRouteTemplateResourceNames = enableRouteTemplateResourceNames;
             SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "400-403, 500-503");
-            EnableDebugMode();
 
             SetServiceVersion("1.0.0");
 
@@ -52,11 +51,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             { "/handled-exception", 500 },
         };
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.Type switch
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            span.Name switch
             {
-                "aspnet_core.request" => span.IsAspNetCore(),
-                "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(),
+                "aspnet_core.request" => span.IsAspNetCore(metadataSchemaVersion),
+                "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(metadataSchemaVersion),
                 _ => Result.DefaultSuccess,
             };
 

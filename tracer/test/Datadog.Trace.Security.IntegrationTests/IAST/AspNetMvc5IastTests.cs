@@ -4,6 +4,7 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -16,85 +17,126 @@ using Xunit.Abstractions;
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
-namespace Datadog.Trace.Security.IntegrationTests.Iast
+namespace Datadog.Trace.Security.IntegrationTests.Iast;
+
+[Collection("IisTests")]
+public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
 {
-    [Collection("IisTests")]
-    public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
+    public AspNetMvc5IntegratedWithIast(IisFixture iisFixture, ITestOutputHelper output)
+        : base(iisFixture, output, classicMode: false, enableIast: true)
     {
-        public AspNetMvc5IntegratedWithIast(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: false, enableIast: true)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
-    public class AspNetMvc5IntegratedWithoutIast : AspNetMvc5IastTests
-    {
-        public AspNetMvc5IntegratedWithoutIast(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: false, enableIast: false)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
-    public class AspNetMvc5ClassicWithIast : AspNetMvc5IastTests
-    {
-        public AspNetMvc5ClassicWithIast(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: true, enableIast: true)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
-    public class AspNetMvc5ClassicWithoutIast : AspNetMvc5IastTests
-    {
-        public AspNetMvc5ClassicWithoutIast(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: true, enableIast: false)
-        {
-        }
-    }
-
-    public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture>
-    {
-        private readonly IisFixture _iisFixture;
-        private readonly string _testName;
-        private readonly bool _enableIast;
-
-        public AspNetMvc5IastTests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableIast)
-            : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
-        {
-            EnableIast(enableIast);
-            DisableObfuscationQueryString();
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
-
-            _iisFixture = iisFixture;
-            _enableIast = enableIast;
-            _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
-            _testName = "Security." + nameof(AspNetMvc5)
-                     + (classicMode ? ".Classic" : ".Integrated")
-                     + ".enableIast=" + enableIast;
-            SetHttpPort(iisFixture.HttpPort);
-        }
-
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("LoadFromGAC", "True")]
-        [SkippableTheory]
-        [InlineData(AddressesConstants.RequestQuery, "/Iast/SqlQuery?query=SELECT%20Surname%20from%20Persons%20where%20name%20=%20%27Vicent%27", null)]
-        public async Task TestIastSqlInjectionRequest(string test, string url, string body)
-        {
-            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-            var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
-            var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-            var filename = _enableIast ? "Iast.SqlInjection.AspNetMvc5.IastEnabled" : "Iast.SqlInjection.AspNetMvc5.IastDisabled";
-            var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-            settings.AddIastScrubbing();
-            await VerifyHelper.VerifySpans(spansFiltered, settings)
-                              .UseFileName(filename)
-                              .DisableRequireUniquePrefix();
-        }
-
-        protected override string GetTestName() => _testName;
     }
 }
+
+[Collection("IisTests")]
+public class AspNetMvc5IntegratedWithoutIast : AspNetMvc5IastTests
+{
+    public AspNetMvc5IntegratedWithoutIast(IisFixture iisFixture, ITestOutputHelper output)
+        : base(iisFixture, output, classicMode: false, enableIast: false)
+    {
+    }
+}
+
+[Collection("IisTests")]
+public class AspNetMvc5ClassicWithIast : AspNetMvc5IastTests
+{
+    public AspNetMvc5ClassicWithIast(IisFixture iisFixture, ITestOutputHelper output)
+        : base(iisFixture, output, classicMode: true, enableIast: true)
+    {
+    }
+}
+
+[Collection("IisTests")]
+public class AspNetMvc5ClassicWithoutIast : AspNetMvc5IastTests
+{
+    public AspNetMvc5ClassicWithoutIast(IisFixture iisFixture, ITestOutputHelper output)
+        : base(iisFixture, output, classicMode: true, enableIast: false)
+    {
+    }
+}
+
+public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture>
+{
+    private readonly IisFixture _iisFixture;
+    private readonly string _testName;
+    private readonly bool _enableIast;
+
+    public AspNetMvc5IastTests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableIast)
+        : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
+    {
+        EnableIast(enableIast);
+        EnableEvidenceRedaction(false);
+        SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
+        SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
+        SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
+        SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
+        DisableObfuscationQueryString();
+        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
+
+        _iisFixture = iisFixture;
+        _enableIast = enableIast;
+        _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+        _testName = "Security." + nameof(AspNetMvc5)
+                 + (classicMode ? ".Classic" : ".Integrated")
+                 + ".enableIast=" + enableIast;
+        SetHttpPort(iisFixture.HttpPort);
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/SqlQuery?username=Vicent", null)]
+    public async Task TestIastSqlInjectionRequest(string test, string url, string body)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var filename = _enableIast ? "Iast.SqlInjection.AspNetMvc5.IastEnabled" : "Iast.SqlInjection.AspNetMvc5.IastDisabled";
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/GetFileContent?file=nonexisting.txt", null)]
+    public async Task TestIastPathTraversalRequest(string test, string url, string body)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var filename = _enableIast ? "Iast.PathTraversal.AspNetMvc5.IastEnabled" : "Iast.PathTraversal.AspNetMvc5.IastDisabled";
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/ExecuteCommand?file=nonexisting.exe&argumentLine=arg1", null)]
+    public async Task TestIastCommandInjectionRequest(string test, string url, string body)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var filename = _enableIast ? "Iast.CommandInjection.AspNetMvc5.IastEnabled" : "Iast.CommandInjection.AspNetMvc5.IastDisabled";
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    protected override string GetTestName() => _testName;
+}
+
 #endif

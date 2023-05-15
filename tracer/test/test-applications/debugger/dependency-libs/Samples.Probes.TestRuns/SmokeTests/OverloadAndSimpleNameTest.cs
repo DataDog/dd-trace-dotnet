@@ -34,7 +34,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData(useFullTypeName: false, unlisted: true)]
+        [LogMethodProbeTestData(useFullTypeName: false, unlisted: true, templateStr: "We cannot use a template with interpolated expressions here, because this is a probe on an  overloaded method, and that is currently not supported.")]
         public void Method(string callerName)
         {
             int a = callerName.Length;

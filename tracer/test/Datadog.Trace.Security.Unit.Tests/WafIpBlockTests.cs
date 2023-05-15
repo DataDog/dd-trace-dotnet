@@ -8,8 +8,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.RcmModels.AsmData;
+using Datadog.Trace.AppSec.Rcm;
+using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
@@ -29,14 +31,15 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             var js = JsonSerializer.Create();
             var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
-            var waf = initResult.Waf;
             using var sr = new StreamReader("rule-data1.json");
             using var jsonTextReader = new JsonTextReader(sr);
-            var rulesData = js.Deserialize<RuleData[]>(jsonTextReader);
-            waf!.Should().NotBeNull();
-            var res = waf!.UpdateRulesData(rulesData!);
-            res.Should().BeTrue();
-            using var context = waf.CreateContext();
+            var rulesData = js.Deserialize<List<RuleData>>(jsonTextReader);
+            initResult.Waf.Should().NotBeNull();
+            var configurationStatus = new ConfigurationStatus(string.Empty) { RulesDataByFile = { ["test"] = rulesData!.ToArray() } };
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
+            var res = initResult.Waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+            res.Success.Should().BeTrue();
+            using var context = initResult.Waf.CreateContext();
             var result = context!.Run(new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "51.222.158.205" } }, WafTests.TimeoutMicroSeconds);
             result.Should().NotBeNull();
             result!.ReturnCode.Should().Be(ReturnCode.Match);
@@ -57,10 +60,11 @@ namespace Datadog.Trace.Security.Unit.Tests
                 new RuleData[] { new() { Id = "id1", Type = "type1", Data = new[] { new Data { Expiration = 10, Value = "1" }, new Data { Expiration = 10, Value = "2" }, new Data { Expiration = 10, Value = "3" } } }, new() { Id = "id2", Type = "type2", Data = new[] { new Data { Expiration = 10, Value = "1" }, new Data { Expiration = null, Value = "2" }, new Data { Expiration = 10, Value = "3" } } }, new() { Id = "id3", Type = "type3", Data = new[] { new Data { Expiration = 55, Value = "1" }, new Data { Expiration = 55, Value = "2" }, new Data { Expiration = 10, Value = "3" } } }, new() { Id = "id2", Type = "type2", Data = new[] { new Data { Expiration = 30, Value = "1" }, new Data { Expiration = 30, Value = "2" }, new Data { Expiration = 30, Value = "3" } } } });
 
             result.Should().NotBeEmpty();
-            result.Should().ContainItemsAssignableTo<IDictionary<string, object>>();
+            result.Should().ContainItemsAssignableTo<RuleData>();
             result.Should().HaveCount(3);
 
-            var expectedResult = new List<object> { new Dictionary<string, object> { { "id", "id1" }, { "type", "type1" }, { "data", new List<object> { new Dictionary<string, object> { { "expiration", 10L }, { "value", "1" } }, new Dictionary<string, object> { { "expiration", 10L }, { "value", "2" } }, new Dictionary<string, object> { { "expiration", 10L }, { "value", "3" } }, } } }, new Dictionary<string, object> { { "id", "id2" }, { "type", "type2" }, { "data", new List<object> { new Dictionary<string, object> { { "expiration", 30L }, { "value", "1" } }, new Dictionary<string, object?> { { "value", "2" } }, new Dictionary<string, object> { { "expiration", 30L }, { "value", "3" } }, } } }, new Dictionary<string, object> { { "id", "id3" }, { "type", "type3" }, { "data", new List<object> { new Dictionary<string, object> { { "expiration", 55L }, { "value", "1" } }, new Dictionary<string, object> { { "expiration", 55L }, { "value", "2" } }, new Dictionary<string, object> { { "expiration", 10L }, { "value", "3" } }, } } } };
+            var expectedResult = new RuleData[] { new() { Id = "id1", Type = "type1", Data = new[] { new Data { Expiration = 10, Value = "1" }, new Data { Expiration = 10, Value = "2" }, new Data { Expiration = 10, Value = "3" } } }, new() { Id = "id2", Type = "type2", Data = new[] { new Data { Expiration = 30, Value = "1" }, new Data { Expiration = null, Value = "2" }, new Data { Expiration = 30, Value = "3" } } }, new() { Id = "id3", Type = "type3", Data = new[] { new Data { Expiration = 55, Value = "1" }, new Data { Expiration = 55, Value = "2" }, new Data { Expiration = 10, Value = "3" } } } };
+
             result.Should().BeEquivalentTo(expectedResult);
         }
 
@@ -71,15 +75,17 @@ namespace Datadog.Trace.Security.Unit.Tests
             var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
 
             using var waf = initResult.Waf;
+            waf.Should().NotBeNull();
             using var sr = new StreamReader("rule-data1.json");
             using var sr2 = new StreamReader("rule-data2.json");
             using var jsonTextReader = new JsonTextReader(sr);
             using var jsonTextReader2 = new JsonTextReader(sr2);
-            var rulesData = js.Deserialize<RuleData[]>(jsonTextReader);
-            var rulesData2 = js.Deserialize<RuleData[]>(jsonTextReader2);
-            var res = waf!.UpdateRulesData(rulesData!.Concat(rulesData2!));
-            res.Should().BeTrue();
-            using var context = waf.CreateContext();
+            var rulesData = js.Deserialize<List<RuleData>>(jsonTextReader);
+            var rulesData2 = js.Deserialize<List<RuleData>>(jsonTextReader2);
+            var configurationStatus = new ConfigurationStatus(string.Empty) { RulesDataByFile = { ["test"] = rulesData!.Concat(rulesData2!).ToArray() } };
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
+            var res = initResult.Waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+            using var context = waf!.CreateContext();
             var result = context!.Run(
                 new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "188.243.182.156" } },
                 WafTests.TimeoutMicroSeconds);

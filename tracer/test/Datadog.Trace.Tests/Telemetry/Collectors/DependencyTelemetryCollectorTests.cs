@@ -93,12 +93,19 @@ namespace Datadog.Trace.Tests.Telemetry
         [InlineData("App_global.asax.zt8edv4m")]
         [InlineData("App_Web_login.cshtml.6331810a.tvsbhzc3")]
         [InlineData("App_GlobalResources.9ccedwue")]
+        [InlineData("App_Browsers.6lthavvf")]
         [InlineData("App_Code.hhzpytyv")]
         [InlineData("App_Theme_Standard.6wkna0wf")]
         [InlineData("App_WebReferences.dvkaf7ph")]
+        [InlineData("CompiledRazorTemplates.Dynamic.RazorEngine_bfb5873170324b4c87d3e556e474eb87")]
+        [InlineData("expression_host_931769d0530d485abda6293dc21820f8")]
+        [InlineData("Expressions63eb484b939a686b78b792fb")]
+        [InlineData("EntityFrameworkDynamicProxies-pi-entityframework")]
+        [InlineData("zx_6c427a9d1b38402ea2ec25be277b3521")]
         [InlineData("0018eae6-bd49-41a4-9bd2-6be3a6544a15")]
         [InlineData("005ec706-91d7-4237-9466-bac51a64d90f")]
         [InlineData("00821386-7d9a-499b-8e7f-53dbbefcaf3d")]
+        [InlineData("{00821386-7d9a-499b-8e7f-53dbbefcaf3d}")]
         [InlineData("ℛ*00093a17-a657-432d-ad25-13cf53f44319#2-0")]
         [InlineData("ℛ*71ccc5b6-6f30-4c09-9e23-4e7ac5a9ad31#13-0")]
         [InlineData("ℛ*1887feb5-1546-46da-a64e-07cba2cb32fa#112-0")]
@@ -146,6 +153,34 @@ namespace Datadog.Trace.Tests.Telemetry
                 collector.AssemblyLoaded(ignoredName, "some-guid");
 
                 collector.HasChanges().Should().BeFalse($"{name} is a temp file name");
+            }
+        }
+
+        [Fact]
+        public void DoesNotHaveChangesWhenAssemblyVersionIsNull()
+        {
+            var name = "My.Assembly";
+            var ignoredName = CreateAssemblyName(null, name: name);
+
+            var collector = new DependencyTelemetryCollector();
+            collector.AssemblyLoaded(ignoredName, "some-guid");
+
+            collector.HasChanges().Should().BeFalse($"{name} has a null version");
+        }
+
+        [Fact]
+        public void DoesNotHaveChangesWhenAssemblyVersionIsZeroAndHasRandom8CharName()
+        {
+            for (var i = 0; i < 1_000; i++)
+            {
+                // Path.GetRandomFileName() returns a name with the right format, so truncate
+                var name = Path.GetRandomFileName().Substring(0, 8);
+                var ignoredName = CreateAssemblyName(new Version(0, 0, 0, 0), name: name);
+
+                var collector = new DependencyTelemetryCollector();
+                collector.AssemblyLoaded(ignoredName, "some-guid");
+
+                collector.HasChanges().Should().BeFalse($"{name} has a zero version");
             }
         }
 

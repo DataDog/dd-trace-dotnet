@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         Log.Error(ex, "Error extracting propagated HTTP headers.");
                     }
 
-                    if (tracer.Settings.IpHeaderEnabled || Security.Instance.Settings.Enabled)
+                    if (tracer.Settings.IpHeaderEnabled || Security.Instance.Enabled)
                     {
                         const string httpContextKey = "MS_HttpContext";
                         if (request.Properties.TryGetValue("MS_OwinContext", out var owinContextObj))
@@ -203,7 +203,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     tags.AspNetController = controller;
                     tags.AspNetArea = area;
                     tags.AspNetRoute = route;
-                    span.Context.TraceContext.RootSpan?.SetTag(Tags.HttpRoute, route);
+                    if (span.Context.TraceContext.RootSpan.Tags is AspNetTags rootAspNetTags)
+                    {
+                        rootAspNetTags.HttpRoute = route;
+                    }
+                    else
+                    {
+                        span.Context.TraceContext.RootSpan?.SetTag(Tags.HttpRoute, route);
+                    }
                 }
 
                 if (newResourceNamesEnabled)

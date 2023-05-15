@@ -9,18 +9,18 @@ namespace AllocSimulator
 {
     public class Engine : IEngine
     {
-        private const long Threshold = 100 * 1024;
-
         private IAllocProvider _provider;
         private ISampler _sampler;
+        private IUpscaler _upscaler;
         private long _cumulatedSize;
         private IDictionary<string, AllocInfo> _allocations;
 
         // TODO support a list of ISampler to compare non upscaled and upscaled for example
-        public Engine(IAllocProvider provider, ISampler sampler)
+        public Engine(IAllocProvider provider, ISampler sampler, IUpscaler upscaler)
         {
             _provider = provider;
             _sampler = sampler;
+            _upscaler = upscaler;
             _cumulatedSize = 0;
             _allocations = new Dictionary<string, AllocInfo>();
         }
@@ -61,20 +61,15 @@ namespace AllocSimulator
 
                     info.Size = info.Size + alloc.Size;
                     info.Count = info.Count + alloc.Count;
+                    _cumulatedSize += alloc.Size;
 
-                    if (ShouldSample(alloc.Size))
+                    if (_sampler.ShouldSample(alloc.Size))
                     {
-                        _sampler.OnAllocationTick(alloc.Type, alloc.Key, alloc.Size, _cumulatedSize);
+                        _upscaler.OnAllocationTick(alloc.Type, alloc.Key, alloc.Size, _cumulatedSize);
                         _cumulatedSize = 0;
                     }
                 }
             }
-        }
-
-        private bool ShouldSample(long size)
-        {
-            _cumulatedSize += size;
-            return (_cumulatedSize >= Threshold);
         }
     }
 }

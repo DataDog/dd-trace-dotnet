@@ -9,10 +9,29 @@
 class RawCpuSample : public RawSample
 {
 public:
+    RawCpuSample() noexcept = default;
+
+    RawCpuSample(RawCpuSample&& other) noexcept
+        :
+        RawSample(std::move(other)),
+        Duration(other.Duration)
+    {
+    }
+
+    RawCpuSample& operator=(RawCpuSample&& other) noexcept
+    {
+        if (this != &other)
+        {
+            RawSample::operator=(std::move(other));
+            Duration = other.Duration;
+        }
+        return *this;
+    }
+
     inline void OnTransform(std::shared_ptr<Sample>& sample, uint32_t valueOffset) const override
     {
         sample->AddValue(Duration * 1000000, valueOffset);
     }
 
-    std::uint64_t Duration;  // in milliseconds
+    std::uint64_t Duration; // in milliseconds
 };

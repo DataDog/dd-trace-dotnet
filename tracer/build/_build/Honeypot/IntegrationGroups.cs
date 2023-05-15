@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using GeneratePackageVersions;
 using Nuke.Common;
+using Logger = Serilog.Log;
 
 namespace Honeypot
 {
@@ -71,7 +72,9 @@ namespace Honeypot
             NugetPackages.Add("Serilog", new [] { "Serilog" });
             NugetPackages.Add("NLog", new [] { "NLog" });
             NugetPackages.Add("log4net", new [] { "log4net" });
+            NugetPackages.Add("Microsoft.Azure.Functions.Worker.Core", new string[] { });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Host", new [] { "Microsoft.Azure.WebJobs" });
+            NugetPackages.Add("Microsoft.Azure.WebJobs.Script.Grpc", new string[] { });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Script.WebHost", new string[] { });
             NugetPackages.Add("Couchbase.NetClient", new string[] { "CouchbaseNetClient" });
             NugetPackages.Add("Grpc.AspNetCore.Server", new string[] { "Grpc.AspNetCore" });
@@ -146,7 +149,7 @@ namespace Honeypot
 
                 if (latestSupportedPackage is null)
                 {
-                    Logger.Warn($"No version of {packageName} below maximum package version {MaximumAssemblyVersion}." +
+                    Logger.Warning($"No version of {packageName} below maximum package version {MaximumAssemblyVersion}." +
                                 $"Using latest instead");
                 }
 

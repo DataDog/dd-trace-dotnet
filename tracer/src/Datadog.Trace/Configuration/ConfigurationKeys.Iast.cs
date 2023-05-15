@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Iast.Settings;
+
 namespace Datadog.Trace.Configuration
 {
     internal partial class ConfigurationKeys
@@ -49,6 +51,34 @@ namespace Datadog.Trace.Configuration
             /// detect in a request. Defaults to 2.
             /// </summary>
             public const string VulnerabilitiesPerRequest = "DD_IAST_VULNERABILITIES_PER_REQUEST";
+
+            /// <summary>
+            /// Configuration key for specifying a custom regex to obfuscate source keys.
+            /// Default value is in TracerSettings
+            /// </summary>
+            /// <seealso cref="IastSettings.RedactionEnabled"/>
+            public const string RedactionEnabled = "DD_IAST_REDACTION_ENABLED";
+
+            /// <summary>
+            /// Configuration key for specifying a custom regex to obfuscate source keys.
+            /// Default value is in TracerSettings
+            /// </summary>
+            /// <seealso cref="IastSettings.RedactionKeysRegex"/>
+            public const string RedactionKeysRegex = "DD_IAST_REDACTION_KEYS_REGEXP";
+
+            /// <summary>
+            /// Configuration key for specifying a custom regex to obfuscate source values.
+            /// Default value is in TracerSettings
+            /// </summary>
+            /// <seealso cref="IastSettings.RedactionValuesRegex"/>
+            public const string RedactionValuesRegex = "DD_IAST_REDACTION_VALUES_REGEXP";
+
+            /// <summary>
+            /// Configuration key for specifying a timeout in milliseconds to the execution of the obfuscation regexes
+            /// Default value is 200ms
+            /// </summary>
+            /// <seealso cref="IastSettings.RedactionRegexTimeout"/>
+            public const string RedactionRegexTimeout = "DD_IAST_REDACTION_REGEXP_TIMEOUT";
         }
     }
 }

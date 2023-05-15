@@ -28,7 +28,6 @@
     </ClCompile>
     <ClCompile Include="environment_variables_util.cpp" />
     <ClCompile Include="tracer_tokens.cpp" />
-    <ClCompile Include="..\..\..\shared\src\native-lib\spdlog\src\spdlog.cpp" />
     <ClCompile Include="..\..\..\shared\src\native-src\string.cpp">
       <Filter>shared</Filter>
     </ClCompile>
@@ -146,6 +145,7 @@
     <ClInclude Include="iast\string_optimization_aspect_filter.h" />
     <ClInclude Include="iast\dataflow_il_rewriter.h" />
     <ClInclude Include="iast\dataflow_il_analysis.h" />
+    <ClInclude Include="Synchronized.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

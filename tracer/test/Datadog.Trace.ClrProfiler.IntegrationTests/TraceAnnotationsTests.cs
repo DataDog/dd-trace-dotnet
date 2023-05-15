@@ -86,9 +86,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             ddTraceMethodsString += ";Samples.TraceAnnotations.ExtensionMethods[ExtensionMethodForTestType,ExtensionMethodForTestTypeGeneric,ExtensionMethodForTestTypeTypeStruct];System.Net.Http.HttpRequestMessage[set_Method]";
 
             SetEnvironmentVariable("DD_TRACE_METHODS", ddTraceMethodsString);
-
             // Don't bother with telemetry when two assemblies are loaded because we could get unreliable results
-            MockTelemetryAgent<TelemetryData> telemetry = _twoAssembliesLoaded ? null : this.ConfigureTelemetry();
+            MockTelemetryAgent telemetry = _twoAssembliesLoaded ? null : this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent))
             {
@@ -160,7 +159,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void IntegrationDisabled()
         {
             // Don't bother with telemetry when two assemblies are loaded because we could get unreliable results
-            MockTelemetryAgent<TelemetryData> telemetry = _twoAssembliesLoaded ? null : this.ConfigureTelemetry();
+            MockTelemetryAgent telemetry = _twoAssembliesLoaded ? null : this.ConfigureTelemetry();
             SetEnvironmentVariable("DD_TRACE_METHODS", string.Empty);
             SetEnvironmentVariable("DD_TRACE_ANNOTATIONS_ENABLED", "false");
 

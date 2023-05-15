@@ -12,7 +12,7 @@
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "3.3.0",
-      "IncludeOnlyTargetFrameworks": ["net461"]
+      "IncludeOnlyTargetFrameworks": ["net462"]
     }]
   },
   {
@@ -29,7 +29,7 @@
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "2.3.0",
-      "IncludeOnlyTargetFrameworks": ["net461"]
+      "IncludeOnlyTargetFrameworks": ["net462"]
     }]
   },
   {
@@ -83,10 +83,24 @@
     "VersionConditions": [{
       "MinVersion": "5.0.0",
       "MaxVersionExclusive": "5.1.1",
-      "ExcludeTargetFrameworks": ["net461", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0"]
+      "ExcludeTargetFrameworks": ["net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0"]
     },{
       "MaxVersionExclusive": "6.0.0",
-      "ExcludeTargetFrameworks": ["net461", "netcoreapp2.1", "netcoreapp3.0"]
+      "ExcludeTargetFrameworks": ["net462", "netcoreapp2.1", "netcoreapp3.0"]
+    }]
+  },
+  {
+    "IntegrationName": "GraphQL7",
+    "SampleProjectName": "Samples.GraphQL7",
+    "NugetPackageSearchName": "GraphQL",
+    "MinVersion": "7.0.0",
+    "MaxVersionExclusive": "8.0.0",
+    "SpecificVersions": [
+      "7.*.*"
+    ],
+    "VersionConditions": [{
+      "MaxVersionExclusive": "8.0.0",
+      "ExcludeTargetFrameworks": ["net462", "netcoreapp2.1", "netcoreapp3.0"]
     }]
   },
   {
@@ -94,14 +108,18 @@
     "SampleProjectName": "Samples.HotChocolate",
     "NugetPackageSearchName": "HotChocolate.AspNetCore",
     "MinVersion": "11.0.0",
-    "MaxVersionExclusive": "13.0.0",
+    "MaxVersionExclusive": "14.0.0",
     "SpecificVersions": [
       "11.*.*",
-      "12.*.*"
+      "12.*.*",
+      "13.*.*"
     ],
     "VersionConditions": [{
-      "MaxVersionExclusive": "13.0.0",
-      "ExcludeTargetFrameworks": [ "net461", "netcoreapp2.1", "netcoreapp3.0" ]
+      "MinVersion": "13.0.0",
+      "ExcludeTargetFrameworks": [ "netcoreapp3.1", "net5.0" ]
+    },{
+      "MaxVersionExclusive": "14.0.0",
+      "ExcludeTargetFrameworks": [ "net462", "netcoreapp2.1", "netcoreapp3.0" ]
     }]
   },
   {
@@ -124,6 +142,19 @@
   {
     "IntegrationName": "RabbitMQ",
     "SampleProjectName": "Samples.RabbitMQ",
+    "NugetPackageSearchName": "RabbitMQ.Client",
+    "MinVersion": "3.6.9",
+    "MaxVersionExclusive": "7.0.0",
+    "SpecificVersions": [
+      "3.*.*",
+      "4.*.*",
+      "5.*.*",
+      "6.*.*"
+    ]
+  },
+  {
+    "IntegrationName": " DataStreamsRabbitMQ",
+    "SampleProjectName": "Samples.DataStreams.RabbitMQ",
     "NugetPackageSearchName": "RabbitMQ.Client",
     "MinVersion": "3.6.9",
     "MaxVersionExclusive": "7.0.0",
@@ -172,7 +203,7 @@
     "MaxVersionExclusive": "3.0.0",
     "VersionConditions": [{
       "MaxVersionExclusive": "1.1.700",
-      "IncludeOnlyTargetFrameworks": ["net461"]
+      "IncludeOnlyTargetFrameworks": ["net462"]
     },{
       "MinVersion": "2.2.0",
       "ExcludeTargetFrameworks": ["netcoreapp2.1"]
@@ -196,7 +227,7 @@
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "5.0.0",
-      "IncludeOnlyTargetFrameworks": ["net461"]
+      "IncludeOnlyTargetFrameworks": ["net462"]
     },{
       "MinVersion": "6.2.0",
       "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
@@ -212,7 +243,11 @@
       "6.7.*",
       "6.*.*",
       "8.*.*"
-    ]
+    ],
+    "VersionConditions": [{
+      "MinVersion": "8.0.33",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
+    }]
   },
   {
     "IntegrationName": "MySqlConnector",
@@ -240,11 +275,16 @@
       "6.*.*",
       "7.*.*"
     ],
-    "VersionConditions": [{
-      "MinVersion": "3.1.32",
-      "MaxVersionExclusive": "4.0.0",
-      "ExcludeTargetFrameworks": ["netcoreapp3.0"]
-    }]
+    "VersionConditions": [
+      {
+        "MinVersion": "3.1.32",
+        "MaxVersionExclusive": "4.0.0",
+        "ExcludeTargetFrameworks": [ "netcoreapp3.0" ]
+      },
+      {
+        "ExcludeTargetFrameworks": [ "netcoreapp2.1" ]
+      }
+    ]
   },
   {
     "IntegrationName": "XUnit",
@@ -321,7 +361,7 @@
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "2.0.0",
-      "IncludeOnlyTargetFrameworks": ["net461"]
+      "IncludeOnlyTargetFrameworks": ["net462"]
     }]
   },
   {
@@ -339,7 +379,7 @@
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "4.5.0",
-      "IncludeOnlyTargetFrameworks": ["net461"]
+      "IncludeOnlyTargetFrameworks": ["net462"]
     }]
   },
   {
@@ -354,7 +394,7 @@
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "2.0.6",
-      "IncludeOnlyTargetFrameworks": ["net461"]
+      "IncludeOnlyTargetFrameworks": ["net462"]
     }]
   },
   {
@@ -374,7 +414,7 @@
       "ExcludeTargetFrameworks": ["net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
     },{
       "MinVersion": "5.0.0",
-      "ExcludeTargetFrameworks": ["net461"]
+      "ExcludeTargetFrameworks": ["net462"]
     }]
   },
   {
@@ -418,7 +458,7 @@
       "MinVersion": "2.0.0",
       "SkipAlpine": true
     }, {
-      "MaxVersionExclusive": "2.37.0",
+      "MaxVersionExclusive": "2.38.1",
       "SkipArm64": true
     }]
   },
@@ -437,7 +477,7 @@
       "MinVersion": "2.0.0",
       "SkipAlpine": true
     }, {
-      "MaxVersionExclusive": "2.37.0",
+      "MaxVersionExclusive": "2.38.1",
       "SkipArm64": true
     }]
   },

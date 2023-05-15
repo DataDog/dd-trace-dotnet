@@ -100,22 +100,25 @@ namespace Datadog.Trace
 
             discoveryService ??= GetDiscoveryService(settings);
 
-            statsd = settings.TracerMetricsEnabled
+            bool runtimeMetricsEnabled = settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer;
+
+            statsd = (settings.TracerMetricsEnabled || runtimeMetricsEnabled)
                          ? (statsd ?? CreateDogStatsdClient(settings, defaultServiceName))
                          : null;
             sampler ??= GetSampler(settings);
-            agentWriter ??= GetAgentWriter(settings, statsd, sampler, discoveryService);
+            agentWriter ??= GetAgentWriter(settings, settings.TracerMetricsEnabled ? statsd : null, sampler, discoveryService);
             scopeManager ??= new AsyncLocalScopeManager();
 
-            if (settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer)
+            if (runtimeMetricsEnabled)
             {
-                runtimeMetrics ??= new RuntimeMetricsWriter(statsd ?? CreateDogStatsdClient(settings, defaultServiceName), TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService);
+                runtimeMetrics ??= new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService);
             }
 
             var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings);
             logSubmissionManager = DirectLogSubmissionManager.Create(
                 logSubmissionManager,
                 settings.LogSubmissionSettings,
+                settings.AzureAppServiceMetadata,
                 defaultServiceName,
                 settings.Environment,
                 settings.ServiceVersion,
@@ -212,28 +215,18 @@ namespace Datadog.Trace
         protected virtual IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)
             => DiscoveryService.Create(settings.Exporter);
 
-        private static IDogStatsd CreateDogStatsdClient(ImmutableTracerSettings settings, string serviceName)
+        internal static IDogStatsd CreateDogStatsdClient(ImmutableTracerSettings settings, List<string> constantTags, string prefix = null)
         {
             try
             {
-                var constantTags = new List<string>
-                                   {
-                                       "lang:.NET",
-                                       $"lang_interpreter:{FrameworkDescription.Instance.Name}",
-                                       $"lang_version:{FrameworkDescription.Instance.ProductVersion}",
-                                       $"tracer_version:{TracerConstants.AssemblyVersion}",
-                                       $"service:{NormalizerTraceProcessor.NormalizeService(serviceName)}",
-                                       $"{Tags.RuntimeId}:{Tracer.RuntimeId}"
-                                   };
-
                 if (settings.Environment != null)
                 {
-                    constantTags.Add($"env:{settings.Environment}");
+                    constantTags?.Add($"env:{settings.Environment}");
                 }
 
                 if (settings.ServiceVersion != null)
                 {
-                    constantTags.Add($"version:{settings.ServiceVersion}");
+                    constantTags?.Add($"version:{settings.ServiceVersion}");
                 }
 
                 var statsd = new DogStatsdService();
@@ -246,7 +239,8 @@ namespace Datadog.Trace
                         Log.Information("Using windows named pipes for metrics transport.");
                         statsd.Configure(new StatsdConfig
                         {
-                            ConstantTags = constantTags.ToArray()
+                            ConstantTags = constantTags?.ToArray(),
+                            Prefix = prefix
                         });
                         break;
 #if NETCOREAPP3_1_OR_GREATER
@@ -255,7 +249,8 @@ namespace Datadog.Trace
                         statsd.Configure(new StatsdConfig
                         {
                             StatsdServerName = $"{ExporterSettings.UnixDomainSocketPrefix}{settings.Exporter.MetricsUnixDomainSocketPath}",
-                            ConstantTags = constantTags.ToArray()
+                            ConstantTags = constantTags?.ToArray(),
+                            Prefix = prefix
                         });
                         break;
 #endif
@@ -265,7 +260,8 @@ namespace Datadog.Trace
                         {
                             StatsdServerName = settings.Exporter.AgentUri.DnsSafeHost,
                             StatsdPort = settings.Exporter.DogStatsdPort,
-                            ConstantTags = constantTags.ToArray()
+                            ConstantTags = constantTags?.ToArray(),
+                            Prefix = prefix
                         });
                         break;
                 }
@@ -277,6 +273,21 @@ namespace Datadog.Trace
                 Log.Error(ex, "Unable to instantiate StatsD client.");
                 return new NoOpStatsd();
             }
+        }
+
+        private static IDogStatsd CreateDogStatsdClient(ImmutableTracerSettings settings, string serviceName)
+        {
+            var constantTags = new List<string>
+            {
+                "lang:.NET",
+                $"lang_interpreter:{FrameworkDescription.Instance.Name}",
+                $"lang_version:{FrameworkDescription.Instance.ProductVersion}",
+                $"tracer_version:{TracerConstants.AssemblyVersion}",
+                $"service:{NormalizerTraceProcessor.NormalizeService(serviceName)}",
+                $"{Tags.RuntimeId}:{Tracer.RuntimeId}"
+            };
+
+            return CreateDogStatsdClient(settings, constantTags);
         }
 
         /// <summary>

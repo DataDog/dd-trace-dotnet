@@ -175,6 +175,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                 DebuggerNativeMethods.InstrumentProbes(
                     methodProbes.Select(t => t.Item2).ToArray(),
                     Array.Empty<NativeLineProbeDefinition>(),
+                    Array.Empty<NativeSpanProbeDefinition>(),
                     Array.Empty<NativeRemoveProbeRequest>());
             }
 

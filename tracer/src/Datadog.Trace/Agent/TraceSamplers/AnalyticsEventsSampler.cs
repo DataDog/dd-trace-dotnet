@@ -14,10 +14,11 @@ namespace Datadog.Trace.Agent.TraceSamplers
         {
             for (int i = 0; i < trace.Count; i++)
             {
-                var span = trace.Array[i + trace.Offset];
-                if (span.GetMetric(Tags.Analytics) is double rate)
+                var span = trace.Array![i + trace.Offset];
+
+                if (span.GetMetric(Tags.Analytics) is { } rate)
                 {
-                    return SamplingHelpers.SampleByRate(span.TraceId, rate);
+                    return SamplingHelpers.SampleByRate(span.TraceId128, rate);
                 }
             }
 

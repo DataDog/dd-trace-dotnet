@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration
@@ -384,6 +385,13 @@ namespace Datadog.Trace.Configuration
         public const string ObfuscationQueryStringRegexTimeout = "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP_TIMEOUT";
 
         /// <summary>
+        /// Configuration key for setting the max size of the querystring to report, before obfuscation
+        /// Default value is 5000, 0 means that we don't limit the size.
+        /// </summary>
+        /// <seealso cref="TracerSettings.QueryStringReportingSize"/>
+        public const string QueryStringReportingSize = "DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE";
+
+        /// <summary>
         /// Configuration key for enabling/disabling reporting query string
         /// Default value is true
         /// </summary>
@@ -396,6 +404,13 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="TracerSettings.DbmPropagationMode"/>
         public const string DbmPropagationMode = "DD_DBM_PROPAGATION_MODE";
+
+        /// <summary>
+        /// Configuration key for setting the schema version for service naming and span attributes
+        /// Accepted values are: "v1", "v0"
+        /// Default value is "v0"
+        /// </summary>
+        public const string MetadataSchemaVersion = "DD_TRACE_SPAN_ATTRIBUTE_SCHEMA";
 
         /// <summary>
         /// String constants for CI Visibility configuration keys.
@@ -466,6 +481,11 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for forcing Agent's EVP Proxy
             /// </summary>
             public const string ForceAgentsEvpProxy = "DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY";
+
+            /// <summary>
+            /// Configuration key for setting the external code coverage file path
+            /// </summary>
+            public const string ExternalCodeCoveragePath = "DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH";
         }
 
         /// <summary>
@@ -552,7 +572,7 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Enables a fix around header tags normalization.
             /// We used to normalize periods even if a tag was provided for a header, whereas we should not.
-            /// This flag defaults to true and is here in case customers need retrocompatibility only
+            /// This flag defaults to true and is here only in case customers need backwards compatibility.
             /// </summary>
             public const string HeaderTagsNormalizationFixEnabled = "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED";
 
@@ -560,6 +580,22 @@ namespace Datadog.Trace.Configuration
             /// Enables beta support for instrumentation via the System.Diagnostics API and the OpenTelemetry SDK.
             /// </summary>
             public const string OpenTelemetryEnabled = "DD_TRACE_OTEL_ENABLED";
+
+            /// <summary>
+            /// Enables generating 128-bit trace ids instead of 64-bit trace ids.
+            /// Note that a 128-bit trace id may be received from an upstream service or from
+            /// an Activity even if we are not generating them ourselves.
+            /// Default value is <c>false</c> (disabled).
+            /// </summary>
+            public const string TraceId128BitGenerationEnabled = "DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED";
+
+            /// <summary>
+            /// Enables injecting 128-bit trace ids into logs as a hexadecimal string.
+            /// If disabled, 128-bit trace ids will be truncated to the lower 64 bits,
+            /// and all trace ids will be injected as decimal strings
+            /// Default value is <c>false</c> (disabled).
+            /// </summary>
+            public const string TraceId128BitLoggingEnabled = "DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED";
         }
 
         internal static class Telemetry

@@ -5,9 +5,11 @@
 
 #include "IConfiguration.h"
 #include "IExporter.h"
+#include "IUpscaleProvider.h"
 #include "MetricsRegistry.h"
 #include "Sample.h"
 #include "TagsHelper.h"
+
 #include <mutex>
 
 extern "C"
@@ -20,6 +22,7 @@ extern "C"
 #include <string_view>
 #include <unordered_map>
 #include <vector>
+#include <optional>
 
 class Sample;
 class IMetricsSender;
@@ -38,12 +41,13 @@ public:
         IRuntimeInfo* runtimeInfo,
         IEnabledProfilers* enabledProfilers,
         MetricsRegistry& metricsRegistry,
-        IAllocationsRecorder* allocationsRecorder);
+        IAllocationsRecorder* allocationsRecorder
+        );
     ~LibddprofExporter() override;
     bool Export() override;
     void Add(std::shared_ptr<Sample> const& sample) override;
     void SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint) override;
-
+    void RegisterUpscaleProvider(IUpscaleProvider* provider) override;
 
 private:
     class SerializedProfile
@@ -52,7 +56,7 @@ private:
         SerializedProfile(struct ddog_prof_Profile* profile);
         ~SerializedProfile();
 
-        ddog_prof_Vec_U8 GetBuffer() const;
+        ddog_Vec_U8 GetBuffer() const;
         ddog_Timespec GetStart() const;
         ddog_Timespec GetEnd() const;
         ddog_prof_ProfiledEndpointsStats* GetEndpointsStats() const;
@@ -125,15 +129,21 @@ private:
 
     ddog_prof_Exporter_Request* CreateRequest(SerializedProfile const& encodedProfile, ddog_prof_Exporter* exporter, const Tags& additionalTags) const;
     ddog_Endpoint CreateEndpoint(IConfiguration* configuration);
-    ProfileInfoScope GetInfo(std::string_view runtimeId);
+    ProfileInfoScope GetOrCreateInfo(std::string_view runtimeId);
 
     void ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int idx);
     void SaveMetricsToDisk(const std::string& content) const;
 
-    static bool Send(ddog_prof_Exporter_Request* request, ddog_prof_Exporter* exporter) ;
+    // we *must* pass the reference to the pointer
+    // the Send function in rust takes the ownership, free the memory and set the pointer to null (avoid double free)
+    static bool Send(ddog_prof_Exporter_Request*& request, ddog_prof_Exporter* exporter) ;
+    static void AddUpscalingRules(ddog_prof_Profile* profile, std::vector<UpscalingInfo> const& upscalingInfos);
+    static fs::path CreatePprofOutputPath(IConfiguration* configuration);
+
     std::string GenerateFilePath(const std::string& applicationName, int idx, const std::string& extension) const;
-    static fs::path CreatePprofOutputPath(IConfiguration* configuration) ;
     std::string CreateMetricsFileContent() const;
+    std::vector<UpscalingInfo> GetUpscalingInfos();
+    std::optional<ProfileInfoScope> GetInfo(const std::string& runtimeId);
 
     static tags CommonTags;
     static std::string const ProcessId;
@@ -169,6 +179,7 @@ private:
     MetricsRegistry& _metricsRegistry;
     fs::path _metricsFileFolder;
     IAllocationsRecorder* _allocationsRecorder;
+    std::vector<IUpscaleProvider*> _upscaledProviders;
 
 public:  // for tests
     static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);

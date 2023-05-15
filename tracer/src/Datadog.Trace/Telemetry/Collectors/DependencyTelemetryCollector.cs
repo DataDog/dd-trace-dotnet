@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using Datadog.Trace.Debugger.Configurations;
 
 namespace Datadog.Trace.Telemetry
 {
@@ -34,25 +35,37 @@ namespace Datadog.Trace.Telemetry
         internal void AssemblyLoaded(AssemblyName assembly, string moduleVersionId)
         {
             // exclude dlls we're not interested in which have a "random" component
-            // ASP.NET sites generate an App_Web_*.dll with a random string for
+            // - ASP.NET site dlls's e.g. App_Web_*.dll
+            // - Assemblies without a version or explicitly version 0.0.0.0 (and have 8 aplphnumeric values)
+            // - Assemblies created by expression evaluation in VB.NET (expression_host_, Expressions12334324)
+            // - Dlls loaded from asp.net temp directory
             var assemblyName = assembly.Name;
             if (assemblyName is null or ""
+             || assembly.Version is null
              || IsTempPathPattern(assemblyName)
              || (assemblyName[0] == 'A'
               && (assemblyName.StartsWith("App_Web_", StringComparison.Ordinal)
                || assemblyName.StartsWith("App_Theme_", StringComparison.Ordinal)
                || assemblyName.StartsWith("App_GlobalResources.", StringComparison.Ordinal)
+               || assemblyName.StartsWith("App_LocalResources.", StringComparison.Ordinal)
                || assemblyName.StartsWith("App_global.asax.", StringComparison.Ordinal)
                || assemblyName.StartsWith("App_Code.", StringComparison.Ordinal)
+               || assemblyName.StartsWith("App_Browsers.", StringComparison.Ordinal)
                || assemblyName.StartsWith("App_WebReferences.", StringComparison.Ordinal)))
-             || IsGuid(assemblyName))
+             || assemblyName.StartsWith("CompiledRazorTemplates.Dynamic.RazorEngine_", StringComparison.Ordinal)
+             || assemblyName.StartsWith("EntityFrameworkDynamicProxies-", StringComparison.Ordinal)
+             || assemblyName.StartsWith("expression_host_", StringComparison.Ordinal)
+             || (assemblyName.StartsWith("Expressions", StringComparison.Ordinal) && IsHexString(assemblyName, 11))
+             || (assembly.Version is { Major: 0, Minor: 0, Build: 0, Revision: 0 } && IsZeroVersionAssemblyPattern(assemblyName))
+             || IsGuid(assemblyName)
+             || IsZxPattern(assemblyName))
             {
                 return;
             }
 
             var key = new DependencyTelemetryData(name: assemblyName)
             {
-                Version = assembly.Version?.ToString(),
+                Version = assembly.Version.ToString(),
                 Hash = moduleVersionId,
             };
 
@@ -108,16 +121,29 @@ namespace Datadog.Trace.Telemetry
                 && IsBase32Char(assemblyName[9])
                 && IsBase32Char(assemblyName[10])
                 && IsBase32Char(assemblyName[11]);
+        }
 
-            static bool IsBase32Char(char c)
+        private static bool IsZxPattern(string assemblyName)
+        {
+            // zx_01aab0f40246424bb7ebaaf80635953b
+            return assemblyName.Length == 35
+                && assemblyName[0] == 'z'
+                && assemblyName[1] == 'x'
+                && assemblyName[2] == '_'
+                && IsHexString(assemblyName, 3);
+        }
+
+        private static bool IsHexString(string assemblyName, int start)
+        {
+            for (int i = assemblyName.Length - 1; i >= start; i--)
             {
-                return c switch
+                if (!IsHexChar(assemblyName[i]))
                 {
-                    >= 'a' and <= 'z' => true,
-                    >= '0' and <= '5' => true,
-                    _ => false
-                };
+                    return false;
+                }
             }
+
+            return true;
         }
 
         private static bool IsGuid(string assemblyName)
@@ -126,12 +152,47 @@ namespace Datadog.Trace.Telemetry
             {
                 // Simple implementation to remove guids
                 case 36 when assemblyName[8] == '-' && assemblyName[13] == '-' && assemblyName[18] == '-' && assemblyName[23] == '-':
+                // Remove Guids with brackets
+                case 38 when assemblyName[9] == '-' && assemblyName[14] == '-' && assemblyName[19] == '-' && assemblyName[24] == '-':
                 // and other weird use cases like ℛ*710fa04a-6428-4dd1-85a0-0419c142709b#5-0 where the suffix can be up to 7 chars long
                 case >= 42 when assemblyName[10] == '-' && assemblyName[15] == '-' && assemblyName[20] == '-' && assemblyName[25] == '-':
                     return true;
                 default:
                     return false;
             }
+        }
+
+        private static bool IsHexChar(char c)
+        {
+            return c switch
+            {
+                >= '0' and <= '9' => true,
+                >= 'a' and <= 'f' => true,
+                _ => false
+            };
+        }
+
+        private static bool IsZeroVersionAssemblyPattern(string assemblyName)
+        {
+            return assemblyName.Length == 8
+                && IsBase32Char(assemblyName[0])
+                && IsBase32Char(assemblyName[1])
+                && IsBase32Char(assemblyName[2])
+                && IsBase32Char(assemblyName[3])
+                && IsBase32Char(assemblyName[4])
+                && IsBase32Char(assemblyName[5])
+                && IsBase32Char(assemblyName[6])
+                && IsBase32Char(assemblyName[7]);
+        }
+
+        private static bool IsBase32Char(char c)
+        {
+            return c switch
+            {
+                >= 'a' and <= 'z' => true,
+                >= '0' and <= '5' => true,
+                _ => false
+            };
         }
 
         private void SetHasChanges()

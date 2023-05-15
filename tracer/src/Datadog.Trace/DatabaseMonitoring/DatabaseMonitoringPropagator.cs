@@ -17,36 +17,40 @@ namespace Datadog.Trace.DatabaseMonitoring
         private const string SqlCommentVersion = "ddpv";
         private const string SqlCommentEnv = "dde";
 
-        internal static string PropagateSpanData(DbmPropagationLevel propagationStyle, string configuredServiceName, SpanContext context)
+        internal static string PropagateSpanData(DbmPropagationLevel propagationStyle, string configuredServiceName, SpanContext context, IntegrationId integrationId)
         {
-            if (propagationStyle != DbmPropagationLevel.Service && propagationStyle != DbmPropagationLevel.Full)
+            if ((integrationId is IntegrationId.MySql or IntegrationId.Npgsql or IntegrationId.SqlClient) &&
+                (propagationStyle is DbmPropagationLevel.Service or DbmPropagationLevel.Full))
             {
-                return string.Empty;
+                var propagatorSringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                propagatorSringBuilder.Append($"/*{SqlCommentSpanService}='{Uri.EscapeDataString(context.ServiceName)}'");
+
+                if (context.TraceContext?.Environment is { } envTag)
+                {
+                    propagatorSringBuilder.Append($",{SqlCommentEnv}='{Uri.EscapeDataString(envTag)}'");
+                }
+
+                propagatorSringBuilder.Append($",{SqlCommentRootService}='{Uri.EscapeDataString(configuredServiceName)}'");
+
+                if (context.TraceContext?.ServiceVersion is { } versionTag)
+                {
+                    propagatorSringBuilder.Append($",{SqlCommentVersion}='{Uri.EscapeDataString(versionTag)}'");
+                }
+
+                // For SqlServer we don't inject the traceparent yet to not affect performance since this DB generates a new plan for any query changes
+                if (propagationStyle == DbmPropagationLevel.Full && integrationId is not IntegrationId.SqlClient)
+                {
+                    propagatorSringBuilder.Append($",{W3CTraceContextPropagator.TraceParentHeaderName}='{W3CTraceContextPropagator.CreateTraceParentHeader(context)}'*/");
+                }
+                else
+                {
+                    propagatorSringBuilder.Append("*/");
+                }
+
+                return StringBuilderCache.GetStringAndRelease(propagatorSringBuilder);
             }
 
-            var propagatorSringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-            propagatorSringBuilder.Append($"/*{SqlCommentRootService}='{configuredServiceName}',{SqlCommentSpanService}='{context.ServiceName}'");
-
-            if (context.TraceContext?.ServiceVersion is { } versionTag)
-            {
-                propagatorSringBuilder.Append($",{SqlCommentVersion}='{versionTag}'");
-            }
-
-            if (context.TraceContext?.Environment is { } envTag)
-            {
-                propagatorSringBuilder.Append($",{SqlCommentEnv}='{envTag}'");
-            }
-
-            if (propagationStyle == DbmPropagationLevel.Full)
-            {
-                propagatorSringBuilder.Append($",{W3CTraceContextPropagator.TraceParentHeaderName}='{W3CTraceContextPropagator.CreateTraceParentHeader(context)}'*/");
-            }
-            else
-            {
-                propagatorSringBuilder.Append("*/");
-            }
-
-            return StringBuilderCache.GetStringAndRelease(propagatorSringBuilder);
+            return string.Empty;
         }
     }
 }

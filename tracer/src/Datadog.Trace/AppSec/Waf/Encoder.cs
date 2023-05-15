@@ -66,7 +66,7 @@ namespace Datadog.Trace.AppSec.Waf
                     return Marshal.PtrToStringAnsi(o.Array) ?? string.Empty;
                 case ObjType.Array:
                     var arr = new object[o.NbEntries];
-                    for (int i = 0; i < arr.Length; i++)
+                    for (var i = 0; i < arr.Length; i++)
                     {
                         var nextObj = Marshal.PtrToStructure(o.Array + (i * ObjectStructSize), typeof(DdwafObjectStruct));
                         if (nextObj != null)
@@ -78,7 +78,7 @@ namespace Datadog.Trace.AppSec.Waf
 
                     return arr;
                 case ObjType.Map:
-                    int entries = (int)o.NbEntries;
+                    var entries = (int)o.NbEntries;
                     var map = new Dictionary<string, object>(entries);
                     for (int i = 0; i < entries; i++)
                     {

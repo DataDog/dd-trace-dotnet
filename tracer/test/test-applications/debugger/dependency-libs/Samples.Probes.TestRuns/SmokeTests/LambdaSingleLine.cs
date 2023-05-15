@@ -2,7 +2,7 @@
 
 namespace Samples.Probes.TestRuns.SmokeTests;
 
-[LineProbeTestData(lineNumber: 10, unlisted: true)]
+[LogLineProbeTestData(lineNumber: 10, unlisted: true)]
 public class LambdaSingleLine : IRun
 {
     public void Run()

@@ -14,6 +14,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
@@ -78,7 +79,8 @@ namespace Datadog.Trace
             Telemetry = telemetry;
             DiscoveryService = discoveryService;
             TraceProcessors = traceProcessors ?? Array.Empty<ITraceProcessor>();
-            QueryStringManager = new(settings?.QueryStringReportingEnabled ?? true, settings?.ObfuscationQueryStringRegexTimeout ?? 100, settings?.ObfuscationQueryStringRegex ?? TracerSettings.DefaultObfuscationQueryStringRegex);
+            Schema = new NamingSchema(settings.MetadataSchemaVersion, defaultServiceName, settings.ServiceNameMappings);
+            QueryStringManager = new(settings.QueryStringReportingEnabled, settings.ObfuscationQueryStringRegexTimeout, settings.QueryStringReportingSize, settings.ObfuscationQueryStringRegex);
             var lstTagProcessors = new List<ITagProcessor>(TraceProcessors.Length);
             foreach (var traceProcessor in TraceProcessors)
             {
@@ -134,6 +136,8 @@ namespace Datadog.Trace
 
         /// Gets the global <see cref="QueryStringManager"/> instance.
         public QueryStringManager QueryStringManager { get; }
+
+        public NamingSchema Schema { get; }
 
         public IDogStatsd Statsd { get; }
 
@@ -217,18 +221,18 @@ namespace Datadog.Trace
                     await oldManager.AgentWriter.FlushAndCloseAsync().ConfigureAwait(false);
                 }
 
-                var statsdReplaced = false;
-                if (oldManager.Statsd != newManager.Statsd)
-                {
-                    statsdReplaced = true;
-                    oldManager.Statsd?.Dispose();
-                }
-
                 var runtimeMetricsWriterReplaced = false;
                 if (oldManager.RuntimeMetrics != newManager.RuntimeMetrics)
                 {
                     runtimeMetricsWriterReplaced = true;
                     oldManager.RuntimeMetrics?.Dispose();
+                }
+
+                var statsdReplaced = false;
+                if (oldManager.Statsd != newManager.Statsd)
+                {
+                    statsdReplaced = true;
+                    oldManager.Statsd?.Dispose();
                 }
 
                 var telemetryReplaced = false;
@@ -403,6 +407,9 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("obfuscation_querystring_regex_timout");
                     writer.WriteValue(instanceSettings.ObfuscationQueryStringRegexTimeout);
+
+                    writer.WritePropertyName("obfuscation_querystring_size");
+                    writer.WriteValue(instanceSettings.QueryStringReportingSize);
 
                     if (string.Compare(instanceSettings.ObfuscationQueryStringRegex, TracerSettings.DefaultObfuscationQueryStringRegex, StringComparison.Ordinal) != 0)
                     {
@@ -604,7 +611,10 @@ namespace Datadog.Trace
             // use the count of Tracer instances as the heartbeat value
             // to estimate the number of "live" Tracers than can potentially
             // send traces to the Agent
-            _instance?.Statsd?.Gauge(TracerMetricNames.Health.Heartbeat, Tracer.LiveTracerCount);
+            if (_instance?.Settings.TracerMetricsEnabled == true)
+            {
+                _instance?.Statsd?.Gauge(TracerMetricNames.Health.Heartbeat, Tracer.LiveTracerCount);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

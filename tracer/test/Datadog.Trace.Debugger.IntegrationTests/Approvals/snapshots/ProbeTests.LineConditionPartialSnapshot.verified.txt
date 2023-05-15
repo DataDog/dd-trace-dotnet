@@ -14,7 +14,7 @@
           "location": {
             "file": "LineConditionPartialSnapshot.cs",
             "lines": [
-              30
+              26
             ]
           }
         },

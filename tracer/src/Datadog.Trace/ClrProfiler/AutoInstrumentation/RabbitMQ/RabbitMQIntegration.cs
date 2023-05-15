@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -68,6 +68,52 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             return scope;
         }
 
+        internal static void SetDataStreamsCheckpointOnProduce(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object> headers)
+        {
+            var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+            if (dataStreamsManager == null || !dataStreamsManager.IsEnabled || headers == null)
+            {
+                return;
+            }
+
+            try
+            {
+                var headersAdapter = new RabbitMQHeadersCollectionAdapter(headers);
+                var edgeTags = string.IsNullOrEmpty(tags.Exchange) ?
+                                   // exchange can be empty for "direct"
+                                   new[] { "direction:out", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" } :
+                                   new[] { "direction:out", $"exchange:{tags.Exchange}", $"has_routing_key:{!string.IsNullOrEmpty(tags.RoutingKey)}", "type:rabbitmq" };
+                span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags);
+                dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, headersAdapter);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to set data streams checkpoint on produce");
+            }
+        }
+
+        internal static void SetDataStreamsCheckpointOnConsume(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object> headers)
+        {
+            var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+            if (dataStreamsManager == null || !dataStreamsManager.IsEnabled || headers == null)
+            {
+                return;
+            }
+
+            try
+            {
+                var headersAdapter = new RabbitMQHeadersCollectionAdapter(headers);
+                var edgeTags = new[] { "direction:in", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" };
+                var pathwayContext = dataStreamsManager.ExtractPathwayContext(headersAdapter);
+                span.Context.MergePathwayContext(pathwayContext);
+                span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to set data streams checkpoint on consume");
+            }
+        }
+
         internal static CallTargetState BasicDeliver_OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, TBasicProperties basicProperties, TBody body)
             where TBasicProperties : IBasicProperties
             where TBody : IBody // ReadOnlyMemory<byte> body in 6.0.0
@@ -101,6 +147,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 tags.MessageSize = body?.Length.ToString() ?? "0";
             }
 
+            RabbitMQIntegration.SetDataStreamsCheckpointOnConsume(Tracer.Instance, scope.Span, tags, basicProperties?.Headers);
             return new CallTargetState(scope);
         }
 

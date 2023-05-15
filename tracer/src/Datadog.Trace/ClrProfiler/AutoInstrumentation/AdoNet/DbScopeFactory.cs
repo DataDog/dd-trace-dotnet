@@ -66,10 +66,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     IastModule.OnSqlQuery(commandText, integrationId);
                 }
 
-                if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled && (integrationId == IntegrationId.MySql || integrationId == IntegrationId.Npgsql))
+                if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled)
                 {
-                    command.CommandText = $"{DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, scope.Span.Context)} {commandText}";
-                    tags.DbmDataPropagated = "true";
+                    var propagatedCommand = DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, scope.Span.Context, integrationId);
+
+                    if (propagatedCommand != string.Empty)
+                    {
+                        command.CommandText = $"{propagatedCommand} {commandText}";
+                        tags.DbmDataPropagated = "true";
+                    }
                 }
             }
             catch (Exception ex)
@@ -223,7 +228,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     if (DbTypeName != dbTypeName)
                     {
                         // We cannot cache in the base class
-                        return $"{tracer.DefaultServiceName}-{dbTypeName}";
+                        return tracer.Settings.GetServiceName(tracer, dbTypeName);
                     }
 
                     var serviceNameCache = _serviceNameCache;
@@ -239,7 +244,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     // We create or replace the cache with the new service name
                     // Slowpath
                     var defaultServiceName = tracer.DefaultServiceName;
-                    serviceName = $"{defaultServiceName}-{dbTypeName}";
+                    serviceName = tracer.Settings.GetServiceName(tracer, dbTypeName);
                     _serviceNameCache = new KeyValuePair<string, string>(defaultServiceName, serviceName);
                 }
 

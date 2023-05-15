@@ -9,6 +9,29 @@
 class GCBaseRawSample : public RawSample
 {
 public:
+    GCBaseRawSample() = default;
+
+    GCBaseRawSample(GCBaseRawSample&& other) noexcept
+        :
+        RawSample(std::move(other)),
+        Number(other.Number),
+        Generation(other.Generation),
+        Duration(other.Duration)
+    {
+    }
+
+    GCBaseRawSample& operator=(GCBaseRawSample&& other) noexcept
+    {
+        if (this != &other)
+        {
+            RawSample::operator=(std::move(other));
+            Number = other.Number;
+            Generation = other.Generation;
+            Duration = other.Duration;
+        }
+        return *this;
+    }
+
     // This base class is in charge of storing garbage collection number and generation as labels
     // and fill up the callstack based on generation.
     // The default value is the Duration field; derived class could override by implementing GetValue()
@@ -36,7 +59,6 @@ public:
 
     // Derived classes are expected to set the event type + any additional field as label
     virtual void DoAdditionalTransform(std::shared_ptr<Sample> sample, uint32_t valueOffset) const = 0;
-
 
 public:
     int32_t Number;
@@ -71,25 +93,25 @@ private:
     inline static void BuildCallStack(std::shared_ptr<Sample>& sample, uint32_t generation)
     {
         // add same root frame
-        sample->AddFrame(EmptyModule, RootFrame);
+        sample->AddFrame({EmptyModule, RootFrame, "", 0});
 
         // add generation based frame
         switch (generation)
         {
             case 0:
-                sample->AddFrame(EmptyModule, Gen0Frame);
+                sample->AddFrame({EmptyModule, Gen0Frame, "", 0});
                 break;
 
             case 1:
-                sample->AddFrame(EmptyModule, Gen1Frame);
+                sample->AddFrame({EmptyModule, Gen1Frame, "", 0});
                 break;
 
             case 2:
-                sample->AddFrame(EmptyModule, Gen2Frame);
+                sample->AddFrame({EmptyModule, Gen2Frame, "", 0});
                 break;
 
             default:
-                sample->AddFrame(EmptyModule, UnknownGenerationFrame);
+                sample->AddFrame({EmptyModule, UnknownGenerationFrame, "", 0});
                 break;
         }
     }

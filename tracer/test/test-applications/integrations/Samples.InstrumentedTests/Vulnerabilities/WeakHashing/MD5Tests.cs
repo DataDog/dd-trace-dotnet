@@ -41,14 +41,14 @@ public class MD5Tests : InstrumentationTestsBase
     public void GivenAMD5_WhenComputeHash_VulnerabilityIsLogged()
     {
         MD5.Create().ComputeHash(new Mock<Stream>().Object);
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "MD5", false);
     }
 
     [Fact]
     public void GivenAMD5_WhenComputeHash_VulnerabilityIsLogged2()
     {
         MD5.Create().ComputeHash(new byte[] { });
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "MD5", false);
     }
 
     [Fact]
@@ -67,6 +67,6 @@ public class MD5Tests : InstrumentationTestsBase
     public void GivenAMD5_WhenComputeHash_VulnerabilityIsLogged3()
     {
         MD5.Create().ComputeHash(new byte[] { 5, 5, 5 }, 0, 2);
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "MD5", false);
     }
 }

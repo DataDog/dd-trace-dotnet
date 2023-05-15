@@ -400,7 +400,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 // these will already be set correctly
                 parentTags.AspNetCoreRoute = aspNetRoute;
                 parentSpan.ResourceName = span.ResourceName;
-                parentSpan.SetTag(Tags.HttpRoute, aspNetRoute);
+                parentTags.HttpRoute = aspNetRoute;
             }
 
             return span;
@@ -412,7 +412,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var security = CurrentSecurity;
 
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = security.Settings.Enabled;
+            var shouldSecure = security.Enabled;
 
             if (!shouldTrace && !shouldSecure)
             {
@@ -426,7 +426,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     // Use an empty resource name here, as we will likely replace it as part of the request
                     // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
-                    var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty);
+                    var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, CurrentSecurity, httpContext, resourceName: string.Empty);
                     if (shouldSecure)
                     {
                         CoreHttpContextStore.Instance.Set(httpContext);
@@ -557,7 +557,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     span.ResourceName = resourceName;
                     tags.AspNetCoreRoute = normalizedRoute;
-                    span.SetTag(Tags.HttpRoute, normalizedRoute);
+                    tags.HttpRoute = normalizedRoute;
                 }
 
                 CurrentSecurity.CheckPathParams(httpContext, span, routeValues);
@@ -575,7 +575,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var security = CurrentSecurity;
 
             var shouldTrace = false;
-            var shouldSecure = security.Settings.Enabled;
+            var shouldSecure = security.Enabled;
             var shouldUseIast = Iast.Iast.Instance.Settings.Enabled;
 
             if (!shouldTrace && !shouldSecure && !shouldUseIast)
@@ -664,45 +664,9 @@ namespace Datadog.Trace.DiagnosticListeners
             }
 
             var scope = tracer.InternalActiveScope;
+            var httpContext = scope is not null ? arg.DuckCast<HttpRequestInStopStruct>().HttpContext : null;
 
-            if (scope != null)
-            {
-                // We may need to update the resource name if none of the routing/mvc events updated it.
-                // If we had an unhandled exception, the status code will already be updated correctly,
-                // but if the span was manually marked as an error, we still need to record the status code
-                var httpRequest = arg.DuckCast<HttpRequestInStopStruct>();
-                var httpContext = httpRequest.HttpContext;
-                var span = scope.Span;
-                var isMissingHttpStatusCode = !span.HasHttpStatusCode();
-
-                if (string.IsNullOrEmpty(span.ResourceName) || isMissingHttpStatusCode)
-                {
-                    if (string.IsNullOrEmpty(span.ResourceName))
-                    {
-                        span.ResourceName = AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request);
-                    }
-
-                    if (isMissingHttpStatusCode)
-                    {
-                        span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracer.Settings);
-                    }
-                }
-
-                span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
-                var security = CurrentSecurity;
-                if (security.Settings.Enabled)
-                {
-                    var transport = new SecurityCoordinator(security, httpContext, span);
-                    transport.AddResponseHeadersToSpanAndCleanup();
-                }
-                else
-                {
-                    // remember security could have been disabled while a request is still executed
-                    new SecurityCoordinator.HttpTransport(httpContext).DisposeAdditiveContext();
-                }
-
-                scope.Dispose();
-            }
+            AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, CurrentSecurity, scope, httpContext);
         }
 
         private void OnHostingUnhandledException(object arg)
@@ -718,21 +682,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (span != null && arg.TryDuckCast<UnhandledExceptionStruct>(out var unhandledStruct))
             {
-                var statusCode = 500;
-
-                if (unhandledStruct.Exception.TryDuckCast<BadHttpRequestExceptionStruct>(out var badRequestException))
-                {
-                    statusCode = badRequestException.StatusCode;
-                }
-
-                // Generic unhandled exceptions are converted to 500 errors by Kestrel
-                span.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
-
-                if (unhandledStruct.Exception is not BlockException)
-                {
-                    span.SetException(unhandledStruct.Exception);
-                    CurrentSecurity.CheckAndBlock(unhandledStruct.HttpContext, span);
-                }
+                AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, CurrentSecurity, span, unhandledStruct.HttpContext, unhandledStruct.Exception);
             }
         }
 

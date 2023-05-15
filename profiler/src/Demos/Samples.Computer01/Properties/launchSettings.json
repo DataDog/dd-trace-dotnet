@@ -23,9 +23,11 @@
         "COMPlus_EnableDiagnostics": "1",
 
         "DD_PROFILING_ENABLED": "1",
-        "DD_PROFILING_CPU_ENABLED": "1",
-        "DD_PROFILING_EXCEPTION_ENABLED": "1",
-        "DD_PROFILING_ALLOCATION_ENABLED": "1",
+        "DD_PROFILING_CPU_ENABLED": "0",
+        "DD_PROFILING_EXCEPTION_ENABLED": "0",
+        "DD_PROFILING_ALLOCATION_ENABLED": "0",
+        "DD_PROFILING_LOCK_ENABLED": "1",
+        "DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED": "1",
         "DD_INTERNAL_PROFILING_OUTPUT_DIR": "$(PROGRAMDATA)\\Datadog-APM\\Pprof-files\\DotNet",
 
         "DD_ENV": "apm-profiling-local",

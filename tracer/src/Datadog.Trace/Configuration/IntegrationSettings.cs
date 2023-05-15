@@ -3,7 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
@@ -18,7 +23,13 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="integrationName">The integration name.</param>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        public IntegrationSettings(string integrationName, IConfigurationSource source)
+        [PublicApi]
+        public IntegrationSettings(string integrationName, IConfigurationSource? source)
+            : this(integrationName, source, TelemetryFactoryV2.GetConfigTelemetry())
+        {
+        }
+
+        internal IntegrationSettings(string integrationName, IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {
             if (integrationName is null)
             {
@@ -32,17 +43,25 @@ namespace Datadog.Trace.Configuration
                 return;
             }
 
-            Enabled = source.GetBool(string.Format(ConfigurationKeys.Integrations.Enabled, integrationName)) ??
-                      source.GetBool(string.Format("DD_{0}_ENABLED", integrationName));
+            var config = new ConfigurationBuilder(source, telemetry);
+            Enabled = config
+                     .WithKeys(
+                          string.Format(ConfigurationKeys.Integrations.Enabled, integrationName),
+                          string.Format("DD_{0}_ENABLED", integrationName))
+                     .AsBool();
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
-            AnalyticsEnabled = source.GetBool(string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName)) ??
-                               source.GetBool(string.Format("DD_{0}_ANALYTICS_ENABLED", integrationName));
+            AnalyticsEnabled = config
+                              .WithKeys(
+                                   string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName),
+                                   string.Format("DD_{0}_ANALYTICS_ENABLED", integrationName))
+                              .AsBool();
 
-            AnalyticsSampleRate = source.GetDouble(string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName)) ??
-                                  source.GetDouble(string.Format("DD_{0}_ANALYTICS_SAMPLE_RATE", integrationName)) ??
-                                  // default value
-                                  1.0;
+            AnalyticsSampleRate = config
+                                 .WithKeys(
+                                      string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName),
+                                      string.Format("DD_{0}_ANALYTICS_SAMPLE_RATE", integrationName))
+                                 .AsDouble(1.0);
 #pragma warning restore 618
         }
 

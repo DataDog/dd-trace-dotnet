@@ -9,13 +9,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec.RcmModels.Asm;
+using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
-using Action = Datadog.Trace.AppSec.RcmModels.Asm.Action;
 
 namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
@@ -43,11 +41,9 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             await TryStartApp();
             var agent = Fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings(type, statusCode);
-            var acknowledgedId = nameof(TestBlockingAction) + Guid.NewGuid();
 
             var spans1 = await SendRequestsAsync(agent, url);
-            acknowledgedId = nameof(TestBlockingAction) + Guid.NewGuid();
-            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = new[] { new Action { Id = "block", Type = type, Parameters = new Parameter { StatusCode = statusCode, Type = "html", Location = "/redirect" } } } }, acknowledgedId) }, AsmProduct, appliedServiceNames: new[] { acknowledgedId });
+            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = new[] { new Datadog.Trace.AppSec.Rcm.Models.Asm.Action { Id = "block", Type = type, Parameters = new Parameter { StatusCode = statusCode, Type = "html", Location = "/redirect" } } } }, AsmProduct, nameof(TestBlockingAction)) });
 
             var spans2 = await SendRequestsAsync(agent, url);
             var spans = new List<MockSpan>();
@@ -55,8 +51,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             spans.AddRange(spans2);
             await VerifySpans(spans.ToImmutableList(), settings);
             // need to reset if the process is going to be reused
-            acknowledgedId = nameof(TestBlockingAction) + Guid.NewGuid();
-            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Action>() }, acknowledgedId) }, AsmProduct, appliedServiceNames: new[] { acknowledgedId });
+            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Datadog.Trace.AppSec.Rcm.Models.Asm.Action>() }, AsmProduct, nameof(TestBlockingAction)) });
         }
 
         protected override string GetTestName() => Prefix + nameof(AspNetCore5AsmActionsConfiguration);

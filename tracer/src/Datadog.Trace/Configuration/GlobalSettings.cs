@@ -3,7 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Configuration
@@ -14,27 +19,20 @@ namespace Datadog.Trace.Configuration
     public class GlobalSettings
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="GlobalSettings"/> class with default values.
-        /// </summary>
-        internal GlobalSettings()
-            : this(null)
-        {
-        }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="GlobalSettings"/> class
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        internal GlobalSettings(IConfigurationSource source)
+        /// <param name="telemetry">Records the origin of telemetry values</param>
+        internal GlobalSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
-            DebugEnabled = source?.GetBool(ConfigurationKeys.DebugEnabled) ??
-                           // default value
-                           false;
+            DebugEnabled = new ConfigurationBuilder(source, telemetry)
+                          .WithKeys(ConfigurationKeys.DebugEnabled)
+                          .AsBool(false);
 
-            DiagnosticSourceEnabled = source?.GetBool(ConfigurationKeys.DiagnosticSourceEnabled) ??
-                                      // default value
-                                      true;
+            DiagnosticSourceEnabled = new ConfigurationBuilder(source, telemetry)
+                                     .WithKeys(ConfigurationKeys.DiagnosticSourceEnabled)
+                                     .AsBool(true);
         }
 
         /// <summary>
@@ -63,7 +61,13 @@ namespace Datadog.Trace.Configuration
         /// Affects the level of logs written to file.
         /// </summary>
         /// <param name="enabled">Whether debug is enabled.</param>
+        [PublicApi]
         public static void SetDebugEnabled(bool enabled)
+        {
+            SetDebugEnabledInternal(enabled);
+        }
+
+        internal static void SetDebugEnabledInternal(bool enabled)
         {
             Instance.DebugEnabled = enabled;
 
@@ -75,6 +79,8 @@ namespace Datadog.Trace.Configuration
             {
                 DatadogLogging.UseDefaultLevel();
             }
+
+            TelemetryFactoryV2.GetConfigTelemetry().Record(ConfigurationKeys.DebugEnabled, enabled, ConfigurationOrigins.Code);
         }
 
         /// <summary>
@@ -95,7 +101,7 @@ namespace Datadog.Trace.Configuration
         /// <returns>A <see cref="TracerSettings"/> populated from the default sources.</returns>
         public static GlobalSettings FromDefaultSources()
         {
-            return new GlobalSettings(GlobalConfigurationSource.Instance);
+            return new GlobalSettings(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
         }
     }
 }

@@ -19,10 +19,6 @@
               }
             },
             "staticFields": {
-              "Dsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"Result is {ref i}\"\r\n}"
-              },
               "Json": {
                 "type": "String",
                 "value": "{\r\n        \"ref\": \"i\"\r\n}"
@@ -51,10 +47,6 @@
               }
             },
             "staticFields": {
-              "Dsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"Result is {ref i}\"\r\n}"
-              },
               "Json": {
                 "type": "String",
                 "value": "{\r\n        \"ref\": \"i\"\r\n}"
@@ -63,9 +55,9 @@
           }
         },
         "duration": "ScrubbedValue",
-        "errors": [
+        "evaluationErrors": [
           {
-            "expression": "this.i",
+            "expr": "this.i",
             "message": "ScrubbedValue"
           }
         ],

@@ -3,9 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Headers.Ip;
 using Xunit;
 
-namespace Datadog.Trace.Headers.Ip
+namespace Datadog.Trace.Tests.Headers.Ip
 {
     public class IpExtractionTests
     {
@@ -14,6 +15,8 @@ namespace Datadog.Trace.Headers.Ip
         [InlineData("81.202.236.243", 5001,  "81.202.236.243:5001")]
         [InlineData("83.204.236.243", 443, "172.16.2.4, 172.31.255.255, 192.168.255.255, 10.145.255.255, 83.204.236.243:443")]
         [InlineData("192.168.1.1", 80, "192.168.1.1, 172.16.32.41, 172.16.32.43")]
+        [InlineData("83.204.236.243", 80, "127.0.0.1, 83.204.236.243")]
+        [InlineData("83.204.236.243", 80, "169.254.0.3, 83.204.236.243")]
         public void Ipv4PublicDetectedLocalIgnored(string expectedIp, int expectedPort, string headerValue)
         {
             var ip = IpExtractor.RealIpFromValue(headerValue, https: false);

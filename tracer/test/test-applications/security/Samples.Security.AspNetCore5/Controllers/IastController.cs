@@ -1,5 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data.SQLite;
+using System.Diagnostics;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +11,20 @@ using Samples.Security.Data;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
+    public class QueryData
+    {
+        public string Query { get; set; }
+        public int IntField { get; set; }
+
+        public List<string> Arguments { get; set; }
+
+        public Dictionary<string, string> StringMap { get; set; }
+
+        public string[] StringArrayArguments { get; set; }
+
+        public QueryData InnerQuery { get; set; }
+    }
+
     [Route("[controller]")]
     [ApiController]
     public class IastController : ControllerBase
@@ -61,6 +79,155 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
 
             return BadRequest($"No query or username was provided");
+        }
+
+        [HttpGet("ExecuteCommand")]
+        [Route("ExecuteCommand")]
+        public IActionResult ExecuteCommand(string file, string argumentLine)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(file))
+                {
+                    var result = Process.Start(file, argumentLine);
+                    return Content($"Process launched: " + result.ProcessName);
+                }
+                else
+                {
+                    return BadRequest($"No file was provided");
+                }
+            }
+            catch (Win32Exception ex)
+            {
+                return Content(IastControllerHelper.ToFormattedString(ex));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
+            }
+        }
+
+        [Route("ExecuteQueryFromBodyQueryData")]
+        public ActionResult ExecuteQueryFromBodyQueryData([FromBody] QueryData query)
+        {
+            try
+            {
+                if (dbConnection is null)
+                {
+                    dbConnection = IastControllerHelper.CreateDatabase();
+                }
+
+                return Query(query);
+            }
+            catch (Exception ex)
+            {
+                return Content(IastControllerHelper.ToFormattedString(ex));
+            }
+        }
+
+        private ActionResult Query(QueryData query)
+        {
+            if (!string.IsNullOrEmpty(query.Query))
+            {
+                return ExecuteQuery(query.Query);
+            }
+
+            if (query.Arguments is not null)
+            {
+                foreach (var value in query.Arguments)
+                {
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        return ExecuteQuery(value);
+                    }
+                }
+            }
+
+            if (query.StringArrayArguments is not null)
+            {
+                foreach (var value in query.StringArrayArguments)
+                {
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        return ExecuteQuery(value);
+                    }
+                }
+            }
+
+            if (query.StringMap is not null)
+            {
+                foreach (var value in query.StringMap)
+                {
+                    if (!string.IsNullOrEmpty(value.Value))
+                    {
+                        return ExecuteQuery(value.Value);
+                    }
+                    if (!string.IsNullOrEmpty(value.Key))
+                    {
+                        return ExecuteQuery(value.Key);
+                    }
+                }
+            }
+
+            if (query.InnerQuery !=null)
+            {
+                return Query(query.InnerQuery);
+            }
+
+            return Content($"No query or username was provided");
+        }
+
+        [Route("ExecuteQueryFromBodyText")]
+        [Consumes("text/plain")]
+        public ActionResult ExecuteQueryFromBodyText([FromBody] string query)
+        {
+            try
+            {
+                if (dbConnection is null)
+                {
+                    dbConnection = IastControllerHelper.CreateDatabase();
+                }
+
+                if (!string.IsNullOrEmpty(query))
+                {
+                    var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
+                    return Content($"Result: " + rname);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Content(IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return Content($"No query or username was provided");
+        }
+
+        [HttpGet("GetFileContent")]
+        [Route("GetFileContent")]
+        public IActionResult GetFileContent(string file)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(file))
+                {
+                    var result = System.IO.File.ReadAllText(file);
+                    return Content($"file content: " + result);
+                }
+                else
+                {
+                    return BadRequest($"No file was provided");
+                }
+            }
+            catch
+            {
+                return Content("The provided file could not be opened");
+            }
+        }
+
+        private ActionResult ExecuteQuery(string query)
+        {
+            var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
+            return Content($"Result: " + rname);
         }
     }
 }

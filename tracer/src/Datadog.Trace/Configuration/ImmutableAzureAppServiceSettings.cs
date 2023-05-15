@@ -3,11 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
-using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
 
 namespace Datadog.Trace.Configuration
 {
@@ -25,75 +26,67 @@ namespace Datadog.Trace.Configuration
         public static readonly string DefaultHttpClientExclusions = "logs.datadoghq, services.visualstudio, applicationinsights.azure, blob.core.windows.net/azure-webjobs, azurewebsites.net/admin, /azure-webjobs-hosts/".ToUpperInvariant();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ImmutableAzureAppServiceSettings"/> class with default values.
-        /// </summary>
-        public ImmutableAzureAppServiceSettings()
-            : this(null)
-        {
-        }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="ImmutableAzureAppServiceSettings"/> class
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        public ImmutableAzureAppServiceSettings(IConfigurationSource source)
+        /// <param name="telemetry"><see cref="IConfigurationTelemetry"/> instance for recording telemetry</param>
+        public ImmutableAzureAppServiceSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {
-            try
+            source ??= NullConfigurationSource.Instance;
+            // TODO: This is retrieved from other places too... need to work out how to not replace config
+            var config = new ConfigurationBuilder(source, telemetry);
+            var apiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
+            if (string.IsNullOrEmpty(apiKey))
             {
-                var apiKey = source?.GetString(Configuration.ConfigurationKeys.ApiKey);
-                if (apiKey == null)
-                {
-                    Log.Error("The Azure Site Extension will not work if you have not configured DD_API_KEY.");
-                    IsUnsafeToTrace = true;
-                    return;
-                }
-
-                // Azure App Services Basis
-                SubscriptionId = GetSubscriptionId(source);
-                ResourceGroup = source?.GetString(ConfigurationKeys.AzureAppService.ResourceGroupKey);
-                SiteName = source?.GetString(ConfigurationKeys.AzureAppService.SiteNameKey);
-                ResourceId = CompileResourceId();
-
-                InstanceId = source?.GetString(ConfigurationKeys.AzureAppService.InstanceIdKey) ?? "unknown";
-                InstanceName = source?.GetString(ConfigurationKeys.AzureAppService.InstanceNameKey) ?? "unknown";
-                OperatingSystem = source?.GetString(ConfigurationKeys.AzureAppService.OperatingSystemKey) ?? "unknown";
-                SiteExtensionVersion = source?.GetString(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey) ?? "unknown";
-
-                FunctionsWorkerRuntime = source?.GetString(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey);
-                FunctionsExtensionVersion = source?.GetString(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey);
-
-                if (FunctionsWorkerRuntime is not null || FunctionsExtensionVersion is not null)
-                {
-                    AzureContext = AzureContext.AzureFunctions;
-                }
-
-                switch (AzureContext)
-                {
-                    case AzureContext.AzureFunctions:
-                        SiteKind = "functionapp";
-                        SiteType = "function";
-                        IsFunctionsApp = true;
-                        PlatformStrategy.ShouldSkipClientSpan = ShouldSkipClientSpanWithinFunctions;
-                        break;
-                    case AzureContext.AzureAppService:
-                        SiteKind = "app";
-                        SiteType = "app";
-                        IsFunctionsApp = false;
-                        break;
-                }
-
-                Runtime = FrameworkDescription.Instance.Name;
-
-                DebugModeEnabled = source?.GetString(Configuration.ConfigurationKeys.DebugEnabled)?.ToBoolean() ?? false;
-                CustomTracingEnabled = source?.GetString(ConfigurationKeys.AzureAppService.AasEnableCustomTracing)?.ToBoolean() ?? false;
-                NeedsDogStatsD = source?.GetString(ConfigurationKeys.AzureAppService.AasEnableCustomMetrics)?.ToBoolean() ?? false;
-            }
-            catch (Exception ex)
-            {
+                Log.Error("The Azure Site Extension will not work if you have not configured DD_API_KEY.");
                 IsUnsafeToTrace = true;
-                Log.Error(ex, "Unable to initialize AzureAppServices metadata.");
             }
+
+            // Azure App Services Basis
+            SubscriptionId = GetSubscriptionId(source, telemetry);
+            ResourceGroup = config.WithKeys(ConfigurationKeys.AzureAppService.ResourceGroupKey).AsString();
+            SiteName = config.WithKeys(ConfigurationKeys.AzureAppService.SiteNameKey).AsString();
+            ResourceId = CompileResourceId();
+
+            InstanceId = config.WithKeys(ConfigurationKeys.AzureAppService.InstanceIdKey).AsString("unknown");
+            InstanceName = config.WithKeys(ConfigurationKeys.AzureAppService.InstanceNameKey).AsString("unknown");
+            OperatingSystem = config.WithKeys(ConfigurationKeys.AzureAppService.OperatingSystemKey).AsString("unknown");
+            SiteExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey).AsString("unknown");
+
+            FunctionsWorkerRuntime = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey).AsString();
+            FunctionsExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey).AsString();
+
+            if (FunctionsWorkerRuntime is not null || FunctionsExtensionVersion is not null)
+            {
+                AzureContext = AzureContext.AzureFunctions;
+            }
+
+            switch (AzureContext)
+            {
+                case AzureContext.AzureFunctions:
+                    SiteKind = "functionapp";
+                    SiteType = "function";
+                    IsFunctionsApp = true;
+                    IsIsolatedFunctionsApp = FunctionsWorkerRuntime?.EndsWith("-isolated", StringComparison.OrdinalIgnoreCase) == true;
+                    PlatformStrategy.ShouldSkipClientSpan = ShouldSkipClientSpanWithinFunctions;
+                    break;
+                case AzureContext.AzureAppService:
+                    SiteKind = "app";
+                    SiteType = "app";
+                    IsFunctionsApp = false;
+                    break;
+                default:
+                    SiteKind = "unknown";
+                    SiteType = "unknown";
+                    break;
+            }
+
+            Runtime = FrameworkDescription.Instance.Name;
+
+            DebugModeEnabled = config.WithKeys(Configuration.ConfigurationKeys.DebugEnabled).AsBool(false);
+            CustomTracingEnabled = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomTracing).AsBool(false);
+            NeedsDogStatsD = config.WithKeys(ConfigurationKeys.AzureAppService.AasEnableCustomMetrics).AsBool(false);
         }
 
         public bool DebugModeEnabled { get; }
@@ -110,21 +103,23 @@ namespace Datadog.Trace.Configuration
 
         public string SiteKind { get; }
 
-        public string SubscriptionId { get; }
+        public string? SubscriptionId { get; }
 
-        public string ResourceGroup { get; }
+        public string? ResourceGroup { get; }
 
-        public string SiteName { get; }
+        public string? SiteName { get; }
 
-        public string ResourceId { get; }
+        public string? ResourceId { get; }
 
         public AzureContext AzureContext { get; private set; } = AzureContext.AzureAppService;
 
         public bool IsFunctionsApp { get; private set; }
 
-        public string FunctionsExtensionVersion { get; }
+        public string? FunctionsExtensionVersion { get; }
 
-        public string FunctionsWorkerRuntime { get; }
+        public string? FunctionsWorkerRuntime { get; }
+
+        public bool IsIsolatedFunctionsApp { get; }
 
         public string InstanceName { get; }
 
@@ -134,67 +129,56 @@ namespace Datadog.Trace.Configuration
 
         public string Runtime { get; }
 
-        private static bool ShouldSkipClientSpanWithinFunctions(Scope scope)
+        private static bool ShouldSkipClientSpanWithinFunctions(Scope? scope)
         {
             // Ignore isolated client spans within azure functions
             return scope == null;
         }
 
-        private string CompileResourceId()
+        private string? CompileResourceId()
         {
-            string resourceId = null;
+            string? resourceId = null;
 
-            try
+            var success = true;
+            if (SubscriptionId == null)
             {
-                var success = true;
-                if (SubscriptionId == null)
-                {
-                    success = false;
-                    Log.Warning("Could not successfully retrieve the subscription ID from variable: {Variable}", ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey);
-                }
-
-                if (SiteName == null)
-                {
-                    success = false;
-                    Log.Warning("Could not successfully retrieve the deployment ID from variable: {Variable}", ConfigurationKeys.AzureAppService.SiteNameKey);
-                }
-
-                if (ResourceGroup == null)
-                {
-                    success = false;
-                    Log.Warning("Could not successfully retrieve the resource group name from variable: {Variable}", ConfigurationKeys.AzureAppService.ResourceGroupKey);
-                }
-
-                if (success)
-                {
-                    resourceId = $"/subscriptions/{SubscriptionId}/resourcegroups/{ResourceGroup}/providers/microsoft.web/sites/{SiteName}".ToLowerInvariant();
-                }
+                success = false;
+                Log.Warning("Could not successfully retrieve the subscription ID from variable: {Variable}", ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey);
             }
-            catch (Exception ex)
+
+            if (SiteName == null)
             {
-                Log.Error(ex, "Could not successfully setup the resource ID for Azure App Services.");
+                success = false;
+                Log.Warning("Could not successfully retrieve the deployment ID from variable: {Variable}", ConfigurationKeys.AzureAppService.SiteNameKey);
+            }
+
+            if (ResourceGroup == null)
+            {
+                success = false;
+                Log.Warning("Could not successfully retrieve the resource group name from variable: {Variable}", ConfigurationKeys.AzureAppService.ResourceGroupKey);
+            }
+
+            if (success)
+            {
+                resourceId = $"/subscriptions/{SubscriptionId}/resourcegroups/{ResourceGroup}/providers/microsoft.web/sites/{SiteName}".ToLowerInvariant();
             }
 
             return resourceId;
         }
 
-        private string GetSubscriptionId(IConfigurationSource source)
+        private string? GetSubscriptionId(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
-            try
+            var websiteOwner = new ConfigurationBuilder(source, telemetry)
+                              .WithKeys(ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey)
+                              .AsString(websiteOwner => !string.IsNullOrWhiteSpace(websiteOwner));
+
+            if (!string.IsNullOrWhiteSpace(websiteOwner))
             {
-                var websiteOwner = source?.GetString(ConfigurationKeys.AzureAppService.WebsiteOwnerNameKey);
-                if (!string.IsNullOrWhiteSpace(websiteOwner))
+                var plusSplit = websiteOwner!.Split('+');
+                if (plusSplit.Length > 0 && !string.IsNullOrWhiteSpace(plusSplit[0]))
                 {
-                    var plusSplit = websiteOwner.Split('+');
-                    if (plusSplit.Length > 0 && !string.IsNullOrWhiteSpace(plusSplit[0]))
-                    {
-                        return plusSplit[0];
-                    }
+                    return plusSplit[0];
                 }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Could not successfully retrieve the subscription ID for Azure App Services.");
             }
 
             return null;

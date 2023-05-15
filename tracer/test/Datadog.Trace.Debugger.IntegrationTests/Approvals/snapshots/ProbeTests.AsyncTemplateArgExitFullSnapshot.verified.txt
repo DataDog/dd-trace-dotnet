@@ -15,10 +15,6 @@
               }
             },
             "staticFields": {
-              "Dsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"ref _field < ref local\"\r\n}"
-              },
               "Json": {
                 "type": "String",
                 "value": "{\r\n      \"ref\": \"intArg\"\r\n}"
@@ -43,10 +39,6 @@
               }
             },
             "staticFields": {
-              "Dsl": {
-                "type": "String",
-                "value": "{\r\n  \"dsl\": \"ref _field < ref local\"\r\n}"
-              },
               "Json": {
                 "type": "String",
                 "value": "{\r\n      \"ref\": \"intArg\"\r\n}"

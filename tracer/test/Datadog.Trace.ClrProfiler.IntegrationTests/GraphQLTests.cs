@@ -12,9 +12,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
@@ -23,10 +21,70 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
 #if NETCOREAPP3_1_OR_GREATER
-    public class GraphQL4Tests : GraphQLTests
+    public class GraphQL7SchemaV0Tests : GraphQL7Tests
     {
-        public GraphQL4Tests(ITestOutputHelper output)
-            : base("GraphQL4", output, nameof(GraphQL4Tests))
+        public GraphQL7SchemaV0Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v0")
+        {
+        }
+    }
+
+    public class GraphQL7SchemaV1Tests : GraphQL7Tests
+    {
+        public GraphQL7SchemaV1Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v1")
+        {
+        }
+    }
+
+    public abstract class GraphQL7Tests : GraphQLTests
+    {
+        public GraphQL7Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string metadataSchemaVersion)
+            : base("GraphQL7", fixture, output, nameof(GraphQL7Tests), metadataSchemaVersion)
+        {
+        }
+
+        // Can't currently run multi-api on Windows
+        public static IEnumerable<object[]> TestData =>
+            EnvironmentTools.IsWindows()
+                ? new[] { new object[] { string.Empty } }
+                : PackageVersions.GraphQL7;
+
+        [SkippableTheory]
+        [MemberData(nameof(TestData))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTraces(string packageVersion)
+            => await RunSubmitsTraces(packageVersion: packageVersion);
+
+        [SkippableTheory]
+        [MemberData(nameof(TestData))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTracesWebsockets(string packageVersion)
+            => await RunSubmitsTraces("SubmitsTracesWebsockets", packageVersion, true);
+    }
+
+    public class GraphQL4SchemaV0Tests : GraphQL4Tests
+    {
+        public GraphQL4SchemaV0Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v0")
+        {
+        }
+    }
+
+    public class GraphQL4SchemaV1Tests : GraphQL4Tests
+    {
+        public GraphQL4SchemaV1Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v1")
+        {
+        }
+    }
+
+    public abstract class GraphQL4Tests : GraphQLTests
+    {
+        public GraphQL4Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string metadataSchemaVersion)
+            : base("GraphQL4", fixture, output, nameof(GraphQL4Tests), metadataSchemaVersion)
         {
         }
 
@@ -41,14 +99,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces(string packageVersion)
-            => await RunSubmitsTraces(packageVersion);
+            => await RunSubmitsTraces(packageVersion: packageVersion);
     }
 #endif
 
-    public class GraphQL3Tests : GraphQLTests
+    public class GraphQL3SchemaV0Tests : GraphQL3Tests
     {
-        public GraphQL3Tests(ITestOutputHelper output)
-            : base("GraphQL3", output, nameof(GraphQL3Tests))
+        public GraphQL3SchemaV0Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v0")
+        {
+        }
+    }
+
+    public class GraphQL3SchemaV1Tests : GraphQL3Tests
+    {
+        public GraphQL3SchemaV1Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v1")
+        {
+        }
+    }
+
+    public abstract class GraphQL3Tests : GraphQLTests
+    {
+        public GraphQL3Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string metadataSchemaVersion)
+            : base("GraphQL3", fixture, output, nameof(GraphQL3Tests), metadataSchemaVersion)
         {
         }
 
@@ -60,10 +134,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             => await RunSubmitsTraces();
     }
 
-    public class GraphQL2Tests : GraphQLTests
+    public class GraphQL2SchemaV0Tests : GraphQL2Tests
     {
-        public GraphQL2Tests(ITestOutputHelper output)
-            : base("GraphQL", output, nameof(GraphQL2Tests))
+        public GraphQL2SchemaV0Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v0")
+        {
+        }
+    }
+
+    public class GraphQL2SchemaV1Tests : GraphQL2Tests
+    {
+        public GraphQL2SchemaV1Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, metadataSchemaVersion: "v1")
+        {
+        }
+    }
+
+    public abstract class GraphQL2Tests : GraphQLTests
+    {
+        public GraphQL2Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string metadataSchemaVersion)
+            : base("GraphQL", fixture, output, nameof(GraphQL2Tests), metadataSchemaVersion)
         {
         }
 
@@ -87,135 +177,130 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [UsesVerify]
-    public abstract class GraphQLTests : TracingIntegrationTest
+    public abstract class GraphQLTests : TracingIntegrationTest, IClassFixture<AspNetCoreTestFixture>
     {
         private const string ServiceVersion = "1.0.0";
 
         private readonly string _testName;
+        private readonly string _metadataSchemaVersion;
 
-        protected GraphQLTests(string sampleAppName, ITestOutputHelper output, string testName)
+        protected GraphQLTests(string sampleAppName, AspNetCoreTestFixture fixture, ITestOutputHelper output, string testName, string metadataSchemaVersion)
             : base(sampleAppName, output)
         {
             SetServiceVersion(ServiceVersion);
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
 
             _testName = testName;
+            _metadataSchemaVersion = metadataSchemaVersion;
+
+            Fixture = fixture;
+            Fixture.SetOutput(output);
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.Type switch
-            {
-                "graphql" => span.IsGraphQL(),
-                _ => Result.DefaultSuccess,
-            };
+        protected AspNetCoreTestFixture Fixture { get; }
 
-        protected async Task RunSubmitsTraces(string packageVersion = "")
+        public override void Dispose()
         {
-            SetInstrumentationVerification();
-            using var telemetry = this.ConfigureTelemetry();
-            int? aspNetCorePort = null;
-
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (Process process = StartSample(agent, arguments: null, packageVersion: packageVersion, aspNetCorePort: 0))
-            {
-                var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
-
-                using var helper = new ProcessHelper(
-                    process,
-                    onDataReceived: data =>
-                    {
-                        if (data.Contains("Now listening on:"))
-                        {
-                            var splitIndex = data.LastIndexOf(':');
-                            aspNetCorePort = int.Parse(data.Substring(splitIndex + 1));
-
-                            wh.Set();
-                        }
-                        else if (data.Contains("Unable to start Kestrel"))
-                        {
-                            wh.Set();
-                        }
-
-                        Output.WriteLine($"[webserver][stdout] {data}");
-                    },
-                    onErrorReceived: data => Output.WriteLine($"[webserver][stderr] {data}"));
-
-                wh.WaitOne(15_000);
-
-                if (!aspNetCorePort.HasValue)
-                {
-                    throw new Exception("Unable to determine port application is listening on");
-                }
-
-                Output.WriteLine($"The ASP.NET Core server is ready on port {aspNetCorePort}");
-
-                var expectedSpans = SubmitRequests(aspNetCorePort.Value);
-
-                if (!process.HasExited)
-                {
-                    // Try shutting down gracefully
-                    var shutdownRequest = new RequestInfo() { HttpMethod = "GET", Url = "/shutdown" };
-                    SubmitRequest(aspNetCorePort.Value, shutdownRequest);
-
-                    WaitForProcessResult(helper);
-                }
-
-                var spans = agent.WaitForSpans(expectedSpans);
-                foreach (var span in spans)
-                {
-                    // TODO: Refactor to use ValidateIntegrationSpans when the graphql server integration is fixed. It currently produces a service name of {service]-graphql
-                    var result = ValidateIntegrationSpan(span);
-                    Assert.True(result.Success, result.ToString());
-                }
-
-                var settings = VerifyHelper.GetSpanVerifierSettings();
-
-                // hacky scrubber for the fact that version 4.1.0+ switched to using " in error message in one place
-                // where every other version uses '
-                settings.AddSimpleScrubber("Did you mean \"appearsIn\"", "Did you mean 'appearsIn'");
-                // Graphql 5 has different error message for missing subscription
-                settings.AddSimpleScrubber("Could not resolve source stream for field", "Error trying to resolve field");
-
-                // Overriding the type name here as we have multiple test classes in the file
-                // Ensures that we get nice file nesting in Solution Explorer
-                var fxSuffix = EnvironmentHelper.IsCoreClr() ? string.Empty : ".netfx";
-                await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName($"{_testName}.SubmitsTraces{fxSuffix}")
-                                  .DisableRequireUniquePrefix(); // all package versions should be the same
-
-                VerifyInstrumentation(process);
-            }
-
-            telemetry.AssertIntegrationEnabled(IntegrationId.GraphQL);
+            Fixture.SetOutput(null);
         }
 
-        private int SubmitRequests(int aspNetCorePort)
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsGraphQL(metadataSchemaVersion);
+
+        protected async Task RunSubmitsTraces(string testName = "SubmitsTraces", string packageVersion = "", bool usingWebsockets = false)
+        {
+            var isExternalSpan = _metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-graphql" : EnvironmentHelper.FullSampleName;
+
+            SetInstrumentationVerification();
+
+            await Fixture.TryStartApp(this);
+            var testStart = DateTime.UtcNow;
+            var expectedSpans = await SubmitRequests(Fixture.HttpPort, usingWebsockets);
+
+            var spans = Fixture.Agent.WaitForSpans(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
+
+            var graphQLSpans = spans.Where(span => span.Type == "graphql");
+            ValidateIntegrationSpans(graphQLSpans, _metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+
+            // hacky scrubber for the fact that version 4.1.0+ switched to using " in error message in one place
+            // where every other version uses '
+            settings.AddSimpleScrubber("Did you mean \"appearsIn\"", "Did you mean 'appearsIn'");
+            // Graphql 5 has different error message for missing subscription
+            settings.AddSimpleScrubber("Could not resolve source stream for field", "Error trying to resolve field");
+
+            // Overriding the type name here as we have multiple test classes in the file
+            // Ensures that we get nice file nesting in Solution Explorer
+            var fxSuffix = EnvironmentHelper.IsCoreClr() ? string.Empty : ".netfx";
+            await VerifyHelper.VerifySpans(spans, settings)
+                              .UseFileName($"{_testName}.{testName}{fxSuffix}.Schema{_metadataSchemaVersion.ToUpper()}")
+                              .DisableRequireUniquePrefix(); // all package versions should be the same
+
+            VerifyInstrumentation(Fixture.Process);
+        }
+
+        private async Task<int> SubmitRequests(int aspNetCorePort, bool usingWebsockets)
         {
             var expectedGraphQlValidateSpanCount = 0;
             var expectedGraphQlExecuteSpanCount = 0;
+            var expectedAspNetcoreRequestSpanCount = 0;
 
-            // SUCCESS: query using GET
-            SubmitGraphqlRequest(url: "/graphql?query=" + WebUtility.UrlEncode("query{hero{name appearsIn}}"), httpMethod: "GET", graphQlRequestBody: null);
+            if (usingWebsockets)
+            {
+                await SubmitWebsocketRequests();
+            }
+            else
+            {
+                var isV7 = _testName.Contains("7");
+                SubmitHttpRequests(isV7);
+            }
 
-            // SUCCESS: query using POST (default)
-            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""query HeroQuery{hero {name appearsIn}}"",""operationName"": ""HeroQuery""}");
+            Output.WriteLine($"[SPANS] Expected graphql.execute Spans: {expectedGraphQlExecuteSpanCount}");
+            Output.WriteLine($"[SPANS] Expected graphql.validate Spans: {expectedGraphQlValidateSpanCount}");
+            Output.WriteLine($"[SPANS] Expected aspnet_core.request Spans: {expectedAspNetcoreRequestSpanCount}");
+            Output.WriteLine($"[SPANS] Total Spans number: {(expectedGraphQlExecuteSpanCount + expectedGraphQlValidateSpanCount + expectedAspNetcoreRequestSpanCount)}");
+            return expectedGraphQlExecuteSpanCount + expectedGraphQlValidateSpanCount + expectedAspNetcoreRequestSpanCount;
 
-            // SUCCESS: mutation
-            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"":{""human"":{""name"": ""Boba Fett""}}}");
+            void SubmitHttpRequests(bool isV7)
+            {
+                // SUCCESS: query using GET
+                SubmitGraphqlRequest(url: "/graphql?query=" + WebUtility.UrlEncode("query{hero{name appearsIn}}"), httpMethod: "GET", graphQlRequestBody: null);
 
-            // SUCCESS: subscription
-            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{ ""query"":""subscription HumanAddedSub{humanAdded{name}}""}");
+                // SUCCESS: query using POST (default)
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""query HeroQuery{hero {name appearsIn}}"",""operationName"": ""HeroQuery""}");
 
-            // TODO: When parse is implemented, add a test that fails 'parse' step
+                // SUCCESS: mutation
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"":{""human"":{""name"": ""Boba Fett""}}}");
 
-            // FAILURE: query fails 'validate' step
-            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""query HumanError{human(id:1){name apearsIn}}""}", failsValidation: true);
+                // SUCCESS: subscription or FAILURE: fails 'validate' (can't do POST for subscription on v7+)
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{ ""query"":""subscription HumanAddedSub{humanAdded{name}}""}", failsValidation: isV7);
 
-            // FAILURE: query fails 'execute' step
-            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}");
+                // TODO: When parse is implemented, add a test that fails 'parse' step
 
-            // TODO: When parse is implemented, add a test that fails 'resolve' step
+                // FAILURE: query fails 'validate' step
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""query HumanError{human(id:1){name apearsIn}}""}", failsValidation: true);
 
-            return expectedGraphQlExecuteSpanCount + expectedGraphQlValidateSpanCount;
+                // FAILURE: query fails 'execute' step but fails at 'validate' on v7
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}", failsValidation: isV7);
+
+                // TODO: When parse is implemented, add a test that fails 'resolve' step
+            }
+
+            async Task SubmitWebsocketRequests()
+            {
+                // SUCCESS: query using Websocket
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""query HeroQuery{hero {name appearsIn}}"",""variables"": {},}}", false);
+
+                // FAILURE: query fails 'execute' step using Websocket
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""subscription NotImplementedSub{throwNotImplementedException {name}}"",""variables"": {},}}", false);
+
+                // FAILURE: query fails 'validate' step using Websocket
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""query HumanError{human(id:1){name apearsIn}}"",""variables"": {},}}", true);
+
+                // SUCCESS: mutation using Websocket
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"": {""human"":{""name"": ""Boba Fett""}},}}", false);
+            }
 
             void SubmitGraphqlRequest(
                 string url,
@@ -230,75 +315,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     expectedGraphQlExecuteSpanCount++;
                 }
 
-                SubmitRequest(
+                expectedAspNetcoreRequestSpanCount++;
+                GraphQLCommon.SubmitRequest(
+                    Output,
                     aspNetCorePort,
-                    new RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
+                    new GraphQLCommon.RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
             }
-        }
 
-        private void SubmitRequest(int aspNetCorePort, RequestInfo requestInfo, bool printResponseText = true)
-        {
-            try
+            async Task SubmitGraphqlWebsocketRequest(
+                string url,
+                string httpMethod,
+                string graphQlRequestBody,
+                bool failsValidation = false)
             {
-                var request = WebRequest.Create($"http://localhost:{aspNetCorePort}{requestInfo.Url}");
-                request.Method = requestInfo.HttpMethod;
-                ((HttpWebRequest)request).UserAgent = "testhelper";
+                expectedGraphQlValidateSpanCount++;
 
-                if (requestInfo.RequestBody != null)
+                if (!failsValidation)
                 {
-                    byte[] requestBytes = System.Text.Encoding.UTF8.GetBytes(requestInfo.RequestBody);
-
-                    request.ContentType = "application/json";
-                    request.ContentLength = requestBytes.Length;
-
-                    using (var dataStream = request.GetRequestStream())
-                    {
-                        dataStream.Write(requestBytes, 0, requestBytes.Length);
-                    }
+                    expectedGraphQlExecuteSpanCount++;
                 }
 
-                using (var response = (HttpWebResponse)request.GetResponse())
-                using (var stream = response.GetResponseStream())
-                using (var reader = new StreamReader(stream))
-                {
-                    string responseText;
-                    try
-                    {
-                        responseText = reader.ReadToEnd();
-                    }
-                    catch (Exception ex)
-                    {
-                        responseText = "ENCOUNTERED AN ERROR WHEN READING RESPONSE.";
-                        Output.WriteLine(ex.ToString());
-                    }
-
-                    if (printResponseText)
-                    {
-                        Output.WriteLine($"[http] {response.StatusCode} {responseText}");
-                    }
-                }
+                expectedAspNetcoreRequestSpanCount++;
+                await GraphQLCommon.SubmitWebsocketRequest(
+                    Output,
+                    aspNetCorePort,
+                    new GraphQLCommon.RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
             }
-            catch (WebException wex)
-            {
-                Output.WriteLine($"[http] exception: {wex}");
-                if (wex.Response is HttpWebResponse response)
-                {
-                    using (var stream = response.GetResponseStream())
-                    using (var reader = new StreamReader(stream))
-                    {
-                        Output.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
-                    }
-                }
-            }
-        }
-
-        private class RequestInfo
-        {
-            public string Url { get; set; }
-
-            public string HttpMethod { get; set; }
-
-            public string RequestBody { get; set; }
         }
     }
 }

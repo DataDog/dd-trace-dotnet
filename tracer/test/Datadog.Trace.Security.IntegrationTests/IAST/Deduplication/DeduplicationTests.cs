@@ -4,8 +4,8 @@
 // </copyright>
 
 using System.IO;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
@@ -25,23 +25,27 @@ public class DeduplicationTests : TestHelper
         SetServiceVersion("1.0.0");
     }
 
-#if NET7_0_OR_GREATER
-    [SkippableTheory(Skip = "Flaky in .NET 7")]
-#else
     [SkippableTheory]
-#endif
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task SubmitsTraces(bool deduplicationEnabled)
+    [InlineData(false, "DD_IAST_WEAK_HASH_ALGORITHMS", "noexistingalgorithm")]
+    [InlineData(false, $"DD_TRACE_{nameof(IntegrationId.HashAlgorithm)}_ENABLED", "false")]
+    public async Task SubmitsTraces(bool deduplicationEnabled, string disableKey = "", string disableValue = "")
     {
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+        bool instrumented = string.IsNullOrEmpty(disableKey);
+        if (!instrumented)
+        {
+            SetEnvironmentVariable(disableKey, disableValue);
+            instrumented = false;
+        }
+
         SetEnvironmentVariable("DD_IAST_ENABLED", "1");
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", deduplicationEnabled.ToString());
         SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory));
 
-        int expectedSpanCount = deduplicationEnabled ? 1 : 5;
+        int expectedSpanCount = instrumented ? (deduplicationEnabled ? 1 : 5) : 0;
         var filename = deduplicationEnabled ? "iast.deduplication.deduplicated" : "iast.deduplication.duplicated";
 
         using var agent = EnvironmentHelper.GetMockAgent();
@@ -50,10 +54,18 @@ public class DeduplicationTests : TestHelper
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spans, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
 
-        VerifyInstrumentation(process.Process);
+        if (instrumented)
+        {
+            await VerifyHelper.VerifySpans(spans, settings)
+                              .UseFileName(filename)
+                              .DisableRequireUniquePrefix();
+
+            VerifyInstrumentation(process.Process);
+        }
+        else
+        {
+            Assert.Empty(spans);
+        }
     }
 }

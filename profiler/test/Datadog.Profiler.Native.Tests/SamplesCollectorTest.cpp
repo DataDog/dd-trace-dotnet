@@ -74,7 +74,7 @@ public:
 
         auto s = std::make_shared<Sample>(rid);
 
-        s->AddFrame(ModuleName, FunctionName);
+        s->AddFrame({ModuleName, FunctionName, "", 0});
 
         return s;
     }

@@ -42,7 +42,7 @@ public sealed class TestModule
     internal TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate, TestSessionSpanTags? sessionSpanTags)
     {
         // First we make sure that CI Visibility is initialized.
-        CIVisibility.Initialize();
+        CIVisibility.InitializeFromManualInstrumentation();
 
         var environment = CIEnvironmentValues.Instance;
         var frameworkDescription = FrameworkDescription.Instance;
@@ -392,13 +392,13 @@ public sealed class TestModule
 
         if (CIVisibility.Settings.TestsSkippingEnabled.HasValue)
         {
-            span.SetTag(CommonTags.TestModuleTestsSkippingEnabled, CIVisibility.Settings.TestsSkippingEnabled.Value ? "true" : "false");
+            span.SetTag(CommonTags.TestTestsSkippingEnabled, CIVisibility.Settings.TestsSkippingEnabled.Value ? "true" : "false");
             span.SetTag(CommonTags.TestsSkipped, CIVisibility.HasSkippableTests() ? "true" : "false");
         }
 
         if (CIVisibility.Settings.CodeCoverageEnabled.HasValue)
         {
-            span.SetTag(CommonTags.TestModuleCodeCoverageEnabled, CIVisibility.Settings.CodeCoverageEnabled.Value ? "true" : "false");
+            span.SetTag(CommonTags.TestCodeCoverageEnabled, CIVisibility.Settings.CodeCoverageEnabled.Value ? "true" : "false");
         }
 
         span.Finish(duration.Value);

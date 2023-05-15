@@ -18,15 +18,18 @@ internal readonly partial struct SecurityCoordinator
 {
     private static readonly Dictionary<string, string?> RequestHeaders = new()
     {
-        { "X-FORWARDED-FOR", string.Empty },
-        { "X-CLIENT-IP", string.Empty },
-        { "X-REAL-IP", string.Empty },
-        { "X-FORWARDED", string.Empty },
-        { "X-CLUSTER-CLIENT-IP", string.Empty },
-        { "FORWARDED-FOR", string.Empty },
-        { "FORWARDED", string.Empty },
-        { "VIA", string.Empty },
-        { "TRUE-CLIENT-IP", string.Empty },
+        { "x-forwarded-for", string.Empty },
+        { "x-real-ip", string.Empty },
+        { "true-client-ip", string.Empty },
+        { "x-client-ip", string.Empty },
+        { "x-forwarded", string.Empty },
+        { "forwarded-for", string.Empty },
+        { "x-cluster-client-ip", string.Empty },
+        { "fastly-client-ip", string.Empty },
+        { "cf-connecting-ip", string.Empty },
+        { "cf-connecting-ipv6", string.Empty },
+        { "forwarded", string.Empty },
+        { "via", string.Empty },
         { "Content-Length", string.Empty },
         { "Content-Type", string.Empty },
         { "Content-Encoding", string.Empty },
@@ -101,7 +104,7 @@ internal readonly partial struct SecurityCoordinator
 
     internal static void ReportWafInitInfoOnce(Security security, Span span)
     {
-        if (!security.WafInitResult.Reported)
+        if (security.WafInitResult is { Reported: false })
         {
             span = TryGetRoot(span);
             security.WafInitResult.Reported = true;

@@ -111,8 +111,11 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
     std::vector<trace::TypeSignature> methodArguments = caller->method_signature.GetMethodArguments();
     std::vector<trace::TypeSignature> traceAnnotationArguments;
+
+    // DO NOT move the definition of these buffers into an inner scope. It will cause memory corruption since they are referenced in a TypeSignature that is used later in this function.
     COR_SIGNATURE runtimeMethodHandleBuffer[10];
     COR_SIGNATURE runtimeTypeHandleBuffer[10];
+
     int numArgs = caller->method_signature.NumberOfArguments();
     auto metaEmit = module_metadata.metadata_emit;
     auto metaImport = module_metadata.metadata_import;
@@ -699,6 +702,76 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
                  "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
                  ", IntegrationType=", integration_definition->integration_type.name, ", Arguments=", numArgs, "]");
     return S_OK;
+}
+
+std::tuple<WSTRING, WSTRING>
+TracerMethodRewriter::GetResourceNameAndOperationName(const ComPtr<IMetaDataImport2>& metadataImport,
+                                                      const FunctionInfo* caller, TracerTokens* tracerTokens) const
+{
+    const BYTE* data = nullptr;
+    ULONG pcbData = 0;
+    auto hr = metadataImport->GetCustomAttributeByName(caller->id, tracerTokens->GetTraceAttributeType().data(),
+                                                       reinterpret_cast<const void**>(&data), &pcbData);
+    WSTRING resourceName;
+    WSTRING operationName;
+
+    // Parse the TraceAttribute
+    if (hr == S_OK)
+    {
+        PCCOR_SIGNATURE signature = data;
+        signature += 2; // skip prolog
+        const ULONG numOfNamedArgs{CorSigUncompressData(signature)};
+        signature += 1; // skip fixed arguments length
+
+        for (ULONG argIndex = 0; argIndex < numOfNamedArgs; argIndex++)
+        {
+            signature += 2; // skip FIELD/PROPERTY and ELEM
+
+            ULONG argNameLength{CorSigUncompressData(signature)}; // length of the name
+
+            // OperationName (13 characters), ResourceName (12 characters)
+            if (argNameLength != 12 && argNameLength != 13)
+            {
+                Logger::Error("TracerMethodRewriter::Rewrite: Failed to parse Trace Attribute for ",
+                              " token=", caller->id, " caller_name=", caller->type.name, ".", caller->name, "()");
+                break;
+            }
+
+            const bool isOperationName = argNameLength == 13;
+            signature += argNameLength; // skip the argument name
+            const auto value = GetStringValueFromBlob(signature);
+            if (isOperationName)
+            {
+                operationName = value;
+            }
+            else
+            {
+                resourceName = value;
+            }
+        }
+    }
+
+    if (resourceName.empty())
+    {
+        if (caller->type.name.empty())
+        {
+            resourceName = caller->name;
+        }
+        else
+        {
+            resourceName =
+                caller->type.name.empty()
+                    ? caller->name
+                    : caller->type.name.substr(caller->type.name.find_last_of(L'.') + 1) + WStr(".") + caller->name;
+        }
+    }
+
+    if (operationName.empty())
+    {
+        operationName = WStr("trace.annotation");
+    }
+
+    return {std::move(resourceName), std::move(operationName)};
 }
 
 ILInstr* trace::TracerMethodRewriter::CreateFilterForException(ILRewriterWrapper* rewriter, mdTypeRef exception,

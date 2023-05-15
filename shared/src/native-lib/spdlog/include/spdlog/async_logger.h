@@ -14,7 +14,7 @@
 // Upon destruction, logs all remaining messages in the queue before
 // destructing..
 
-#include "spdlog/logger.h"
+#include <spdlog/logger.h>
 
 namespace spdlog {
 
@@ -30,7 +30,7 @@ namespace details {
 class thread_pool;
 }
 
-class async_logger final : public std::enable_shared_from_this<async_logger>, public logger
+class SPDLOG_API async_logger final : public std::enable_shared_from_this<async_logger>, public logger
 {
     friend class details::thread_pool;
 
@@ -52,10 +52,9 @@ public:
     std::shared_ptr<logger> clone(std::string new_name) override;
 
 protected:
-    void sink_it_(details::log_msg &msg) override;
+    void sink_it_(const details::log_msg &msg) override;
     void flush_() override;
-
-    void backend_log_(const details::log_msg &incoming_log_msg);
+    void backend_sink_it_(const details::log_msg &incoming_log_msg);
     void backend_flush_();
 
 private:
@@ -65,5 +64,5 @@ private:
 } // namespace spdlog
 
 #ifdef SPDLOG_HEADER_ONLY
-#include "async_logger-inl.h"
+#    include "async_logger-inl.h"
 #endif

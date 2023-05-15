@@ -7,34 +7,28 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal class RemoteConfigurationSettings
     {
-        private const int DefaultPollIntervalMilliseconds = 5000;
+        internal const int DefaultPollIntervalMilliseconds = 5000;
 
-        public RemoteConfigurationSettings()
-            : this(configurationSource: null)
+        public RemoteConfigurationSettings(IConfigurationSource? configurationSource, IConfigurationTelemetry telemetry)
         {
-        }
+            configurationSource ??= NullConfigurationSource.Instance;
 
-        public RemoteConfigurationSettings(IConfigurationSource? configurationSource)
-        {
             Id = Guid.NewGuid().ToString();
             RuntimeId = Util.RuntimeId.Get();
             TracerVersion = TracerConstants.ThreePartVersion;
 
-            var pollInterval =
-                configurationSource?.GetInt32(ConfigurationKeys.Rcm.PollInterval)
+            var pollInterval = new ConfigurationBuilder(configurationSource, telemetry)
 #pragma warning disable CS0618
-                    ?? configurationSource?.GetInt32(ConfigurationKeys.Rcm.PollIntervalInternal);
+                              .WithKeys(ConfigurationKeys.Rcm.PollInterval, ConfigurationKeys.Rcm.PollIntervalInternal)
 #pragma warning restore CS0618
-
-            pollInterval =
-                pollInterval is null or <= 0 or > 5000
-                    ? DefaultPollIntervalMilliseconds
-                    : pollInterval.Value;
+                              .AsInt32(DefaultPollIntervalMilliseconds, pollInterval => pollInterval is > 0 and <= 5000);
 
             PollInterval = TimeSpan.FromMilliseconds(pollInterval.Value);
         }
@@ -47,14 +41,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public TimeSpan PollInterval { get; }
 
-        public static RemoteConfigurationSettings FromSource(IConfigurationSource source)
-        {
-            return new RemoteConfigurationSettings(source);
-        }
+        public static RemoteConfigurationSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
+            => new(source, telemetry);
 
         public static RemoteConfigurationSettings FromDefaultSource()
-        {
-            return FromSource(GlobalConfigurationSource.Instance);
-        }
+            => FromSource(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
     }
 }

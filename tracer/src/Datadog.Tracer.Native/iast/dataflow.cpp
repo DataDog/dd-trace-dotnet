@@ -31,7 +31,6 @@ static const WSTRING _fixedAssemblyExcludeFilters[] = {
     WStr("Kudu*"),
     WStr("Microsoft*"),
     WStr("MSBuild"),
-    WStr("testhost.net*"),
     WStr("dotnet"),
     WStr("netstandard"),
     WStr("AspNet.*"),
@@ -76,6 +75,8 @@ static const WSTRING _fixedAssemblyExcludeFilters[] = {
     WStr("FluentAssertions"),
     WStr("NUnit3.TestAdapter"),
     WStr("nunit.*"),
+    WStr("vstest.console"),
+    WStr("testhost.*"),    
     LastEntry, // Can't have an empty array. This must be the last element
 };
 static const WSTRING _fixedMethodIncludeFilters[] = {
@@ -483,7 +484,7 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     }
     return nullptr;
 }
-ModuleInfo* Dataflow::GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId)
+ModuleInfo* Dataflow::GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId, bool lookInSharedRepos)
 {
     CSGUARD(_cs);
     for (auto iterator = _modules.begin(); iterator != _modules.end(); iterator++)
@@ -491,7 +492,8 @@ ModuleInfo* Dataflow::GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId)
         if (iterator->second->_name == moduleName)
         {
             auto ppModuleInfo = iterator->second;
-            if (ppModuleInfo->_appDomain.Id == appDomainId)
+
+            if ((ppModuleInfo->_appDomain.Id == appDomainId) || (lookInSharedRepos && ppModuleInfo->_appDomain.IsSharedAssemblyRepository))
             {
                 return ppModuleInfo;
             }

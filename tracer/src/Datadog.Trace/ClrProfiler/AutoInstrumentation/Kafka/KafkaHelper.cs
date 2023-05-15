@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 {
     internal static class KafkaHelper
     {
+        private const string MessagingType = "kafka";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaHelper));
         private static bool _headersInjectionEnabled = true;
         private static string[] defaultProduceEdgeTags = new[] { "direction:out", "type:kafka" };
@@ -33,18 +34,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
 
                 var parent = tracer.ActiveScope?.Span;
+                string operationName = tracer.Schema.Messaging.GetOutboundOperationName(MessagingType);
                 if (parent is not null &&
-                    parent.OperationName == KafkaConstants.ProduceOperationName &&
+                    parent.OperationName == operationName &&
                     parent.GetTag(Tags.InstrumentationName) != null)
                 {
                     return null;
                 }
 
-                string serviceName = settings.GetServiceName(tracer, KafkaConstants.ServiceName);
+                string serviceName = tracer.Schema.Messaging.GetOutboundServiceName(MessagingType);
+
                 var tags = new KafkaTags(SpanKinds.Producer);
 
                 scope = tracer.StartActiveInternal(
-                    KafkaConstants.ProduceOperationName,
+                    operationName,
                     tags: tags,
                     serviceName: serviceName,
                     finishOnClose: finishOnClose);
@@ -98,8 +101,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
 
                 var parent = tracer.ActiveScope?.Span;
+                string operationName = tracer.Schema.Messaging.GetInboundOperationName(MessagingType);
                 if (parent is not null &&
-                    parent.OperationName == KafkaConstants.ConsumeOperationName &&
+                    parent.OperationName == operationName &&
                     parent.GetTag(Tags.InstrumentationName) != null)
                 {
                     return null;
@@ -135,11 +139,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     }
                 }
 
-                string serviceName = tracer.Settings.GetServiceName(tracer, KafkaConstants.ServiceName);
+                string serviceName = tracer.Schema.Messaging.GetInboundServiceName(MessagingType);
 
                 var tags = new KafkaTags(SpanKinds.Consumer);
 
-                scope = tracer.StartActiveInternal(KafkaConstants.ConsumeOperationName, parent: propagatedContext, tags: tags, serviceName: serviceName);
+                scope = tracer.StartActiveInternal(operationName, parent: propagatedContext, tags: tags, serviceName: serviceName);
 
                 string resourceName = $"Consume Topic {(string.IsNullOrEmpty(topic) ? "kafka" : topic)}";
 
@@ -216,7 +220,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                                            ? new[] { "direction:in", $"group:{groupId}", "type:kafka" }
                                            : new[] { "direction:in", $"group:{groupId}", $"topic:{topic}", "type:kafka" };
 
-                        span.Context.SetCheckpoint(dataStreamsManager, edgeTags);
+                        span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags);
                     }
                 }
             }
@@ -241,7 +245,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 var activeScope = tracer.InternalActiveScope;
                 var currentSpan = activeScope?.Span;
-                if (currentSpan?.OperationName != KafkaConstants.ConsumeOperationName)
+                if (currentSpan?.OperationName != tracer.Schema.Messaging.GetInboundOperationName(MessagingType))
                 {
                     // Not currently in a consumer operation
                     return;
@@ -259,14 +263,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <summary>
         /// Try to inject the prop
         /// </summary>
-        /// <param name="context">The Span context to propagate</param>
+        /// <param name="span">Current span</param>
         /// <param name="dataStreamsManager">The global data streams manager</param>
         /// <param name="topic">Topic name</param>
         /// <param name="message">The duck-typed Kafka Message object</param>
         /// <typeparam name="TTopicPartitionMarker">The TopicPartition type (used  optimisation purposes)</typeparam>
         /// <typeparam name="TMessage">The type of the duck-type proxy</typeparam>
         internal static void TryInjectHeaders<TTopicPartitionMarker, TMessage>(
-            SpanContext context,
+            Span span,
             DataStreamsManager dataStreamsManager,
             string topic,
             TMessage message)
@@ -286,15 +290,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 var adapter = new KafkaHeadersCollectionAdapter(message.Headers);
 
-                SpanContextPropagator.Instance.Inject(context, adapter);
+                SpanContextPropagator.Instance.Inject(span.Context, adapter);
 
                 if (dataStreamsManager.IsEnabled)
                 {
                     var edgeTags = string.IsNullOrEmpty(topic)
                         ? defaultProduceEdgeTags
                         : new[] { "direction:out", $"topic:{topic}", "type:kafka" };
-                    context.SetCheckpoint(dataStreamsManager, edgeTags);
-                    dataStreamsManager.InjectPathwayContext(context.PathwayContext, adapter);
+                    span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags);
+                    dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, adapter);
                 }
             }
             catch (Exception ex)

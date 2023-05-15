@@ -3,13 +3,9 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
-    [LineProbeTestData(30, conditionDsl: Dsl, conditionJson: Json, captureSnapshot: false)]
+    [LogLineProbeTestData(26, conditionJson: Json, captureSnapshot: false)]
     internal class LineConditionPartialSnapshot : IRun
     {
-        private const string Dsl = @"{
-  ""dsl"": ""local > arg""
-}";
-
         private const string Json = @"{
     ""gt"": [
       {""ref"": ""local""},

@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
@@ -37,5 +39,44 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         [FieldOffset(32)]
         public DDWAF_OBJ_TYPE Type;
+
+        internal IReadOnlyDictionary<string, string[]> Decode()
+        {
+            var nbEntriesStart = (int)NbEntries;
+            var errorsDic = new Dictionary<string, string[]>(nbEntriesStart);
+            if (nbEntriesStart > 0)
+            {
+                if (Type != DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP)
+                {
+                    Log.Warning("Expecting type {DDWAF_OBJ_MAP} to decode waf errors and instead got a {Type} ", nameof(DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP), Type);
+                }
+                else
+                {
+                    var structSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
+                    for (var i = 0; i < nbEntriesStart; i++)
+                    {
+                        var arrayPtr = new IntPtr(Array.ToInt64() + (structSize * i));
+                        var array = (DdwafObjectStruct?)Marshal.PtrToStructure(arrayPtr, typeof(DdwafObjectStruct));
+                        if (array is { } arrayValue)
+                        {
+                            var key = Marshal.PtrToStringAnsi(arrayValue.ParameterName, (int)arrayValue.ParameterNameLength);
+                            var nbEntries = (int)arrayValue.NbEntries;
+                            var ruleIds = new string[nbEntries];
+                            for (var j = 0; j < nbEntries; j++)
+                            {
+                                var errorPtr = new IntPtr(arrayValue.Array.ToInt64() + (structSize * j));
+                                var error = (DdwafObjectStruct?)Marshal.PtrToStructure(errorPtr, typeof(DdwafObjectStruct));
+                                var ruleId = Marshal.PtrToStringAnsi(error!.Value.Array);
+                                ruleIds[j] = ruleId!;
+                            }
+
+                            errorsDic.Add(key, ruleIds);
+                        }
+                    }
+                }
+            }
+
+            return errorsDic;
+        }
     }
 }

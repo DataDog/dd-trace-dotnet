@@ -9,6 +9,7 @@ using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.TestHelpers;
@@ -38,7 +39,7 @@ public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 
     protected bool? EnableSecurity { get; }
 
-    protected string LogDirectory => Path.Combine(DatadogLoggingFactory.GetLogDirectory(), $"{GetType().Name}Logs");
+    protected string LogDirectory => Path.Combine(DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance), $"{GetType().Name}Logs");
 
     public override void Dispose()
     {
@@ -52,22 +53,16 @@ public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
         SetHttpPort(Fixture.HttpPort);
     }
 
-    internal static void CheckAckState(GetRcmRequest request, string product, uint expectedState, string expectedError, string message)
+    internal static void CheckAckState(GetRcmRequest request, string product, int expectedStateLength, uint expectedState, string expectedError, string message)
     {
-        var state = request?.Client?.State?.ConfigStates?.SingleOrDefault(x => x.Product == product);
+        var states = request?.Client?.State?.ConfigStates?.Where(x => x.Product == product).ToList();
 
-        state.Should().NotBeNull();
-        state.ApplyState.Should().Be(expectedState, message);
-        state.ApplyError.Should().Be(expectedError, message);
-    }
+        states.Count.Should().Be(expectedStateLength, message);
 
-    internal static void CheckCapabilities(GetRcmRequest request, uint expectedState, string message)
-    {
-#if !NETCOREAPP
-        var capabilities = new BigInteger(request?.Client?.Capabilities);
-#else
-        var capabilities = new BigInteger(request?.Client?.Capabilities, true, true);
-#endif
-        capabilities.Should().Be(expectedState, message);
+        foreach (var state in states)
+        {
+            state.ApplyState.Should().Be(expectedState, message);
+            state.ApplyError.Should().Be(expectedError, message);
+        }
     }
 }

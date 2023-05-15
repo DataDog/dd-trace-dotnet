@@ -19,17 +19,18 @@ namespace Datadog.Trace.Tests
 {
     public class LambdaCommonTests
     {
-        private readonly Mock<ILambdaExtensionRequest> _lambdaRequestMock = new Mock<ILambdaExtensionRequest>();
+        private readonly Mock<ILambdaExtensionRequest> _lambdaRequestMock = new();
 
         [Fact]
         public void TestCreatePlaceholderScopeSuccessWithTraceIdOnly()
         {
             var tracer = TracerHelper.Create();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", null);
+
             scope.Should().NotBeNull();
-            scope.Span.TraceId.ToString().Should().Be("1234");
-            scope.Span.SpanId.ToString().Should().NotBeNull();
-            scope.Span.Context.TraceContext.SamplingPriority.Should().Be(1);
+            scope.Span.TraceId128.Should().Be((TraceId)1234);
+            ((ISpan)scope.Span).TraceId.Should().Be(1234);
+            scope.Span.SpanId.Should().BeGreaterThan(0);
         }
 
         [Fact]
@@ -37,9 +38,11 @@ namespace Datadog.Trace.Tests
         {
             var tracer = TracerHelper.Create();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, "-1");
+
             scope.Should().NotBeNull();
-            scope.Span.TraceId.ToString().Should().NotBeNull();
-            scope.Span.SpanId.ToString().Should().NotBeNull();
+            scope.Span.TraceId128.Should().BeGreaterThan(TraceId.Zero);
+            ((ISpan)scope.Span).TraceId.Should().BeGreaterThan(0);
+            scope.Span.SpanId.Should().BeGreaterThan(0);
             scope.Span.Context.TraceContext.SamplingPriority.Should().Be(-1);
         }
 
@@ -48,9 +51,11 @@ namespace Datadog.Trace.Tests
         {
             var tracer = TracerHelper.Create();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", "-1");
+
             scope.Should().NotBeNull();
-            scope.Span.TraceId.ToString().Should().Be("1234");
-            scope.Span.SpanId.ToString().Should().NotBeNull();
+            scope.Span.TraceId128.Should().Be((TraceId)1234);
+            ((ISpan)scope.Span).TraceId.Should().Be(1234);
+            scope.Span.SpanId.Should().BeGreaterThan(0);
             scope.Span.Context.TraceContext.SamplingPriority.Should().Be(-1);
         }
 
@@ -60,10 +65,11 @@ namespace Datadog.Trace.Tests
         {
             var tracer = TracerHelper.Create();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, null);
+
             scope.Should().NotBeNull();
-            scope.Span.TraceId.ToString().Should().NotBeNull();
-            scope.Span.SpanId.ToString().Should().NotBeNull();
-            scope.Span.Context.TraceContext.SamplingPriority.Should().Be(1);
+            scope.Span.TraceId128.Should().BeGreaterThan((TraceId.Zero));
+            ((ISpan)scope.Span).TraceId.Should().BeGreaterThan(0);
+            scope.Span.SpanId.Should().BeGreaterThan(0);
         }
 
         [Fact]

@@ -19,7 +19,7 @@ internal enum AspectFilter
     /// <summary> Filter if all params are String Literals </summary>
     StringLiterals,
 
-    /// <summary> Filter if any pf the params are String Literals </summary>
+    /// <summary> Filter if any of the params are String Literals </summary>
     StringLiterals_Any,
 
     /// <summary> Filter if param0 is String Literal </summary>

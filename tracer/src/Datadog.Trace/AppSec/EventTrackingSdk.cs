@@ -49,7 +49,7 @@ public static class EventTrackingSdk
 
             var setTag = TaggingUtils.GetSpanSetter(span);
 
-            setTag(Tags.AppSec.EventsUsersLogin.SuccessTrack, bool.TrueString);
+            setTag(Tags.AppSec.EventsUsersLogin.SuccessTrack, "true");
             setTag(Tags.User.Id, userId);
 
             if (metadata != null)
@@ -98,9 +98,9 @@ public static class EventTrackingSdk
 
             var setTag = TaggingUtils.GetSpanSetter(span);
 
-            setTag(Tags.AppSec.EventsUsersLogin.FailureTrack, bool.TrueString);
+            setTag(Tags.AppSec.EventsUsersLogin.FailureTrack, "true");
             setTag(Tags.AppSec.EventsUsersLogin.FailureUserId, userId);
-            setTag(Tags.AppSec.EventsUsersLogin.FailureUserExists, exists.ToString());
+            setTag(Tags.AppSec.EventsUsersLogin.FailureUserExists, exists ? "true" : "false");
 
             if (metadata != null)
             {
@@ -146,7 +146,7 @@ public static class EventTrackingSdk
 
             var setTag = TaggingUtils.GetSpanSetter(span);
 
-            setTag(Tags.AppSec.Track(eventName), bool.TrueString);
+            setTag(Tags.AppSec.Track(eventName), "true");
 
             if (metadata != null)
             {

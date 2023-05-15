@@ -5,8 +5,11 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.AppSec.RcmModels.AsmData;
+using Datadog.Trace.AppSec.Rcm;
+using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -16,10 +19,8 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IContext CreateContext();
 
-        public bool UpdateRulesData(IEnumerable<RuleData> res);
-
-        public bool ToggleRules(IDictionary<string, bool> ruleStatus);
-
         internal DDWAF_RET_CODE Run(IntPtr contextHandle, IntPtr rawArgs, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds);
+
+        UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus);
     }
 }

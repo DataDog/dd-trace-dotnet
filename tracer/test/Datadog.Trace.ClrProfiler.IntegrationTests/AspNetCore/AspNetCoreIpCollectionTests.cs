@@ -45,7 +45,7 @@ public abstract class AspNetCoreIpCollectionTests : AspNetCoreMvcTestBase
         await Fixture.TryStartApp(this);
 
         var spans = await Fixture.WaitForSpans(path);
-        ValidateIntegrationSpans(spans, expectedServiceName: $"Samples.{EnvironmentHelper.SampleName}", isExternalSpan: false);
+        ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: $"Samples.{EnvironmentHelper.SampleName}", isExternalSpan: false);
 
         var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
         var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);

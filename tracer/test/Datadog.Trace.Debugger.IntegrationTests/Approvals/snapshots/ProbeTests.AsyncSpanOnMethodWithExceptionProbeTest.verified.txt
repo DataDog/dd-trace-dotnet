@@ -1,0 +1,676 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "35": {
+              "arguments": {
+                "input": {
+                  "type": "String",
+                  "value": "AsyncSpanOnMethodWithExceptionProbeTest.RunAsync"
+                },
+                "person": {
+                  "fields": {
+                    "_shouldCloned": {
+                      "type": "Int32",
+                      "value": "99"
+                    },
+                    "Address": {
+                      "fields": {
+                        "City": {
+                          "fields": {
+                            "Name": {
+                              "type": "String",
+                              "value": "New York"
+                            },
+                            "Type": {
+                              "type": "PlaceType",
+                              "value": "City"
+                            }
+                          },
+                          "type": "Place",
+                          "value": "Place"
+                        },
+                        "HomeType": {
+                          "type": "BuildingType",
+                          "value": "Duplex"
+                        },
+                        "Number": {
+                          "type": "Int32",
+                          "value": "15"
+                        },
+                        "Street": {
+                          "type": "String",
+                          "value": "Harlem"
+                        }
+                      },
+                      "type": "Address",
+                      "value": "Address"
+                    },
+                    "Age": {
+                      "type": "Double",
+                      "value": "99"
+                    },
+                    "Children": {
+                      "elements": [
+                        {
+                          "fields": {
+                            "_shouldCloned": {
+                              "type": "Int32",
+                              "value": "31"
+                            },
+                            "Address": {
+                              "fields": {
+                                "City": {
+                                  "notCapturedReason": "depth",
+                                  "type": "Place",
+                                  "value": "Place"
+                                },
+                                "HomeType": {
+                                  "type": "BuildingType",
+                                  "value": "Duplex"
+                                },
+                                "Number": {
+                                  "type": "Int32",
+                                  "value": "15"
+                                },
+                                "Street": {
+                                  "type": "String",
+                                  "value": "Harlem"
+                                }
+                              },
+                              "type": "Address",
+                              "value": "Address"
+                            },
+                            "Age": {
+                              "type": "Double",
+                              "value": "31"
+                            },
+                            "Children": {
+                              "isNull": "true",
+                              "type": "List`1"
+                            },
+                            "Id": {
+                              "type": "Guid",
+                              "value": "ScrubbedValue"
+                            },
+                            "Name": {
+                              "type": "String",
+                              "value": "Ralph Jr."
+                            }
+                          },
+                          "type": "Person",
+                          "value": "Person"
+                        }
+                      ],
+                      "type": "List`1",
+                      "value": "count: 1"
+                    },
+                    "Id": {
+                      "type": "Guid",
+                      "value": "ScrubbedValue"
+                    },
+                    "Name": {
+                      "type": "String",
+                      "value": "Ralph"
+                    }
+                  },
+                  "type": "Person",
+                  "value": "Person"
+                },
+                "this": {
+                  "type": "AsyncSpanOnMethodWithExceptionProbeTest",
+                  "value": "AsyncSpanOnMethodWithExceptionProbeTest"
+                }
+              },
+              "locals": {
+                "somewhat": {
+                  "isNull": "true",
+                  "type": "String"
+                }
+              },
+              "staticFields": {
+                "ClassName": {
+                  "type": "String",
+                  "value": "AsyncSpanOnMethodWithExceptionProbeTest"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "AsyncSpanOnMethodWithExceptionProbeTest.cs",
+            "lines": [
+              35
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncSpanOnMethodWithExceptionProbeTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "36": {
+              "arguments": {
+                "input": {
+                  "type": "String",
+                  "value": "AsyncSpanOnMethodWithExceptionProbeTest.RunAsync"
+                },
+                "person": {
+                  "fields": {
+                    "_shouldCloned": {
+                      "type": "Int32",
+                      "value": "99"
+                    },
+                    "Address": {
+                      "fields": {
+                        "City": {
+                          "fields": {
+                            "Name": {
+                              "type": "String",
+                              "value": "New York"
+                            },
+                            "Type": {
+                              "type": "PlaceType",
+                              "value": "City"
+                            }
+                          },
+                          "type": "Place",
+                          "value": "Place"
+                        },
+                        "HomeType": {
+                          "type": "BuildingType",
+                          "value": "Duplex"
+                        },
+                        "Number": {
+                          "type": "Int32",
+                          "value": "15"
+                        },
+                        "Street": {
+                          "type": "String",
+                          "value": "Harlem"
+                        }
+                      },
+                      "type": "Address",
+                      "value": "Address"
+                    },
+                    "Age": {
+                      "type": "Double",
+                      "value": "99"
+                    },
+                    "Children": {
+                      "elements": [
+                        {
+                          "fields": {
+                            "_shouldCloned": {
+                              "type": "Int32",
+                              "value": "31"
+                            },
+                            "Address": {
+                              "fields": {
+                                "City": {
+                                  "notCapturedReason": "depth",
+                                  "type": "Place",
+                                  "value": "Place"
+                                },
+                                "HomeType": {
+                                  "type": "BuildingType",
+                                  "value": "Duplex"
+                                },
+                                "Number": {
+                                  "type": "Int32",
+                                  "value": "15"
+                                },
+                                "Street": {
+                                  "type": "String",
+                                  "value": "Harlem"
+                                }
+                              },
+                              "type": "Address",
+                              "value": "Address"
+                            },
+                            "Age": {
+                              "type": "Double",
+                              "value": "31"
+                            },
+                            "Children": {
+                              "isNull": "true",
+                              "type": "List`1"
+                            },
+                            "Id": {
+                              "type": "Guid",
+                              "value": "ScrubbedValue"
+                            },
+                            "Name": {
+                              "type": "String",
+                              "value": "Ralph Jr."
+                            }
+                          },
+                          "type": "Person",
+                          "value": "Person"
+                        }
+                      ],
+                      "type": "List`1",
+                      "value": "count: 1"
+                    },
+                    "Id": {
+                      "type": "Guid",
+                      "value": "ScrubbedValue"
+                    },
+                    "Name": {
+                      "type": "String",
+                      "value": "Ralph"
+                    }
+                  },
+                  "type": "Person",
+                  "value": "Person"
+                },
+                "this": {
+                  "type": "AsyncSpanOnMethodWithExceptionProbeTest",
+                  "value": "AsyncSpanOnMethodWithExceptionProbeTest"
+                }
+              },
+              "locals": {
+                "somewhat": {
+                  "type": "String",
+                  "value": "AsyncSpanOnMethodWithExceptionProbeTest.RunAsync00000000-0000-0000-0000-000000000000"
+                }
+              },
+              "staticFields": {
+                "ClassName": {
+                  "type": "String",
+                  "value": "AsyncSpanOnMethodWithExceptionProbeTest"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "AsyncSpanOnMethodWithExceptionProbeTest.cs",
+            "lines": [
+              36
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncSpanOnMethodWithExceptionProbeTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "37": {
+              "arguments": {
+                "input": {
+                  "type": "String",
+                  "value": "AsyncSpanOnMethodWithExceptionProbeTest.RunAsync"
+                },
+                "person": {
+                  "fields": {
+                    "_shouldCloned": {
+                      "type": "Int32",
+                      "value": "99"
+                    },
+                    "Address": {
+                      "fields": {
+                        "City": {
+                          "fields": {
+                            "Name": {
+                              "type": "String",
+                              "value": "New York"
+                            },
+                            "Type": {
+                              "type": "PlaceType",
+                              "value": "City"
+                            }
+                          },
+                          "type": "Place",
+                          "value": "Place"
+                        },
+                        "HomeType": {
+                          "type": "BuildingType",
+                          "value": "Duplex"
+                        },
+                        "Number": {
+                          "type": "Int32",
+                          "value": "15"
+                        },
+                        "Street": {
+                          "type": "String",
+                          "value": "Harlem"
+                        }
+                      },
+                      "type": "Address",
+                      "value": "Address"
+                    },
+                    "Age": {
+                      "type": "Double",
+                      "value": "99"
+                    },
+                    "Children": {
+                      "elements": [
+                        {
+                          "fields": {
+                            "_shouldCloned": {
+                              "type": "Int32",
+                              "value": "31"
+                            },
+                            "Address": {
+                              "fields": {
+                                "City": {
+                                  "notCapturedReason": "depth",
+                                  "type": "Place",
+                                  "value": "Place"
+                                },
+                                "HomeType": {
+                                  "type": "BuildingType",
+                                  "value": "Duplex"
+                                },
+                                "Number": {
+                                  "type": "Int32",
+                                  "value": "15"
+                                },
+                                "Street": {
+                                  "type": "String",
+                                  "value": "Harlem"
+                                }
+                              },
+                              "type": "Address",
+                              "value": "Address"
+                            },
+                            "Age": {
+                              "type": "Double",
+                              "value": "31"
+                            },
+                            "Children": {
+                              "isNull": "true",
+                              "type": "List`1"
+                            },
+                            "Id": {
+                              "type": "Guid",
+                              "value": "ScrubbedValue"
+                            },
+                            "Name": {
+                              "type": "String",
+                              "value": "Ralph Jr."
+                            }
+                          },
+                          "type": "Person",
+                          "value": "Person"
+                        }
+                      ],
+                      "type": "List`1",
+                      "value": "count: 1"
+                    },
+                    "Id": {
+                      "type": "Guid",
+                      "value": "ScrubbedValue"
+                    },
+                    "Name": {
+                      "type": "String",
+                      "value": "Ralph"
+                    }
+                  },
+                  "type": "Person",
+                  "value": "Person"
+                },
+                "this": {
+                  "type": "AsyncSpanOnMethodWithExceptionProbeTest",
+                  "value": "AsyncSpanOnMethodWithExceptionProbeTest"
+                }
+              },
+              "locals": {
+                "somewhat": {
+                  "type": "String",
+                  "value": "AsyncSpanOnMethodWithExceptionProbeTest.RunAsync00000000-0000-0000-0000-000000000000"
+                }
+              },
+              "staticFields": {
+                "ClassName": {
+                  "type": "String",
+                  "value": "AsyncSpanOnMethodWithExceptionProbeTest"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "AsyncSpanOnMethodWithExceptionProbeTest.cs",
+            "lines": [
+              37
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncSpanOnMethodWithExceptionProbeTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "42": {
+              "arguments": {
+                "input": {
+                  "type": "String",
+                  "value": "AsyncSpanOnMethodWithExceptionProbeTest.RunAsync"
+                },
+                "person": {
+                  "fields": {
+                    "_shouldCloned": {
+                      "type": "Int32",
+                      "value": "99"
+                    },
+                    "Address": {
+                      "fields": {
+                        "City": {
+                          "fields": {
+                            "Name": {
+                              "type": "String",
+                              "value": "New York"
+                            },
+                            "Type": {
+                              "type": "PlaceType",
+                              "value": "City"
+                            }
+                          },
+                          "type": "Place",
+                          "value": "Place"
+                        },
+                        "HomeType": {
+                          "type": "BuildingType",
+                          "value": "Duplex"
+                        },
+                        "Number": {
+                          "type": "Int32",
+                          "value": "15"
+                        },
+                        "Street": {
+                          "type": "String",
+                          "value": "Harlem"
+                        }
+                      },
+                      "type": "Address",
+                      "value": "Address"
+                    },
+                    "Age": {
+                      "type": "Double",
+                      "value": "99"
+                    },
+                    "Children": {
+                      "elements": [
+                        {
+                          "fields": {
+                            "_shouldCloned": {
+                              "type": "Int32",
+                              "value": "31"
+                            },
+                            "Address": {
+                              "fields": {
+                                "City": {
+                                  "notCapturedReason": "depth",
+                                  "type": "Place",
+                                  "value": "Place"
+                                },
+                                "HomeType": {
+                                  "type": "BuildingType",
+                                  "value": "Duplex"
+                                },
+                                "Number": {
+                                  "type": "Int32",
+                                  "value": "15"
+                                },
+                                "Street": {
+                                  "type": "String",
+                                  "value": "Harlem"
+                                }
+                              },
+                              "type": "Address",
+                              "value": "Address"
+                            },
+                            "Age": {
+                              "type": "Double",
+                              "value": "31"
+                            },
+                            "Children": {
+                              "isNull": "true",
+                              "type": "List`1"
+                            },
+                            "Id": {
+                              "type": "Guid",
+                              "value": "ScrubbedValue"
+                            },
+                            "Name": {
+                              "type": "String",
+                              "value": "Ralph Jr."
+                            }
+                          },
+                          "type": "Person",
+                          "value": "Person"
+                        }
+                      ],
+                      "type": "List`1",
+                      "value": "count: 1"
+                    },
+                    "Id": {
+                      "type": "Guid",
+                      "value": "ScrubbedValue"
+                    },
+                    "Name": {
+                      "type": "String",
+                      "value": "Ralph"
+                    }
+                  },
+                  "type": "Person",
+                  "value": "Person"
+                },
+                "this": {
+                  "type": "AsyncSpanOnMethodWithExceptionProbeTest",
+                  "value": "AsyncSpanOnMethodWithExceptionProbeTest"
+                }
+              },
+              "staticFields": {
+                "ClassName": {
+                  "type": "String",
+                  "value": "AsyncSpanOnMethodWithExceptionProbeTest"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "AsyncSpanOnMethodWithExceptionProbeTest.cs",
+            "lines": [
+              42
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Calculate",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncSpanOnMethodWithExceptionProbeTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

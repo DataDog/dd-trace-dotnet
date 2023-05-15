@@ -21,6 +21,9 @@ export DOTNET_EXE="$(command -v dotnet)"
 # e.g. "/property:Platform=AnyCPU" gives
 # No se reconoce el comando o el argumento "/property:Platform=AnyCPU"
 export DOTNET_CLI_UI_LANGUAGE="en"
+export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+export NUKE_TELEMETRY_OPTOUT=1
 
 echo "Microsoft (R) .NET Core SDK version $("$DOTNET_EXE" --version)"
 

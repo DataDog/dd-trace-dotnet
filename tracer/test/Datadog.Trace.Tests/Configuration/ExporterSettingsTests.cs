@@ -8,6 +8,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using FluentAssertions;
 using Xunit;
 using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
@@ -298,12 +299,12 @@ namespace Datadog.Trace.Tests.Configuration
 
         private ExporterSettings Setup(string key, string value)
         {
-            return new ExporterSettings(BuildSource(key + ":" + value), NoFile());
+            return new ExporterSettings(BuildSource(key + ":" + value), NoFile(), NullConfigurationTelemetry.Instance);
         }
 
         private ExporterSettings Setup(Func<string, bool> fileExistsMock, params string[] config)
         {
-            return new ExporterSettings(BuildSource(config), fileExistsMock);
+            return new ExporterSettings(BuildSource(config), fileExistsMock, NullConfigurationTelemetry.Instance);
         }
 
         private NameValueConfigurationSource BuildSource(params string[] config)

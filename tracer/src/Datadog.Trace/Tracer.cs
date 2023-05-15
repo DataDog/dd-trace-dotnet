@@ -14,6 +14,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.PInvoke;
@@ -222,6 +223,11 @@ namespace Datadog.Trace
         public ImmutableTracerSettings Settings => TracerManager.Settings;
 
         /// <summary>
+        /// Gets this tracer's settings.
+        /// </summary>
+        internal NamingSchema Schema => TracerManager.Schema;
+
+        /// <summary>
         /// Gets the active scope
         /// </summary>
         IScope ITracer.ActiveScope => ActiveScope;
@@ -356,7 +362,7 @@ namespace Datadog.Trace
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
-        internal SpanContext CreateSpanContext(ISpanContext parent = null, string serviceName = null, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null)
+        internal SpanContext CreateSpanContext(ISpanContext parent = null, string serviceName = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null)
         {
             // null parent means use the currently active span
             parent ??= DistributedTracer.Instance.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.Context;
@@ -371,11 +377,10 @@ namespace Datadog.Trace
 
                 if (traceContext == null)
                 {
-                    // if parent is SpanContext but its TraceContext is null, then it was extracted from
-                    // propagation headers. create a new TraceContext (this will start a new trace) and initialize
+                    // If parent is SpanContext but its TraceContext is null, then it was extracted from
+                    // propagation headers. Create a new TraceContext (this will start a new trace) and initialize
                     // it with the propagated values (sampling priority, origin, tags, W3C trace state, etc).
-                    var traceTags = TagPropagation.ParseHeader(parentSpanContext.PropagatedTags, Settings.OutgoingTagPropagationHeaderMaxLength);
-                    traceContext = new TraceContext(this, traceTags);
+                    traceContext = new TraceContext(this, parentSpanContext.PropagatedTags);
 
                     var samplingPriority = parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority();
                     traceContext.SetSamplingPriority(samplingPriority);
@@ -385,10 +390,10 @@ namespace Datadog.Trace
             }
             else
             {
-                // if parent is not a SpanContext, it must be either a ReadOnlySpanContext or
-                // a user-defined ISpanContext implementation. we don't have a TraceContext,
+                // if parent is not a SpanContext, it must be either a ReadOnlySpanContext,
+                // a user-defined ISpanContext implementation, or null (no parent). we don't have a TraceContext,
                 // so create a new one (this will start a new trace).
-                var traceTagCollection = new TraceTagCollection(outgoingHeaderMaxLength: 20);
+                var traceTagCollection = new TraceTagCollection();
                 var hasDebugInfo = FlipACoin().ToString(CultureInfo.InvariantCulture);
                 traceTagCollection.SetTag(Tags.HasDebugInfo, hasDebugInfo);
                 traceTagCollection.SetTag(Tags.HasDebugInfoPropagationTag, hasDebugInfo);
@@ -398,19 +403,26 @@ namespace Datadog.Trace
                 var samplingPriority = DistributedTracer.Instance.GetSamplingPriority();
                 traceContext.SetSamplingPriority(samplingPriority);
 
-                if (traceId == null)
+                if (traceId == TraceId.Zero &&
+                    Activity.ActivityListener.GetCurrentActivity() is Activity.DuckTypes.IW3CActivity { TraceId: { } activityTraceId })
                 {
-                    var activity = Activity.ActivityListener.GetCurrentActivity();
-                    if (activity is Activity.DuckTypes.IW3CActivity w3CActivity)
-                    {
-                        // If there's an existing activity we use the same traceId (converted).
-                        rawTraceId = w3CActivity.TraceId;
-                        traceId = Convert.ToUInt64(w3CActivity.TraceId.Substring(16), 16);
-                    }
+                    // if there's an existing Activity we try to use its TraceId,
+                    // but if Activity.IdFormat is not ActivityIdFormat.W3C, it may be null or unparsable
+                    rawTraceId = activityTraceId;
+                    HexString.TryParseTraceId(activityTraceId, out traceId);
                 }
             }
 
             var finalServiceName = serviceName ?? DefaultServiceName;
+
+            if (traceId == TraceId.Zero)
+            {
+                // generate the trace id here using the 128-bit setting
+                // instead of letting the SpanContext generate it in its ctor
+                var useAllBits = Settings?.TraceId128BitGenerationEnabled ?? false;
+                traceId = RandomIdGenerator.Shared.NextTraceId(useAllBits);
+            }
+
             return new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
         }
 
@@ -425,7 +437,7 @@ namespace Datadog.Trace
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
-        internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true)
+        internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true)
         {
             var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId);
 
@@ -466,11 +478,6 @@ namespace Datadog.Trace
             TracerManager.GitMetadataTagsProvider.TryExtractGitMetadata(out _);
 
             return span;
-        }
-
-        internal Task FlushAsync()
-        {
-            return TracerManager.AgentWriter.FlushTracesAsync();
         }
 
         private static void SpanOriginResolution(Span span)
@@ -610,6 +617,7 @@ namespace Datadog.Trace
             DebuggerNativeMethods.InstrumentProbes(
                 Array.Empty<NativeMethodProbeDefinition>(),
                 lineProbes,
+                Array.Empty<NativeSpanProbeDefinition>(),
                 Array.Empty<NativeRemoveProbeRequest>());
         }
 
@@ -617,6 +625,11 @@ namespace Datadog.Trace
         {
             var closestSequencePoint = userSymbolMethod.SequencePoints.Reverse().First(sp => sp.Offset <= callInstruction.Offset);
             return new NativeLineProbeDefinition($"SpanOrigin_ExitSpan_{closestSequencePoint.Document.URL}_{closestSequencePoint.Line}", userMethod.Module.ModuleVersionId, userMethod.MetadataToken, (int)(closestSequencePoint.Offset), closestSequencePoint.Line, closestSequencePoint.Document.URL);
+        }
+
+        internal Task FlushAsync()
+        {
+            return TracerManager.AgentWriter.FlushTracesAsync();
         }
     }
 }

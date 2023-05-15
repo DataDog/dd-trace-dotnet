@@ -1,13 +1,10 @@
 using System.Runtime.CompilerServices;
+using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
     public class GreaterThanArgumentFalse : IRun
     {
-        private const string Dsl = @"{
-  ""dsl"": ""ref intArg > 2""
-}";
-
         private const string Json = @"{
     ""gt"": [
       {""ref"": ""intArg""},
@@ -22,13 +19,13 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData(conditionDsl: Dsl,
-                             conditionJson: Json,
-                             captureSnapshot: true,
-                             evaluateAt: 1,
-                             expectedNumberOfSnapshots: 0,
-                             returnTypeName: "System.String",
-                             parametersTypeName: new[] { "System.Int32" })]
+        [LogMethodProbeTestData(
+            conditionJson: Json,
+            captureSnapshot: true,
+            evaluateAt: Const.Exit,
+            expectedNumberOfSnapshots: 0,
+            returnTypeName: "System.String",
+            parametersTypeName: new[] { "System.Int32" })]
         public string Method(int intArg)
         {
             return $"Argument: {intArg}";

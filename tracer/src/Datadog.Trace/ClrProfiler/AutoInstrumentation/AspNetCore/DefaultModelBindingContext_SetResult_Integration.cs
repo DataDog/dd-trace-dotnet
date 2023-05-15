@@ -12,6 +12,8 @@ using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Iast;
+using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
@@ -39,6 +41,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     IntegrationName = IntegrationName,
     CallTargetIntegrationType = IntegrationType.Derived,
     InstrumentationCategory = InstrumentationCategory.AppSec)]
+    [InstrumentMethod(
+    AssemblyName = "Microsoft.AspNetCore.Mvc.Core",
+    TypeName = "Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext",
+    MethodName = "set_Result",
+    ReturnTypeName = ClrNames.Void,
+    ParameterTypeNames = new[] { "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" },
+    MinimumVersion = "2.0.0.0",
+    MaximumVersion = "7.*.*.*.*",
+    IntegrationName = IntegrationName,
+    InstrumentationCategory = InstrumentationCategory.Iast)]
+    [InstrumentMethod(
+    AssemblyName = "Microsoft.AspNetCore.Mvc.Core",
+    TypeName = "Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext",
+    MethodName = "set_Result",
+    ReturnTypeName = ClrNames.Void,
+    ParameterTypeNames = new[] { "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" },
+    MinimumVersion = "2.0.0.0",
+    MaximumVersion = "7.*.*.*.*",
+    IntegrationName = IntegrationName,
+    CallTargetIntegrationType = IntegrationType.Derived,
+    InstrumentationCategory = InstrumentationCategory.Iast)]
 
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -51,8 +74,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, in CallTargetState state)
         {
+            var iast = Iast.Iast.Instance;
             var security = Security.Instance;
-            if (security.Settings.Enabled)
+            if (security.Enabled || iast.Settings.Enabled)
             {
                 if (instance.TryDuckCast<DefaultModelBindingContext>(out var defaultModelBindingContext))
                 {
@@ -62,7 +86,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 
                         if (defaultModelBindingContext.BindingSource.Id == "Body")
                         {
-                            security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model);
+                            object bodyExtracted = null;
+
+                            if (security.Enabled)
+                            {
+                                bodyExtracted = security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model);
+                            }
+
+                            if (iast.Settings.Enabled)
+                            {
+                                span.Context?.TraceContext?.IastRequestContext?.AddRequestBody(defaultModelBindingContext.Result.Model, bodyExtracted);
+                            }
                         }
                         else
                         {
@@ -73,7 +107,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                                 {
                                     if (prov.BindingSource.Id is "Form" or "Body")
                                     {
-                                        security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model);
+                                        object bodyExtracted = null;
+                                        if (security.Enabled)
+                                        {
+                                            bodyExtracted = security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model);
+                                        }
+
+                                        if (iast.Settings.Enabled)
+                                        {
+                                            span.Context?.TraceContext?.IastRequestContext?.AddRequestBody(defaultModelBindingContext.Result.Model, bodyExtracted);
+                                        }
+
                                         break;
                                     }
                                 }

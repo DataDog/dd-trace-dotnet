@@ -4,25 +4,29 @@
 // </copyright>
 
 using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Specialized;
 using Datadog.Trace.Configuration;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Configuration
 {
     public class ServiceNameTests
     {
-        private const string ApplicationName = "MyApplication";
-        private readonly ServiceNames _serviceNames;
+        private readonly Tracer _tracerV0;
+        private readonly Tracer _tracerV1;
 
         public ServiceNameTests()
         {
-            _serviceNames = new ServiceNames(new Dictionary<string, string>
+            var mappings = new Dictionary<string, string>
             {
                 { "sql-server", "custom-db" },
                 { "http-client", "some-service" },
                 { "mongodb", "my-mongo" },
-            });
+            };
+
+            _tracerV0 = new LockedTracer(new TracerSettings() { MetadataSchemaVersion = SchemaVersion.V0, ServiceNameMappings = mappings });
+            _tracerV1 = new LockedTracer(new TracerSettings() { MetadataSchemaVersion = SchemaVersion.V1, ServiceNameMappings = mappings });
         }
 
         [Theory]
@@ -31,9 +35,8 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("mongodb", "my-mongo")]
         public void RetrievesMappedServiceNames(string serviceName, string expected)
         {
-            var actual = _serviceNames.GetServiceName(ApplicationName, serviceName);
-
-            Assert.Equal(expected, actual);
+            _tracerV0.Settings.GetServiceName(_tracerV0, serviceName).Should().Be(expected);
+            _tracerV1.Settings.GetServiceName(_tracerV1, serviceName).Should().Be(expected);
         }
 
         [Theory]
@@ -42,11 +45,8 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("custom-service")]
         public void RetrievesUnmappedServiceNames(string serviceName)
         {
-            var expected = $"{ApplicationName}-{serviceName}";
-
-            var actual = _serviceNames.GetServiceName(ApplicationName, serviceName);
-
-            Assert.Equal(expected, actual);
+            _tracerV0.Settings.GetServiceName(_tracerV0, serviceName).Should().Be($"{_tracerV0.DefaultServiceName}-{serviceName}");
+            _tracerV1.Settings.GetServiceName(_tracerV1, serviceName).Should().Be(_tracerV1.DefaultServiceName);
         }
 
         [Theory]
@@ -55,56 +55,43 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("custom-service")]
         public void DoesNotRequireAnyMappings(string serviceName)
         {
-            var serviceNames = new ServiceNames(new Dictionary<string, string>());
-            var expected = $"{ApplicationName}-{serviceName}";
+            var tracerV0 = new LockedTracer(new TracerSettings() { MetadataSchemaVersion = SchemaVersion.V0 });
+            var tracerV1 = new LockedTracer(new TracerSettings() { MetadataSchemaVersion = SchemaVersion.V1 });
 
-            var actual = serviceNames.GetServiceName(ApplicationName, serviceName);
-
-            Assert.Equal(expected, actual);
+            tracerV0.Settings.GetServiceName(tracerV0, serviceName).Should().Be($"{tracerV0.DefaultServiceName}-{serviceName}");
+            tracerV1.Settings.GetServiceName(tracerV1, serviceName).Should().Be(tracerV1.DefaultServiceName);
         }
 
         [Fact]
-        public void CanPassNullToConstructor()
-        {
-            var serviceName = "elasticsearch";
-            var expected = $"{ApplicationName}-{serviceName}";
-            var serviceNames = new ServiceNames(null);
-
-            var actual = serviceNames.GetServiceName(ApplicationName, serviceName);
-
-            Assert.Equal(expected, actual);
-        }
-
-        [Fact]
-        public void CanAddMappingsLater()
+        public void CanAddMappingsViaConfigurationSource()
         {
             var serviceName = "elasticsearch";
             var expected = "custom-name";
-            var serviceNames = new ServiceNames(new Dictionary<string, string>());
-            serviceNames.SetServiceNameMappings(new Dictionary<string, string> { { serviceName, expected } });
 
-            var actual = serviceNames.GetServiceName(ApplicationName, serviceName);
+            var collectionV0 = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, "v0" }, { ConfigurationKeys.ServiceNameMappings, $"{serviceName}:{expected}" } };
+            var collectionV1 = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, "v1" }, { ConfigurationKeys.ServiceNameMappings, $"{serviceName}:{expected}" } };
 
-            Assert.Equal(expected, actual);
+            var tracerV0 = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collectionV0)));
+            var tracerV1 = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collectionV1)));
+
+            tracerV0.Settings.GetServiceName(tracerV0, serviceName).Should().Be(expected);
+            tracerV1.Settings.GetServiceName(tracerV1, serviceName).Should().Be(expected);
         }
 
-        [Fact]
-        public void ReplacesExistingMappings()
+        private class LockedTracer : Tracer
         {
-            var serviceNames = new ServiceNames(new Dictionary<string, string>
+            internal LockedTracer(TracerSettings tracerSettings)
+                : base(new LockedTracerManager(tracerSettings))
             {
-                { "sql-server", "custom-db" },
-                { "elasticsearch", "original-service" },
-            });
-            serviceNames.SetServiceNameMappings(new Dictionary<string, string> { { "elasticsearch", "custom-name" } });
+            }
+        }
 
-            var mongodbActual = serviceNames.GetServiceName(ApplicationName, "mongodb");
-            var elasticActual = serviceNames.GetServiceName(ApplicationName, "elasticsearch");
-            var sqlActual = serviceNames.GetServiceName(ApplicationName, "sql-server");
-
-            Assert.Equal($"{ApplicationName}-mongodb", mongodbActual);
-            Assert.Equal("custom-name", elasticActual);
-            Assert.Equal($"{ApplicationName}-sql-server", sqlActual);
+        private class LockedTracerManager : TracerManager, ILockedTracer
+        {
+            public LockedTracerManager(TracerSettings tracerSettings)
+                : base(new ImmutableTracerSettings(tracerSettings), null, null, null, null, null, null, null, null, null, null, null)
+            {
+            }
         }
     }
 }

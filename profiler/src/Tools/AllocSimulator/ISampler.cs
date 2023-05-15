@@ -7,8 +7,10 @@ namespace AllocSimulator
 {
     public interface ISampler
     {
-        public void OnAllocationTick(string type, int key, long size, long allocationsAmount);
+        public bool ShouldSample(long size);
 
-        public IEnumerable<AllocInfo> GetAllocs();
+        public string GetDescription();
+
+        public string GetName();
     }
 }

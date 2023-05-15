@@ -6,8 +6,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Sampling;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Util;
@@ -139,6 +146,64 @@ public class RandomIdGeneratorTests
         var values = GetValues(() => _rng.NextTraceId(useAllBits).Lower).Take(NumberOfIdsToGenerate);
 
         AssertEvenDistribution(values, MinId, useAllBits ? MaxUInt64 : MaxUInt63);
+    }
+
+    [Fact]
+    public void Default_Is_64Bit_TraceId()
+    {
+        var tracer = new Tracer(
+            new TracerSettings(),
+            Mock.Of<IAgentWriter>(),
+            Mock.Of<ITraceSampler>(),
+            new AsyncLocalScopeManager(),
+            Mock.Of<IDogStatsd>(),
+            Mock.Of<ITelemetryController>(),
+            Mock.Of<IDiscoveryService>());
+
+        var scope = (Scope)tracer.StartActive("operation");
+
+        scope.Span.TraceId128.Lower.Should().BeGreaterThan(0);
+        scope.Span.TraceId128.Upper.Should().Be(0);
+    }
+
+    [Fact]
+    public void Configure_128Bit_TraceId_Disabled()
+    {
+        var settings = new TracerSettings { TraceId128BitGenerationEnabled = false };
+
+        var tracer = new Tracer(
+            settings,
+            Mock.Of<IAgentWriter>(),
+            Mock.Of<ITraceSampler>(),
+            new AsyncLocalScopeManager(),
+            Mock.Of<IDogStatsd>(),
+            Mock.Of<ITelemetryController>(),
+            Mock.Of<IDiscoveryService>());
+
+        var scope = (Scope)tracer.StartActive("operation");
+
+        scope.Span.TraceId128.Lower.Should().BeGreaterThan(0);
+        scope.Span.TraceId128.Upper.Should().Be(0);
+    }
+
+    [Fact]
+    public void Configure_128Bit_TraceId_Enabled()
+    {
+        var settings = new TracerSettings { TraceId128BitGenerationEnabled = true };
+
+        var tracer = new Tracer(
+            settings,
+            Mock.Of<IAgentWriter>(),
+            Mock.Of<ITraceSampler>(),
+            new AsyncLocalScopeManager(),
+            Mock.Of<IDogStatsd>(),
+            Mock.Of<ITelemetryController>(),
+            Mock.Of<IDiscoveryService>());
+
+        var scope = (Scope)tracer.StartActive("operation");
+
+        scope.Span.TraceId128.Lower.Should().BeGreaterThan(0);
+        scope.Span.TraceId128.Upper.Should().BeGreaterThan(0);
     }
 
     private static void AssertEvenDistribution(IEnumerable<ulong> values, ulong minValue, ulong maxValue)

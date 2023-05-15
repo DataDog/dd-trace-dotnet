@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 
@@ -16,6 +17,7 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
 {
     private readonly ImmutableTracerSettings _immutableTracerSettings;
     private GitMetadata? _cachedGitTags = null;
+    private int _tryCount = 0;
 
     public GitMetadataTagsProvider(ImmutableTracerSettings immutableTracerSettings)
     {
@@ -52,10 +54,10 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
 
             // Get the tag from configuration. These may originate from the DD_GIT_REPOSITORY_URL and DD_GIT_COMMIT_SHA environment variables,
             // but if those were not available, they may have been extracted from the DD_TAGS environment variable.
-            if (string.IsNullOrWhiteSpace(_immutableTracerSettings.GitCommitSha) == false &&
-                string.IsNullOrWhiteSpace(_immutableTracerSettings.GitRepositoryUrl) == false)
+            if (!string.IsNullOrWhiteSpace(_immutableTracerSettings.GitCommitSha) &&
+                !string.IsNullOrWhiteSpace(_immutableTracerSettings.GitRepositoryUrl))
             {
-                gitMetadata = _cachedGitTags = new GitMetadata(_immutableTracerSettings.GitCommitSha, _immutableTracerSettings.GitRepositoryUrl);
+                gitMetadata = _cachedGitTags = new GitMetadata(_immutableTracerSettings.GitCommitSha!, _immutableTracerSettings.GitRepositoryUrl!);
                 return true;
             }
 
@@ -91,9 +93,20 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
         {
             // Cannot determine the entry assembly. This may mean this method was called too early.
             // Return false to indicate that we should try again later.
-            Log.Debug("Cannot extract SourceLink information as the entry assembly could not be determined.");
-            result = default;
-            return false;
+
+            var nbTries = Interlocked.Increment(ref _tryCount);
+            if (nbTries > 100)
+            {
+                Log.Debug("Tried 100 times to get the SourceLink information. Giving up.");
+                result = GitMetadata.Empty;
+                return true;
+            }
+            else
+            {
+                Log.Debug("Cannot extract SourceLink information as the entry assembly could not be determined.");
+                result = default;
+                return false;
+            }
         }
 
         if (SourceLinkInformationExtractor.TryGetSourceLinkInfo(assembly, out var commitSha, out var repositoryUrl))

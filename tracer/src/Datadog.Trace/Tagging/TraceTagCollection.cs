@@ -7,26 +7,46 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Tagging
 {
     internal class TraceTagCollection
     {
-        private readonly object _listLock = new();
-        private readonly int _outgoingHeaderMaxLength;
-
         private List<KeyValuePair<string, string>>? _tags;
         private string? _cachedPropagationHeader;
+        private string? _samplingMechanismValue;
 
-        public TraceTagCollection(int outgoingHeaderMaxLength)
-            : this(outgoingHeaderMaxLength, null, null)
+        public TraceTagCollection()
         {
         }
 
-        public TraceTagCollection(int outgoingHeaderMaxLength, List<KeyValuePair<string, string>>? tags, string? cachedPropagationHeader)
+        public TraceTagCollection(List<KeyValuePair<string, string>>? tags, string? cachedPropagationHeader)
         {
-            _outgoingHeaderMaxLength = outgoingHeaderMaxLength;
+            if (tags?.Count > 0)
+            {
+                lock (tags)
+                {
+                    KeyValuePair<string, string>? samplingMechanismPair = null;
+                    foreach (var item in tags)
+                    {
+                        if (item.Key == Trace.Tags.Propagated.DecisionMaker)
+                        {
+                            samplingMechanismPair = item;
+                            break;
+                        }
+                    }
+
+                    if (samplingMechanismPair != null)
+                    {
+                        tags.Remove(samplingMechanismPair.Value);
+                        _samplingMechanismValue = samplingMechanismPair.Value.Value;
+                    }
+                }
+            }
+
             _tags = tags;
             _cachedPropagationHeader = cachedPropagationHeader;
         }
@@ -34,7 +54,7 @@ namespace Datadog.Trace.Tagging
         /// <summary>
         /// Gets the number of elements contained in the <see cref="TraceTagCollection"/>.
         /// </summary>
-        public int Count => _tags?.Count ?? 0;
+        public int Count => (_tags?.Count ?? 0) + (_samplingMechanismValue != null ? 1 : 0);
 
         /// <summary>
         /// Adds a new tag to the collection.
@@ -84,51 +104,61 @@ namespace Datadog.Trace.Tagging
                 return RemoveTag(name);
             }
 
-            var isPropagated = name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase);
-
-            lock (_listLock)
+            if (name == Trace.Tags.Propagated.DecisionMaker)
             {
-                if (_tags?.Count > 0)
+                if (_samplingMechanismValue != null && !replaceIfExists)
                 {
-                    // we have some tags already, try to find this one
-                    for (int i = 0; i < _tags.Count; i++)
+                    return false;
+                }
+
+                _samplingMechanismValue = value;
+                return true;
+            }
+
+            var tags = _tags;
+            if (tags == null)
+            {
+                var newTags = new List<KeyValuePair<string, string>>(2);
+                tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
+            }
+
+            lock (tags)
+            {
+                // we have some tags already, try to find this one
+                for (var i = 0; i < tags.Count; i++)
+                {
+                    if (string.Equals(tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (string.Equals(_tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
+                        // found the tag
+                        if (replaceIfExists)
                         {
-                            // found the tag
-                            if (replaceIfExists)
+                            if (!string.Equals(tags[i].Value, value, StringComparison.Ordinal))
                             {
-                                if (!string.Equals(_tags[i].Value, value, StringComparison.Ordinal))
+                                // tag already exists with different value, replace it
+                                tags[i] = new(name, value);
+
+                                // clear the cached header
+                                if (name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase))
                                 {
-                                    // tag already exists with different value, replace it
-                                    _tags[i] = new(name, value);
-
-                                    // clear the cached header
-                                    if (isPropagated)
-                                    {
-                                        _cachedPropagationHeader = null;
-                                    }
-
-                                    return true;
+                                    _cachedPropagationHeader = null;
                                 }
-                            }
 
-                            // tag exists but replaceIfExists is false, don't modify anything
-                            return false;
+                                return true;
+                            }
                         }
+
+                        // tag exists but replaceIfExists is false, don't modify anything
+                        return false;
                     }
                 }
 
                 // tag not found
 
-                // delay creating the List<T> as long as possible
-                _tags ??= new List<KeyValuePair<string, string>>(1);
-
                 // add new tag
-                _tags.Add(new(name, value));
+                tags.Add(new(name, value));
 
                 // clear the cached header if we added a propagated tag
-                if (isPropagated)
+                if (name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase))
                 {
                     _cachedPropagationHeader = null;
                 }
@@ -144,26 +174,34 @@ namespace Datadog.Trace.Tagging
                 ThrowHelper.ThrowArgumentNullException(nameof(name));
             }
 
-            var isPropagated = name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase);
-
-            if (_tags?.Count > 0)
+            if (name == Trace.Tags.Propagated.DecisionMaker)
             {
-                lock (_listLock)
+                _samplingMechanismValue = null;
+                return true;
+            }
+
+            var tags = _tags;
+            if (tags == null || tags.Count == 0)
+            {
+                // tag not found
+                return false;
+            }
+
+            lock (tags)
+            {
+                for (var i = 0; i < tags.Count; i++)
                 {
-                    for (int i = 0; i < _tags.Count; i++)
+                    if (string.Equals(tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (string.Equals(_tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
+                        tags.RemoveAt(i);
+
+                        // clear the cached header
+                        if (name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase))
                         {
-                            _tags.RemoveAt(i);
-
-                            // clear the cached header
-                            if (isPropagated)
-                            {
-                                _cachedPropagationHeader = null;
-                            }
-
-                            return true;
+                            _cachedPropagationHeader = null;
                         }
+
+                        return true;
                     }
                 }
             }
@@ -179,16 +217,24 @@ namespace Datadog.Trace.Tagging
                 ThrowHelper.ThrowArgumentNullException(nameof(name));
             }
 
-            if (_tags?.Count > 0)
+            if (name == Trace.Tags.Propagated.DecisionMaker)
             {
-                lock (_listLock)
+                return _samplingMechanismValue;
+            }
+
+            var tags = _tags;
+            if (tags == null || tags.Count == 0)
+            {
+                return null;
+            }
+
+            lock (tags)
+            {
+                for (var i = 0; i < tags.Count; i++)
                 {
-                    for (int i = 0; i < _tags.Count; i++)
+                    if (string.Equals(tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (string.Equals(_tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return _tags[i].Value;
-                        }
+                        return tags[i].Value;
                     }
                 }
             }
@@ -200,10 +246,29 @@ namespace Datadog.Trace.Tagging
         {
             if (tags?.Count > 0)
             {
-                foreach (var tag in tags.ToArray())
+                var traceTagsSetter = new TraceTagSetter(this);
+                tags.Enumerate(ref traceTagsSetter);
+            }
+        }
+
+        public void FixTraceIdTag(TraceId traceId)
+        {
+            var tagValue = GetTag(Trace.Tags.Propagated.TraceIdUpper);
+
+            if (traceId.Upper > 0)
+            {
+                // add missing "_dd.p.tid" tag with the upper 64 bits of the trace id,
+                // or replace existing tag if it has the wrong value
+                // (parse the hex string and compare ulongs to avoid allocating another string)
+                if (tagValue == null || !HexString.TryParseUInt64(tagValue, out var currentValue) || currentValue != traceId.Upper)
                 {
-                    SetTag(tag.Key, tag.Value);
+                    SetTag(Trace.Tags.Propagated.TraceIdUpper, HexString.ToHexString(traceId.Upper));
                 }
+            }
+            else if (traceId.Upper == 0 && tagValue != null)
+            {
+                // remove tag "_dd.p.tid" if trace id is only 64 bits
+                RemoveTag(Trace.Tags.Propagated.TraceIdUpper);
             }
         }
 
@@ -213,21 +278,57 @@ namespace Datadog.Trace.Tagging
         /// The returned string is cached and reused if no relevant tags are changed between calls.
         /// </summary>
         /// <returns>A string that can be used for horizontal propagation using the "x-datadog-tags" header.</returns>
-        public string ToPropagationHeader()
+        public string ToPropagationHeader(int? maximumHeaderLength)
         {
-            return _cachedPropagationHeader ??= TagPropagation.ToHeader(this, _outgoingHeaderMaxLength);
+            return _cachedPropagationHeader ??= TagPropagation.ToHeader(this, maximumHeaderLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
         }
 
-        public KeyValuePair<string, string>[] ToArray()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Enumerate<TTagEnumerator>(ref TTagEnumerator tagEnumerator)
+            where TTagEnumerator : struct, ITagEnumerator
         {
-            if (_tags == null || _tags.Count == 0)
+            if (_samplingMechanismValue != null)
             {
-                return Array.Empty<KeyValuePair<string, string>>();
+                tagEnumerator.Next(new KeyValuePair<string, string>(Trace.Tags.Propagated.DecisionMaker, _samplingMechanismValue));
             }
 
-            lock (_listLock)
+            var tags = _tags;
+            if (tags is null || tags.Count == 0)
             {
-                return _tags.ToArray();
+                return;
+            }
+
+            lock (tags)
+            {
+                for (var i = 0; i < tags.Count; i++)
+                {
+                    tagEnumerator.Next(tags[i]);
+                }
+            }
+        }
+
+#pragma warning disable SA1201
+        public interface ITagEnumerator
+#pragma warning restore SA1201
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            void Next(KeyValuePair<string, string> item);
+        }
+
+        internal readonly struct TraceTagSetter : ITagEnumerator
+        {
+            private readonly TraceTagCollection _traceTagCollection;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal TraceTagSetter(TraceTagCollection traceTagCollection)
+            {
+                _traceTagCollection = traceTagCollection;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Next(KeyValuePair<string, string> tag)
+            {
+                _traceTagCollection.SetTag(tag.Key, tag.Value);
             }
         }
     }

@@ -27,7 +27,8 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       attribute-double: 2.0,
@@ -103,26 +104,6 @@
     TraceId: Id_1,
     SpanId: Id_6,
     Name: MyServiceName.internal,
-    Resource: StartActiveSpan.Child,
-    Service: MyServiceName,
-    Type: custom,
-    ParentId: Id_2,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      otel.library.name: MyServiceName,
-      otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_1,
-      service.instance.id: Guid_3,
-      service.name: MyServiceName,
-      service.version: 1.0.x,
-      span.kind: internal
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_7,
-    Name: MyServiceName.internal,
     Resource: InnerSpanOk,
     Service: MyServiceName,
     Type: custom,
@@ -141,7 +122,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_8,
+    SpanId: Id_7,
     Name: MyServiceName.internal,
     Resource: InnerSpanError,
     Service: MyServiceName,
@@ -164,7 +145,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_9,
+    SpanId: Id_8,
     Name: MyServiceName.internal,
     Resource: InnerSpanUpdated,
     Service: MyServiceName,
@@ -184,7 +165,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_10,
+    SpanId: Id_9,
     Name: OtherLibrary.internal,
     Resource: Response,
     Service: MyServiceName,
@@ -195,6 +176,26 @@
       language: dotnet,
       otel.library.name: OtherLibrary,
       otel.library.version: 4.0.0,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
+      span.kind: internal
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_10,
+    Name: MyServiceName.internal,
+    Resource: StartActiveSpan.Child,
+    Service: MyServiceName,
+    Type: custom,
+    ParentId: Id_3,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MyServiceName,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
       service.instance.id: Guid_3,
@@ -221,7 +222,8 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -249,7 +251,8 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -274,7 +277,8 @@
       otel.trace_id: Guid_6,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,

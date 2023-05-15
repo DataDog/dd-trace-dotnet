@@ -30,7 +30,9 @@ namespace Samples.Computer01
         QuicklyDeadThreads,  // parameter = number of short lived threads to create
         LinuxMallocDeadlock,
         MeasureAllocations,
-        InnerMethods
+        InnerMethods,
+        LineNumber,
+        NullThreadNameBug
     }
 
     public class Program
@@ -58,6 +60,8 @@ namespace Samples.Computer01
             // 15: trigger malloc deadlock on Linux
             // 16: count sized allocations
             // 17: generate frames with named and anonymous methods
+            // 18: call stack on functions to check line number(s)
+            // 19: set thread names to null and empty (validate bug fix)
             //
             Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} " +
             $"[--service] [--iterations <number of iterations to execute>] " +

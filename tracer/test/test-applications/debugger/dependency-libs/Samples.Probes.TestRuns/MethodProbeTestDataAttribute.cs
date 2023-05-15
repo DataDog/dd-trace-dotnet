@@ -3,7 +3,7 @@ using System;
 namespace Samples.Probes.TestRuns
 {
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor)]
-    public class MethodProbeTestDataAttribute : ProbeAttributeBase
+    public abstract class MethodProbeTestDataAttribute : ProbeAttributeBase
     {
         public MethodProbeTestDataAttribute(
             string returnTypeName = null,
@@ -13,16 +13,15 @@ namespace Samples.Probes.TestRuns
             bool unlisted = false,
             int expectedNumberOfSnapshots = 1,
             bool useFullTypeName = true,
-            string conditionDsl = null,
             string conditionJson = null,
-            string templateDsl = null,
             string templateJson = null,
             string templateStr = null,
-            string probeId = null,
+			string probeId = null,
             bool captureSnapshot = true,
-            int evaluateAt = 1,
-            params string[] skipOnFramework)
-            : base(skip, phase, unlisted, expectedNumberOfSnapshots, skipOnFramework, conditionJson: conditionJson, conditionDsl: conditionDsl, templateDsl: templateDsl, templateJson: templateJson, templateStr: templateStr, probeId: probeId, evaluateAt: evaluateAt, captureSnapshot: captureSnapshot)
+            string evaluateAt = null,
+            bool expectProbeStatusFailure = false,
+            params string[] skipOnFrameworks)
+            : base(skip : skip, phase : phase, unlisted : unlisted, expectedNumberOfSnapshots : expectedNumberOfSnapshots, skipOnFrameworks: skipOnFrameworks, conditionJson: conditionJson, templateJson: templateJson, templateStr: templateStr, probeId: probeId, evaluateAt: evaluateAt, captureSnapshot: captureSnapshot, expectProbeStatusFailure: expectProbeStatusFailure)
         {
 
             ReturnTypeName = returnTypeName;

@@ -25,6 +25,6 @@ CpuTimeProvider::CpuTimeProvider(
     IConfiguration* pConfiguration
     )
     :
-    CollectorBase<RawCpuSample>("CpuTimeProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
+    CollectorBase<RawCpuSample>("CpuTimeProvider", valueOffset, SampleTypeDefinitions.size(), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
 {
 }

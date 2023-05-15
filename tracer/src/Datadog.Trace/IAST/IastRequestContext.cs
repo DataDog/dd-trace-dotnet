@@ -6,11 +6,15 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Xml.Linq;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Iast;
 
 internal class IastRequestContext
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastRequestContext));
     private VulnerabilityBatch? _vulnerabilityBatch;
     private object _vulnerabilityLock = new();
     private TaintedObjects _taintedObjects = new();
@@ -36,8 +40,58 @@ internal class IastRequestContext
     {
         lock (_vulnerabilityLock)
         {
-            _vulnerabilityBatch ??= new();
+            _vulnerabilityBatch ??= IastModule.GetVulnerabilityBatch();
             _vulnerabilityBatch.Add(vulnerability);
+        }
+    }
+
+    internal void AddRequestBody(object body, object? bodyExtracted)
+    {
+        try
+        {
+            if (bodyExtracted is null)
+            {
+                bodyExtracted = ObjectExtractor.Extract(body);
+            }
+
+            AddExtractedBody(bodyExtracted, null);
+        }
+        catch
+        {
+            Log.Warning("Error reading request Body.");
+        }
+    }
+
+    private void AddExtractedBody(object bodyExtracted, string? key)
+    {
+        if (bodyExtracted != null)
+        {
+            // We get either string, List<object> or Dictionary<string, object>
+            if (bodyExtracted is string bodyExtractedStr)
+            {
+                _taintedObjects.TaintInputString(bodyExtractedStr, new Source(SourceType.GetByte(SourceTypeName.RequestBody), key, bodyExtractedStr));
+            }
+            else
+            {
+                if (bodyExtracted is List<object> bodyExtractedList)
+                {
+                    foreach (var element in bodyExtractedList)
+                    {
+                        AddExtractedBody(element, key);
+                    }
+                }
+                else
+                {
+                    if (bodyExtracted is Dictionary<string, object> bodyExtractedDic)
+                    {
+                        foreach (var keyValue in bodyExtractedDic)
+                        {
+                            AddExtractedBody(keyValue.Value, keyValue.Key);
+                            _taintedObjects.TaintInputString(keyValue.Key, new Source(SourceType.GetByte(SourceTypeName.RequestBody), key, keyValue.Key));
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -54,7 +108,7 @@ internal class IastRequestContext
 
     private void AddQueryStringRaw(string queryString)
     {
-        _taintedObjects.TaintInputString(queryString, new Source(SourceType.GetByte(SourceTypeName.RequestQueryString), null, queryString));
+        _taintedObjects.TaintInputString(queryString, new Source(SourceType.GetByte(SourceTypeName.RequestQuery), null, queryString));
     }
 
     private void AddQueryPath(string path)
@@ -79,6 +133,11 @@ internal class IastRequestContext
 
             _routedParametersAdded = true;
         }
+    }
+
+    internal TaintedObjects GetTaintedObjects()
+    {
+        return _taintedObjects;
     }
 
     internal TaintedObject? GetTainted(object objectToFind)

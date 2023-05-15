@@ -2,7 +2,7 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.Profiler.Native.Linux" VERSION 2.25.0)
+project("Datadog.Profiler.Native.Linux" VERSION 2.31.0)
 
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
@@ -15,7 +15,7 @@ message(STATUS "Run Clang Undefined-Behavior Sanitizer: " ${RUN_UBSAN})
 # ******************************************************
 
 # Sets compiler options
-add_compile_options(-std=c++17 -fPIC -fms-extensions)
+add_compile_options(-std=c++17 -fPIC -fms-extensions -g)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 
@@ -110,10 +110,10 @@ endif()
 target_compile_definitions(${PROFILER_STATIC_LIB_NAME} PUBLIC "-D_GLIBCXX_USE_CXX11_ABI=0")
 
 target_link_libraries(${PROFILER_STATIC_LIB_NAME}
-    fmt-lib
     libunwind-lib
     libdatadog-lib
     coreclr
+    PPDB
     spdlog-headers
     -static-libgcc
     -static-libstdc++
@@ -122,7 +122,7 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -ldl
 )
 
-add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt-lib libdatadog-lib libunwind-lib coreclr spdlog-headers)
+add_dependencies(${PROFILER_STATIC_LIB_NAME} libdatadog-lib libunwind-lib coreclr spdlog-headers PPDB)
 
 # ******************************************************
 # Define shared target

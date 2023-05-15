@@ -12,11 +12,13 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.NetworkInformation;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -24,14 +26,12 @@ using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
-#if NETFRAMEWORK
-using Datadog.Trace.ExtensionMethods; // needed for Dictionary<K,V>.GetValueOrDefault()
-#endif
-
 namespace Datadog.Trace.TestHelpers
 {
     public abstract class TestHelper : IDisposable
     {
+        private HttpClient _client = new();
+
         protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
             : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides), output)
         {
@@ -58,6 +58,8 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"TargetFramework: {EnvironmentHelper.GetTargetFramework()}");
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
             Output.WriteLine($"Native Loader DLL: {EnvironmentHelper.GetNativeLoaderPath()}");
+
+            _client.DefaultRequestHeaders.Add("DD-API-KEY", Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY"));
         }
 
         public bool SecurityEnabled { get; private set; }
@@ -157,34 +159,6 @@ namespace Datadog.Trace.TestHelpers
             return process;
         }
 
-        public async Task<bool> TakeMemoryDump(Process process)
-        {
-            try
-            {
-                if (EnvironmentTools.IsLinux())
-                {
-                    var dotnetRuntimeFolder = Path.GetDirectoryName(typeof(object).Assembly.Location);
-                    var createDumpExecutable = Path.Combine(dotnetRuntimeFolder!, "createdump");
-                    // createdump automatically puts the dump in the /tmp/ directory, which is where we grab it from
-                    var args = process.Id.ToString();
-                    return CaptureMemoryDump(createDumpExecutable, args);
-                }
-                else if (EnvironmentTools.IsWindows())
-                {
-                    var procDumpExecutable = await DownloadProcdumpZipAndExtract();
-                    var args = $"-ma {process.Id} -accepteula";
-                    return CaptureMemoryDump(procDumpExecutable, args);
-                }
-            }
-            catch (Exception ex)
-            {
-                Output.WriteLine("Error taking memory dump: " + ex);
-                return false;
-            }
-
-            return false;
-        }
-
         public ProcessResult RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000)
         {
             var process = StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework);
@@ -193,7 +167,7 @@ namespace Datadog.Trace.TestHelpers
             return WaitForProcessResult(helper);
         }
 
-        public ProcessResult WaitForProcessResult(ProcessHelper helper)
+        public ProcessResult WaitForProcessResult(ProcessHelper helper, int expectedExitCode = 0)
         {
             // this is _way_ too long, but we want to be v. safe
             // the goal is just to make sure we kill the test before
@@ -218,9 +192,9 @@ namespace Datadog.Trace.TestHelpers
 
             if (!ranToCompletion && !process.HasExited)
             {
-                var tookMemoryDump = TakeMemoryDump(process);
+                var tookMemoryDump = MemoryDumpHelper.CaptureMemoryDump(process);
                 process.Kill();
-                throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump.Result}. Killing process.");
+                throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump}. Killing process.");
             }
 
             var exitCode = process.ExitCode;
@@ -243,7 +217,7 @@ namespace Datadog.Trace.TestHelpers
                 throw new SkipException("Coverlet threw AbandonedMutexException during cleanup");
             }
 
-            ExitCodeException.ThrowIfNonZero(exitCode);
+            ExitCodeException.ThrowIfNonExpected(exitCode, expectedExitCode);
 
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
@@ -320,28 +294,32 @@ namespace Datadog.Trace.TestHelpers
 
             var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
-            Task.Run(() =>
-            {
-                string line;
-                while ((line = process.StandardOutput.ReadLine()) != null)
+            Task.Factory.StartNew(
+                () =>
                 {
-                    Output.WriteLine($"[webserver][stdout] {line}");
-
-                    if (line.Contains("IIS Express is running"))
+                    string line;
+                    while ((line = process.StandardOutput.ReadLine()) != null)
                     {
-                        wh.Set();
-                    }
-                }
-            });
+                        Output.WriteLine($"[webserver][stdout] {line}");
 
-            Task.Run(() =>
-            {
-                string line;
-                while ((line = process.StandardError.ReadLine()) != null)
+                        if (line.Contains("IIS Express is running"))
+                        {
+                            wh.Set();
+                        }
+                    }
+                },
+                TaskCreationOptions.LongRunning);
+
+            Task.Factory.StartNew(
+                () =>
                 {
-                    Output.WriteLine($"[webserver][stderr] {line}");
-                }
-            });
+                    string line;
+                    while ((line = process.StandardError.ReadLine()) != null)
+                    {
+                        Output.WriteLine($"[webserver][stderr] {line}");
+                    }
+                },
+                TaskCreationOptions.LongRunning);
 
             wh.WaitOne(5000);
 
@@ -374,6 +352,14 @@ namespace Datadog.Trace.TestHelpers
         public void EnableIast(bool enable = true)
         {
             SetEnvironmentVariable(ConfigurationKeys.Iast.Enabled, enable.ToString().ToLower());
+        }
+
+        public void EnableEvidenceRedaction(bool? enable = null)
+        {
+            if (enable != null)
+            {
+                SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, enable.ToString().ToLower());
+            }
         }
 
         public void DisableObfuscationQueryString()
@@ -425,6 +411,12 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
+        /// <summary>
+        /// NOTE: Only use this for local debugging, don't set permanently in tests
+        /// We have a dedicated run that tests with debug mode enabled, so want to make
+        /// sure that "normal" runs don't set this flag.
+        /// </summary>
+        [Obsolete("Setting this forces debug mode, whereas we want to automatically test in both modes")]
         protected void EnableDebugMode()
         {
             EnvironmentHelper.DebugModeEnabled = true;
@@ -449,7 +441,11 @@ namespace Datadog.Trace.TestHelpers
         protected void SetInstrumentationVerification()
         {
             bool verificationEnabled = ShouldUseInstrumentationVerification();
-            SetEnvironmentVariable(ConfigurationKeys.LogDirectory, verificationEnabled ? EnvironmentHelper.LogDirectory : null);
+
+            if (verificationEnabled)
+            {
+                SetEnvironmentVariable(ConfigurationKeys.LogDirectory, EnvironmentHelper.LogDirectory);
+            }
         }
 
         protected void VerifyInstrumentation(Process process)
@@ -644,60 +640,60 @@ namespace Datadog.Trace.TestHelpers
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
         }
 
+        protected async Task ReportRetry(ITestOutputHelper outputHelper, int attemptsRemaining, Type testType, Exception ex = null)
+        {
+            var type = outputHelper.GetType();
+            var testMember = type.GetField("test", BindingFlags.Instance | BindingFlags.NonPublic);
+            var test = (ITest)testMember?.GetValue(outputHelper);
+            var testFullName = type.FullName + test?.TestCase.DisplayName;
+
+            outputHelper.WriteLine($"Error executing test: {testFullName}. {attemptsRemaining} attempts remaining. {ex}");
+
+            // In addition to logging, send a metric that will help us get more information through tags
+            var srcBranch = Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH");
+
+            var tags = $$"""
+                "os.platform:{{SanitizeTagValue(FrameworkDescription.Instance.OSPlatform)}}",
+                "os.architecture:{{SanitizeTagValue(EnvironmentTools.GetPlatform())}}",
+                "target.framework:{{SanitizeTagValue(EnvironmentHelper.GetTargetFramework())}}",
+                "test.name:{{SanitizeTagValue(testFullName)}}",
+                "git.branch:{{SanitizeTagValue(srcBranch)}}"
+            """;
+
+            var payload = $$"""
+                {
+                    "series": [{
+                        "metric": "dd_trace_dotnet.ci.tests.retries",
+                        "type": 1,
+                        "points": [{
+                            "timestamp": {{((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds()}},
+                            "value": 1
+                            }],
+                        "tags": [
+                            {{tags}}
+                        ]
+                    }]
+                }
+            """;
+
+            var content = new StringContent(payload, Encoding.UTF8, "application/json");
+            var response = await _client.PostAsync("https://api.datadoghq.com/api/v2/series", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.StatusCode != HttpStatusCode.Accepted)
+            {
+                outputHelper.WriteLine($"Failed to submit metric to monitor retry. Response was: Code: {response.StatusCode}. Response: {responseContent}. Payload sent was: \"{payload}\"");
+            }
+        }
+
+        private string SanitizeTagValue(string tag)
+        {
+            tag.TryConvertToNormalizedTagName(true, out var normalizedTag);
+            return normalizedTag;
+        }
+
         private bool IsServerSpan(MockSpan span) =>
             span.Tags.GetValueOrDefault(Tags.SpanKind) == SpanKinds.Server;
-
-        private async Task<string> DownloadProcdumpZipAndExtract()
-        {
-            // We don't know if procdump is available, so download it fresh
-            const string url = @"https://download.sysinternals.com/files/Procdump.zip";
-            var client = new HttpClient();
-            var zipFilePath = Path.GetTempFileName();
-            Output.WriteLine($"Downloading Procdump to '{zipFilePath}'");
-            using (var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
-            {
-                using var bodyStream = await response.Content.ReadAsStreamAsync();
-                using Stream streamToWriteTo = File.Open(zipFilePath, FileMode.Create);
-                await bodyStream.CopyToAsync(streamToWriteTo);
-            }
-
-            var unpackedDirectory = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetTempFileName()));
-            Output.WriteLine($"Procdump downloaded. Unpacking to '{unpackedDirectory}'");
-            System.IO.Compression.ZipFile.ExtractToDirectory(zipFilePath, unpackedDirectory);
-
-            var procDump = Path.Combine(unpackedDirectory, "procdump.exe");
-            return procDump;
-        }
-
-        private bool CaptureMemoryDump(string tool, string args)
-        {
-            Output.WriteLine($"Capturing memory dump using '{tool} {args}'");
-
-            using var dumpToolProcess = Process.Start(new ProcessStartInfo(tool, args)
-            {
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            });
-
-            using var helper = new ProcessHelper(dumpToolProcess);
-            dumpToolProcess.WaitForExit(30_000);
-            helper.Drain();
-            Output.WriteLine($"[dump][stdout] {helper.StandardOutput}");
-            Output.WriteLine($"[dump][stderr] {helper.ErrorOutput}");
-
-            if (dumpToolProcess.ExitCode == 0)
-            {
-                Output.WriteLine($"Memory dump successfully captured using '{tool} {args}'.");
-            }
-            else
-            {
-                Output.WriteLine($"Failed to capture memory dump using '{tool} {args}'. {tool}'s exit code was {dumpToolProcess.ExitCode}.");
-            }
-
-            return true;
-        }
 
         protected internal class TupleList<T1, T2> : List<Tuple<T1, T2>>
         {

@@ -16,14 +16,14 @@ public class HMACMD5Tests : InstrumentationTestsBase
     public void GivenAHMACMD5_WhenComputeHash_VulnerabilityIsLogged()
     {
         new HMACMD5().ComputeHash(new Mock<Stream>().Object);
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "HMACMD5", false);
     }
 
     [Fact]
     public void GivenAHMACMD5_WhenComputeHash_VulnerabilityIsLogged2()
     {
         new HMACMD5().ComputeHash(new byte[] { });
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "HMACMD5", false);
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public class HMACMD5Tests : InstrumentationTestsBase
     public void GivenAHMACMD5_WhenComputeHash_VulnerabilityIsLogged3()
     {
         new HMACMD5().ComputeHash(new byte[] { 5, 5, 5 }, 0, 2);
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "HMACMD5", false);
     }
 
     [Fact]
@@ -56,21 +56,21 @@ public class HMACMD5Tests : InstrumentationTestsBase
     public void GivenAHMACMD5_WhenComputeHashByte3Args_VulnerabilityIsLogged3()
     {
         HMAC.Create("HMACMD5").ComputeHash(new byte[] { 5, 5, 5 }, 0, 2);
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "HMACMD5", false);
     }
 
     [Fact]
     public void GivenAHMACMD5_WhenComputeHashStream_VulnerabilityIsLogged()
     {
         HMAC.Create("HMACMD5").ComputeHash(new Mock<Stream>().Object);
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "HMACMD5", false);
     }
 
     [Fact]
     public void GivenAHMACMD5_WhenComputeHashByte_VulnerabilityIsLogged()
     {
         HMAC.Create("HMACMD5").ComputeHash(new byte[] { });
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "HMACMD5", false);
     }
 #pragma warning restore SYSLIB0045
 }

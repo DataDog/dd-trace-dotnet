@@ -178,5 +178,38 @@ namespace Datadog.Trace.Tests.Telemetry
             integration.Enabled.Should().BeTrue();
             integration.Error.Should().Be(error);
         }
+
+        [Fact]
+        public void OnlyIncludesChangedValues()
+        {
+            const string error = "Some error";
+            var collector = new IntegrationTelemetryCollector();
+            collector.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()));
+
+            // first call
+            collector.GetData().Should().NotBeEmpty();
+            // second call
+            collector.GetData().Should().BeNullOrEmpty();
+
+            // Make change
+            collector.IntegrationRunning(IntegrationId);
+
+            collector.HasChanges().Should().BeTrue();
+            collector.GetData().Should().ContainSingle().Which.Should().BeEquivalentTo(new { Name = IntegrationName });
+
+            // Make identical change
+            collector.IntegrationRunning(IntegrationId);
+            collector.GetData().Should().BeNullOrEmpty();
+
+            // new change
+            collector.IntegrationGeneratedSpan(IntegrationId);
+            collector.GetData().Should().ContainSingle().Which.Should().BeEquivalentTo(new { Name = IntegrationName });
+            collector.GetData().Should().BeNullOrEmpty();
+
+            // new change
+            collector.IntegrationDisabledDueToError(IntegrationId, error);
+            collector.GetData().Should().ContainSingle().Which.Should().BeEquivalentTo(new { Name = IntegrationName });
+            collector.GetData().Should().BeNullOrEmpty();
+        }
     }
 }

@@ -5,7 +5,7 @@
 
 using System;
 using System.Globalization;
-using System.Security.Cryptography;
+using System.Threading;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
@@ -26,7 +26,7 @@ namespace Datadog.Trace
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
-        private readonly object _lock = new object();
+        private int _isFinished;
 
         internal Span(SpanContext context, DateTimeOffset? start)
             : this(context, start, null)
@@ -45,7 +45,7 @@ namespace Datadog.Trace
 
                 Log.Debug(
                     "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{TagsType}])",
-                    new object[] { SpanId, Context.ParentId, TraceId, Tags, tagsType });
+                    new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, Tags, tagsType });
             }
         }
 
@@ -81,12 +81,17 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets the trace's unique identifier.
+        /// Gets the trace's unique 128-bit identifier.
         /// </summary>
-        internal ulong TraceId => Context.TraceId;
+        internal TraceId TraceId128 => Context.TraceId128;
 
         /// <summary>
-        /// Gets the span's unique identifier.
+        /// Gets the 64-bit trace id, or the lower 64 bits of a 128-bit trace id.
+        /// </summary>
+        internal ulong TraceId => Context.TraceId128.Lower;
+
+        /// <summary>
+        /// Gets the span's unique 64-bit identifier.
         /// </summary>
         internal ulong SpanId => Context.SpanId;
 
@@ -109,7 +114,11 @@ namespace Datadog.Trace
 
         internal TimeSpan Duration { get; private set; }
 
-        internal bool IsFinished { get; private set; }
+        internal bool IsFinished
+        {
+            get => _isFinished == 1;
+            private set => _isFinished = value ? 1 : 0;
+        }
 
         internal bool IsRootSpan => Context.TraceContext?.RootSpan == this;
 
@@ -133,9 +142,12 @@ namespace Datadog.Trace
         public override string ToString()
         {
             var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-            sb.AppendLine($"TraceId: {Context.TraceId}");
+            sb.AppendLine($"TraceId64: {Context.TraceId128.Lower}");
+            sb.AppendLine($"TraceId128: {Context.TraceId128}");
+            sb.AppendLine($"RawTraceId: {Context.RawTraceId}");
             sb.AppendLine($"ParentId: {Context.ParentId}");
             sb.AppendLine($"SpanId: {Context.SpanId}");
+            sb.AppendLine($"RawSpanId: {Context.RawSpanId}");
             sb.AppendLine($"Origin: {Context.Origin}");
             sb.AppendLine($"ServiceName: {ServiceName}");
             sb.AppendLine($"OperationName: {OperationName}");
@@ -395,6 +407,8 @@ namespace Datadog.Trace
                     return Context.TraceContext?.ServiceVersion;
                 case Trace.Tags.Origin:
                     return Context.TraceContext?.Origin;
+                case Trace.Tags.TraceId:
+                    return Context.RawTraceId;
                 default:
                     return Tags.GetTag(key);
             }
@@ -402,33 +416,22 @@ namespace Datadog.Trace
 
         internal void Finish(TimeSpan duration)
         {
-            var shouldCloseSpan = false;
-            lock (_lock)
+            ResourceName ??= OperationName;
+            if (Interlocked.CompareExchange(ref _isFinished, 1, 0) == 0)
             {
-                ResourceName ??= OperationName;
-
-                if (!IsFinished)
+                Duration = duration;
+                if (Duration < TimeSpan.Zero)
                 {
-                    Duration = duration;
-                    if (Duration < TimeSpan.Zero)
-                    {
-                        Duration = TimeSpan.Zero;
-                    }
-
-                    IsFinished = true;
-                    shouldCloseSpan = true;
+                    Duration = TimeSpan.Zero;
                 }
-            }
 
-            if (shouldCloseSpan)
-            {
                 Context.TraceContext.CloseSpan(this);
 
                 if (IsLogLevelDebugEnabled)
                 {
                     Log.Debug(
                         "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])",
-                        new object[] { SpanId, Context.ParentId, TraceId, ServiceName, ResourceName, OperationName, Tags });
+                        new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, ServiceName, ResourceName, OperationName, Tags });
                 }
             }
         }

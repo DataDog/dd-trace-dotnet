@@ -24,21 +24,21 @@ public class SHA1CryptoServiceProviderTests : InstrumentationTestsBase
     public void GivenASHA1CryptoServiceProvider_WhenCreating_VulnerabilityIsLogged()
     {
         _ = new SHA1CryptoServiceProvider().ComputeHash(new byte[] { 5, 5, 5 }, 0, 2);
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "SHA1", false);
     }
 
     [Fact]
     public void GivenASHA1CryptoServiceProvider_WhenCreating_VulnerabilityIsLogged2()
     {
         _ = new SHA1CryptoServiceProvider().ComputeHash(new byte[] { 5, 5, 5 });
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "SHA1", false);
     }
 
     [Fact]
     public void GivenASHA1CryptoServiceProvider_WhenCreating_VulnerabilityIsLogged3()
     {
         _ = new SHA1CryptoServiceProvider().ComputeHash(new Mock<Stream>().Object);
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "SHA1", false);
     }
 
     [Fact]
@@ -47,6 +47,6 @@ public class SHA1CryptoServiceProviderTests : InstrumentationTestsBase
         var crypto = new SHA1CryptoServiceProvider();
         Assert.NotNull(crypto);
         crypto.ComputeHash(new byte[] { 0xFF });
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "SHA1", false);
     }
 }

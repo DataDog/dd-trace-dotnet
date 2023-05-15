@@ -6,14 +6,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
+    [UsesVerify]
     public class MySqlDatabaseMonitoringTests : TracingIntegrationTest
     {
         public MySqlDatabaseMonitoringTests(ITestOutputHelper output)
@@ -32,80 +36,81 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                     continue;
                 }
 
-                yield return item;
+                yield return new[] { item[0], "v0" };
+                yield return new[] { item[0], "v1" };
             }
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsMySql();
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsMySql(metadataSchemaVersion);
 
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitDbmCommentedSpanspropagationNotSet(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationNotSet(string packageVersion, string metadataSchemaVersion)
         {
-            SubmitDbmCommentedSpans(packageVersion, string.Empty);
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, string.Empty);
         }
 
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitDbmCommentedSpanspropagationIntValue(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationIntValue(string packageVersion, string metadataSchemaVersion)
         {
-            SubmitDbmCommentedSpans(packageVersion, "100");
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "100");
         }
 
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitDbmCommentedSpanspropagationRandomValue(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationRandomValue(string packageVersion, string metadataSchemaVersion)
         {
-            SubmitDbmCommentedSpans(packageVersion, "randomValue");
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "randomValue");
         }
 
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitDbmCommentedSpanspropagationDisabled(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationDisabled(string packageVersion, string metadataSchemaVersion)
         {
-            SubmitDbmCommentedSpans(packageVersion, "disabled");
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "disabled");
         }
 
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitDbmCommentedSpanspropagationService(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationService(string packageVersion, string metadataSchemaVersion)
         {
-            SubmitDbmCommentedSpans(packageVersion, "service");
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "service");
         }
 
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitDbmCommentedSpanspropagationFull(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationFull(string packageVersion, string metadataSchemaVersion)
         {
-            SubmitDbmCommentedSpans(packageVersion, "full");
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "full");
         }
 
         // Check that the spans have been tagged after the comment was propagated
-        private void ValidatePresentDbmTag(IEnumerable<MockSpan> spans, string propagationLevel)
+        private void ValidatePresentDbmTag(IReadOnlyCollection<MockSpan> spans, string propagationLevel)
         {
             if (propagationLevel == "service" || propagationLevel == "full")
             {
                 foreach (var span in spans)
                 {
-                    Assert.True(span.Tags?.ContainsKey(Tags.DbmDataPropagated));
+                    span.Tags?.Should().ContainKey(Tags.DbmDataPropagated);
                 }
-            }
+         }
             else
             {
                 foreach (var span in spans)
                 {
-                    Assert.False(span.Tags?.ContainsKey(Tags.DbmDataPropagated));
+                    span.Tags?.Should().NotContainKey(Tags.DbmDataPropagated);
                 }
             }
         }
 
-        private void SubmitDbmCommentedSpans(string packageVersion, string propagationLevel)
+        private async Task SubmitDbmCommentedSpans(string packageVersion, string metadataSchemaVersion, string propagationLevel)
         {
             if (propagationLevel != string.Empty)
             {
@@ -132,14 +137,41 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const string dbType = "mysql";
             const string expectedOperationName = dbType + ".query";
 
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-            int actualSpanCount = spans.Count(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase)); // Remove unexpected DB spans from the calculation
+            var filteredSpans = spans.Where(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase)).ToList();
 
-            actualSpanCount.Should().Be(expectedSpanCount);
+            filteredSpans.Count().Should().Be(expectedSpanCount);
             ValidatePresentDbmTag(spans, propagationLevel);
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
+            settings.AddSimpleScrubber("out.host: localhost", "out.host: mysql");
+            settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: mysql");
+
+            var fileName = nameof(MySqlDatabaseMonitoringTests);
+#if NET5_0_OR_GREATER
+            fileName = fileName + "Net";
+#elif NET462
+            fileName = fileName + "Net462";
+#else
+            fileName = fileName + "NetCore";
+#endif
+            fileName = fileName + (propagationLevel switch
+            {
+                "service" or "full" => ".enabled",
+                _ => ".disabled",
+            });
+
+            fileName += $".Schema{metadataSchemaVersion.ToUpper()}";
+
+            await VerifyHelper.VerifySpans(filteredSpans, settings)
+                .DisableRequireUniquePrefix()
+                .UseFileName(fileName);
         }
     }
 }

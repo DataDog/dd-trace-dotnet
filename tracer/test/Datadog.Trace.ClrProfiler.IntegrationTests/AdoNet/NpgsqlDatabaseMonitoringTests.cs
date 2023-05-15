@@ -6,14 +6,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
+    [UsesVerify]
     public class NpgsqlDatabaseMonitoringTests : TracingIntegrationTest
     {
         public NpgsqlDatabaseMonitoringTests(ITestOutputHelper output)
@@ -23,54 +27,59 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetEnvironmentVariable("DD_ENV", "testing");
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsNpgsql();
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.Npgsql
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsNpgsql(metadataSchemaVersion);
 
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.Npgsql), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitDbmCommentedSpanspropagationNotSet(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationNotSet(string packageVersion, string metadataSchemaVersion)
         {
-            SubmitDbmCommentedSpans(packageVersion, string.Empty);
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, string.Empty);
         }
 
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.Npgsql), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitDbmCommentedSpanspropagationIntValue(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationIntValue(string packageVersion, string metadataSchemaVersion)
         {
-            SubmitDbmCommentedSpans(packageVersion, "100");
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "100");
         }
 
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.Npgsql), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitDbmCommentedSpanspropagationUnsupportedValue(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationRandomValue(string packageVersion, string metadataSchemaVersion)
         {
-            SubmitDbmCommentedSpans(packageVersion, "randomValue");
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "randomValue");
         }
 
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.Npgsql), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitDbmCommentedSpanspropagationDisabled(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationDisabled(string packageVersion, string metadataSchemaVersion)
         {
-            SubmitDbmCommentedSpans(packageVersion, "disabled");
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "disabled");
         }
 
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.Npgsql), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitDbmCommentedSpanspropagationService(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationService(string packageVersion, string metadataSchemaVersion)
         {
-            SubmitDbmCommentedSpans(packageVersion, "service");
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "service");
         }
 
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.Npgsql), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitDbmCommentedSpanspropagationFull(string packageVersion)
+        public async Task SubmitDbmCommentedSpanspropagationFull(string packageVersion, string metadataSchemaVersion)
         {
-            SubmitDbmCommentedSpans(packageVersion, "full");
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "full");
         }
 
         // Check that the spans have been tagged after the comment was propagated
@@ -80,19 +89,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             {
                 foreach (var span in spans)
                 {
-                    Assert.True(span.Tags?.ContainsKey(Tags.DbmDataPropagated));
+                    span.Tags?.Should().ContainKey(Tags.DbmDataPropagated);
                 }
             }
             else
             {
                 foreach (var span in spans)
                 {
-                    Assert.False(span.Tags?.ContainsKey(Tags.DbmDataPropagated));
+                    span.Tags?.Should().NotContainKey(Tags.DbmDataPropagated);
                 }
             }
         }
 
-        private void SubmitDbmCommentedSpans(string packageVersion, string propagationLevel)
+        private async Task SubmitDbmCommentedSpans(string packageVersion, string metadataSchemaVersion, string propagationLevel)
         {
             if (propagationLevel != string.Empty)
             {
@@ -117,14 +126,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const string dbType = "postgres";
             const string expectedOperationName = dbType + ".query";
 
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-            int actualSpanCount = spans.Count(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase)); // Remove unexpected DB spans from the calculation
+            var filteredSpans = spans.Where(s => s.ParentId.HasValue).ToList();
 
-            actualSpanCount.Should().Be(expectedSpanCount);
+            filteredSpans.Count().Should().Be(expectedSpanCount);
             ValidatePresentDbmTag(spans, propagationLevel);
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
+            settings.AddSimpleScrubber("out.host: localhost", "out.host: postgres");
+            settings.AddSimpleScrubber("out.host: postgres_arm64", "out.host: postgres");
+
+            var fileName = nameof(NpgsqlDatabaseMonitoringTests);
+#if NET462
+            fileName = fileName + "Net462";
+#endif
+            fileName = fileName + (propagationLevel switch
+            {
+                "service" or "full" => ".enabled",
+                _ => ".disabled",
+            });
+
+            fileName += $".Schema{metadataSchemaVersion.ToUpper()}";
+
+            await VerifyHelper.VerifySpans(filteredSpans, settings)
+                .DisableRequireUniquePrefix()
+                .UseFileName(fileName);
         }
     }
 }

@@ -138,6 +138,12 @@ namespace Datadog.Trace
         public const string Language = "language";
 
         /// <summary>
+        /// Pseudo-tag used to expose the complete trace id as a hex string.
+        /// The string will have length 16 for 64-bit trace ids and length 32 for 128-bit trace ids.
+        /// </summary>
+        internal const string TraceId = "trace.id";
+
+        /// <summary>
         /// Indicates whether debugger information was captured.
         /// </summary>
         internal const string HasDebugInfo = "has_debug_info";
@@ -587,7 +593,21 @@ namespace Datadog.Trace
 
         internal static class Propagated
         {
+            /// <summary>
+            /// Tag used to propagate the sampling mechanism used to make a sampling decision.
+            /// See <see cref="Datadog.Trace.Sampling.SamplingMechanism"/>.
+            /// </summary>
+            /// <remarks>
+            /// This tag was originally meant to carry the name of the service that made the sampling decision,
+            /// hence its name: "decision maker".
+            /// </remarks>
             internal const string DecisionMaker = "_dd.p.dm";
+
+            /// <summary>
+            /// Tag used to propagate the higher-order 64 bits of a 128-bit trace id encoded as a
+            /// lower-case hexadecimal string with no zero-padding or `0x` prefix.
+            /// </summary>
+            internal const string TraceIdUpper = "_dd.p.tid";
         }
     }
 }

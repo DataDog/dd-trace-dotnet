@@ -41,14 +41,14 @@ public class SHA1Tests : InstrumentationTestsBase
     public void GivenASHA1_WhenComputeHash_VulnerabilityIsLogged()
     {
         SHA1.Create().ComputeHash(new Mock<Stream>().Object);
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "SHA1", false);
     }
 
     [Fact]
     public void GivenASHA1_WhenComputeHash_VulnerabilityIsLogged2()
     {
         SHA1.Create().ComputeHash(new byte[] { });
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "SHA1", false);
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public class SHA1Tests : InstrumentationTestsBase
     public void GivenASHA1_WhenComputeHash_VulnerabilityIsLogged3()
     {
         SHA1.Create().ComputeHash(new byte[] { 5, 5, 5 }, 0, 2);
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "SHA1", false);
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class SHA1Tests : InstrumentationTestsBase
     {
         // This is vulnerable because internally, it is using HMACSHA1
         MACTripleDES.Create().ComputeHash(new byte[] { 5, 5, 5 });
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "HMACSHA1", false);
     }
 #endif
 }

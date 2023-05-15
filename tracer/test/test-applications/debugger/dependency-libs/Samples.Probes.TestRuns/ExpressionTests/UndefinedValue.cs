@@ -1,13 +1,10 @@
 using System.Runtime.CompilerServices;
+using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
     public class UndefinedValue : IRun
     {
-        private const string Dsl = @"{
-  ""dsl"": ""ref undefined > 2""
-}";
-
         private const string Json = @"{
     ""gt"": [
       {""ref"": ""undefined""},
@@ -22,16 +19,15 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData(
-            conditionDsl: Dsl,
+        [LogMethodProbeTestData(
             conditionJson: Json,
             captureSnapshot: true,
-            evaluateAt: 1,
+            evaluateAt: Const.Exit,
             returnTypeName: "System.String",
             parametersTypeName: new[] { "System.Int32" })]
         public string Method(int intArg)
         {
-            return $"Dsl: {Dsl}, Argument: {intArg}";
+            return $"Argument: {intArg}";
         }
     }
 }

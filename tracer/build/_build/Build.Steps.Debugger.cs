@@ -5,7 +5,7 @@ using Nuke.Common.Tools.DotNet;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
-
+using Logger = Serilog.Log;
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
 // #pragma warning disable SA1111
@@ -92,8 +92,9 @@ partial class Build
         .After(BuildDebuggerIntegrationTests)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
-        .Executes(() =>
+        .Executes(async () =>
         {
+            var isDebugRun = await IsDebugRun();
             EnsureExistingDirectory(TestLogsDirectory);
             EnsureResultsDirectory(DebuggerIntegrationTests);
 
@@ -109,6 +110,7 @@ partial class Build
                     .EnableNoBuild()
                     .SetFilter(GetTestFilter())
                     .SetTestTargetPlatform(TargetPlatform)
+                    .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)

@@ -51,7 +51,8 @@ namespace Datadog.Trace
         }
 
         /// <inheritdoc />
-        ulong ISpan.TraceId => TraceId;
+        // this public API always returns the lower 64-bits, truncate using TraceId128.Lower
+        ulong ISpan.TraceId => TraceId128.Lower;
 
         /// <inheritdoc />
         ulong ISpan.SpanId => SpanId;

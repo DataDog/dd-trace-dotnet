@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using GraphQL;
-#if GRAPHQL_5_0
+#if GRAPHQL_5_0 || GRAPHQL_7_0
+using System;
 using GraphQL.MicrosoftDI;
 using GraphQL.NewtonsoftJson;
 #endif
@@ -29,7 +30,7 @@ namespace Samples.GraphQL4
     {
         public void ConfigureServices(IServiceCollection services)
         {
-#if !GRAPHQL_5_0
+#if !GRAPHQL_5_0 && !GRAPHQL_7_0
             // Not required in GraphQL 5.0
             services.AddSingleton<IDocumentExecuter, SubscriptionDocumentExecuter>();
 #endif
@@ -49,10 +50,14 @@ namespace Samples.GraphQL4
 
             services.AddLogging(builder => builder.AddConsole());
 
-#if GRAPHQL_5_0
+#if GRAPHQL_5_0 || GRAPHQL_7_0
             services.AddGraphQL(
                 _ => _
+#if GRAPHQL_5_0
                     .AddHttpMiddleware<ISchema>()
+                    .AddWebSockets()
+                    .AddWebSocketsHttpMiddleware<ISchema>()
+#endif
                     .AddNewtonsoftJson()
                     .AddUserContextBuilder(httpContext => new Dictionary<string, object>()));
 #else
@@ -61,6 +66,7 @@ namespace Samples.GraphQL4
                 _.EnableMetrics = true;
                 // _.ExposeExceptions = true;
             })
+            .AddWebSockets()
             .AddNewtonsoftJson(_ => { }, _ => { })
             .AddUserContextBuilder(httpContext => new Dictionary<string, object>());
 #endif
@@ -93,10 +99,16 @@ namespace Samples.GraphQL4
             });
 
             // add http for Schema at default url /graphql
+            app.UseWebSockets();
+#if GRAPHQL_7_0
+            app.UseGraphQL<ISchema>("/graphql", config => config.WebSockets.ConnectionInitWaitTimeout = TimeSpan.FromMinutes(5));
+#else
+            app.UseGraphQLWebSockets<ISchema>("/graphql");
             app.UseGraphQL<ISchema>("/graphql");
-
+#endif
             // use graphql-playground at default url /ui/playground
             app.UseGraphQLPlayground("/ui/playground");
+
         }
     }
 }

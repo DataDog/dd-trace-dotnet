@@ -5,9 +5,9 @@
 
 using System;
 using System.Diagnostics;
-using System.Globalization;
+using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
@@ -23,12 +23,12 @@ namespace Datadog.Trace
 
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
         private readonly long _timestamp = Stopwatch.GetTimestamp();
-        private readonly object _syncRoot = new();
         private IastRequestContext _iastRequestContext;
 
         private ArrayBuilder<Span> _spans;
         private int _openSpans;
         private int? _samplingPriority;
+        private Span _rootSpan;
 
         public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
         {
@@ -45,10 +45,14 @@ namespace Datadog.Trace
             }
 
             Tracer = tracer;
-            Tags = tags ?? new TraceTagCollection(settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+            Tags = tags ?? new TraceTagCollection();
         }
 
-        public Span RootSpan { get; private set; }
+        public Span RootSpan
+        {
+            get => _rootSpan;
+            private set => _rootSpan = value;
+        }
 
         public DateTimeOffset UtcNow => _utcStart.Add(Elapsed);
 
@@ -57,6 +61,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the collection of trace-level tags.
         /// </summary>
+        [NotNull]
         public TraceTagCollection Tags { get; }
 
         /// <summary>
@@ -89,32 +94,26 @@ namespace Datadog.Trace
 
         internal void EnableIastInRequest()
         {
-            if (_iastRequestContext is null)
+            if (Volatile.Read(ref _iastRequestContext) is null)
             {
-                lock (_syncRoot)
-                {
-                    _iastRequestContext ??= new();
-                }
+                Interlocked.CompareExchange(ref _iastRequestContext, new(), null);
             }
         }
 
         public void AddSpan(Span span)
         {
-            lock (_syncRoot)
+            // first span added is the local root span
+            if (Interlocked.CompareExchange(ref _rootSpan, span, null) == null)
             {
-                if (RootSpan == null)
+                // if we don't have a sampling priority yet, make a sampling decision now
+                if (_samplingPriority == null)
                 {
-                    // first span added is the local root span
-                    RootSpan = span;
-
-                    // if we don't have a sampling priority yet, make a sampling decision now
-                    if (_samplingPriority == null)
-                    {
-                        var samplingDecision = Tracer.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
-                        SetSamplingPriority(samplingDecision);
-                    }
+                    SetSamplingPriority(Tracer.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default);
                 }
+            }
 
+            lock (_rootSpan)
+            {
                 _openSpans++;
             }
         }
@@ -130,14 +129,14 @@ namespace Datadog.Trace
             {
                 Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
 
-                if (Iast.Iast.Instance.Settings.Enabled && _iastRequestContext != null)
+                if (Iast.Iast.Instance.Settings.Enabled && _iastRequestContext is { } iastRequestContext)
                 {
-                    _iastRequestContext.AddIastVulnerabilitiesToSpan(span);
+                    iastRequestContext.AddIastVulnerabilitiesToSpan(span);
                     OverheadController.Instance.ReleaseRequest();
                 }
             }
 
-            lock (_syncRoot)
+            lock (_rootSpan)
             {
                 _spans.Add(span);
                 _openSpans--;
@@ -149,10 +148,10 @@ namespace Datadog.Trace
                 }
                 else if (ShouldTriggerPartialFlush())
                 {
-                    Log.Debug<ulong, ulong, int>(
+                    Log.Debug<ulong, string, int>(
                         "Closing span {SpanId} triggered a partial flush of trace {TraceId} with {SpanCount} pending spans",
                         span.SpanId,
-                        span.TraceId,
+                        span.Context.RawTraceId,
                         _spans.Count);
 
                     spansToWrite = _spans.GetArray();
@@ -175,7 +174,7 @@ namespace Datadog.Trace
         {
             ArraySegment<Span> spansToWrite;
 
-            lock (_syncRoot)
+            lock (_rootSpan)
             {
                 spansToWrite = _spans.GetArray();
                 _spans = default;
@@ -205,13 +204,7 @@ namespace Datadog.Trace
 
             if (priority > 0 && mechanism != null)
             {
-                // set the sampling mechanism trace tag
-                // * only set tag if priority is AUTO_KEEP (1) or USER_KEEP (2)
-                // * do not overwrite an existing value
-                // * don't set tag if sampling mechanism is unknown (null)
-                // * the "-" prefix is a left-over separator from a previous iteration of this feature (not a typo or a negative sign)
-                var tagValue = $"-{mechanism.Value.ToString(CultureInfo.InvariantCulture)}";
-                Tags.TryAddTag(tagName, tagValue);
+                Tags.TryAddTag(tagName, SamplingMechanism.GetTagValue(mechanism.Value));
             }
             else if (priority <= 0)
             {

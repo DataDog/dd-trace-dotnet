@@ -11,6 +11,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -27,13 +28,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsServiceStackRedis();
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.ServiceStackRedis
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion };
+
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsServiceStackRedis(metadataSchemaVersion);
 
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.ServiceStackRedis), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitsTraces(string packageVersion)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-redis" : EnvironmentHelper.FullSampleName;
+
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
@@ -44,19 +54,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var numberOfRuns = 2;
 #endif
 
-                var expectedSpansPerRun = 12;
-                var spans = agent.WaitForSpans(numberOfRuns * expectedSpansPerRun)
+                using var assertionScope = new AssertionScope();
+                var expectedSpansPerRun = 13;
+                var expectedSpans = numberOfRuns * expectedSpansPerRun;
+                var spans = agent.WaitForSpans(expectedSpans)
                                  .OrderBy(s => s.Start)
                                  .ToList();
-                spans.Count.Should().Be(numberOfRuns * expectedSpansPerRun);
-                ValidateIntegrationSpans(spans, expectedServiceName: "Samples.ServiceStack.Redis-redis");
+                spans.Count.Should().Be(expectedSpans);
+                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var host = Environment.GetEnvironmentVariable("SERVICESTACK_REDIS_HOST") ?? "localhost:6379";
                 var port = host.Substring(host.IndexOf(':') + 1);
                 host = host.Substring(0, host.IndexOf(':'));
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                settings.UseFileName($"{nameof(ServiceStackRedisTests)}.RunServiceStack");
+                settings.UseFileName($"{nameof(ServiceStackRedisTests)}.RunServiceStack" + $".Schema{metadataSchemaVersion.ToUpper()}");
                 settings.DisableRequireUniquePrefix();
                 settings.AddSimpleScrubber($" {TestPrefix}ServiceStack.Redis.", " ServiceStack.Redis.");
                 settings.AddSimpleScrubber($"out.host: {host}", "out.host: servicestackredis");

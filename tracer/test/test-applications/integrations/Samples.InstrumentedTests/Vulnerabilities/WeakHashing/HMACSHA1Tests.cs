@@ -38,14 +38,14 @@ public class HMACSHA1Tests : InstrumentationTestsBase
     public void GivenAHMACSHA1_WhenComputeHash_VulnerabilityIsLogged()
     {
         new HMACSHA1().ComputeHash(new Mock<Stream>().Object);
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "HMACSHA1", false);
     }
 
     [Fact]
     public void GivenAHMACSHA1_WhenComputeHash_VulnerabilityIsLogged2()
     {
         new HMACSHA1().ComputeHash(new byte[] { });
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "HMACSHA1", false);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class HMACSHA1Tests : InstrumentationTestsBase
     {
 #if NETFRAMEWORK
         HMAC.Create().ComputeHash(new byte[] { 5, 5, 5 }, 0, 2);
-        AssertVulnerable();
+        AssertVulnerable(WeakHashVulnerabilityType, "HMACSHA1", false);
 #else
         Assert.Throws<PlatformNotSupportedException>(() => HMAC.Create().ComputeHash(new byte[] { 5, 5, 5 }, 0, 2));
 #endif

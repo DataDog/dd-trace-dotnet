@@ -2,15 +2,21 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: GetAsync,
+    Name: Samples.Telemetry.internal,
     Resource: GetAsync,
     Service: Samples.Telemetry,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
+      otel.library.name: Samples.Telemetry,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      runtime-id: Guid_2,
+      span.kind: internal,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -34,8 +40,8 @@
       http-client-handler-type: System.Net.Http.HttpClientHandler,
       http.method: GET,
       http.status_code: 200,
-      http.url: http://localhost:00000/Guid_3/,
-      runtime-id: Guid_1,
+      http.url: http://localhost:00000/Guid_4/,
+      runtime-id: Guid_2,
       span.kind: client
     },
     Metrics: {
@@ -54,11 +60,12 @@
       env: integration_tests,
       language: dotnet,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_2,
-      runtime-id: Guid_1,
+      otel.trace_id: Guid_3,
+      runtime-id: Guid_2,
       span.kind: internal,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,

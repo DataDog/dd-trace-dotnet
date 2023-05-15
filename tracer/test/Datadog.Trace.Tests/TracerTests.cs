@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -14,6 +15,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tests.PlatformHelpers;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -224,17 +226,17 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void StartActive_SetParentManuallyFromExternalContext_ParentIsSet()
         {
-            const ulong traceId = 11;
+            var traceId = (TraceId)11;
             const ulong parentId = 7;
             const int samplingPriority = SamplingPriorityValues.UserKeep;
 
-            var parent = new SpanContext(traceId, parentId, (SamplingPriority)samplingPriority);
+            var parent = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin: null);
             var spanCreationSettings = new SpanCreationSettings() { Parent = parent };
             var child = (Scope)_tracer.StartActive("Child", spanCreationSettings);
             var childSpan = child.Span;
 
             Assert.True(childSpan.IsRootSpan);
-            Assert.Equal(traceId, parent.TraceId);
+            Assert.Equal(traceId, parent.TraceId128);
             Assert.Equal(parentId, parent.SpanId);
             Assert.Null(parent.TraceContext);
             Assert.Equal(parent, childSpan.Context.Parent);
@@ -454,7 +456,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void OriginHeader_RootSpanTag()
         {
-            const ulong traceId = 9;
+            var traceId = (TraceId)9;
             const ulong spanId = 7;
             const int samplingPriority = SamplingPriorityValues.UserKeep;
             const string origin = "synthetics";
@@ -482,7 +484,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void OriginHeader_InjectFromChildSpan()
         {
-            const ulong traceId = 9;
+            var traceId = (TraceId)9;
             const ulong spanId = 7;
             const int samplingPriority = SamplingPriorityValues.UserKeep;
             const string origin = "synthetics";
@@ -667,6 +669,35 @@ namespace Datadog.Trace.Tests
 
             Assert.ThrowsAny<ArgumentException>(() =>
                 testSpan.SetUser(userDetails));
+        }
+
+        [Fact]
+        public void SetUser_PropagateId_ShouldSetUsrId()
+        {
+            var scopeManager = new AsyncLocalScopeManager();
+
+            var settings = new TracerSettings
+            {
+                StartupDiagnosticLogEnabled = false
+            };
+            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+
+            var rootTestScope = (Scope)tracer.StartActive("test.trace");
+
+            var id = Guid.NewGuid().ToString();
+
+            var userDetails = new UserDetails()
+            {
+                Id = id,
+                PropagateId = true,
+            };
+            tracer.ActiveScope?.Span.SetUser(userDetails);
+
+            var base64UserId = Convert.ToBase64String(Encoding.UTF8.GetBytes(userDetails.Id));
+
+            var traceContext = rootTestScope.Span.Context.TraceContext;
+            Assert.Equal(id, traceContext.Tags.GetTag(Tags.User.Id));
+            Assert.Equal(base64UserId, traceContext.Tags.GetTag(TagPropagation.PropagatedTagPrefix + Tags.User.Id));
         }
 
         private class SpanStub : ISpan

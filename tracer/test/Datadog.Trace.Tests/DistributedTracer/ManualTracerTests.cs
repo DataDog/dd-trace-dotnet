@@ -16,7 +16,7 @@ namespace Datadog.Trace.Tests.DistributedTracer
         [Fact]
         public void GetSpanContext()
         {
-            var expectedSpanContext = new SpanContext(1, 2, SamplingPriorityValues.UserKeep, "Service", "Origin");
+            var expectedSpanContext = new SpanContext((TraceId)1, 2, SamplingPriorityValues.UserKeep, "Service", "Origin");
 
             var automaticTracer = new Mock<IAutomaticTracer>();
             automaticTracer.Setup(t => t.GetDistributedTrace()).Returns(expectedSpanContext);
@@ -34,7 +34,7 @@ namespace Datadog.Trace.Tests.DistributedTracer
             var automaticTracer = new Mock<IAutomaticTracer>();
             var manualTracer = new ManualTracer(automaticTracer.Object);
 
-            var expectedSpanContext = new SpanContext(1, 2, SamplingPriorityValues.UserKeep, "Service", "Origin");
+            var expectedSpanContext = new SpanContext((TraceId)1, 2, SamplingPriorityValues.UserKeep, "Service", "Origin");
 
             ((IDistributedTracer)manualTracer).SetSpanContext(expectedSpanContext);
 

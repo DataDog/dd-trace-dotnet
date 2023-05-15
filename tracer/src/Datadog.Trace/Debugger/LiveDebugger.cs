@@ -1,4 +1,4 @@
- // <copyright file="LiveDebugger.cs" company="Datadog">
+// <copyright file="LiveDebugger.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,8 +19,10 @@ using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Debugger
 {
@@ -31,12 +33,14 @@ namespace Datadog.Trace.Debugger
 
         private readonly DebuggerSettings _settings;
         private readonly IDiscoveryService _discoveryService;
-        private readonly IRemoteConfigurationManager _remoteConfigurationManager;
+        private readonly IRcmSubscriptionManager _subscriptionManager;
+        private readonly ISubscription _subscription;
         private readonly IDebuggerSink _debuggerSink;
         private readonly ILineProbeResolver _lineProbeResolver;
         private readonly List<ProbeDefinition> _unboundProbes;
         private readonly IProbeStatusPoller _probeStatusPoller;
         private readonly ConfigurationUpdater _configurationUpdater;
+        private readonly IDogStatsd _dogStats;
         private readonly object _instanceLock = new();
         private bool _isInitialized;
         private bool _isRcmAvailable;
@@ -45,28 +49,35 @@ namespace Datadog.Trace.Debugger
             DebuggerSettings settings,
             string serviceName,
             IDiscoveryService discoveryService,
-            IRemoteConfigurationManager remoteConfigurationManager,
+            IRcmSubscriptionManager remoteConfigurationManager,
             ILineProbeResolver lineProbeResolver,
             IDebuggerSink debuggerSink,
             IProbeStatusPoller probeStatusPoller,
-            ConfigurationUpdater configurationUpdater)
+            ConfigurationUpdater configurationUpdater,
+            IDogStatsd dogStats)
         {
             _settings = settings;
             _discoveryService = discoveryService;
             _lineProbeResolver = lineProbeResolver;
             _debuggerSink = debuggerSink;
             _probeStatusPoller = probeStatusPoller;
-            _remoteConfigurationManager = remoteConfigurationManager;
+            _subscriptionManager = remoteConfigurationManager;
             _configurationUpdater = configurationUpdater;
+            _dogStats = dogStats;
             _unboundProbes = new List<ProbeDefinition>();
-            Product = new LiveDebuggerProduct();
             ServiceName = serviceName;
+            _subscription = new Subscription(
+                (updates, removals) =>
+                {
+                    AcceptAddedConfiguration(updates.Values.SelectMany(u => u).Select(i => new NamedRawFile(i.Path, i.Contents)));
+                    AcceptRemovedConfiguration(removals.Values.SelectMany(u => u));
+                    return Enumerable.Empty<ApplyDetails>();
+                },
+                RcmProducts.LiveDebugging);
             discoveryService?.SubscribeToChanges(DiscoveryCallback);
         }
 
         public static LiveDebugger Instance { get; private set; }
-
-        public LiveDebuggerProduct Product { get; }
 
         public string ServiceName { get; }
 
@@ -74,15 +85,16 @@ namespace Datadog.Trace.Debugger
             DebuggerSettings settings,
             string serviceName,
             IDiscoveryService discoveryService,
-            IRemoteConfigurationManager remoteConfigurationManager,
+            IRcmSubscriptionManager remoteConfigurationManager,
             ILineProbeResolver lineProbeResolver,
             IDebuggerSink debuggerSink,
             IProbeStatusPoller probeStatusPoller,
-            ConfigurationUpdater configurationUpdater)
+            ConfigurationUpdater configurationUpdater,
+            IDogStatsd dogStats)
         {
             lock (GlobalLock)
             {
-                return Instance ??= new LiveDebugger(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, probeStatusPoller, configurationUpdater);
+                return Instance ??= new LiveDebugger(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, probeStatusPoller, configurationUpdater, dogStats);
             }
         }
 
@@ -101,12 +113,9 @@ namespace Datadog.Trace.Debugger
             try
             {
                 Log.Information("Live Debugger initialization started");
-                _remoteConfigurationManager.RegisterProduct(Product);
+                _subscriptionManager.SubscribeToChanges(_subscription);
 
                 DebuggerSnapshotSerializer.SetConfig(_settings);
-
-                Product.ConfigChanged += (sender, args) => AcceptAddedConfiguration(args);
-                Product.ConfigRemoved += (sender, args) => AcceptRemovedConfiguration(args);
                 AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
 
                 await StartAsync().ConfigureAwait(false);
@@ -151,6 +160,8 @@ namespace Datadog.Trace.Debugger
                 LifetimeManager.Instance.AddShutdownTask(() => _discoveryService.RemoveSubscription(DiscoveryCallback));
                 LifetimeManager.Instance.AddShutdownTask(_debuggerSink.Dispose);
                 LifetimeManager.Instance.AddShutdownTask(_probeStatusPoller.Dispose);
+                LifetimeManager.Instance.AddShutdownTask(_dogStats.Dispose);
+                LifetimeManager.Instance.AddShutdownTask(() => _subscriptionManager.Unsubscribe(_subscription));
             }
         }
 
@@ -167,6 +178,8 @@ namespace Datadog.Trace.Debugger
 
                 var methodProbes = new List<NativeMethodProbeDefinition>();
                 var lineProbes = new List<NativeLineProbeDefinition>();
+                var spanProbes = new List<NativeSpanProbeDefinition>();
+
                 foreach (var probe in addedProbes)
                 {
                     switch (GetProbeLocationType(probe))
@@ -192,20 +205,30 @@ namespace Datadog.Trace.Debugger
 
                             break;
                         case ProbeLocationType.Method:
-                            var nativeDefinition = new NativeMethodProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
-                            methodProbes.Add(nativeDefinition);
+                            if (probe is SpanProbe)
+                            {
+                                var spanDefinition = new NativeSpanProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
+                                spanProbes.Add(spanDefinition);
+                            }
+                            else
+                            {
+                                var nativeDefinition = new NativeMethodProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
+                                methodProbes.Add(nativeDefinition);
+                            }
+
                             break;
                         case ProbeLocationType.Unrecognized:
                             break;
                     }
                 }
 
-                using var disposable = new DisposableEnumerable<NativeMethodProbeDefinition>(methodProbes);
-                DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), Array.Empty<NativeRemoveProbeRequest>());
+                using var disposableMethodProbes = new DisposableEnumerable<NativeMethodProbeDefinition>(methodProbes);
+                using var disposableSpanProbes = new DisposableEnumerable<NativeSpanProbeDefinition>(spanProbes);
+                DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), Array.Empty<NativeRemoveProbeRequest>());
 
                 _probeStatusPoller.AddProbes(addedProbes.Select(probe => probe.Id).ToArray());
 
-                foreach (var probe in addedProbes)
+                foreach (var probe in addedProbes.Where(probe => probe is not SpanProbe))
                 {
                     ProbeExpressionsProcessor.Instance.AddProbeProcessor(probe);
                     if (probe is LogProbe logProbe)
@@ -242,7 +265,7 @@ namespace Datadog.Trace.Debugger
                 var revertProbes = removedProbesIds
                    .Select(probeId => new NativeRemoveProbeRequest(probeId));
 
-                DebuggerNativeMethods.InstrumentProbes(Array.Empty<NativeMethodProbeDefinition>(), Array.Empty<NativeLineProbeDefinition>(), revertProbes.ToArray());
+                DebuggerNativeMethods.InstrumentProbes(Array.Empty<NativeMethodProbeDefinition>(), Array.Empty<NativeLineProbeDefinition>(), Array.Empty<NativeSpanProbeDefinition>(), revertProbes.ToArray());
 
                 _probeStatusPoller.RemoveProbes(removedProbesIds);
 
@@ -304,14 +327,14 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private void AcceptAddedConfiguration(ProductConfigChangedEventArgs args)
+        private void AcceptAddedConfiguration(IEnumerable<NamedRawFile> configContents)
         {
             var logs = new List<LogProbe>();
             var metrics = new List<MetricProbe>();
             var spans = new List<SpanProbe>();
             ServiceConfiguration serviceConfig = null;
 
-            foreach (var configContent in args.ConfigContents)
+            foreach (var configContent in configContents)
             {
                 try
                 {
@@ -339,28 +362,22 @@ namespace Datadog.Trace.Debugger
                 }
             }
 
-            var probeConfiguration = new ProbeConfiguration()
-            {
-                ServiceConfiguration = serviceConfig,
-                MetricProbes = metrics.ToArray(),
-                LogProbes = logs.ToArray(),
-                SpanProbes = spans.ToArray()
-            };
+            var probeConfiguration = new ProbeConfiguration() { ServiceConfiguration = serviceConfig, MetricProbes = metrics.ToArray(), LogProbes = logs.ToArray(), SpanProbes = spans.ToArray() };
 
             _configurationUpdater.AcceptAdded(probeConfiguration);
         }
 
-        private void AcceptRemovedConfiguration(ProductConfigChangedEventArgs args)
+        private void AcceptRemovedConfiguration(IEnumerable<RemoteConfigurationPath> paths)
         {
-            var removedIds = args.ConfigContents
-                   .Select(TrimProbeTypeFromPath)
-                   .ToArray();
+            var removedIds = paths
+                            .Select(TrimProbeTypeFromPath)
+                            .ToArray();
 
             _configurationUpdater.AcceptRemoved(removedIds);
 
-            string TrimProbeTypeFromPath(NamedRawFile file)
+            string TrimProbeTypeFromPath(RemoteConfigurationPath path)
             {
-                return file.Path.Id.Split('_').Last();
+                return path.Id.Split('_').Last();
             }
         }
 
@@ -389,9 +406,29 @@ namespace Datadog.Trace.Debugger
             _debuggerSink.AddErrorProbeStatus(probeId, exception, errorMessage);
         }
 
-        internal void SendMetrics()
+        internal void SendMetrics(MetricKind metricKind, string metricName, double value)
         {
-            // IDogStatsd _statsd...
+            if (_dogStats is NoOpStatsd)
+            {
+                Log.Warning($"{nameof(SendMetrics)}: Metrics are not enabled");
+            }
+
+            switch (metricKind)
+            {
+                case MetricKind.COUNT:
+                    _dogStats.Counter(statName: metricName, value: value);
+                    break;
+                case MetricKind.GAUGE:
+                    _dogStats.Gauge(statName: metricName, value: value);
+                    break;
+                case MetricKind.HISTOGRAM:
+                    _dogStats.Histogram(statName: metricName, value: value);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(
+                        nameof(metricKind),
+                        $"{metricKind} is not a valid value");
+            }
         }
 
         private void DiscoveryCallback(AgentConfiguration x)

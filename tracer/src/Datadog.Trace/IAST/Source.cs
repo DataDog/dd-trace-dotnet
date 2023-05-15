@@ -11,19 +11,22 @@ internal class Source
 {
     private readonly byte _origin;
     private int _internalId;
+    private string? _value;
+    private bool _redacted;
 
     public Source(byte origin, string? name, string? value)
     {
         this._origin = origin;
         this.Name = name;
-        this.Value = value;
+        this._value = value;
+        this._redacted = false;
     }
 
     public string Origin => SourceType.GetString(_origin);
 
     public string? Name { get; }
 
-    public string? Value { get; }
+    public string? Value => _value;
 
     public void SetInternalId(int id)
     {
@@ -41,4 +44,14 @@ internal class Source
     }
 
     public override bool Equals(object? obj) => GetHashCode() == obj?.GetHashCode();
+
+    internal void MarkAsRedacted()
+    {
+        _redacted = true;
+    }
+
+    internal bool IsRedacted()
+    {
+        return _redacted;
+    }
 }

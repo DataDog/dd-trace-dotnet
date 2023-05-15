@@ -6,11 +6,9 @@
 #nullable enable
 #if !NETFRAMEWORK
 using System;
-using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
-using Datadog.Trace.AspNet;
 using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
 
@@ -79,7 +77,7 @@ internal class BlockingMiddleware
         var security = Security.Instance;
         var endedResponse = false;
 
-        if (security.Settings.Enabled)
+        if (security.Enabled)
         {
             if (Tracer.Instance?.ActiveScope?.Span is Span span)
             {
@@ -116,18 +114,18 @@ internal class BlockingMiddleware
             {
                 await _next(context).ConfigureAwait(false);
             }
-            catch (BlockException e)
+            catch (Exception e) when (GetBlockException(e) is { } blockException)
             {
-                var action = security.GetBlockingAction(e.Result.Actions[0], context.Request.Headers.GetCommaSeparatedValues("Accept"));
+                var action = security.GetBlockingAction(blockException!.Result.Actions[0], context.Request.Headers.GetCommaSeparatedValues("Accept"));
                 await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
-                if (security.Settings.Enabled)
+                if (security.Enabled)
                 {
                     if (Tracer.Instance?.ActiveScope?.Span is Span span)
                     {
                         var securityCoordinator = new SecurityCoordinator(security, context, span);
-                        if (!e.Reported)
+                        if (!blockException.Reported)
                         {
-                            securityCoordinator.Report(e.Result.Data, e.Result.AggregatedTotalRuntime, e.Result.AggregatedTotalRuntimeWithBindings, endedResponse);
+                            securityCoordinator.Report(blockException.Result.Data, blockException.Result.AggregatedTotalRuntime, blockException.Result.AggregatedTotalRuntimeWithBindings, endedResponse);
                         }
 
                         securityCoordinator.AddResponseHeadersToSpanAndCleanup();
@@ -139,6 +137,21 @@ internal class BlockingMiddleware
                 }
             }
         }
+    }
+
+    private static BlockException? GetBlockException(Exception? exception)
+    {
+        while (exception is not null)
+        {
+            if (exception is BlockException b)
+            {
+                return b;
+            }
+
+            exception = exception.InnerException;
+        }
+
+        return null;
     }
 }
 #endif

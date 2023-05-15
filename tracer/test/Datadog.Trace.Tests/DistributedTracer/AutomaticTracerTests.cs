@@ -37,7 +37,7 @@ namespace Datadog.Trace.Tests.DistributedTracer
 
             automaticTracer.GetDistributedTrace().Should().BeNull();
 
-            var expectedSpanContext = new SpanContext(1, 2, SamplingPriorityValues.UserKeep, "Service", "Origin");
+            var expectedSpanContext = new SpanContext((TraceId)1, 2, SamplingPriorityValues.UserKeep, "Service", "Origin");
 
             automaticTracer.SetDistributedTrace(expectedSpanContext);
 
@@ -92,7 +92,8 @@ namespace Datadog.Trace.Tests.DistributedTracer
                 var spanContext = SpanContextPropagator.Instance.Extract(automaticTracer.GetDistributedTrace());
 
                 spanContext.Should().NotBeNull();
-                spanContext.TraceId.Should().Be(scope.Span.TraceId);
+                spanContext.TraceId128.Should().Be(((Scope)scope).Span.TraceId128);
+                spanContext.TraceId.Should().Be(scope.Span.TraceId); // ISpan only has the ulong TraceId
                 spanContext.SpanId.Should().Be(scope.Span.SpanId);
             }
 

@@ -1,14 +1,11 @@
 using System;
 using System.Runtime.CompilerServices;
+using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
     internal class TemplateWithLocalAtEntry : IRun
     {
-        private const string Dsl = @"{
-  ""dsl"": ""Result is {ref i}""
-}";
-
         private const string Json = @"{
         ""ref"": ""i""
 }";
@@ -20,12 +17,11 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData(
-            templateDsl: Dsl,
+        [LogMethodProbeTestData(
             templateJson: Json,
             templateStr: "Result is: ",
             captureSnapshot: true,
-            evaluateAt: 0,
+            evaluateAt: Const.Entry,
             returnTypeName: "System.Int32",
             parametersTypeName: new[] { "System.Int32" })]
         public int Method(int seed)

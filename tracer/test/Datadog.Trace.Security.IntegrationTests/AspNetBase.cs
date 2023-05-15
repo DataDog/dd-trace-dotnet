@@ -33,7 +33,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         private const string XffHeader = "X-FORWARDED-FOR";
         private static readonly Regex AppSecWafDuration = new(@"_dd.appsec.waf.duration: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecWafDurationWithBindings = new(@"_dd.appsec.waf.duration_ext: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex AppSecWafVersion = new(@"\s*_dd.appsec.waf.version: \d.\d.\d(\S*)?,", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex AppSecWafVersion = new(@"\s*_dd.appsec.waf.version: \d+.\d+.\d+(\S*)?,", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex AppSecWafRulesVersion = new(@"\s*_dd.appsec.event_rules.version: \d+.\d+.\d+(\S*)?,", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecEventRulesLoaded = new(@"\s*_dd.appsec.event_rules.loaded: \d+\.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecErrorCount = new(@"\s*_dd.appsec.event_rules.error_count: 0.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private readonly string _testName;
@@ -49,9 +50,15 @@ namespace Datadog.Trace.Security.IntegrationTests
             _httpClient = new HttpClient();
             _shutdownPath = shutdownPath;
 
-            // adding these header so we can later assert it was collect properly
+            // adding these header so we can later assert it was collected properly
             _httpClient.DefaultRequestHeaders.Add(XffHeader, MainIp);
             _httpClient.DefaultRequestHeaders.Add("user-agent", "Mistake Not...");
+
+#if NETCOREAPP2_1
+            // Keep-alive is causing some weird failures on aspnetcore 2.1
+            _httpClient.DefaultRequestHeaders.ConnectionClose = true;
+#endif
+
             _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings { ContractResolver = new OrderedContractResolver() };
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_WAF_TIMEOUT", 10_000_000.ToString());
         }
@@ -70,7 +77,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             await VerifySpans(spans, settings, testInit, methodNameOverride);
         }
 
-        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null)
+        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null)
         {
             settings.ModifySerialization(
                 serializationSettings =>
@@ -94,6 +101,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             if (!testInit)
             {
                 settings.AddRegexScrubber(AppSecWafVersion, string.Empty);
+                settings.AddRegexScrubber(AppSecWafRulesVersion, string.Empty);
                 settings.AddRegexScrubber(AppSecErrorCount, string.Empty);
                 settings.AddRegexScrubber(AppSecEventRulesLoaded, string.Empty);
             }
@@ -108,7 +116,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             // Ensures that we get nice file nesting in Solution Explorer
             await Verifier.Verify(spans, settings)
                           .UseMethodName(methodNameOverride ?? "_")
-                          .UseTypeName(GetTestName());
+                          .UseTypeName(testName ?? GetTestName());
         }
 
         protected void SetClientIp(string ip)
@@ -223,6 +231,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             try
             {
                 var url = $"http://localhost:{_httpPort}{path}";
+
                 var response =
                     body == null ? await _httpClient.GetAsync(url) : await _httpClient.PostAsync(url, new StringContent(body, Encoding.UTF8, contentType ?? "application/json"));
                 var responseText = await response.Content.ReadAsStringAsync();
@@ -244,12 +253,17 @@ namespace Datadog.Trace.Security.IntegrationTests
             return WaitForSpans(agent, expectedSpans, phase, minDateTime, url);
         }
 
-        protected async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, params string[] urls)
+        protected Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, params string[] urls)
+        {
+            return SendRequestsAsync(agent, 1, urls);
+        }
+
+        protected async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, int expectedSpansPerRequest, params string[] urls)
         {
             var spans = new List<MockSpan>();
             foreach (var url in urls)
             {
-                spans.AddRange(await SendRequestsAsync(agent, url, null, 1, 1, string.Empty));
+                spans.AddRange(await SendRequestsAsync(agent, url, null, 1, expectedSpansPerRequest, string.Empty));
             }
 
             return spans.ToImmutableList();

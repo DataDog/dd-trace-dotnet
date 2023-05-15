@@ -17,6 +17,11 @@
     <GeneratedFolder>Generated_Code\$(TargetFramework)</GeneratedFolder>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(IsOSX)' == 'true'">
+    <!-- If OSX we force the x64 version (protoc is only available in x64) -->
+    <Protobuf_ToolsCpu>x64</Protobuf_ToolsCpu>
+  </PropertyGroup>
+  
   <ItemGroup>
     <Protobuf Include="Protos\greet.proto" GrpcServices="Both" OutputDir="$(GeneratedFolder)\$(ApiVersion)" />
   </ItemGroup>

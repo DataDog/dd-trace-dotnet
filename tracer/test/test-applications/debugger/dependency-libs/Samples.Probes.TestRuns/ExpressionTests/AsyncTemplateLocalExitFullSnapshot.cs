@@ -1,16 +1,13 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Samples.Probes.TestRuns.Shared;
 
 namespace Samples.Probes.TestRuns.ExpressionTests
 {
     public class AsyncTemplateLocalExitFullSnapshot : IAsyncRun
     {
         private int _field;
-        private const string Dsl = @"{
-  ""dsl"": ""ref _field < ref local""
-}";
-
         private const string Json = @"{
       ""ref"": ""local""
 }";
@@ -22,11 +19,10 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [MethodProbeTestData(
-            templateDsl: Dsl,
+        [LogMethodProbeTestData(
             templateJson: Json,
             captureSnapshot: true,
-            evaluateAt: 1)]
+            evaluateAt: Const.Exit)]
         public async Task<string> Method(int intArg)
         {
             await Task.Delay(20);

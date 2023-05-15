@@ -14,7 +14,7 @@ namespace GenerateSpanDocumentation
     public class SpanDocumentationGenerator
     {
         private const string HeaderConst =
-@"This file is intended for development purposes only. The markdown is generated from assertions authored [here](/tracer/test/Datadog.Trace.TestHelpers/SpanMetadataRules.cs) and the assertions are actively tested in the tracing integration tests.
+@"This file is intended for development purposes only. The markdown is generated from assertions authored in files /tracer/test/Datadog.Trace.TestHelpers/SpanMetadata*Rules.cs and the assertions are actively tested in the tracing integration tests.
 
 The Integration Name (used for configuring individual integrations) of each span corresponds to the markdown header, with the following exceptions:
 - The `AspNetCoreMvc` span has the Integration Name `AspNetCore`";
@@ -73,6 +73,7 @@ The Integration Name (used for configuring individual integrations) of each span
                         {
                             functionStartIndex += 23;
                             functionEndIndex = line.IndexOf("(", functionStartIndex);
+                            functionEndIndex -= 2; // Subtract two indices for the version number
                             currentModel.SectionName = line.Substring(functionStartIndex, functionEndIndex - functionStartIndex).TrimEnd();
                             currentModel.State = SpanModel.ModelState.Initialized;
                         }
@@ -327,14 +328,14 @@ The Integration Name (used for configuring individual integrations) of each span
                                 OperationName = null,
                                 RequiredValue = string.Join("; ", parts.Skip(2).Select(s => $"`{s}`")),
                             },
-                        (ModelState.ParsingTags, "IsOptional") => new Requirement
+                        (ModelState.ParsingTags, "IsOptional") or (ModelState.ParsingMetrics, "IsOptional")  => new Requirement
                             {
                                 Property = $"{parts[1]}",
                                 PropertyType = propertyType,
                                 OperationName = null,
                                 RequiredValue = "No",
                             },
-                        (ModelState.ParsingTags, "IsPresent") => new Requirement
+                        (ModelState.ParsingTags, "IsPresent") or (ModelState.ParsingMetrics, "IsPresent") => new Requirement
                             {
                                 Property = $"{parts[1]}",
                                 PropertyType = propertyType,

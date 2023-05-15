@@ -8,6 +8,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.XPath;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
@@ -86,6 +88,10 @@ namespace Datadog.Trace.Tools.Runner
 
             // Set Agentless configuration from the command line options
             ciVisibilitySettings.SetAgentlessConfiguration(agentless, apiKey, applicationKey, ciVisibilitySettings.AgentlessUrl);
+            if (!string.IsNullOrEmpty(settings.AgentUrl))
+            {
+                EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.AgentUri, settings.AgentUrl);
+            }
 
             // Initialize flags to enable code coverage and test skipping
             var codeCoverageEnabled = ciVisibilitySettings.CodeCoverageEnabled == true || ciVisibilitySettings.TestsSkippingEnabled == true;
@@ -232,11 +238,11 @@ namespace Datadog.Trace.Tools.Runner
 
             // We create a test session if the flag is turned on (agentless or evp proxy)
             TestSession session = null;
-            if (createTestSession && Program.CallbackForTests is null)
+            if (createTestSession)
             {
                 session = TestSession.GetOrCreate(command, null, null, null, true);
-                session.SetTag(CommonTags.TestSessionTestsSkippingEnabled, testSkippingEnabled ? "true" : "false");
-                session.SetTag(CommonTags.TestSessionCodeCoverageEnabled, codeCoverageEnabled ? "true" : "false");
+                session.SetTag(CommonTags.TestTestsSkippingEnabled, testSkippingEnabled ? "true" : "false");
+                session.SetTag(CommonTags.TestCodeCoverageEnabled, codeCoverageEnabled ? "true" : "false");
 
                 // At session level we know if the ITR is disabled (meaning that no tests will be skipped)
                 // In that case we tell the backend no tests are going to be skipped.
@@ -300,12 +306,59 @@ namespace Datadog.Trace.Tools.Runner
                     // Note: we also write the total global code coverage to the `session-coverage-{date}.json` file
                     if (!string.IsNullOrEmpty(codeCoveragePath))
                     {
+                        if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath)))
+                        {
+                            Log.Warning("DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH was ignored because DD_CIVISIBILITY_CODE_COVERAGE_ENABLED is set.");
+                        }
+
                         var outputPath = Path.Combine(codeCoveragePath, $"session-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}.json");
                         if (CoverageUtils.TryCombineAndGetTotalCoverage(codeCoveragePath, outputPath, out var globalCoverage, useStdOut: false) &&
                             globalCoverage is not null)
                         {
                             // Adds the global code coverage percentage to the session
                             session.SetTag(CommonTags.CodeCoverageTotalLines, globalCoverage.Data[0].ToString(CultureInfo.InvariantCulture));
+                        }
+                    }
+                    else
+                    {
+                        try
+                        {
+                            if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath) is { Length: > 0 } extCodeCoverageFilePath &&
+                                File.Exists(extCodeCoverageFilePath))
+                            {
+                                // Check Code Coverage from other files.
+                                var xmlDoc = new XmlDocument();
+                                xmlDoc.Load(extCodeCoverageFilePath);
+
+                                if (xmlDoc.SelectSingleNode("/CoverageSession/Summary/@sequenceCoverage") is { } seqCovAttribute &&
+                                    double.TryParse(seqCovAttribute.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var seqCovValue))
+                                {
+                                    // Found using the OpenCover format.
+
+                                    // Adds the global code coverage percentage to the session
+                                    session.SetTag(CommonTags.TestCodeCoverageEnabled, "true");
+                                    session.SetTag(CommonTags.CodeCoverageTotalLines, Math.Round(seqCovValue, 2).ToString("F2", CultureInfo.InvariantCulture));
+                                    Log.Debug("RunCiCommand: OpenCover code coverage was reported: {Value}", seqCovValue);
+                                }
+                                else if (xmlDoc.SelectSingleNode("/coverage/@line-rate") is { } lineRateAttribute &&
+                                    double.TryParse(lineRateAttribute.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var lineRateValue))
+                                {
+                                    // Found using the Cobertura format.
+
+                                    // Adds the global code coverage percentage to the session
+                                    session.SetTag(CommonTags.TestCodeCoverageEnabled, "true");
+                                    session.SetTag(CommonTags.CodeCoverageTotalLines, Math.Round(lineRateValue * 100, 2).ToString("F2", CultureInfo.InvariantCulture));
+                                    Log.Debug("RunCiCommand: Cobertura code coverage was reported: {Value}", lineRateAttribute.Value);
+                                }
+                                else
+                                {
+                                    Log.Warning("RunCiCommand: Error while reading the external file code coverage. Format is not supported.");
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Warning(ex, "RunCiCommand: Error while reading the external file code coverage.");
                         }
                     }
 

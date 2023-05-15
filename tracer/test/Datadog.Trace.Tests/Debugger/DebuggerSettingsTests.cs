@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using FluentAssertions;
 using Xunit;
@@ -19,10 +20,9 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData(null)]
         public void InvalidMaxDepthToSerialize_DefaultUsed(string value)
         {
-            var settings = new DebuggerSettings(new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.Debugger.MaxDepthToSerialize, value },
-            }));
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.MaxDepthToSerialize, value }, }),
+                NullConfigurationTelemetry.Instance);
 
             settings.MaximumDepthOfMembersToCopy.Should().Be(3);
         }
@@ -34,10 +34,9 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData(null)]
         public void InvalidSerializationTimeThreshold_DefaultUsed(string value)
         {
-            var settings = new DebuggerSettings(new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.Debugger.MaxTimeToSerialize, value },
-            }));
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.MaxTimeToSerialize, value }, }),
+                NullConfigurationTelemetry.Instance);
 
             settings.MaxSerializationTimeInMilliseconds.Should().Be(200);
         }
@@ -48,10 +47,9 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData("false")]
         public void DebuggerDisabled(string enabled)
         {
-            var settings = new DebuggerSettings(new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.Debugger.Enabled, enabled },
-            }));
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.Enabled, enabled }, }),
+                NullConfigurationTelemetry.Instance);
 
             settings.Enabled.Should().BeFalse();
         }
@@ -59,12 +57,14 @@ namespace Datadog.Trace.Tests.Debugger
         [Fact]
         public void DebuggerSettings_UseSettings()
         {
-            var settings = new DebuggerSettings(new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.Debugger.Enabled, "true" },
-                { ConfigurationKeys.Debugger.MaxDepthToSerialize, "100" },
-                { ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000" },
-            }));
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new()
+                {
+                    { ConfigurationKeys.Debugger.Enabled, "true" },
+                    { ConfigurationKeys.Debugger.MaxDepthToSerialize, "100" },
+                    { ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000" },
+                }),
+                NullConfigurationTelemetry.Instance);
 
             settings.Enabled.Should().BeTrue();
             settings.MaximumDepthOfMembersToCopy.Should().Be(100);
@@ -78,10 +78,9 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData(null)]
         public void InvalidUploadBatchSize_DefaultUsed(string value)
         {
-            var settings = new DebuggerSettings(new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.Debugger.UploadBatchSize, value },
-            }));
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.UploadBatchSize, value }, }),
+                NullConfigurationTelemetry.Instance);
 
             settings.UploadBatchSize.Should().Be(100);
         }
@@ -93,10 +92,9 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData(null)]
         public void InvalidDiagnosticsInterval_DefaultUsed(string value)
         {
-            var settings = new DebuggerSettings(new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.Debugger.DiagnosticsInterval, value },
-            }));
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DiagnosticsInterval, value }, }),
+                NullConfigurationTelemetry.Instance);
 
             settings.DiagnosticsIntervalSeconds.Should().Be(5);
         }
@@ -108,10 +106,9 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData(null)]
         public void InvalidUploadFlushInterval_DefaultUsed(string value)
         {
-            var settings = new DebuggerSettings(new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.Debugger.UploadFlushInterval, value },
-            }));
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.UploadFlushInterval, value }, }),
+                NullConfigurationTelemetry.Instance);
 
             settings.UploadFlushIntervalMilliseconds.Should().Be(0);
         }

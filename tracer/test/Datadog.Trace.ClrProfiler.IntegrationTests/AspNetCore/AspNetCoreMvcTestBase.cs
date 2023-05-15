@@ -31,6 +31,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         protected const string HeaderName3 = "Server";
         protected const string HeaderValue3 = "Kestrel";
 
+        private static readonly HashSet<string> ExcludeTags = new HashSet<string>
+        {
+            "datadog-header-tag",
+            "http.request.headers.sample_correlation_identifier",
+            "http.response.headers.sample_correlation_identifier",
+            "http.response.headers.server",
+        };
+
         private readonly bool _enableRouteTemplateResourceNames;
 
         protected AspNetCoreMvcTestBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableRouteTemplateResourceNames)
@@ -39,7 +47,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             _enableRouteTemplateResourceNames = enableRouteTemplateResourceNames;
             SetEnvironmentVariable(ConfigurationKeys.HeaderTags, $"{HeaderName1UpperWithMapping}:{HeaderTagName1WithMapping},{HeaderName2},{HeaderName3}");
             SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "400-403, 500-503");
-            EnableDebugMode();
 
             SetServiceVersion("1.0.0");
 
@@ -73,18 +80,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             Fixture.SetOutput(null);
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             span.Name switch
             {
-                "aspnet_core.request" => span.IsAspNetCore(excludeTags: new HashSet<string>
-                    {
-                        "datadog-header-tag",
-                        "http.request.headers.sample_correlation_identifier",
-                        "http.response.headers.sample_correlation_identifier",
-                        "http.response.headers.server",
-                    }),
-                "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(),
-                _ => Result.DefaultSuccess
+                "aspnet_core.request" => span.IsAspNetCore(metadataSchemaVersion, ExcludeTags),
+                "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(metadataSchemaVersion),
+                _ => Result.DefaultSuccess,
             };
 
         protected virtual string GetTestName(string testName)

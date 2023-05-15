@@ -71,7 +71,14 @@ namespace Datadog.Trace.TestHelpers
                 startInfo.WorkingDirectory = workingDirectory;
             }
 
-            return Process.Start(startInfo);
+            var process = Process.Start(startInfo);
+
+            if (process != null)
+            {
+                MemoryDumpHelper.MonitorCrashes(process.Id);
+            }
+
+            return process;
         }
 
         private static void SetCorFlags(string executable, ITestOutputHelper output, bool require32Bit)

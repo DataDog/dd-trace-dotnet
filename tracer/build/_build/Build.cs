@@ -11,6 +11,7 @@ using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
+using Logger = Serilog.Log;
 
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
@@ -30,8 +31,8 @@ partial class Build : NukeBuild
     [Parameter("Configuration to build - Default is 'Release'")]
     readonly Configuration BuildConfiguration = Configuration.Release;
 
-    [Parameter("Platform to build - x86 or x64. Default is x64")]
-    readonly MSBuildTargetPlatform TargetPlatform = MSBuildTargetPlatform.x64;
+    [Parameter("Platform to build - x86, x64, ARM64. Defaults to the current platform.")]
+    readonly MSBuildTargetPlatform TargetPlatform = GetDefaultTargetPlatform();
 
     [Parameter("The TargetFramework to execute when running or building a sample app, or linux integration tests")]
     readonly TargetFramework Framework;
@@ -54,7 +55,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "2.25.0";
+    readonly string Version = "2.31.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -91,16 +92,16 @@ partial class Build : NukeBuild
                        .Before(Clean, Restore, BuildTracerHome)
                        .Executes(() =>
                         {
-                            Logger.Info($"Configuration: {BuildConfiguration}");
-                            Logger.Info($"Platform: {TargetPlatform}");
-                            Logger.Info($"Framework: {Framework}");
-                            Logger.Info($"TestAllPackageVersions: {TestAllPackageVersions}");
-                            Logger.Info($"MonitoringHomeDirectory: {MonitoringHomeDirectory}");
-                            Logger.Info($"ArtifactsDirectory: {ArtifactsDirectory}");
-                            Logger.Info($"NugetPackageDirectory: {NugetPackageDirectory}");
-                            Logger.Info($"IncludeAllTestFrameworks: {IncludeAllTestFrameworks}");
-                            Logger.Info($"IsAlpine: {IsAlpine}");
-                            Logger.Info($"Version: {Version}");
+                            Logger.Information($"Configuration: {BuildConfiguration}");
+                            Logger.Information($"TargetPlatform: {TargetPlatform}");
+                            Logger.Information($"Framework: {Framework}");
+                            Logger.Information($"TestAllPackageVersions: {TestAllPackageVersions}");
+                            Logger.Information($"MonitoringHomeDirectory: {MonitoringHomeDirectory}");
+                            Logger.Information($"ArtifactsDirectory: {ArtifactsDirectory}");
+                            Logger.Information($"NugetPackageDirectory: {NugetPackageDirectory}");
+                            Logger.Information($"IncludeAllTestFrameworks: {IncludeAllTestFrameworks}");
+                            Logger.Information($"IsAlpine: {IsAlpine}");
+                            Logger.Information($"Version: {Version}");
                         });
 
     Target Clean => _ => _
@@ -249,9 +250,9 @@ partial class Build : NukeBuild
         .DependsOn(CompileDependencyLibs)
         .DependsOn(CompileRegressionDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileSamplesLinux)
+        .DependsOn(CompileSamplesLinuxOrOsx)
         .DependsOn(CompileMultiApiPackageVersionSamples)
-        .DependsOn(CompileLinuxIntegrationTests)
+        .DependsOn(CompileLinuxOrOsxIntegrationTests)
         .DependsOn(BuildRunnerTool)
         .DependsOn(CopyServerlessArtifacts);
 
@@ -261,6 +262,24 @@ partial class Build : NukeBuild
         .DependsOn(BuildLinuxIntegrationTests)
         .DependsOn(RunLinuxIntegrationTests);
 
+    Target BuildOsxIntegrationTests => _ => _
+        .Requires(() => IsOsx)
+        .Description("Builds the osx integration tests")
+        .DependsOn(CompileDependencyLibs)
+        .DependsOn(CompileRegressionDependencyLibs)
+        .DependsOn(CompileManagedTestHelpers)
+        .DependsOn(CompileSamplesLinuxOrOsx)
+        .DependsOn(CompileMultiApiPackageVersionSamples)
+        .DependsOn(CompileLinuxOrOsxIntegrationTests)
+        .DependsOn(BuildRunnerTool)
+        .DependsOn(CopyServerlessArtifacts);
+
+    Target BuildAndRunOsxIntegrationTests => _ => _
+        .Requires(() => IsOsx)
+        .Description("Builds and runs the osx integration tests. Requires docker-compose dependencies")
+        .DependsOn(BuildOsxIntegrationTests)
+        .DependsOn(RunOsxIntegrationTests);
+    
     Target BuildAndRunToolArtifactTests => _ => _
        .Description("Builds and runs the tool artifacts tests")
        .DependsOn(CompileManagedTestHelpers)

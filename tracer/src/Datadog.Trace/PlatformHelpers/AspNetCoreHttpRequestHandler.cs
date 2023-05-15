@@ -8,7 +8,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DiagnosticListeners;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Iast;
@@ -96,8 +99,9 @@ namespace Datadog.Trace.PlatformHelpers
             return Enumerable.Empty<KeyValuePair<string, string>>();
         }
 
-        public Scope StartAspNetCorePipelineScope(Tracer tracer, HttpContext httpContext, HttpRequest request, string resourceName)
+        public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, HttpContext httpContext, string resourceName)
         {
+            var request = httpContext.Request;
             string host = request.Host.Value;
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
             string url = request.GetUrl(tracer.TracerManager.QueryStringManager);
@@ -123,7 +127,7 @@ namespace Datadog.Trace.PlatformHelpers
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, propagatedContext, tags: tags);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags, tagsFromHeaders);
-            if (tracer.Settings.IpHeaderEnabled || Security.Instance.Settings.Enabled)
+            if (tracer.Settings.IpHeaderEnabled || security.Enabled)
             {
                 var peerIp = new Headers.Ip.IpInfo(httpContext.Connection.RemoteIpAddress?.ToString(), httpContext.Connection.RemotePort);
                 Func<string, string> getRequestHeaderFromKey = key => request.Headers.TryGetValue(key, out var value) ? value : string.Empty;
@@ -140,6 +144,67 @@ namespace Datadog.Trace.PlatformHelpers
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(_integrationId);
 
             return scope;
+        }
+
+        public void StopAspNetCorePipelineScope(Tracer tracer, Security security, Scope scope, HttpContext httpContext)
+        {
+            if (scope != null)
+            {
+                // We may need to update the resource name if none of the routing/mvc events updated it.
+                // If we had an unhandled exception, the status code will already be updated correctly,
+                // but if the span was manually marked as an error, we still need to record the status code
+                var span = scope.Span;
+                var isMissingHttpStatusCode = !span.HasHttpStatusCode();
+
+                if (string.IsNullOrEmpty(span.ResourceName) || isMissingHttpStatusCode)
+                {
+                    if (string.IsNullOrEmpty(span.ResourceName))
+                    {
+                        span.ResourceName = GetDefaultResourceName(httpContext.Request);
+                    }
+
+                    if (isMissingHttpStatusCode)
+                    {
+                        span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracer.Settings);
+                    }
+                }
+
+                span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                if (security.Enabled)
+                {
+                    var transport = new SecurityCoordinator(security, httpContext, span);
+                    transport.AddResponseHeadersToSpanAndCleanup();
+                }
+                else
+                {
+                    // remember security could have been disabled while a request is still executed
+                    new SecurityCoordinator.HttpTransport(httpContext).DisposeAdditiveContext();
+                }
+
+                scope.Dispose();
+            }
+        }
+
+        public void HandleAspNetCoreException(Tracer tracer, Security security, Span span, HttpContext httpContext, Exception exception)
+        {
+            if (span != null && httpContext is not null && exception is not null)
+            {
+                var statusCode = 500;
+
+                if (exception.TryDuckCast<AspNetCoreDiagnosticObserver.BadHttpRequestExceptionStruct>(out var badRequestException))
+                {
+                    statusCode = badRequestException.StatusCode;
+                }
+
+                // Generic unhandled exceptions are converted to 500 errors by Kestrel
+                span.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
+
+                if (exception is not BlockException)
+                {
+                    span.SetException(exception);
+                    security.CheckAndBlock(httpContext, span);
+                }
+            }
         }
 
         /// <summary>

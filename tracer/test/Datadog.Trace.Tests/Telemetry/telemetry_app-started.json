@@ -30,9 +30,9 @@
       },
       {
         "name": "pg",
-        "compatible": false,
         "enabled": false,
-        "auto_enabled": false
+        "auto_enabled": false,
+        "error": "there was an error"
       }
     ],
     "dependencies": [

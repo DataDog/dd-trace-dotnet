@@ -15,6 +15,7 @@ using FluentAssertions;
 using Perftools.Profiles;
 using Xunit;
 using Xunit.Abstractions;
+using static Google.Protobuf.Reflection.SourceCodeInfo.Types;
 
 namespace Datadog.Profiler.IntegrationTests.Allocations
 {
@@ -34,8 +35,10 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
         public void ShouldGetAllocationSamples(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
+            // disable default profilers
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+
             runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "1");
 
             // only allocation profiler enabled so should only see the 2 related values per sample
@@ -46,8 +49,11 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
         public void ShouldAllocationProfilerBeDisabledByDefault(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
+            // disable default profilers
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -71,6 +77,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
 
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "0");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
@@ -86,8 +93,11 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioMeasureAllocation);
 
+            // disable default profilers
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+
             runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
@@ -349,25 +359,60 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             var allocationSamples = ExtractAllocationSamples(runner.Environment.PprofDir).ToArray();
             allocationSamples.Should().NotBeEmpty();
 
-            bool arrayFound = false;
-            bool elementFound = false;
+            // expected allocations:
+            //  System.Byte[][,]
+            //  System.Byte[][]
+            //  System.Byte[]
+            //  Generic<System.Int32>[,]
+            //  Generic<System.Int32>[]
+            //  Generic<System.Int32>
+            //
+            bool matrixOfArrayOfBytesFound = false;
+            bool jaggedArrayOfBytesFound = false;
+            bool arrayOfBytesFound = false;
+            bool matrixOfGenericsFound = false;
+            bool arrayOfGenericsFound = false;
+            bool genericElementFound = false;
 
             foreach (var sample in allocationSamples)
             {
-                // still a bug for array of generic
-                if (sample.Type.CompareTo("Samples.Computer01.Generic`1[System.Int32][]") == 0)
+                if (sample.Type.CompareTo("System.Byte[][,]") == 0)
                 {
-                    arrayFound = true;
+                    matrixOfArrayOfBytesFound = true;
+                }
+                else
+                if (sample.Type.CompareTo("System.Byte[][]") == 0)
+                {
+                    jaggedArrayOfBytesFound = true;
+                }
+                else
+                if (sample.Type.CompareTo("System.Byte[]") == 0)
+                {
+                    arrayOfBytesFound = true;
+                }
+                else
+                if (sample.Type.CompareTo("Samples.Computer01.Generic<System.Int32>[,]") == 0)
+                {
+                    matrixOfGenericsFound = true;
+                }
+                else
+                if (sample.Type.CompareTo("Samples.Computer01.Generic<System.Int32>[]") == 0)
+                {
+                    arrayOfGenericsFound = true;
                 }
                 else
                 if (sample.Type.CompareTo("Samples.Computer01.Generic<System.Int32>") == 0)
                 {
-                    elementFound = true;
+                    genericElementFound = true;
                 }
             }
 
-            Assert.True(arrayFound);
-            Assert.True(elementFound);
+            Assert.True(matrixOfArrayOfBytesFound);
+            Assert.True(jaggedArrayOfBytesFound);
+            Assert.True(arrayOfBytesFound);
+            Assert.True(genericElementFound);
+            Assert.True(arrayOfGenericsFound);
+            Assert.True(matrixOfGenericsFound);
         }
 
         internal class AllocStats

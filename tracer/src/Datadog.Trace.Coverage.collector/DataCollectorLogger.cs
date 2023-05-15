@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
@@ -27,7 +28,7 @@ namespace Datadog.Trace.Coverage.Collector
             _collectionContext = collectionContext;
             _isDebugEnabled = GlobalSettings.Instance.DebugEnabled;
 
-            if (DatadogLoggingFactory.GetConfiguration(GlobalConfigurationSource.Instance).File is { } fileConfig)
+            if (DatadogLoggingFactory.GetConfiguration(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry()).File is { } fileConfig)
             {
                 var loggerConfiguration = new LoggerConfiguration().Enrich.FromLogContext().MinimumLevel.Debug();
 

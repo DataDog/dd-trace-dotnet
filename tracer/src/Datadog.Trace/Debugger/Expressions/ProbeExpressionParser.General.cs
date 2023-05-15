@@ -5,23 +5,29 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
 internal partial class ProbeExpressionParser<T>
 {
-    private static Expression WideNumericType(Expression expr)
+    private static Expression ConvertToDouble(Expression expr)
     {
-        var type = expr.Type;
-        if (type == typeof(float))
+        if (expr.Type == typeof(double))
+        {
+            return expr;
+        }
+
+        if (expr.Type.IsNumeric())
         {
             return Expression.Convert(expr, typeof(double));
         }
 
-        return IsIntegralNumericType(type) ? Expression.Convert(expr, typeof(long)) : expr;
+        return expr;
     }
 
     private static bool IsIntegralNumericType(Type type)
@@ -39,6 +45,33 @@ internal partial class ProbeExpressionParser<T>
         }
 
         return false;
+    }
+
+    private static MethodCallExpression CallConvertToNumericType<TNumeric>(Expression finalExpr)
+    {
+        var convertMethodName = typeof(TNumeric) switch
+        {
+            { } @int when @int == typeof(byte) => nameof(IConvertible.ToByte),
+            { } @int when @int == typeof(sbyte) => nameof(IConvertible.ToSByte),
+            { } @int when @int == typeof(short) => nameof(IConvertible.ToInt16),
+            { } @int when @int == typeof(ushort) => nameof(IConvertible.ToUInt16),
+            { } @int when @int == typeof(int) => nameof(IConvertible.ToInt32),
+            { } @int when @int == typeof(uint) => nameof(IConvertible.ToUInt32),
+            { } @int when @int == typeof(long) => nameof(IConvertible.ToInt64),
+            { } @int when @int == typeof(ulong) => nameof(IConvertible.ToUInt64),
+            { } @int when @int == typeof(float) => nameof(IConvertible.ToSingle),
+            { } @int when @int == typeof(double) => nameof(IConvertible.ToDouble),
+            { } @int when @int == typeof(decimal) => nameof(IConvertible.ToDecimal),
+            _ => null
+        };
+
+        return convertMethodName == null
+                   ? null
+                   : Expression.Call(
+                       Expression.Convert(finalExpr, typeof(IConvertible)),
+                       ProbeExpressionParserHelper.GetMethodByReflection(
+                           typeof(IConvertible), convertMethodName, new[] { typeof(IFormatProvider) }),
+                       Expression.Constant(NumberFormatInfo.CurrentInfo));
     }
 
     private Expression IsUndefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
@@ -148,10 +181,5 @@ internal partial class ProbeExpressionParser<T>
                (@namespace is "System" or "Microsoft" ||
                 @namespace.StartsWith("System.") ||
                 @namespace.StartsWith("Microsoft."));
-    }
-
-    private Expression CallTimeSpanConstructor(Expression arg)
-    {
-        return Expression.New(typeof(TimeSpan).GetConstructor(new[] { typeof(long) }), WideNumericType(arg));
     }
 }
