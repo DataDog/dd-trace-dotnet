@@ -48,20 +48,28 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
         private static Tuple<string, string, string> ExtractFilePathAndLineNumbersFromPdb(MethodBase method)
         {
-            var userSymbolMethod = Pdb.DatadogPdbReader.CreatePdbReader(method.Module.Assembly).ReadMethodSymbolInfo((int)(method.MetadataToken));
-            var filePath = string.Empty;
-            var methodBeginLineNumber = string.Empty;
-            var methodEndLineNumber = string.Empty;
-
-            if (userSymbolMethod != null && userSymbolMethod.SequencePoints != null && userSymbolMethod.SequencePoints.Any())
+            try
             {
-                const int hiddenSequencePoint = 0x00feefee;
-                filePath = userSymbolMethod.SequencePoints.First(sp => sp.Line != hiddenSequencePoint).Document.URL;
-                methodBeginLineNumber = userSymbolMethod.SequencePoints.First(sp => sp.Line != hiddenSequencePoint).Line.ToString();
-                methodEndLineNumber = userSymbolMethod.SequencePoints.Last(sp => sp.Line != hiddenSequencePoint).Line.ToString();
-            }
+                var userSymbolMethod = Pdb.DatadogPdbReader.CreatePdbReader(method.Module.Assembly)?.ReadMethodSymbolInfo((int)(method.MetadataToken));
+                var filePath = string.Empty;
+                var methodBeginLineNumber = string.Empty;
+                var methodEndLineNumber = string.Empty;
 
-            return Tuple.Create(filePath, methodBeginLineNumber, methodEndLineNumber);
+                if (userSymbolMethod != null && userSymbolMethod.SequencePoints != null && userSymbolMethod.SequencePoints.Any())
+                {
+                    const int hiddenSequencePoint = 0x00feefee;
+                    filePath = userSymbolMethod.SequencePoints.First(sp => sp.Line != hiddenSequencePoint).Document.URL;
+                    methodBeginLineNumber = userSymbolMethod.SequencePoints.First(sp => sp.Line != hiddenSequencePoint).Line.ToString();
+                    methodEndLineNumber = userSymbolMethod.SequencePoints.Last(sp => sp.Line != hiddenSequencePoint).Line.ToString();
+                }
+
+                return Tuple.Create(filePath, methodBeginLineNumber, methodEndLineNumber);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Failed to extract file path and line numbers from PDB for method: {Name}", method.Name);
+                return Tuple.Create(string.Empty, string.Empty, string.Empty);
+            }
         }
 
         private static string[] GetParameterNames(MethodBase method)
