@@ -131,7 +131,7 @@ namespace Datadog.Trace
 
                 if (Iast.Iast.Instance.Settings.Enabled)
                 {
-                    if ( && _iastRequestContext is { } iastRequestContext)
+                    if (_iastRequestContext is { } iastRequestContext)
                     {
                         iastRequestContext.AddIastVulnerabilitiesToSpan(span);
                         OverheadController.Instance.ReleaseRequest();
