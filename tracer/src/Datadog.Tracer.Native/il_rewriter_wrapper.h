@@ -21,7 +21,7 @@ public:
     ILInstr* Pop() const;
     ILInstr* LoadNull() const;
     void LoadInt64(INT64 value) const;
-    void LoadInt32(INT32 value) const;
+    ILInstr* LoadInt32(INT32 value) const;
     ILInstr* LoadArgument(UINT16 index) const;
     ILInstr* LoadArgumentRef(UINT16 index) const;
     ILInstr* LoadFieldAddress(mdFieldDef field_def, bool isStatic = false) const;

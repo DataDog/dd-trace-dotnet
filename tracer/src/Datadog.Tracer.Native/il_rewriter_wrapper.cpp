@@ -39,7 +39,7 @@ void ILRewriterWrapper::LoadInt64(const INT64 value) const
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
 
-void ILRewriterWrapper::LoadInt32(const INT32 value) const
+ILInstr* ILRewriterWrapper::LoadInt32(const INT32 value) const
 {
     static const std::vector<OPCODE> opcodes = {
         CEE_LDC_I4_0, CEE_LDC_I4_1, CEE_LDC_I4_2, CEE_LDC_I4_3, CEE_LDC_I4_4,
@@ -64,6 +64,7 @@ void ILRewriterWrapper::LoadInt32(const INT32 value) const
     }
 
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+    return pNewInstr;
 }
 
 ILInstr* ILRewriterWrapper::LoadArgument(const UINT16 index) const

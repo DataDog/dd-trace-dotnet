@@ -2767,6 +2767,16 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Define a TypeRef for System.Byte
+    mdTypeRef byte_type_ref;
+    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Byte"), &byte_type_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName:System.Byte failed");
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Get a TypeRef for System.Threading.Interlocked
     mdTypeRef interlocked_type_ref;
     hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Threading.Interlocked"), &interlocked_type_ref);
@@ -2798,27 +2808,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
             Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName:System.AppDomain failed");
             return hr;
         }
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Get a TypeRef for System.RuntimeTypeHandle
-    mdTypeRef system_runtime_type_handle_type_ref;
-    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.RuntimeTypeHandle"), &system_runtime_type_handle_type_ref);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName:System.RuntimeTypeHandle failed");
-        return hr;
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Get a TypeSpec for System.Byte[]
-    mdTypeSpec system_byte_array_type_ref;
-    COR_SIGNATURE system_byte_array_signature[2] = { ELEMENT_TYPE_SZARRAY, ELEMENT_TYPE_U1 };
-    hr = metadata_emit->GetTokenFromTypeSpec(system_byte_array_signature, sizeof(system_byte_array_signature), &system_byte_array_type_ref);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: GetTokenFromTypeSpec failed");
-        return hr;
     }
 
     // ****************************************************************************************************************
@@ -2932,19 +2921,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
             Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef:get_IsFullyTrusted failed");
             return hr;
         }
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Get MemberRef for System.RuntimeTypeHandle.get_Value
-    mdMemberRef system_runtimetypehandle_get_value_member_ref;
-    COR_SIGNATURE system_runtimetypehandle_get_value_signature[] = {IMAGE_CEE_CS_CALLCONV_HASTHIS, 0, ELEMENT_TYPE_I };
-    hr = metadata_emit->DefineMemberRef(system_runtime_type_handle_type_ref, WStr("get_Value"),
-                                        system_runtimetypehandle_get_value_signature, sizeof(system_runtimetypehandle_get_value_signature),
-                                        &system_runtimetypehandle_get_value_member_ref);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef:get_Value failed");
-        return hr;
     }
 
     // ****************************************************************************************************************
@@ -3094,6 +3070,28 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Define a new static method ref IntPtr GetArrayPointer(ref byte[] value) to reinterpret a pointer as an array
+
+    mdMethodDef getArrayPointerMethodToken;
+    BYTE get_array_pointer_signature[] = {
+        IMAGE_CEE_CS_CALLCONV_DEFAULT,
+        1,
+        ELEMENT_TYPE_BYREF,
+        ELEMENT_TYPE_I,
+        ELEMENT_TYPE_BYREF,
+        ELEMENT_TYPE_SZARRAY,
+        ELEMENT_TYPE_U1,
+    };
+    hr = metadata_emit->DefineMethod(new_type_def, WStr("GetArrayPointer"), mdStatic | mdPrivate,
+                                     get_array_pointer_signature, sizeof(get_array_pointer_signature), 0, 0,
+                                     &getArrayPointerMethodToken);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMethod:GetArrayPointer failed");
+        return hr;
+    }
+
     // ****************************************************************************************************************
     // Locals signature
     // ****************************************************************************************************************
@@ -3102,16 +3100,16 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     // Generate a locals signature defined in the following way:
     //   [0] System.IntPtr ("assemblyPtr" - address of assembly bytes)
     //   [1] System.IntPtr ("symbolsPtr" - address of symbols bytes)
-    //   [2] System.RuntimeTypeHandle (byte[] typehandle value)
+    //   [2] System.Byte[]
     mdSignature locals_signature_token;
-    COR_SIGNATURE locals_signature[7] = {
+    COR_SIGNATURE locals_signature[] = {
         IMAGE_CEE_CS_CALLCONV_LOCAL_SIG, // Calling convention
         3,                               // Number of variables
         ELEMENT_TYPE_I,                  // List of variable types
         ELEMENT_TYPE_I,
-        ELEMENT_TYPE_VALUETYPE,
+        ELEMENT_TYPE_SZARRAY,
+        ELEMENT_TYPE_U1,
     };
-    CorSigCompressToken(system_runtime_type_handle_type_ref, &locals_signature[5]);
     hr = metadata_emit->GetTokenFromSig(locals_signature, sizeof(locals_signature), &locals_signature_token);
     if (FAILED(hr))
     {
@@ -3147,6 +3145,36 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     }
 
     hr = rewriter_get_unmanaged_array.Export();
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: Call to ILRewriter.Export() failed for ModuleID=", module_id);
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Add IL instructions into the GetArrayPointer method
+    ILRewriter rewriter_get_array_pointer(this->info_, nullptr, module_id, getArrayPointerMethodToken);
+    rewriter_get_array_pointer.InitializeTiny();
+
+    ILRewriterWrapper rewriterwrapper_get_array_pointer(&rewriter_get_array_pointer);
+    rewriterwrapper_get_array_pointer.SetILPosition(rewriter_get_array_pointer.GetILList()->m_pNext);
+
+    // Load the argument (ref to byte[])
+    rewriterwrapper_get_array_pointer.LoadArgument(0);
+    // Return the value
+    rewriterwrapper_get_array_pointer.Return();
+
+    if (IsDumpILRewriteEnabled())
+    {
+        mdToken token = 0;
+        TypeInfo typeInfo{};
+        shared::WSTRING methodName = WStr("GetArrayPointer");
+        FunctionInfo caller(token, methodName, typeInfo, MethodSignature(), FunctionMethodSignature());
+        Logger::Info(GetILCodes("*** GenerateVoidILStartupMethod() GetArrayPointer Code: ",
+                                &rewriter_get_array_pointer, caller, metadata_import));
+    }
+
+    hr = rewriter_get_array_pointer.Export();
     if (FAILED(hr))
     {
         Logger::Warn("GenerateVoidILStartupMethod: Call to ILRewriter.Export() failed for ModuleID=", module_id);
@@ -3199,14 +3227,17 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
 
     // Step 2) Call void GetAssemblyAndSymbolsBytes(IntPtr typeHandle, out IntPtr assemblyPtr, out IntPtr symbolsPtr)
 
-    // Load TypeHandle for byte[]
-    const auto loadTokenInstr = rewriterwrapper_void.LoadToken(system_byte_array_type_ref);
+    // ldc.i4.0 : Load constant value 0
+    const auto loadTokenInstr = rewriterwrapper_void.LoadInt32(0);
+    // new byte array
+    rewriterwrapper_void.CreateInstr(CEE_NEWARR)->m_Arg32 = byte_type_ref;
     // Store TypeHandle into the local
     rewriterwrapper_void.StLocal(2);
     // Load the address of the local
     rewriterwrapper_void.LoadLocalAddress(2);
-    // Call get_Value() from the TypeHandle returning a IntPtr
-    rewriterwrapper_void.CallMember(system_runtimetypehandle_get_value_member_ref, false);
+    // Call GetArrayPointer
+    rewriterwrapper_void.CallMember(getArrayPointerMethodToken, false);
+    rewriterwrapper_void.CreateInstr(CEE_LDIND_I);
 
     // ldloca.s 0 : Load the address of the "assemblyPtr" variable (locals index 0)
     rewriterwrapper_void.LoadLocalAddress(0);
@@ -3517,25 +3548,25 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(void* typeHandle, BYTE** pAssemblyA
 #ifdef BIT64
     BYTE* newAssemblyArray = new BYTE[assemblySize + 24];
     memcpy(&newAssemblyArray[24], *pAssemblyArray, assemblySize);
-    *((INT64*) &newAssemblyArray[8]) = reinterpret_cast<INT64>(typeHandle);
+    *((INT64*) &newAssemblyArray[8]) = *reinterpret_cast<INT64*>(typeHandle);
     *((INT32*) &newAssemblyArray[16]) = assemblySize;
     *pAssemblyArray = newAssemblyArray + 8;
 
     BYTE* newSymbolsArray = new BYTE[symbolsSize + 24];
     memcpy(&newSymbolsArray[24], *pSymbolsArray, symbolsSize);
-    *((INT64*) &newSymbolsArray[8]) = reinterpret_cast<INT64>(typeHandle);
+    *((INT64*) &newSymbolsArray[8]) = *reinterpret_cast<INT64*>(typeHandle);
     *((INT32*) &newSymbolsArray[16]) = symbolsSize;
     *pSymbolsArray = newSymbolsArray + 8;
 #else
     BYTE* newAssemblyArray = new BYTE[assemblySize + 12];
     memcpy(&newAssemblyArray[12], *pAssemblyArray, assemblySize);
-    *((INT32*) &newAssemblyArray[4]) = reinterpret_cast<INT32>(typeHandle);
+    *((INT32*) &newAssemblyArray[4]) = *reinterpret_cast<INT32*>(typeHandle);
     *((INT32*) &newAssemblyArray[8]) = assemblySize;
     *pAssemblyArray = newAssemblyArray + 4;
 
     BYTE* newSymbolsArray = new BYTE[symbolsSize + 12];
     memcpy(&newSymbolsArray[12], *pSymbolsArray, symbolsSize);
-    *((INT32*) &newSymbolsArray[4]) = reinterpret_cast<INT32>(typeHandle);
+    *((INT32*) &newSymbolsArray[4]) = *reinterpret_cast<INT32*>(typeHandle);
     *((INT32*) &newSymbolsArray[8]) = symbolsSize;
     *pSymbolsArray = newSymbolsArray + 4;
 #endif
