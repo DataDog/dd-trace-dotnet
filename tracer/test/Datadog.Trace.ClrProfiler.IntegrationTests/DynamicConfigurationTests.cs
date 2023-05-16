@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Drawing;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -62,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         DataStreamsEnabled = false,
                         LogsInjectionEnabled = false,
                         SpanSamplingRules = string.Empty,
-                        TraceSampleRate = 1.0, // TODO: handle the case when we set it back to null
+                        TraceSampleRate = null,
                         CustomSamplingRules = string.Empty
                     });
             }
@@ -75,9 +74,51 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private async Task UpdateAndValidateConfig(MockTracerAgent agent, LogEntryWatcher logEntryWatcher, Config config)
+        [SkippableFact]
+        public async Task RestoreInitialConfiguration()
+        {
+            using var agent = EnvironmentHelper.GetMockAgent();
+            var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Console";
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*");
+
+            EnvironmentHelper.CustomEnvironmentVariables["DD_TRACE_SAMPLE_RATE"] = "0.9";
+            using var sample = StartSample(agent, string.Empty, string.Empty, aspNetCorePort: 5000);
+
+            try
+            {
+                _ = await logEntryWatcher.WaitForLogEntry(DiagnosticLog);
+
+                await UpdateAndValidateConfig(
+                    agent,
+                    logEntryWatcher,
+                    new Config
+                    {
+                        TraceSampleRate = .5,
+                    });
+
+                await UpdateAndValidateConfig(
+                    agent,
+                    logEntryWatcher,
+                    config: new Config(),
+                    expectedConfig: new Config
+                    {
+                        TraceSampleRate = .9 // When clearing the key from dynamic configuration, it should revert back to the initial value
+                    });
+            }
+            finally
+            {
+                if (!sample.HasExited)
+                {
+                    sample.Kill();
+                }
+            }
+        }
+
+        private async Task UpdateAndValidateConfig(MockTracerAgent agent, LogEntryWatcher logEntryWatcher, Config config, Config expectedConfig = null)
         {
             const string diagnosticLogRegex = @".+ (?<diagnosticLog>\{.+\})\s+(?<context>\{.+\})";
+
+            expectedConfig ??= config;
 
             await agent.SetupRcmAndWait(Output, new[] { ((object)config, DynamicConfiguration.ProductName, "1") });
             var log = await logEntryWatcher.WaitForLogEntry(DiagnosticLog);
@@ -91,13 +132,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var json = JObject.Parse(match.Groups["diagnosticLog"].Value);
 
-            json["runtime_metrics_enabled"]?.Value<bool>().Should().Be(config.RuntimeMetricsEnabled);
-            json["debug"]?.Value<bool>().Should().Be(config.DebugLogsEnabled);
-            json["log_injection_enabled"]?.Value<bool>().Should().Be(config.LogsInjectionEnabled);
-            json["sample_rate"]?.Value<double>().Should().Be(config.TraceSampleRate);
-            json["sampling_rules"]?.Value<string>().Should().Be(config.CustomSamplingRules);
-            json["span_sampling_rules"]?.Value<string>().Should().Be(config.SpanSamplingRules);
-            json["data_streams_enabled"]?.Value<bool>().Should().Be(config.DataStreamsEnabled);
+            json["runtime_metrics_enabled"]?.Value<bool>().Should().Be(expectedConfig.RuntimeMetricsEnabled);
+            json["debug"]?.Value<bool>().Should().Be(expectedConfig.DebugLogsEnabled);
+            json["log_injection_enabled"]?.Value<bool>().Should().Be(expectedConfig.LogsInjectionEnabled);
+            json["sample_rate"]?.Value<double?>().Should().Be(expectedConfig.TraceSampleRate);
+            json["sampling_rules"]?.Value<string>().Should().Be(expectedConfig.CustomSamplingRules);
+            json["span_sampling_rules"]?.Value<string>().Should().Be(expectedConfig.SpanSamplingRules);
+            json["data_streams_enabled"]?.Value<bool>().Should().Be(expectedConfig.DataStreamsEnabled);
         }
 
         // Missing: TraceHeaderTags, ServiceMapping

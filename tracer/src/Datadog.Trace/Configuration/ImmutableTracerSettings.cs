@@ -72,11 +72,11 @@ namespace Datadog.Trace.Configuration
             AnalyticsEnabled = settings.AnalyticsEnabled;
 #pragma warning restore 618
             MaxTracesSubmittedPerSecond = settings.MaxTracesSubmittedPerSecond;
-            CustomSamplingRules = settings.CustomSamplingRules;
-            SpanSamplingRules = settings.SpanSamplingRules;
-            GlobalSamplingRate = settings.GlobalSamplingRate;
+            _customSamplingRules = settings.CustomSamplingRules;
+            _spanSamplingRules = settings.SpanSamplingRules;
+            _globalSamplingRate = settings.GlobalSamplingRate;
             Integrations = new ImmutableIntegrationSettingsCollection(settings.Integrations, settings.DisabledIntegrationNames);
-            HeaderTags = new ReadOnlyDictionary<string, string>(settings.HeaderTags);
+            _headerTags = new ReadOnlyDictionary<string, string>(settings.HeaderTags);
             HeaderTagsNormalizationFixEnabled = settings.HeaderTagsNormalizationFixEnabled;
             GrpcTags = new ReadOnlyDictionary<string, string>(settings.GrpcTags);
             IpHeader = settings.IpHeader;
@@ -84,7 +84,7 @@ namespace Datadog.Trace.Configuration
             TracerMetricsEnabled = settings.TracerMetricsEnabled;
             StatsComputationEnabled = settings.StatsComputationEnabled;
             StatsComputationInterval = settings.StatsComputationInterval;
-            RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled;
+            _runtimeMetricsEnabled = settings.RuntimeMetricsEnabled;
             KafkaCreateConsumerScopeEnabled = settings.KafkaCreateConsumerScopeEnabled;
             StartupDiagnosticLogEnabled = settings.StartupDiagnosticLogEnabled;
             HttpClientExcludedUrlSubstrings = settings.HttpClientExcludedUrlSubstrings;
@@ -101,12 +101,12 @@ namespace Datadog.Trace.Configuration
             PropagationStyleExtract = settings.PropagationStyleExtract;
             TraceMethods = settings.TraceMethods;
             IsActivityListenerEnabled = settings.IsActivityListenerEnabled;
-            IsDataStreamsMonitoringEnabled = settings.IsDataStreamsMonitoringEnabled;
+            _isDataStreamsMonitoringEnabled = settings.IsDataStreamsMonitoringEnabled;
             IsRareSamplerEnabled = settings.IsRareSamplerEnabled;
 
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
             // Logs injection is enabled by default if direct log submission is enabled, otherwise disabled by default
-            LogsInjectionEnabled = settings.LogSubmissionSettings.LogsInjectionEnabled ?? LogSubmissionSettings.IsEnabled;
+            _logsInjectionEnabled = settings.LogSubmissionSettings.LogsInjectionEnabled ?? LogSubmissionSettings.IsEnabled;
 
             // we cached the static instance here, because is being used in the hotpath
             // by IsIntegrationEnabled method (called from all integrations)
@@ -163,6 +163,8 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.ServiceVersion"/>
         public string? ServiceVersion { get; }
 
+        internal ImmutableDynamicSettings DynamicSettings { get; init; } = new();
+
         /// <summary>
         /// Gets the application's git repository url.
         /// </summary>
@@ -210,7 +212,7 @@ namespace Datadog.Trace.Configuration
         /// Default is <c>false</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.LogsInjectionEnabled"/>
-        public bool LogsInjectionEnabled { get; init; }
+        public bool LogsInjectionEnabled => DynamicSettings.LogsInjectionEnabled ?? _logsInjectionEnabled;
 
         /// <summary>
         /// Gets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
@@ -223,19 +225,19 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating custom sampling rules.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
-        public string? CustomSamplingRules { get; init; }
+        public string? CustomSamplingRules => DynamicSettings.CustomSamplingRules ?? _customSamplingRules;
 
         /// <summary>
         /// Gets a value indicating the span sampling rules.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.SpanSamplingRules"/>
-        internal string? SpanSamplingRules { get; init; }
+        internal string? SpanSamplingRules => DynamicSettings.SpanSamplingRules ?? _spanSamplingRules;
 
         /// <summary>
         /// Gets a value indicating a global rate for sampling.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GlobalSamplingRate"/>
-        public double? GlobalSamplingRate { get; init; }
+        public double? GlobalSamplingRate => DynamicSettings.GlobalSamplingRate ?? _globalSamplingRate;
 
         /// <summary>
         /// Gets a collection of <see cref="Integrations"/> keyed by integration name.
@@ -251,7 +253,7 @@ namespace Datadog.Trace.Configuration
         /// Gets the map of header keys to tag names, which are applied to the root <see cref="Span"/>
         /// of incoming and outgoing requests.
         /// </summary>
-        public IReadOnlyDictionary<string, string> HeaderTags { get; init; }
+        public IReadOnlyDictionary<string, string> HeaderTags => DynamicSettings.HeaderTags ?? _headerTags;
 
         /// <summary>
         /// Gets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>
@@ -298,7 +300,7 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether runtime metrics
         /// are enabled and sent to DogStatsd.
         /// </summary>
-        internal bool RuntimeMetricsEnabled { get; init; }
+        internal bool RuntimeMetricsEnabled => DynamicSettings.RuntimeMetricsEnabled ?? _runtimeMetricsEnabled;
 
         /// <summary>
         /// Gets a value indicating the time interval (in seconds) for sending stats
@@ -326,7 +328,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets configuration values for changing service names based on configuration
         /// </summary>
-        internal IDictionary<string, string>? ServiceNameMappings { get; init; }
+        internal IDictionary<string, string> ServiceNameMappings => DynamicSettings.ServiceNameMappings ?? _serviceNameMappings;
 
         /// <summary>
         /// Gets a value indicating the size in bytes of the trace buffer
@@ -412,7 +414,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether data streams monitoring is enabled or not.
         /// </summary>
-        internal bool IsDataStreamsMonitoringEnabled { get; init; }
+        internal bool IsDataStreamsMonitoringEnabled => DynamicSettings.DataStreamsMonitoringEnabled ?? _isDataStreamsMonitoringEnabled;
 
         /// <summary>
         /// Gets the maximum length of an outgoing propagation header's value ("x-datadog-tags")

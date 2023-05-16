@@ -76,17 +76,19 @@ namespace Datadog.Trace.Configuration
                 serviceNames = new ServiceNames(serviceNameMappings, oldSettings.MetadataSchemaVersion);
             }
 
-            var newSettings = oldSettings with
+            var dynamicSettings = new ImmutableDynamicSettings
             {
-                RuntimeMetricsEnabled = settings.GetBool("RuntimeMetricsEnabled") ?? oldSettings.RuntimeMetricsEnabled,
-                IsDataStreamsMonitoringEnabled = settings.GetBool("DataStreamsEnabled") ?? oldSettings.IsDataStreamsMonitoringEnabled,
-                CustomSamplingRules = settings.GetString("CustomSamplingRules") ?? oldSettings.CustomSamplingRules,
-                GlobalSamplingRate = settings.GetDouble("TraceSampleRate") ?? oldSettings.GlobalSamplingRate,
-                SpanSamplingRules = settings.GetString("SpanSamplingRules") ?? oldSettings.SpanSamplingRules,
-                LogsInjectionEnabled = settings.GetBool("LogsInjectionEnabled") ?? oldSettings.LogsInjectionEnabled,
-                HeaderTags = headerTags as IReadOnlyDictionary<string, string> ?? oldSettings.HeaderTags,
-                ServiceNameMappings = serviceNames ?? oldSettings.ServiceNameMappings
+                RuntimeMetricsEnabled = settings.GetBool("RuntimeMetricsEnabled"),
+                DataStreamsMonitoringEnabled = settings.GetBool("DataStreamsEnabled"),
+                CustomSamplingRules = settings.GetString("CustomSamplingRules"),
+                GlobalSamplingRate = settings.GetDouble("TraceSampleRate"),
+                SpanSamplingRules = settings.GetString("SpanSamplingRules"),
+                LogsInjectionEnabled = settings.GetBool("LogsInjectionEnabled"),
+                HeaderTags = headerTags as IReadOnlyDictionary<string, string>,
+                ServiceNameMappings = serviceNames
             };
+
+            var newSettings = oldSettings with { DynamicSettings = dynamicSettings };
 
             var debugLogsEnabled = settings.GetBool("DebugLogsEnabled");
 
