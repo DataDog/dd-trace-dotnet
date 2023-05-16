@@ -133,5 +133,29 @@ namespace Datadog.Trace.DuckTyping.Tests
         {
             public string Name;
         }
+
+        [Fact]
+        public void NonPublicStructCopyFieldTest()
+        {
+            InternalFieldStruct instance = default;
+            CopyFieldStruct copy = instance.DuckCast<CopyFieldStruct>(); // crashes test process
+        }
+
+        [DuckCopy]
+        public struct CopyFieldStruct
+        {
+            [DuckField]
+            public string Value;
+        }
+
+        public readonly struct InternalFieldStruct
+        {
+            public InternalFieldStruct(string value)
+            {
+                Value = value;
+            }
+
+            internal readonly string Value;
+        }
     }
 }
