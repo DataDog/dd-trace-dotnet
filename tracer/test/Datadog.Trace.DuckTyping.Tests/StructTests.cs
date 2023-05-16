@@ -137,8 +137,10 @@ namespace Datadog.Trace.DuckTyping.Tests
         [Fact]
         public void NonPublicStructCopyFieldTest()
         {
-            InternalFieldStruct instance = default;
-            CopyFieldStruct copy = instance.DuckCast<CopyFieldStruct>(); // crashes test process
+            InternalFieldStruct instance = new InternalFieldStruct("InstanceValue");
+            CopyFieldStruct copy = instance.DuckCast<CopyFieldStruct>();
+            Assert.Equal(instance.Value, copy.Value);
+            Assert.Equal(InternalFieldStruct.StaticValue, copy.StaticValue);
         }
 
         [DuckCopy]
@@ -146,6 +148,9 @@ namespace Datadog.Trace.DuckTyping.Tests
         {
             [DuckField]
             public string Value;
+
+            [DuckField]
+            public string StaticValue;
         }
 
         public readonly struct InternalFieldStruct
@@ -155,6 +160,7 @@ namespace Datadog.Trace.DuckTyping.Tests
                 Value = value;
             }
 
+            internal static readonly string StaticValue = "MyValue";
             internal readonly string Value;
         }
     }
