@@ -50,7 +50,7 @@ public abstract class AspNetCore5IastTests50PctSamplingIastEnabled : AspNetCore5
         await TryStartApp();
         await TestWeakHashing(filename, Fixture.Agent);
 
-        filename = "Iast.WeakHashing.AspNetCore5.IastDisabled";
+        filename = "Iast.WeakHashing.AspNetCore5.IastDisabledFlag";
         await TestWeakHashing(filename, Fixture.Agent);
 
         filename = "Iast.WeakHashing.AspNetCore5.IastEnabled";
