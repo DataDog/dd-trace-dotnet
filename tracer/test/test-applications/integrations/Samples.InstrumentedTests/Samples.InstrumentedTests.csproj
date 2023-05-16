@@ -31,6 +31,8 @@
     </PackageReference>
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.115.5" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.115.5" />
+    <PackageReference Include="linq2db" Version="3.1.5" />
+    <PackageReference Include="System.Data.OleDb" Version="4.7.1" />
     <Reference Include="System.Data.Entity" />
   </ItemGroup>
 
