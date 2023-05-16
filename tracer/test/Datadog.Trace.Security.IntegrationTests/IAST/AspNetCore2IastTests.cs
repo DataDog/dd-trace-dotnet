@@ -260,8 +260,8 @@ public class AspNetCore2IastTests50PctSamplingIastEnabled : AspNetCore2IastTests
         var agent = Fixture.Agent;
         await TestWeakHashing(filename, agent);
 
-            filename = "Iast.WeakHashing.AspNetCore2.IastDisabledFlag";
-            await TestWeakHashing(filename, agent);
+        filename = "Iast.WeakHashing.AspNetCore2.IastDisabledFlag";
+        await TestWeakHashing(filename, agent);
 
         filename = "Iast.WeakHashing.AspNetCore2.IastEnabled";
         await TestWeakHashing(filename, agent);
