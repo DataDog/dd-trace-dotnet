@@ -43,6 +43,9 @@ namespace Datadog.Trace.ClrProfiler
                new ("System.Web", "System.Web.ThreadContext", "AssociateWithCurrentThread",  new[] { "System.Void", "System.Boolean" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ThreadContext_AssociateWithCurrentThread_Integration"),
                new ("System.Web", "System.Web.ThreadContext", "DisassociateFromCurrentThread",  new[] { "System.Void" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ThreadContext_DisassociateFromCurrentThread_Integration"),
 
+                // AspNetCore
+               new ("Microsoft.AspNetCore.Components", "Microsoft.AspNetCore.Components.RenderTree.Renderer", "DispatchEventAsync",  new[] { "System.Threading.Tasks.Task", "System.UInt64", "Microsoft.AspNetCore.Components.RenderTree.EventFieldInfo", "System.EventArgs" }, 7, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.BlazorRenderTreeDispatchEventAsyncIntegrationEnd"),
+
                 // AspNetMvc
                new ("System.Web.Mvc", "System.Web.Mvc.Async.AsyncControllerActionInvoker", "BeginInvokeAction",  new[] { "System.IAsyncResult", "System.Web.Mvc.ControllerContext", "System.String", "System.AsyncCallback", "System.Object" }, 4, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_BeginInvokeAction_Integration"),
                new ("System.Web.Mvc", "System.Web.Mvc.Async.AsyncControllerActionInvoker", "EndInvokeAction",  new[] { "System.Boolean", "System.IAsyncResult" }, 4, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_EndInvokeAction_Integration"),
@@ -569,6 +572,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ThreadContext_AssociateWithCurrentThread_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ThreadContext_DisassociateFromCurrentThread_Integration"
                     => Datadog.Trace.Configuration.IntegrationId.AspNet,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.BlazorRenderTreeDispatchEventAsyncIntegrationEnd"
+                    => Datadog.Trace.Configuration.IntegrationId.AspNetCore,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_BeginInvokeAction_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_EndInvokeAction_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ControllerActionInvoker_InvokeAction_Integration"

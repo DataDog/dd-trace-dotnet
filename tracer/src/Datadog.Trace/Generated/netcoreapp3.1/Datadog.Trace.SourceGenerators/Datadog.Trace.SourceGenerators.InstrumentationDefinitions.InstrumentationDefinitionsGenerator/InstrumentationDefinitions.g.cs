@@ -39,6 +39,7 @@ namespace Datadog.Trace.ClrProfiler
                new ("AerospikeClient", "Aerospike.Client.SyncCommand", "ExecuteCommand",  new[] { "System.Void" }, 4, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.SyncCommandIntegration"),
 
                 // AspNetCore
+               new ("Microsoft.AspNetCore.Components", "Microsoft.AspNetCore.Components.RenderTree.Renderer", "DispatchEventAsync",  new[] { "System.Threading.Tasks.Task", "System.UInt64", "Microsoft.AspNetCore.Components.RenderTree.EventFieldInfo", "System.EventArgs" }, 7, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.BlazorRenderTreeDispatchEventAsyncIntegrationEnd"),
                new ("Microsoft.AspNetCore.Http", "Microsoft.AspNetCore.Builder.ApplicationBuilder", "Build",  new[] { "Microsoft.AspNetCore.Http.RequestDelegate" }, 3, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreBlockMiddlewareIntegrationEnd"),
                new ("Microsoft.AspNetCore.Http", "Microsoft.AspNetCore.Builder.Internal.ApplicationBuilder", "Build",  new[] { "Microsoft.AspNetCore.Http.RequestDelegate" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreBlockMiddlewareIntegrationEnd"),
 
@@ -577,7 +578,8 @@ namespace Datadog.Trace.ClrProfiler
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.AsyncCommandIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.SyncCommandIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Aerospike,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreBlockMiddlewareIntegrationEnd"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.BlazorRenderTreeDispatchEventAsyncIntegrationEnd"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreBlockMiddlewareIntegrationEnd"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreBlockMiddlewareIntegrationEnd"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.DefaultModelBindingContext_SetResult_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.DefaultModelBindingContext_SetResult_Integration"
