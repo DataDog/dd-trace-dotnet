@@ -5,7 +5,12 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
+using System.Web;
+#if !NETFRAMEWORK
+using Microsoft.AspNetCore.Http;
+#endif
 using System.Xml.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Logging;
@@ -163,7 +168,27 @@ internal class IastRequestContext
 
             AddRequestHeaders(request.Headers);
             AddQueryPath(request.Path);
+            AddRequestCookies(request.Cookies);
             _querySourcesAdded = true;
+        }
+    }
+
+    private void AddRequestCookies(HttpCookieCollection? cookies)
+    {
+        if (cookies?.AllKeys is not null)
+        {
+            foreach (string key in cookies.AllKeys)
+            {
+                // cookies[key].Value is covered in the aspect
+
+                for (int i = 0; i < cookies[key].Values.Count; i++)
+                {
+                    if (cookies[key].Values[i] is string valueInCollectionString)
+                    {
+                        AddCookieData(key, valueInCollectionString);
+                    }
+                }
+            }
         }
     }
 
@@ -204,7 +229,19 @@ internal class IastRequestContext
             AddQueryPath(request.Path);
             AddQueryStringRaw(request.QueryString.Value);
             AddRequestHeaders(request.Headers);
+            AddRequestCookies(request.Cookies);
             _querySourcesAdded = true;
+        }
+    }
+
+    private void AddRequestCookies(IRequestCookieCollection? cookies)
+    {
+        if (cookies is not null)
+        {
+            foreach (var cookie in cookies)
+            {
+                AddCookieData(cookie.Key, cookie.Value);
+            }
         }
     }
 
@@ -230,6 +267,12 @@ internal class IastRequestContext
     }
 
 #endif
+
+    private void AddCookieData(string name, string value)
+    {
+        _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.CookieValue), name, value));
+        _taintedObjects.TaintInputString(name, new Source(SourceType.GetByte(SourceTypeName.CookieName), name, null));
+    }
 
     private void AddHeaderData(string name, string value)
     {
