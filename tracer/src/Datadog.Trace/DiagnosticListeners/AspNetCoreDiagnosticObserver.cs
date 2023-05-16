@@ -422,6 +422,12 @@ namespace Datadog.Trace.DiagnosticListeners
             if (arg.TryDuckCast<HttpRequestInStartStruct>(out var requestStruct))
             {
                 HttpContext httpContext = requestStruct.HttpContext;
+                if (httpContext.Request.Method == "CONNECT")
+                {
+                    // web socket, not supported as long-lived and not very useful.
+                    return;
+                }
+
                 if (shouldTrace)
                 {
                     // Use an empty resource name here, as we will likely replace it as part of the request
