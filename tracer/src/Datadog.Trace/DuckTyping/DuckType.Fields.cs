@@ -36,7 +36,7 @@ namespace Datadog.Trace.DuckTyping
             Type returnType = targetField.FieldType;
 
             // Load the field value to the stack
-            if (UseDirectAccessTo(proxyTypeBuilder, targetType) && targetField.IsPublic)
+            if (UseDirectAccessTo(proxyTypeBuilder, targetType))
             {
                 // Load the instance
                 if (!targetField.IsStatic)
@@ -179,7 +179,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             // We set the field value
-            if (UseDirectAccessTo(proxyTypeBuilder, targetType) && targetField.IsPublic)
+            if (UseDirectAccessTo(proxyTypeBuilder, targetType))
             {
                 // If the instance and the field are public then is easy to set.
                 il.WriteTypeConversion(currentValueType, targetField.FieldType);
