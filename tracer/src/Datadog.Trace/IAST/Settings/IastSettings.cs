@@ -19,6 +19,16 @@ internal class IastSettings
     public const int MaxConcurrentRequestDefault = 2;
     public const int RequestSamplingDefault = 30;
 
+    /// <summary>
+    /// Default keys readaction regex if none specified via env DD_IAST_REDACTION_KEYS_REGEXP
+    /// </summary>
+    internal const string DefaultRedactionKeysRegex = @"(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)";
+
+    /// <summary>
+    /// Default values readaction regex if none specified via env DD_IAST_REDACTION_VALUES_REGEXP
+    /// </summary>
+    internal const string DefaultRedactionValuesRegex = @"(?i)(?:bearer\s+[a-z0-9\._\-]+|glpat-[\w\-]{20}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\w=\-]+\.ey[I-L][\w=\-]+(?:\.[\w.+/=\-]+)?|(?:[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}[^\-]+[\-]{5}END[a-z\s]+PRIVATE\sKEY[\-]{5}|ssh-rsa\s*[a-z0-9/\.+]{100,}))";
+
     public IastSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
         var config = new ConfigurationBuilder(source, telemetry);
@@ -40,6 +50,18 @@ internal class IastSettings
                                    .WithKeys(ConfigurationKeys.Iast.VulnerabilitiesPerRequest)
                                    .AsInt32(VulnerabilitiesPerRequestDefault, x => x > 0)
                                    .Value;
+        RedactionEnabled = config
+                           .WithKeys(ConfigurationKeys.Iast.RedactionEnabled)
+                           .AsBool(true);
+        RedactionKeysRegex = config
+                             .WithKeys(ConfigurationKeys.Iast.RedactionKeysRegex)
+                             .AsString(DefaultRedactionKeysRegex);
+        RedactionValuesRegex = config
+                               .WithKeys(ConfigurationKeys.Iast.RedactionValuesRegex)
+                               .AsString(DefaultRedactionValuesRegex);
+        RedactionRegexTimeout = config
+                                .WithKeys(ConfigurationKeys.Iast.RedactionRegexTimeout)
+                                .AsDouble(200, val1 => val1 is > 0).Value;
     }
 
     public bool Enabled { get; set; }
@@ -59,6 +81,14 @@ internal class IastSettings
     public int MaxConcurrentRequests { get; }
 
     public int VulnerabilitiesPerRequest { get; }
+
+    public bool RedactionEnabled { get; }
+
+    public string RedactionKeysRegex { get; }
+
+    public string RedactionValuesRegex { get; }
+
+    public double RedactionRegexTimeout { get; }
 
     public static IastSettings FromDefaultSources()
     {

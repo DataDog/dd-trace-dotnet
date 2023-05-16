@@ -16,239 +16,302 @@ using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.Security.IntegrationTests.Iast
+namespace Datadog.Trace.Security.IntegrationTests.Iast;
+
+public class AspNetCore2IastTestsOneVulnerabilityPerRequestIastEnabled : AspNetCore2IastTestsVariableVulnerabilityPerRequestIastEnabled
 {
-    public class AspNetCore2IastTestsOneVulnerabilityPerRequestIastEnabled : AspNetCore2IastTestsVariableVulnerabilityPerRequestIastEnabled
+    public AspNetCore2IastTestsOneVulnerabilityPerRequestIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+: base(fixture, outputHelper, vulnerabilitiesPerRequest: 1)
     {
-        public AspNetCore2IastTestsOneVulnerabilityPerRequestIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-    : base(fixture, outputHelper, vulnerabilitiesPerRequest: 1)
-        {
-        }
+    }
+}
+
+public class AspNetCore2IastTestsTwoVulnerabilityPerRequestIastEnabled : AspNetCore2IastTestsVariableVulnerabilityPerRequestIastEnabled
+{
+    public AspNetCore2IastTestsTwoVulnerabilityPerRequestIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+: base(fixture, outputHelper, vulnerabilitiesPerRequest: 2)
+    {
+    }
+}
+
+public abstract class AspNetCore2IastTestsVariableVulnerabilityPerRequestIastEnabled : AspNetCore2IastTests
+{
+    public AspNetCore2IastTestsVariableVulnerabilityPerRequestIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, int vulnerabilitiesPerRequest)
+        : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore2IastTestsEnabled", isIastDeduplicationEnabled: false, samplingRate: 100, vulnerabilitiesPerRequest: vulnerabilitiesPerRequest)
+    {
     }
 
-    public class AspNetCore2IastTestsTwoVulnerabilityPerRequestIastEnabled : AspNetCore2IastTestsVariableVulnerabilityPerRequestIastEnabled
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastWeakHashingRequestVulnerabilitiesPerRequest()
     {
-        public AspNetCore2IastTestsTwoVulnerabilityPerRequestIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-    : base(fixture, outputHelper, vulnerabilitiesPerRequest: 2)
-        {
-        }
+        IncludeAllHttpSpans = true;
+        var filename = VulnerabilitiesPerRequest == 1 ? "Iast.WeakHashing.AspNetCore2.IastEnabled.SingleVulnerability" : "Iast.WeakHashing.AspNetCore2.IastEnabled";
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        await TestWeakHashing(filename, agent);
+    }
+}
+
+public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullSampling
+{
+    public AspNetCore2IastTestsFullSamplingEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+        : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore2IastTestsEnabled", isIastDeduplicationEnabled: false)
+    {
+    }
+}
+
+public class AspNetCore2IastTestsFullSamplingDisabled : AspNetCore2IastTestsFullSampling
+{
+    public AspNetCore2IastTestsFullSamplingDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+        : base(fixture, outputHelper, enableIast: false, testName: "AspNetCore2IastTestsDisabled")
+    {
+    }
+}
+
+public class AspNetCore2IastTestsFullSamplingRedactionEnabled : AspNetCore2IastTestsFullSampling
+{
+    public AspNetCore2IastTestsFullSamplingRedactionEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+        : base(fixture, outputHelper, enableIast: true, isIastDeduplicationEnabled: false, testName: "AspNetCore2IastTestsRedactionEnabled", redactionEnabled: true)
+    {
+    }
+}
+
+public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
+{
+    public AspNetCore2IastTestsFullSampling(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? vulnerabilitiesPerRequest = null, bool redactionEnabled = false)
+        : base(fixture, outputHelper, enableIast: enableIast, testName: testName, samplingRate: 100, isIastDeduplicationEnabled: isIastDeduplicationEnabled, vulnerabilitiesPerRequest: vulnerabilitiesPerRequest, redactionEnabled: redactionEnabled)
+    {
     }
 
-    public abstract class AspNetCore2IastTestsVariableVulnerabilityPerRequestIastEnabled : AspNetCore2IastTests
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastNotWeakRequest()
     {
-        public AspNetCore2IastTestsVariableVulnerabilityPerRequestIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, int vulnerabilitiesPerRequest)
-            : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore2IastTestsEnabled", isIastDeduplicationEnabled: false, samplingRate: 100, vulnerabilitiesPerRequest: vulnerabilitiesPerRequest)
-        {
-        }
+        var filename = IastEnabled ? "Iast.NotWeak.AspNetCore2.IastEnabled" : "Iast.NotWeak.AspNetCore2.IastDisabled";
+        var url = "/Iast";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
 
-        [SkippableFact]
-        [Trait("RunOnWindows", "True")]
-        public async Task TestIastWeakHashingRequestVulnerabilitiesPerRequest()
-        {
-            IncludeAllHttpSpans = true;
-            var filename = VulnerabilitiesPerRequest == 1 ? "Iast.WeakHashing.AspNetCore2.IastEnabled.SingleVulnerability" : "Iast.WeakHashing.AspNetCore2.IastEnabled";
-            await TryStartApp();
-            var agent = Fixture.Agent;
-            await TestWeakHashing(filename, agent);
-        }
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
     }
 
-    public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullSampling
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastWeakHashingRequest()
     {
-        public AspNetCore2IastTestsFullSamplingEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore2IastTestsEnabled", isIastDeduplicationEnabled: false)
-        {
-        }
+        var filename = IastEnabled ? "Iast.WeakHashing.AspNetCore2.IastEnabled" : "Iast.WeakHashing.AspNetCore2.IastDisabled";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        await TestWeakHashing(filename, agent);
     }
 
-    public class AspNetCore2IastTestsFullSamplingDisabled : AspNetCore2IastTestsFullSampling
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestRequestBodyTaintingRazor()
     {
-        public AspNetCore2IastTestsFullSamplingDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableIast: false, testName: "AspNetCore2IastTestsDisabled")
-        {
-        }
+        var filename = IastEnabled ? "Iast.RequestBodyTestRazor.AspNetCore2.IastEnabled" : "Iast.RequestBodyTestRazor.AspNetCore2.IastDisabled";
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        var url = "/DataRazorIastPage";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, url, "property=Execute&property3=2&Property2=nonexisting.exe", 1, 1, string.Empty, "application/x-www-form-urlencoded", null);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
     }
 
-    public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
+    [SkippableTheory]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [InlineData("{\"Query\": \"SELECT Surname from Persons where name='Vicent'\"}")]
+    [InlineData("{\"InnerQuery\": {\"Arguments\": [\"SELECT Surname from Persons where name='Vicent'\"]}}")]
+    [InlineData("{\"Arguments\": [\"SELECT Surname from Persons where name='Vicent'\", \"SELECT Surname from Persons where name='Mark'\"]}")]
+    [InlineData("{\"StringMap\": {\"query1\": \"SELECT Surname from Persons where name='Vicent'\",\"query2\": \"temp\"}}")]
+    [InlineData("{\"StringMap\": {\"\": \"\",\"query2\": \"SELECT Surname from Persons where name='Vicent'\"}}")]
+    [InlineData("{\"StringMap\": {\"SELECT Surname from Persons where name='Vicent'\": \"\"}}")]
+    [InlineData("{\"StringArrayArguments\": [\"SELECT Surname from Persons where name='Vicent'\", \"SELECT Surname from Persons where name='Mark'\"]}")]
+    public async Task TestRequestBodyTainting(string body)
     {
-        public AspNetCore2IastTestsFullSampling(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? vulnerabilitiesPerRequest = null)
-            : base(fixture, outputHelper, enableIast: enableIast, testName: testName, samplingRate: 100, isIastDeduplicationEnabled: isIastDeduplicationEnabled, vulnerabilitiesPerRequest: vulnerabilitiesPerRequest)
-        {
-        }
-
-        [SkippableFact]
-        [Trait("RunOnWindows", "True")]
-        public async Task TestIastNotWeakRequest()
-        {
-            var filename = IastEnabled ? "Iast.NotWeak.AspNetCore2.IastEnabled" : "Iast.NotWeak.AspNetCore2.IastDisabled";
-            var url = "/Iast";
-            IncludeAllHttpSpans = true;
-            await TryStartApp();
-            var agent = Fixture.Agent;
-            var spans = await SendRequestsAsync(agent, new string[] { url });
-
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-            await VerifyHelper.VerifySpans(spans, settings)
-                              .UseFileName(filename)
-                              .DisableRequireUniquePrefix();
-        }
-
-        [SkippableFact]
-        [Trait("RunOnWindows", "True")]
-        public async Task TestIastWeakHashingRequest()
-        {
-            var filename = IastEnabled ? "Iast.WeakHashing.AspNetCore2.IastEnabled" : "Iast.WeakHashing.AspNetCore2.IastDisabled";
-            IncludeAllHttpSpans = true;
-            await TryStartApp();
-            var agent = Fixture.Agent;
-            await TestWeakHashing(filename, agent);
-        }
-
-        [SkippableFact]
-        [Trait("RunOnWindows", "True")]
-        public async Task TestIastSqlInjectionRequest()
-        {
-            var filename = IastEnabled ? "Iast.SqlInjection.AspNetCore2.IastEnabled" : "Iast.SqlInjection.AspNetCore2.IastDisabled";
-            var url = "/Iast/SqlQuery?query=SELECT%20Surname%20from%20Persons%20where%20name%20=%20%27Vicent%27";
-            IncludeAllHttpSpans = true;
-            await TryStartApp();
-            var agent = Fixture.Agent;
-            var spans = await SendRequestsAsync(agent, new string[] { url });
-            var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddIastScrubbing();
-            await VerifyHelper.VerifySpans(spansFiltered, settings)
-                              .UseFileName(filename)
-                              .DisableRequireUniquePrefix();
-        }
-
-        [SkippableFact]
-        [Trait("RunOnWindows", "True")]
-        public async Task TestIastCommandInjectionRequest()
-        {
-            var filename = IastEnabled ? "Iast.CommandInjection.AspNetCore2.IastEnabled" : "Iast.CommandInjection.AspNetCore2.IastDisabled";
-            var url = "/Iast/ExecuteCommand?file=nonexisting.exe&argumentLine=arg1";
-            IncludeAllHttpSpans = true;
-            await TryStartApp();
-            var agent = Fixture.Agent;
-            var spans = await SendRequestsAsync(agent, new string[] { url });
-            var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddIastScrubbing();
-            await VerifyHelper.VerifySpans(spansFiltered, settings)
-                              .UseFileName(filename)
-                              .DisableRequireUniquePrefix();
-        }
-
-        [SkippableFact]
-        [Trait("RunOnWindows", "True")]
-        public async Task TestIastPathTraversalRequest()
-        {
-            var filename = IastEnabled ? "Iast.PathTraversal.AspNetCore2.IastEnabled" : "Iast.PathTraversal.AspNetCore2.IastDisabled";
-            var url = "/Iast/GetFileContent?file=nonexisting.txt";
-            IncludeAllHttpSpans = true;
-            await TryStartApp();
-            var agent = Fixture.Agent;
-            var spans = await SendRequestsAsync(agent, new string[] { url });
-            var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddIastScrubbing();
-            await VerifyHelper.VerifySpans(spansFiltered, settings)
-                              .UseFileName(filename)
-                              .DisableRequireUniquePrefix();
-        }
+        var filename = IastEnabled ? "Iast.RequestBodyTest.AspNetCore2.IastEnabled" : "Iast.RequestBodyTest.AspNetCore2.IastDisabled";
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        var url = "/Iast/ExecuteQueryFromBodyQueryData";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, url, body, 1, 1, string.Empty, "application/json", null);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        var nameRegex = new Regex(@"""name"": ""(\w+)""");
+        settings.AddRegexScrubber(nameRegex, string.Empty);
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
     }
 
-    public class AspNetCore2IastTests50PctSamplingIastEnabled : AspNetCore2IastTests
+    [SkippableFact]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastSqlInjectionRequest()
     {
-        public AspNetCore2IastTests50PctSamplingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore2IastTestsEnabled", isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 100, samplingRate: 50)
-        {
-        }
+        var filename = IastEnabled ? "Iast.SqlInjection.AspNetCore2.IastEnabled" : "Iast.SqlInjection.AspNetCore2.IastDisabled";
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        var url = "/Iast/SqlQuery?query=SELECT%20Surname%20from%20Persons%20where%20name%20=%20%27Vicent%27";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
 
-        [SkippableFact]
-        [Trait("RunOnWindows", "True")]
-        public async Task TestIastWeakHashingRequestSampling()
-        {
-            IncludeAllHttpSpans = true;
-            var filename = "Iast.WeakHashing.AspNetCore2.IastEnabled";
-            await TryStartApp();
-            var agent = Fixture.Agent;
-            await TestWeakHashing(filename, agent);
-
-            filename = "Iast.WeakHashing.AspNetCore2.IastDisabled";
-            await TestWeakHashing(filename, agent);
-
-            filename = "Iast.WeakHashing.AspNetCore2.IastEnabled";
-            await TestWeakHashing(filename, agent);
-        }
-
-        protected override async Task TryStartApp()
-        {
-            EnableIast(IastEnabled);
-            DisableObfuscationQueryString();
-            SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
-            SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
-            SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
-            await Fixture.TryStartApp(this, enableSecurity: false, sendHealthCheck: false);
-            SetHttpPort(Fixture.HttpPort);
-        }
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
     }
 
-    public abstract class AspNetCore2IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastCommandInjectionRequest()
     {
-        public AspNetCore2IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null)
-            : base("AspNetCore2", outputHelper, "/shutdown", testName: testName)
-        {
-            Fixture = fixture;
-            fixture.SetOutput(outputHelper);
-            IastEnabled = enableIast;
-            IsIastDeduplicationEnabled = isIastDeduplicationEnabled;
-            VulnerabilitiesPerRequest = vulnerabilitiesPerRequest;
-            SamplingRate = samplingRate;
-        }
+        var filename = IastEnabled ? "Iast.CommandInjection.AspNetCore2.IastEnabled" : "Iast.CommandInjection.AspNetCore2.IastDisabled";
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        var url = "/Iast/ExecuteCommand?file=nonexisting.exe&argumentLine=arg1";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
 
-        protected AspNetCoreTestFixture Fixture { get; }
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
 
-        protected bool IastEnabled { get; }
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastPathTraversalRequest()
+    {
+        var filename = IastEnabled ? "Iast.PathTraversal.AspNetCore2.IastEnabled" : "Iast.PathTraversal.AspNetCore2.IastDisabled";
+        var url = "/Iast/GetFileContent?file=nonexisting.txt";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
 
-        protected bool? IsIastDeduplicationEnabled { get; }
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+}
 
-        protected int? VulnerabilitiesPerRequest { get; }
+public class AspNetCore2IastTests50PctSamplingIastEnabled : AspNetCore2IastTests
+{
+    public AspNetCore2IastTests50PctSamplingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+        : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore2IastTestsEnabled", isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 100, samplingRate: 50)
+    {
+    }
 
-        protected int? SamplingRate { get; }
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastWeakHashingRequestSampling()
+    {
+        IncludeAllHttpSpans = true;
+        var filename = "Iast.WeakHashing.AspNetCore2.IastEnabled";
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        await TestWeakHashing(filename, agent);
 
-        public override void Dispose()
-        {
-            base.Dispose();
-            Fixture.SetOutput(null);
-        }
+        filename = "Iast.WeakHashing.AspNetCore2.IastDisabled";
+        await TestWeakHashing(filename, agent);
 
-        protected virtual async Task TryStartApp()
-        {
-            EnableIast(IastEnabled);
-            DisableObfuscationQueryString();
-            SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
-            SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
-            SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
-            await Fixture.TryStartApp(this, enableSecurity: false);
-            SetHttpPort(Fixture.HttpPort);
-        }
+        filename = "Iast.WeakHashing.AspNetCore2.IastEnabled";
+        await TestWeakHashing(filename, agent);
+    }
 
-        protected async Task TestWeakHashing(string filename, MockTracerAgent agent)
-        {
-            var url = "/Iast/WeakHashing";
-            var spans = await SendRequestsAsync(agent, expectedSpansPerRequest: 2, url);
+    protected override async Task TryStartApp()
+    {
+        EnableIast(IastEnabled);
+        EnableEvidenceRedaction(RedactionEnabled);
+        DisableObfuscationQueryString();
+        SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
+        SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
+        SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
+        await Fixture.TryStartApp(this, enableSecurity: false, sendHealthCheck: false);
+        SetHttpPort(Fixture.HttpPort);
+    }
+}
 
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddIastScrubbing();
-            await VerifyHelper.VerifySpans(spans, settings)
-                              .UseFileName(filename)
-                              .DisableRequireUniquePrefix();
-        }
+public abstract class AspNetCore2IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
+{
+    public AspNetCore2IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null, bool? redactionEnabled = false)
+        : base("AspNetCore2", outputHelper, "/shutdown", testName: testName)
+    {
+        Fixture = fixture;
+        fixture.SetOutput(outputHelper);
+        IastEnabled = enableIast;
+        RedactionEnabled = redactionEnabled;
+        IsIastDeduplicationEnabled = isIastDeduplicationEnabled;
+        VulnerabilitiesPerRequest = vulnerabilitiesPerRequest;
+        SamplingRate = samplingRate;
+    }
+
+    protected AspNetCoreTestFixture Fixture { get; }
+
+    protected bool IastEnabled { get; }
+
+    protected bool? RedactionEnabled { get; }
+
+    protected bool? IsIastDeduplicationEnabled { get; }
+
+    protected int? VulnerabilitiesPerRequest { get; }
+
+    protected int? SamplingRate { get; }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+        Fixture.SetOutput(null);
+    }
+
+    protected virtual async Task TryStartApp()
+    {
+        EnableIast(IastEnabled);
+        EnableEvidenceRedaction(RedactionEnabled);
+        DisableObfuscationQueryString();
+        SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
+        SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
+        SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
+        await Fixture.TryStartApp(this, enableSecurity: false);
+        SetHttpPort(Fixture.HttpPort);
+    }
+
+    protected async Task TestWeakHashing(string filename, MockTracerAgent agent)
+    {
+        var url = "/Iast/WeakHashing";
+        var spans = await SendRequestsAsync(agent, expectedSpansPerRequest: 2, url);
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
     }
 }
 #endif

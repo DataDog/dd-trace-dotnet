@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
@@ -41,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = MockTracerAgent.Create(Output, useTelemetry: true);
             Output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
 
-            using var telemetry = new MockTelemetryAgent<TelemetryData>();
+            using var telemetry = new MockTelemetryAgent();
             Output.WriteLine($"Assigned port {telemetry.Port} for the telemetry port.");
             EnableAgentlessTelemetry(telemetry.Port);
 
@@ -56,9 +58,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await AssertExpectedSpans(spans);
             }
 
-            var data = telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+            telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
             telemetry.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
-            AssertTelemetry(data);
+            AssertService(telemetry, "Samples.Telemetry", ServiceVersion);
             agent.Telemetry.Should().BeEmpty();
         }
 
@@ -82,9 +84,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await AssertExpectedSpans(spans);
             }
 
-            var data = agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+            agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
             agent.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
-            AssertTelemetry(data);
+            AssertService(agent, "Samples.Telemetry", ServiceVersion);
         }
 
         [SkippableFact]
@@ -155,10 +157,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     await AssertExpectedSpans(spans);
                 }
 
-                var data = agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+                agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
                 agent.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
-
-                AssertTelemetry(data);
+                AssertService(agent, "Samples.Telemetry", ServiceVersion);
             }
         }
 
@@ -181,16 +182,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await AssertExpectedSpans(spans);
             }
 
-            var data = agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
-
-            AssertTelemetry(data);
+            agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+            AssertService(agent, "Samples.Telemetry", ServiceVersion);
         }
 #endif
 
-        private static void AssertTelemetry(TelemetryData data)
+        private static void AssertService(MockTracerAgent mockAgent, string expectedServiceName, string expectedServiceVersion)
         {
-            data.Application.ServiceVersion.Should().Be(ServiceVersion);
-            data.Application.ServiceName.Should().Be("Samples.Telemetry");
+            mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).RequestType == TelemetryRequestTypes.AppStarted);
+            AssertService(mockAgent.Telemetry.Cast<TelemetryData>(), expectedServiceName, expectedServiceVersion);
+        }
+
+        private static void AssertService(MockTelemetryAgent telemetry, string expectedServiceName, string expectedServiceVersion)
+        {
+            telemetry.WaitForLatestTelemetry(x => x.RequestType == TelemetryRequestTypes.AppStarted);
+            AssertService(telemetry.Telemetry, expectedServiceName, expectedServiceVersion);
+        }
+
+        private static void AssertService(IEnumerable<TelemetryData> allData, string expectedServiceName, string expectedServiceVersion)
+        {
+            var appClosing = allData.Should().ContainSingle(x => x.RequestType == TelemetryRequestTypes.AppClosing).Subject;
+            appClosing.Application.ServiceName.Should().Be(expectedServiceName);
+            appClosing.Application.ServiceVersion.Should().Be(expectedServiceVersion);
         }
 
         private static async Task AssertExpectedSpans(IImmutableList<MockSpan> spans)

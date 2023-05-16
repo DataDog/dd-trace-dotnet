@@ -9,13 +9,19 @@ namespace Datadog.Trace.Iast;
 
 internal readonly struct ValuePart
 {
+    public ValuePart(int? source)
+    {
+        this.Value = null; // Redacted value
+        this.Source = source;
+    }
+
     public ValuePart(string value, int? source)
     {
         this.Value = value;
         this.Source = source;
     }
 
-    public string Value { get; }
+    public string? Value { get; }
 
     public int? Source { get; }
 }
