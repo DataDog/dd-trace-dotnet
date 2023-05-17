@@ -12,7 +12,6 @@
 
 # ASM
 /tracer/src/Datadog.Trace/AppSec/         @DataDog/asm-dotnet
-/tracer/src/Datadog.Trace/IAST/           @DataDog/asm-dotnet
 /tracer/src/Datadog.Tracer.Native/iast/    @DataDog/asm-dotnet
 /tracer/test/test-applications/security/   @DataDog/asm-dotnet
 /tracer/test/Datadog.Trace.Security.IntegrationTests/ @DataDog/asm-dotnet
