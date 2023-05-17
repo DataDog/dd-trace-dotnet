@@ -41,7 +41,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class BlazorRenderTreeDispatchEventAsyncIntegrationEnd
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BlazorRenderTreeDispatchEventAsyncIntegrationEnd));
+    private const string ChangeEventArgs = "ChangeEventArgs";
+    private const string MouseEventArgs = "MouseEventArgs";
 
     internal static CallTargetState OnMethodBegin<TTarget, TEventFieldInfo>(TTarget instance, ulong eventHandlerId, in TEventFieldInfo fieldInfo, in System.EventArgs eventArgs)
         where TTarget : IRendererProxy, IDuckType
@@ -49,18 +50,17 @@ public static class BlazorRenderTreeDispatchEventAsyncIntegrationEnd
         var eventType = eventArgs?.GetType().Name;
 
         // skip some events, as don't want to generate too much data
-        // only handle mouse clicks and progress events for now
-        if (eventType is not "MouseEventArgs" and not "ProgressEventArgs")
+        string eventDescription;
+        switch (eventType)
         {
-            return CallTargetState.GetDefault();
-        }
-
-        var eventDescription = eventArgs.DuckCast<EventArgsProxy>().EventType;
-
-        if (eventType is "MouseEventArgs" && eventDescription is not "click")
-        {
-            // ignore mouse move events
-            return CallTargetState.GetDefault();
+            case ChangeEventArgs:
+                eventDescription = "change_event";
+                break;
+            case MouseEventArgs:
+                eventDescription = eventArgs.DuckCast<EventArgsProxy>().EventType;
+                break;
+            default:
+                return CallTargetState.GetDefault();
         }
 
         string component = null;
