@@ -29,23 +29,17 @@ internal class MetricsTelemetryCollector : IMetricsTelemetryCollector
 
     public void Record(PublicApiUsage publicApi)
     {
-        var newValue = Interlocked.Increment(ref _buffer.PublicApiCounts[(int)publicApi]);
-        if (newValue < 0)
-        {
-            // overflow detected, reset the value to "max"
-            Interlocked.Exchange(ref _buffer.PublicApiCounts[(int)publicApi], int.MaxValue);
-        }
+        // This can technically overflow, but it's _very_ unlikely as we reset every minute
+        // Negative values are normalized during polling
+        Interlocked.Increment(ref _buffer.PublicApiCounts[(int)publicApi]);
     }
 
     public void Record(Count count, int increment = 1)
     {
         AssertTags(count, 0);
-        var newValue = Interlocked.Add(ref _buffer.Counts[(int)count], increment);
-        if (newValue < 0)
-        {
-            // overflow detected, reset the value to "max"
-            Interlocked.Exchange(ref _buffer.Counts[(int)count], int.MaxValue);
-        }
+        // This can technically overflow, but it's _very_ unlikely as we reset every minute
+        // Negative values are normalized during polling
+        Interlocked.Add(ref _buffer.Counts[(int)count], increment);
     }
 
     public void Record(Count count, MetricTags tag, int increment = 1)
@@ -155,6 +149,12 @@ internal class MetricsTelemetryCollector : IMetricsTelemetryCollector
             for (var i = 0; i < publicApis.Length; i++)
             {
                 var value = publicApis[i];
+                if (value < 0)
+                {
+                    // handles overflow
+                    value = int.MaxValue;
+                }
+
                 if (value > 0 && ((PublicApiUsage)i).ToStringFast() is { } metricName)
                 {
                     // TODO: should public api be separate metrics, or single tagged metric?
@@ -173,6 +173,12 @@ internal class MetricsTelemetryCollector : IMetricsTelemetryCollector
             for (var i = 0; i < counts.Length; i++)
             {
                 var value = counts[i];
+                if (value < 0)
+                {
+                    // handles overflow
+                    value = int.MaxValue;
+                }
+
                 var metric = (Count)i;
                 if (value > 0 && metric.GetName() is { } metricName)
                 {
