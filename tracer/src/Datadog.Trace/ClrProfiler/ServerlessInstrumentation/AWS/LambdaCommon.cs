@@ -30,6 +30,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return new CallTargetState(NotifyExtensionStart(requestBuilder, json, context));
         }
 
+        // HARV: No event object passed into the handler
+        // public async Task<string> FunctionHandler(Dictionary < string, string > input, ILambdaContext context)
         internal static CallTargetState StartInvocationWithoutEvent(ILambdaExtensionRequest requestBuilder)
         {
             return StartInvocation(requestBuilder, DefaultJson, null);

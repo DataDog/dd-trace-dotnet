@@ -129,9 +129,14 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
                 {
                     LambdaHandler handler = new LambdaHandler(handlerName);
                     var assemblyName = typeof(InstrumentationDefinitions).Assembly.FullName;
+                    Console.WriteLine($"assemblyName is {assemblyName}");
                     var paramCount = handler.ParamTypeArray.Length;
+                    Console.WriteLine($"paramCount is {paramCount}");
 
                     var integrationType = GetIntegrationType(handler.ParamTypeArray[0], paramCount);
+                    Console.WriteLine($"integrationType is {integrationType}");
+
+                    Console.WriteLine($"NativeCallTargetDefinition({handler.Assembly}, {handler.FullType}, {handler.MethodName}, {handler.ParamTypeArray}, 0, 0, 0, 65535, 65535, 65535, {assemblyName}, {integrationType})");
                     callTargetDefinitions = new NativeCallTargetDefinition[]
                     {
                         new(handler.Assembly, handler.FullType, handler.MethodName, handler.ParamTypeArray, 0, 0, 0, 65535, 65535, 65535, assemblyName, integrationType)

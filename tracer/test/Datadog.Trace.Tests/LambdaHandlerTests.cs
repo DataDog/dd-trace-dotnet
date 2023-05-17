@@ -6,16 +6,63 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests
 {
     public class LambdaHandlerTests
     {
+        private ITestOutputHelper output;
+
+        public LambdaHandlerTests(ITestOutputHelper output)
+        {
+            this.output = output;
+        }
+
+        // public LambdaHandlerTests(ITestOutputHelper output)
+        // {
+        //     var converter = new Converter(output);
+        //     Console.SetOut(converter);
+        // }
+
+        // private class Converter : TextWriter
+        // {
+        //     ITestOutputHelper _output;
+        //     public Converter(ITestOutputHelper output)
+        //     {
+        //         _output = output;
+        //     }
+        //     public override Encoding Encoding
+        //     {
+        //         get { return Encoding.ASCII; }
+        //     }
+        //     public override void WriteLine(string message)
+        //     {
+        //         _output.WriteLine(message);
+        //     }
+        //     public override void WriteLine(string format, params object[] args)
+        //     {
+        //         _output.WriteLine(format, args);
+        //     }
+        //     // public override void Write(char value)
+        //     // {
+        //     //     throw new NotSupportedException("This text writer only supports WriteLine(string) and WriteLine(string, params object[]).");
+        //     // }
+        // }
+
+        [Fact]
+        public void ExampleTestName()
+        {
+            Console.SetOut(new ConsoleWriter(output));
+            Assert.True(ToBeTested.Foo());
+        }
+
         [Fact]
         public void LambdaHandlerGetters()
         {
@@ -55,6 +102,7 @@ namespace Datadog.Trace.Tests
         [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler3::AbstractGenericBaseMethod2", "Datadog.Trace.Tests.TestHandler3", "AbstractGenericBaseMethod2")]
         public void LambdaHandlerCanHandleClosedGenericTypes(string handlerVariable, string expectedType, string expectedMethod)
         {
+            Console.SetOut(new ConsoleWriter(output));
             LambdaHandler handler = new LambdaHandler(handlerVariable);
             handler.Assembly.Should().Be("Datadog.Trace.Tests");
             handler.FullType.Should().Be(expectedType);
@@ -62,19 +110,49 @@ namespace Datadog.Trace.Tests
             handler.ParamTypeArray.Length.Should().Be(2);
             handler.ParamTypeArray[0].Should().Be(ClrNames.Int32);
             handler.ParamTypeArray[1].Should().Be(ClrNames.Int32);
+            // Assert.False(ToBeTested.Foo());
         }
 
-        [Theory(Skip = "We don't currently support open generics in Lambda")]
-        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod1", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod1")]
-        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod2", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod2")]
-        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod3", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
+        // [Theory(Skip = "We don't currently support open generics in Lambda")]
+        [Theory]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod1", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod1")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod2", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod2")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod3", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod4", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod1")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod5", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod2")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod6", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod7", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod1")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod8", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod2")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod9", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod10", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod1")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod11", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod2")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod12", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod13", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod1")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod14", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod2")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod15", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod1", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod1")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod2", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod2")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod3", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod4", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod1")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod6", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod2")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod7", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod8", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod1")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod9", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod2")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod10", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod11", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod12", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.GenericBaseHandler2::GenericBaseMethod13", "Datadog.Trace.Tests.GenericBaseHandler2`2", "GenericBaseMethod13", "System.String", "System.Int32", "System.String")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod14", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
+        // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod15", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
         public void LambdaHandlerCanHandleOpenGenericTypes(string handlerVariable, string expectedType, string expectedMethod, params string[] args)
         {
+            Console.SetOut(new ConsoleWriter(output));
             LambdaHandler handler = new LambdaHandler(handlerVariable);
             handler.Assembly.Should().Be("Datadog.Trace.Tests");
             handler.FullType.Should().Be(expectedType);
             handler.MethodName.Should().Be(expectedMethod);
             handler.ParamTypeArray.Should().BeSameAs(args);
+            // Assert.False(ToBeTested.Foo());
         }
 
         [Theory]
@@ -156,6 +234,30 @@ namespace Datadog.Trace.Tests
             handler.ParamTypeArray[0].Should().Be(ClrNames.Int32);
             handler.ParamTypeArray[1].Should().Be(expectedArg);
         }
+
+        public class ConsoleWriter : StringWriter
+        {
+            private ITestOutputHelper output;
+
+            public ConsoleWriter(ITestOutputHelper output)
+            {
+                this.output = output;
+            }
+
+            public override void WriteLine(string m)
+            {
+                output.WriteLine("HARV DEBUG LINE: " + m);
+            }
+        }
+
+        public class ToBeTested
+        {
+            public static bool Foo()
+            {
+                Console.WriteLine("Foo uses Console.WriteLine!!!");
+                return true;
+            }
+        }
     }
 
 #pragma warning disable SA1402 // File may only contain a single type
@@ -211,6 +313,15 @@ namespace Datadog.Trace.Tests
     {
     }
 
+    public class TestHandler5 : GenericBaseHandler2<int, string>
+    {
+    }
+
+    // Let's see if this works
+    public class TestHandler6 : GenericBaseHandler2<GenericBaseHandler<GenericBaseHandler<TrickyParamHandler>>, GenericBaseHandler2<GenericBaseHandler<TrickyParamHandler>, TestMockSpan>>
+    {
+    }
+
     public class BaseHandler
     {
         public void BaseHandlerMethod()
@@ -253,6 +364,81 @@ namespace Datadog.Trace.Tests
         public T GenericBaseMethod2() => default;
 
         public T2 GenericBaseMethod3<T2>() => default;
+
+        public void GenericBaseMethod4<T2>()
+        {
+        }
+
+        public void GenericBaseMethod5<T2, T3>()
+        {
+        }
+
+        public void GenericBaseMethod6<T3, T2>()
+        {
+        }
+
+        public T GenericBaseMethod7() => default;
+
+        public T GenericBaseMethod8<T2>() => default;
+
+        public T GenericBaseMethod9<T3, T2>() => default;
+
+        public T GenericBaseMethod10<T2>() => default;
+
+        public T2 GenericBaseMethod11<T3, T2>() => default;
+
+        public void GenericBaseMethod12<T2>(T2 val1, T2 val3)
+        {
+        }
+
+        public T2 GenericBaseMethod13<T2>(T2 val1) => default;
+
+        public T GenericBaseMethod14<T2>(T2 val1, T val3) => default;
+
+        public T3 GenericBaseMethod15<T3>(T val1, T3 val3) => default;
+    }
+
+    public class GenericBaseHandler2<T, T2>
+    {
+        public void GenericBaseMethod1(T value)
+        {
+        }
+
+        public T GenericBaseMethod2() => default;
+
+        public T2 GenericBaseMethod3<T3>() => default;
+
+        public void GenericBaseMethod4<T3>()
+        {
+        }
+
+        public void GenericBaseMethod5<T3, T4>()
+        {
+        }
+
+        public void GenericBaseMethod6<T4, T3>()
+        {
+        }
+
+        public T GenericBaseMethod7() => default;
+
+        public T GenericBaseMethod8<T3>() => default;
+
+        public T GenericBaseMethod9<T3, T4>() => default;
+
+        public T2 GenericBaseMethod10<T3>() => default;
+
+        public T2 GenericBaseMethod11<T3, T4>() => default;
+
+        public void GenericBaseMethod12<T3>(T2 val1, T val3)
+        {
+        }
+
+        public T2 GenericBaseMethod13<T3>(T val1, T2 val3) => default;
+
+        public T3 GenericBaseMethod14<T3>(T2 val1, T val3) => default;
+
+        public T3 GenericBaseMethod15<T3>(T2 val1, T3 val3) => default;
     }
 
     public class TrickyParamHandler
