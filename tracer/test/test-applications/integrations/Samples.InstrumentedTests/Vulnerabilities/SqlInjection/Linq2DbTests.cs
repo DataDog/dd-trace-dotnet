@@ -13,7 +13,7 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
 public class Linq2DbTests : InstrumentationTestsBase, IDisposable
 {
-    protected string taintedValue = "Manuel";
+    protected string taintedValue = "brian";
     protected string notTaintedValue = "nottainted";
     string queryUnsafe;
     readonly string querySafe = "SELECT * from Persons where Name like 'Emilio'";
