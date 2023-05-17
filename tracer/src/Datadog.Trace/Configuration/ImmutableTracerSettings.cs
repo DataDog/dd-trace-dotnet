@@ -122,6 +122,7 @@ namespace Datadog.Trace.Configuration
             TraceBufferSize = settings.TraceBufferSize;
             TraceBatchInterval = settings.TraceBatchInterval;
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
+            SingleWebSpanEnabled = settings.SingleWebSpanEnabled;
             DelayWcfInstrumentationEnabled = settings.DelayWcfInstrumentationEnabled;
             WcfWebHttpResourceNamesEnabled = settings.WcfWebHttpResourceNamesEnabled;
             WcfObfuscationEnabled = settings.WcfObfuscationEnabled;
@@ -425,6 +426,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled"/>
         internal bool RouteTemplateResourceNamesEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the feature flag to enable single-web spans is enabled
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.SingleWebSpanEnabled"/>
+        internal bool SingleWebSpanEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether route parameters in ASP.NET and ASP.NET Core resource names

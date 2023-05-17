@@ -579,6 +579,14 @@ namespace Datadog.Trace.Configuration
             public const string RouteTemplateResourceNamesEnabled = "DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED";
 
             /// <summary>
+            /// When enabled, <c>aspnet_core_mvc.request</c>, <c>aspnet-webapi.request</c>, and <c>aspnet-mvc.request</c>
+            /// spans will not be created. Instead, tags typically associated with these spans will be associated with
+            /// the <c>aspnet.request</c> and <c>aspnet_core.request</c> span instead.
+            /// </summary>
+            /// <seealso cref="TracerSettings.SingleWebSpanEnabled"/>
+            public const string SingleWebSpanEnabled = "DD_TRACE_SINGLE_WEB_SPAN_ENABLED";
+
+            /// <summary>
             /// Configuration key to enable or disable the updated WCF instrumentation that delays execution
             /// until later in the WCF pipeline when the WCF server exception handling is established.
             /// </summary>
