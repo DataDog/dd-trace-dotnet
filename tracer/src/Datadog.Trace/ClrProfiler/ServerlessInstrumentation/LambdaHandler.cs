@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Reflection;
 using System.Text;
 using Datadog.Trace.Util;
 
@@ -19,8 +20,8 @@ internal class LambdaHandler
     // MyFunction::MyFunction.Function::HandlerCustomStructParamSync
     internal LambdaHandler(string? handlerName)
     {
-        Console.WriteLine("HARVINDER TEST LOG CHANGED");
-        // ThrowHelper.ThrowArgumentException($"The HARVINDER handler name {handlerName} did not have the expected format A::B::C");
+        Console.WriteLine("TEST LOG");
+        // ThrowHelper.ThrowArgumentException($"The handler name {handlerName} did not have the expected format A::B::C");
         if (handlerName is null)
         {
             Console.WriteLine("handlerName is null");
@@ -45,6 +46,12 @@ internal class LambdaHandler
 
         var handlerType = Type.GetType($"{handlerTokens[1]},{handlerTokens[0]}");
         Console.WriteLine($"handlerType is {handlerType}");
+
+        var handlerMethods = handlerType?.GetMethods((BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.FlattenHierarchy))!;
+        for (var i = 0; i < handlerMethods.Length; i++)
+        {
+            Console.WriteLine($"handlerMethods[{i}] is {handlerMethods[i]}");
+        }
 
         var handlerMethod = handlerType?.GetMethod(MethodName);
         Console.WriteLine($"handlerMethod is {handlerMethod}");

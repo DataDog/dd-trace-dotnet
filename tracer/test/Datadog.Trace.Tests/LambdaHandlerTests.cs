@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.TestHelpers;
@@ -141,7 +142,7 @@ namespace Datadog.Trace.Tests
         // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod10", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
         // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod11", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
         // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod12", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
-        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.GenericBaseHandler2::GenericBaseMethod13", "Datadog.Trace.Tests.GenericBaseHandler2`2", "GenericBaseMethod13", "System.String", "System.Int32", "System.String")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.FunctionImplementation::FunctionHandlerAsync", "Datadog.Trace.Tests.AbstractAspNetCoreFunction`2", "FunctionHandlerAsync", "Task[!1]", "!0", "Amazon.Lambda.Core.ILambdaContext")]
         // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod14", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
         // [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod15", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
         public void LambdaHandlerCanHandleOpenGenericTypes(string handlerVariable, string expectedType, string expectedMethod, params string[] args)
@@ -355,6 +356,22 @@ namespace Datadog.Trace.Tests
         public abstract T AbstractGenericBaseMethod2(int value);
     }
 
+    public class AbstractAspNetCoreFunction
+    {
+    }
+
+    public class AbstractAspNetCoreFunction<TREQUEST, TRESPONSE> : AbstractAspNetCoreFunction
+    {
+        public virtual async Task<TRESPONSE> FunctionHandlerAsync(TREQUEST request, ILambdaContext lambdaContext)
+        {
+            return await Task.FromResult<TRESPONSE>(default(TRESPONSE));
+        }
+    }
+
+    public class FunctionImplementation : AbstractAspNetCoreFunction<string, string>
+    {
+    }
+
     public class GenericBaseHandler<T>
     {
         public void GenericBaseMethod1(T value)
@@ -480,6 +497,10 @@ namespace Datadog.Trace.Tests
     }
 
     public class TestMockSpan : MockSpan
+    {
+    }
+
+    public class ILambdaContext
     {
     }
 }
