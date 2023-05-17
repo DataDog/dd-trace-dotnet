@@ -89,10 +89,10 @@ namespace Datadog.Trace.ClrProfiler
 
             TracerDebugger.WaitForDebugger();
 
-            var swTotal = new Stopwatch();
+            var swTotal = Stopwatch.StartNew();
             Log.Debug("Initialization started.");
 
-            var sw = new Stopwatch();
+            var sw = Stopwatch.StartNew();
             if (GetNativeTracerVersion() != TracerConstants.ThreePartVersion)
             {
                 try
@@ -452,10 +452,9 @@ namespace Datadog.Trace.ClrProfiler
                     // TODO: RCM and LiveDebugger should be initialized in TracerManagerFactory so they can respond
                     // to changes in ExporterSettings etc.
 
-                    var sw = new Stopwatch();
+                    var sw = Stopwatch.StartNew();
                     var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
                     TelemetryMetrics.Instance.Record(Distribution.InitTime, MetricTags.Component_DiscoveryService, sw.ElapsedMilliseconds);
-                    sw.Reset();
 
                     if (isDiscoverySuccessful)
                     {
@@ -497,7 +496,7 @@ namespace Datadog.Trace.ClrProfiler
 
         internal static async Task InitializeRemoteConfigurationManager(IRemoteConfigurationManager remoteConfigurationManager)
         {
-            var sw = new Stopwatch();
+            var sw = Stopwatch.StartNew();
             try
             {
                 await remoteConfigurationManager.StartPollingAsync().ConfigureAwait(false);
@@ -512,7 +511,7 @@ namespace Datadog.Trace.ClrProfiler
 
         internal static async Task InitializeLiveDebugger(LiveDebugger liveDebugger)
         {
-            var sw = new Stopwatch();
+            var sw = Stopwatch.StartNew();
             try
             {
                 await liveDebugger.InitializeAsync().ConfigureAwait(false);
