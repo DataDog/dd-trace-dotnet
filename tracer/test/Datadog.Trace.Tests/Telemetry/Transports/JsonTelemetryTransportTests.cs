@@ -50,8 +50,8 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                 payload: new AppStartedPayload(
                     integrations: new List<IntegrationTelemetryData>
                     {
-                        new(name: "express", enabled: true) { AutoEnabled = true },
-                        new(name: "pg", enabled: false) { AutoEnabled = false, Compatible = false },
+                        new(name: "express", enabled: true, autoEnabled: true, error: null),
+                        new(name: "pg", enabled: false, autoEnabled: false, error: "there was an error"),
                     },
                     dependencies: new List<DependencyTelemetryData>
                     {

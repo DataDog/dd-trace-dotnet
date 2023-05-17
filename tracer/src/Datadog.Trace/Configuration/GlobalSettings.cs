@@ -64,6 +64,11 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public static void SetDebugEnabled(bool enabled)
         {
+            SetDebugEnabledInternal(enabled);
+        }
+
+        internal static void SetDebugEnabledInternal(bool enabled)
+        {
             Instance.DebugEnabled = enabled;
 
             if (enabled)

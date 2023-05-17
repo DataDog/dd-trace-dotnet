@@ -5,17 +5,31 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
+using System.Web;
+#if !NETFRAMEWORK
+using Microsoft.AspNetCore.Http;
+#endif
+using System.Xml.Linq;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Iast;
 
 internal class IastRequestContext
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastRequestContext));
     private VulnerabilityBatch? _vulnerabilityBatch;
     private object _vulnerabilityLock = new();
     private TaintedObjects _taintedObjects = new();
     private bool _routedParametersAdded = false;
     private bool _querySourcesAdded = false;
+
+    internal static void AddIastDisabledFlagToSpan(Span span)
+    {
+        span.Tags.SetTag(Tags.IastEnabled, "0");
+    }
 
     internal void AddIastVulnerabilitiesToSpan(Span span)
     {
@@ -36,8 +50,58 @@ internal class IastRequestContext
     {
         lock (_vulnerabilityLock)
         {
-            _vulnerabilityBatch ??= new();
+            _vulnerabilityBatch ??= IastModule.GetVulnerabilityBatch();
             _vulnerabilityBatch.Add(vulnerability);
+        }
+    }
+
+    internal void AddRequestBody(object body, object? bodyExtracted)
+    {
+        try
+        {
+            if (bodyExtracted is null)
+            {
+                bodyExtracted = ObjectExtractor.Extract(body);
+            }
+
+            AddExtractedBody(bodyExtracted, null);
+        }
+        catch
+        {
+            Log.Warning("Error reading request Body.");
+        }
+    }
+
+    private void AddExtractedBody(object bodyExtracted, string? key)
+    {
+        if (bodyExtracted != null)
+        {
+            // We get either string, List<object> or Dictionary<string, object>
+            if (bodyExtracted is string bodyExtractedStr)
+            {
+                _taintedObjects.TaintInputString(bodyExtractedStr, new Source(SourceType.GetByte(SourceTypeName.RequestBody), key, bodyExtractedStr));
+            }
+            else
+            {
+                if (bodyExtracted is List<object> bodyExtractedList)
+                {
+                    foreach (var element in bodyExtractedList)
+                    {
+                        AddExtractedBody(element, key);
+                    }
+                }
+                else
+                {
+                    if (bodyExtracted is Dictionary<string, object> bodyExtractedDic)
+                    {
+                        foreach (var keyValue in bodyExtractedDic)
+                        {
+                            AddExtractedBody(keyValue.Value, keyValue.Key);
+                            _taintedObjects.TaintInputString(keyValue.Key, new Source(SourceType.GetByte(SourceTypeName.RequestBody), key, keyValue.Key));
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -109,7 +173,27 @@ internal class IastRequestContext
 
             AddRequestHeaders(request.Headers);
             AddQueryPath(request.Path);
+            AddRequestCookies(request.Cookies);
             _querySourcesAdded = true;
+        }
+    }
+
+    private void AddRequestCookies(HttpCookieCollection? cookies)
+    {
+        if (cookies?.AllKeys is not null)
+        {
+            foreach (string key in cookies.AllKeys)
+            {
+                // cookies[key].Value is covered in the aspect
+
+                for (int i = 0; i < cookies[key].Values.Count; i++)
+                {
+                    if (cookies[key].Values[i] is string valueInCollectionString)
+                    {
+                        AddCookieData(key, valueInCollectionString);
+                    }
+                }
+            }
         }
     }
 
@@ -150,7 +234,19 @@ internal class IastRequestContext
             AddQueryPath(request.Path);
             AddQueryStringRaw(request.QueryString.Value);
             AddRequestHeaders(request.Headers);
+            AddRequestCookies(request.Cookies);
             _querySourcesAdded = true;
+        }
+    }
+
+    private void AddRequestCookies(IRequestCookieCollection? cookies)
+    {
+        if (cookies is not null)
+        {
+            foreach (var cookie in cookies)
+            {
+                AddCookieData(cookie.Key, cookie.Value);
+            }
         }
     }
 
@@ -176,6 +272,12 @@ internal class IastRequestContext
     }
 
 #endif
+
+    private void AddCookieData(string name, string value)
+    {
+        _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.CookieValue), name, value));
+        _taintedObjects.TaintInputString(name, new Source(SourceType.GetByte(SourceTypeName.CookieName), name, null));
+    }
 
     private void AddHeaderData(string name, string value)
     {

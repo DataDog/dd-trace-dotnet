@@ -26,13 +26,13 @@ namespace Datadog.Trace.Processors
             if (TraceUtil.TruncateUTF8(ref key, MaxMetaKeyLen))
             {
                 key += "...";
-                Log.Debug("span.truncate: truncating `Meta` key (max {MaxMetaKeyLen} chars): {Key}", MaxMetaKeyLen, key);
+                Log.Debug<int, string>("span.truncate: truncating `Meta` key (max {MaxMetaKeyLen} chars): {Key}", MaxMetaKeyLen, key);
             }
 
             if (TraceUtil.TruncateUTF8(ref value, MaxMetaValLen))
             {
                 value += "...";
-                Log.Debug("span.truncate: truncating `Meta` value (max {MaxMetaValLen} chars): {Value}", MaxMetaValLen, value);
+                Log.Debug<int, string>("span.truncate: truncating `Meta` value (max {MaxMetaValLen} chars): {Value}", MaxMetaValLen, value);
             }
         }
 
@@ -42,7 +42,7 @@ namespace Datadog.Trace.Processors
             if (TraceUtil.TruncateUTF8(ref key, MaxMetricsKeyLen))
             {
                 key += "...";
-                Log.Debug("span.truncate: truncating `Metrics` key (max {MaxMetricsKeyLen} chars): {Key}", MaxMetricsKeyLen, key);
+                Log.Debug<int, string>("span.truncate: truncating `Metrics` key (max {MaxMetricsKeyLen} chars): {Key}", MaxMetricsKeyLen, key);
             }
         }
     }

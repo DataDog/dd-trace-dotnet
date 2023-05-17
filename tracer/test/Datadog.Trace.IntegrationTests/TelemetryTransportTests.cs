@@ -22,7 +22,7 @@ namespace Datadog.Trace.IntegrationTests
         [SkippableFact]
         public async Task CanSendTelemetry()
         {
-            using var agent = new MockTelemetryAgent<TelemetryData>(TcpPortProvider.GetOpenPort());
+            using var agent = new MockTelemetryAgent(TcpPortProvider.GetOpenPort());
             var telemetryUri = new Uri($"http://localhost:{agent.Port}");
 
             // Uses framework specific transport
@@ -106,7 +106,7 @@ namespace Datadog.Trace.IntegrationTests
             return transport[0];
         }
 
-        internal class ErroringTelemetryAgent : MockTelemetryAgent<TelemetryData>
+        internal class ErroringTelemetryAgent : MockTelemetryAgent
         {
             private readonly int _responseCode;
 
@@ -121,7 +121,10 @@ namespace Datadog.Trace.IntegrationTests
                 OnRequestReceived(ctx);
 
                 // make sure it works correctly
-                var telemetry = DeserializeResponse(ctx.Request.InputStream);
+                var apiVersion = ctx.Request.Headers[TelemetryConstants.ApiVersionHeader];
+                var requestType = ctx.Request.Headers[TelemetryConstants.RequestTypeHeader];
+
+                var telemetry = DeserializeResponse(ctx.Request.InputStream, apiVersion, requestType);
 
                 ctx.Response.StatusCode = _responseCode;
                 ctx.Response.Close();

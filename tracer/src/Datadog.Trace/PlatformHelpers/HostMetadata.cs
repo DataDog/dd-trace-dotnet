@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.IO;
 using Datadog.Trace.Util;
@@ -25,7 +27,7 @@ namespace Datadog.Trace.PlatformHelpers
                 kernelVersion: version);
         }
 
-        private HostMetadata(string hostname, string kernelName, string kernelRelease, string kernelVersion)
+        private HostMetadata(string? hostname, string? kernelName, string? kernelRelease, string? kernelVersion)
         {
             Hostname = hostname;
             KernelName = kernelName;
@@ -39,28 +41,28 @@ namespace Datadog.Trace.PlatformHelpers
         /// Gets the name of the host on which the code is running
         /// Returns <c>null</c> if the host name can not be determined
         /// </summary>
-        public string Hostname { get; }
+        public string? Hostname { get; }
 
         /// <summary>
         /// Gets the name of the kernel, e.g. Linux
         /// Returns <c>null</c> if it can not be determined
         /// </summary>
-        public string KernelName { get; }
+        public string? KernelName { get; }
 
         /// <summary>
         /// Gets the release name of the kernel, e.g. 3.2.0-4-686-pae
         /// Returns <c>null</c> if it can not be determined
         /// </summary>
-        public string KernelRelease { get; }
+        public string? KernelRelease { get; }
 
         /// <summary>
         /// Gets the version number of the kernel, e.g. #1 SMP Debian 3.2.63-2+deb7u2
         /// Returns <c>null</c> if it can not be determined
         /// </summary>
-        public string KernelVersion { get; }
+        public string? KernelVersion { get; }
 
         // internal for testing
-        internal static void ParseKernel(string fullVersion, out string kernel, out string kernelRelease, out string kernelVersion)
+        internal static void ParseKernel(string fullVersion, out string? kernel, out string? kernelRelease, out string? kernelVersion)
         {
             kernel = null;
             kernelRelease = null;
@@ -104,7 +106,7 @@ namespace Datadog.Trace.PlatformHelpers
             kernelVersion = fullVersion.Substring(versionIndex);
         }
 
-        private static void TryGetKernelInformation(out string kernel, out string kernelRelease, out string kernelVersion)
+        private static void TryGetKernelInformation(out string? kernel, out string? kernelRelease, out string? kernelVersion)
         {
             try
             {
@@ -127,7 +129,7 @@ namespace Datadog.Trace.PlatformHelpers
             kernelVersion = null;
         }
 
-        private static string GetHostInternal()
+        private static string? GetHostInternal()
         {
             try
             {

@@ -15,6 +15,35 @@ internal static class PropagationModuleImpl
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(PropagationModuleImpl));
 
+    public static void AddTainted(string? input, Source source)
+    {
+        try
+        {
+            if (input is null || input == string.Empty)
+            {
+                return;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext is null)
+            {
+                return;
+            }
+
+            var taintedObjects = iastContext.GetTaintedObjects();
+            var taintedSelf = taintedObjects?.Get(input);
+
+            if (taintedSelf is null)
+            {
+                taintedObjects?.TaintInputString(input, source);
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "PropagationModuleImpl.AddTainted exception");
+        }
+    }
+
     public static object? PropagateTaint(object? input, object result, int offset = 0)
     {
         try

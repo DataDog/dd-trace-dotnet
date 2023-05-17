@@ -334,9 +334,26 @@ bool Windows64BitStackFramesCollector::SuspendTargetThreadImplementation(Managed
         // We wanted to suspend, but it resulted in error.
         // This can happen when the thread died after we called managedThreads->LoopNext().
         // Give up.
-        Log::Info("Windows64BitStackFramesCollector::SuspendTargetThreadImplementation() failed to suspend the target thread.",
-                  " (SuspendThread() returned -1).",
-                  " ClrThreadId=0x", std::hex, pThreadInfo->GetClrThreadId(), "; OsThreadId=", std::dec, pThreadInfo->GetOsThreadId());
+        LPVOID msgBuffer;
+        DWORD errorCode = GetLastError();
+
+        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                      NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgBuffer, 0, NULL);
+
+
+        if (msgBuffer != NULL)
+        {
+            Log::Info("Windows64BitStackFramesCollector::SuspendTargetThreadImplementation() SuspendThread() returned -1.",
+                      " CLR tid=0x", std::hex, pThreadInfo->GetClrThreadId(), "; OS tid=", std::dec, pThreadInfo->GetOsThreadId(), "(", errorCode, ") : ",
+                      (LPTSTR)msgBuffer);
+
+            LocalFree(msgBuffer);
+        }
+        else
+        {
+            Log::Info("Windows64BitStackFramesCollector::SuspendTargetThreadImplementation() SuspendThread() returned -1.",
+                      " CLR tid=0x", std::hex, pThreadInfo->GetClrThreadId(), "; OS tid=", std::dec, pThreadInfo->GetOsThreadId(), "(", errorCode , ")");
+        }
 
         *pIsTargetThreadSuspended = false;
         return false;

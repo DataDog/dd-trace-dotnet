@@ -3,9 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Threading;
-using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
 
