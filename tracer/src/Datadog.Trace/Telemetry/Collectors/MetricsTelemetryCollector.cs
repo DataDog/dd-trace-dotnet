@@ -311,16 +311,7 @@ internal class MetricsTelemetryCollector : IMetricsTelemetryCollector
 
     private void RecordGauge(in MetricKey key, int value)
     {
-#if NETCOREAPP
-        // we can avoid the closure in .NET Core
-        _buffer.GaugesWithTags.AddOrUpdate(
-            key: key,
-            addValueFactory: static (_, arg) => arg,
-            updateValueFactory: static (_, _, arg) => arg,
-            factoryArgument: value);
-#else
-        _buffer.GaugesWithTags.AddOrUpdate(key, value, (_, old) => value);
-#endif
+        _buffer.GaugesWithTags[key] = value;
     }
 
     private void RecordDistribution(in MetricKey key, double value)
