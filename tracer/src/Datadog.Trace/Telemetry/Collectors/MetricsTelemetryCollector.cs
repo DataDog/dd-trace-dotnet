@@ -325,37 +325,8 @@ internal class MetricsTelemetryCollector : IMetricsTelemetryCollector
 
     private void RecordDistribution(in MetricKey key, double value)
     {
-#if NETCOREAPP
-        // we can avoid the closure in .NET Core
-        _buffer.DistributionsWithTags.AddOrUpdate(
-            key: key,
-            addValueFactory: static (_, arg) =>
-            {
-                var q = MetricBuffer.CreateDistributionQueue();
-                q.TryEnqueue(arg);
-                return q;
-            },
-            updateValueFactory: static (_, queue, arg) =>
-            {
-                queue.TryEnqueue(arg);
-                return queue;
-            },
-            factoryArgument: value);
-#else
-        _buffer.DistributionsWithTags.AddOrUpdate(
-            key,
-            _ =>
-            {
-                var queue = MetricBuffer.CreateDistributionQueue();
-                queue.TryEnqueue(value);
-                return queue;
-            },
-            (_, queue) =>
-            {
-                queue.TryEnqueue(value);
-                return queue;
-            });
-#endif
+        var queue = _buffer.DistributionsWithTags.GetOrAdd(key, _ => MetricBuffer.CreateDistributionQueue());
+        queue.TryEnqueue(value);
     }
 
     private readonly record struct MetricKey
