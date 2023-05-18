@@ -387,7 +387,7 @@ namespace Datadog.Trace.Ci
                 case OSPlatformName.Linux:
                     if (!string.IsNullOrEmpty(HostMetadata.Instance.KernelRelease))
                     {
-                        return HostMetadata.Instance.KernelRelease;
+                        return HostMetadata.Instance.KernelRelease!;
                     }
 
                     break;

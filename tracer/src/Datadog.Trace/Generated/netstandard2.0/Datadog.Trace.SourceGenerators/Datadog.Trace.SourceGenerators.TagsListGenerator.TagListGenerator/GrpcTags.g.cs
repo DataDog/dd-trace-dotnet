@@ -3,27 +3,60 @@
 
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
+using System;
 
 namespace Datadog.Trace.Tagging
 {
     partial class GrpcTags
     {
-        // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
-        private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // MethodKindBytes = System.Text.Encoding.UTF8.GetBytes("grpc.method.kind");
-        private static readonly byte[] MethodKindBytes = new byte[] { 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 107, 105, 110, 100 };
-        // MethodNameBytes = System.Text.Encoding.UTF8.GetBytes("grpc.method.name");
-        private static readonly byte[] MethodNameBytes = new byte[] { 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 110, 97, 109, 101 };
-        // MethodPathBytes = System.Text.Encoding.UTF8.GetBytes("grpc.method.path");
-        private static readonly byte[] MethodPathBytes = new byte[] { 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 112, 97, 116, 104 };
-        // MethodPackageBytes = System.Text.Encoding.UTF8.GetBytes("grpc.method.package");
-        private static readonly byte[] MethodPackageBytes = new byte[] { 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 112, 97, 99, 107, 97, 103, 101 };
-        // MethodServiceBytes = System.Text.Encoding.UTF8.GetBytes("grpc.method.service");
-        private static readonly byte[] MethodServiceBytes = new byte[] { 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 115, 101, 114, 118, 105, 99, 101 };
-        // StatusCodeBytes = System.Text.Encoding.UTF8.GetBytes("grpc.status.code");
-        private static readonly byte[] StatusCodeBytes = new byte[] { 103, 114, 112, 99, 46, 115, 116, 97, 116, 117, 115, 46, 99, 111, 100, 101 };
+        // SpanKindBytes = MessagePack.Serialize("span.kind");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
+        // InstrumentationNameBytes = MessagePack.Serialize("component");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
+        // MethodKindBytes = MessagePack.Serialize("grpc.method.kind");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> MethodKindBytes => new byte[] { 176, 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] MethodKindBytes = new byte[] { 176, 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 107, 105, 110, 100 };
+#endif
+        // MethodNameBytes = MessagePack.Serialize("grpc.method.name");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> MethodNameBytes => new byte[] { 176, 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] MethodNameBytes = new byte[] { 176, 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 110, 97, 109, 101 };
+#endif
+        // MethodPathBytes = MessagePack.Serialize("grpc.method.path");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> MethodPathBytes => new byte[] { 176, 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 112, 97, 116, 104 };
+#else
+        private static readonly byte[] MethodPathBytes = new byte[] { 176, 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 112, 97, 116, 104 };
+#endif
+        // MethodPackageBytes = MessagePack.Serialize("grpc.method.package");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> MethodPackageBytes => new byte[] { 179, 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 112, 97, 99, 107, 97, 103, 101 };
+#else
+        private static readonly byte[] MethodPackageBytes = new byte[] { 179, 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 112, 97, 99, 107, 97, 103, 101 };
+#endif
+        // MethodServiceBytes = MessagePack.Serialize("grpc.method.service");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> MethodServiceBytes => new byte[] { 179, 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 115, 101, 114, 118, 105, 99, 101 };
+#else
+        private static readonly byte[] MethodServiceBytes = new byte[] { 179, 103, 114, 112, 99, 46, 109, 101, 116, 104, 111, 100, 46, 115, 101, 114, 118, 105, 99, 101 };
+#endif
+        // StatusCodeBytes = MessagePack.Serialize("grpc.status.code");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> StatusCodeBytes => new byte[] { 176, 103, 114, 112, 99, 46, 115, 116, 97, 116, 117, 115, 46, 99, 111, 100, 101 };
+#else
+        private static readonly byte[] StatusCodeBytes = new byte[] { 176, 103, 114, 112, 99, 46, 115, 116, 97, 116, 117, 115, 46, 99, 111, 100, 101 };
+#endif
 
         public override string? GetTag(string key)
         {

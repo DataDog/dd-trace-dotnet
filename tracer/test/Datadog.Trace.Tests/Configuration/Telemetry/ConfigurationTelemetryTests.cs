@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
 using FluentAssertions;
@@ -19,37 +18,36 @@ public class ConfigurationTelemetryTests
     [Fact]
     public void Record_RecordsTelemetryValues()
     {
-        var i = 0;
         var stringValues = new List<ConfigDto>
         {
-            new("string1", null, ConfigurationOrigins.Code, Interlocked.Increment(ref i)),
-            new("string2", "value", ConfigurationOrigins.AppConfig, Interlocked.Increment(ref i)),
-            new("string3", "value", ConfigurationOrigins.DdConfig, Interlocked.Increment(ref i), error: TelemetryErrorCode.FailedValidation),
-            new("string4", "overridden", ConfigurationOrigins.RemoteConfig, Interlocked.Increment(ref i)),
-            new("string4", "newvalue", ConfigurationOrigins.EnvVars, Interlocked.Increment(ref i)),
-            new("redacted1", null, ConfigurationOrigins.Code, Interlocked.Increment(ref i), recordValue: false),
-            new("redacted2", "value", ConfigurationOrigins.AppConfig, Interlocked.Increment(ref i), recordValue: false),
-            new("redacted3", "value", ConfigurationOrigins.DdConfig, Interlocked.Increment(ref i), recordValue: false, TelemetryErrorCode.FailedValidation),
-            new("redacted4", "overridden", ConfigurationOrigins.RemoteConfig, Interlocked.Increment(ref i), recordValue: false),
-            new("redacted4", "newvalue", ConfigurationOrigins.EnvVars, Interlocked.Increment(ref i), recordValue: false),
+            new("string1", null, ConfigurationOrigins.Code),
+            new("string2", "value", ConfigurationOrigins.AppConfig),
+            new("string3", "value", ConfigurationOrigins.DdConfig, error: TelemetryErrorCode.FailedValidation),
+            new("string4", "overridden", ConfigurationOrigins.RemoteConfig),
+            new("string4", "newvalue", ConfigurationOrigins.EnvVars),
+            new("redacted1", null, ConfigurationOrigins.Code, recordValue: false),
+            new("redacted2", "value", ConfigurationOrigins.AppConfig, recordValue: false),
+            new("redacted3", "value", ConfigurationOrigins.DdConfig, recordValue: false, TelemetryErrorCode.FailedValidation),
+            new("redacted4", "overridden", ConfigurationOrigins.RemoteConfig, recordValue: false),
+            new("redacted4", "newvalue", ConfigurationOrigins.EnvVars, recordValue: false),
         };
 
         var boolValues = new List<ConfigDto>
         {
-            new("bool", false, ConfigurationOrigins.EnvVars, Interlocked.Increment(ref i)),
-            new("bool", true, ConfigurationOrigins.Code, Interlocked.Increment(ref i)),
+            new("bool", false, ConfigurationOrigins.EnvVars),
+            new("bool", true, ConfigurationOrigins.Code),
         };
 
         var intValues = new List<ConfigDto>
         {
-            new("int", 123, ConfigurationOrigins.EnvVars, Interlocked.Increment(ref i)),
-            new("int", 42, ConfigurationOrigins.Code, Interlocked.Increment(ref i)),
+            new("int", 123, ConfigurationOrigins.EnvVars),
+            new("int", 42, ConfigurationOrigins.Code),
         };
 
         var doubleValues = new List<ConfigDto>
         {
-            new("double", 123.0, ConfigurationOrigins.EnvVars, Interlocked.Increment(ref i)),
-            new("double", 42.0, ConfigurationOrigins.Code, Interlocked.Increment(ref i)),
+            new("double", 123.0, ConfigurationOrigins.EnvVars),
+            new("double", 42.0, ConfigurationOrigins.Code),
         };
 
         var telemetry = new ConfigurationTelemetry();
@@ -87,12 +85,11 @@ public class ConfigurationTelemetryTests
                       .Concat(boolValues)
                       .Concat(intValues)
                       .Concat(doubleValues)
-                      .OrderBy(x => x.SeqId)
                       .ToList();
 
         var actual = telemetry.GetLatest()
-                              .Select(x => new ConfigDto(x))
                               .OrderBy(x => x.SeqId)
+                              .Select(x => new ConfigDto(x))
                               .ToList();
 
         actual.Should().BeEquivalentTo(expected);
@@ -115,17 +112,15 @@ public class ConfigurationTelemetryTests
             RecordValue = entry.Type != ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted;
             Origin = entry.Origin;
             Error = entry.Error;
-            SeqId = entry.SeqId;
         }
 
-        public ConfigDto(string name, object value, ConfigurationOrigins origin, long seqId, bool recordValue = true, TelemetryErrorCode? error = null)
+        public ConfigDto(string name, object value, ConfigurationOrigins origin, bool recordValue = true, TelemetryErrorCode? error = null)
         {
             Name = name;
             Value = value;
             RecordValue = recordValue;
             Origin = origin;
             Error = error;
-            SeqId = seqId;
         }
 
         public string Name { get; set; }
@@ -137,7 +132,5 @@ public class ConfigurationTelemetryTests
         public ConfigurationOrigins Origin { get; set; }
 
         public TelemetryErrorCode? Error { get; set; }
-
-        public long SeqId { get; set; }
     }
 }
