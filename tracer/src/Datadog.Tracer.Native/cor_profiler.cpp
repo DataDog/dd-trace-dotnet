@@ -442,6 +442,18 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
                          expected_version);
             managed_profiler_loaded_app_domains.insert({assembly_info.app_domain_id, assembly_metadata.version});
 
+            // Load defaults values if the version are the same as expected
+            if (assembly_metadata.version == expected_assembly_reference.version)
+            {
+                EnableByRefInstrumentation();
+                EnableCallTargetStateByRef();
+                auto traceAnnotationIntegrationId = WSTRING(WStr("9C6EB897BD4946D0BB492E062FB0AE67"));
+                auto traceAnnotationType = WSTRING(
+                    WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration"));
+                AddTraceAttributeInstrumentation(traceAnnotationIntegrationId.data(),
+                                                 expected_assembly_reference.str().data(), traceAnnotationType.data());
+            }
+
             if (runtime_information_.is_desktop() && corlib_module_loaded)
             {
                 // Set the managed_profiler_loaded_domain_neutral flag whenever the
