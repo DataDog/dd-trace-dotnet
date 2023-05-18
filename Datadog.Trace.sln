@@ -530,6 +530,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeepNestedHierarchy", "trac
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AWS.Kinesis", "tracer\test\test-applications\integrations\Samples.AWS.Kinesis\Samples.AWS.Kinesis.csproj", "{C7DE0626-9EB6-475E-AA0C-CB9DE21D4FAE}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureServiceBus", "tracer\test\test-applications\integrations\Samples.AzureServiceBus\Samples.AzureServiceBus.csproj", "{BC44A41F-1BED-4438-9F66-0EA5607906D5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1258,6 +1260,10 @@ Global
 		{C7DE0626-9EB6-475E-AA0C-CB9DE21D4FAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C7DE0626-9EB6-475E-AA0C-CB9DE21D4FAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C7DE0626-9EB6-475E-AA0C-CB9DE21D4FAE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC44A41F-1BED-4438-9F66-0EA5607906D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC44A41F-1BED-4438-9F66-0EA5607906D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC44A41F-1BED-4438-9F66-0EA5607906D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC44A41F-1BED-4438-9F66-0EA5607906D5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1463,6 +1469,7 @@ Global
 		{959E9599-8D99-43BC-8038-B91F76179C1C} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 		{1B3E6BEE-F7AB-433E-A1D9-E8BE3782419B} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 		{C7DE0626-9EB6-475E-AA0C-CB9DE21D4FAE} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{BC44A41F-1BED-4438-9F66-0EA5607906D5} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

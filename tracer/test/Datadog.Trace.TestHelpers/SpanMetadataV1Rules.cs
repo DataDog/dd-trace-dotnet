@@ -302,6 +302,25 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "client"));
 
+        public static Result IsAzureServiceBusRequestV1(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                // .MatchesOneOf(Name, "Message", "ServiceBusSender.Send", "ServiceBusReceiver.Receive", "ServiceBusReceiver.Complete", "ServiceBusProcessor.ProcessMessage", "ServiceBusSessionReceiver.RenewSessionLock", "ServiceBusSessionReceiver.SetSessionState", "ServiceBusSessionReceiver.GetSessionState", "ServiceBusSessionProcessor.ProcessSessionMessage", "ServiceBusSender.Schedule")
+                .MatchesOneOf(Type, "http", "custom"))
+            .Tags(s => s
+                .Matches("az.namespace", "Microsoft.ServiceBus")
+                .IsPresent("az.schema_url")
+                .IsOptional("messaging.destination.name")
+                .IsOptional("messaging.operation")
+                .IsOptional("messaging.source.name")
+                .Matches("messaging.system", "servicebus")
+                .IsPresent("net.peer.name")
+                .IsPresent("otel.library.name")
+                .IsOptional("otel.library.version")
+                .IsPresent("otel.trace_id")
+                .MatchesOneOf("otel.status_code", "STATUS_CODE_UNSET", "STATUS_CODE_OK", "STATUS_CODE_ERROR")
+                .IsOptional("otel.status_description")
+                .MatchesOneOf("span.kind", "client", "consumer", "producer"));
+
         public static Result IsCosmosDbV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "cosmosdb.query")

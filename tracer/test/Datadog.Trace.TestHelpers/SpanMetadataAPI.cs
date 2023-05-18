@@ -109,6 +109,27 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsAwsSnsRequestV0(),
             };
 
+        public static Result IsAzureServiceBusInbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAzureServiceBusRequestV1(),
+                _ => span.IsAzureServiceBusRequestV0(),
+            };
+
+        public static Result IsAzureServiceBusOutbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAzureServiceBusRequestV1(),
+                _ => span.IsAzureServiceBusRequestV0(),
+            };
+
+        public static Result IsAzureServiceBusRequest(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAzureServiceBusRequestV1(),
+                _ => span.IsAzureServiceBusRequestV0(),
+            };
+
         public static Result IsCosmosDb(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
