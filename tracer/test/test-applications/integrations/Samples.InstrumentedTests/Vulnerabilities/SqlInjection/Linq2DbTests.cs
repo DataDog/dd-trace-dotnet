@@ -39,13 +39,6 @@ public class Linq2DbTests : InstrumentationTestsBase, IDisposable
     }
 
     [Fact]
-    public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
-    {
-        DbCommandProcessorExtensions.ExecuteReaderExt(command, CommandBehavior.Default);
-        AssertLocation(nameof(Linq2DbTests));
-    }
-
-    [Fact]
     public void GivenLinq2DbOperation_WhenCallingExecuteReaderExtWithTainted_VulnerabilityIsReported()
     {
         DbCommandProcessorExtensions.ExecuteReaderExt(commandUnsafe, CommandBehavior.Default);

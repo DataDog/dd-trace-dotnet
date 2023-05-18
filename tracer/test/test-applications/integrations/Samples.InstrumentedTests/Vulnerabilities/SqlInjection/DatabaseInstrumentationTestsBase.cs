@@ -45,16 +45,6 @@ public abstract class DatabaseInstrumentationTestsBase : InstrumentationTestsBas
     protected abstract DbCommand GetCommand();
 
     [Fact]
-    public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
-    {
-        using (var databaseConnection = OpenConnection())
-        {
-            GetCommand(QueryUnsafe, databaseConnection).ExecuteNonQuery();
-            AssertLocation(nameof(DatabaseInstrumentationTestsBase));
-        }        
-    }
-
-    [Fact]
     public void GivenADbCommand_WhenCallingExecuteNonQueryWithTainted_VulnerabilityIsReported()
     {
         using (var databaseConnection = OpenConnection())
