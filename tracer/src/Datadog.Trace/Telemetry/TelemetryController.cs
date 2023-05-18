@@ -81,6 +81,11 @@ namespace Datadog.Trace.Telemetry
             _tracerInitialized.TrySetResult(true);
         }
 
+        public void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error)
+        {
+            // Not implemented in V1 of telemetry
+        }
+
         public void RecordSecuritySettings(SecuritySettings settings)
             => _configuration.RecordSecuritySettings(settings);
 

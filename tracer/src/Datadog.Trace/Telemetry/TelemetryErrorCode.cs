@@ -5,9 +5,11 @@
 
 #nullable enable
 using System.ComponentModel;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Telemetry;
 
+[EnumExtensions]
 internal enum TelemetryErrorCode
 {
     /// <summary>

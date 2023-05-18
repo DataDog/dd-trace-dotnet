@@ -420,7 +420,7 @@ namespace Datadog.Trace.ClrProfiler
 
                         var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, tracer.Settings, tracer.TracerManager.GitMetadataTagsProvider, RcmSubscriptionManager.Instance);
 
-                        var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, tracer.Settings, serviceName);
+                        var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, tracer.Settings, serviceName, tracer.TracerManager.Telemetry);
 
                         Log.Debug("Initializing Remote Configuration management.");
 
