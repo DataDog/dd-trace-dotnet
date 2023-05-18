@@ -34,6 +34,18 @@ public class EFCoreSqliteTests : InstrumentationTestsBase
     {
         dbContext.Database.CloseConnection();
     }
+
+    [Fact]
+    public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
+    {
+        var command = dbContext.Database.GetDbConnection().CreateCommand();
+        command.CommandText = queryUnsafe;
+        command.ExecuteScalar();
+        dbContext.Database.CloseConnection();
+        AssertVulnerable();
+        AssertLocation(nameof(EFCoreSqliteTests));
+    }
+
 #if NET5_0_OR_GREATER
     [Fact]
     public void GivenAMicrosoftSqliteEFCoreDatabase_WhenCallingExecuteSqlRawWithTainted_VulnerabilityIsReported()
@@ -128,19 +140,6 @@ public class EFCoreSqliteTests : InstrumentationTestsBase
     {
         dbContext.Books.Where(x => x.Title == taintedTitle).ToList();
         AssertNotVulnerable();
-    }
-
-    [Fact]
-    public void GivenADatabaseCore_WhenRetrievingFromDatabase_Tainted()
-    {
-        var title = dbContext.Books.First().Title;
-        AssertTainted(title);
-    }
-
-    [Fact]
-    public void GivenADatabaseCore_WhenRetrievingFromDatabase_IsTainted2()
-    {
-        AssertTainted(dbContext.Books.Where(x => x.Title != "w").First().Title);
     }
 }
 

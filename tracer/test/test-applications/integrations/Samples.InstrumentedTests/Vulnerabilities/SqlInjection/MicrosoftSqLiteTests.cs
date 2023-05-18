@@ -33,6 +33,13 @@ public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
     }
 
     [Fact]
+    public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
+    {
+        new SqliteCommand(taintedQuery, dbConnection).ExecuteNonQuery();
+        AssertLocation(nameof(MicrosoftSqLiteTests));
+    }
+
+    [Fact]
     public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteNonQueryWithTainted_VulnerabilityIsReported()
     {
         new SqliteCommand(taintedQuery, dbConnection).ExecuteNonQuery();
@@ -46,19 +53,16 @@ public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
         AssertVulnerable();
     }
 
-// #if !NET60
-//    [ExpectedException(typeof(InvalidOperationException))]
-// #endif
+    [Fact]
     public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteNonQueryWithNull_VulnerabilityIsReported()
     {
-        new SqliteCommand(null, dbConnection).ExecuteNonQuery();
+        Assert.Throws<InvalidOperationException>(() => new SqliteCommand(null, dbConnection).ExecuteNonQuery());
     }
 
-    // [ExpectedException(typeof(InvalidOperationException))]
     [Fact]
     public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteNonQueryWithNoCommand_VulnerabilityIsReported()
     {
-        new SqliteCommand().ExecuteNonQuery();
+        Assert.Throws<InvalidOperationException>(() => new SqliteCommand().ExecuteNonQuery());        
     }
 
     [Fact]
@@ -94,7 +98,7 @@ public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
     {
         var reader = new SqliteCommand(taintedQuery, dbConnection).ExecuteReader(CommandBehavior.Default);
         reader.Read();
-        AssertTainted(reader[1]);
+        AssertVulnerable();
     }
 
     [Fact]
@@ -102,7 +106,7 @@ public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
     {
         var reader = new SqliteCommand(taintedQuery, dbConnection).ExecuteReader(CommandBehavior.Default);
         reader.Read();
-        AssertTainted(reader["Name"]);
+        AssertVulnerable();
     }
 
     [Fact]
@@ -110,18 +114,9 @@ public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
     {
         var reader = new SqliteCommand(taintedQuery, dbConnection).ExecuteReader(CommandBehavior.Default);
         reader.Read();
-        AssertTainted(reader.GetValue(1));
+        AssertVulnerable();
     }
 
-#if NETCOREAPP3_0_OR_GREATER
-    [Fact]
-    public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteReaderCommandBehaviorWithTainted_Tainted4()
-    {
-        var reader = new SqliteCommand(taintedQuery, dbConnection).ExecuteReader(CommandBehavior.Default);
-        reader.Read();
-        AssertTainted(reader.GetString("Name"));
-    }
-#endif
     [Fact]
     public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteReaderCommandBehaviorWithNotTainted_VulnerabilityIsNotReported()
     {

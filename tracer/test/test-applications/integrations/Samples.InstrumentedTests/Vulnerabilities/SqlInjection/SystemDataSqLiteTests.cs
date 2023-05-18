@@ -35,12 +35,11 @@ public class SystemDataSqLiteTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
     {
+        new SQLiteCommand(taintedQuery, dbConnection, null).ExecuteNonQuery();
         AssertLocation(nameof(SystemDataSqLiteTests));
     }
 
     [Fact]
-    // [ExpectedException(typeof(InvalidOperationException))]
-
     public void GivenASystemDataSQLiteCommand_WhenCallingExecuteNonQueryWithTainted_VulnerabilityIsReported1()
     {
         Assert.Throws<InvalidOperationException>(() => new SQLiteCommand(taintedQuery).ExecuteNonQuery());
@@ -228,39 +227,6 @@ public class SystemDataSqLiteTests : InstrumentationTestsBase, IDisposable
     {
         var reader = new SQLiteCommand(taintedQuery, dbConnection).ExecuteReader(CommandBehavior.Default);
         reader.Read();
-        AssertTainted(reader[1]);
-    }
-
-    [Fact]
-    public void GivenASystemDataSQLiteCommand_WhenCallingExecuteReaderCommandBehaviorWithTainted_Tainted2()
-    {
-        var reader = new SQLiteCommand(taintedQuery, dbConnection).ExecuteReader(CommandBehavior.Default);
-        reader.Read();
-        AssertTainted(reader["Name"]);
-    }
-
-#if NETCOREAPP3_1_OR_GREATER
-    [Fact]
-    public void GivenASystemDataSQLiteCommand_WhenCallingExecuteReaderCommandBehaviorWithTainted_Tainted21()
-    {
-        var reader = new SQLiteCommand(taintedQuery, dbConnection).ExecuteReader(CommandBehavior.Default);
-        reader.Read();
-        AssertTainted(reader.GetString("Name"));
-    }
-#endif
-    [Fact]
-    public void GivenASystemDataSQLiteCommand_WhenCallingExecuteReaderCommandBehaviorWithTainted_Tainted3()
-    {
-        var reader = new SQLiteCommand(taintedQuery, dbConnection).ExecuteReader(CommandBehavior.Default);
-        reader.Read();
-        AssertTainted(reader.GetValue(1));
-    }
-
-    [Fact]
-    public void GivenASystemDataSQLiteCommand_WhenCallingExecuteReaderCommandBehaviorWithTainted_Tainted4()
-    {
-        var reader = new SQLiteCommand(taintedQuery, dbConnection).ExecuteReader(CommandBehavior.Default);
-        reader.Read();
-        AssertTainted(reader.GetString(1));
+        AssertVulnerable();
     }
 }

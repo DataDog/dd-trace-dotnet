@@ -8,6 +8,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Threading;
 using FluentAssertions;
+using LinqToDB.Data.DbCommandProcessor;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
@@ -42,6 +43,13 @@ public class EntityFrameworkTests : InstrumentationTestsBase, IDisposable
         db.Database.Connection.Close();
         db.Dispose();
         db = null;
+    }
+
+    [Fact]
+    public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
+    {
+        db.Database.ExecuteSqlCommand(CommandUnsafeText);
+        AssertLocation(nameof(EntityFrameworkTests));
     }
 
     [Fact]
@@ -104,7 +112,7 @@ public class EntityFrameworkTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteSqlCommandFormatUnsafe_VulnerabilityIsReported()
     {
-        var result = db.Database.ExecuteSqlCommand(String.Format("Update dbo.Books set title='{0}' where title ='{1}'", taintedTitle, taintedTitle));
+        var result = db.Database.ExecuteSqlCommand("Update dbo.Books set title='"+ taintedTitle + "' where title = '" + taintedTitle + "'");
         result.Should().Be(1);
         AssertVulnerable();
     }

@@ -33,7 +33,8 @@ internal static class StackWalker
         "System.Data.SqlClient",
         "System.Data.SQLite",
         "System.Diagnostics.Process",
-        "System.Configuration.ConfigurationManager"
+        "System.Configuration.ConfigurationManager",
+        "linq2db"
     };
 
     private const int DefaultSkipFrames = 2;

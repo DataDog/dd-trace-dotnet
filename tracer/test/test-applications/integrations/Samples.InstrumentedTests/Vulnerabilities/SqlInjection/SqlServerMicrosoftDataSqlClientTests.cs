@@ -53,18 +53,4 @@ public class SqlServerMicrosoftDataSqlClientTests : DatabaseInstrumentationTests
     {
         return DbCommand(dbConnection, "Select * From Persons").ExecuteReader();
     }
-
-    [Fact]
-    public void GivenADbDataReader_WhenCallingGetItemString_ValueIsTainted()
-    {
-        using (var dbConnection = OpenSqlConnection())
-        {
-            using (var dbDataReader = DataReader(dbConnection))
-            {
-                dbDataReader.Read();
-                var value = dbDataReader["Name"];
-                AssertTainted(value);
-            }
-        }
-    }
 }

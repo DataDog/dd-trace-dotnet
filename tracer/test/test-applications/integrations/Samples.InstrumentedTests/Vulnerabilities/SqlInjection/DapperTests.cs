@@ -40,6 +40,13 @@ public class DapperTests : InstrumentationTestsBase, IDisposable
     }
 
     [Fact]
+    public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
+    {
+        dbConnection.ExecuteReader(QueryUnsafe, null);
+        AssertLocation(nameof(DapperTests));
+    }
+
+    [Fact]
     public void GivenDapper_WhenCallingExecuteReaderWithTainted3Params_VulnerabilityIsReported()
     {
         dbConnection.ExecuteReader(QueryUnsafe, null);

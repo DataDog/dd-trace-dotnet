@@ -1,6 +1,8 @@
 using System;
 using System.Data;
+using System.Data.Common;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Threading;
 using Xunit;
 
@@ -31,6 +33,13 @@ public class SqlCommandTests : InstrumentationTestsBase, IDisposable
     }
 
     [Fact]
+    public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
+    {
+        new SqlCommand(taintedQuery, databaseConnection).ExecuteNonQuery();
+        AssertLocation(nameof(SqlCommandTests));
+    }
+
+    [Fact]
     public void GivenASqlCommand_WhenCallingExecuteNonQueryWithTainted_VulnerabilityIsReported()
     {
         new SqlCommand(taintedQuery, databaseConnection).ExecuteNonQuery();
@@ -44,18 +53,16 @@ public class SqlCommandTests : InstrumentationTestsBase, IDisposable
         AssertVulnerable();
     }
 
-    // [ExpectedException(typeof(InvalidOperationException))]
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteNonQueryWithNull_VulnerabilityIsReported()
     {
-        new SqlCommand(null, databaseConnection).ExecuteNonQuery();
+        Assert.Throws<InvalidOperationException>(() => new SqlCommand(null, databaseConnection).ExecuteNonQuery());
     }
 
-    // [ExpectedException(typeof(InvalidOperationException))]
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteNonQueryWithNoCommand_VulnerabilityIsReported()
     {
-        new SqlCommand().ExecuteNonQuery();
+        Assert.Throws<InvalidOperationException>(() => new SqlCommand().ExecuteNonQuery());
     }
 
     [Fact]
