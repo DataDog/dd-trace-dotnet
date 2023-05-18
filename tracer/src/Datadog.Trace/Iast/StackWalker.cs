@@ -35,7 +35,9 @@ internal static class StackWalker
         "System.Diagnostics.Process",
         "System.Configuration.ConfigurationManager",
         "linq2db",
-        "Dapper"
+        "Dapper",
+        "EntityFramework",
+        "EntityFramework.SqlServer"
     };
 
     private const int DefaultSkipFrames = 2;
