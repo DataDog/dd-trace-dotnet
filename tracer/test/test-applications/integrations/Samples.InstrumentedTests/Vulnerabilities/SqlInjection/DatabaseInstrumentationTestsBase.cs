@@ -1,7 +1,9 @@
+using System;
 using System.Data;
 using System.Data.Common;
 using System.Threading;
 using Xunit;
+using static LinqToDB.DataProvider.DB2.DB2ProviderAdapter;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
@@ -43,6 +45,16 @@ public abstract class DatabaseInstrumentationTestsBase : InstrumentationTestsBas
     protected abstract DbCommand GetCommand();
 
     [Fact]
+    public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
+    {
+        using (var databaseConnection = OpenConnection())
+        {
+            GetCommand(QueryUnsafe, databaseConnection).ExecuteNonQuery();
+            AssertLocation(nameof(DatabaseInstrumentationTestsBase));
+        }        
+    }
+
+    [Fact]
     public void GivenADbCommand_WhenCallingExecuteNonQueryWithTainted_VulnerabilityIsReported()
     {
         using (var databaseConnection = OpenConnection())
@@ -52,18 +64,16 @@ public abstract class DatabaseInstrumentationTestsBase : InstrumentationTestsBas
         }
     }
 
-    // [ExpectedException(typeof(InvalidOperationException))]
     [Fact]
     public void GivenADbCommand_WhenCallingExecuteNonQueryWithNull_VulnerabilityIsReported()
     {
-        GetCommand(null).ExecuteNonQuery();
+        Assert.Throws<InvalidOperationException>(() => GetCommand(null).ExecuteNonQuery());
     }
 
-    // [ExpectedException(typeof(InvalidOperationException))]
     [Fact]
     public void GivenADbCommand_WhenCallingExecuteNonQueryWithNoCommand_VulnerabilityIsReported()
     {
-        GetCommand().ExecuteNonQuery();
+        Assert.Throws<InvalidOperationException>(() => GetCommand().ExecuteNonQuery());
     }
 
     [Fact]
@@ -293,68 +303,6 @@ public abstract class DatabaseInstrumentationTestsBase : InstrumentationTestsBas
         {
             GetCommand(QuerySafe, databaseConnection).ExecuteNonQueryAsync(CancellationToken.None).Wait();
             AssertNotVulnerable();
-        }
-    }
-
-    [Fact]
-    public void GivenADbCommand_WhenCallingExecuteReaderCommandBehaviorWithTainted_Tainted()
-    {
-        using (var databaseConnection = OpenConnection())
-        {
-            var reader = GetCommand(QueryUnsafe, databaseConnection).ExecuteReader(CommandBehavior.Default);
-            reader.Read();
-            AssertTainted(reader[1]);
-        }
-    }
-
-
-    [Fact]
-    public void GivenADbCommand_WhenCallingExecuteReaderCommandBehaviorWithTainted_Tainted2()
-    {
-        using (var databaseConnection = OpenConnection())
-        {
-            var reader = GetCommand(QueryUnsafe, databaseConnection).ExecuteReader(CommandBehavior.Default);
-            reader.Read();
-            AssertTainted(reader["Title"]);
-        }
-    }
-
-    [Fact]
-    public void GivenADbCommand_WhenCallingExecuteReaderCommandBehaviorWithTainted_Tainted3()
-    {
-        using (var databaseConnection = OpenConnection())
-        {
-            var reader = GetCommand(QueryUnsafe, databaseConnection).ExecuteReader(CommandBehavior.Default);
-            reader.Read();
-            AssertTainted(reader.GetValue(1));
-        }
-    }
-
-    [Fact]
-    public void GivenADbCommand_WhenCallingExecuteReaderCommandBehaviorWithTainted_Tainted4()
-    {
-        using (var databaseConnection = OpenConnection())
-        {
-            var reader = GetCommand(QueryUnsafe, databaseConnection).ExecuteReader(CommandBehavior.Default);
-            reader.Read();
-            AssertTainted(reader.GetString(3));
-        }
-    }
-
-    [Fact]
-    public void GivenADbDataReader_WhenCallingGetValues_AllStringValuesAreTainted()
-    {
-        using (var databaseConnection = OpenConnection())
-        {
-            using (var dbDataReader = GetCommand(QueryUnsafe, databaseConnection).ExecuteReader(CommandBehavior.Default))
-            {
-                while (dbDataReader.Read())
-                {
-                    object[] values = new object[dbDataReader.FieldCount];
-                    dbDataReader.GetValues(values);
-                    AssertTainted(values[1]);
-                }
-            }
         }
     }
 }

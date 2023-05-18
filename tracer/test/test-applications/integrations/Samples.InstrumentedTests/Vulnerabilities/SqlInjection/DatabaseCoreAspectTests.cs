@@ -48,6 +48,7 @@ public class DatabaseCoreAspectTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
     {
+        dbContext.Database.ExecuteSqlRaw(CommandUnsafe);
         AssertLocation(nameof(DatabaseCoreAspectTests));
     }
 
