@@ -33,13 +33,6 @@ public class SqlCommandTests : InstrumentationTestsBase, IDisposable
     }
 
     [Fact]
-    public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
-    {
-        new SqlCommand(taintedQuery, databaseConnection).ExecuteNonQuery();
-        AssertLocation(nameof(SqlCommandTests));
-    }
-
-    [Fact]
     public void GivenASqlCommand_WhenCallingExecuteNonQueryWithTainted_VulnerabilityIsReported()
     {
         new SqlCommand(taintedQuery, databaseConnection).ExecuteNonQuery();

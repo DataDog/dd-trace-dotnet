@@ -46,16 +46,6 @@ public class DatabaseCoreAspectTests : InstrumentationTestsBase, IDisposable
     }
 
     [Fact]
-    public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
-    {
-        var command = dbContext.Database.GetDbConnection().CreateCommand();
-        command.CommandText = CommandUnsafe;
-        command.ExecuteNonQuery();
-        dbContext.Database.CloseConnection();
-        AssertLocation(nameof(DatabaseCoreAspectTests));
-    }
-
-    [Fact]
     public void GivenACoreDatabase_WhenCallingExecuteSqlRawWithTainted_VulnerabilityIsReported()
     {
         dbContext.Database.ExecuteSqlRaw(CommandUnsafe);

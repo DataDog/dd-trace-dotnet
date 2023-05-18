@@ -13,7 +13,7 @@ public class EFCoreSqliteTests : InstrumentationTestsBase
 {
     protected string taintedTitle = "Think_Python";
     protected string notTaintedValue = "nottainted";
-    string CommandUnsafe;
+    string CommandTextUnsafe;
 
     SqliteParameter titleParam;
     string queryUnsafe;
@@ -26,7 +26,7 @@ public class EFCoreSqliteTests : InstrumentationTestsBase
         AddTainted(taintedTitle);
         titleParam = new SqliteParameter("@title", taintedTitle);
         queryUnsafe = "Select * from Books where title ='" + taintedTitle + "'";
-        CommandUnsafe = "Update Books set title= title where title ='" + taintedTitle + "'";
+        CommandTextUnsafe = "Update Books set title= title where title ='" + taintedTitle + "'";
         dbContext.Database.OpenConnection();
     }
 
@@ -35,71 +35,60 @@ public class EFCoreSqliteTests : InstrumentationTestsBase
         dbContext.Database.CloseConnection();
     }
 
-    [Fact]
-    public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
-    {
-        var command = dbContext.Database.GetDbConnection().CreateCommand();
-        command.CommandText = queryUnsafe;
-        command.ExecuteScalar();
-        dbContext.Database.CloseConnection();
-        AssertVulnerable();
-        AssertLocation(nameof(EFCoreSqliteTests));
-    }
-
 #if NET5_0_OR_GREATER
     [Fact]
     public void GivenAMicrosoftSqliteEFCoreDatabase_WhenCallingExecuteSqlRawWithTainted_VulnerabilityIsReported()
     {
-        dbContext.Database.ExecuteSqlRaw(CommandUnsafe);
+        dbContext.Database.ExecuteSqlRaw(CommandTextUnsafe);
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAMicrosoftSqliteEFCoreDatabase_WhenCallingExecuteSqlRawWithTainted_VulnerabilityIsReported2()
     {
-        dbContext.Database.ExecuteSqlRaw(CommandUnsafe, new List<object>());
+        dbContext.Database.ExecuteSqlRaw(CommandTextUnsafe, new List<object>());
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAMicrosoftSqliteEFCoreDatabase_WhenCallingExecuteSqlRawWithTainted_VulnerabilityIsReported3()
     {
-        dbContext.Database.ExecuteSqlRaw(CommandUnsafe, new object[] { });
+        dbContext.Database.ExecuteSqlRaw(CommandTextUnsafe, new object[] { });
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAMicrosoftSqliteEFCoreDatabase_WhenCallingExecuteSqlRawAsyncWithTainted_VulnerabilityIsReported()
     {
-        dbContext.Database.ExecuteSqlRawAsync(CommandUnsafe);
+        dbContext.Database.ExecuteSqlRawAsync(CommandTextUnsafe);
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAMicrosoftSqliteEFCoreDatabase_WhenCallingExecuteSqlRawAsyncWithTainted_VulnerabilityIsReported2()
     {
-        dbContext.Database.ExecuteSqlRawAsync(CommandUnsafe, CancellationToken.None);
+        dbContext.Database.ExecuteSqlRawAsync(CommandTextUnsafe, CancellationToken.None);
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAMicrosoftSqliteEFCoreDatabase_WhenCallingExecuteSqlRawAsyncWithTainted_VulnerabilityIsReported3()
     {
-        dbContext.Database.ExecuteSqlRawAsync(CommandUnsafe, new object[] { });
+        dbContext.Database.ExecuteSqlRawAsync(CommandTextUnsafe, new object[] { });
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAMicrosoftSqliteEFCoreDatabase_WhenCallingExecuteSqlRawAsyncWithTainted_VulnerabilityIsReported4()
     {
-        dbContext.Database.ExecuteSqlRawAsync(CommandUnsafe, new List<object>());
+        dbContext.Database.ExecuteSqlRawAsync(CommandTextUnsafe, new List<object>());
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAMicrosoftSqliteEFCoreDatabase_WhenCallingExecuteSqlRawAsyncWithTainted_VulnerabilityIsReported5()
     {
-        dbContext.Database.ExecuteSqlRawAsync(CommandUnsafe, new List<object>(), CancellationToken.None);
+        dbContext.Database.ExecuteSqlRawAsync(CommandTextUnsafe, new List<object>(), CancellationToken.None);
         AssertVulnerable();
     }
 

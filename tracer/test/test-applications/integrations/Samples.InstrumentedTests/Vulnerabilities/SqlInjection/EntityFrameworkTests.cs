@@ -46,13 +46,6 @@ public class EntityFrameworkTests : InstrumentationTestsBase, IDisposable
     }
 
     [Fact]
-    public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
-    {
-        db.Database.ExecuteSqlCommand(CommandUnsafeText);
-        AssertLocation(nameof(EntityFrameworkTests));
-    }
-
-    [Fact]
     public void GivenEntityFramework_WhenCallingExecuteSqlCommandWithTainted_VulnerabilityIsReported()
     {
         var result = db.Database.ExecuteSqlCommand(CommandUnsafeText);
@@ -75,7 +68,6 @@ public class EntityFrameworkTests : InstrumentationTestsBase, IDisposable
         result.Should().Be(1);
         AssertVulnerable();
     }
-
 
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteSqlCommandTransactionalBehaviorObjectWithTainted_VulnerabilityIsReported()

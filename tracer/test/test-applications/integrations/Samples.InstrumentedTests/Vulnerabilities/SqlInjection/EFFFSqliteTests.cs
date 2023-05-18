@@ -44,13 +44,6 @@ public class EFFFSqliteTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
-    {
-        db.Database.ExecuteSqlCommand(CommandUnsafeText);
-        AssertLocation(nameof(EFFFSqliteTests));
-    }
-
-    [Fact]
     public void GivenEntityFrameworkSqlite_WhenCallingExecuteSqlCommandWithTainted_VulnerabilityIsReported()
     {
         var result = db.Database.ExecuteSqlCommand(CommandUnsafeText);

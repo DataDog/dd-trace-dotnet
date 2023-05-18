@@ -16,6 +16,10 @@ internal static class StackWalker
     public static readonly string[] AssemblyNamesToSkip =
     {
         "Datadog.Trace",
+        "Dapper",
+        "EntityFramework",
+        "EntityFramework.SqlServer",
+        "linq2db",
         "Microsoft.Data.SqlClient",
         "Microsoft.Data.Sqlite",
         "MySql.Data",
@@ -25,6 +29,7 @@ internal static class StackWalker
         "Oracle.ManagedDataAccess",
         "System.Data",
         "System",
+        "System.Linq",
         "System.Data.Common",
         "System.Security.Cryptography",
         "System.Security.Cryptography.Algorithms",
@@ -34,10 +39,7 @@ internal static class StackWalker
         "System.Data.SQLite",
         "System.Diagnostics.Process",
         "System.Configuration.ConfigurationManager",
-        "linq2db",
-        "Dapper",
-        "EntityFramework",
-        "EntityFramework.SqlServer"
+        "System.Private.CoreLib",
     };
 
     private const int DefaultSkipFrames = 2;

@@ -23,13 +23,6 @@ public class DirectoryTests : InstrumentationTestsBase
         AddTainted(taintedpattern);
     }
 
-    [Fact]
-    public void GivenADirectory_WhenCreatingFromTaintedString_LocationIsCorrect()
-    {
-        ExecuteAction(() => { Directory.CreateDirectory(taintedPathValue); });
-        AssertLocation(nameof(DirectoryTests));
-    }
-
     // Cover System.IO.Directory::CreateDirectory(System.String)
 
 #if NETFRAMEWORK

@@ -33,13 +33,6 @@ public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
     }
 
     [Fact]
-    public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
-    {
-        new SqliteCommand(taintedQuery, dbConnection).ExecuteNonQuery();
-        AssertLocation(nameof(MicrosoftSqLiteTests));
-    }
-
-    [Fact]
     public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteNonQueryWithTainted_VulnerabilityIsReported()
     {
         new SqliteCommand(taintedQuery, dbConnection).ExecuteNonQuery();

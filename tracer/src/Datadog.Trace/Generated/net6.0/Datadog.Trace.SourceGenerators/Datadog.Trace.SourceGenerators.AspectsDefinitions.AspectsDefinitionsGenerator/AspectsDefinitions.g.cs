@@ -11,6 +11,14 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] Aspects = new string[] {
+"[AspectClass(\"Microsoft.EntityFrameworkCore.Relational\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.EntityFrameworkCoreAspect",
+"  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRaw(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Object[])\",\"\",[1],[False],[None],Propagation,[])] ReviewSqlString(System.String)",
+"  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRaw(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Collections.Generic.IEnumerable`1<System.Object>)\",\"\",[1],[False],[None],Propagation,[])] ReviewSqlString(System.String)",
+"  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRawAsync(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Threading.CancellationToken)\",\"\",[1],[False],[None],Propagation,[])] ReviewSqlString(System.String)",
+"  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRawAsync(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Object[])\",\"\",[1],[False],[None],Propagation,[])] ReviewSqlString(System.String)",
+"  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRawAsync(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Collections.Generic.IEnumerable`1<System.Object>)\",\"\",[1],[False],[None],Propagation,[])] ReviewSqlString(System.String)",
+"  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRawAsync(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Collections.Generic.IEnumerable`1<System.Object>,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Propagation,[])] ReviewSqlString(System.String)",
+"  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalQueryableExtensions::FromSqlRaw(Microsoft.EntityFrameworkCore.DbSet`1<!!0>,System.String,System.Object[])\",\"\",[1],[False],[None],Propagation,[])] ReviewSqlString(System.String)",
 "[AspectClass(\"mscorlib,System.IO.FileSystem,System.Runtime\",[None],Sink,[PathTraversal])] Datadog.Trace.Iast.Aspects.DirectoryAspect",
 "  [AspectMethodInsertBefore(\"System.IO.Directory::CreateDirectory(System.String)\",\"\",[0],[False],[None],Propagation,[])] ReviewPath(System.String)",
 "  [AspectMethodInsertBefore(\"System.IO.Directory::CreateDirectory(System.String,System.IO.UnixFileMode)\",\"\",[1],[False],[None],Propagation,[])] ReviewPath(System.String)",
