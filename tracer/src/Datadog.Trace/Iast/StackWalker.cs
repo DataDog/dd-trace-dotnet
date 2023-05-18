@@ -34,7 +34,8 @@ internal static class StackWalker
         "System.Data.SQLite",
         "System.Diagnostics.Process",
         "System.Configuration.ConfigurationManager",
-        "linq2db"
+        "linq2db",
+        "Dapper"
     };
 
     private const int DefaultSkipFrames = 2;
