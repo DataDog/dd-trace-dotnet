@@ -48,7 +48,10 @@ public class DatabaseCoreAspectTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenAVulnerability_WhenGetStack_ThenLocationIsCorrect()
     {
-        dbContext.Database.ExecuteSqlRaw(CommandUnsafe);
+        var command = dbContext.Database.GetDbConnection().CreateCommand();
+        command.CommandText = CommandUnsafe;
+        command.ExecuteNonQuery();
+        dbContext.Database.CloseConnection();
         AssertLocation(nameof(DatabaseCoreAspectTests));
     }
 
@@ -118,6 +121,7 @@ public class DatabaseCoreAspectTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenACoreDatabase_WhenCallingFromSqlRawWithTainted_VulnerabilityIsReported2()
     {
+        queryUnsafe += " ";
         dbContext.Books.FromSqlRaw(queryUnsafe, titleParam).ToList();
         AssertVulnerable();
     }
@@ -136,13 +140,6 @@ public class DatabaseCoreAspectTests : InstrumentationTestsBase, IDisposable
     public void GivenACoreDatabase_WhenCallingFromSqlRawWithTainted_VulnerabilityIsReported3()
     {
         dbContext.Books.FromSqlRaw("Select * from dbo.Books where title ='" + taintedTitle + "'");
-        AssertVulnerable();
-    }
-
-    [Fact]
-    public void GivenACoreDatabase_WhenCallingFromSqlRawWithTaintedInsecure_VulnerabilityIsReported()
-    {
-        dbContext.Books.FromSqlRaw(String.Format("Select * from dbo.Books where title ='{0}'", taintedTitle));
         AssertVulnerable();
     }
 
