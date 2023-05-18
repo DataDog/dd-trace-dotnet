@@ -126,9 +126,18 @@ namespace Datadog.Trace
 
             telemetry ??= TelemetryFactory.CreateTelemetryController(settings);
             telemetry.RecordTracerSettings(settings, defaultServiceName);
-            telemetry.RecordSecuritySettings(Security.Instance.Settings);
+
+            var security = Security.Instance;
+            telemetry.RecordSecuritySettings(security.Settings);
             telemetry.RecordIastSettings(Datadog.Trace.Iast.Iast.Instance.Settings);
-            telemetry.RecordProfilerSettings(Profiler.Instance);
+            ErrorData? initError = !string.IsNullOrEmpty(security.InitializationError)
+                                       ? new ErrorData(TelemetryErrorCode.AppsecConfigurationError, security.InitializationError)
+                                       : null;
+            telemetry.ProductChanged(TelemetryProductType.AppSec, enabled: security.Enabled, initError);
+
+            var profiler = Profiler.Instance;
+            telemetry.RecordProfilerSettings(profiler);
+            telemetry.ProductChanged(TelemetryProductType.Profiler, enabled: profiler.Status.IsProfilerReady, error: null);
 
             SpanContextPropagator.Instance = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract);
 
