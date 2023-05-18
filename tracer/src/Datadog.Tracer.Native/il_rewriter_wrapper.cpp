@@ -31,15 +31,16 @@ ILInstr* ILRewriterWrapper::LoadNull() const
     return pNewInstr;
 }
 
-void ILRewriterWrapper::LoadInt64(const INT64 value) const
+ILInstr* ILRewriterWrapper::LoadInt64(const INT64 value) const
 {
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
     pNewInstr->m_opcode = CEE_LDC_I8;
     pNewInstr->m_Arg64 = value;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+    return pNewInstr;
 }
 
-void ILRewriterWrapper::LoadInt32(const INT32 value) const
+ILInstr* ILRewriterWrapper::LoadInt32(const INT32 value) const
 {
     static const std::vector<OPCODE> opcodes = {
         CEE_LDC_I4_0, CEE_LDC_I4_1, CEE_LDC_I4_2, CEE_LDC_I4_3, CEE_LDC_I4_4,
@@ -64,6 +65,7 @@ void ILRewriterWrapper::LoadInt32(const INT32 value) const
     }
 
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+    return pNewInstr;
 }
 
 ILInstr* ILRewriterWrapper::LoadArgument(const UINT16 index) const
@@ -115,45 +117,56 @@ ILInstr* ILRewriterWrapper::LoadArgumentRef(const UINT16 index) const
     return pNewInstr;
 }
 
-ILInstr* ILRewriterWrapper::LoadFieldAddress(const mdFieldDef field_def) const
+ILInstr* ILRewriterWrapper::LoadFieldAddress(const mdFieldDef field_def, bool isStatic) const
 {
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
-    pNewInstr->m_opcode = CEE_LDFLDA;
+    if (isStatic)
+    {
+        pNewInstr->m_opcode = CEE_LDSFLDA;
+    }
+    else
+    {
+        pNewInstr->m_opcode = CEE_LDFLDA;
+    }
     pNewInstr->m_Arg32 = field_def;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
     return pNewInstr;
 }
 
-void ILRewriterWrapper::Cast(const mdTypeRef type_ref) const
+ILInstr* ILRewriterWrapper::Cast(const mdTypeRef type_ref) const
 {
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
     pNewInstr->m_opcode = CEE_CASTCLASS;
     pNewInstr->m_Arg32 = type_ref;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+    return pNewInstr;
 }
 
-void ILRewriterWrapper::Box(const mdTypeRef type_ref) const
+ILInstr* ILRewriterWrapper::Box(const mdTypeRef type_ref) const
 {
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
     pNewInstr->m_opcode = CEE_BOX;
     pNewInstr->m_Arg32 = type_ref;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+    return pNewInstr;
 }
 
-void ILRewriterWrapper::UnboxAny(const mdTypeRef type_ref) const
+ILInstr* ILRewriterWrapper::UnboxAny(const mdTypeRef type_ref) const
 {
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
     pNewInstr->m_opcode = CEE_UNBOX_ANY;
     pNewInstr->m_Arg32 = type_ref;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+    return pNewInstr;
 }
 
-void ILRewriterWrapper::UnboxAnyAfter(const mdTypeRef type_ref) const
+ILInstr* ILRewriterWrapper::UnboxAnyAfter(const mdTypeRef type_ref) const
 {
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
     pNewInstr->m_opcode = CEE_UNBOX_ANY;
     pNewInstr->m_Arg32 = type_ref;
     m_ILRewriter->InsertAfter(m_ILInstr, pNewInstr);
+    return pNewInstr;
 }
 
 void ILRewriterWrapper::CreateArray(const mdTypeRef type_ref, const INT32 size) const
@@ -176,11 +189,12 @@ ILInstr* ILRewriterWrapper::CallMember(const mdMemberRef& member_ref, const bool
     return pNewInstr;
 }
 
-void ILRewriterWrapper::Duplicate() const
+ILInstr* ILRewriterWrapper::Duplicate() const
 {
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
     pNewInstr->m_opcode = CEE_DUP;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+    return pNewInstr;
 }
 
 void ILRewriterWrapper::BeginLoadValueIntoArray(const INT32 arrayIndex) const
@@ -192,12 +206,13 @@ void ILRewriterWrapper::BeginLoadValueIntoArray(const INT32 arrayIndex) const
     LoadInt32(arrayIndex);
 }
 
-void ILRewriterWrapper::EndLoadValueIntoArray() const
+ILInstr* ILRewriterWrapper::EndLoadValueIntoArray() const
 {
     // stelem.ref (store value into array at the specified index)
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
     pNewInstr->m_opcode = CEE_STELEM_REF;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+    return pNewInstr;
 }
 
 bool ILRewriterWrapper::ReplaceMethodCalls(const mdMemberRef old_method_ref, const mdMemberRef new_method_ref) const
