@@ -90,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler
 
             Log.Debug("Initialization started.");
 
-            if (GetNativeTracerVersion() == TracerConstants.AssemblyVersion)
+            if (GetNativeTracerVersion() != TracerConstants.ThreePartVersion)
             {
                 try
                 {
