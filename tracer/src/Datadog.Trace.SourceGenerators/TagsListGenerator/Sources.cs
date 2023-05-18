@@ -66,6 +66,7 @@ internal sealed class MetricAttribute : System.Attribute
 
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
+using System;
 
 namespace ");
             sb.Append(tagList.Namespace)
@@ -81,30 +82,31 @@ namespace ");
             {
                 foreach (var property in tagList.MetricProperties)
                 {
-                    var tagBytes = Encoding.UTF8.GetBytes(property.TagValue);
-                    var tagArray = new string[tagBytes.Length];
-                    for (var i = 0; i < tagBytes.Length; i++)
-                    {
-                        tagArray[i] = tagBytes[i].ToString();
-                    }
-
-                    var tagByteArray = string.Join(", ", tagArray);
+                    var tagByteArray = string.Join(", ", MessagePackHelper.GetValueInRawMessagePackIEnumerable(property.TagValue));
 
                     sb.Append(
                            @"
         // ")
                       .Append(property.PropertyName)
-                      .Append(@"Bytes = System.Text.Encoding.UTF8.GetBytes(""")
+                      .Append(@"Bytes = MessagePack.Serialize(""")
                       .Append(property.TagValue)
                       .Append(@""");");
 
                     sb.Append(
-                           @"
+                            @"
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> ")
+                        .Append(property.PropertyName)
+                        .Append(@"Bytes => new byte[] { ")
+                        .Append(tagByteArray)
+                        .Append(@" };
+#else
         private static readonly byte[] ")
-                      .Append(property.PropertyName)
-                      .Append(@"Bytes = new byte[] { ")
-                      .Append(tagByteArray)
-                      .Append(@" };");
+                        .Append(property.PropertyName)
+                        .Append(@"Bytes = new byte[] { ")
+                        .Append(tagByteArray)
+                        .Append(@" };
+#endif");
                 }
             }
 
@@ -112,30 +114,31 @@ namespace ");
             {
                 foreach (var property in tagList.TagProperties)
                 {
-                    var tagBytes = Encoding.UTF8.GetBytes(property.TagValue);
-                    var tagArray = new string[tagBytes.Length];
-                    for (var i = 0; i < tagBytes.Length; i++)
-                    {
-                        tagArray[i] = tagBytes[i].ToString();
-                    }
-
-                    var tagByteArray = string.Join(", ", tagArray);
+                    var tagByteArray = string.Join(", ", MessagePackHelper.GetValueInRawMessagePackIEnumerable(property.TagValue));
 
                     sb.Append(
                            @"
         // ")
                       .Append(property.PropertyName)
-                      .Append(@"Bytes = System.Text.Encoding.UTF8.GetBytes(""")
+                      .Append(@"Bytes = MessagePack.Serialize(""")
                       .Append(property.TagValue)
                       .Append(@""");");
 
                     sb.Append(
-                           @"
+                            @"
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> ")
+                        .Append(property.PropertyName)
+                        .Append(@"Bytes => new byte[] { ")
+                        .Append(tagByteArray)
+                        .Append(@" };
+#else
         private static readonly byte[] ")
-                      .Append(property.PropertyName)
-                      .Append(@"Bytes = new byte[] { ")
-                      .Append(tagByteArray)
-                      .Append(@" };");
+                        .Append(property.PropertyName)
+                        .Append(@"Bytes = new byte[] { ")
+                        .Append(tagByteArray)
+                        .Append(@" };
+#endif");
                 }
 
                 sb.Append(

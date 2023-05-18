@@ -3,15 +3,24 @@
 
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
+using System;
 
 namespace Datadog.Trace.Tagging
 {
     partial class ProcessCommandStartTags
     {
-        // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // EnvironmentVariablesBytes = System.Text.Encoding.UTF8.GetBytes("cmd.environment_variables");
-        private static readonly byte[] EnvironmentVariablesBytes = new byte[] { 99, 109, 100, 46, 101, 110, 118, 105, 114, 111, 110, 109, 101, 110, 116, 95, 118, 97, 114, 105, 97, 98, 108, 101, 115 };
+        // SpanKindBytes = MessagePack.Serialize("span.kind");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
+        // EnvironmentVariablesBytes = MessagePack.Serialize("cmd.environment_variables");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> EnvironmentVariablesBytes => new byte[] { 185, 99, 109, 100, 46, 101, 110, 118, 105, 114, 111, 110, 109, 101, 110, 116, 95, 118, 97, 114, 105, 97, 98, 108, 101, 115 };
+#else
+        private static readonly byte[] EnvironmentVariablesBytes = new byte[] { 185, 99, 109, 100, 46, 101, 110, 118, 105, 114, 111, 110, 109, 101, 110, 116, 95, 118, 97, 114, 105, 97, 98, 108, 101, 115 };
+#endif
 
         public override string? GetTag(string key)
         {

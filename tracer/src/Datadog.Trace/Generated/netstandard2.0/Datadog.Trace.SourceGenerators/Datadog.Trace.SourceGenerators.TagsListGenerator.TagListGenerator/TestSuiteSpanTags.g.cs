@@ -3,13 +3,18 @@
 
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
+using System;
 
 namespace Datadog.Trace.Ci.Tagging
 {
     partial class TestSuiteSpanTags
     {
-        // SuiteBytes = System.Text.Encoding.UTF8.GetBytes("test.suite");
-        private static readonly byte[] SuiteBytes = new byte[] { 116, 101, 115, 116, 46, 115, 117, 105, 116, 101 };
+        // SuiteBytes = MessagePack.Serialize("test.suite");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SuiteBytes => new byte[] { 170, 116, 101, 115, 116, 46, 115, 117, 105, 116, 101 };
+#else
+        private static readonly byte[] SuiteBytes = new byte[] { 170, 116, 101, 115, 116, 46, 115, 117, 105, 116, 101 };
+#endif
 
         public override string? GetTag(string key)
         {
