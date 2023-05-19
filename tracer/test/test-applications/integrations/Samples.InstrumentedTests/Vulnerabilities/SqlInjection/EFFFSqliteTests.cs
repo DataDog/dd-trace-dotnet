@@ -215,6 +215,7 @@ public class EFFFSqliteTests : InstrumentationTestsBase
     [Fact]
     public void GivenEntityFrameworkSqlite_WhenCallingExecuteNonQueryAsyncWithTainted_VulnerabilityIsReported()
     {
+        CommandUnsafeText += string.Empty;
         EntityCommand query = GetEntityCommand();
         _ = query.ExecuteNonQueryAsync().Result;
         AssertVulnerable();

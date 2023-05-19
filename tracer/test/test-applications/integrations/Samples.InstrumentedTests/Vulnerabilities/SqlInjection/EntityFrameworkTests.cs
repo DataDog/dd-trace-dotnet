@@ -273,6 +273,7 @@ public class EntityFrameworkTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteReaderAsyncWithTainted_VulnerabilityIsReported3()
     {
+        CommandUnsafeText += string.Empty;
         var query = GetEntityCommand();
         _ = query.ExecuteReaderAsync(CommandBehavior.SequentialAccess, CancellationToken.None).Result;
         AssertVulnerable();
