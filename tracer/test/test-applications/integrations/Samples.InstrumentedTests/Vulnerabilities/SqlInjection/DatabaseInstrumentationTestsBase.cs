@@ -3,7 +3,6 @@ using System.Data;
 using System.Data.Common;
 using System.Threading;
 using Xunit;
-using static LinqToDB.DataProvider.DB2.DB2ProviderAdapter;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
