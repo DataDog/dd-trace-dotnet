@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -29,7 +28,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 ThrowHelper.ThrowArgumentNullException(nameof(diagnosticSubscribers));
             }
 
-            _diagnosticObservers = diagnosticSubscribers.Where(x => x.IsSubscriberEnabled());
+            _diagnosticObservers = diagnosticSubscribers;
         }
 
         public static DiagnosticManager Instance { get; set; }
@@ -57,6 +56,11 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             foreach (var subscriber in _diagnosticObservers)
             {
+                if (!subscriber.IsSubscriberEnabled())
+                {
+                    continue;
+                }
+
                 IDisposable subscription = subscriber.SubscribeIfMatch(listener);
 
                 if (subscription != null)

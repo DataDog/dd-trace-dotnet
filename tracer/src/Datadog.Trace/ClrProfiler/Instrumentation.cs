@@ -90,41 +90,45 @@ namespace Datadog.Trace.ClrProfiler
 
             Log.Debug("Initialization started.");
 
-            try
+            if (GetNativeTracerVersion() != TracerConstants.ThreePartVersion)
             {
-                Log.Debug("Enabling by ref instrumentation.");
-                NativeMethods.EnableByRefInstrumentation();
-                Log.Information("ByRef instrumentation enabled.");
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "ByRef instrumentation cannot be enabled: ");
-            }
+                try
+                {
+                    Log.Debug("Enabling by ref instrumentation.");
+                    NativeMethods.EnableByRefInstrumentation();
+                    Log.Information("ByRef instrumentation enabled.");
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "ByRef instrumentation cannot be enabled: ");
+                }
 
-            try
-            {
-                Log.Debug("Enabling calltarget state by ref.");
-                NativeMethods.EnableCallTargetStateByRef();
-                Log.Information("CallTarget State ByRef enabled.");
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "CallTarget state ByRef cannot be enabled: ");
-            }
+                try
+                {
+                    Log.Debug("Enabling calltarget state by ref.");
+                    NativeMethods.EnableCallTargetStateByRef();
+                    Log.Information("CallTarget State ByRef enabled.");
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "CallTarget state ByRef cannot be enabled: ");
+                }
 
-            try
-            {
-                Log.Debug("Initializing TraceAttribute instrumentation.");
-                var payload = InstrumentationDefinitions.GetTraceAttributeDefinitions();
-                NativeMethods.AddTraceAttributeInstrumentation(payload.DefinitionsId, payload.AssemblyName, payload.TypeName);
-                Log.Information("TraceAttribute instrumentation enabled with Assembly={AssemblyName} and Type={TypeName}.", payload.AssemblyName, payload.TypeName);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error initializing TraceAttribute instrumentation");
+                try
+                {
+                    Log.Debug("Initializing TraceAttribute instrumentation.");
+                    var payload = InstrumentationDefinitions.GetTraceAttributeDefinitions();
+                    NativeMethods.AddTraceAttributeInstrumentation(payload.DefinitionsId, payload.AssemblyName, payload.TypeName);
+                    Log.Information("TraceAttribute instrumentation enabled with Assembly={AssemblyName} and Type={TypeName}.", payload.AssemblyName, payload.TypeName);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error initializing TraceAttribute instrumentation");
+                }
             }
 
             InitializeNoNativeParts();
+
             var tracer = Tracer.Instance;
 
             try
@@ -132,7 +136,6 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Debug("Sending CallTarget integration definitions to native library.");
                 var payload = InstrumentationDefinitions.GetAllDefinitions();
                 NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-
                 Log.Information<int>("The profiler has been initialized with {Count} definitions.", payload.Definitions.Length);
             }
             catch (Exception ex)
@@ -154,7 +157,6 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Debug("Sending CallTarget derived integration definitions to native library.");
                 var payload = InstrumentationDefinitions.GetDerivedDefinitions();
                 NativeMethods.AddDerivedInstrumentations(payload.DefinitionsId, payload.Definitions);
-
                 Log.Information<int>("The profiler has been initialized with {Count} derived definitions.", payload.Definitions.Length);
             }
             catch (Exception ex)
@@ -167,7 +169,6 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Debug("Sending CallTarget interface integration definitions to native library.");
                 var payload = InstrumentationDefinitions.GetInterfaceDefinitions();
                 NativeMethods.AddInterfaceInstrumentations(payload.DefinitionsId, payload.Definitions);
-
                 Log.Information<int>("The profiler has been initialized with {Count} interface definitions.", payload.Definitions.Length);
             }
             catch (Exception ex)
