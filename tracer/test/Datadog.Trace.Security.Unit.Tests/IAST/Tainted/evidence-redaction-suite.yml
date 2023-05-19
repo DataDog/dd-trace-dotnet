@@ -886,6 +886,9 @@ suite:
       ]
     expected: >
       {
+        "sources": [
+         { "origin": "http.request.parameter", "name": "oid", "value": "2.4.6.8.10" }
+        ],
         "vulnerabilities": [
           {
             "type": "LDAP_INJECTION",
