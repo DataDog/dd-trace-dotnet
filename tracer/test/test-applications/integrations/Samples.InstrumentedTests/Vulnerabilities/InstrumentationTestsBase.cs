@@ -119,7 +119,7 @@ public class InstrumentationTestsBase
     {
         var spans = GetGeneratedSpans(_traceContext);
         spans = spans.Where(x => (string)_operationNameProperty.Invoke(x, Array.Empty<object>()) == operationName).ToList();
-        spansGenerated.Should().Be(spans.Count);
+        spans.Count.Should().Be(spansGenerated);
     }
 
     protected void AssertVulnerable(int vulnerabilities = 1)

@@ -3,7 +3,7 @@ using System.Data.SqlClient;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
-internal class SqlDDBBCreator
+internal static class SqlDDBBCreator
 {
     static object DDBBLock = new();
     static bool DDBBCreated = false;

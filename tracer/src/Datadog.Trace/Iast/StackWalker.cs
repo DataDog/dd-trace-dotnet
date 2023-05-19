@@ -40,6 +40,7 @@ internal static class StackWalker
         "System.Diagnostics.Process",
         "System.Configuration.ConfigurationManager",
         "System.Private.CoreLib",
+        "xunit.runner.visualstudio"
     };
 
     private const int DefaultSkipFrames = 2;

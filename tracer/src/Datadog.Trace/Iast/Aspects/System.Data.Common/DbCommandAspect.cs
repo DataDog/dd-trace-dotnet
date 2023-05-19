@@ -21,8 +21,6 @@ public class DbCommandAspect
     /// <param name="command"> the DbCommand </param>
     /// <returns> resulting sql query </returns>
     [AspectMethodInsertBefore("System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReader(System.Data.CommandBehavior)", 1)]
-    [AspectMethodInsertBefore("System.Data.Common.DbCommand::ExecuteNonQueryAsync(System.Threading.CancellationToken)", 1)]
-    [AspectMethodInsertBefore("System.Data.Common.DbCommand::ExecuteNonQueryAsync()")]
     [AspectMethodInsertBefore("System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior,System.Threading.CancellationToken)", 2)]
     [AspectMethodInsertBefore("System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior)", 1)]
     public static object ReviewSqlCommand(object command)
@@ -30,6 +28,23 @@ public class DbCommandAspect
         if (command is DbCommand dbCommand)
         {
             IastModule.OnSqlQuery(dbCommand.CommandText, IntegrationId.SqlClient);
+        }
+
+        return command;
+    }
+
+    /// <summary>
+    /// ReviewSqlString aspect
+    /// </summary>
+    /// <param name="command"> the DbCommand </param>
+    /// <returns> resulting sql query </returns>
+    [AspectMethodInsertBefore("System.Data.Common.DbCommand::ExecuteNonQueryAsync(System.Threading.CancellationToken)", 1)]
+    [AspectMethodInsertBefore("System.Data.Common.DbCommand::ExecuteNonQueryAsync()")]
+    public static object ReviewExecuteNonQuery(object command)
+    {
+        if (command is DbCommand entityCommand && command.GetType().Name == "EntityCommand")
+        {
+            IastModule.OnSqlQuery(entityCommand.CommandText, IntegrationId.SqlClient);
         }
 
         return command;
