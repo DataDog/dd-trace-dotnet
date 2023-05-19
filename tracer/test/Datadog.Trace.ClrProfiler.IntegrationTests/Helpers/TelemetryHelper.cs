@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,81 +44,113 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static void AssertIntegrationEnabled(this MockTracerAgent mockAgent, IntegrationId integrationId)
         {
-            mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).RequestType == TelemetryRequestTypes.AppClosing);
+            mockAgent.WaitForLatestTelemetry(x => ((TelemetryWrapper)x).IsRequestType(TelemetryRequestTypes.AppClosing));
 
-            var allData = mockAgent.Telemetry.Cast<TelemetryData>().ToArray();
+            var allData = mockAgent.Telemetry.Cast<TelemetryWrapper>().ToArray();
             AssertIntegration(allData, integrationId, true, true);
         }
 
         public static void AssertIntegration(this MockTelemetryAgent telemetry, IntegrationId integrationId, bool enabled, bool? autoEnabled)
         {
-            telemetry.WaitForLatestTelemetry(x => x.RequestType == TelemetryRequestTypes.AppClosing);
+            telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
             var allData = telemetry.Telemetry.ToArray();
             AssertIntegration(allData, integrationId, enabled, autoEnabled);
         }
 
-        public static TelemetryData AssertConfiguration(this MockTracerAgent mockAgent, string key, object value = null)
+        public static void AssertConfiguration(this MockTracerAgent mockAgent, string key, object value = null)
         {
-            mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).RequestType == TelemetryRequestTypes.AppStarted);
+            mockAgent.WaitForLatestTelemetry(x => ((TelemetryWrapper)x).IsRequestType(TelemetryRequestTypes.AppClosing));
 
-            var allData = mockAgent.Telemetry.Cast<TelemetryData>().ToArray();
-            return AssertConfiguration(allData, key, value);
+            var allData = mockAgent.Telemetry.Cast<TelemetryWrapper>().ToArray();
+            AssertConfiguration(allData, key, value);
         }
 
-        public static TelemetryData AssertConfiguration(this MockTelemetryAgent telemetry, string key, object value)
+        public static void AssertConfiguration(this MockTelemetryAgent telemetry, string key, object value)
         {
-            telemetry.WaitForLatestTelemetry(x => x.RequestType == TelemetryRequestTypes.AppStarted);
+            telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
             var allData = telemetry.Telemetry.ToArray();
-            return AssertConfiguration(allData, key, value);
+            AssertConfiguration(allData, key, value);
         }
 
-        public static TelemetryData AssertConfiguration(this MockTelemetryAgent telemetry, string key) => telemetry.AssertConfiguration(key, value: null);
+        public static void AssertConfiguration(this MockTelemetryAgent telemetry, string key) => telemetry.AssertConfiguration(key, value: null);
 
-        internal static TelemetryData AssertConfiguration(ICollection<TelemetryData> allData, string key, object value = null)
+        internal static void AssertConfiguration(ICollection<TelemetryWrapper> allData, string key, object value = null)
         {
-            var (latestConfigurationData, configurationPayload) =
+            // assume we're not mixing v1 and v2 telemetry in the same app
+            var payloads =
                 allData
-                   .Where(x => x.RequestType == TelemetryRequestTypes.AppStarted)
                    .OrderByDescending(x => x.SeqId)
-                   .Select(
-                        data =>
+                   .Select<TelemetryWrapper, (ICollection<TelemetryValue>, ICollection<ConfigurationKeyValue>)>(
+                        data => data switch
                         {
-                            var configuration = ((AppStartedPayload)data.Payload).Configuration;
-                            return (data, configuration);
+                            _ when data.TryGetPayload<AppStartedPayload>(TelemetryRequestTypes.AppStarted) is { } p => (p.Configuration, null),
+                            _ when data.TryGetPayload<AppStartedPayloadV2>(TelemetryRequestTypes.AppStarted) is { } p => (null, p.Configuration),
+                            _ when data.TryGetPayload<AppClientConfigurationChangedPayloadV2>(TelemetryRequestTypes.AppClientConfigurationChanged) is { } p => (null, p.Configuration),
+                            _ => (null, null),
                         })
-                   .FirstOrDefault(x => x.configuration is not null);
+                   .Where(x => x.Item1 is not null || x.Item2 is not null)
+                   .ToList();
 
-            latestConfigurationData.Should().NotBeNull();
-            configurationPayload.Should().NotBeNull();
+            var v1Payloads = payloads
+                            .Where(x => x.Item1 is not null)
+                            .Select(x => x.Item1)
+                            .ToList();
 
-            var config = configurationPayload.Should().ContainSingle(telemetryValue => telemetryValue.Name == key).Subject;
-            config.Should().NotBeNull();
-            if (value is not null)
+            var v2Payloads = payloads
+                            .Where(x => x.Item2 is not null)
+                            .Select(x => x.Item2)
+                            .ToList();
+
+            if (v1Payloads.Any())
             {
-                config.Value.Should().Be(value);
-            }
+                v2Payloads.Should().BeEmpty("Should not have v2 and v1 payloads in the same run");
 
-            return latestConfigurationData;
+                var configPayload = v1Payloads.First();
+
+                var config = configPayload.Should().ContainSingle(telemetryValue => telemetryValue.Name == key).Subject;
+                config.Should().NotBeNull();
+                if (value is not null)
+                {
+                    config.Value.Should().Be(value);
+                }
+            }
+            else
+            {
+                v2Payloads.Should().NotBeEmpty();
+                var config = v2Payloads
+                            .SelectMany(x => x)
+                            .GroupBy(x => x.Name)
+                            .Where(x => x.Key == key)
+                            .SelectMany(x => x)
+                            .OrderByDescending(x => x.SeqId)
+                            .FirstOrDefault();
+                config.Should().NotBeNull();
+                if (value is not null)
+                {
+                    config.Value.Should().Be(value);
+                }
+            }
         }
 
-        internal static void AssertIntegration(ICollection<TelemetryData> allData, IntegrationId integrationId, bool enabled, bool? autoEnabled)
+        internal static void AssertIntegration(ICollection<TelemetryWrapper> allData, IntegrationId integrationId, bool enabled, bool? autoEnabled)
         {
-            allData.Should().ContainSingle(x => x.RequestType == TelemetryRequestTypes.AppClosing);
+            allData.Should().ContainSingle(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
             // as integrations only include the diff, we need to reconstruct the "latest" data ourselves
             var latestIntegrations = new ConcurrentDictionary<string, IntegrationTelemetryData>();
             var integrationsPayloads =
                 allData
-                   .Where(
-                        x => x.RequestType == TelemetryRequestTypes.AppStarted
-                          || x.RequestType == TelemetryRequestTypes.AppIntegrationsChanged)
                    .OrderByDescending(x => x.SeqId)
                    .Select(
-                        data => data.Payload is AppStartedPayload payload
-                                    ? payload.Integrations
-                                    : ((AppIntegrationsChangedPayload)data.Payload).Integrations);
+                        data => data switch
+                        {
+                            _ when data.TryGetPayload<AppStartedPayload>(TelemetryRequestTypes.AppStarted) is { } p => p.Integrations,
+                            _ when data.TryGetPayload<AppIntegrationsChangedPayload>(TelemetryRequestTypes.AppIntegrationsChanged) is { } p => p.Integrations,
+                            _ => null,
+                        })
+                   .Where(x => x is not null);
 
             // only keep the latest version of integration data
             foreach (var integrationsPayload in integrationsPayloads)

@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
 namespace Datadog.Trace.TestHelpers
@@ -83,7 +84,7 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         public int Port { get; }
 
-        public ConcurrentStack<TelemetryData> Telemetry { get; } = new();
+        public ConcurrentStack<TelemetryWrapper> Telemetry { get; } = new();
 
         public IImmutableList<NameValueCollection> RequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
@@ -96,14 +97,14 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="timeoutInMilliseconds">The timeout</param>
         /// <param name="sleepTime">The time between checks</param>
         /// <returns>The telemetry that satisfied <paramref name="hasExpectedValues"/></returns>
-        public TelemetryData WaitForLatestTelemetry(
-            Func<TelemetryData, bool> hasExpectedValues,
+        public TelemetryWrapper WaitForLatestTelemetry(
+            Func<TelemetryWrapper, bool> hasExpectedValues,
             int timeoutInMilliseconds = 5000,
             int sleepTime = 200)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
 
-            TelemetryData latest = default;
+            TelemetryWrapper latest = default;
             while (DateTime.UtcNow < deadline)
             {
                 if (Telemetry.TryPeek(out latest) && hasExpectedValues(latest))
@@ -122,19 +123,52 @@ namespace Datadog.Trace.TestHelpers
             _listener?.Close();
         }
 
-        internal static TelemetryData DeserializeResponse(Stream inputStream, string apiVersion, string requestType)
+        internal static TelemetryWrapper DeserializeResponse(Stream inputStream, string apiVersion, string requestType)
         {
-            var serializer = TelemetryConverter.GetSerializer(apiVersion, requestType);
-            TelemetryData telemetry;
-            using var sr = new StreamReader(inputStream);
-            var text = sr.ReadToEnd();
-            var tr = new StringReader(text);
-            using (var jsonTextReader = new JsonTextReader(tr))
+            return apiVersion switch
             {
-                telemetry = serializer.Deserialize<TelemetryData>(jsonTextReader);
+                TelemetryConstants.ApiVersionV1 => DeserializeV1(inputStream, requestType),
+                TelemetryConstants.ApiVersionV2 => DeserializeV2(inputStream, requestType),
+                _ => throw new Exception($"Unknown telemetry api version: {apiVersion}"),
+            };
+
+            static TelemetryWrapper DeserializeV1(Stream inputStream, string requestType)
+            {
+                if (!TelemetryConverter.V1Serializers.TryGetValue(requestType, out var serializer))
+                {
+                    throw new Exception($"Unknown V1 telemetry request type {requestType}");
+                }
+
+                TelemetryData telemetry;
+                using var sr = new StreamReader(inputStream);
+                var text = sr.ReadToEnd();
+                var tr = new StringReader(text);
+                using (var jsonTextReader = new JsonTextReader(tr))
+                {
+                    telemetry = serializer.Deserialize<TelemetryData>(jsonTextReader);
+                }
+
+                return new TelemetryWrapper.V1(telemetry);
             }
 
-            return telemetry;
+            static TelemetryWrapper DeserializeV2(Stream inputStream, string requestType)
+            {
+                if (!TelemetryConverter.V2Serializers.TryGetValue(requestType, out var serializer))
+                {
+                    throw new Exception($"Unknown V2 telemetry request type {requestType}");
+                }
+
+                TelemetryDataV2 telemetry;
+                using var sr = new StreamReader(inputStream);
+                var text = sr.ReadToEnd();
+                var tr = new StringReader(text);
+                using (var jsonTextReader = new JsonTextReader(tr))
+                {
+                    telemetry = serializer.Deserialize<TelemetryDataV2>(jsonTextReader);
+                }
+
+                return new TelemetryWrapper.V2(telemetry);
+            }
         }
 
         protected virtual void OnRequestReceived(HttpListenerContext context)
@@ -196,7 +230,8 @@ namespace Datadog.Trace.TestHelpers
 
         internal class TelemetryConverter
         {
-            private static readonly Dictionary<string, JsonSerializer> V1Serializers;
+            public static readonly Dictionary<string, JsonSerializer> V1Serializers;
+            public static readonly Dictionary<string, JsonSerializer> V2Serializers;
 
             static TelemetryConverter()
             {
@@ -210,19 +245,21 @@ namespace Datadog.Trace.TestHelpers
                     { TelemetryRequestTypes.AppClosing, CreateNullPayloadSerializer() },
                     { TelemetryRequestTypes.AppHeartbeat, CreateNullPayloadSerializer() },
                 };
-            }
 
-            public static JsonSerializer GetSerializer(string apiVersion, string requestType)
-            {
-                if (apiVersion == TelemetryConstants.ApiVersionV1)
+                V2Serializers = new()
                 {
-                    if (V1Serializers.TryGetValue(requestType, out var serializer))
-                    {
-                        return serializer;
-                    }
-                }
-
-                throw new Exception($"Unknown {apiVersion} telemetry request type {requestType} ");
+                    { TelemetryRequestTypes.MessageBatch, CreateSerializer<MessageBatchPayload>() },
+                    { TelemetryRequestTypes.AppStarted, CreateSerializer<AppStartedPayloadV2>() },
+                    { TelemetryRequestTypes.AppDependenciesLoaded, CreateSerializer<AppDependenciesLoadedPayload>() },
+                    { TelemetryRequestTypes.AppIntegrationsChanged, CreateSerializer<AppIntegrationsChangedPayload>() },
+                    { TelemetryRequestTypes.AppClientConfigurationChanged, CreateSerializer<AppClientConfigurationChangedPayloadV2>() },
+                    { TelemetryRequestTypes.AppProductChanged, CreateSerializer<AppProductChangePayloadV2>() },
+                    { TelemetryRequestTypes.GenerateMetrics, CreateSerializer<GenerateMetricsPayload>() },
+                    { TelemetryRequestTypes.Distributions, CreateSerializer<DistributionsPayload>() },
+                    { TelemetryRequestTypes.AppExtendedHeartbeat, CreateSerializer<AppExtendedHeartbeatPayload>() },
+                    { TelemetryRequestTypes.AppClosing, CreateNullPayloadSerializer() },
+                    { TelemetryRequestTypes.AppHeartbeat, CreateNullPayloadSerializer() },
+                };
             }
 
             // Needs to be kept in sync with JsonTelemetryTransport.SerializerSettings, but with the additional converter
@@ -231,7 +268,7 @@ namespace Datadog.Trace.TestHelpers
                 {
                     NullValueHandling = JsonTelemetryTransport.SerializerSettings.NullValueHandling,
                     ContractResolver = JsonTelemetryTransport.SerializerSettings.ContractResolver,
-                    Converters = new List<JsonConverter> { new PayloadConverter<TPayload>(), new IntegrationTelemetryDataConverter() },
+                    Converters = new List<JsonConverter> { new PayloadConverter<TPayload>(), new IntegrationTelemetryDataConverter(), new MessageBatchDataConverter(), new ConfigurationKeyValueConverter() },
                 });
 
             private static JsonSerializer CreateNullPayloadSerializer() =>
@@ -240,6 +277,28 @@ namespace Datadog.Trace.TestHelpers
                     NullValueHandling = JsonTelemetryTransport.SerializerSettings.NullValueHandling,
                     ContractResolver = JsonTelemetryTransport.SerializerSettings.ContractResolver,
                 });
+        }
+
+        private class MessageBatchDataConverter : JsonConverter
+        {
+            public override bool CanConvert(Type objectType)
+                => objectType == typeof(MessageBatchData);
+
+            // use the default serialization - it works fine
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+                => serializer.Serialize(writer, value);
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                var jsonObject = JObject.Load(reader);
+                var requestType = jsonObject["request_type"]?.ToString();
+                if (!TelemetryConverter.V2Serializers.TryGetValue(requestType!, out var innerSerializer))
+                {
+                    throw new Exception($"Unknown message batch telemetry request type {requestType}");
+                }
+
+                return new MessageBatchData(requestType, jsonObject["payload"]?.ToObject<IPayload>(innerSerializer));
+            }
         }
 
         private class PayloadConverter<TPayload> : JsonConverter
@@ -323,6 +382,49 @@ namespace Datadog.Trace.TestHelpers
                 }
 
                 return new IntegrationTelemetryData(name, enabled.Value, autoEnabled, error);
+            }
+        }
+
+        private class ConfigurationKeyValueConverter : JsonConverter
+        {
+            public override bool CanConvert(Type objectType)
+            {
+                return objectType == typeof(ConfigurationKeyValue);
+            }
+
+            // use the default serialization - it works fine
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+                => serializer.Serialize(writer, value);
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                // This is a pain, but for some reason Json.NET refuses to deserialize it otherwise
+                var jo = JObject.Load(reader);
+
+                var contractResolver = (DefaultContractResolver)serializer.ContractResolver;
+                var name = jo[contractResolver.GetResolvedPropertyName(nameof(ConfigurationKeyValue.Name))]?.ToString();
+                var jToken = jo[contractResolver.GetResolvedPropertyName(nameof(ConfigurationKeyValue.Value))];
+                object value = jToken.Type switch
+                {
+                    JTokenType.Null => null,
+                    JTokenType.Boolean => jToken.Value<bool>(),
+                    JTokenType.Integer => jToken.Value<int>(),
+                    JTokenType.Float => jToken.Value<double>(),
+                    _ => jToken.ToString()
+                };
+
+                var origin = jo[contractResolver.GetResolvedPropertyName(nameof(ConfigurationKeyValue.Origin))]?.ToString();
+                var seqId = jo[contractResolver.GetResolvedPropertyName(nameof(ConfigurationKeyValue.SeqId))]?.Value<long>();
+                var error = jo[contractResolver.GetResolvedPropertyName(nameof(ConfigurationKeyValue.Error))];
+                ErrorData? errorData = null;
+                if (error is not null)
+                {
+                    var errorCode = error[contractResolver.GetResolvedPropertyName(nameof(ErrorData.Code))]?.Value<int>();
+                    var errorMessage = error[contractResolver.GetResolvedPropertyName(nameof(ErrorData.Message))]?.ToString();
+                    errorData = new ErrorData((TelemetryErrorCode)errorCode, errorMessage);
+                }
+
+                return ConfigurationKeyValue.Create(name, value, origin, seqId.Value, errorData);
             }
         }
     }
