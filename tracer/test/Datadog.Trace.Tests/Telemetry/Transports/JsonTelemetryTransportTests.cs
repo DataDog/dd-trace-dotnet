@@ -101,10 +101,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                     KernelRelease = "5.4.0-1037-gcp",
                     KernelVersion = "#40~18.04.1-Ubuntu SMP Fri Feb 5 15:41:35 UTC 2021"
                 },
-                payload: new GenerateMetricsPayload(
-                    libVersion: "0.33.1",
-                    libLanguage: "node.js",
-                    allMetricData: new MetricData[]
+                payload: new GenerateMetricsPayload(new MetricData[]
                     {
                         new(
                             "tracer_init_time",
