@@ -214,7 +214,7 @@ namespace Datadog.Trace.TestHelpers
 
             public static JsonSerializer GetSerializer(string apiVersion, string requestType)
             {
-                if (apiVersion == TelemetryConstants.ApiVersion)
+                if (apiVersion == TelemetryConstants.ApiVersionV1)
                 {
                     if (V1Serializers.TryGetValue(requestType, out var serializer))
                     {

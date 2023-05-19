@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryData.cs" company="Datadog">
+﻿// <copyright file="TelemetryDataV2.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,15 +11,15 @@ namespace Datadog.Trace.Telemetry
     /// DTO that is serialized.
     /// Be aware that the property names control serialization
     /// </summary>
-    internal class TelemetryData
+    internal class TelemetryDataV2
     {
-        public TelemetryData(
+        public TelemetryDataV2(
             string requestType,
             long tracerTime,
             string runtimeId,
             int seqId,
-            ApplicationTelemetryData application,
-            HostTelemetryData host,
+            ApplicationTelemetryDataV2 application,
+            HostTelemetryDataV2 host,
             IPayload? payload)
         {
             RequestType = requestType;
@@ -31,7 +31,12 @@ namespace Datadog.Trace.Telemetry
             Payload = payload;
         }
 
-        public string ApiVersion => TelemetryConstants.ApiVersionV1;
+        public string ApiVersion => TelemetryConstants.ApiVersionV2;
+
+        /// <summary>
+        /// Gets or sets integer denoting the naming schema version used by the tracer. 0 by default. Possible values are {0, 1}
+        /// </summary>
+        public int? NamingSchemaVersion { get; set; }
 
         /// <summary>
         /// Gets or sets requested API function
@@ -50,9 +55,9 @@ namespace Datadog.Trace.Telemetry
         /// </summary>
         public int SeqId { get; set; }
 
-        public ApplicationTelemetryData Application { get; set; }
+        public ApplicationTelemetryDataV2 Application { get; set; }
 
-        public HostTelemetryData Host { get; set; }
+        public HostTelemetryDataV2 Host { get; set; }
 
         public IPayload? Payload { get; set; }
     }
