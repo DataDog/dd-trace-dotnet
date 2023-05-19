@@ -1,6 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <None Remove="IAST\Tainted\evidence-redaction-suite.yml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
   </ItemGroup>
@@ -17,6 +21,14 @@
 
   <ItemGroup Condition="!$(TargetFramework.StartsWith('net4'))">
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="IAST\Tainted\evidence-redaction-suite.yml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="YamlDotNet" Version="13.1.0" />
   </ItemGroup>
 
   <ItemGroup>

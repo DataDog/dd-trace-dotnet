@@ -37,4 +37,21 @@ internal static class SourceType
             SourceTypeName.CookieValue => "http.cookie.value",
             _ => string.Empty
         };
+
+    internal static SourceTypeName FromString(string? value)
+        => value switch
+        {
+            "http.request.parameter" => SourceTypeName.RequestParameterValue,
+            "http.request.parameter.name" => SourceTypeName.RequestParameterName,
+            "http.request.header" => SourceTypeName.RequestHeader,
+            "http.request.header.name" => SourceTypeName.RequestHeaderName,
+            "http.request.path" => SourceTypeName.RequestPath,
+            "http.request.body" => SourceTypeName.RequestBody,
+            "http.request.query" => SourceTypeName.RequestQuery,
+            "http.request.path.parameter" => SourceTypeName.RoutedParameterValue,
+            "http.request.matrix.parameter" => SourceTypeName.MatrixParameter,
+            "http.cookie.name" => SourceTypeName.CookieName,
+            "http.cookie.value" => SourceTypeName.CookieValue,
+            _ => default(SourceTypeName)
+        };
 }

@@ -40,7 +40,7 @@ internal class EvidenceConverter : JsonConverter<Evidence>
         _redactionEnabled = redactionEnabled;
     }
 
-    public override bool CanRead => false;
+    public override bool CanRead => true;
 
     public override Evidence ReadJson(JsonReader reader, Type objectType, Evidence existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
