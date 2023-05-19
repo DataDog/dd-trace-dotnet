@@ -1,4 +1,5 @@
 using LinqToDB;
+using LinqToDB.Common;
 using LinqToDB.Data;
 using LinqToDB.Data.DbCommandProcessor;
 using System;
@@ -6,6 +7,7 @@ using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Xunit;
 
@@ -93,6 +95,23 @@ public class Linq2DbTests : InstrumentationTestsBase, IDisposable
         dataConnection.FromSql<TestDb.Person>(querySafe)?.ToList();
         AssertVulnerable(0);
         dataConnection.FromSql<TestDb.Person>(queryUnsafe)?.ToList();
+        AssertVulnerable(1);
+    }
+
+    [Fact]
+    public void GivenLinq2DbOperation_WhenCallingFromSqlWithTainted_VulnerabilityIsReported2()
+    {
+        dataConnection.FromSql<TestDb.Person>(new RawSqlString(querySafe))?.ToList();
+        AssertVulnerable(0);
+        dataConnection.FromSql<TestDb.Person>(new RawSqlString(queryUnsafe))?.ToList();
+        AssertVulnerable(1);
+    }
+
+    [Fact]
+    public void GivenLinq2DbOperation_WhenCallingFromSqlScalarWithTainted_VulnerabilityIsReported()
+    {
+        FormattableString formattableString = FormattableStringFactory.Create($"{queryUnsafe}");
+        dataConnection.FromSqlScalar<TestDb.Person>(formattableString)?.ToList();
         AssertVulnerable(1);
     }
 
