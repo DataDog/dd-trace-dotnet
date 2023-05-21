@@ -589,14 +589,7 @@ namespace Datadog.Trace
 
             foreach (var probe in lineProbes)
             {
-                var templateStr = $"Exit Span : {span.OperationName}";
-                var template = templateStr + "{1}";
-                var json = @"{
-    ""Ignore"": ""1""
-}";
-                var segments = new SnapshotSegment[] { new(null, null, templateStr), new("1", json, null) };
-
-                ProbeExpressionsProcessor.Instance.AddProbeProcessor(new LogProbe { CaptureSnapshot = true, Id = probe.ProbeId, Where = new Where(), Template = template, Segments = segments, Sampling = new Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 1000000 } });
+                RegisterFakeProbeProcessor($"Exit Span : {span.OperationName}", probe.ProbeId, new Where());
             }
 
             const int hiddenSequencePoint = 0x00feefee;
@@ -611,6 +604,17 @@ namespace Datadog.Trace
                 Array.Empty<NativeMethodProbeDefinition>(),
                 lineProbes,
                 Array.Empty<NativeRemoveProbeRequest>());
+        }
+
+        internal static void RegisterFakeProbeProcessor(string templateStr, string probeId, Where where)
+        {
+            var template = templateStr + "{1}";
+            var json = @"{
+    ""Ignore"": ""1""
+}";
+            var segments = new SnapshotSegment[] { new(null, null, templateStr), new("1", json, null) };
+
+            ProbeExpressionsProcessor.Instance.AddProbeProcessor(new LogProbe { CaptureSnapshot = true, Id = probeId, Where = where, Template = template, Segments = segments, Sampling = new Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 1000000 } });
         }
 
         private static NativeLineProbeDefinition CreateLineProbe(Instruction callInstruction, MethodBase userMethod, SymbolMethod userSymbolMethod)

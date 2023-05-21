@@ -137,7 +137,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LogLocal<TLocal>(ref TLocal local, int index, ref AsyncMethodDebuggerState asyncState)
         {
-            if (!asyncState.IsActive)
+            if (asyncState == null || !asyncState.IsActive)
             {
                 return;
             }
@@ -171,7 +171,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <returns>LiveDebugger return structure</returns>
         public static DebuggerReturn EndMethod_StartMarker<TTarget>(TTarget instance, Exception exception, ref AsyncMethodDebuggerState asyncState)
         {
-            if (!asyncState.IsActive)
+            if (asyncState == null || !asyncState.IsActive)
             {
                 return DebuggerReturn.GetDefault();
             }
@@ -238,7 +238,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void EndMethod_EndMarker(ref AsyncMethodDebuggerState asyncState)
         {
-            if (!asyncState.IsActive)
+            if (asyncState == null || !asyncState.IsActive)
             {
                 return;
             }
@@ -265,7 +265,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             try
             {
-                if (!asyncState.IsActive)
+                if (asyncState == null || !asyncState.IsActive)
                 {
                     // Already encountered `LogException`
                     return;

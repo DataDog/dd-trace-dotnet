@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 
 namespace Datadog.Trace
 {

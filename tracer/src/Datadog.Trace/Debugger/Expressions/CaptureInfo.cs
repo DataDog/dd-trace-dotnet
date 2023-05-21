@@ -23,13 +23,15 @@ internal readonly ref struct CaptureInfo<TCapture>
         string name = null,
         bool? hasLocalOrArgument = null,
         LineCaptureInfo lineCaptureInfo = default,
-        AsyncCaptureInfo asyncCaptureInfo = default)
+        AsyncCaptureInfo asyncCaptureInfo = default,
+        Exception exceptionThrown = default)
     {
         Value = value;
         MemberKind = memberKind;
         Type = type ?? value?.GetType() ?? typeof(TCapture);
         Name = name;
         MethodState = methodState;
+        ExceptionThrown = exceptionThrown;
         HasLocalOrArgument = hasLocalOrArgument;
         LineCaptureInfo = lineCaptureInfo;
         AsyncCaptureInfo = asyncCaptureInfo;
@@ -62,6 +64,8 @@ internal readonly ref struct CaptureInfo<TCapture>
     internal AsyncCaptureInfo AsyncCaptureInfo { get; }
 
     internal LineCaptureInfo LineCaptureInfo { get; }
+
+    internal Exception ExceptionThrown { get; }
 
     internal bool IsAsyncCapture()
     {

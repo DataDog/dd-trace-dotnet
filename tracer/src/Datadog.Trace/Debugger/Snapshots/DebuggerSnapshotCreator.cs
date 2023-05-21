@@ -294,11 +294,11 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        internal DebuggerSnapshotCreator EndSnapshot(DateTimeOffset? startTime)
+        internal DebuggerSnapshotCreator EndSnapshot(DateTimeOffset? startTime, Guid snapshotId)
         {
             var duration = DateTimeOffset.UtcNow - startTime;
             _jsonWriter.WritePropertyName("id");
-            _jsonWriter.WriteValue(Guid.NewGuid());
+            _jsonWriter.WriteValue(snapshotId);
 
             _jsonWriter.WritePropertyName("timestamp");
             _jsonWriter.WriteValue(DateTimeOffset.Now.ToUnixTimeMilliseconds());
@@ -646,7 +646,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                         methodName,
                         typeFullName,
                         _startTime,
-                        info.LineCaptureInfo.ProbeFilePath);
+                        info.LineCaptureInfo.ProbeFilePath,
+                        Guid.NewGuid());
 
                 var snapshot = GetSnapshotJson();
                 return snapshot;
@@ -664,6 +665,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 var typeFullName = info.MethodState == MethodState.ExitEndAsync
                                        ? info.AsyncCaptureInfo.KickoffInvocationTargetType?.FullName
                                        : info.InvocationTargetType?.FullName;
+                var snapshotId = Guid.NewGuid();
                 AddEvaluationErrors()
                    .AddProbeInfo(
                         probeId,
@@ -674,14 +676,23 @@ namespace Datadog.Trace.Debugger.Snapshots
                         methodName,
                         typeFullName,
                         _startTime,
-                        null);
+                        null,
+                        snapshotId);
 
                 var snapshot = GetSnapshotJson();
+                ExceptionAutoInstrumentationHook(probeId, snapshot,  info.ExceptionThrown, snapshotId);
+
                 return snapshot;
             }
         }
 
-        internal void FinalizeSnapshot(string probeId, string methodName, string typeFullName, DateTimeOffset? startTime, string probeFilePath)
+        private static void ExceptionAutoInstrumentationHook(string probeId, string snapshot, Exception exceptionThrown, Guid snapshotId)
+        {
+            var span = Tracer.Instance.ActiveScope.Span;
+            ((Span)span).Snapshots.Add(new ExceptionAutoInstrumentation.DebuggerSnapshot(probeId, snapshot, exceptionThrown, snapshotId));
+        }
+
+        internal void FinalizeSnapshot(string probeId, string methodName, string typeFullName, DateTimeOffset? startTime, string probeFilePath, Guid snapshotId)
         {
             var isSpanOrigin = probeId.StartsWith("SpanOrigin_ExitSpan");
 
@@ -690,7 +701,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             var spanId = isSpanOrigin ? "TO_BE_ADDED_SPAN_ID" : activeScope?.Span?.SpanId.ToString();
 
             AddStackInfo()
-            .EndSnapshot(startTime)
+            .EndSnapshot(startTime, snapshotId)
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
             .AddGeneralInfo(LiveDebugger.Instance?.ServiceName, traceId, spanId)
