@@ -170,13 +170,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                         };
                         ProbeExpressionsProcessor.Instance.AddProbeProcessor(methodProbeDef);
                     });
-
-                // Install probes
-                DebuggerNativeMethods.InstrumentProbes(
-                    methodProbes.Select(t => t.Item2).ToArray(),
-                    Array.Empty<NativeLineProbeDefinition>(),
-                    Array.Empty<NativeSpanProbeDefinition>(),
-                    Array.Empty<NativeRemoveProbeRequest>());
             }
 
             instance.Components.Insert(0, rd => new BlockingMiddleware(rd).Invoke);

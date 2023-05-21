@@ -446,15 +446,6 @@ namespace Datadog.Trace
                 OperationName = operationName,
             };
 
-            try
-            {
-                SpanOriginResolution(span);
-            }
-            catch
-            {
-                // Ignored
-            }
-
             // Apply any global tags
             if (Settings.GlobalTags.Count > 0)
             {
