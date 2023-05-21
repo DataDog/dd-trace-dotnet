@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.Debugger.Helpers;
 
@@ -14,12 +15,12 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
     /// </summary>
     internal readonly record struct MethodMetadataInfo
     {
-        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, Type type, MethodBase method, string filePath, string methodBeginLineNumber, string methodEndLineNumber)
-            : this(parameterNames, localVariableNames, null, null, type, method, null, null, filePath, methodBeginLineNumber, methodEndLineNumber)
+        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, Type type, MethodBase method, string filePath, string methodBeginLineNumber, string methodEndLineNumber, Dictionary<int, int> ilOffsetToLineNumberMapping)
+            : this(parameterNames, localVariableNames, null, null, type, method, null, null, filePath, methodBeginLineNumber, methodEndLineNumber, ilOffsetToLineNumberMapping)
         {
         }
 
-        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, AsyncHelper.FieldInfoNameSanitized[] asyncMethodHoistedLocals, FieldInfo[] asyncMethodHoistedArguments, Type type, MethodBase method, Type kickoffType, MethodBase kickoffMethod, string filePath, string methodBeginLineNumber, string methodEndLineNumber)
+        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, AsyncHelper.FieldInfoNameSanitized[] asyncMethodHoistedLocals, FieldInfo[] asyncMethodHoistedArguments, Type type, MethodBase method, Type kickoffType, MethodBase kickoffMethod, string filePath, string methodBeginLineNumber, string methodEndLineNumber, Dictionary<int, int> ilOffsetToLineNumberMapping)
         {
             ParameterNames = parameterNames;
             LocalVariableNames = localVariableNames;
@@ -32,6 +33,7 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
             FilePath = filePath;
             MethodBeginLineNumber = methodBeginLineNumber;
             MethodEndLineNumber = methodEndLineNumber;
+            ILOffsetToLineNumberMapping = ilOffsetToLineNumberMapping;
         }
 
         public string[] ParameterNames { get; }
@@ -87,5 +89,10 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         /// Gets the line number of the last line of code inside the method
         /// </summary>
         public string MethodEndLineNumber { get; }
+
+        /// <summary>
+        /// Gets the mapping IL Offset -> IL Number.
+        /// </summary>
+        public Dictionary<int, int> ILOffsetToLineNumberMapping { get; }
     }
 }

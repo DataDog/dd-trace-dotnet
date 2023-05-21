@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Debugger.Expressions;
@@ -165,6 +167,33 @@ namespace Datadog.Trace.Debugger.Instrumentation
             asyncState.HasLocalsOrReturnValue = true;
             asyncState.HasArguments = false;
             asyncState.SnapshotCreator.StartSampling();
+        }
+
+        /// <summary>
+        /// Logs the return value of <paramref name="methodName"/> in line number ByRef.
+        /// </summary>
+        /// <typeparam name="TReturnValue">Type of return value.</typeparam>
+        /// <param name="returnValue">The local to be logged.</param>
+        /// <param name="methodName">index of given argument.</param>
+        /// <param name="bytecodeOffset">The bytecode offset of the line where the method call exists.</param>
+        /// <param name="state">Debugger state</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void LogCall<TReturnValue>(TReturnValue returnValue, string methodName, int bytecodeOffset, ref AsyncDebuggerState state)
+        {
+            if (!state.LogState.IsActive)
+            {
+                return;
+            }
+
+            Log.Information("MethodDebuggerInvoker.LogCall with: return value = {ReturnValue}, methodName = {MethodName}", returnValue, methodName);
+
+            // Map between bytecodeOffset -> lineNumber
+            ref var methodMetadataInfo = ref state.LogState.MethodMetadataInfo;
+
+            var closestMapping = methodMetadataInfo.ILOffsetToLineNumberMapping
+                                                   ?.LastOrDefault(pair => pair.Key <= bytecodeOffset) ?? default;
+            var lineNumber = closestMapping.Equals(default(KeyValuePair<int, int>)) ? -1 : closestMapping.Value;
+            state.LogState.SnapshotCreator.CaptureReturnValue(returnValue, methodName, lineNumber, returnValue?.GetType() ?? typeof(TReturnValue));
         }
 
         /// <summary>

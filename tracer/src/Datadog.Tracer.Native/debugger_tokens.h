@@ -31,6 +31,7 @@ static const WSTRING managed_profiler_debugger_beginmethod_endmarker_name = WStr
 static const WSTRING managed_profiler_debugger_endmethod_startmarker_name = WStr("EndMethod_StartMarker");
 static const WSTRING managed_profiler_debugger_endmethod_endmarker_name = WStr("EndMethod_EndMarker");
 static const WSTRING managed_profiler_debugger_logexception_name = WStr("LogException");
+static const WSTRING managed_profiler_debugger_logcall_name = WStr("LogCall");
 static const WSTRING managed_profiler_debugger_logarg_name = WStr("LogArg");
 static const WSTRING managed_profiler_debugger_loglocal_name = WStr("LogLocal");
 static const WSTRING managed_profiler_debugger_method_type = WStr("Datadog.Trace.Debugger.Instrumentation.MethodDebuggerInvoker");
@@ -77,6 +78,7 @@ private:
     mdMemberRef methodLogArgRef = mdMemberRefNil;
     mdMemberRef methodLogLocalRef = mdMemberRefNil;
     mdMemberRef methodLogExceptionRef = mdMemberRefNil;
+    mdMemberRef methodLogCallRef = mdMemberRefNil;
 
     // Async method probe members:
     mdTypeRef asyncMethodDebuggerStateTypeRef = mdTypeRefNil;
@@ -88,6 +90,7 @@ private:
     mdMemberRef asyncMethodLogExceptionRef = mdMemberRefNil;
     mdMemberRef asyncMethodLogArgRef = mdMemberRefNil;
     mdMemberRef asyncMethodLogLocalRef = mdMemberRefNil;
+    mdMemberRef asyncMethodLogCallRef = mdMemberRefNil;
 
     // Line probe members:
     mdMemberRef beginLineRef = mdMemberRefNil;
@@ -379,6 +382,45 @@ private:
         }
     }
 
+    [[nodiscard]] mdMemberRef GetLogCallMemberRef(const ProbeType probeType) const
+    {
+        switch (probeType)
+        {
+            case NonAsyncMethodProbe:
+            return methodLogCallRef;
+            case AsyncMethodProbe:
+            return asyncMethodLogCallRef;
+            case NonAsyncMethodSpanProbe:
+            case AsyncMethodSpanProbe:
+            return mdTypeRefNil;
+            case NonAsyncLineProbe: // TODO
+            return mdTypeRefNil;
+            case AsyncLineProbe: // TODO
+            return mdTypeRefNil;
+        }
+        return mdTypeRefNil;
+    }
+
+    void SetLogCallMemberRef(const ProbeType probeType, const mdMemberRef logArgMemberRef)
+    {
+        switch (probeType)
+        {
+            case NonAsyncMethodProbe:
+            methodLogCallRef = logArgMemberRef;
+            break;
+            case AsyncMethodProbe:
+            asyncMethodLogCallRef = logArgMemberRef;
+            break;
+            case NonAsyncMethodSpanProbe:
+            case AsyncMethodSpanProbe:
+            break;
+            case NonAsyncLineProbe: // TODO
+            break;
+            case AsyncLineProbe: // TDOO
+            break;
+        }
+    }
+
     [[nodiscard]] mdMemberRef GetLogLocalMemberRef(const ProbeType probeType) const
     {
         switch (probeType)
@@ -462,6 +504,8 @@ public:
 
     HRESULT WriteBeginSpan(void* rewriterWrapperPtr, const TypeInfo* currentType, ILInstr** instruction, bool isAsyncMethod);
     HRESULT WriteEndSpan(void* rewriterWrapperPtr, ILInstr** instruction, bool isAsyncMethod);
+
+    HRESULT WriteLogCall(void* rewriterWrapperPtr, const TypeSignature& argOrLocal, ILInstr** instruction, ProbeType probeType);
 
     HRESULT GetIsFirstEntryToMoveNextFieldToken(mdToken type, mdFieldDef& token);
 };

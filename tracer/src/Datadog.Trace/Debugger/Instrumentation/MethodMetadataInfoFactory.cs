@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Debugger.Helpers;
@@ -25,7 +26,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             var pdbData = ExtractFilePathAndLineNumbersFromPdb(method);
 
-            return new MethodMetadataInfo(GetParameterNames(method), GetLocalVariableNames(method), type, method, pdbData.Item1, pdbData.Item2, pdbData.Item3);
+            return new MethodMetadataInfo(GetParameterNames(method), GetLocalVariableNames(method), type, method, pdbData.Item1, pdbData.Item2, pdbData.Item3, pdbData.Item4);
         }
 
         public static MethodMetadataInfo Create(MethodBase method, Type type, AsyncHelper.AsyncKickoffMethodInfo asyncKickOffInfo)
@@ -43,10 +44,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 asyncKickOffInfo.KickoffMethod,
                 pdbData.Item1,
                 pdbData.Item2,
-                pdbData.Item3);
+                pdbData.Item3,
+                pdbData.Item4);
         }
 
-        private static Tuple<string, string, string> ExtractFilePathAndLineNumbersFromPdb(MethodBase method)
+        private static Tuple<string, string, string, Dictionary<int, int>> ExtractFilePathAndLineNumbersFromPdb(MethodBase method)
         {
             try
             {
@@ -54,6 +56,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 var filePath = string.Empty;
                 var methodBeginLineNumber = string.Empty;
                 var methodEndLineNumber = string.Empty;
+                Dictionary<int, int> ilOffsetToLineNumberMapping = null;
 
                 if (userSymbolMethod != null && userSymbolMethod.SequencePoints != null && userSymbolMethod.SequencePoints.Any())
                 {
@@ -61,14 +64,20 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     filePath = userSymbolMethod.SequencePoints.First(sp => sp.Line != hiddenSequencePoint).Document.URL;
                     methodBeginLineNumber = userSymbolMethod.SequencePoints.First(sp => sp.Line != hiddenSequencePoint).Line.ToString();
                     methodEndLineNumber = userSymbolMethod.SequencePoints.Last(sp => sp.Line != hiddenSequencePoint).Line.ToString();
+
+                    ilOffsetToLineNumberMapping = new Dictionary<int, int>();
+                    foreach (var sp in userSymbolMethod.SequencePoints.Where(sp => sp.Line != hiddenSequencePoint))
+                    {
+                        ilOffsetToLineNumberMapping[sp.Offset] = sp.Line;
+                    }
                 }
 
-                return Tuple.Create(filePath, methodBeginLineNumber, methodEndLineNumber);
+                return Tuple.Create(filePath, methodBeginLineNumber, methodEndLineNumber, ilOffsetToLineNumberMapping);
             }
             catch (Exception e)
             {
                 Log.Error(e, "Failed to extract file path and line numbers from PDB for method: {Name}", method.Name);
-                return Tuple.Create(string.Empty, string.Empty, string.Empty);
+                return Tuple.Create(string.Empty, string.Empty, string.Empty, (Dictionary<int, int>)null);
             }
         }
 

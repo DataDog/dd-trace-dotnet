@@ -96,19 +96,20 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
         const auto argOrLocal = methodArgsOrLocals[argOrLocalIndex];
 
         const auto [elementType, argTypeFlags] = argOrLocal.GetElementTypeAndFlags();
-        
+
         bool isTypeIsByRefLike = false;
-        HRESULT hr = IsTypeByRefLike(moduleMetadata, argOrLocal, debuggerTokens->GetCorLibAssemblyRef(), isTypeIsByRefLike);
+        HRESULT hr =
+            IsTypeByRefLike(moduleMetadata, argOrLocal, debuggerTokens->GetCorLibAssemblyRef(), isTypeIsByRefLike);
 
         if (FAILED(hr))
         {
-            Logger::Warn("DebuggerRewriter: Failed to determine if ", isArgs ? "argument" : "local", " index = ", argOrLocalIndex,
-                         " is By-Ref like.");
+            Logger::Warn("DebuggerRewriter: Failed to determine if ", isArgs ? "argument" : "local",
+                         " index = ", argOrLocalIndex, " is By-Ref like.");
         }
         else if (isTypeIsByRefLike)
         {
-            Logger::Warn("DebuggerRewriter: Skipped ", isArgs ? "argument" : "local",
-                         " index = ", argOrLocalIndex, " because it's By-Ref like.");
+            Logger::Warn("DebuggerRewriter: Skipped ", isArgs ? "argument" : "local", " index = ", argOrLocalIndex,
+                         " because it's By-Ref like.");
             continue;
         }
 
@@ -138,7 +139,7 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
         }
         else
         {
-            rewriterWrapper.LoadLocalAddress(callTargetStateIndex); 
+            rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
         }
 
         if (isArgs)
@@ -152,7 +153,8 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
 
         if (FAILED(hr))
         {
-            Logger::Warn("DebuggerRewriter: Failed in ", isArgs ? "WriteLogArg" : "WriteLogLocal", " with index=", argOrLocalIndex);
+            Logger::Warn("DebuggerRewriter: Failed in ", isArgs ? "WriteLogArg" : "WriteLogLocal",
+                         " with index=", argOrLocalIndex);
             return E_FAIL;
         }
     }
@@ -181,9 +183,9 @@ DebuggerMethodRewriter::WriteCallsToLogLocal(ModuleMetadata& moduleMetadata,
                                              ProbeType probeType,
                                              mdFieldDef isReEntryFieldTok) const
 {
-    return WriteCallsToLogArgOrLocal(moduleMetadata, debuggerTokens, isStatic, locals, numLocals,
-                                     rewriterWrapper,
-                                     callTargetStateIndex, beginCallInstruction, /* IsArgs */ false, probeType, isReEntryFieldTok);
+    return WriteCallsToLogArgOrLocal(moduleMetadata, debuggerTokens, isStatic, locals, numLocals, rewriterWrapper,
+                                     callTargetStateIndex, beginCallInstruction, /* IsArgs */ false, probeType,
+                                     isReEntryFieldTok);
 }
 
 HRESULT DebuggerMethodRewriter::LoadInstanceIntoStack(FunctionInfo* caller, bool isStatic,
@@ -316,6 +318,154 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
 
         const auto hr = Rewrite(moduleHandler, methodHandler, methodProbes, lineProbes, spanOnMethodProbes);
     }
+
+    return S_OK;
+}
+
+HRESULT DebuggerMethodRewriter::ApplyLogCalls(
+    const int instrumentedMethodIndex, LineProbeDefinitions& lineProbes, ModuleID module_id,
+    ModuleMetadata& module_metadata, FunctionInfo* caller, DebuggerTokens* debuggerTokens, mdToken function_token,
+    bool isStatic, std::vector<TypeSignature>& methodArguments, int numArgs, ILRewriter& rewriter,
+    std::vector<TypeSignature>& methodLocals, int numLocals, ILRewriterWrapper& rewriterWrapper,
+                                              ULONG callTargetStateIndex, std::vector<EHClause>& newClauses, bool isAsyncMethod) const
+{
+    const auto pushILinstr = rewriterWrapper.GetCurrentILInstr();
+
+    //if (isAsyncMethod && caller->type.isGeneric && caller->type.valueType)
+    //{
+    //    Logger::Warn("Async generic methods in optimized code are not supported at the moment. Skipping on placing ",
+    //                 lineProbes.size(), " line probe(s).");
+    //    MarkAllLineProbesAsError(lineProbes, line_probe_in_async_generic_method_in_optimized_code);
+    //    return E_NOTIMPL;
+    //}
+
+    mdFieldDef isReEntryFieldTok = mdFieldDefNil;
+
+    if (isAsyncMethod)
+    {
+        auto hr = debuggerTokens->GetIsFirstEntryToMoveNextFieldToken(caller->type.id, isReEntryFieldTok);
+        IfFailRet(hr);
+
+        if (isReEntryFieldTok == mdFieldDefNil)
+        {
+            return E_FAIL;
+        }
+    }
+
+    auto const firstIlInstr = rewriter.GetILList();
+    for (ILInstr* pInstr = firstIlInstr->m_pPrev; pInstr != firstIlInstr; pInstr = pInstr->m_pPrev)
+    {
+        const auto opcode = pInstr->m_opcode;
+
+        // No CALLI for now
+        if (opcode == CEE_CALL || opcode == CEE_CALLVIRT)
+        {
+            auto functionInfo = GetFunctionInfo(module_metadata.metadata_import, pInstr->m_Arg32);
+
+            // Determine the IL Offset of the call/callvirt instruction that we're processing
+            auto offset = -1;
+            for (auto x = 0; x < 10000; x++)
+            {
+                ILInstr* instrAtOffset;
+                auto hr = rewriter.GetInstrFromOffset(x, &instrAtOffset);
+                if (instrAtOffset == pInstr)
+                {
+                    offset = x;
+                    break;
+                }
+            }
+
+            if (functionInfo.type.name._Starts_with(WStr("Datadog.")) || functionInfo.name == WStr("get_IsCompleted") ||
+                functionInfo.name == WStr("GetAwaiter") || functionInfo.name == WStr("GetResult"))
+            {
+                continue;
+            }
+
+            auto hr = functionInfo.method_signature.TryParse();
+
+            if (FAILED(hr))
+            {
+                auto failedMethodCall = WStr("<DI_FAILED>") + functionInfo.name;
+                mdString methodNameToken;
+                auto hr = module_metadata.metadata_emit->DefineUserString(
+                    failedMethodCall.data(), static_cast<ULONG>(failedMethodCall.length()), &methodNameToken);
+
+                if (FAILED(hr))
+                {
+                    continue;
+                }
+
+                COR_SIGNATURE data{ELEMENT_TYPE_I4};
+                TypeSignature type = {0, 1, &data};
+                rewriterWrapper.LoadInt32(0);
+                rewriterWrapper.LoadStr(methodNameToken);
+                rewriterWrapper.LoadInt32(offset);
+                if (isAsyncMethod)
+                {
+                    rewriterWrapper.LoadArgument(0);
+                    rewriterWrapper.LoadFieldAddress(isReEntryFieldTok);
+                }
+                else
+                {
+                    rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
+                }
+
+                ILInstr* beginCallInstruction;
+                hr = debuggerTokens->WriteLogCall(&rewriterWrapper, type, &beginCallInstruction,
+                                                  isAsyncMethod ? AsyncMethodProbe : NonAsyncMethodProbe);
+                if (FAILED(hr))
+                {
+                    return E_FAIL;
+                }
+
+                continue;
+            }
+
+            auto [elementType, returnTypeFlags] = functionInfo.method_signature.GetReturnValue().GetElementTypeAndFlags();
+            const bool isVoidMethod = elementType == ELEMENT_TYPE_VOID;
+
+            if (isVoidMethod || returnTypeFlags & TypeFlagByRef)
+            {
+                continue;
+            }
+
+            rewriterWrapper.SetILPosition(pInstr->m_pNext);
+            
+            const auto& returnValue = functionInfo.method_signature.GetReturnValue();
+
+            mdString methodNameToken;
+            hr = module_metadata.metadata_emit->DefineUserString(
+                functionInfo.name.data(), static_cast<ULONG>(functionInfo.name.length()), &methodNameToken);
+
+            if (FAILED(hr))
+            {
+                continue;
+            }
+
+            rewriterWrapper.Duplicate(); // Dup return value
+            rewriterWrapper.LoadStr(methodNameToken);
+            rewriterWrapper.LoadInt32(offset);
+
+            if (isAsyncMethod)
+            {
+                rewriterWrapper.LoadArgument(0);
+                rewriterWrapper.LoadFieldAddress(isReEntryFieldTok);
+            }
+            else
+            {
+                rewriterWrapper.LoadLocalAddress(callTargetStateIndex);
+            }
+
+            ILInstr* beginCallInstruction;
+            hr = debuggerTokens->WriteLogCall(&rewriterWrapper, returnValue, &beginCallInstruction, isAsyncMethod ? AsyncMethodProbe : NonAsyncMethodProbe);
+            if (FAILED(hr))
+            {
+                return E_FAIL;
+            }
+        }
+    }
+
+    rewriterWrapper.SetILPosition(pushILinstr);
 
     return S_OK;
 }
@@ -1992,6 +2142,24 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
     const auto instrumentedMethodIndex = ProbesMetadataTracker::GetNextInstrumentedMethodIndex();
     std::vector<EHClause> newClauses;
+
+    /**
+     * Collect all return values of method calls
+     */
+
+    if (!methodProbes.empty())
+    {
+        hr = ApplyLogCalls(instrumentedMethodIndex, lineProbes, module_id, module_metadata, caller, debuggerTokens,
+                           function_token, isStatic, methodArguments, numArgs, rewriter, methodLocals, numLocals,
+                           rewriterWrapper, callTargetStateIndex, newClauses, isAsyncMethod);
+
+        if (FAILED(hr))
+        {
+            MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, WStr("Failed to apply method calls."));
+            // Appropriate error message is already logged in ApplyLogCalls.
+            return E_FAIL;
+        }
+    }
 
     // ***
     // BEGIN LINE PROBES PART

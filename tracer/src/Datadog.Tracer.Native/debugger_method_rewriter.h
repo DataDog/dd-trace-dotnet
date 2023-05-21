@@ -46,6 +46,15 @@ private:
                                  mdFieldDef isReEntryFieldTok = mdFieldDefNil) const;
     static HRESULT LoadInstanceIntoStack(FunctionInfo* caller, bool isStatic, const ILRewriterWrapper& rewriterWrapper,
                                          ILInstr** outLoadArgumentInstr, CallTargetTokens* callTargetTokens);
+
+    HRESULT ApplyLogCalls(int instrumentedMethodIndex, LineProbeDefinitions& lineProbes, ModuleID module_id,
+                        ModuleMetadata& module_metadata, FunctionInfo* caller, DebuggerTokens* debuggerTokens,
+                        mdToken function_token, bool isStatic, std::vector<TypeSignature>& methodArguments,
+                        int numArgs, ILRewriter& rewriter, std::vector<TypeSignature>& methodLocals, int numLocals,
+                          ILRewriterWrapper& rewriterWrapper, ULONG callTargetStateIndex,
+                          std::vector<EHClause>& lineProbesEHClauses,
+                          bool isAsyncMethod) const;
+
     HRESULT CallLineProbe(int instrumentedMethodIndex, ModuleID module_id,
                                  ModuleMetadata& module_metadata, FunctionInfo* caller, DebuggerTokens* debuggerTokens,
                                  mdToken function_token, bool isStatic, std::vector<TypeSignature>& methodArguments,

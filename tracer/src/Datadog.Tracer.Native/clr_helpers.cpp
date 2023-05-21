@@ -198,6 +198,80 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import, co
             FunctionMethodSignature(raw_signature, raw_signature_len)};
 }
 
+FunctionInfo GetFunctionInfo(IMetaDataImport2* metadata_import, const mdToken& token)
+{
+    mdToken parent_token = mdTokenNil;
+    mdToken method_spec_token = mdTokenNil;
+    mdToken method_def_token = mdTokenNil;
+    WCHAR function_name[kNameMaxSize]{};
+    DWORD function_name_len = 0;
+
+    PCCOR_SIGNATURE raw_signature;
+    ULONG raw_signature_len;
+    BOOL is_generic = false;
+    std::vector<BYTE> final_signature_bytes;
+    std::vector<BYTE> method_spec_signature;
+
+    HRESULT hr = E_FAIL;
+    const auto token_type = TypeFromToken(token);
+    switch (token_type)
+    {
+        case mdtMemberRef:
+            hr = metadata_import->GetMemberRefProps(token, &parent_token, function_name, kNameMaxSize,
+                                                    &function_name_len, &raw_signature, &raw_signature_len);
+            break;
+        case mdtMethodDef:
+            hr = metadata_import->GetMemberProps(token, &parent_token, function_name, kNameMaxSize, &function_name_len,
+                                                 nullptr, &raw_signature, &raw_signature_len, nullptr, nullptr, nullptr,
+                                                 nullptr, nullptr);
+            break;
+        case mdtMethodSpec:
+        {
+            hr = metadata_import->GetMethodSpecProps(token, &parent_token, &raw_signature, &raw_signature_len);
+            is_generic = true;
+            if (FAILED(hr))
+            {
+                return {};
+            }
+            const auto generic_info = GetFunctionInfo(metadata_import, parent_token);
+            final_signature_bytes = generic_info.signature.data;
+            method_spec_signature = GetSignatureByteRepresentation(raw_signature_len, raw_signature);
+            std::memcpy(function_name, generic_info.name.c_str(), sizeof(WCHAR) * (generic_info.name.length() + 1));
+            function_name_len = DWORD(generic_info.name.length() + 1);
+            method_spec_token = token;
+            method_def_token = generic_info.id;
+        }
+        break;
+        default:
+            Logger::Warn("[trace::GetFunctionInfo] unknown token type: {}", token_type);
+            return {};
+    }
+    if (FAILED(hr) || function_name_len == 0)
+    {
+        return {};
+    }
+
+    // parent_token could be: TypeDef, TypeRef, TypeSpec, ModuleRef, MethodDef
+    const auto type_info = GetTypeInfo(metadata_import, parent_token);
+
+    if (is_generic)
+    {
+        // use the generic constructor and feed both method signatures
+        return {method_spec_token,
+                shared::WSTRING(function_name),
+                type_info,
+                MethodSignature(final_signature_bytes),
+                MethodSignature(method_spec_signature),
+                method_def_token,
+                FunctionMethodSignature(raw_signature, raw_signature_len)};
+    }
+
+    final_signature_bytes = GetSignatureByteRepresentation(raw_signature_len, raw_signature);
+
+    return {token, shared::WSTRING(function_name), type_info, MethodSignature(final_signature_bytes),
+            FunctionMethodSignature(raw_signature, raw_signature_len)};
+}
+
 ModuleInfo GetModuleInfo(ICorProfilerInfo4* info, const ModuleID& module_id)
 {
     const DWORD module_path_size = 260;
@@ -309,6 +383,102 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
     return {token,       type_name_string, mdTypeSpecNil,  token_type,
             extendsInfo, type_valueType,   type_isGeneric, type_isAbstract, type_isSealed, parentTypeInfo, parent_token};
 }
+
+TypeInfo GetTypeInfo(IMetaDataImport2* metadata_import, const mdToken& token)
+{
+    mdToken parent_token = mdTokenNil;
+    std::shared_ptr<TypeInfo> parentTypeInfo = nullptr;
+    mdToken parent_type_token = mdTokenNil;
+    WCHAR type_name[kNameMaxSize]{};
+    DWORD type_name_len = 0;
+    DWORD type_flags;
+    std::shared_ptr<TypeInfo> extendsInfo = nullptr;
+    mdToken type_extends = mdTokenNil;
+    bool type_valueType = false;
+    bool type_isGeneric = false;
+    bool type_isAbstract = false;
+    bool type_isSealed = false;
+
+    HRESULT hr = E_FAIL;
+    const auto token_type = TypeFromToken(token);
+
+    switch (token_type)
+    {
+        case mdtTypeDef:
+            hr = metadata_import->GetTypeDefProps(token, type_name, kNameMaxSize, &type_name_len, &type_flags,
+                                                  &type_extends);
+
+            metadata_import->GetNestedClassProps(token, &parent_type_token);
+            if (parent_type_token != mdTokenNil)
+            {
+                parentTypeInfo = std::make_shared<TypeInfo>(GetTypeInfo(metadata_import, parent_type_token));
+            }
+
+            if (type_extends != mdTokenNil)
+            {
+                extendsInfo = std::make_shared<TypeInfo>(GetTypeInfo(metadata_import, type_extends));
+                type_valueType =
+                    extendsInfo->name == WStr("System.ValueType") || extendsInfo->name == WStr("System.Enum");
+            }
+
+            type_isAbstract = IsTdAbstract(type_flags);
+            type_isSealed = IsTdSealed(type_flags);
+
+            break;
+        case mdtTypeRef:
+            hr = metadata_import->GetTypeRefProps(token, &parent_token, type_name, kNameMaxSize, &type_name_len);
+            break;
+        case mdtTypeSpec:
+        {
+            PCCOR_SIGNATURE signature{};
+            ULONG signature_length{};
+
+            hr = metadata_import->GetTypeSpecFromToken(token, &signature, &signature_length);
+
+            if (FAILED(hr) || signature_length < 3)
+            {
+                return {};
+            }
+
+            if (signature[0] & ELEMENT_TYPE_GENERICINST)
+            {
+                mdToken type_token;
+                CorSigUncompressToken(&signature[2], &type_token);
+                const auto baseType = GetTypeInfo(metadata_import, type_token);
+                return {baseType.id,          baseType.name,        token,
+                        token_type,           baseType.extend_from, baseType.valueType,
+                        baseType.isGeneric,   baseType.isAbstract,  baseType.isSealed,
+                        baseType.parent_type, baseType.scopeToken};
+            }
+        }
+        break;
+        case mdtModuleRef:
+            metadata_import->GetModuleRefProps(token, type_name, kNameMaxSize, &type_name_len);
+            break;
+        case mdtMemberRef:
+            return GetFunctionInfo(metadata_import, token).type;
+            break;
+        case mdtMethodDef:
+            return GetFunctionInfo(metadata_import, token).type;
+            break;
+    }
+    if (FAILED(hr) || type_name_len == 0)
+    {
+        return {};
+    }
+
+    const auto type_name_string = shared::WSTRING(type_name);
+    const auto generic_token_index = type_name_string.rfind(WStr("`"));
+    if (generic_token_index != std::string::npos)
+    {
+        const auto idxFromRight = type_name_string.length() - generic_token_index - 1;
+        type_isGeneric = idxFromRight == 1 || idxFromRight == 2;
+    }
+
+    return {token,          type_name_string, mdTypeSpecNil, token_type,     extendsInfo, type_valueType,
+            type_isGeneric, type_isAbstract,  type_isSealed, parentTypeInfo, parent_token};
+}
+
 
 // Searches for an AssemblyRef whose name and version match exactly.
 // The exact version match is critical when two Datadog.Trace.dll assemblies are loaded

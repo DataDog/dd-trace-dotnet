@@ -609,9 +609,13 @@ AssemblyMetadata GetReferencedAssemblyMetadata(const ComPtr<IMetaDataAssemblyImp
 
 FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& token);
 
+FunctionInfo GetFunctionInfo(IMetaDataImport2* metadata_import, const mdToken& token);
+
 ModuleInfo GetModuleInfo(ICorProfilerInfo4* info, const ModuleID& module_id);
 
 TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& token);
+
+TypeInfo GetTypeInfo(IMetaDataImport2* metadata_import, const mdToken& token);
 
 mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport>& assembly_import,
                               const shared::WSTRING& assembly_name, const Version& version);

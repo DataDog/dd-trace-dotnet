@@ -18,6 +18,115 @@ const int signatureBufferSize = 500;
  * PRIVATE
  **/
 
+HRESULT DebuggerTokens::WriteLogCall(void* rewriterWrapperPtr, const TypeSignature& argOrLocal, ILInstr** instruction, ProbeType probeType)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    mdMemberRef logArgOrLocalRef;
+    auto [invokerTypeRef, stateTypeRef] = GetDebuggerInvokerAndState(probeType);
+    
+    logArgOrLocalRef = GetLogCallMemberRef(probeType);
+
+    if (logArgOrLocalRef == mdMemberRefNil)
+    {
+        auto targetMemberName = managed_profiler_debugger_logcall_name.data();
+        unsigned callTargetStateBuffer;
+        auto callTargetStateSize = CorSigCompressToken(stateTypeRef, &callTargetStateBuffer);
+
+        unsigned long signatureLength = 10 + callTargetStateSize;
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
+        signature[offset++] = 0x01; // one generic
+        signature[offset++] = 0x04; // (returnValue, methodName, bytecodeOffset, DebuggerState)
+
+        signature[offset++] = ELEMENT_TYPE_VOID;
+
+        // the argOrLocal
+        signature[offset++] = ELEMENT_TYPE_MVAR;
+        signature[offset++] = 0x00;
+
+        // methodName
+        signature[offset++] = ELEMENT_TYPE_STRING;
+
+        // bytecodeOffset
+        signature[offset++] = ELEMENT_TYPE_I4;
+
+        // DebuggerState
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
+        offset += callTargetStateSize;
+
+        auto hr = module_metadata->metadata_emit->DefineMemberRef(invokerTypeRef, targetMemberName, signature,
+                                                                  signatureLength, &logArgOrLocalRef);
+        if (FAILED(hr))
+        {
+            return hr;
+        }
+        
+        SetLogCallMemberRef(probeType, logArgOrLocalRef);
+    }
+
+    mdMethodSpec logArgMethodSpec = mdMethodSpecNil;
+
+    auto signatureLength = 2;
+
+    PCCOR_SIGNATURE argumentSignatureBuffer;
+    ULONG argumentSignatureSize;
+    const auto [elementType, argTypeFlags] = argOrLocal.GetElementTypeAndFlags();
+    if (argTypeFlags & TypeFlagByRef)
+    {
+        PCCOR_SIGNATURE argSigBuff;
+        auto signatureSize = argOrLocal.GetSignature(argSigBuff);
+        if (argSigBuff[0] == ELEMENT_TYPE_BYREF)
+        {
+            argumentSignatureBuffer = argSigBuff + 1;
+            argumentSignatureSize = signatureSize - 1;
+            signatureLength += signatureSize - 1;
+        }
+        else
+        {
+            argumentSignatureBuffer = argSigBuff;
+            argumentSignatureSize = signatureSize;
+            signatureLength += signatureSize;
+        }
+    }
+    else
+    {
+        auto signatureSize = argOrLocal.GetSignature(argumentSignatureBuffer);
+        argumentSignatureSize = signatureSize;
+        signatureLength += signatureSize;
+    }
+
+    COR_SIGNATURE signature[signatureBufferSize];
+    unsigned offset = 0;
+    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
+    signature[offset++] = 0x01;
+
+    memcpy(&signature[offset], argumentSignatureBuffer, argumentSignatureSize);
+    offset += argumentSignatureSize;
+
+    hr = module_metadata->metadata_emit->DefineMethodSpec(logArgOrLocalRef, signature, signatureLength,
+                                                          &logArgMethodSpec);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error creating log exception method spec.");
+        return hr;
+    }
+
+    *instruction = rewriterWrapper->CallMember(logArgMethodSpec, false);
+    return S_OK;
+}
+
 HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeSignature& argOrLocal,
                                            ILInstr** instruction, bool isArg, ProbeType probeType)
 {
