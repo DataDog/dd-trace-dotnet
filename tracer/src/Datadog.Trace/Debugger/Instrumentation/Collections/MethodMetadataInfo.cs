@@ -22,10 +22,10 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
 
         public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, AsyncHelper.FieldInfoNameSanitized[] asyncMethodHoistedLocals, FieldInfo[] asyncMethodHoistedArguments, Type type, MethodBase method, Type kickoffType, MethodBase kickoffMethod, string filePath, string methodBeginLineNumber, string methodEndLineNumber, Dictionary<int, int> ilOffsetToLineNumberMapping)
         {
-            ParameterNames = parameterNames;
-            LocalVariableNames = localVariableNames;
+            ParameterNames = parameterNames ?? Array.Empty<string>();
+            LocalVariableNames = localVariableNames ?? Array.Empty<string>();
             AsyncMethodHoistedLocals = asyncMethodHoistedLocals;
-            AsyncMethodHoistedArguments = asyncMethodHoistedArguments;
+            AsyncMethodHoistedArguments = asyncMethodHoistedArguments ?? Array.Empty<FieldInfo>();
             DeclaringType = type;
             Method = method;
             KickoffInvocationTargetType = kickoffType;

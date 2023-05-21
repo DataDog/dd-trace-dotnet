@@ -215,9 +215,10 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             state.SnapshotCreator.StopSampling();
+            state.ExceptionThrown = exception;
             state.MethodPhase = EvaluateAt.Exit;
 
-            var captureInfo = new CaptureInfo<Exception>(value: exception, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.ExitStart, memberKind: ScopeMemberKind.Exception, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
+            var captureInfo = new CaptureInfo<Exception>(value: exception, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.ExitStart, memberKind: ScopeMemberKind.Exception, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length, exceptionThrown: exception);
 
             if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
             {
@@ -247,11 +248,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             state.SnapshotCreator.StopSampling();
+            state.ExceptionThrown = exception;
             state.MethodPhase = EvaluateAt.Exit;
 
             if (exception != null)
             {
-                var captureInfo = new CaptureInfo<Exception>(value: exception, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.ExitStart, memberKind: ScopeMemberKind.Exception, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
+                var captureInfo = new CaptureInfo<Exception>(value: exception, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.ExitStart, memberKind: ScopeMemberKind.Exception, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length, exceptionThrown: exception);
                 if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
                 {
                     state.IsActive = false;
@@ -289,7 +291,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                                        state.MethodMetadataInfo.ParameterNames.Length > 0 ||
                                        !state.MethodMetadataInfo.Method.IsStatic;
 
-            var captureInfo = new CaptureInfo<object>(value: state.InvocationTarget, type: state.MethodMetadataInfo.DeclaringType, invocationTargetType: state.MethodMetadataInfo.DeclaringType, memberKind: ScopeMemberKind.This, methodState: MethodState.ExitEnd, hasLocalOrArgument: hasArgumentsOrLocals, method: state.MethodMetadataInfo.Method);
+            var captureInfo = new CaptureInfo<object>(value: state.InvocationTarget, type: state.MethodMetadataInfo.DeclaringType, invocationTargetType: state.MethodMetadataInfo.DeclaringType, memberKind: ScopeMemberKind.This, methodState: MethodState.ExitEnd, hasLocalOrArgument: hasArgumentsOrLocals, method: state.MethodMetadataInfo.Method, exceptionThrown: state.ExceptionThrown);
             state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator);
             state.HasLocalsOrReturnValue = false;
         }

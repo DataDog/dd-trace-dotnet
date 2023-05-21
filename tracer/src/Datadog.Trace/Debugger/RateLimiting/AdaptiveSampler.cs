@@ -104,7 +104,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         internal bool Sample()
         {
-            return Tracer.Instance.ActiveScope.Span.Context is SpanContext context && context.TraceContext?.Tags.GetTag(Tags.HasDebugInfo) == bool.TrueString;
+            return true;
         }
 
         internal bool Keep()

@@ -4,8 +4,11 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Threading;
+using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
@@ -119,6 +122,8 @@ namespace Datadog.Trace
             get => _isFinished == 1;
             private set => _isFinished = value ? 1 : 0;
         }
+
+        internal List<DebuggerSnapshot> Snapshots { get; private set; } = new();
 
         internal bool IsRootSpan => Context.TraceContext?.RootSpan == this;
 
@@ -381,6 +386,8 @@ namespace Datadog.Trace
                 {
                     exception = aggregateException.InnerExceptions[0];
                 }
+
+                Debugger.ExceptionAutoInstrumentation.ExceptionTrackManager.Notify(exception);
 
                 SetTag(Trace.Tags.ErrorMsg, exception.Message);
                 SetTag(Trace.Tags.ErrorStack, exception.ToString());

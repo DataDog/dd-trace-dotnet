@@ -27,12 +27,16 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// This index is hard-coded into the method's instrumented bytecode.
         /// </summary>
         private readonly int _methodMetadataIndex;
+        private readonly ProbeData _probeData;
+        private readonly DebuggerSnapshotCreator _snapshotCreator;
 
         // Determines whether we should still be capturing values, or halt for any reason (e.g an exception was caused by our instrumentation, rate limiter threshold reached).
-        internal bool IsActive = true;
 
         internal bool HasLocalsOrReturnValue;
         internal object InvocationTarget;
+        private EvaluateAt _methodPhase;
+        private bool _isActive = true;
+        private Exception _exceptionThrown = null;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MethodDebuggerState"/> struct.
@@ -49,21 +53,38 @@ namespace Datadog.Trace.Debugger.Instrumentation
             _methodMetadataIndex = methodMetadataIndex;
             HasLocalsOrReturnValue = false;
             InvocationTarget = invocationTarget;
-            SnapshotCreator = DebuggerSnapshotCreator.BuildSnapshotCreator(probeData.Processor);
-            ProbeData = probeData;
+            _snapshotCreator = DebuggerSnapshotCreator.BuildSnapshotCreator(probeData.Processor);
+            _probeData = probeData;
             MethodPhase = EvaluateAt.Entry;
         }
 
-        internal EvaluateAt MethodPhase { get; set; }
+        internal EvaluateAt MethodPhase
+        {
+            readonly get => _methodPhase;
+            set => _methodPhase = value;
+        }
 
         internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataCollection.Instance.Get(_methodMetadataIndex);
 
-        internal ProbeData ProbeData { get; }
+        internal readonly ProbeData ProbeData => _probeData;
+
+        internal bool IsActive
+        {
+            get => _isActive;
+            // ReSharper disable once RedundantCheckBeforeAssignment
+            set
+            {
+                if (_isActive != value)
+                {
+                    _isActive = value;
+                }
+            }
+        }
 
         /// <summary>
         /// Gets the LiveDebugger SnapshotCreator
         /// </summary>
-        internal DebuggerSnapshotCreator SnapshotCreator { get; }
+        internal readonly DebuggerSnapshotCreator SnapshotCreator => _snapshotCreator;
 
         /// <summary>
         /// Gets the LiveDebugger BeginMethod scope
@@ -74,6 +95,15 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// Gets the Id of the probe
         /// </summary>
         internal string ProbeId => _probeId;
+
+        /// <summary>
+        /// Gets or sets an Exception
+        /// </summary>
+        internal Exception ExceptionThrown
+        {
+            readonly get => _exceptionThrown;
+            set => _exceptionThrown = value;
+        }
 
         /// <summary>
         /// Gets the default live debugger state (used by the native side to initialize the locals)

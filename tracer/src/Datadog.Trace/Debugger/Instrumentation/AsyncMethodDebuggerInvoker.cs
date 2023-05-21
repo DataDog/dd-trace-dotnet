@@ -143,7 +143,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LogLocal<TLocal>(ref TLocal local, int index, ref AsyncDebuggerState state)
         {
-            if (!state.LogState.IsActive)
+            if (state.LogState == null || state.LogState.IsActive == false)
             {
                 return;
             }
@@ -180,7 +180,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LogCall<TReturnValue>(TReturnValue returnValue, string methodName, int bytecodeOffset, ref AsyncDebuggerState state)
         {
-            if (!state.LogState.IsActive)
+            if (state.LogState == null || state.LogState.IsActive == false)
             {
                 return;
             }
@@ -209,7 +209,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <returns>LiveDebugger return structure</returns>
         public static DebuggerReturn EndMethod_StartMarker<TTarget>(TTarget instance, Exception exception, ref AsyncDebuggerState state)
         {
-            if (!state.LogState.IsActive)
+            if (state.LogState == null || state.LogState.IsActive == false)
             {
                 return DebuggerReturn.GetDefault();
             }
@@ -245,7 +245,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DebuggerReturn<TReturn> EndMethod_StartMarker<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref AsyncDebuggerState state)
         {
-            if (!state.LogState.IsActive)
+            if (state.LogState == null || state.LogState.IsActive == false)
             {
                 return new DebuggerReturn<TReturn>(returnValue);
             }
@@ -284,7 +284,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void EndMethod_EndMarker(ref AsyncDebuggerState state)
         {
-            if (!state.LogState.IsActive)
+            if (state.LogState == null || state.LogState.IsActive == false)
             {
                 return;
             }
@@ -314,7 +314,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             try
             {
-                if (state.LogState?.IsActive == false)
+                if (state.LogState == null || state.LogState.IsActive == false)
                 {
                     // Already encountered `LogException`
                     return;
