@@ -245,10 +245,10 @@ internal static partial class DotNetSettingsExtensions
 
         if (enabled)
         {
-            settings = settings.SetProcessEnvironmentVariable("DD_LOGGER_BUILD_SOURCESDIRECTORY", NukeBuild.RootDirectory);
-            var pArgConf = settings.ProcessArgumentConfigurator ?? (args => args);
-            return settings.SetProcessArgumentConfigurator(
-                args => pArgConf(args.Add("--logger:datadog")));
+            return settings
+                  .SetProcessEnvironmentVariable("DD_LOGGER_BUILD_SOURCESDIRECTORY", NukeBuild.RootDirectory)
+                  .SetProcessEnvironmentVariable("DD_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH", NukeBuild.RootDirectory / "Datadog.Trace.snk")
+                  .SetSettingsFile(NukeBuild.RootDirectory / "tracer" / "test" / "test.settings");
         }
 
         return settings;

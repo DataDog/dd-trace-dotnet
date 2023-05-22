@@ -370,3 +370,4 @@ CMakeFiles/
 lib/
 libdatadog-*/
 *-prefix/
+cmake-build-debug/
