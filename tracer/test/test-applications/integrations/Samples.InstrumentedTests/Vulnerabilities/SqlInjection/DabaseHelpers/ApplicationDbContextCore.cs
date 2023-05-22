@@ -1,7 +1,6 @@
 #if NETCOREAPP3_0_OR_GREATER
 
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Data.Common;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;

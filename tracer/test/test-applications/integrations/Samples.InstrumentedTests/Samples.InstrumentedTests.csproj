@@ -33,7 +33,6 @@
     <PackageReference Include="System.Data.SQLite" Version="1.0.115.5" />
     <PackageReference Include="linq2db" Version="3.1.5" />
     <PackageReference Include="System.Data.OleDb" Version="4.7.1" />
-    <Reference Include="System.Data.Entity" />
     <PackageReference Include="MySql.Data" Version="8.0.28" />
   </ItemGroup>
 
@@ -45,21 +44,21 @@
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <PackageReference Include="EntityFramework" Version="6.4.4" />
-    <PackageReference Include="Dapper.StrongName" Version="1.60.0" />
+    <PackageReference Include="Dapper.StrongName" Version="1.60.1" />
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.1.6" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SQLite" Version="2.1.6" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.1.6" />
-    <PackageReference Include="Dapper" Version="2.0.78" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.1.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SQLite" Version="2.1.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.1.8" />
+    <PackageReference Include="Dapper.StrongName" Version="2.0.78" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0' OR '$(TargetFramework)'=='net5.0'">
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SQLite" Version="5.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="5.0.8" />
-    <PackageReference Include="Dapper" Version="2.0.78" />
+    <PackageReference Include="Dapper.StrongName" Version="2.0.78" />
   </ItemGroup>
 
 </Project>

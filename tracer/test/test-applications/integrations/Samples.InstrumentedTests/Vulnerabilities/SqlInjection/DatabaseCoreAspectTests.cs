@@ -25,7 +25,6 @@ public class DatabaseCoreAspectTests : InstrumentationTestsBase, IDisposable
     readonly string querySafe = "Select * from dbo.Books where title = @title";
     FormattableString formatStr;
     ApplicationDbContextCore dbContext;
-    string connectionString;
 
     public DatabaseCoreAspectTests()
     {

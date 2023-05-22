@@ -1,25 +1,6 @@
 using System;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
-public class FormatProviderForTest : IFormatProvider, ICustomFormatter
-{
-    public string Format(string format, object arg, IFormatProvider formatProvider)
-    {
-        return (arg.ToString());
-    }
-
-    public object GetFormat(Type formatType)
-    {
-        if (formatType == typeof(ICustomFormatter))
-        {
-            return this;
-        }
-        else
-        {
-            return null;
-        }
-    }
-}
 
 public class BookSerialize
 {
