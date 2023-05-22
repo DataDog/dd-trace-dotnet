@@ -25,7 +25,7 @@ public class SystemDataSqLiteTests : InstrumentationTestsBase, IDisposable
 
     public SystemDataSqLiteTests()
     {
-        dbConnection = SqliteDDBBCreator.CreateDatabase();
+        dbConnection = SqliteDDBBCreator.Create() as SQLiteConnection;
         AddTainted(taintedValue);
         taintedQuery = "SELECT * from Persons where name = '" + taintedValue + "'";
         notTaintedQuery = "SELECT * from Persons where name = 'Emilio'";

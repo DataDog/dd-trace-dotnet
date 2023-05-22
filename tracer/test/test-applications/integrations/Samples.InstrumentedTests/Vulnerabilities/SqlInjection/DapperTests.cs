@@ -4,6 +4,7 @@ using Dapper;
 using System;
 using System.Data.SqlClient;
 using System.Threading;
+using System.Data.Common;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
@@ -20,12 +21,12 @@ public class DapperTests : InstrumentationTestsBase, IDisposable
     protected string QuerySafe;
 
     protected string CommandUnsafe2;
-    protected SqlConnection dbConnection;
+    protected DbConnection dbConnection;
     protected static string databaseName = "InstrumentationTestsDB";
 
     public DapperTests()
     {
-        dbConnection = SqlDDBBCreator.Create();
+        dbConnection = SqliteDDBBCreator.Create();
         AddTainted(taintedValue);
         QueryUnsafe = "SELECT * from books where Title = '" + taintedValue + "'";
         QuerySafe = "SELECT * from books where Title = '" + notTaintedValue + "'";

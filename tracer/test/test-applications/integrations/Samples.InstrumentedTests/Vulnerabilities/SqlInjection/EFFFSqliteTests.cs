@@ -28,7 +28,7 @@ public class EFFFSqliteTests : InstrumentationTestsBase
 
     public EFFFSqliteTests()
     {
-        var connection = SqliteDDBBCreator.CreateDatabase();
+        var connection = SqliteDDBBCreator.Create();
         db = new ApplicationDbSqlLiteContext(connection);
 
         if (db.Database.Connection.State != ConnectionState.Open)
