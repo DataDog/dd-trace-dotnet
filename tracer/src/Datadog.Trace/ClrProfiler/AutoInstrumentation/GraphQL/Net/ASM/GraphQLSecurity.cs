@@ -12,8 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM;
 
 internal abstract class GraphQLSecurity
 {
-    public static void RegisterResolver<TContext, TNode>(TContext context, TNode node, bool v5V7 = false)
-        where TContext : IExecutionContext
+    public static void RegisterResolver<TNode>(object context, TNode node, bool v5V7 = false)
         where TNode : IExecutionNode
     {
         var scope = Tracer.Instance.ActiveScope;
@@ -126,8 +125,7 @@ internal abstract class GraphQLSecurity
         GraphQLSecurityCommon.RegisterResolverCall(scope, resolverName, resolverArguments);
     }
 
-    private static object GetArgumentValue<TContext>(TContext context, object arg)
-        where TContext : IExecutionContext
+    private static object GetArgumentValue(object context, object arg)
     {
         if (arg is null)
         {
@@ -158,9 +156,13 @@ internal abstract class GraphQLSecurity
     }
 
     private static object GetVariableValue<TContext>(TContext context, string name)
-        where TContext : IExecutionContext
     {
-        foreach (var v in context.Variables)
+        if (!context.TryDuckCast<IExecutionContextVariable>(out var variableContext))
+        {
+            return null;
+        }
+
+        foreach (var v in variableContext.Variables)
         {
             if (v.TryDuckCast<Variable>(out var var))
             {
