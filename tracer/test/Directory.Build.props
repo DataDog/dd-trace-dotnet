@@ -45,7 +45,8 @@
   </PropertyGroup>
 
   <ItemGroup Condition=" $(DD_LOGGER_ENABLED) != 'false' ">
-    <PackageReference Include="DatadogTestLogger" Version="0.0.38" ExcludeAssets="compile"/>
+    <PackageReference Include="DatadogTestCollector" Version="0.0.39" ExcludeAssets="compile"/>
+    <PackageReference Include="DatadogTestLogger" Version="0.0.39" ExcludeAssets="compile"/>
   </ItemGroup>
 
   <!-- StyleCop -->
