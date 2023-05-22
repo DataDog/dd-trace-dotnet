@@ -351,6 +351,17 @@ namespace Datadog.Trace.Configuration
             TraceId128BitLoggingEnabled = config
                                          .WithKeys(ConfigurationKeys.FeatureFlags.TraceId128BitLoggingEnabled)
                                          .AsBool(false);
+
+            // we "enrich" with these values which aren't _strictly_ configuration, but which we want to track as we tracked them in v1
+            telemetry.Record(ConfigTelemetryData.NativeTracerVersion, Instrumentation.GetNativeTracerVersion(), recordValue: true, ConfigurationOrigins.Default);
+            telemetry.Record(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted, ConfigurationOrigins.Default);
+
+            if (AzureAppServiceMetadata is not null)
+            {
+                telemetry.Record(ConfigTelemetryData.AasConfigurationError, AzureAppServiceMetadata.IsUnsafeToTrace, ConfigurationOrigins.Default);
+                telemetry.Record(ConfigTelemetryData.CloudHosting, "Azure", recordValue: true, ConfigurationOrigins.Default);
+                telemetry.Record(ConfigTelemetryData.AasAppType, AzureAppServiceMetadata.SiteType, recordValue: true, ConfigurationOrigins.Default);
+            }
         }
 
         /// <summary>
