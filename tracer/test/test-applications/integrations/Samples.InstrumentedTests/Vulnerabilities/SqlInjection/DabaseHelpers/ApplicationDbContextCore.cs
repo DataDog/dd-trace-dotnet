@@ -54,32 +54,6 @@ public class ApplicationDbContextCore : DbContext
             }
         }
     }
-    
-    public static DbConnection OpenConnection(Type connectionType)
-    {
-        int numAttempts = 3;
-        var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
-@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
-
-        for (int i = 0; i < numAttempts; i++)
-        {
-            DbConnection connection = null;
-
-            try
-            {
-                connection = Activator.CreateInstance(connectionType, connectionString) as DbConnection;
-                connection.Open();
-                return connection;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-                connection?.Dispose();
-            }
-        }
-
-        throw new Exception($"Unable to open connection to connection string {connectionString} after {numAttempts} attempts");
-    }
 
     public Microsoft.EntityFrameworkCore.DbSet<Book> Books { get; set; }
 

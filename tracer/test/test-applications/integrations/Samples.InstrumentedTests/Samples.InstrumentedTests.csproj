@@ -49,9 +49,9 @@
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="1.1.6" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SQLite" Version="1.1.6" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="1.1.6" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.1.6" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SQLite" Version="2.1.6" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.1.6" />
     <PackageReference Include="Dapper" Version="2.0.78" />
   </ItemGroup>
 

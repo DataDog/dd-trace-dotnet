@@ -29,7 +29,6 @@ public abstract class DatabaseInstrumentationTestsBase : InstrumentationTestsBas
     protected DbConnection OpenConnection()
     {
         var connection = GetDbConnection(connectionString);
-        // DatabaseProvider.RetryOperation($"Open connection {connectionString}", connection.Open);
         return connection;
     }
 
