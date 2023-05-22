@@ -115,7 +115,6 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected async Task Test(string query)
         {
-            EnableDebugMode();
             await _fixture.TryStartApp(this, enableSecurity: true, externalRulesFile: DefaultRuleFile);
             SetHttpPort(_fixture.HttpPort);
 

@@ -41,7 +41,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestQuerySecurity(string query)
         {
-            EnableDebugMode();
             await fixture.TryStartApp(this, enableSecurity: true, externalRulesFile: DefaultRuleFile);
             SetHttpPort(fixture.HttpPort);
 
