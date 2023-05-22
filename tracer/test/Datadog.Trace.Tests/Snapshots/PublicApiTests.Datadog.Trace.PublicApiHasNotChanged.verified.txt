@@ -479,6 +479,7 @@ namespace Datadog.Trace
         public const string MessageSize = "message.size";
         public const string OutHost = "out.host";
         public const string OutPort = "out.port";
+        public const string PeerService = "peer.service";
         public const string SamplingPriority = "sampling.priority";
         public const string SpanKind = "span.kind";
         public const string SqlQuery = "sql.query";

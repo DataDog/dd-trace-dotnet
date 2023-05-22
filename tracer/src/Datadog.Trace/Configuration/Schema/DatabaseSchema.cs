@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 
 namespace Datadog.Trace.Configuration.Schema
 {
@@ -37,5 +38,12 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => _defaultServiceName,
             };
         }
+
+        public MongoDbTags CreateMongoDbTags()
+            => _version switch
+            {
+                SchemaVersion.V0 => new MongoDbTags(),
+                _ => new MongoDbV1Tags(),
+            };
     }
 }
