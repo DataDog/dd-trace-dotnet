@@ -1,5 +1,6 @@
 #if NETCOREAPP3_0_OR_GREATER
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -9,7 +10,7 @@ using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
-public class EFCoreSqliteTests : InstrumentationTestsBase
+public class EFCoreSqliteTests : InstrumentationTestsBase, IDisposable
 {
     protected string taintedTitle = "Think_Python";
     protected string notTaintedValue = "nottainted";
@@ -30,7 +31,7 @@ public class EFCoreSqliteTests : InstrumentationTestsBase
         dbContext.Database.OpenConnection();
     }
 
-    public void SqlCommandTestsInitCleanup()
+    public void Dispose()
     {
         dbContext.Database.CloseConnection();
     }
