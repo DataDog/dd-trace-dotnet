@@ -3,15 +3,24 @@
 
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
+using System;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
     partial class MongoDbV1Tags
     {
-        // PeerServiceBytes = System.Text.Encoding.UTF8.GetBytes("peer.service");
-        private static readonly byte[] PeerServiceBytes = new byte[] { 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101 };
-        // PeerServiceSourceBytes = System.Text.Encoding.UTF8.GetBytes("_dd.peer.service.source");
-        private static readonly byte[] PeerServiceSourceBytes = new byte[] { 95, 100, 100, 46, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101, 46, 115, 111, 117, 114, 99, 101 };
+        // PeerServiceBytes = MessagePack.Serialize("peer.service");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> PeerServiceBytes => new byte[] { 172, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101 };
+#else
+        private static readonly byte[] PeerServiceBytes = new byte[] { 172, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101 };
+#endif
+        // PeerServiceSourceBytes = MessagePack.Serialize("_dd.peer.service.source");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> PeerServiceSourceBytes => new byte[] { 183, 95, 100, 100, 46, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101, 46, 115, 111, 117, 114, 99, 101 };
+#else
+        private static readonly byte[] PeerServiceSourceBytes = new byte[] { 183, 95, 100, 100, 46, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101, 46, 115, 111, 117, 114, 99, 101 };
+#endif
 
         public override string? GetTag(string key)
         {
