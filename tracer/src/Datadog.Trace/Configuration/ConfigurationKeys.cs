@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration

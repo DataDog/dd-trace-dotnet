@@ -676,6 +676,93 @@ stages:
         displayName: Publish NuGet packages
         artifact: nuget-packages
 
+- stage: debug_builds
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [linux, macos, windows, linux_arm64]
+
+  - job: linux
+    timeoutInMinutes: 60 #default value
+    dependsOn: []
+    strategy:
+      matrix:
+        centos7:
+          baseImage: centos7
+        alpine:
+          baseImage: alpine
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+      - template: steps/clone-repo.yml
+        parameters:
+          targetShaId: $(targetShaId)
+          targetBranch: $(targetBranch)
+      - template: steps/run-in-docker.yml
+        parameters:
+          build: true
+          target: builder
+          baseImage: $(baseImage)
+          command: "Clean Restore CreateRequiredDirectories CompileManagedSrc BuildRunnerTool -buildConfiguration Debug"
+          retryCountForRunCommand: 1
+
+  - job: windows
+    timeoutInMinutes: 60 #default value
+    dependsOn: []
+    pool:
+      name: azure-windows-scale-set-3
+    steps:
+      - template: steps/clone-repo.yml
+        parameters:
+          targetShaId: $(targetShaId)
+          targetBranch: $(targetBranch)
+      - template: steps/install-latest-dotnet-sdk.yml
+
+      - script: tracer\build.cmd Clean Restore CreateRequiredDirectories CompileManagedSrc BuildRunnerTool -buildConfiguration Debug
+        displayName: Build tracer home in debug
+        retryCountOnTaskFailure: 1
+
+  - job: linux_arm64
+    timeoutInMinutes: 60 #default value
+    dependsOn: []
+    pool:
+      name: aws-arm64-auto-scaling
+    workspace:
+      clean: all
+    steps:
+      - template: steps/clone-repo.yml
+        parameters:
+          targetShaId: $(targetShaId)
+          targetBranch: $(targetBranch)
+      - template: steps/run-in-docker.yml
+        parameters:
+          build: true
+          target: builder
+          baseImage: debian
+          command: "Clean Restore CreateRequiredDirectories CompileManagedSrc BuildRunnerTool -buildConfiguration Debug"
+          retryCountForRunCommand: 1
+
+  - job: macos
+    timeoutInMinutes: 60 #default value
+    dependsOn: [ ]
+    pool:
+      vmImage: macos-11
+    steps:
+      - template: steps/clone-repo.yml
+        parameters:
+          targetShaId: $(targetShaId)
+          targetBranch: $(targetBranch)
+      - template: steps/install-latest-dotnet-sdk.yml
+
+      - script: ./tracer/build.sh Clean Restore CreateRequiredDirectories CompileManagedSrc BuildRunnerTool -buildConfiguration Debug
+        displayName: Build tracer home
+        retryCountOnTaskFailure: 1
+
 - stage: unit_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, merge_commit_id]

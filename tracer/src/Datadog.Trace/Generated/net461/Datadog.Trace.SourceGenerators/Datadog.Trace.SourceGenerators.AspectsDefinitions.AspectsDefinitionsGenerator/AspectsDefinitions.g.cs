@@ -154,6 +154,8 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.Text.StringBuilder::Append(System.Object)\",\"\",[0],[False],[None],Propagation,[])] Append(System.Text.StringBuilder,System.Object)",
 "  [AspectMethodReplace(\"System.Text.StringBuilder::Append(System.Char[])\",\"\",[0],[False],[None],Propagation,[])] Append(System.Text.StringBuilder,System.Char[])",
 "  [AspectMethodReplace(\"System.Text.StringBuilder::AppendLine(System.String)\",\"\",[0],[False],[StringLiteral_1],Propagation,[])] AppendLine(System.Text.StringBuilder,System.String)",
+"[AspectClass(\"System.Web\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.System.Web.HttpCookieAspect",
+"  [AspectMethodReplace(\"System.Web.HttpCookie::get_Value()\",\"\",[0],[False],[None],Propagation,[])] GetValue(System.Web.HttpCookie)",
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib,System.Runtime\",[StringOptimization],Propagation,[])] Datadog.Trace.Iast.Aspects.System.StringAspects",
 "  [AspectMethodReplace(\"System.String::Trim()\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Trim(System.String)",
 "  [AspectMethodReplace(\"System.String::Trim(System.Char[])\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Trim(System.String,System.Char[])",

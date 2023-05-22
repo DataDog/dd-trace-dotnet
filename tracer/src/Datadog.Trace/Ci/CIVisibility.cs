@@ -387,7 +387,7 @@ namespace Datadog.Trace.Ci
                 case OSPlatformName.Linux:
                     if (!string.IsNullOrEmpty(HostMetadata.Instance.KernelRelease))
                     {
-                        return HostMetadata.Instance.KernelRelease;
+                        return HostMetadata.Instance.KernelRelease!;
                     }
 
                     break;
@@ -445,20 +445,12 @@ namespace Datadog.Trace.Ci
 
         private static bool InternalEnabled()
         {
-            var processName = string.Empty;
-
-            try
-            {
-                processName = ProcessHelpers.GetCurrentProcessName() ?? string.Empty;
-            }
-            catch (Exception exception)
-            {
-                Log.Warning(exception, "Error getting current process name when checking CI Visibility status");
-            }
+            string? processName = null;
 
             // By configuration
             if (Settings.Enabled)
             {
+                processName ??= GetProcessName();
                 // When is enabled by configuration we only enable it to the testhost child process if the process name is dotnet.
                 if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase) && Environment.CommandLine.IndexOf("testhost.dll", StringComparison.OrdinalIgnoreCase) == -1)
                 {
@@ -483,6 +475,7 @@ namespace Datadog.Trace.Ci
             }
 
             // Try to autodetect based in the process name.
+            processName ??= GetProcessName();
             if (processName.StartsWith("testhost.", StringComparison.Ordinal))
             {
                 Log.Information("CI Visibility Enabled by Process name whitelist");
@@ -503,6 +496,20 @@ namespace Datadog.Trace.Ci
                 {
                     // .
                 }
+            }
+
+            static string GetProcessName()
+            {
+                try
+                {
+                    return ProcessHelpers.GetCurrentProcessName();
+                }
+                catch (Exception exception)
+                {
+                    Log.Warning(exception, "Error getting current process name when checking CI Visibility status");
+                }
+
+                return string.Empty;
             }
         }
 

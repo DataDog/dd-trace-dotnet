@@ -66,6 +66,11 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("ExecuteCommand")]
         public ActionResult ExecuteCommand(string file, string argumentLine)
         {
+            return ExecuteCommandInternal(file, argumentLine);
+        }
+
+        private ActionResult ExecuteCommandInternal(string file, string argumentLine)
+        {
             try
             {
                 if (!string.IsNullOrEmpty(file))
@@ -75,7 +80,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                 }
                 else
                 {
-                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, $"No file was provided");
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "No file was provided");
                 }
             }
             catch (Win32Exception ex)
@@ -86,6 +91,14 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.InternalServerError, IastControllerHelper.ToFormattedString(ex));
             }
+        }
+
+        [Route("ExecuteCommandFromCookie")]
+        public ActionResult ExecuteCommandFromCookie()
+        {
+            // we test two different ways of obtaining a cookie
+            var argumentValue = Request.Cookies["argumentLine"].Values[0];
+            return ExecuteCommandInternal(Request.Cookies["file"].Value, argumentValue);
         }
 
         [Route("GetFileContent")]

@@ -8,7 +8,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Reflection;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Iast;
+using FluentAssertions;
 using Moq;
 using Xunit;
 
@@ -16,6 +18,22 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
 {
     public class IastRequestContextTests
     {
+        private static string _value = "value1";
+
+        public static IEnumerable<object[]> GetRequestBodyTestData()
+        {
+            yield return new object[] { new BodyClassTest() { Value = _value } };
+            yield return new object[] { new BodyClassTest { BodyClassTestProperty = new() { Value = _value } } };
+            yield return new object[] { new BodyClassTest { BodyClassTestProperty = new() { ValueList = new() { _value } } } };
+            yield return new object[] { new BodyClassTest { BodyClassTestProperty = new() { ValueListObject = new() { _value } } } };
+            yield return new object[] { new BodyClassTest { BodyClassTestProperty = new() { ValueDicObject = new() { { "key", _value } } } } };
+            yield return new object[] { new BodyClassTest { BodyClassTestProperty = new() { ValueDicObject = new() { { _value, "values" } } } } };
+            yield return new object[] { new BodyClassTest { BodyClassTestProperty = new() { ValueDicObject = new() { { "key", new List<string> { _value } } } } } };
+            yield return new object[] { new BodyClassTest { BodyClassTestProperty = new() { ValueDic = new() { { "key", _value } } } } };
+            yield return new object[] { new BodyClassTest { BodyClassTestProperty = new() { ValueDic = new() { { _value, "values" } } } } };
+            yield return new object[] { new BodyClassTest { BodyClassTestProperty = new(1, _value) } };
+        }
+
 #if NETFRAMEWORK
 
         [Fact]
@@ -91,5 +109,41 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
             Assert.NotNull(iastContext.GetTainted(value3));
         }
 #endif
+
+        [Theory]
+        [MemberData(nameof(GetRequestBodyTestData))]
+        public void GivenAnIastRequestContext_WhenAddRequestBody_ValuesAreTainted(BodyClassTest sample)
+        {
+            IastRequestContext iastContext = new();
+            var extracted = ObjectExtractor.Extract(sample);
+            iastContext.AddRequestBody(sample, extracted);
+            iastContext.GetTainted(_value).Should().NotBeNull();
+        }
+
+        public class BodyClassTest
+        {
+            public BodyClassTest()
+            {
+            }
+
+            public BodyClassTest(int index, object value)
+            {
+                ObjectArray[index] = value;
+            }
+
+            public string Value { get; set; }
+
+            public List<string> ValueList { get; set; } = new();
+
+            public List<object> ValueListObject { get; set; } = new();
+
+            public Dictionary<string, string> ValueDic { get; set; } = new();
+
+            public Dictionary<object, object> ValueDicObject { get; set; } = new();
+
+            public object[] ObjectArray { get; set; } = new object[2];
+
+            public BodyClassTest BodyClassTestProperty { get; set; } = null;
+        }
     }
 }

@@ -48,23 +48,23 @@ namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions
                     };
 
                     sb.Append($@"
-                // {integrationTypeString} types for InstrumentationCategory {name}
-                payload = new Payload
-                {{
-                    DefinitionsId = ""{getDefinitionsId(defAttri)}"",
-                    Definitions = new NativeCallTargetDefinition[]
-                    {{");
+            // {integrationTypeString} types for InstrumentationCategory {name}
+            {instrumentationsCollectionName}_{name} = new Payload
+            {{
+                DefinitionsId = ""{getDefinitionsId(defAttri)}"",
+                Definitions = new NativeCallTargetDefinition[]
+                {{");
                     foreach (var definition in enumDefinitions)
                     {
                         integrationName = WriteDefinition(definition, integrationName, sb);
                     }
 
                     sb.Append($@"
-                    }}
-                }};
-                {instrumentationsCollectionName}.Add(InstrumentationCategory.{name}, payload);
-                {instrumentationsCollectionName}Natives = {instrumentationsCollectionName}Natives.Concat(payload.Definitions);
-                ");
+                }}
+            }};
+
+            {instrumentationsCollectionName}Natives = {instrumentationsCollectionName}Natives.Concat({instrumentationsCollectionName}_{name}.Definitions);
+            ");
                 }
             }
 
@@ -81,16 +81,24 @@ namespace Datadog.Trace.ClrProfiler
 {{
     internal static partial class InstrumentationDefinitions
     {{
-        private static IDictionary<InstrumentationCategory, Payload> {InstrumentationsCollectionName} = new Dictionary<InstrumentationCategory, Payload>();
-        private static IDictionary<InstrumentationCategory, Payload> {DerivedInstrumentationsCollectionName} = new Dictionary<InstrumentationCategory, Payload>();
-        private static IDictionary<InstrumentationCategory, Payload> {InterfaceInstrumentationsCollectionName} = new Dictionary<InstrumentationCategory, Payload>();
-        private static IEnumerable<NativeCallTargetDefinition> {InstrumentationsCollectionName}Natives = new List<NativeCallTargetDefinition>();
-        private static IEnumerable<NativeCallTargetDefinition> {DerivedInstrumentationsCollectionName}Natives = new List<NativeCallTargetDefinition>();
-        private static IEnumerable<NativeCallTargetDefinition> {InterfaceInstrumentationsCollectionName}Natives = new List<NativeCallTargetDefinition>();
+        private static Payload {InstrumentationsCollectionName}_Tracing;
+        private static Payload {InstrumentationsCollectionName}_AppSec;
+        private static Payload {InstrumentationsCollectionName}_Iast;
+
+        private static Payload {DerivedInstrumentationsCollectionName}_Tracing;
+        private static Payload {DerivedInstrumentationsCollectionName}_AppSec;
+        private static Payload {DerivedInstrumentationsCollectionName}_Iast;
+
+        private static Payload {InterfaceInstrumentationsCollectionName}_Tracing;
+        private static Payload {InterfaceInstrumentationsCollectionName}_AppSec;
+        private static Payload {InterfaceInstrumentationsCollectionName}_Iast;
+
+        private static IEnumerable<NativeCallTargetDefinition> {InstrumentationsCollectionName}Natives = Array.Empty<NativeCallTargetDefinition>();
+        private static IEnumerable<NativeCallTargetDefinition> {DerivedInstrumentationsCollectionName}Natives = Array.Empty<NativeCallTargetDefinition>();
+        private static IEnumerable<NativeCallTargetDefinition> {InterfaceInstrumentationsCollectionName}Natives = Array.Empty<NativeCallTargetDefinition>();
 
         static InstrumentationDefinitions()
-        {{
-            Payload payload = default;");
+        {{");
             var orderedDefinitions = definitions
                                     .OrderBy(static x => x.IntegrationName)
                                     .ThenBy(static x => x.AssemblyName)
@@ -106,23 +114,41 @@ namespace Datadog.Trace.ClrProfiler
             BuildInstrumentationDefinitions(sb, orderedDefinitions, 1, DerivedInstrumentationsCollectionName);
             BuildInstrumentationDefinitions(sb, orderedDefinitions, 2, InterfaceInstrumentationsCollectionName);
 
-            sb.Append(@"
-        }
+            sb.Append(@$"
+        }}
 
         private static Payload GetDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
-            => Instrumentations[instrumentationCategory];
+            => instrumentationCategory switch
+            {{
+                InstrumentationCategory.Tracing => {InstrumentationsCollectionName}_Tracing,
+                InstrumentationCategory.AppSec => {InstrumentationsCollectionName}_AppSec,
+                InstrumentationCategory.Iast => {InstrumentationsCollectionName}_Iast,
+                _ => default
+            }};
 
         private static Payload GetDerivedDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
-            => DerivedInstrumentations[instrumentationCategory];
+            => instrumentationCategory switch
+            {{
+                InstrumentationCategory.Tracing => {DerivedInstrumentationsCollectionName}_Tracing,
+                InstrumentationCategory.AppSec => {DerivedInstrumentationsCollectionName}_AppSec,
+                InstrumentationCategory.Iast => {DerivedInstrumentationsCollectionName}_Iast,
+                _ => default
+            }};
 
         private static Payload GetInterfaceDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
-            => InterfaceInstrumentations[instrumentationCategory];
+            => instrumentationCategory switch
+            {{
+                InstrumentationCategory.Tracing => {InterfaceInstrumentationsCollectionName}_Tracing,
+                InstrumentationCategory.AppSec => {InterfaceInstrumentationsCollectionName}_AppSec,
+                InstrumentationCategory.Iast => {InterfaceInstrumentationsCollectionName}_Iast,
+                _ => default
+            }};
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
             string? integrationTypeName, System.Type targetType)
-        {
+        {{
             return integrationTypeName switch
-            {
+            {{
                 // integrations with a single IntegrationId per implementation type
                 ");
             integrationName = null;
@@ -288,12 +314,12 @@ namespace Datadog.Trace.ClrProfiler
                 integrationName = definition.IntegrationName;
                 sb.Append(
                     $@"
-                // {integrationName}");
+                    // {integrationName}");
             }
 
             sb.Append(
                    @"
-               new (""")
+                    new (""")
               .Append(definition.AssemblyName)
               .Append(@""", """)
               .Append(definition.TargetTypeName)

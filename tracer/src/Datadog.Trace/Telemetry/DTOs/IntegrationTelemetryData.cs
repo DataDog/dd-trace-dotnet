@@ -7,22 +7,22 @@
 
 namespace Datadog.Trace.Telemetry
 {
-    internal class IntegrationTelemetryData
+    internal readonly record struct IntegrationTelemetryData
     {
-        public IntegrationTelemetryData(string name, bool enabled)
+        public IntegrationTelemetryData(string name, bool enabled, bool? autoEnabled, string? error)
         {
             Name = name;
             Enabled = enabled;
+            AutoEnabled = autoEnabled;
+            Error = error;
         }
 
-        public string Name { get; set; }
+        public string Name { get; }
 
-        public bool Enabled { get; set; }
+        public bool Enabled { get; }
 
-        public bool? AutoEnabled { get; set; }
+        public bool? AutoEnabled { get; }
 
-        public bool? Compatible { get; set; }
-
-        public string? Error { get; set; }
+        public string? Error { get; }
     }
 }

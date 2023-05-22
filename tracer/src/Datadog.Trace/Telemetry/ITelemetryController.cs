@@ -9,7 +9,6 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast.Settings;
-using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Telemetry
 {
@@ -63,8 +62,14 @@ namespace Datadog.Trace.Telemetry
         public Task DisposeAsync();
 
         /// <summary>
-        /// Indicates the
+        /// Indicates the controller can start sending telemetry
         /// </summary>
         void Start();
+
+        /// <summary>
+        /// Should be called when the status (enabled/disabled) of a product (ASM/Profiler) changed.
+        /// Only used in Telemetry V2
+        /// </summary>
+        void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error);
     }
 }

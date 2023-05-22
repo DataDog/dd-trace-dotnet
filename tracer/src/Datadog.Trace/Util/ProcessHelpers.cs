@@ -30,8 +30,7 @@ namespace Datadog.Trace.Util
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static string GetCurrentProcessName()
         {
-            using var currentProcess = Process.GetCurrentProcess();
-            return currentProcess.ProcessName;
+            return CurrentProcess.Instance.ProcessName;
         }
 
         /// <summary>
@@ -49,7 +48,7 @@ namespace Datadog.Trace.Util
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void GetCurrentProcessInformation(out string processName, out string machineName, out int processId)
         {
-            using var currentProcess = Process.GetCurrentProcess();
+            var currentProcess = CurrentProcess.Instance;
             processName = currentProcess.ProcessName;
             machineName = currentProcess.MachineName;
             processId = currentProcess.Id;
@@ -71,7 +70,7 @@ namespace Datadog.Trace.Util
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void GetCurrentProcessRuntimeMetrics(out TimeSpan userProcessorTime, out TimeSpan systemCpuTime, out int threadCount, out long privateMemorySize)
         {
-            using var process = Process.GetCurrentProcess();
+            var process = CurrentProcess.Instance;
             userProcessorTime = process.UserProcessorTime;
             systemCpuTime = process.PrivilegedProcessorTime;
             threadCount = process.Threads.Count;
@@ -168,6 +167,16 @@ namespace Datadog.Trace.Util
             public string Error { get; }
 
             public int ExitCode { get; }
+        }
+
+        private static class CurrentProcess
+        {
+            internal static readonly Process Instance;
+
+            static CurrentProcess()
+            {
+                Instance = Process.GetCurrentProcess();
+            }
         }
     }
 }

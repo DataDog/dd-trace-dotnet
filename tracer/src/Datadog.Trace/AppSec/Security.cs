@@ -121,6 +121,8 @@ namespace Datadog.Trace.AppSec
 
         internal bool Enabled { get; private set; }
 
+        internal string? InitializationError { get; private set; }
+
         internal bool WafExportsErrorHappened => _libraryInitializationResult?.ExportErrorHappened ?? false;
 
         internal string? WafRuleFileVersion { get; private set; }
@@ -411,6 +413,7 @@ namespace Datadog.Trace.AppSec
                 if (!_libraryInitializationResult.Success)
                 {
                     Enabled = false;
+                    InitializationError = "Error initializing native library";
                     // logs happened during the process of initializing
                     return;
                 }
@@ -431,6 +434,7 @@ namespace Datadog.Trace.AppSec
                 AddAppsecSpecificInstrumentations();
                 _rateLimiter ??= new(_settings.TraceRateLimit);
                 Enabled = true;
+                InitializationError = null;
                 Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
                 if (_wafInitResult.EmbeddedRules != null)
                 {
@@ -441,6 +445,7 @@ namespace Datadog.Trace.AppSec
             {
                 _wafInitResult.Waf?.Dispose();
                 Enabled = false;
+                InitializationError = "Error initializing waf";
             }
         }
 
@@ -473,6 +478,7 @@ namespace Datadog.Trace.AppSec
 
                 RemoveAppsecSpecificInstrumentations();
                 Enabled = false;
+                InitializationError = null;
                 Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
             }
         }
