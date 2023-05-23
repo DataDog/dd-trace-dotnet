@@ -175,14 +175,30 @@ namespace Datadog.Trace.Propagators
             return Extract(serializedSpanContext, default(ReadOnlyDictionaryGetter));
         }
 
-        public IEnumerable<KeyValuePair<string, string?>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)
+        public void ExtractHeaderTags<T>(ISpan span, T headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)
             where T : IHeadersCollection
         {
-            return ExtractHeaderTags(headers, headerToTagMap, defaultTagPrefix, string.Empty);
+            var processor = new SpanTagHeaderTagProcessor(span);
+            ExtractHeaderTags(ref processor, headers, headerToTagMap, defaultTagPrefix, string.Empty);
         }
 
-        public IEnumerable<KeyValuePair<string, string?>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix, string useragent)
+        public void ExtractHeaderTags<T>(ISpan span, T headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix, string useragent)
             where T : IHeadersCollection
+        {
+            var processor = new SpanTagHeaderTagProcessor(span);
+            ExtractHeaderTags(ref processor, headers, headerToTagMap, defaultTagPrefix, useragent);
+        }
+
+        public void ExtractHeaderTags<T, TProcessor>(ref TProcessor processor, T headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)
+            where T : IHeadersCollection
+            where TProcessor : struct, IHeaderTagProcessor
+        {
+            ExtractHeaderTags(ref processor, headers, headerToTagMap, defaultTagPrefix, string.Empty);
+        }
+
+        public void ExtractHeaderTags<T, TProcessor>(ref TProcessor processor, T headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix, string useragent)
+            where T : IHeadersCollection
+            where TProcessor : struct, IHeaderTagProcessor
         {
             foreach (var headerNameToTagName in headerToTagMap)
             {
@@ -208,7 +224,7 @@ namespace Datadog.Trace.Propagators
                 // Tag name is normalized during Tracer instantiation so use as-is
                 if (!string.IsNullOrWhiteSpace(providedTagName))
                 {
-                    yield return new KeyValuePair<string, string?>(providedTagName!, headerValue);
+                    processor.ProcessTag(providedTagName!, headerValue);
                 }
                 else
                 {
@@ -227,9 +243,31 @@ namespace Datadog.Trace.Propagators
 
                     if (tagNameResult != null)
                     {
-                        yield return new KeyValuePair<string, string?>(tagNameResult, headerValue);
+                        processor.ProcessTag(tagNameResult, headerValue);
                     }
                 }
+            }
+        }
+
+#pragma warning disable SA1201
+        public interface IHeaderTagProcessor
+#pragma warning restore SA1201
+        {
+            void ProcessTag(string key, string? value);
+        }
+
+        public readonly struct SpanTagHeaderTagProcessor : IHeaderTagProcessor
+        {
+            private readonly ISpan _span;
+
+            public SpanTagHeaderTagProcessor(ISpan span)
+            {
+                _span = span;
+            }
+
+            public void ProcessTag(string key, string? value)
+            {
+                _span.SetTag(key, value);
             }
         }
 

@@ -11,6 +11,7 @@ using System.Web.Routing;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -127,16 +128,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     }
 
                     SpanContext propagatedContext = null;
-                    var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
+                    NameValueHeadersCollection? headers = null;
 
                     if (tracer.InternalActiveScope == null)
                     {
                         try
                         {
                             // extract propagated http headers
-                            var headers = httpContext.Request.Headers.Wrap();
-                            propagatedContext = SpanContextPropagator.Instance.Extract(headers);
-                            tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                            headers = httpContext.Request.Headers.Wrap();
+                            propagatedContext = SpanContextPropagator.Instance.Extract(headers.Value);
                         }
                         catch (Exception ex)
                         {
@@ -154,8 +154,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         host: host,
                         httpUrl: url,
                         userAgent: userAgent,
-                        tags,
-                        tagsFromHeaders);
+                        tags);
+
+                    if (headers is not null)
+                    {
+                        SpanContextPropagator.Instance.ExtractHeaderTags(span, headers.Value, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                    }
+
                     tags.AspNetRoute = routeUrl;
                     tags.AspNetArea = areaName;
                     tags.AspNetController = controllerName;
