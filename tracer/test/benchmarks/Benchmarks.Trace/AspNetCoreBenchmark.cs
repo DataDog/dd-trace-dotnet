@@ -97,10 +97,12 @@ namespace Benchmarks.Trace
     [MemoryDiagnoser]
     public class AspNetCoreBenchmark
     {
+        private static readonly Task<string> CompletedTask = Task.FromResult<string>("OK");
+
         [Benchmark]
-        public Task SendRequest()
+        public Task<string> SendRequest()
         {
-            return Task.CompletedTask;
+            return CompletedTask;
         }
 
         [Benchmark]
