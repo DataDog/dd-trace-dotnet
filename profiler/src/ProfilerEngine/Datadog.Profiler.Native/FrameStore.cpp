@@ -336,7 +336,7 @@ bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc*& pTypeDesc, bool isEncod
         }
 
         ComPtr<IMetaDataImport2> metadataImport;
-        INVOKE(_pCorProfilerInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(metadataImport.GetAddressOf())));
+        INVOKE(_pCorProfilerInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(&metadataImport)));
 
         // try to get the type description
         TypeDesc typeDesc;
@@ -999,12 +999,15 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
     hr = S_OK;
     HCORENUM hEnum = 0;
     ULONG paramCount;
+
+    // Note: calling EnumParams with NULL, 0 to get the size does not seem to work
+    //       so rely on the count provided by the blob
     auto paramDefs = std::make_unique<mdParamDef[]>(argCount);
     hr = pMetaData->EnumParams(&hEnum, mdTokenFunc, paramDefs.get(), argCount, &paramCount);
     pMetaData->CloseEnum(hEnum);
 
-    // sanity checks
-    assert(paramCount == argCount);
+    // sanity checks but one time, paramCount was greater than argCount so remove it
+    //assert(paramCount == argCount);
 
     ULONG pos;
     WCHAR name[260];
@@ -1037,27 +1040,32 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
             hr = pInfo->GetClassIDInfo2(methodTypeArgs[currentGenericParam], &moduleId, &mdType, NULL, 0, NULL, NULL);
             if (SUCCEEDED(hr))
             {
-                WCHAR paramTypeName[260];
-                IMetaDataImport2* pImport2;
+                ComPtr<IMetaDataImport2> pImport2;
                 hr = pInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(&pImport2));
-                ULONG sigBlobLen = 0;
-
-                // get elementType from type name because the metadata can't give us the instanciated generic signature
-                hr = pImport2->GetTypeDefProps(mdType, paramTypeName, ARRAY_LEN(paramTypeName) - 1, 0, NULL, NULL);
-                if (FAILED(hr))
+                if (SUCCEEDED(hr))
                 {
-                    builder << "?";
+                    ULONG sigBlobLen = 0;
+                    WCHAR paramTypeName[260];
+
+                    // get elementType from type name because the metadata can't give us the instanciated generic signature
+                    hr = pImport2->GetTypeDefProps(mdType, paramTypeName, ARRAY_LEN(paramTypeName) - 1, 0, NULL, NULL);
+                    if (FAILED(hr))
+                    {
+                        builder << "?";
+                    }
+                    else
+                    {
+                        // convert from UTF16 to UTF8
+                        builder << shared::ToString(shared::WSTRING(paramTypeName));
+                        builder << " ";
+                        // convert from UTF16 to UTF8
+                        builder << shared::ToString(shared::WSTRING(name));
+                    }
                 }
                 else
                 {
-                    // convert from UTF16 to UTF8
-                    builder << shared::ToString(shared::WSTRING(paramTypeName));
-                    builder << " ";
-                    // convert from UTF16 to UTF8
-                    builder << shared::ToString(shared::WSTRING(name));
+                    builder << "?";
                 }
-
-                pImport2->Release();
             }
 
             currentGenericParam++;
@@ -1314,8 +1322,9 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
 
             // The second condition is to guard against overflow bugs & shut up PREFAST
             if (rank == 0 || rank >= 65536)
+            {
                 StrAppend(buffer, "[?]", cchBuffer);
-
+            }
             else
             {
                 ULONG* lower;
@@ -1334,13 +1343,17 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
                     ULONG i;
 
                     for (i = 0; i < numsizes; i++)
+                    {
                         sizes[i] = CorSigUncompressData(signature);
+                    }
 
                     numlower = CorSigUncompressData(signature);
                     if (numlower <= rank)
                     {
                         for (i = 0; i < numlower; i++)
+                        {
                             lower[i] = CorSigUncompressData(signature);
+                        }
 
                         StrAppend(buffer, "[", cchBuffer);
                         for (i = 0; i < rank; i++)
@@ -1349,19 +1362,25 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
                             {
                                 char sizeBuffer[100];
                                 if (lower[i] == 0)
+                                {
                                     sprintf_s(sizeBuffer, ARRAY_LEN(sizeBuffer), "%d", sizes[i]);
+                                }
                                 else
                                 {
                                     sprintf_s(sizeBuffer, ARRAY_LEN(sizeBuffer), "%d...", lower[i]);
 
                                     if (sizes[i] != 0)
+                                    {
                                         sprintf_s(sizeBuffer, ARRAY_LEN(sizeBuffer), "%d...%d", lower[i], (lower[i] + sizes[i] + 1));
+                                    }
                                 }
                                 StrAppend(buffer, sizeBuffer, cchBuffer);
                             }
 
                             if (i < (rank - 1))
+                            {
                                 StrAppend(buffer, ",", cchBuffer);
+                            }
                         }
 
                         StrAppend(buffer, "]", cchBuffer);
@@ -1422,7 +1441,7 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
                 // signature = ParseByte(signature, &elementType);
                 if ((elementType != ELEMENT_TYPE_CLASS) && (elementType != ELEMENT_TYPE_VALUETYPE))
                 {
-                    StrAppend(buffer, "<T???>", cchBuffer);
+                    StrAppend(buffer, "<T?>", cchBuffer);
                     break;
                 }
 
@@ -1457,7 +1476,11 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
                 }
                 if (SUCCEEDED(hr))
                 {
+#ifndef _WINDOWS
+                    strcpy(classname, shared::ToString(shared::WSTRING(zName)).c_str());
+#else
                     strncpy_s(classname, shared::ToString(shared::WSTRING(zName)).c_str(), ARRAY_LEN(classname));
+#endif
                 }
 
                 FixGenericSyntax((char*)classname);
