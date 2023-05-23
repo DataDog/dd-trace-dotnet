@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using Datadog.Trace.Iast.SensitiveData;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.Iast;
@@ -29,11 +30,17 @@ internal class SourceConverter : JsonConverter<Source>
     {
     }
 
-    public override bool CanRead => false;
+    public override bool CanRead => true;
 
     public override Source? ReadJson(JsonReader reader, Type objectType, Source? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
-        throw new NotImplementedException();
+        // { "origin": "http.request.parameter", "name": "$1", "value": "table" }
+        JObject jo = JObject.Load(reader);
+        var origin = SourceType.FromString(jo["origin"]?.ToString());
+        var name = jo["name"]?.ToString();
+        var value = jo["value"]?.ToString();
+
+        return new Source((byte)origin, name, value);
     }
 
     public override void WriteJson(JsonWriter writer, Source? source, JsonSerializer serializer)
