@@ -15,5 +15,5 @@ internal class AgentlessTelemetryTransport : JsonTelemetryTransport
     {
     }
 
-    public override string GetTransportInfo() => nameof(AgentTelemetryTransport) + " to " + GetEndpointInfo();
+    public override string GetTransportInfo() => nameof(AgentlessTelemetryTransport) + " to " + GetEndpointInfo();
 }
