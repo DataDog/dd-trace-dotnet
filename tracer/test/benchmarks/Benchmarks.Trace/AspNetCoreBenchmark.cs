@@ -98,9 +98,9 @@ namespace Benchmarks.Trace
     public class AspNetCoreBenchmark
     {
         [Benchmark]
-        public string SendRequest()
+        public Task SendRequest()
         {
-            return null;
+            return Task.CompletedTask;
         }
 
         [Benchmark]
