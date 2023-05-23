@@ -2,7 +2,12 @@
 Segments: 
 
 {
-    "ref": "@exception"
+    "getmember": [
+        {
+            "ref": "this"
+        },
+        "String"
+    ]
 }
 Expressions: 
 (
@@ -28,10 +33,8 @@ Expressions:
     var StringArg = (string)scopeMemberArray[9].Value;
     var CollectionArg = (List<string>)scopeMemberArray[10].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[11].Value;
-    var $dd_el_result = (@exception == null)
-        ? "System.Exception"
-        : "System.Exception" + ", " + @exception.Message + ", " + @exception.StackTrace;
+    var $dd_el_result = this.String;
 
     return $dd_el_result;
 }
-Result: The result of the expression is: System.Exception, Can not cast X to Y, 
+Result: The result of the expression is: Hello world!

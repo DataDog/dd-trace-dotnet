@@ -2,7 +2,7 @@
 Segments: 
 
 {
-    "ref": "Nested"
+    "ref": "Collection"
 }
 Expressions: 
 (
@@ -12,6 +12,8 @@ Expressions:
     exception,
     scopeMemberArray) =>
 {
+    string loopItem;
+    IEnumerator<string> enumerator;
     var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
     var @return = (string)scopeMember.Value;
     var @duration = (TimeSpan)scopeMember.Value;
@@ -30,41 +32,47 @@ Expressions:
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[11].Value;
     var $dd_el_result =
     {
-        var fieldsArray = this.Nested.GetType().GetFields(
-            BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-        var fieldValues = new StringBuilder();
+        enumerator = this.Collection.GetEnumerator();
         var index = 0;
+        var itemValues = new StringBuilder();
+        itemValues.Append("[");
         while (true)
         {
-            if ((index < fieldsArray.Length) && (index < 5))
+            if (enumerator.MoveNext())
             {
-                fieldValues.Append(
-                    ProbeExpressionParser<string>.DumpObject(
-                        fieldsArray[index].GetValue(this.Nested),
-                        fieldsArray[index].FieldType,
-                        fieldsArray[index].Name,
-                        0));
-                index++;
+                string loopItem;
 
-                if ((index < fieldsArray.Length) && (index < 5))
+                if (index < 3)
                 {
-                    return fieldValues.Append(", ");
+                    if (index > 0)
+                    {
+                        return itemValues.Append(", ");
+                    }
+
+                    loopItem = enumerator.Current;
+                    itemValues.Append(ProbeExpressionParser<string>.DumpObject(
+                        loopItem,
+                        typeof(string),
+                        "",
+                        1));
+                    index++;
+                }
+                else
+                {
+                    itemValues.Append(", ...");
+                    break;
                 }
             }
             else
             {
-                if (index < fieldsArray.Length)
-                {
-                    return fieldValues.Append(", ...");
-                }
-
                 break;
             }
         }
+        itemValues.Append("]");
 
-        return fieldValues.ToString();
+        return itemValues.ToString();
     };
 
     return $dd_el_result;
 }
-Result: The result of the expression is: _circleRef=Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+TestStruct+NestedObject, _timeSpan=00:00:00, {[one, 1], [two, 2], [three, 3], ...}, _ienumerable=System.Collections.Generic.IEnumerable`1[[System.Int32, Culture=neutral]], [1, 2, 3, ...], ...
+Result: The result of the expression is: [hello, 1st Item, 2nd item, ...]
