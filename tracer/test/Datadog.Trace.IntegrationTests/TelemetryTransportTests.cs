@@ -226,19 +226,6 @@ namespace Datadog.Trace.IntegrationTests
             return transport[0];
         }
 
-        private static ITelemetryTransport GetAgentlessOnlyTransport(Uri telemetryUri, string apiKey)
-        {
-            var agentlessSettings = new TelemetrySettings.AgentlessSettings(telemetryUri, apiKey);
-
-            var transport = TelemetryTransportFactory.Create(
-                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings, agentProxyEnabled: false, heartbeatInterval: HeartbeatInterval),
-                new ImmutableExporterSettings(new ExporterSettings()));
-
-            transport.Should().HaveCount(1);
-            transport[0].Should().BeOfType<AgentlessTelemetryTransport>();
-            return transport[0];
-        }
-
         internal class ErroringTelemetryAgent : MockTelemetryAgent
         {
             private readonly int _responseCode;
