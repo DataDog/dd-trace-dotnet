@@ -28,8 +28,10 @@ internal partial class ProbeExpressionParser<T>
 
         var stringConcat = GetMethodByReflection(typeof(string), nameof(string.Concat), new[] { typeof(object[]) });
 
-        if (IsMicrosoftException(expression.Type))
+        if (IsSafeException(expression.Type))
         {
+            // for known Exception types we can assume it's safe to call .Message
+            // whereas the others might have overriden it in a way that could cause side effects
             var typeNameExpression = Expression.Constant(expression.Type.FullName, typeof(string));
             var ifNull = Expression.Equal(expression, Expression.Constant(null));
             var exceptionAsString = Expression.Call(
@@ -202,7 +204,7 @@ internal partial class ProbeExpressionParser<T>
             name += "=";
         }
 
-        if (IsMicrosoftException(type))
+        if (IsSafeException(type))
         {
             return value is not Exception ex
                        ? $"{name}{type?.FullName}"

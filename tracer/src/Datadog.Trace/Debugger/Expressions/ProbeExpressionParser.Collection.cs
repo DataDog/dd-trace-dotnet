@@ -174,9 +174,10 @@ internal partial class ProbeExpressionParser<T>
 
     private bool IsSafeCollection(Type type)
     {
-        return type.GetInterface("ICollection") != null ||
+        return IsMicrosoftType(type) &&
+               (type.GetInterface("ICollection") != null ||
                type.GetInterface("IReadOnlyCollection") != null ||
-               type.IsArray;
+               type.IsArray);
     }
 
     private bool IsIEnumerable(Type type)
@@ -186,13 +187,20 @@ internal partial class ProbeExpressionParser<T>
 
     private bool IsTypeSupportCount(Expression source)
     {
-        return source.Type.GetInterface("ICollection") != null ||
-               source.Type.GetInterface("IReadOnlyCollection") != null ||
-               source.Type.IsArray;
+        return IsMicrosoftType(source.Type) &&
+               (source.Type.GetInterface("ICollection") != null ||
+                source.Type.GetInterface("IReadOnlyCollection") != null ||
+                source.Type.IsArray);
     }
 
     private bool IsTypeSupportIndex(Type type, out Type assignableFrom)
     {
+        if (!IsMicrosoftType(type))
+        {
+            assignableFrom = null;
+            return false;
+        }
+
         if (type == typeof(IList) || type.GetInterface(nameof(IList)) != null)
         {
             assignableFrom = typeof(IList);
