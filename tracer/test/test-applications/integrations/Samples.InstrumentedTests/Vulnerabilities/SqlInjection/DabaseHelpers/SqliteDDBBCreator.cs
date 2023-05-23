@@ -19,7 +19,7 @@ internal class SqliteDDBBCreator
         var dbConnection = new SQLiteConnection(conn);
         dbConnection.Open();
 
-        foreach (var command in SqlCommands.GetCommands())
+        foreach (var command in QueryUtils.GetCommands())
         {
             new SQLiteCommand(command, dbConnection).ExecuteReader();
         }

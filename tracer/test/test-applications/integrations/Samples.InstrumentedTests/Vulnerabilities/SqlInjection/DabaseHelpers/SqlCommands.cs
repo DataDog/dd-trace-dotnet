@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Samples.InstrumentedTests.Vulnerabilities.SqlInjection.DabaseHelpers
 {
-    internal static class SqlCommands
+    internal static class QueryUtils
     {
         public static List<string> GetCommands()
         {

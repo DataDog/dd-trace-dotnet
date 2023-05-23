@@ -59,6 +59,12 @@ public class SqlCommandTests : InstrumentationTestsBase, IDisposable
     }
 
     [Fact]
+    public void GivenADbCommand_WhenCallingExecuteNonQueryWithNull_VulnerabilityIsReported()
+    {
+        Assert.Throws<InvalidOperationException>(() => new SqlCommand(null).ExecuteNonQuery());
+    }
+
+    [Fact]
     public void GivenASqlCommand_WhenCallingExecuteNonQueryWithNotTainted_VulnerabilityIsNotReported()
     {
         new SqlCommand(notTaintedQuery, databaseConnection).ExecuteNonQuery();

@@ -20,7 +20,7 @@ public static class MicrosoftDataSqliteDdbbCreator
         var dbConnection = new SqliteConnection(conn);
         dbConnection.Open();
 
-        foreach (var command in SqlCommands.GetCommands())
+        foreach (var command in QueryUtils.GetCommands())
         {
             new SqliteCommand(command, dbConnection).ExecuteReader();
         }
