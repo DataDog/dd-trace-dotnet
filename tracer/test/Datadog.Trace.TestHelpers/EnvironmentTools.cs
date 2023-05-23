@@ -69,6 +69,11 @@ namespace Datadog.Trace.TestHelpers
             return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
         }
 
+        public static bool IsArm64Linux()
+        {
+            return RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
+        }
+
         public static bool IsLinux()
         {
             return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux);

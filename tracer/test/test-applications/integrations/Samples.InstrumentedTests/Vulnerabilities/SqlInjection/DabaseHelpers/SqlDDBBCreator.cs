@@ -46,7 +46,8 @@ internal static class SqlDDBBCreator
     private static SqlConnection OpenConnection()
     {
         int numAttempts = 3;
-        var connectionString = @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
+        var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
+            @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
 
         for (int i = 0; i < numAttempts; i++)
         {
