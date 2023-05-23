@@ -118,7 +118,7 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
     }
 
     // method name is resolved first because we also get the mdDefToken of its class
-    auto [methodName, mdTokenType] = GetMethodName(pMetadataImport.Get(), mdTokenFunc, genericParametersCount, genericParameters.get());
+    auto [methodName, mdTokenType] = GetMethodName(functionId, pMetadataImport.Get(), mdTokenFunc, genericParametersCount, genericParameters.get());
     if (methodName.empty())
     {
         return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
@@ -493,6 +493,7 @@ bool FrameStore::GetMetadataApi(ModuleID moduleId, FunctionID functionId, ComPtr
 }
 
 std::pair<std::string, mdTypeDef> FrameStore::GetMethodName(
+    FunctionID functionId,
     IMetaDataImport2* pMetadataImport,
     mdMethodDef mdTokenFunc,
     ULONG32 genericParametersCount,
@@ -501,7 +502,10 @@ std::pair<std::string, mdTypeDef> FrameStore::GetMethodName(
     auto [methodName, mdTokenType] = GetMethodNameFromMetadata(pMetadataImport, mdTokenFunc);
     if ((methodName.empty()) || (genericParametersCount == 0))
     {
-        return std::make_pair(std::move(methodName), mdTokenType);
+        // get the method signature
+        std::string signature = GetMethodSignature(_pCorProfilerInfo, pMetadataImport, functionId, mdTokenFunc);
+
+        return std::make_pair(std::move(methodName + signature), mdTokenType);
     }
 
     // Append generic parameters if any
@@ -541,7 +545,10 @@ std::pair<std::string, mdTypeDef> FrameStore::GetMethodName(
     }
     builder << "}";
 
-    return std::make_pair(methodName + builder.str(), mdTokenType);
+    // get the method signature
+    std::string signature = GetMethodSignature(_pCorProfilerInfo, pMetadataImport, functionId, mdTokenFunc);
+
+    return std::make_pair(methodName + builder.str() + signature, mdTokenType);
 }
 
 bool FrameStore::GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, std::string& assemblyName)
@@ -876,6 +883,7 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(
 
 std::pair<std::string, mdTypeDef> FrameStore::GetMethodNameFromMetadata(IMetaDataImport2* pMetadataImport, mdMethodDef mdTokenFunc)
 {
+    // get the method name
     ULONG nameCharCount = 0;
     HRESULT hr = pMetadataImport->GetMethodProps(mdTokenFunc, nullptr, nullptr, 0, &nameCharCount, nullptr, nullptr, nullptr, nullptr, nullptr);
     if (FAILED(hr))
@@ -895,6 +903,243 @@ std::pair<std::string, mdTypeDef> FrameStore::GetMethodNameFromMetadata(IMetaDat
     // convert from UTF16 to UTF8
     return std::make_pair(shared::ToString(shared::WSTRING(buffer.get())), mdTokenType);
 }
+
+std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataImport2* pMetaData, FunctionID functionId, mdMethodDef mdTokenFunc)
+{
+    PCCOR_SIGNATURE pSigBlob;
+    ULONG blobSize, attributes;
+    DWORD flags;
+    ULONG codeRva;
+
+    // get the coded signature from metadata
+    ULONG nameCharCount = 0;
+    HRESULT hr = pMetaData->GetMethodProps(mdTokenFunc, nullptr, nullptr, 0, nullptr, &attributes, &pSigBlob, &blobSize, &codeRva, &flags);
+    if (FAILED(hr))
+    {
+        return "(?)";
+    }
+
+    // use Peter Sollich way in ClrProfiler to parse the binary signature
+    // https://github.com/microsoftarchive/clrprofiler/blob/master/CLRProfiler/profilerOBJ/ProfilerInfo.cpp#L1838
+    // read https://chnasarre.medium.com/decyphering-method-signature-with-clr-profiling-api-8328a72a216e for more details
+    ULONG elementType;
+    ULONG callConv;
+    char buffer[2 * 260];
+
+    // get the calling convention
+    pSigBlob += CorSigUncompressData(pSigBlob, &callConv);
+
+    ULONG argCount = 0;
+    ClassID* methodTypeArgs = NULL;
+    ClassID* classTypeArgs = NULL;
+    ModuleID moduleId;
+    // for generic support
+    ULONG genericArgCount = 0;
+    UINT32 methodTypeArgCount = 0;
+    ULONG32 classTypeArgCount = 0;
+    ClassID classId = 0;
+    if ((callConv & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0)
+    {
+        //
+        // Grab the generic type argument count
+        //
+        pSigBlob += CorSigUncompressData(pSigBlob, &genericArgCount);
+
+        // get the generic details for the function
+        // TODO replace with unique_ptr methodTypeArgs = std::make_unique<ClassID[]>(genericArgCount);
+        methodTypeArgs = new ClassID[genericArgCount];
+        hr = pInfo->GetFunctionInfo2(functionId, NULL, &classId, &moduleId, NULL, genericArgCount, &methodTypeArgCount, methodTypeArgs);
+        assert(!SUCCEEDED(hr) || (genericArgCount == methodTypeArgCount));
+        if (FAILED(hr))
+        {
+            delete[] methodTypeArgs;
+            methodTypeArgs = NULL;
+        }
+
+        // TODO: why would we need these for the method signature?
+        // get the generic details for the type implementing the function
+        hr = pInfo->GetClassIDInfo2(classId, NULL, NULL, NULL, 0, &classTypeArgCount, NULL);
+        if (SUCCEEDED(hr) && classTypeArgCount > 0)
+        {
+            // TODO replace with unique_ptr classTypeArgs = std::make_unique<ClassID[]>(classTypeArgCount);
+            classTypeArgs = new ClassID[classTypeArgCount];
+            hr = pInfo->GetClassIDInfo2(classId, NULL, NULL, NULL, classTypeArgCount, &classTypeArgCount, classTypeArgs);
+
+            if (FAILED(hr))
+            {
+                delete[] classTypeArgs;
+                classTypeArgs = NULL;
+            }
+        }
+
+        hr = S_OK;
+    }
+    else
+    {
+        hr = pInfo->GetFunctionInfo(functionId, NULL, &moduleId, NULL);
+    }
+
+    //
+    // Grab the argument count
+    //
+    pSigBlob += CorSigUncompressData(pSigBlob, &argCount);
+
+    //
+    // Get the return type
+    //
+    mdToken returnTypeToken;
+    buffer[0] = '\0';
+    pSigBlob = ParseElementType(pMetaData, pSigBlob, classTypeArgs, methodTypeArgs, &elementType, buffer, ARRAY_LEN(buffer) - 1, &returnTypeToken);
+    // if the return type returned back empty, should correspond to "void"
+    // NOTE: elementType should be ELEMENT_TYPE_VOID in that case
+
+    if (argCount == 0)
+    {
+        // TODO: should go away with unique_ptr
+        if (methodTypeArgs != NULL)
+        {
+            delete[] methodTypeArgs;
+            methodTypeArgs = NULL;
+        }
+        if (classTypeArgs != NULL)
+        {
+            delete[] classTypeArgs;
+            classTypeArgs = NULL;
+        }
+
+        return "()";
+    }
+
+
+    // To get the parameters types and name, it is needed to:
+    // - decypher the function binary blob signature to get each parameter type
+    // - fetch each parameter properties to get its name
+    // NOTE: in case of non static method, the implicit 'this' parameter is not part of the parameters
+    //       neither in the signature nor in the metadata enumeration EnumParams
+    hr = S_OK;
+    HCORENUM hEnum = 0;
+    ULONG paramCount;
+    // TODO: use unique_ptr
+    mdParamDef* paramDefs = new mdParamDef[argCount];
+    hr = pMetaData->EnumParams(&hEnum, mdTokenFunc, paramDefs, argCount, &paramCount);
+    pMetaData->CloseEnum(hEnum);
+
+    // sanity checks
+    //assert(paramCount == argCount);
+    if (paramCount != argCount)
+    {
+        printf("paramCount=%u  argCount=%u\r\n", paramCount, argCount);
+    }
+
+    ULONG pos;
+    WCHAR name[260];
+    ULONG length;
+
+    // attributes values from CorParamAttr in CorHdr.h
+    /*
+    typedef enum CorParamAttr
+    {
+       pdIn                        =   0x0001,     // Param is [In]
+       pdOut                       =   0x0002,     // Param is [out]
+       pdOptional                  =   0x0010,     // Param is optional
+       ...
+    } CorParamAttr;
+
+    // Macros for accessing the members of CorParamAttr.
+    #define IsPdIn(x)                           ((x) & pdIn)
+    #define IsPdOut(x)                          ((x) & pdOut)
+    #define IsPdOptional(x)                     ((x) & pdOptional)
+    */
+
+    DWORD bIsValueType;
+    ULONG currentGenericParam = 0;
+    std::stringstream builder;
+    builder << "(";
+    for (ULONG i = 0;
+         (SUCCEEDED(hr) && (pSigBlob != NULL) && (i < (argCount)));
+         i++)
+    {
+        // get the parameter name
+        hr = pMetaData->GetParamProps(paramDefs[i], NULL, &pos, name, ARRAY_LEN(name) - 1, &length, &attributes, &bIsValueType, NULL, NULL);
+        // note that we need to convert from WCHAR* to char* for the name
+
+        // get the parameter type
+        buffer[0] = '\0';
+
+        // TODO: in case of generic function, get the type details from the runtime and not from the metadata
+        // !! we don't know in advance which parameter is a generic parameter and this is given by elementType == MVAR
+        mdToken parameterTypeToken = mdTypeDefNil;
+        pSigBlob = ParseElementType(pMetaData, pSigBlob, classTypeArgs, methodTypeArgs, &elementType, buffer, ARRAY_LEN(buffer) - 1, &parameterTypeToken);
+        if ((methodTypeArgs != NULL) && (elementType == ELEMENT_TYPE_MVAR))
+        {
+            // TODO: check that currentGenericParam < methodTypeArgCount
+            ModuleID moduleId;
+            mdTypeDef mdType;
+            hr = pInfo->GetClassIDInfo2(methodTypeArgs[currentGenericParam], &moduleId, &mdType, NULL, 0, NULL, NULL);
+            if (SUCCEEDED(hr))
+            {
+                WCHAR paramTypeName[260];
+                IMetaDataImport2* pImport2;
+                hr = pInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(&pImport2));
+                ULONG sigBlobLen = 0;
+
+                // get elementType from type name because the metadata can't give us the instanciated generic signature
+                hr = pImport2->GetTypeDefProps(mdType, paramTypeName, ARRAY_LEN(paramTypeName) - 1, 0, NULL, NULL);
+                if (FAILED(hr))
+                {
+                    builder << "?";
+                }
+                else
+                {
+                    // convert from UTF16 to UTF8
+                    builder << shared::ToString(shared::WSTRING(paramTypeName));
+                    builder << " ";
+                    // convert from UTF16 to UTF8
+                    builder << shared::ToString(shared::WSTRING(name));
+                }
+
+                pImport2->Release();
+            }
+
+            currentGenericParam++;
+        }
+        else
+        {
+            builder << buffer;
+            builder << " ";
+            // convert from UTF16 to UTF8
+            builder << shared::ToString(shared::WSTRING(name));
+        }
+
+        if (i < argCount - 1)
+        {
+            builder << ", ";
+        }
+    }
+    builder << ")";
+
+    // TODO: remove it once unique_ptr is used
+    // don't forget to cleanup
+    if (paramDefs != NULL)
+    {
+        delete[] paramDefs;
+        paramDefs = NULL;
+    }
+    if (methodTypeArgs != NULL)
+    {
+        delete[] methodTypeArgs;
+        methodTypeArgs = NULL;
+    }
+    if (classTypeArgs != NULL)
+    {
+        delete[] classTypeArgs;
+        classTypeArgs = NULL;
+    }
+
+    return builder.str();
+}
+
+
 
 std::pair<std::string, std::string> FrameStore::GetManagedTypeName(ICorProfilerInfo4* pInfo, ClassID classId)
 {
@@ -931,4 +1176,377 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(ICorProfilerI
 
     // need to split to get the namespace and type name
     return std::make_pair(typeName.substr(0, pos), typeName.substr(pos + 1));
+}
+
+
+void FixGenericSyntax(WCHAR* name)
+{
+    ULONG currentCharPos = 0;
+    while (name[currentCharPos] != L'\0')
+    {
+        if (name[currentCharPos] == L'`')
+        {
+            // skip `xx
+            name[currentCharPos] = L'\0';
+            return;
+        }
+        currentCharPos++;
+    }
+}
+
+void FixGenericSyntax(char* name)
+{
+    ULONG currentCharPos = 0;
+    while (name[currentCharPos] != '\0')
+    {
+        if (name[currentCharPos] == '`')
+        {
+            // skip `xx
+            name[currentCharPos] = '\0';
+            return;
+        }
+        currentCharPos++;
+    }
+}
+
+void StrAppend(__out_ecount(cchBuffer) char* buffer, const char* str, size_t cchBuffer)
+{
+    size_t bufLen = strlen(buffer) + 1;
+    if (bufLen <= cchBuffer)
+        strncat_s(buffer, cchBuffer, str, cchBuffer - bufLen);
+}
+
+PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte)
+{
+    *pByte = *pbSig++;
+    return pbSig;
+}
+
+// TODO: move the signature parsing helpers into another file
+//			so it could be called from different places in a more
+//			consistent way
+PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
+                                 PCCOR_SIGNATURE signature,
+                                 ClassID* classTypeArgs,
+                                 ClassID* methodTypeArgs,
+                                 ULONG* elementType,
+                                 __out_ecount(cchBuffer) char* buffer,
+                                 size_t cchBuffer,
+                                 mdToken* typeToken // type ref/def token for reference and value types
+)
+{
+    ULONG eType = *signature++;
+    *elementType = eType;
+    switch (*elementType)
+    {
+        case ELEMENT_TYPE_VOID:
+            StrAppend(buffer, "void", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_BOOLEAN:
+            StrAppend(buffer, "bool", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_CHAR:
+            StrAppend(buffer, "char", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_I1:
+            StrAppend(buffer, "int8", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_U1:
+            StrAppend(buffer, "unsigned int8", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_I2:
+            StrAppend(buffer, "int16", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_U2:
+            StrAppend(buffer, "unsigned int16", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_I4:
+            StrAppend(buffer, "int32", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_U4:
+            StrAppend(buffer, "unsigned int32", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_I8:
+            StrAppend(buffer, "int64", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_U8:
+            StrAppend(buffer, "unsigned int64", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_R4:
+            StrAppend(buffer, "float32", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_R8:
+            StrAppend(buffer, "float64", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_U:
+            StrAppend(buffer, "unsigned int_ptr", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_I:
+            StrAppend(buffer, "int_ptr", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_OBJECT:
+            StrAppend(buffer, "Object", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_STRING:
+            StrAppend(buffer, "String", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_TYPEDBYREF:
+            StrAppend(buffer, "refany", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_CLASS:
+        case ELEMENT_TYPE_VALUETYPE:
+        case ELEMENT_TYPE_CMOD_REQD:
+        case ELEMENT_TYPE_CMOD_OPT:
+        {
+            mdToken token;
+            char classname[260];
+
+            classname[0] = '\0';
+            signature += CorSigUncompressToken(signature, &token);
+            if (typeToken != NULL)
+            {
+                *typeToken = token;
+            }
+
+            HRESULT hr;
+            WCHAR zName[260];
+            if (TypeFromToken(token) == mdtTypeRef)
+            {
+                mdToken resScope;
+                ULONG length;
+                hr = pMDImport->GetTypeRefProps(token,
+                                                &resScope,
+                                                zName,
+                                                260,
+                                                &length);
+            }
+            else
+            {
+                hr = pMDImport->GetTypeDefProps(token,
+                                                zName,
+                                                260,
+                                                NULL,
+                                                NULL,
+                                                NULL);
+            }
+            if (SUCCEEDED(hr))
+            {
+                size_t convertedChars;
+                wcstombs_s(&convertedChars, classname, sizeof(classname) / sizeof(char), zName, sizeof(zName) / sizeof(WCHAR));
+            }
+
+            StrAppend(buffer, classname, cchBuffer);
+        }
+        break;
+
+        case ELEMENT_TYPE_SZARRAY:
+            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, buffer, cchBuffer, typeToken);
+            StrAppend(buffer, "[]", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_ARRAY:
+        {
+            ULONG rank;
+            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, buffer, cchBuffer, typeToken);
+            rank = CorSigUncompressData(signature);
+
+            // The second condition is to guard against overflow bugs & shut up PREFAST
+            if (rank == 0 || rank >= 65536)
+                StrAppend(buffer, "[?]", cchBuffer);
+
+            else
+            {
+                ULONG* lower;
+                ULONG* sizes;
+                ULONG numsizes;
+                ULONG arraysize = (sizeof(ULONG) * 2 * rank);
+
+                lower = (ULONG*)_alloca(arraysize);
+                memset(lower, 0, arraysize);
+                sizes = &lower[rank];
+
+                numsizes = CorSigUncompressData(signature);
+                if (numsizes <= rank)
+                {
+                    ULONG numlower;
+                    ULONG i;
+
+                    for (i = 0; i < numsizes; i++)
+                        sizes[i] = CorSigUncompressData(signature);
+
+                    numlower = CorSigUncompressData(signature);
+                    if (numlower <= rank)
+                    {
+                        for (i = 0; i < numlower; i++)
+                            lower[i] = CorSigUncompressData(signature);
+
+                        StrAppend(buffer, "[", cchBuffer);
+                        for (i = 0; i < rank; i++)
+                        {
+                            if ((sizes[i] != 0) && (lower[i] != 0))
+                            {
+                                char sizeBuffer[100];
+                                if (lower[i] == 0)
+                                    sprintf_s(sizeBuffer, sizeof(sizeBuffer) / sizeof(char), "%d", sizes[i]);
+                                else
+                                {
+                                    sprintf_s(sizeBuffer, sizeof(sizeBuffer) / sizeof(char), "%d...", lower[i]);
+
+                                    if (sizes[i] != 0)
+                                        sprintf_s(sizeBuffer, sizeof(sizeBuffer) / sizeof(char), "%d...%d", lower[i], (lower[i] + sizes[i] + 1));
+                                }
+                                StrAppend(buffer, sizeBuffer, cchBuffer);
+                            }
+
+                            if (i < (rank - 1))
+                                StrAppend(buffer, ",", cchBuffer);
+                        }
+
+                        StrAppend(buffer, "]", cchBuffer);
+                    }
+                }
+            }
+        }
+        break;
+
+        case ELEMENT_TYPE_PINNED:
+            // TODO: I'm not sure what to do with this...
+            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, buffer, cchBuffer, typeToken);
+            StrAppend(buffer, "pinned ", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_PTR:
+            // TODO: I'm not sure this is something that can happen in C#
+            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, buffer, cchBuffer, typeToken);
+            StrAppend(buffer, "*", cchBuffer);
+            break;
+
+        case ELEMENT_TYPE_BYREF:
+            // TODO: keep in mind that it is a parameter passed by reference; i.e. its value is the address of the variable
+            // that contains the real object address in case of reference type.
+            // --> we need to return if it is a BYREF parameter as an 'isReference' out parameter in this method!!!
+            // Note that the "real" type just follows
+            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, buffer, cchBuffer, typeToken);
+            StrAppend(buffer, "&", cchBuffer);
+            break;
+
+            // handle generics
+        case ELEMENT_TYPE_VAR: // for type
+        {
+            // read the number
+            StrAppend(buffer, "T", cchBuffer);
+            ULONG n = CorSigUncompressData(signature);
+            char number[16];
+            sprintf_s(number, ARRAY_LEN(number) - 1, "%u", n);
+            StrAppend(buffer, number, cchBuffer);
+        }
+        break;
+        case ELEMENT_TYPE_MVAR: // for method
+        {
+            StrAppend(buffer, "M", cchBuffer);
+            ULONG n = CorSigUncompressData(signature);
+            char number[16];
+            sprintf_s(number, ARRAY_LEN(number) - 1, "%u", n);
+            StrAppend(buffer, number, cchBuffer);
+        }
+        break;
+
+        case ELEMENT_TYPE_GENERICINST:
+            // https://docs.microsoft.com/en-us/archive/blogs/davbr/sigparse-cpp line 834
+            //
+            {
+                // is it value/reference type?
+                ULONG eType = CorSigUncompressData(signature);
+                BYTE elementType = (BYTE)eType;
+                // signature = ParseByte(signature, &elementType);
+                if ((elementType != ELEMENT_TYPE_CLASS) && (elementType != ELEMENT_TYPE_VALUETYPE))
+                {
+                    StrAppend(buffer, "<T???>", cchBuffer);
+                    break;
+                }
+
+                // get the mdToken corresponding to the generic type and get it's name
+                // Note that the name ends with `xx where xx is the count of generic parameters
+                mdToken token;
+                signature += CorSigUncompressToken(signature, &token);
+
+                // TODO extract this code (same as case ELEMENT_TYPE_CLASS)
+                HRESULT hr;
+                char classname[260];
+                classname[0] = '\0';
+                WCHAR zName[260];
+                if (TypeFromToken(token) == mdtTypeRef)
+                {
+                    mdToken resScope;
+                    ULONG length;
+                    hr = pMDImport->GetTypeRefProps(token,
+                                                    &resScope,
+                                                    zName,
+                                                    260,
+                                                    &length);
+                }
+                else
+                {
+                    hr = pMDImport->GetTypeDefProps(token,
+                                                    zName,
+                                                    260,
+                                                    NULL,
+                                                    NULL,
+                                                    NULL);
+                }
+                if (SUCCEEDED(hr))
+                {
+                    size_t convertedChars;
+                    wcstombs_s(&convertedChars, classname, sizeof(classname) / sizeof(char), zName, sizeof(zName) / sizeof(WCHAR));
+                }
+
+                FixGenericSyntax((char*)classname);
+                StrAppend(buffer, classname, cchBuffer);
+
+                StrAppend(buffer, "<", cchBuffer);
+
+                // get generic parameters count
+                ULONG genericParameterCount = CorSigUncompressData(signature);
+
+                // get each generic parameter
+                for (ULONG current = 1; current <= genericParameterCount; current++)
+                {
+                    signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, buffer, cchBuffer, NULL);
+
+                    if (current != genericParameterCount)
+                    {
+                        StrAppend(buffer, ", ", cchBuffer);
+                    }
+                }
+                StrAppend(buffer, ">", cchBuffer);
+                break;
+            }
+
+        default:
+        case ELEMENT_TYPE_END:
+        case ELEMENT_TYPE_SENTINEL:
+            StrAppend(buffer, "<UNKNOWN>", cchBuffer);
+            break;
+
+    } // switch
+
+    return signature;
 }

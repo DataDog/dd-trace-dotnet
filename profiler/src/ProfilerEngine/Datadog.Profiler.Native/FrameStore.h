@@ -13,6 +13,24 @@
 
 class IConfiguration;
 
+#define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
+
+void StrAppend(__out_ecount(cchBuffer) char* buffer, const char* str, size_t cchBuffer);
+
+void FixGenericSyntax(WCHAR* name);
+void FixGenericSyntax(char* name);
+
+PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte);
+PCCOR_SIGNATURE ParseElementType(
+    IMetaDataImport* pMDImport,
+    PCCOR_SIGNATURE signature,
+    ClassID* classTypeArgs,
+    ClassID* methodTypeArgs,
+    ULONG* elementType,
+    __out_ecount(cchBuffer) char* buffer,
+    size_t cchBuffer,
+    mdToken* typeToken);
+
 class FrameStore : public IFrameStore
 {
 private:
@@ -49,6 +67,7 @@ private:
         );
     bool GetMetadataApi(ModuleID moduleId, FunctionID functionId, ComPtr<IMetaDataImport2>& pMetadataImport);
     std::pair<std::string, mdTypeDef> GetMethodName(
+        FunctionID functionId,
         IMetaDataImport2* pMetadataImport,
         mdMethodDef mdTokenFunc,
         ULONG32 genericParametersCount,
@@ -96,6 +115,12 @@ private:  // global helpers
         bool isArray,
         const char* arraySuffix,
         bool isEncoded
+        );
+    static std::string GetMethodSignature(
+        ICorProfilerInfo4* pInfo,
+        IMetaDataImport2* pMetadataImport,
+        FunctionID functionId,
+        mdMethodDef mdTokenFunc
         );
     static std::pair<std::string, mdTypeDef> GetMethodNameFromMetadata(
         IMetaDataImport2* pMetadataImport,
