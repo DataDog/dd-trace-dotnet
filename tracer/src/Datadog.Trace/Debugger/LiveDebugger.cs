@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -44,6 +45,7 @@ namespace Datadog.Trace.Debugger
         private readonly object _instanceLock = new();
         private bool _isInitialized;
         private bool _isRcmAvailable;
+        private ConcurrentDictionary<string, byte> _uploadedSnapshots = new();
 
         private LiveDebugger(
             DebuggerSettings settings,
@@ -383,7 +385,11 @@ namespace Datadog.Trace.Debugger
 
         internal void AddSnapshot(string probeId, string snapshot)
         {
-            _debuggerSink.AddSnapshot(probeId, snapshot);
+            if (!_uploadedSnapshots.ContainsKey(snapshot) &&
+                _uploadedSnapshots.TryAdd(snapshot, 0))
+            {
+                _debuggerSink.AddSnapshot(snapshot, snapshot);
+            }
         }
 
         internal void AddReceivedProbeStatus(string probeId)

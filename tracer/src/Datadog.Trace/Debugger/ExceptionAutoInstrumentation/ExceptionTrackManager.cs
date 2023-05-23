@@ -198,7 +198,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return !(methodFullName.StartsWith("Microsoft") ||
                      methodFullName.StartsWith("System") ||
                      methodFullName.StartsWith("Datadog.Trace") ||
-                     methodFullName.StartsWith("Serilog"));
+                     methodFullName.StartsWith("Serilog") ||
+                     methodFullName.StartsWith("MySql.Data"));
         }
     }
 }
