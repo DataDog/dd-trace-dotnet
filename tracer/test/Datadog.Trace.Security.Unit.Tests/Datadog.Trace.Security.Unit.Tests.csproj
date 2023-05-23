@@ -1,10 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <None Remove="IAST\Tainted\evidence-redaction-suite.yml" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
   </ItemGroup>
@@ -24,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="IAST\Tainted\evidence-redaction-suite.yml" />
     <EmbeddedResource Include="IAST\Tainted\evidence-redaction-suite.yml" />
   </ItemGroup>
 
