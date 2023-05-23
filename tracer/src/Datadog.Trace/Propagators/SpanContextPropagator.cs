@@ -175,29 +175,29 @@ namespace Datadog.Trace.Propagators
             return Extract(serializedSpanContext, default(ReadOnlyDictionaryGetter));
         }
 
-        public void ExtractHeaderTags<T>(ISpan span, T headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)
-            where T : IHeadersCollection
+        public void ExtractHeaderTags<THeaders>(ISpan span, THeaders headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)
+            where THeaders : IHeadersCollection
         {
             var processor = new SpanTagHeaderTagProcessor(span);
             ExtractHeaderTags(ref processor, headers, headerToTagMap, defaultTagPrefix, string.Empty);
         }
 
-        public void ExtractHeaderTags<T>(ISpan span, T headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix, string useragent)
-            where T : IHeadersCollection
+        public void ExtractHeaderTags<THeaders>(ISpan span, THeaders headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix, string useragent)
+            where THeaders : IHeadersCollection
         {
             var processor = new SpanTagHeaderTagProcessor(span);
             ExtractHeaderTags(ref processor, headers, headerToTagMap, defaultTagPrefix, useragent);
         }
 
-        public void ExtractHeaderTags<T, TProcessor>(ref TProcessor processor, T headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)
-            where T : IHeadersCollection
+        public void ExtractHeaderTags<THeaders, TProcessor>(ref TProcessor processor, THeaders headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)
+            where THeaders : IHeadersCollection
             where TProcessor : struct, IHeaderTagProcessor
         {
             ExtractHeaderTags(ref processor, headers, headerToTagMap, defaultTagPrefix, string.Empty);
         }
 
-        public void ExtractHeaderTags<T, TProcessor>(ref TProcessor processor, T headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix, string useragent)
-            where T : IHeadersCollection
+        public void ExtractHeaderTags<THeaders, TProcessor>(ref TProcessor processor, THeaders headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix, string useragent)
+            where THeaders : IHeadersCollection
             where TProcessor : struct, IHeaderTagProcessor
         {
             foreach (var headerNameToTagName in headerToTagMap)
