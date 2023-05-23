@@ -919,8 +919,6 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
         return "(?)";
     }
 
-    // use Peter Sollich way in ClrProfiler to parse the binary signature
-    // https://github.com/microsoftarchive/clrprofiler/blob/master/CLRProfiler/profilerOBJ/ProfilerInfo.cpp#L1838
     // read https://chnasarre.medium.com/decyphering-method-signature-with-clr-profiling-api-8328a72a216e for more details
     ULONG elementType;
     ULONG callConv;
@@ -930,14 +928,14 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
     pSigBlob += CorSigUncompressData(pSigBlob, &callConv);
 
     ULONG argCount = 0;
-    ClassID* methodTypeArgs = NULL;
-    ClassID* classTypeArgs = NULL;
+    ClassID classId = 0;
     ModuleID moduleId;
     // for generic support
+    std::unique_ptr<ClassID[]> methodTypeArgs = NULL;
+    std::unique_ptr<ClassID[]> classTypeArgs = NULL;
     ULONG genericArgCount = 0;
     UINT32 methodTypeArgCount = 0;
     ULONG32 classTypeArgCount = 0;
-    ClassID classId = 0;
     if ((callConv & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0)
     {
         //
@@ -946,28 +944,22 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
         pSigBlob += CorSigUncompressData(pSigBlob, &genericArgCount);
 
         // get the generic details for the function
-        // TODO replace with unique_ptr methodTypeArgs = std::make_unique<ClassID[]>(genericArgCount);
-        methodTypeArgs = new ClassID[genericArgCount];
-        hr = pInfo->GetFunctionInfo2(functionId, NULL, &classId, &moduleId, NULL, genericArgCount, &methodTypeArgCount, methodTypeArgs);
+        methodTypeArgs = std::make_unique<ClassID[]>(genericArgCount);
+        hr = pInfo->GetFunctionInfo2(functionId, NULL, &classId, &moduleId, NULL, genericArgCount, &methodTypeArgCount, methodTypeArgs.get());
         assert(!SUCCEEDED(hr) || (genericArgCount == methodTypeArgCount));
         if (FAILED(hr))
         {
-            delete[] methodTypeArgs;
             methodTypeArgs = NULL;
         }
 
-        // TODO: why would we need these for the method signature?
         // get the generic details for the type implementing the function
         hr = pInfo->GetClassIDInfo2(classId, NULL, NULL, NULL, 0, &classTypeArgCount, NULL);
         if (SUCCEEDED(hr) && classTypeArgCount > 0)
         {
-            // TODO replace with unique_ptr classTypeArgs = std::make_unique<ClassID[]>(classTypeArgCount);
-            classTypeArgs = new ClassID[classTypeArgCount];
-            hr = pInfo->GetClassIDInfo2(classId, NULL, NULL, NULL, classTypeArgCount, &classTypeArgCount, classTypeArgs);
-
+            classTypeArgs = std::make_unique<ClassID[]>(classTypeArgCount);
+            hr = pInfo->GetClassIDInfo2(classId, NULL, NULL, NULL, classTypeArgCount, &classTypeArgCount, classTypeArgs.get());
             if (FAILED(hr))
             {
-                delete[] classTypeArgs;
                 classTypeArgs = NULL;
             }
         }
@@ -989,24 +981,12 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
     //
     mdToken returnTypeToken;
     buffer[0] = '\0';
-    pSigBlob = ParseElementType(pMetaData, pSigBlob, classTypeArgs, methodTypeArgs, &elementType, buffer, ARRAY_LEN(buffer) - 1, &returnTypeToken);
+    pSigBlob = ParseElementType(pMetaData, pSigBlob, classTypeArgs.get(), methodTypeArgs.get(), &elementType, buffer, ARRAY_LEN(buffer) - 1, &returnTypeToken);
     // if the return type returned back empty, should correspond to "void"
     // NOTE: elementType should be ELEMENT_TYPE_VOID in that case
 
     if (argCount == 0)
     {
-        // TODO: should go away with unique_ptr
-        if (methodTypeArgs != NULL)
-        {
-            delete[] methodTypeArgs;
-            methodTypeArgs = NULL;
-        }
-        if (classTypeArgs != NULL)
-        {
-            delete[] classTypeArgs;
-            classTypeArgs = NULL;
-        }
-
         return "()";
     }
 
@@ -1019,37 +999,16 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
     hr = S_OK;
     HCORENUM hEnum = 0;
     ULONG paramCount;
-    // TODO: use unique_ptr
-    mdParamDef* paramDefs = new mdParamDef[argCount];
-    hr = pMetaData->EnumParams(&hEnum, mdTokenFunc, paramDefs, argCount, &paramCount);
+    auto paramDefs = std::make_unique<mdParamDef[]>(argCount);
+    hr = pMetaData->EnumParams(&hEnum, mdTokenFunc, paramDefs.get(), argCount, &paramCount);
     pMetaData->CloseEnum(hEnum);
 
     // sanity checks
-    //assert(paramCount == argCount);
-    if (paramCount != argCount)
-    {
-        printf("paramCount=%u  argCount=%u\r\n", paramCount, argCount);
-    }
+    assert(paramCount == argCount);
 
     ULONG pos;
     WCHAR name[260];
     ULONG length;
-
-    // attributes values from CorParamAttr in CorHdr.h
-    /*
-    typedef enum CorParamAttr
-    {
-       pdIn                        =   0x0001,     // Param is [In]
-       pdOut                       =   0x0002,     // Param is [out]
-       pdOptional                  =   0x0010,     // Param is optional
-       ...
-    } CorParamAttr;
-
-    // Macros for accessing the members of CorParamAttr.
-    #define IsPdIn(x)                           ((x) & pdIn)
-    #define IsPdOut(x)                          ((x) & pdOut)
-    #define IsPdOptional(x)                     ((x) & pdOptional)
-    */
 
     DWORD bIsValueType;
     ULONG currentGenericParam = 0;
@@ -1066,13 +1025,13 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
         // get the parameter type
         buffer[0] = '\0';
 
-        // TODO: in case of generic function, get the type details from the runtime and not from the metadata
-        // !! we don't know in advance which parameter is a generic parameter and this is given by elementType == MVAR
+        // In case of generic function, get the type details from the runtime and not from the metadata
+        // we don't know in advance which parameter is a generic parameter and this is given by elementType == MVAR
         mdToken parameterTypeToken = mdTypeDefNil;
-        pSigBlob = ParseElementType(pMetaData, pSigBlob, classTypeArgs, methodTypeArgs, &elementType, buffer, ARRAY_LEN(buffer) - 1, &parameterTypeToken);
+        pSigBlob = ParseElementType(pMetaData, pSigBlob, classTypeArgs.get(), methodTypeArgs.get(), &elementType, buffer, ARRAY_LEN(buffer) - 1, &parameterTypeToken);
         if ((methodTypeArgs != NULL) && (elementType == ELEMENT_TYPE_MVAR))
         {
-            // TODO: check that currentGenericParam < methodTypeArgCount
+            // Assume that currentGenericParam < methodTypeArgCount
             ModuleID moduleId;
             mdTypeDef mdType;
             hr = pInfo->GetClassIDInfo2(methodTypeArgs[currentGenericParam], &moduleId, &mdType, NULL, 0, NULL, NULL);
@@ -1117,24 +1076,6 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
         }
     }
     builder << ")";
-
-    // TODO: remove it once unique_ptr is used
-    // don't forget to cleanup
-    if (paramDefs != NULL)
-    {
-        delete[] paramDefs;
-        paramDefs = NULL;
-    }
-    if (methodTypeArgs != NULL)
-    {
-        delete[] methodTypeArgs;
-        methodTypeArgs = NULL;
-    }
-    if (classTypeArgs != NULL)
-    {
-        delete[] classTypeArgs;
-        classTypeArgs = NULL;
-    }
 
     return builder.str();
 }
@@ -1209,11 +1150,14 @@ void FixGenericSyntax(char* name)
     }
 }
 
-void StrAppend(__out_ecount(cchBuffer) char* buffer, const char* str, size_t cchBuffer)
+void StrAppend(char* buffer, const char* str, size_t& cchBuffer)
 {
     size_t bufLen = strlen(buffer) + 1;
     if (bufLen <= cchBuffer)
+    {
         strncat_s(buffer, cchBuffer, str, cchBuffer - bufLen);
+        cchBuffer -= bufLen;
+    }
 }
 
 PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte)
@@ -1222,15 +1166,14 @@ PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte)
     return pbSig;
 }
 
-// TODO: move the signature parsing helpers into another file
-//			so it could be called from different places in a more
-//			consistent way
+// use Peter Sollich way in ClrProfiler to parse the binary signature
+// https://github.com/microsoftarchive/clrprofiler/blob/master/CLRProfiler/profilerOBJ/ProfilerInfo.cpp#L1838
 PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
                                  PCCOR_SIGNATURE signature,
                                  ClassID* classTypeArgs,
                                  ClassID* methodTypeArgs,
                                  ULONG* elementType,
-                                 __out_ecount(cchBuffer) char* buffer,
+                                 char* buffer,
                                  size_t cchBuffer,
                                  mdToken* typeToken // type ref/def token for reference and value types
 )
@@ -1244,59 +1187,59 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
             break;
 
         case ELEMENT_TYPE_BOOLEAN:
-            StrAppend(buffer, "bool", cchBuffer);
+            StrAppend(buffer, "Boolean", cchBuffer);
             break;
 
         case ELEMENT_TYPE_CHAR:
-            StrAppend(buffer, "char", cchBuffer);
+            StrAppend(buffer, "Char", cchBuffer);
             break;
 
         case ELEMENT_TYPE_I1:
-            StrAppend(buffer, "int8", cchBuffer);
+            StrAppend(buffer, "SByte", cchBuffer);
             break;
 
         case ELEMENT_TYPE_U1:
-            StrAppend(buffer, "unsigned int8", cchBuffer);
+            StrAppend(buffer, "Byte", cchBuffer);
             break;
 
         case ELEMENT_TYPE_I2:
-            StrAppend(buffer, "int16", cchBuffer);
+            StrAppend(buffer, "Int16", cchBuffer);
             break;
 
         case ELEMENT_TYPE_U2:
-            StrAppend(buffer, "unsigned int16", cchBuffer);
+            StrAppend(buffer, "UInt16", cchBuffer);
             break;
 
         case ELEMENT_TYPE_I4:
-            StrAppend(buffer, "int32", cchBuffer);
+            StrAppend(buffer, "Int32", cchBuffer);
             break;
 
         case ELEMENT_TYPE_U4:
-            StrAppend(buffer, "unsigned int32", cchBuffer);
+            StrAppend(buffer, "UInt32", cchBuffer);
             break;
 
         case ELEMENT_TYPE_I8:
-            StrAppend(buffer, "int64", cchBuffer);
+            StrAppend(buffer, "Int64", cchBuffer);
             break;
 
         case ELEMENT_TYPE_U8:
-            StrAppend(buffer, "unsigned int64", cchBuffer);
+            StrAppend(buffer, "UInt64", cchBuffer);
             break;
 
         case ELEMENT_TYPE_R4:
-            StrAppend(buffer, "float32", cchBuffer);
+            StrAppend(buffer, "Single", cchBuffer);
             break;
 
         case ELEMENT_TYPE_R8:
-            StrAppend(buffer, "float64", cchBuffer);
+            StrAppend(buffer, "Double", cchBuffer);
             break;
 
         case ELEMENT_TYPE_U:
-            StrAppend(buffer, "unsigned int_ptr", cchBuffer);
+            StrAppend(buffer, "UIntPtr", cchBuffer);
             break;
 
         case ELEMENT_TYPE_I:
-            StrAppend(buffer, "int_ptr", cchBuffer);
+            StrAppend(buffer, "IntPtr", cchBuffer);
             break;
 
         case ELEMENT_TYPE_OBJECT:
@@ -1349,11 +1292,12 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
             }
             if (SUCCEEDED(hr))
             {
-                size_t convertedChars;
-                wcstombs_s(&convertedChars, classname, sizeof(classname) / sizeof(char), zName, sizeof(zName) / sizeof(WCHAR));
+                StrAppend(buffer, shared::ToString(shared::WSTRING(zName)).c_str(), cchBuffer);
             }
-
-            StrAppend(buffer, classname, cchBuffer);
+            else
+            {
+                StrAppend(buffer, "?", cchBuffer);
+            }
         }
         break;
 
@@ -1405,13 +1349,13 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
                             {
                                 char sizeBuffer[100];
                                 if (lower[i] == 0)
-                                    sprintf_s(sizeBuffer, sizeof(sizeBuffer) / sizeof(char), "%d", sizes[i]);
+                                    sprintf_s(sizeBuffer, ARRAY_LEN(sizeBuffer), "%d", sizes[i]);
                                 else
                                 {
-                                    sprintf_s(sizeBuffer, sizeof(sizeBuffer) / sizeof(char), "%d...", lower[i]);
+                                    sprintf_s(sizeBuffer, ARRAY_LEN(sizeBuffer), "%d...", lower[i]);
 
                                     if (sizes[i] != 0)
-                                        sprintf_s(sizeBuffer, sizeof(sizeBuffer) / sizeof(char), "%d...%d", lower[i], (lower[i] + sizes[i] + 1));
+                                        sprintf_s(sizeBuffer, ARRAY_LEN(sizeBuffer), "%d...%d", lower[i], (lower[i] + sizes[i] + 1));
                                 }
                                 StrAppend(buffer, sizeBuffer, cchBuffer);
                             }
@@ -1428,27 +1372,26 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
         break;
 
         case ELEMENT_TYPE_PINNED:
-            // TODO: I'm not sure what to do with this...
+            // I'm not sure what to do with this...
             signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, buffer, cchBuffer, typeToken);
-            StrAppend(buffer, "pinned ", cchBuffer);
+            StrAppend(buffer, "* ", cchBuffer);
             break;
 
         case ELEMENT_TYPE_PTR:
-            // TODO: I'm not sure this is something that can happen in C#
             signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, buffer, cchBuffer, typeToken);
             StrAppend(buffer, "*", cchBuffer);
             break;
 
         case ELEMENT_TYPE_BYREF:
-            // TODO: keep in mind that it is a parameter passed by reference; i.e. its value is the address of the variable
+            // keep in mind that it is a parameter passed by reference; i.e. its value is the address of the variable
             // that contains the real object address in case of reference type.
-            // --> we need to return if it is a BYREF parameter as an 'isReference' out parameter in this method!!!
+            // --> we need to return if it is a BYREF parameter as an 'isReference' out parameter in this method
             // Note that the "real" type just follows
             signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, buffer, cchBuffer, typeToken);
             StrAppend(buffer, "&", cchBuffer);
             break;
 
-            // handle generics
+        // handle generics
         case ELEMENT_TYPE_VAR: // for type
         {
             // read the number
@@ -1488,7 +1431,7 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
                 mdToken token;
                 signature += CorSigUncompressToken(signature, &token);
 
-                // TODO extract this code (same as case ELEMENT_TYPE_CLASS)
+                // close to ELEMENT_TYPE_CLASS except for generic processing
                 HRESULT hr;
                 char classname[260];
                 classname[0] = '\0';
@@ -1514,8 +1457,7 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
                 }
                 if (SUCCEEDED(hr))
                 {
-                    size_t convertedChars;
-                    wcstombs_s(&convertedChars, classname, sizeof(classname) / sizeof(char), zName, sizeof(zName) / sizeof(WCHAR));
+                    strncpy_s(classname, shared::ToString(shared::WSTRING(zName)).c_str(), ARRAY_LEN(classname));
                 }
 
                 FixGenericSyntax((char*)classname);

@@ -15,7 +15,7 @@ class IConfiguration;
 
 #define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
 
-void StrAppend(__out_ecount(cchBuffer) char* buffer, const char* str, size_t cchBuffer);
+void StrAppend(char* buffer, const char* str, size_t& cchBuffer);
 
 void FixGenericSyntax(WCHAR* name);
 void FixGenericSyntax(char* name);
@@ -27,7 +27,7 @@ PCCOR_SIGNATURE ParseElementType(
     ClassID* classTypeArgs,
     ClassID* methodTypeArgs,
     ULONG* elementType,
-    __out_ecount(cchBuffer) char* buffer,
+    char* buffer,
     size_t cchBuffer,
     mdToken* typeToken);
 
