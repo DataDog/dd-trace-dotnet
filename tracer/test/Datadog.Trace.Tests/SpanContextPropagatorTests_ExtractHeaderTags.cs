@@ -53,7 +53,9 @@ namespace Datadog.Trace.Tests
             expectedResults.Add(customHeader2TagName, customHeader2Value);
 
             // Test
-            var tagsFromHeader = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerTags, TestPrefix);
+            var processor = new HeaderTagsProcessor();
+            SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix);
+            var tagsFromHeader = processor.TagsFromHeader;
 
             // Assert
             Assert.NotNull(tagsFromHeader);
@@ -73,7 +75,9 @@ namespace Datadog.Trace.Tests
             var expectedResults = new Dictionary<string, string>();
 
             // Test
-            var tagsFromHeader = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerTags, TestPrefix);
+            var processor = new HeaderTagsProcessor();
+            SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix);
+            var tagsFromHeader = processor.TagsFromHeader;
 
             // Assert
             Assert.NotNull(tagsFromHeader);
@@ -92,7 +96,9 @@ namespace Datadog.Trace.Tests
             var expectedResults = new Dictionary<string, string>();
 
             // Test
-            var tagsFromHeader = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerToTagMap, TestPrefix);
+            var processor = new HeaderTagsProcessor();
+            SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerToTagMap, TestPrefix);
+            var tagsFromHeader = processor.TagsFromHeader;
 
             // Assert
             Assert.NotNull(tagsFromHeader);
@@ -124,7 +130,9 @@ namespace Datadog.Trace.Tests
             };
 
             // Test
-            var tagsFromHeader = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerToTagMap, TestPrefix);
+            var processor = new HeaderTagsProcessor();
+            SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerToTagMap, TestPrefix);
+            var tagsFromHeader = processor.TagsFromHeader;
 
             // Assert
             Assert.NotNull(tagsFromHeader);
@@ -151,14 +159,38 @@ namespace Datadog.Trace.Tests
             headerTags.Add(HttpHeaderNames.UserAgent, tagName);
 
             // Test no user agent
-            var tagsFromHeader = provideUserAgent ? SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerTags, TestPrefix, uaInParameter) :
-                SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerTags, TestPrefix);
+            var processor = new HeaderTagsProcessor();
+            if (provideUserAgent)
+            {
+                SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix, uaInParameter);
+            }
+            else
+            {
+                SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix);
+            }
+
+            var tagsFromHeader = processor.TagsFromHeader;
 
             // Assert
             Assert.Single(tagsFromHeader);
             var normalizedHeader = tagsFromHeader.First();
             Assert.Equal(tagName, normalizedHeader.Key);
             Assert.Equal(provideUserAgent ? uaInParameter : uaInHeaders, normalizedHeader.Value);
+        }
+
+        private readonly struct HeaderTagsProcessor : SpanContextPropagator.IHeaderTagProcessor
+        {
+            public HeaderTagsProcessor()
+            {
+                TagsFromHeader = new();
+            }
+
+            public Dictionary<string, string> TagsFromHeader { get; }
+
+            public void ProcessTag(string key, string value)
+            {
+                TagsFromHeader[key] = value;
+            }
         }
     }
 }
