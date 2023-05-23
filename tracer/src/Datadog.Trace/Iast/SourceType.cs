@@ -35,7 +35,7 @@ internal static class SourceType
             SourceTypeName.MatrixParameter => "http.request.matrix.parameter",
             SourceTypeName.CookieName => "http.cookie.name",
             SourceTypeName.CookieValue => "http.cookie.value",
-            _ => string.Empty
+            _ => throw new System.Exception($"SourceTypeName TEXT for value {value} not defined")
         };
 
     internal static SourceTypeName FromString(string? value)
@@ -52,6 +52,6 @@ internal static class SourceType
             "http.request.matrix.parameter" => SourceTypeName.MatrixParameter,
             "http.cookie.name" => SourceTypeName.CookieName,
             "http.cookie.value" => SourceTypeName.CookieValue,
-            _ => default(SourceTypeName)
+            _ => throw new System.Exception($"SourceTypeName VALUE for text {value ?? "NULL"} not defined")
         };
 }
