@@ -14,6 +14,10 @@
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <GenerateRuntimeConfigDevFile>true</GenerateRuntimeConfigDevFile>
     <RunSettingsFilePath>$(MSBuildProjectDirectory)\iast.runsettings</RunSettingsFilePath>
+    <ContentSQLiteInteropFiles>true</ContentSQLiteInteropFiles>
+    <CopySQLiteInteropFiles>false</CopySQLiteInteropFiles>
+    <CleanSQLiteInteropFiles>false</CleanSQLiteInteropFiles>
+    <CollectSQLiteInteropFiles>false</CollectSQLiteInteropFiles>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)'=='net462'">

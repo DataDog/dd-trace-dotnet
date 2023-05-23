@@ -1,6 +1,5 @@
 using System.Data.Common;
 using System.Data.SqlClient;
-using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
