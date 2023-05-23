@@ -25,18 +25,19 @@ namespace Benchmarks.Trace
 
             Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
 
-            new GraphQLBenchmark().ExecuteAsync();
+            new GraphQLBenchmark().ExecuteAsync().GetAwaiter().GetResult();
         }
 
         [Benchmark]
-        public unsafe int ExecuteAsync()
+        public async Task<int> ExecuteAsync()
         {
-            var task = CallTarget.Run<Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncIntegration, GraphQLClient, ExecutionContext, Task<ExecutionResult>>(
-                Client,
-                Context,
-                &ExecuteAsync);
+            return (await CallTargetRun()).Value;
 
-            return task.GetAwaiter().GetResult().Value;
+            unsafe Task<ExecutionResult> CallTargetRun()
+                => CallTarget.Run<Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncIntegration, GraphQLClient, ExecutionContext, Task<ExecutionResult>>(
+                    Client,
+                    Context,
+                    &ExecuteAsync);
 
             static Task<ExecutionResult> ExecuteAsync(ExecutionContext context) => Result;
         }

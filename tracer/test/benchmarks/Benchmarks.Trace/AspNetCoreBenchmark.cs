@@ -37,13 +37,13 @@ namespace Benchmarks.Trace
             Datadog.Trace.ClrProfiler.Instrumentation.Initialize();
 
             var bench = new AspNetCoreBenchmark();
-            bench.SendRequest();
+            bench.SendRequest().GetAwaiter().GetResult();
         }
 
         [Benchmark]
-        public string SendRequest()
+        public async Task<string> SendRequest()
         {
-            return Client.GetStringAsync("/Home").GetAwaiter().GetResult();
+            return await Client.GetStringAsync("/Home");
         }
 
         private class Startup
@@ -71,17 +71,19 @@ namespace Benchmarks.Trace
     /// </summary>
     public class HomeController : Controller
     {
-        private static readonly HttpRequestMessage HttpRequest = new HttpRequestMessage { RequestUri = new Uri("http://datadoghq.com") };
+        private static readonly HttpRequestMessage HttpRequest = new() { RequestUri = new Uri("http://datadoghq.com") };
         private static readonly Task<HttpResponseMessage> CachedResult = Task.FromResult(new HttpResponseMessage());
 
-        public unsafe string Index()
+        public async Task<string> Index()
         {
-            CallTarget.Run<HttpClientHandlerIntegration, HomeController, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>
-                (this, HttpRequest, CancellationToken.None, &GetResult).GetAwaiter().GetResult();
-
+            await CallTargetRun();
             return "OK";
 
-            static Task<HttpResponseMessage> GetResult(HttpRequestMessage request, CancellationToken cancellationToken) => CachedResult;
+            unsafe Task<HttpResponseMessage> CallTargetRun()
+                => CallTarget.Run<HttpClientHandlerIntegration, HomeController, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>(this, HttpRequest, CancellationToken.None, &GetResult);
+            
+            static Task<HttpResponseMessage> GetResult(HttpRequestMessage request, CancellationToken cancellationToken)
+                => CachedResult;
         }
     }
 }

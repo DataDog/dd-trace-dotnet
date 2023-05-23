@@ -27,17 +27,20 @@ namespace Benchmarks.Trace
             Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
 
             var bench = new HttpClientBenchmark();
-            bench.SendAsync();
+            bench.SendAsync().GetAwaiter().GetResult();
         }
 
         [Benchmark]
-        public unsafe string SendAsync()
+        public async Task<string> SendAsync()
         {
-            CallTarget.Run<HttpClientHandlerIntegration, HttpClientBenchmark, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>
-                (this, HttpRequest, CancellationToken.None, &GetResult).GetAwaiter().GetResult();
+            await CallTargetRun();
             return "OK";
 
-            static Task<HttpResponseMessage> GetResult(HttpRequestMessage request, CancellationToken cancellationToken) => CachedResult;
+            unsafe Task<HttpResponseMessage> CallTargetRun()
+                => CallTarget.Run<HttpClientHandlerIntegration, HttpClientBenchmark, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>(this, HttpRequest, CancellationToken.None, &GetResult);
+
+            static Task<HttpResponseMessage> GetResult(HttpRequestMessage request, CancellationToken cancellationToken)
+                => CachedResult;
         }
     }
 }
