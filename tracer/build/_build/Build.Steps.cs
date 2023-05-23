@@ -701,7 +701,7 @@ partial class Build
 
     Target ZipMonitoringHomeWindows => _ => _
         .Unlisted()
-        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
+        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader, SignDlls)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
