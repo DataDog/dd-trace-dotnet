@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -80,6 +81,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                 EnvironmentVariables = variablesTruncated,
                 Component = "process",
             };
+
+            // Don't populate further with command line information if shell collection is disabled
+            if (!Security.Instance.EnableShellCollection)
+            {
+                return tags;
+            }
 
             if (useShellExecute)
             {
