@@ -129,4 +129,9 @@ namespace shared {
         return str.size() >= prefix.size() && str.compare(0, prefix.size(), prefix) == 0;
     }
 
+    bool WStartsWith(const shared::WSTRING &str, const shared::WSTRING &prefix)
+    {
+        return str.size() >= prefix.size() && str.compare(0, prefix.size(), prefix) == 0;
+    }
+
 }  // namespace trace
