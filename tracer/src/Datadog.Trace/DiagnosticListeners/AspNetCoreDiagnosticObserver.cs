@@ -26,6 +26,7 @@ using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Template;
@@ -487,6 +488,19 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
+#if NETCOREAPP3_1_OR_GREATER
+                Microsoft.AspNetCore.Routing.RouteEndpoint routeEndpoint = null;
+
+                if (rawEndpointFeature is Microsoft.AspNetCore.Routing.RouteEndpoint rEndpoint)
+                {
+                    routeEndpoint = rEndpoint;
+                }
+
+                if (routeEndpoint is null && rawEndpointFeature is IEndpointFeature { Endpoint: Microsoft.AspNetCore.Routing.RouteEndpoint rEndpointFeature })
+                {
+                    routeEndpoint = rEndpointFeature;
+                }
+#else
                 RouteEndpoint? routeEndpoint = null;
 
                 if (rawEndpointFeature.TryDuckCast<EndpointFeatureProxy>(out var endpointFeatureInterface))
@@ -504,6 +518,7 @@ namespace Datadog.Trace.DiagnosticListeners
                         routeEndpoint = routeEndpointObj;
                     }
                 }
+#endif
 
                 if (routeEndpoint is null)
                 {
@@ -511,12 +526,21 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
+#if NETCOREAPP3_1_OR_GREATER
+                if (isFirstExecution)
+                {
+                    tags.AspNetCoreEndpoint = routeEndpoint.DisplayName;
+                }
+
+                var routePattern = routeEndpoint.RoutePattern;
+#else
                 if (isFirstExecution)
                 {
                     tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
                 }
 
                 var routePattern = routeEndpoint.Value.RoutePattern;
+#endif
 
                 // Have to pass this value through to the MVC span, as not available there
                 var normalizedRoute = routePattern.RawText?.ToLowerInvariant();

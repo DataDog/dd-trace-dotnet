@@ -38,7 +38,16 @@
     <Reference Include="System.Web" />
   </ItemGroup>
 
-  <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) ">
+  <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) AND !$(TargetFramework.StartsWith('netcoreapp2.1')) AND !$(TargetFramework.StartsWith('netstandard')) ">
+    <!-- Instrumented libraries -->
+    <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.2.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.2.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.AspNetCore.Routing" Version="2.2.0" PrivateAssets="All" />
+
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.4.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) AND ($(TargetFramework.StartsWith('netcoreapp2.1')) OR $(TargetFramework.StartsWith('netstandard')))">
     <!-- Instrumented libraries -->
     <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.0.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.0.0" PrivateAssets="All" />

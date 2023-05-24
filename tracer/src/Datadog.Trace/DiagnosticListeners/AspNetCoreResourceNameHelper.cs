@@ -9,12 +9,130 @@ using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Util;
 using Microsoft.AspNetCore.Routing;
+#if NETCOREAPP3_1_OR_GREATER
+using Microsoft.AspNetCore.Routing.Patterns;
+#endif
 using Microsoft.AspNetCore.Routing.Template;
 
 namespace Datadog.Trace.DiagnosticListeners;
 
 internal class AspNetCoreResourceNameHelper
 {
+#if NETCOREAPP3_1_OR_GREATER
+    internal static string SimplifyRoutePattern(
+        Microsoft.AspNetCore.Routing.Patterns.RoutePattern routePattern,
+        RouteValueDictionary routeValueDictionary,
+        string areaName,
+        string controllerName,
+        string actionName,
+        bool expandRouteParameters)
+    {
+        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+
+        foreach (var pathSegment in routePattern.PathSegments)
+        {
+            var parts = 0;
+            foreach (var part in pathSegment.Parts)
+            {
+                parts++;
+                if (part is RoutePatternParameterPart parameter)
+                {
+                    var parameterName = parameter.Name;
+                    if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (parts == 1)
+                        {
+                            sb.Append('/');
+                        }
+
+                        sb.Append(areaName);
+                    }
+                    else if (parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (parts == 1)
+                        {
+                            sb.Append('/');
+                        }
+
+                        sb.Append(controllerName);
+                    }
+                    else if (parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (parts == 1)
+                        {
+                            sb.Append('/');
+                        }
+
+                        sb.Append(actionName);
+                    }
+                    else
+                    {
+                        var haveParameter = routeValueDictionary.TryGetValue(parameterName, out var value);
+                        if (!parameter.IsOptional || haveParameter)
+                        {
+                            if (parts == 1)
+                            {
+                                sb.Append('/');
+                            }
+
+                            if (expandRouteParameters && haveParameter && !IsIdentifierSegment(value, out var valueAsString))
+                            {
+                                // write the expanded parameter value
+                                sb.Append(valueAsString);
+                            }
+                            else
+                            {
+                                // write the route template value
+                                sb.Append('{');
+                                if (parameter.IsCatchAll)
+                                {
+                                    if (parameter.EncodeSlashes)
+                                    {
+                                        sb.Append("**");
+                                    }
+                                    else
+                                    {
+                                        sb.Append('*');
+                                    }
+                                }
+
+                                sb.Append(parameterName);
+                                if (parameter.IsOptional)
+                                {
+                                    sb.Append('?');
+                                }
+
+                                sb.Append('}');
+                            }
+                        }
+                    }
+                }
+                else if (part is RoutePatternLiteralPart literalPart)
+                {
+                    if (parts == 1)
+                    {
+                        sb.Append('/');
+                    }
+
+                    sb.Append(literalPart.Content);
+                }
+                else if (part is RoutePatternSeparatorPart separatorPart)
+                {
+                    if (parts == 1)
+                    {
+                        sb.Append('/');
+                    }
+
+                    sb.Append(separatorPart.Content);
+                }
+            }
+        }
+
+        var simplifiedRoute = StringBuilderCache.GetStringAndRelease(sb);
+
+        return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
+    }
+#else
     internal static string SimplifyRoutePattern(
         RoutePattern routePattern,
         RouteValueDictionary routeValueDictionary,
@@ -23,13 +141,7 @@ internal class AspNetCoreResourceNameHelper
         string actionName,
         bool expandRouteParameters)
     {
-        var maxSize = routePattern.RawText.Length
-                    + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
-                    + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName.Length - 10, 0)) // "controller".Length
-                    + (string.IsNullOrEmpty(actionName) ? 0 : Math.Max(actionName.Length - 6, 0)) // "action".Length
-                    + 1; // '/' prefix
-
-        var sb = StringBuilderCache.Acquire(maxSize);
+        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 
         foreach (var pathSegment in routePattern.PathSegments)
         {
@@ -125,6 +237,7 @@ internal class AspNetCoreResourceNameHelper
 
         return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
     }
+#endif
 
     internal static string SimplifyRouteTemplate(
         RouteTemplate routePattern,
@@ -134,13 +247,7 @@ internal class AspNetCoreResourceNameHelper
         string actionName,
         bool expandRouteParameters)
     {
-        var maxSize = routePattern.TemplateText.Length
-                    + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
-                    + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName.Length - 10, 0)) // "controller".Length
-                    + (string.IsNullOrEmpty(actionName) ? 0 : Math.Max(actionName.Length - 6, 0)) // "action".Length
-                    + 1; // '/' prefix
-
-        var sb = StringBuilderCache.Acquire(maxSize);
+        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 
         foreach (var pathSegment in routePattern.Segments)
         {

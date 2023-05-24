@@ -120,6 +120,15 @@ public class AspNetCoreResourceNameHelperTests
     public void SimplifyRoutePattern_CleansValidRouteTemplates(string template, string expected, bool expandRouteTemplates)
     {
         var originalPattern = RoutePatternFactory.Parse(template);
+#if NETCOREAPP3_1_OR_GREATER
+        var resource = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+            routePattern: originalPattern,
+            routeValueDictionary: Values,
+            areaName: null,
+            controllerName: Values["controller"] as string,
+            actionName: Values["action"] as string,
+            expandRouteTemplates);
+#else
         var duckTypedPattern = originalPattern.DuckCast<Datadog.Trace.DiagnosticListeners.RoutePattern>();
         var resource = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
             routePattern: duckTypedPattern,
@@ -128,7 +137,7 @@ public class AspNetCoreResourceNameHelperTests
             controllerName: Values["controller"] as string,
             actionName: Values["action"] as string,
             expandRouteTemplates);
-
+#endif
         resource.Should().Be(expected);
     }
 
@@ -137,6 +146,15 @@ public class AspNetCoreResourceNameHelperTests
     public void SimplifyRoutePattern_CleansValidRouteTemplatesWithDefaults(string template, string expected, bool expandRouteTemplates)
     {
         var originalPattern = RoutePatternFactory.Parse(template, Defaults, parameterPolicies: ParameterPolicies);
+#if NETCOREAPP3_1_OR_GREATER
+        var resource = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+            routePattern: originalPattern,
+            routeValueDictionary: Values,
+            areaName: null,
+            controllerName: Values["controller"] as string,
+            actionName: Values["action"] as string,
+            expandRouteTemplates);
+#else
         var duckTypedPattern = originalPattern.DuckCast<Datadog.Trace.DiagnosticListeners.RoutePattern>();
         var resource = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
             routePattern: duckTypedPattern,
@@ -145,7 +163,7 @@ public class AspNetCoreResourceNameHelperTests
             controllerName: Values["controller"] as string,
             actionName: Values["action"] as string,
             expandRouteTemplates);
-
+#endif
         resource.Should().Be(expected);
     }
 
