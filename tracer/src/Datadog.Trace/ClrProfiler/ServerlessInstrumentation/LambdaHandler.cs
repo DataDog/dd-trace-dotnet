@@ -16,7 +16,6 @@ internal class LambdaHandler
     internal const string Separator = "::";
     private static readonly string[] Separators = { "::" };
 
-    // MyFunction::MyFunction.Function::HandlerCustomStructParamSync
     internal LambdaHandler(string? handlerName)
     {
         if (handlerName is null)
@@ -54,8 +53,6 @@ internal class LambdaHandler
             ThrowHelper.ThrowArgumentException($"Unable to instrument generic method {handlerMethod.Name} declared on {handlerMethod.DeclaringType}");
         }
 
-        // The method body may be in a different type, e.g. a base type
-        // In that case we need the FullType to point to the base type
         var declaringType = handlerMethod.DeclaringType;
 
         // We should never be invoking generic _definitions_ (i.e. open generics)
