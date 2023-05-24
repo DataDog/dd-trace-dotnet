@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.ObjectModel;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
@@ -14,5 +15,20 @@ namespace Datadog.Trace.Tagging
 
         [Tag(Trace.Tags.ProcessEnvironmentVariables)]
         public string EnvironmentVariables { get; set; }
+
+        [Tag(Trace.Tags.ProcessComponent)]
+        public string Component { get; set; }
+
+        [Tag(Trace.Tags.ProcessCommandExec)]
+        public string CommandExec { get; set; }
+
+        [Tag(Trace.Tags.ProcessCommandShell)]
+        public string CommandShell { get; set; }
+
+        [Tag(Trace.Tags.ProcessExitCode)]
+        public string ExitCode { get; set; }
+
+        [Tag(Trace.Tags.ProcessTruncated)]
+        public string Truncated { get; set; }
     }
 }

@@ -5,11 +5,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 {
@@ -25,13 +27,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         {
             if (info != null)
             {
-                return CreateScope(info.FileName, info.UseShellExecute ? null : info.Environment);
+#if NETFRAMEWORK || NETSTANDARD2_0
+                return CreateScope(info.FileName, info.UseShellExecute ? null : info.Environment, info.UseShellExecute, info.Arguments);
+#else
+                return CreateScope(info.FileName, info.UseShellExecute ? null : info.Environment, info.UseShellExecute, info.Arguments, info.ArgumentList);
+#endif
             }
 
             return null;
         }
 
-        internal static Scope CreateScope(string filename, IDictionary<string, string> environmentVariables)
+        internal static Scope CreateScope(string filename, IDictionary<string, string> environmentVariables, bool useShellExecute, string arguments, Collection<string> argumentList = null)
         {
             var tracer = Tracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
@@ -42,15 +48,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 
             Scope scope = null;
 
+            // Arguments > ArgumentList : If Arguments is used, ArgumentList is ignored. ArgumentsList is only used if Arguments is an empty string.
+
             try
             {
-                var variablesTruncated = EnvironmentVariablesScrubber.ScrubEnvironmentVariables(environmentVariables);
-                variablesTruncated = Truncate(variablesTruncated, MaxCommandLineLength);
-
-                var tags = new ProcessCommandStartTags
-                {
-                    EnvironmentVariables = variablesTruncated,
-                };
+                var tags = PopulateTags(filename, environmentVariables, useShellExecute, arguments, argumentList);
 
                 var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, ServiceName);
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
@@ -67,9 +69,98 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             return scope;
         }
 
-        internal static string Truncate(string value, int maxLength)
+        internal static ProcessCommandStartTags PopulateTags(string filename, IDictionary<string, string> environmentVariables, bool useShellExecute, string arguments, Collection<string> argumentList)
         {
-            return (string.IsNullOrEmpty(value) || value.Length <= maxLength) ? value : value.Substring(0, maxLength);
+            // Environment variables
+            var variablesTruncated = EnvironmentVariablesScrubber.ScrubEnvironmentVariables(environmentVariables);
+            variablesTruncated = Truncate(variablesTruncated, MaxCommandLineLength, out _);
+
+            var tags = new ProcessCommandStartTags
+            {
+                EnvironmentVariables = variablesTruncated,
+                Component = "process",
+            };
+
+            if (useShellExecute)
+            {
+                // cmd.shell
+                var commandLine = filename;
+
+                // Append the arguments to the command line
+                if (!string.IsNullOrWhiteSpace(arguments))
+                {
+                    commandLine += " " + arguments;
+                }
+                else if (argumentList != null)
+                {
+                    foreach (var argument in argumentList)
+                    {
+                        commandLine += " " + argument;
+                    }
+                }
+
+                // Truncate the command line if needed
+                commandLine = Truncate(commandLine, MaxCommandLineLength, out var truncated);
+                tags.Truncated = truncated ? "true" : null;
+
+                tags.CommandShell = commandLine;
+            }
+            else
+            {
+                // cmd.exec
+                var commandExec = new List<string> { filename };
+                if (!string.IsNullOrWhiteSpace(arguments))
+                {
+                    // Arguments are provided in a raw strings, we need to split them
+                    var split = arguments.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    commandExec.AddRange(split);
+                }
+                else if (argumentList is not null)
+                {
+                    // Arguments are provided as a list of strings
+                    commandExec.AddRange(argumentList);
+                }
+
+                // The cumulated size of the strings in the array shall not exceed 4kB
+                var size = MaxCommandLineLength;
+                var truncated = false;
+                var finalCommandExec = new Collection<string>();
+                foreach (var arg in commandExec)
+                {
+                    if (truncated)
+                    {
+                        finalCommandExec.Add(string.Empty);
+                        continue;
+                    }
+
+                    var truncatedArg = Truncate(arg, MaxCommandLineLength, out truncated);
+                    finalCommandExec.Add(truncatedArg);
+                    size -= truncatedArg.Length;
+
+                    if (size <= 0)
+                    {
+                        truncated = true;
+                    }
+                }
+
+                // Serialized as JSON array string because tracer only supports string values
+                tags.CommandExec = JsonConvert.SerializeObject(finalCommandExec);
+                tags.Truncated = truncated ? "true" : null;
+            }
+
+            return tags;
+        }
+
+        internal static string Truncate(string value, int maxLength, out bool truncated)
+        {
+            truncated = false;
+            if (string.IsNullOrEmpty(value) || value.Length <= maxLength)
+            {
+                return value;
+            }
+
+            truncated = true;
+            return value.Substring(0, maxLength);
         }
     }
 }
