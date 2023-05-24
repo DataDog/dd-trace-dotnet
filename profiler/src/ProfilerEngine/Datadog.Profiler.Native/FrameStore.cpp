@@ -1163,7 +1163,11 @@ void StrAppend(char* buffer, const char* str, size_t& cchBuffer)
     size_t bufLen = strlen(buffer) + 1;
     if (bufLen <= cchBuffer)
     {
+#ifdef _WINDOWS
         strncat_s(buffer, cchBuffer, str, cchBuffer - bufLen);
+#else
+        strcat(buffer, str);
+#endif
         cchBuffer -= bufLen;
     }
 }
@@ -1363,15 +1367,26 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
                                 char sizeBuffer[100];
                                 if (lower[i] == 0)
                                 {
+#ifdef _WINDOWS
                                     sprintf_s(sizeBuffer, ARRAY_LEN(sizeBuffer), "%d", sizes[i]);
+#else
+                                    sprintf(sizeBuffer, "%d", sizes[i]);
+#endif
                                 }
                                 else
                                 {
+#ifdef _WINDOWS
                                     sprintf_s(sizeBuffer, ARRAY_LEN(sizeBuffer), "%d...", lower[i]);
-
+#else
+                                    sprintf(sizeBuffer, "%d...", lower[i]);
+#endif
                                     if (sizes[i] != 0)
                                     {
+#ifdef _WINDOWS
                                         sprintf_s(sizeBuffer, ARRAY_LEN(sizeBuffer), "%d...%d", lower[i], (lower[i] + sizes[i] + 1));
+#else
+                                        sprintf(sizeBuffer, "%d...%d", lower[i], (lower[i] + sizes[i] + 1));
+#endif
                                     }
                                 }
                                 StrAppend(buffer, sizeBuffer, cchBuffer);
