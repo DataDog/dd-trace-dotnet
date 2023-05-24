@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -74,7 +75,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 Task<TResult> previousTask = FromTReturn<Task<TResult>>(returnValue);
                 if (previousTask.Status == TaskStatus.RanToCompletion)
                 {
-                    return ToTReturn(Task.FromResult(_continuation(instance, previousTask.Result, default, in state)));
+                    var result = _continuation(instance, previousTask.Result, default, in state);
+                    if (EqualityComparer<TResult>.Default.Equals(result, previousTask.Result))
+                    {
+                        return returnValue;
+                    }
+
+                    return ToTReturn(Task.FromResult(result));
                 }
 
                 return ToTReturn(ContinuationAction(previousTask, instance, state));
