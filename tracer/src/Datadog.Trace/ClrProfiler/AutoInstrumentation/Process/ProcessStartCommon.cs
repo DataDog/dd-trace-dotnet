@@ -6,10 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Diagnostics;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -168,6 +168,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 
             truncated = true;
             return value.Substring(0, maxLength);
+        }
+
+        internal static void SetExitCode(object instance)
+        {
+            try
+            {
+                if (!instance.TryDuckCast<ProcessProxy>(out var process))
+                {
+                    return;
+                }
+
+                var scope = Tracer.Instance.InternalActiveScope;
+                var span = scope?.Span;
+                span?.Tags.SetTag(Trace.Tags.ProcessExitCode, process.ExitCode.ToString());
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error setting exit code.");
+            }
         }
     }
 }
