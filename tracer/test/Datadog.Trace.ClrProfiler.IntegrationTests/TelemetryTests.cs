@@ -25,6 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private const int ExpectedSpans = 3;
         private const string ServiceVersion = "1.0.0";
+        private const bool DependenciesEnabledDefault = true;
         private readonly ITestOutputHelper _output;
 
         public TelemetryTests(ITestOutputHelper output)
@@ -35,17 +36,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _output = output;
         }
 
-        [SkippableFact]
+        [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task Telemetry_Agentless_IsSentOnAppClose()
+        [InlineData(null)]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task Telemetry_Agentless_IsSentOnAppClose(bool? enableDependencies)
         {
             using var agent = MockTracerAgent.Create(Output, useTelemetry: true);
             Output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
 
             using var telemetry = new MockTelemetryAgent();
             Output.WriteLine($"Assigned port {telemetry.Port} for the telemetry port.");
-            EnableAgentlessTelemetry(telemetry.Port);
+            EnableAgentlessTelemetry(telemetry.Port, enableDependencies);
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
@@ -61,18 +65,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
             telemetry.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
             AssertService(telemetry, "Samples.Telemetry", ServiceVersion);
+            AssertDependencies(telemetry, enableDependencies);
             agent.Telemetry.Should().BeEmpty();
         }
 
-        [SkippableFact]
+        [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task Telemetry_WithAgentProxy_IsSentOnAppClose()
+        [InlineData(null)]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task Telemetry_WithAgentProxy_IsSentOnAppClose(bool? enableDependencies)
         {
             using var agent = MockTracerAgent.Create(Output, useTelemetry: true);
             Output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
 
-            EnableAgentProxyTelemetry();
+            EnableAgentProxyTelemetry(enableDependencies);
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
@@ -87,6 +95,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
             agent.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
             AssertService(agent, "Samples.Telemetry", ServiceVersion);
+            AssertDependencies(agent, enableDependencies);
         }
 
         [SkippableFact]
@@ -115,10 +124,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             agent.Telemetry.Should().BeEmpty();
         }
 
-        [SkippableFact]
+        [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task WhenUsingNamedPipesAgent_UsesNamedPipesTelemetry()
+        [InlineData(null)]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task WhenUsingNamedPipesAgent_UsesNamedPipesTelemetry(bool? enableDependencies)
         {
             if (!EnvironmentTools.IsWindows())
             {
@@ -126,6 +138,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             EnvironmentHelper.EnableWindowsNamedPipes();
+            EnableDependencies(enableDependencies);
+
             // The server implementation of named pipes is flaky so have 3 attempts
             var attemptsRemaining = 3;
             while (true)
@@ -160,16 +174,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
                 agent.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
                 AssertService(agent, "Samples.Telemetry", ServiceVersion);
+                AssertDependencies(agent, enableDependencies);
             }
         }
 
 #if NETCOREAPP3_1_OR_GREATER
-        [SkippableFact]
+        [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task WhenUsingUdsAgent_UsesUdsTelemetry()
+        [InlineData(null)]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task WhenUsingUdsAgent_UsesUdsTelemetry(bool? enableDependencies)
         {
             EnvironmentHelper.EnableUnixDomainSockets();
+            EnableDependencies(enableDependencies);
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
             int httpPort = TcpPortProvider.GetOpenPort();
@@ -184,6 +203,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
             AssertService(agent, "Samples.Telemetry", ServiceVersion);
+            AssertDependencies(agent, enableDependencies);
         }
 #endif
 
@@ -206,6 +226,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             appClosing.Application.ServiceVersion.Should().Be(expectedServiceVersion);
         }
 
+        private static void AssertDependencies(MockTracerAgent mockAgent, bool? enableDependencies)
+        {
+            mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).RequestType == TelemetryRequestTypes.AppClosing);
+            AssertDependencies(mockAgent.Telemetry.Cast<TelemetryData>(), enableDependencies);
+        }
+
+        private static void AssertDependencies(MockTelemetryAgent telemetry, bool? enableDependencies)
+        {
+            telemetry.WaitForLatestTelemetry(x => x.RequestType == TelemetryRequestTypes.AppClosing);
+            AssertDependencies(telemetry.Telemetry, enableDependencies);
+        }
+
+        private static void AssertDependencies(IEnumerable<TelemetryData> allData, bool? enableDependencies)
+        {
+            var enabled = (enableDependencies ?? DependenciesEnabledDefault);
+
+            var dependencies = allData
+                         .Where(x => x.Payload is AppStartedPayload { Dependencies: not null }
+                                  || x.Payload is AppDependenciesLoadedPayload);
+
+            if (enableDependencies ?? DependenciesEnabledDefault)
+            {
+                dependencies.Should().NotBeEmpty();
+            }
+            else
+            {
+                dependencies.Should().BeEmpty();
+            }
+        }
+
         private static async Task AssertExpectedSpans(IImmutableList<MockSpan> spans)
         {
             await VerifyHelper.VerifySpans(spans, VerifyHelper.GetSpanVerifierSettings())
@@ -213,7 +263,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                               .UseFileName("TelemetryTests");
         }
 
-        private void EnableAgentlessTelemetry(int standaloneAgentPort)
+        private void EnableAgentlessTelemetry(int standaloneAgentPort, bool? enableDependencies)
         {
             SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "true");
             SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED", "true");
@@ -221,12 +271,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_URL", $"http://localhost:{standaloneAgentPort}");
             // API key is required for agentless
             SetEnvironmentVariable("DD_API_KEY", "INVALID_KEY_FOR_TESTS");
+            EnableDependencies(enableDependencies);
         }
 
-        private void EnableAgentProxyTelemetry()
+        private void EnableAgentProxyTelemetry(bool? enableDependencies)
         {
             SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "true");
             SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED", "false");
+            EnableDependencies(enableDependencies);
+        }
+
+        private void EnableDependencies(bool? enableDependencies)
+        {
+            SetEnvironmentVariable(ConfigurationKeys.Telemetry.DependencyCollectionEnabled, (enableDependencies ?? DependenciesEnabledDefault).ToString());
         }
     }
 }

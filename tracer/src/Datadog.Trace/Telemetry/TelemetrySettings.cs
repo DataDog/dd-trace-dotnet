@@ -20,13 +20,15 @@ namespace Datadog.Trace.Telemetry
             string? configurationError,
             AgentlessSettings? agentlessSettings,
             bool agentProxyEnabled,
-            TimeSpan heartbeatInterval)
+            TimeSpan heartbeatInterval,
+            bool dependencyCollectionEnabled)
         {
             TelemetryEnabled = telemetryEnabled;
             ConfigurationError = configurationError;
             Agentless = agentlessSettings;
-            HeartbeatInterval = heartbeatInterval;
             AgentProxyEnabled = agentProxyEnabled;
+            HeartbeatInterval = heartbeatInterval;
+            DependencyCollectionEnabled = dependencyCollectionEnabled;
         }
 
         /// <summary>
@@ -42,6 +44,8 @@ namespace Datadog.Trace.Telemetry
         public TimeSpan HeartbeatInterval { get; }
 
         public bool AgentProxyEnabled { get; }
+
+        public bool DependencyCollectionEnabled { get; }
 
         public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
             => FromSource(source, telemetry, IsAgentAvailable);
@@ -126,7 +130,14 @@ namespace Datadog.Trace.Telemetry
                                    .AsInt32(defaultValue: 60, rawInterval => rawInterval is > 0 and <= 3600)
                                    .Value;
 
-            return new TelemetrySettings(telemetryEnabled, configurationError, agentless, agentProxyEnabled, TimeSpan.FromSeconds(heartbeatInterval));
+            var dependencyCollectionEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DependencyCollectionEnabled).AsBool(true);
+            return new TelemetrySettings(
+                telemetryEnabled,
+                configurationError,
+                agentless,
+                agentProxyEnabled,
+                TimeSpan.FromSeconds(heartbeatInterval),
+                dependencyCollectionEnabled);
         }
 
         private static bool? IsAgentAvailable()

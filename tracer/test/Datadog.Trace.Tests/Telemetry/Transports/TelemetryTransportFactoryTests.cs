@@ -27,7 +27,8 @@ public class TelemetryTransportFactoryTests
             configurationError: null,
             agentlessSettings: agentlessEnabled ? new TelemetrySettings.AgentlessSettings(new Uri("http://localhost"), "SOME_API_KEY") : null,
             agentProxyEnabled: agentProxyEnabled,
-            heartbeatInterval: TimeSpan.FromSeconds(1));
+            heartbeatInterval: TimeSpan.FromSeconds(1),
+            dependencyCollectionEnabled: true);
 
         var exporterSettings = new ImmutableExporterSettings(new ExporterSettings());
 
