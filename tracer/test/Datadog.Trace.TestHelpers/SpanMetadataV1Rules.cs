@@ -258,6 +258,9 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("kafka.offset")
                 .IsOptional("kafka.partition")
                 .IsOptional("kafka.tombstone")
+                .IsPresent("messaging.kafka.bootstrap.servers")
+                .IsPresent("peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "messaging.kafka.bootstrap.servers", "peer.service")
                 .Matches("component", "kafka")
                 .IsPresent("span.kind"));
 
@@ -271,6 +274,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("mongodb.query")
                 .IsPresent("out.host")
                 .IsPresent("out.port")
+                .IsPresent("peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "db.instance", "network.destination.name", "peer.service")
                 .Matches("component", "MongoDb")
                 .Matches("span.kind", "client"));
 

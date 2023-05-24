@@ -133,7 +133,7 @@ namespace Datadog.Trace
 
             if (parent is SpanContext spanContext)
             {
-                _rawTraceId = spanContext.RawTraceId ?? rawTraceId;
+                _rawTraceId = spanContext._rawTraceId ?? rawTraceId;
                 PathwayContext = spanContext.PathwayContext;
             }
             else

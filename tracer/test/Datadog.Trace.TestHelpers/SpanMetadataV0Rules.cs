@@ -258,6 +258,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("kafka.offset")
                 .IsOptional("kafka.partition")
                 .IsOptional("kafka.tombstone")
+                .IsPresent("messaging.kafka.bootstrap.servers")
                 .Matches("component", "kafka")
                 .IsPresent("span.kind"));
 

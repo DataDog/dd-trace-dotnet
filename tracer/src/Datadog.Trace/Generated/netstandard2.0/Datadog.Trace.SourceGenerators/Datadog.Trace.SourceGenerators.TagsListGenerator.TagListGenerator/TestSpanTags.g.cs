@@ -3,27 +3,60 @@
 
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
+using System;
 
 namespace Datadog.Trace.Ci.Tagging
 {
     partial class TestSpanTags
     {
-        // SourceStartBytes = System.Text.Encoding.UTF8.GetBytes("test.source.start");
-        private static readonly byte[] SourceStartBytes = new byte[] { 116, 101, 115, 116, 46, 115, 111, 117, 114, 99, 101, 46, 115, 116, 97, 114, 116 };
-        // SourceEndBytes = System.Text.Encoding.UTF8.GetBytes("test.source.end");
-        private static readonly byte[] SourceEndBytes = new byte[] { 116, 101, 115, 116, 46, 115, 111, 117, 114, 99, 101, 46, 101, 110, 100 };
-        // NameBytes = System.Text.Encoding.UTF8.GetBytes("test.name");
-        private static readonly byte[] NameBytes = new byte[] { 116, 101, 115, 116, 46, 110, 97, 109, 101 };
-        // ParametersBytes = System.Text.Encoding.UTF8.GetBytes("test.parameters");
-        private static readonly byte[] ParametersBytes = new byte[] { 116, 101, 115, 116, 46, 112, 97, 114, 97, 109, 101, 116, 101, 114, 115 };
-        // SourceFileBytes = System.Text.Encoding.UTF8.GetBytes("test.source.file");
-        private static readonly byte[] SourceFileBytes = new byte[] { 116, 101, 115, 116, 46, 115, 111, 117, 114, 99, 101, 46, 102, 105, 108, 101 };
-        // CodeOwnersBytes = System.Text.Encoding.UTF8.GetBytes("test.codeowners");
-        private static readonly byte[] CodeOwnersBytes = new byte[] { 116, 101, 115, 116, 46, 99, 111, 100, 101, 111, 119, 110, 101, 114, 115 };
-        // TraitsBytes = System.Text.Encoding.UTF8.GetBytes("test.traits");
-        private static readonly byte[] TraitsBytes = new byte[] { 116, 101, 115, 116, 46, 116, 114, 97, 105, 116, 115 };
-        // SkipReasonBytes = System.Text.Encoding.UTF8.GetBytes("test.skip_reason");
-        private static readonly byte[] SkipReasonBytes = new byte[] { 116, 101, 115, 116, 46, 115, 107, 105, 112, 95, 114, 101, 97, 115, 111, 110 };
+        // SourceStartBytes = MessagePack.Serialize("test.source.start");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SourceStartBytes => new byte[] { 177, 116, 101, 115, 116, 46, 115, 111, 117, 114, 99, 101, 46, 115, 116, 97, 114, 116 };
+#else
+        private static readonly byte[] SourceStartBytes = new byte[] { 177, 116, 101, 115, 116, 46, 115, 111, 117, 114, 99, 101, 46, 115, 116, 97, 114, 116 };
+#endif
+        // SourceEndBytes = MessagePack.Serialize("test.source.end");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SourceEndBytes => new byte[] { 175, 116, 101, 115, 116, 46, 115, 111, 117, 114, 99, 101, 46, 101, 110, 100 };
+#else
+        private static readonly byte[] SourceEndBytes = new byte[] { 175, 116, 101, 115, 116, 46, 115, 111, 117, 114, 99, 101, 46, 101, 110, 100 };
+#endif
+        // NameBytes = MessagePack.Serialize("test.name");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> NameBytes => new byte[] { 169, 116, 101, 115, 116, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] NameBytes = new byte[] { 169, 116, 101, 115, 116, 46, 110, 97, 109, 101 };
+#endif
+        // ParametersBytes = MessagePack.Serialize("test.parameters");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> ParametersBytes => new byte[] { 175, 116, 101, 115, 116, 46, 112, 97, 114, 97, 109, 101, 116, 101, 114, 115 };
+#else
+        private static readonly byte[] ParametersBytes = new byte[] { 175, 116, 101, 115, 116, 46, 112, 97, 114, 97, 109, 101, 116, 101, 114, 115 };
+#endif
+        // SourceFileBytes = MessagePack.Serialize("test.source.file");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SourceFileBytes => new byte[] { 176, 116, 101, 115, 116, 46, 115, 111, 117, 114, 99, 101, 46, 102, 105, 108, 101 };
+#else
+        private static readonly byte[] SourceFileBytes = new byte[] { 176, 116, 101, 115, 116, 46, 115, 111, 117, 114, 99, 101, 46, 102, 105, 108, 101 };
+#endif
+        // CodeOwnersBytes = MessagePack.Serialize("test.codeowners");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CodeOwnersBytes => new byte[] { 175, 116, 101, 115, 116, 46, 99, 111, 100, 101, 111, 119, 110, 101, 114, 115 };
+#else
+        private static readonly byte[] CodeOwnersBytes = new byte[] { 175, 116, 101, 115, 116, 46, 99, 111, 100, 101, 111, 119, 110, 101, 114, 115 };
+#endif
+        // TraitsBytes = MessagePack.Serialize("test.traits");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> TraitsBytes => new byte[] { 171, 116, 101, 115, 116, 46, 116, 114, 97, 105, 116, 115 };
+#else
+        private static readonly byte[] TraitsBytes = new byte[] { 171, 116, 101, 115, 116, 46, 116, 114, 97, 105, 116, 115 };
+#endif
+        // SkipReasonBytes = MessagePack.Serialize("test.skip_reason");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SkipReasonBytes => new byte[] { 176, 116, 101, 115, 116, 46, 115, 107, 105, 112, 95, 114, 101, 97, 115, 111, 110 };
+#else
+        private static readonly byte[] SkipReasonBytes = new byte[] { 176, 116, 101, 115, 116, 46, 115, 107, 105, 112, 95, 114, 101, 97, 115, 111, 110 };
+#endif
 
         public override string? GetTag(string key)
         {

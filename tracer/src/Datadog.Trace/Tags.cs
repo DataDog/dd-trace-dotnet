@@ -102,6 +102,20 @@ namespace Datadog.Trace
         public const string SqlRows = "sql.rows";
 
         /// <summary>
+        /// The service name of a remote service.
+        /// </summary>
+        public const string PeerService = "peer.service";
+
+        /// <summary>
+        /// The name of the attribute that determined the peer.service tag value. Expected values are:
+        /// <ul>
+        ///   <li>{source_attribute} when the tag was set to a default value, using a defined precursor attribute</li>
+        ///   <li>peer.service when the tag was set by the user</li>
+        /// </ul>
+        /// </summary>
+        internal const string PeerServiceSource = "_dd.peer.service.source";
+
+        /// <summary>
         /// The hostname of a outgoing server connection.
         /// </summary>
         public const string OutHost = "out.host";
@@ -281,6 +295,11 @@ namespace Datadog.Trace
         /// The delivery mode of the AMQP message.
         /// </summary>
         internal const string AmqpDeliveryMode = "amqp.delivery_mode";
+
+        /// <summary>
+        /// The bootstrap servers as defined in producer or consumer config
+        /// </summary>
+        internal const string KafkaBootstrapServers = "messaging.kafka.bootstrap.servers";
 
         /// <summary>
         /// The partition associated with a record

@@ -46,8 +46,7 @@ namespace Datadog.Trace.ExtensionMethods
             string host,
             string httpUrl,
             string userAgent,
-            WebTags tags,
-            IEnumerable<KeyValuePair<string, string>> tagsFromHeaders)
+            WebTags tags)
         {
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
@@ -59,11 +58,6 @@ namespace Datadog.Trace.ExtensionMethods
                 tags.HttpUrl = httpUrl;
                 tags.HttpUserAgent = userAgent;
             }
-
-            foreach (var kvp in tagsFromHeaders)
-            {
-                span.SetTag(kvp.Key, kvp.Value);
-            }
         }
 
         internal static void SetHeaderTags<T>(this ISpan span, T headers, IReadOnlyDictionary<string, string> headerTags, string defaultTagPrefix)
@@ -73,11 +67,7 @@ namespace Datadog.Trace.ExtensionMethods
             {
                 try
                 {
-                    var tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerTags, defaultTagPrefix);
-                    foreach (KeyValuePair<string, string> kvp in tagsFromHeaders)
-                    {
-                        span.SetTag(kvp.Key, kvp.Value);
-                    }
+                    SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, headers, headerTags, defaultTagPrefix);
                 }
                 catch (Exception ex)
                 {

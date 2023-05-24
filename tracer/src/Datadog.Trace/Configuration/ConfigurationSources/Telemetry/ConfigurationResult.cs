@@ -28,6 +28,4 @@ internal readonly record struct ConfigurationResult<T>
     public static ConfigurationResult<T> Valid(T result) => new(result, isValid: true);
 
     public static ConfigurationResult<T> Invalid(T result) => new(result, isValid: false);
-
-    public static ConfigurationResult<T>? NotFound() => null;
 }

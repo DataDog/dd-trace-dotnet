@@ -420,7 +420,11 @@ namespace Datadog.Trace.Agent.MessagePack
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if !NETCOREAPP
         private void WriteTag(ref byte[] bytes, ref int offset, byte[] keyBytes, string value, ITagProcessor[] tagProcessors)
+#else
+        private void WriteTag(ref byte[] bytes, ref int offset, ReadOnlySpan<byte> keyBytes, string value, ITagProcessor[] tagProcessors)
+#endif
         {
             if (tagProcessors is not null)
             {
@@ -431,7 +435,8 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, keyBytes);
+            MessagePackBinary.EnsureCapacity(ref bytes, offset, keyBytes.Length + StringEncoding.UTF8.GetMaxByteCount(value.Length) + 5);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, keyBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, value);
         }
 
@@ -510,7 +515,11 @@ namespace Datadog.Trace.Agent.MessagePack
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if !NETCOREAPP
         private void WriteMetric(ref byte[] bytes, ref int offset, byte[] keyBytes, double value, ITagProcessor[] tagProcessors)
+#else
+        private void WriteMetric(ref byte[] bytes, ref int offset, ReadOnlySpan<byte> keyBytes, double value, ITagProcessor[] tagProcessors)
+#endif
         {
             if (tagProcessors is not null)
             {
@@ -521,7 +530,8 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, keyBytes);
+            MessagePackBinary.EnsureCapacity(ref bytes, offset, keyBytes.Length + 9);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, keyBytes);
             offset += MessagePackBinary.WriteDouble(ref bytes, offset, value);
         }
 
@@ -571,13 +581,17 @@ namespace Datadog.Trace.Agent.MessagePack
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Process(TagItem<string> item)
             {
-                if (item.KeyUtf8 is null)
+#if NETCOREAPP
+                if (item.SerializedKey.IsEmpty)
+#else
+                if (item.SerializedKey is null)
+#endif
                 {
                     _formatter.WriteTag(ref Bytes, ref Offset, item.Key, item.Value, _tagProcessors);
                 }
                 else
                 {
-                    _formatter.WriteTag(ref Bytes, ref Offset, item.KeyUtf8, item.Value, _tagProcessors);
+                    _formatter.WriteTag(ref Bytes, ref Offset, item.SerializedKey, item.Value, _tagProcessors);
                 }
 
                 Count++;
@@ -586,13 +600,17 @@ namespace Datadog.Trace.Agent.MessagePack
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Process(TagItem<double> item)
             {
-                if (item.KeyUtf8 is null)
+#if NETCOREAPP
+                if (item.SerializedKey.IsEmpty)
+#else
+                if (item.SerializedKey is null)
+#endif
                 {
                     _formatter.WriteMetric(ref Bytes, ref Offset, item.Key, item.Value, _tagProcessors);
                 }
                 else
                 {
-                    _formatter.WriteMetric(ref Bytes, ref Offset, item.KeyUtf8, item.Value, _tagProcessors);
+                    _formatter.WriteMetric(ref Bytes, ref Offset, item.SerializedKey, item.Value, _tagProcessors);
                 }
 
                 Count++;

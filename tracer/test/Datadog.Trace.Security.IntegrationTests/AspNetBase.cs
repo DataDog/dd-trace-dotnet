@@ -20,6 +20,7 @@ using FluentAssertions;
 using VerifyTests;
 using VerifyXunit;
 using Xunit.Abstractions;
+using static System.Net.WebRequestMethods;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
@@ -39,6 +40,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         private static readonly Regex AppSecErrorCount = new(@"\s*_dd.appsec.event_rules.error_count: 0.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private readonly string _testName;
         private readonly HttpClient _httpClient;
+        private readonly CookieContainer _cookieContainer;
         private readonly string _shutdownPath;
         private readonly JsonSerializerSettings _jsonSerializerSettingsOrderProperty;
         private int _httpPort;
@@ -47,7 +49,11 @@ namespace Datadog.Trace.Security.IntegrationTests
             : base(Prefix + sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
             _testName = Prefix + (testName ?? sampleName);
-            _httpClient = new HttpClient();
+
+            _cookieContainer = new CookieContainer();
+            var handler = new HttpClientHandler();
+            handler.CookieContainer = _cookieContainer;
+            _httpClient = new HttpClient(handler);
             _shutdownPath = shutdownPath;
 
             // adding these header so we can later assert it was collected properly
@@ -69,6 +75,14 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             base.Dispose();
             _httpClient?.Dispose();
+        }
+
+        public void AddCookies(Dictionary<string, string> cookiesValues)
+        {
+            foreach (var cookie in cookiesValues)
+            {
+                _cookieContainer.Add(new Cookie(cookie.Key, cookie.Value, string.Empty, "localhost"));
+            }
         }
 
         public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null, string methodNameOverride = null)
@@ -223,7 +237,9 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent)
         {
-            if (!string.IsNullOrEmpty(userAgent) && _httpClient.DefaultRequestHeaders.GetValues("user-agent").All(c => c != userAgent))
+            var values = _httpClient.DefaultRequestHeaders.GetValues("user-agent");
+
+            if (!string.IsNullOrEmpty(userAgent) && values.All(c => string.Compare(c, userAgent, StringComparison.Ordinal) != 0))
             {
                 _httpClient.DefaultRequestHeaders.Add("user-agent", userAgent);
             }

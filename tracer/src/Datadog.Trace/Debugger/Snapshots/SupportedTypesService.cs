@@ -48,7 +48,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private static readonly string[] AllowedSpecialCasedCollectionTypeNames = { }; // "RangeIterator"
 
-        private static readonly Type[] AllowedTypesSafeToCallToString =
+        internal static readonly Type[] AllowedTypesSafeToCallToString =
         {
             typeof(DateTime),
             typeof(TimeSpan),

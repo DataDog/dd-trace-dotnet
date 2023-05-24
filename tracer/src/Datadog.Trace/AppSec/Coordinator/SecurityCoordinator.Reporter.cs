@@ -45,11 +45,7 @@ internal readonly partial struct SecurityCoordinator
 
     private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string?> headersToCollect, string prefix)
     {
-        var tags = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headersToCollect, defaultTagPrefix: prefix);
-        foreach (var tag in tags)
-        {
-            span.SetTag(tag.Key, tag.Value);
-        }
+        SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, headers, headersToCollect, defaultTagPrefix: prefix);
     }
 
     private static void LogAddressIfDebugEnabled(IDictionary<string, object> args)

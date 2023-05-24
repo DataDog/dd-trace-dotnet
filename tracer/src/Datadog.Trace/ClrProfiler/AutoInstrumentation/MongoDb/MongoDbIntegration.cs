@@ -97,12 +97,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
             string operationName = tracer.Schema.Database.GetOperationName(DatabaseType);
             string serviceName = tracer.Schema.Database.GetServiceName(DatabaseType);
+            MongoDbTags tags = tracer.Schema.Database.CreateMongoDbTags();
 
             Scope scope = null;
 
             try
             {
-                var tags = new MongoDbTags();
                 scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
                 var span = scope.Span;
                 span.Type = SpanTypes.MongoDb;

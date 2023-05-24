@@ -3,25 +3,54 @@
 
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
+using System;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
     partial class MongoDbTags
     {
-        // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
-        private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // DbNameBytes = System.Text.Encoding.UTF8.GetBytes("db.name");
-        private static readonly byte[] DbNameBytes = new byte[] { 100, 98, 46, 110, 97, 109, 101 };
-        // QueryBytes = System.Text.Encoding.UTF8.GetBytes("mongodb.query");
-        private static readonly byte[] QueryBytes = new byte[] { 109, 111, 110, 103, 111, 100, 98, 46, 113, 117, 101, 114, 121 };
-        // CollectionBytes = System.Text.Encoding.UTF8.GetBytes("mongodb.collection");
-        private static readonly byte[] CollectionBytes = new byte[] { 109, 111, 110, 103, 111, 100, 98, 46, 99, 111, 108, 108, 101, 99, 116, 105, 111, 110 };
-        // HostBytes = System.Text.Encoding.UTF8.GetBytes("out.host");
-        private static readonly byte[] HostBytes = new byte[] { 111, 117, 116, 46, 104, 111, 115, 116 };
-        // PortBytes = System.Text.Encoding.UTF8.GetBytes("out.port");
-        private static readonly byte[] PortBytes = new byte[] { 111, 117, 116, 46, 112, 111, 114, 116 };
+        // SpanKindBytes = MessagePack.Serialize("span.kind");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
+        // InstrumentationNameBytes = MessagePack.Serialize("component");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
+        // DbNameBytes = MessagePack.Serialize("db.name");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> DbNameBytes => new byte[] { 167, 100, 98, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] DbNameBytes = new byte[] { 167, 100, 98, 46, 110, 97, 109, 101 };
+#endif
+        // QueryBytes = MessagePack.Serialize("mongodb.query");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> QueryBytes => new byte[] { 173, 109, 111, 110, 103, 111, 100, 98, 46, 113, 117, 101, 114, 121 };
+#else
+        private static readonly byte[] QueryBytes = new byte[] { 173, 109, 111, 110, 103, 111, 100, 98, 46, 113, 117, 101, 114, 121 };
+#endif
+        // CollectionBytes = MessagePack.Serialize("mongodb.collection");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CollectionBytes => new byte[] { 178, 109, 111, 110, 103, 111, 100, 98, 46, 99, 111, 108, 108, 101, 99, 116, 105, 111, 110 };
+#else
+        private static readonly byte[] CollectionBytes = new byte[] { 178, 109, 111, 110, 103, 111, 100, 98, 46, 99, 111, 108, 108, 101, 99, 116, 105, 111, 110 };
+#endif
+        // HostBytes = MessagePack.Serialize("out.host");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> HostBytes => new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#else
+        private static readonly byte[] HostBytes = new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#endif
+        // PortBytes = MessagePack.Serialize("out.port");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> PortBytes => new byte[] { 168, 111, 117, 116, 46, 112, 111, 114, 116 };
+#else
+        private static readonly byte[] PortBytes = new byte[] { 168, 111, 117, 116, 46, 112, 111, 114, 116 };
+#endif
 
         public override string? GetTag(string key)
         {

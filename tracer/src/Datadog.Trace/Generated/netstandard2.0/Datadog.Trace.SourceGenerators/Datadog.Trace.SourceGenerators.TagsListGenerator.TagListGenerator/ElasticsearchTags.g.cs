@@ -3,21 +3,42 @@
 
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
+using System;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 {
     partial class ElasticsearchTags
     {
-        // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
-        private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // ActionBytes = System.Text.Encoding.UTF8.GetBytes("elasticsearch.action");
-        private static readonly byte[] ActionBytes = new byte[] { 101, 108, 97, 115, 116, 105, 99, 115, 101, 97, 114, 99, 104, 46, 97, 99, 116, 105, 111, 110 };
-        // MethodBytes = System.Text.Encoding.UTF8.GetBytes("elasticsearch.method");
-        private static readonly byte[] MethodBytes = new byte[] { 101, 108, 97, 115, 116, 105, 99, 115, 101, 97, 114, 99, 104, 46, 109, 101, 116, 104, 111, 100 };
-        // UrlBytes = System.Text.Encoding.UTF8.GetBytes("elasticsearch.url");
-        private static readonly byte[] UrlBytes = new byte[] { 101, 108, 97, 115, 116, 105, 99, 115, 101, 97, 114, 99, 104, 46, 117, 114, 108 };
+        // SpanKindBytes = MessagePack.Serialize("span.kind");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
+        // InstrumentationNameBytes = MessagePack.Serialize("component");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
+        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
+        // ActionBytes = MessagePack.Serialize("elasticsearch.action");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> ActionBytes => new byte[] { 180, 101, 108, 97, 115, 116, 105, 99, 115, 101, 97, 114, 99, 104, 46, 97, 99, 116, 105, 111, 110 };
+#else
+        private static readonly byte[] ActionBytes = new byte[] { 180, 101, 108, 97, 115, 116, 105, 99, 115, 101, 97, 114, 99, 104, 46, 97, 99, 116, 105, 111, 110 };
+#endif
+        // MethodBytes = MessagePack.Serialize("elasticsearch.method");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> MethodBytes => new byte[] { 180, 101, 108, 97, 115, 116, 105, 99, 115, 101, 97, 114, 99, 104, 46, 109, 101, 116, 104, 111, 100 };
+#else
+        private static readonly byte[] MethodBytes = new byte[] { 180, 101, 108, 97, 115, 116, 105, 99, 115, 101, 97, 114, 99, 104, 46, 109, 101, 116, 104, 111, 100 };
+#endif
+        // UrlBytes = MessagePack.Serialize("elasticsearch.url");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> UrlBytes => new byte[] { 177, 101, 108, 97, 115, 116, 105, 99, 115, 101, 97, 114, 99, 104, 46, 117, 114, 108 };
+#else
+        private static readonly byte[] UrlBytes = new byte[] { 177, 101, 108, 97, 115, 116, 105, 99, 115, 101, 97, 114, 99, 104, 46, 117, 114, 108 };
+#endif
 
         public override string? GetTag(string key)
         {

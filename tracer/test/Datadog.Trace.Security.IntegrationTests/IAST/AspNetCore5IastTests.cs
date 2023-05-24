@@ -8,6 +8,7 @@
 #pragma warning disable SA1649 // File name must match first type name
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -49,7 +50,7 @@ public abstract class AspNetCore5IastTests50PctSamplingIastEnabled : AspNetCore5
         await TryStartApp();
         await TestWeakHashing(filename, Fixture.Agent);
 
-        filename = "Iast.WeakHashing.AspNetCore5.IastDisabled";
+        filename = "Iast.WeakHashing.AspNetCore5.IastDisabledFlag";
         await TestWeakHashing(filename, Fixture.Agent);
 
         filename = "Iast.WeakHashing.AspNetCore5.IastEnabled";
@@ -250,6 +251,27 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         var url = "/Iast/ExecuteCommand?file=nonexisting.exe&argumentLine=arg1";
         IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastCookieTaintingRequest()
+    {
+        var filename = IastEnabled ? "Iast.CookieTainting.AspNetCore5.IastEnabled" : "Iast.CookieTainting.AspNetCore5.IastDisabled";
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        var url = "/Iast/ExecuteCommandFromCookie";
+        IncludeAllHttpSpans = true;
+        AddCookies(new Dictionary<string, string>() { { "file", "file.txt" }, { "argumentLine", "arg1" } });
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });

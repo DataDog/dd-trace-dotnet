@@ -18,6 +18,7 @@ using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.StatsdClient;
 using Datadog.Trace.Vendors.StatsdClient.Transport;
 
@@ -27,11 +28,12 @@ internal class LiveDebuggerFactory
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebuggerFactory));
 
-    public static LiveDebugger Create(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, ImmutableTracerSettings tracerSettings, string serviceName)
+    public static LiveDebugger Create(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, ImmutableTracerSettings tracerSettings, string serviceName, ITelemetryController telemetry)
     {
         var settings = DebuggerSettings.FromDefaultSource();
         if (!settings.Enabled)
         {
+            telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
             Log.Information("Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
             return LiveDebugger.Create(settings, string.Empty, null, null, null, null, null, null, null);
         }
@@ -74,6 +76,7 @@ internal class LiveDebuggerFactory
             statsd = TracerManagerFactory.CreateDogStatsdClient(tracerSettings, constantTags, DebuggerSettings.DebuggerMetricPrefix);
         }
 
+        telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
         return LiveDebugger.Create(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, probeStatusPoller, configurationUpdater, statsd);
     }
 }
