@@ -36,14 +36,13 @@ namespace Benchmarks.Trace
 
             Datadog.Trace.ClrProfiler.Instrumentation.Initialize();
 
-            var bench = new AspNetCoreBenchmark();
-            bench.SendRequest().GetAwaiter().GetResult();
+            new AspNetCoreBenchmark().SendRequest().GetAwaiter().GetResult();
         }
 
         [Benchmark]
         public async Task<string> SendRequest()
         {
-            return await Client.GetStringAsync("/Home");
+            return await Client.GetStringAsync("/Home").ConfigureAwait(false);
         }
 
         private class Startup
@@ -76,7 +75,7 @@ namespace Benchmarks.Trace
 
         public async Task<string> Index()
         {
-            await CallTargetRun();
+            await CallTargetRun().ConfigureAwait(false);
             return "OK";
 
             unsafe Task<HttpResponseMessage> CallTargetRun()

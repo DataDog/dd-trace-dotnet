@@ -31,7 +31,7 @@ namespace Benchmarks.Trace
         [Benchmark]
         public async Task<int> ExecuteAsync()
         {
-            return (await CallTargetRun()).Value;
+            return (await CallTargetRun().ConfigureAwait(false)).Value;
 
             unsafe Task<ExecutionResult> CallTargetRun()
                 => CallTarget.Run<Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ExecuteAsyncIntegration, GraphQLClient, ExecutionContext, Task<ExecutionResult>>(

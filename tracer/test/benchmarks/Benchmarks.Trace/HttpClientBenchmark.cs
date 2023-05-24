@@ -26,14 +26,13 @@ namespace Benchmarks.Trace
 
             Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
 
-            var bench = new HttpClientBenchmark();
-            bench.SendAsync().GetAwaiter().GetResult();
+            new HttpClientBenchmark().SendAsync().GetAwaiter().GetResult();
         }
 
         [Benchmark]
         public async Task<string> SendAsync()
         {
-            await CallTargetRun();
+            await CallTargetRun().ConfigureAwait(false);
             return "OK";
 
             unsafe Task<HttpResponseMessage> CallTargetRun()
