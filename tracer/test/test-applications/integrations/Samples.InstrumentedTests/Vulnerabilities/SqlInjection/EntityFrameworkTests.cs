@@ -8,11 +8,12 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Threading;
 using FluentAssertions;
-using LinqToDB.Data.DbCommandProcessor;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
+// We cannot use localDB on linux and this calls cannot be mocked
+[Trait("Category", "LinuxUnsupported")]
 public class EntityFrameworkTests : InstrumentationTestsBase, IDisposable
 {
     protected string taintedTitle = "CLR via C#";
@@ -193,7 +194,7 @@ public class EntityFrameworkTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenEntityFramework_WhenCallingExecutSqlQueryGenericParamWithTainted_VulnerabilityIsReported()
     {
-        var data = db.Database.SqlQuery<Book>(queryUnsafe + @" and title =@title", titleParam).ToList();
+        _ = db.Database.SqlQuery<Book>(queryUnsafe + @" and title =@title", titleParam).ToList();
         AssertVulnerable();
     }
 
@@ -224,16 +225,14 @@ public class EntityFrameworkTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteNonQueryWithTainted_VulnerabilityIsReported()
     {
-        var query = GetEntityCommand();
-        query.ExecuteNonQuery();
+        GetEntityCommand().ExecuteNonQuery();
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteScalarWithTainted_VulnerabilityIsReported()
     {
-        var query = GetEntityCommand();
-        var result = query.ExecuteScalar();
+        var result = GetEntityCommand().ExecuteScalar();
         result.Should().NotBeNull();
         AssertVulnerable();
     }
@@ -242,7 +241,7 @@ public class EntityFrameworkTests : InstrumentationTestsBase, IDisposable
     public void GivenEntityFramework_WhenCallingExecuteNonQueryAsyncWithTainted_VulnerabilityIsReported()
     {
         var query = GetEntityCommand();
-        _ = query.ExecuteNonQueryAsync().Result;
+        _ = GetEntityCommand().ExecuteNonQueryAsync().Result;
         AssertVulnerable();
     }
 
@@ -250,23 +249,21 @@ public class EntityFrameworkTests : InstrumentationTestsBase, IDisposable
     public void GivenEntityFramework_WhenCallingExecuteNonQueryAsyncWithTainted_VulnerabilityIsReported2()
     {
         var query = GetEntityCommand();
-        _ = query.ExecuteNonQueryAsync(CancellationToken.None).Result;
+        _ = GetEntityCommand().ExecuteNonQueryAsync(CancellationToken.None).Result;
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteReaderWithTainted_VulnerabilityIsReported2()
     {
-        var query = GetEntityCommand();
-        query.ExecuteReader(CommandBehavior.SequentialAccess);
+        GetEntityCommand().ExecuteReader(CommandBehavior.SequentialAccess);
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteReaderAsyncWithTainted_VulnerabilityIsReported2()
     {
-        var query = GetEntityCommand();
-        _ = query.ExecuteReaderAsync(CommandBehavior.SequentialAccess).Result;
+        _ = GetEntityCommand().ExecuteReaderAsync(CommandBehavior.SequentialAccess).Result;
         AssertVulnerable();
     }
 
@@ -275,23 +272,21 @@ public class EntityFrameworkTests : InstrumentationTestsBase, IDisposable
     {
         CommandUnsafeText += string.Empty;
         var query = GetEntityCommand();
-        _ = query.ExecuteReaderAsync(CommandBehavior.SequentialAccess, CancellationToken.None).Result;
+        _ = GetEntityCommand().ExecuteReaderAsync(CommandBehavior.SequentialAccess, CancellationToken.None).Result;
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteScalarAsyncWithTainted_VulnerabilityIsReported()
     {
-        var query = GetEntityCommand();
-        _ = query.ExecuteScalarAsync(CancellationToken.None).Result;
+        _ = GetEntityCommand().ExecuteScalarAsync(CancellationToken.None).Result;
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteScalarAsyncWithTainted_VulnerabilityIsReported2()
     {
-        var query = GetEntityCommand();
-        _ = query.ExecuteScalarAsync().Result;
+        _ = GetEntityCommand().ExecuteScalarAsync().Result;
         AssertVulnerable();
     }
 
