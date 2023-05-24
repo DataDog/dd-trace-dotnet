@@ -1432,7 +1432,11 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
             StrAppend(buffer, "T", cchBuffer);
             ULONG n = CorSigUncompressData(signature);
             char number[16];
+#ifdef _WINDOWS
             sprintf_s(number, ARRAY_LEN(number) - 1, "%u", n);
+#else
+            sprintf(number, "%u", n);
+#endif
             StrAppend(buffer, number, cchBuffer);
         }
         break;
@@ -1441,7 +1445,11 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
             StrAppend(buffer, "M", cchBuffer);
             ULONG n = CorSigUncompressData(signature);
             char number[16];
+#ifdef _WINDOWS
             sprintf_s(number, ARRAY_LEN(number) - 1, "%u", n);
+#else
+            sprintf(number, "%u", n);
+#endif
             StrAppend(buffer, number, cchBuffer);
         }
         break;
