@@ -176,7 +176,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                     {
                         new(
                             "init_time",
-                            new[] { 224.1 },
+                            new() { 224.1 },
                             common: true)
                         {
                             Tags = new()
@@ -187,7 +187,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                         },
                         new(
                             "app_sec_init_time",
-                            new[] { 424.2, 232 },
+                            new() { 424.2, 232 },
                             common: false)
                         {
                             Namespace = MetricNamespaceConstants.ASM,
