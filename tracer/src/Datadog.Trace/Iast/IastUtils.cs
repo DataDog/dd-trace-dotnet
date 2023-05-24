@@ -18,27 +18,6 @@ internal static class IastUtils
     // Avoid infinite loops
     private const int MaxDepth = 5;
 
-    public static int GetHashCodeForArray(Array objects, int actualDepth = 0)
-    {
-        int hash = 17;
-
-        if (actualDepth >= MaxDepth)
-        {
-            return objects?.GetHashCode() ?? 0;
-        }
-
-        foreach (var element in objects)
-        {
-            var hashCode = GetHash(element, actualDepth + 1);
-            unchecked
-            {
-                hash = (hash * 23) + hashCode;
-            }
-        }
-
-        return hash;
-    }
-
     public static int GetHashCode<T>(T value)
     {
         unchecked
@@ -72,19 +51,20 @@ internal static class IastUtils
         return hash;
     }
 
-    private static int GetHash<T>(T element, int actualDepth = 1)
+    private static int GetHash<T>(T element)
     {
-        if (element is Array array)
-        {
-            return GetHashCodeForArray(array, actualDepth);
-        }
+        var hash =
+            element switch
+            {
+                string s => s.GetStaticHashCode(),
+                byte b => b,
+                short s => s,
+                int i => i,
+                long l => (int)l ^ (int)(l >> 32),
+                _ => element?.GetHashCode() ?? 0
+            };
 
-        if (element is string s)
-        {
-            return s?.GetStaticHashCode() ?? 0;
-        }
-
-        return element?.GetHashCode() ?? 0;
+        return hash;
     }
 
     public static int IdentityHashCode(object item)
