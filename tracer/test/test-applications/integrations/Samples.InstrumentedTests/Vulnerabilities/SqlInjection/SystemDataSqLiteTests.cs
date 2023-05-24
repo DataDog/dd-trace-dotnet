@@ -1,12 +1,12 @@
 using System;
 using System.Data;
 using System.Data.SQLite;
-using System.Text;
 using System.Threading;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
+[Trait("Category", "ArmUnsupported")]
 public class SystemDataSqLiteTests : InstrumentationTestsBase, IDisposable
 {
     protected static string ScalarCommandUnsafe;

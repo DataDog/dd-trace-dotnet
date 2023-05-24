@@ -41,6 +41,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="System.Data.Entity" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="xunit.runner.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -49,6 +53,7 @@
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <PackageReference Include="EntityFramework" Version="6.4.4" />
     <PackageReference Include="Dapper.StrongName" Version="1.60.1" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.5" />
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">

@@ -14,6 +14,7 @@ using FluentAssertions;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
+[Trait("Category", "ArmUnsupported")]
 public class EFSqliteTests : EFBaseTests
 {
     public EFSqliteTests()

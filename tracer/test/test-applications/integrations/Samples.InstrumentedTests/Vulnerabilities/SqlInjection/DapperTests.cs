@@ -8,6 +8,7 @@ using System.Data.Common;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
+[Trait("Category", "ArmUnsupported")]
 public class DapperTests : InstrumentationTestsBase, IDisposable
 {
     protected string taintedValue = "tainted";

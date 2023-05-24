@@ -1,4 +1,3 @@
-#if NETCOREAPP2_1_OR_GREATER
 using System;
 using System.Data;
 using System.Threading;
@@ -46,11 +45,13 @@ public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
         AssertVulnerable();
     }
 
+#if !NETFRAMEWORK
     [Fact]
     public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteNonQueryWithNull_VulnerabilityIsReported()
     {
         Assert.Throws<InvalidOperationException>(() => new SqliteCommand(null, dbConnection).ExecuteNonQuery());
     }
+#endif
 
     [Fact]
     public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteNonQueryWithNoCommand_VulnerabilityIsReported()
@@ -256,4 +257,3 @@ public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
         AssertNotVulnerable();
     }
 }
-#endif

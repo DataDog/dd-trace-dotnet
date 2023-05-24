@@ -1,4 +1,3 @@
-#if NETCOREAPP2_1_OR_GREATER
 using Microsoft.Data.Sqlite;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
@@ -27,5 +26,3 @@ public static class MicrosoftDataSqliteDdbbCreator
         return (dbConnection);
     }
 }
-
-#endif
