@@ -11,6 +11,8 @@ namespace Datadog.Trace.Iast;
 
 internal static class IastUtils
 {
+    private const int GoldenRatio = 1618033987;
+
     private const int StartHash = 17;
 
     // Avoid infinite loops
@@ -27,10 +29,10 @@ internal static class IastUtils
 
         foreach (var element in objects)
         {
-            var hashCode = (element is Array array) ? GetHashCodeForArray(array, actualDepth + 1) : element?.GetHashCode();
+            var hashCode = GetHash(element, actualDepth + 1);
             unchecked
             {
-                hash = (hash * 23) + (hashCode ?? 0);
+                hash = (hash * 23) + hashCode;
             }
         }
 
@@ -70,11 +72,11 @@ internal static class IastUtils
         return hash;
     }
 
-    private static int GetHash<T>(T element)
+    private static int GetHash<T>(T element, int actualDepth = 1)
     {
         if (element is Array array)
         {
-            return GetHashCodeForArray(array, 1);
+            return GetHashCodeForArray(array, actualDepth);
         }
 
         if (element is string s)
@@ -93,5 +95,32 @@ internal static class IastUtils
     public static Range[] GetRangesForString(string stringValue, Source source)
     {
         return new Range[] { new Range(0, stringValue.Length, source) };
+    }
+
+    internal static unsafe int GetStaticHashCode(this string? target)
+    {
+        if (target == null)
+        {
+            return -1;
+        }
+
+        fixed (char* charPtr = target)
+        {
+            var int32Length = target.Length / 2;
+            var intPtr = (int*)charPtr;
+
+            var hash = StartHash;
+            for (var i = 0; i < int32Length; i++)
+            {
+                hash += intPtr[i] * GoldenRatio;
+            }
+
+            if (target.Length % 2 != 0)
+            {
+                hash += ((int)charPtr[target.Length - 1]) * GoldenRatio;
+            }
+
+            return hash;
+        }
     }
 }

@@ -52,5 +52,18 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
             elem3[0] = elem3;
             IastUtils.GetHashCode(elem3).Should().Be(IastUtils.GetHashCodeForArray(new object[] { elem3 }));
         }
+
+        [Theory]
+        [InlineData(null, -1)]
+        [InlineData("", 17)]
+        [InlineData("a", -1964493196)]
+        [InlineData("ab", -24234380)]
+        [InlineData("abc", 1247340381)]
+        [InlineData("𐐷", -1450785452)]
+        public void Test_GetStaticHashCode(string input, int result)
+        {
+            var i = input.GetStaticHashCode();
+            i.Should().Be(result);
+        }
     }
 }
