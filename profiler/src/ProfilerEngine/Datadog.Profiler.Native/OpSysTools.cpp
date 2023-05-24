@@ -357,14 +357,35 @@ bool OpSysTools::IsSafeToStartProfiler(double coresThreshold)
     }
 
     const auto* customFnName = "dl_iterate_phdr";
-    auto customFn = dlsym(instance, customFnName);
+    auto* customFn = dlsym(instance, customFnName);
+    auto* defaultFn = dlsym(RTLD_DEFAULT, customFnName);
 
     // make sure that the default symbol for the custom function
     // is at the same address as the one found in our lib
-    if (customFn != dlsym(RTLD_DEFAULT, customFnName))
+    if (customFn != defaultFn)
     {
         Log::Warn("Custom function '", customFnName, "' is not the default one. That indicates that the library ",
-              "'", wrapperLibraryPath, "' is not loaded using the LD_PRELOAD environment variable");
+                  "'", wrapperLibraryPath, "' is not loaded using the LD_PRELOAD environment variable");
+
+        if (defaultFn != nullptr)
+        {
+            auto envVarValue = shared::GetEnvironmentValue(WStr("LD_PRELOAD"));
+
+            Log::Info("LD_PRELOAD: ", (envVarValue.empty() ? WStr("<empty>") : envVarValue));
+
+            Dl_info info;
+            int rc = dladdr(defaultFn, &info);
+            if (rc != 0)
+            {
+                Log::Info("\nShared library: ", info.dli_fname, "\nShared library base address: ", info.dli_fbase,
+                          "\nNearest symbol: ", info.dli_sname, "\nNearest symbol address: ", info.dli_saddr);
+            }
+            else
+            {
+                Log::Info("Unable to get information about shared library containing '", customFnName, "'");
+            }
+        }
+
         return false;
     }
 
