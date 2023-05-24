@@ -336,7 +336,7 @@ bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc*& pTypeDesc, bool isEncod
         }
 
         ComPtr<IMetaDataImport2> metadataImport;
-        INVOKE(_pCorProfilerInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(&metadataImport)));
+        INVOKE(_pCorProfilerInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(metadataImport.GetAddressOf())));
 
         // try to get the type description
         TypeDesc typeDesc;
@@ -475,13 +475,13 @@ bool FrameStore::GetFunctionInfo(
 
 bool FrameStore::GetMetadataApi(ModuleID moduleId, FunctionID functionId, ComPtr<IMetaDataImport2>& pMetadataImport)
 {
-    HRESULT hr = _pCorProfilerInfo->GetModuleMetaData(moduleId, CorOpenFlags::ofRead, IID_IMetaDataImport2, (IUnknown**)&pMetadataImport);
+    HRESULT hr = _pCorProfilerInfo->GetModuleMetaData(moduleId, CorOpenFlags::ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(pMetadataImport.GetAddressOf()));
     if (FAILED(hr))
     {
         Log::Debug("GetModuleMetaData() failed with HRESULT = ", HResultConverter::ToStringWithCode(hr));
         mdToken mdTokenFunc; // not used
         hr = _pCorProfilerInfo->GetTokenAndMetaDataFromFunction(
-            functionId, IID_IMetaDataImport2, (IUnknown**)&pMetadataImport, &mdTokenFunc);
+            functionId, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(pMetadataImport.GetAddressOf()), &mdTokenFunc);
         if (FAILED(hr))
         {
             Log::Debug("GetTokenAndMetaDataFromFunction() failed with HRESULT = ", HResultConverter::ToStringWithCode(hr));
@@ -752,7 +752,7 @@ std::string FrameStore::FormatGenericParameters(
             else
             {
                 ComPtr<IMetaDataImport2> pMetadata;
-                hr = pInfo->GetModuleMetaData(argModuleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(&pMetadata));
+                hr = pInfo->GetModuleMetaData(argModuleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(pMetadata.GetAddressOf()));
                 if (FAILED(hr))
                 {
                     ConcatUnknownGenericType(builder, isEncoded);
@@ -1041,10 +1041,9 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
             if (SUCCEEDED(hr))
             {
                 ComPtr<IMetaDataImport2> pImport2;
-                hr = pInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(&pImport2));
+                hr = pInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(pImport2.GetAddressOf()));
                 if (SUCCEEDED(hr))
                 {
-                    ULONG sigBlobLen = 0;
                     WCHAR paramTypeName[260];
 
                     // get elementType from type name because the metadata can't give us the instanciated generic signature
@@ -1131,12 +1130,12 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(ICorProfilerI
 void FixGenericSyntax(WCHAR* name)
 {
     ULONG currentCharPos = 0;
-    while (name[currentCharPos] != L'\0')
+    while (name[currentCharPos] != WStr('\0'))
     {
-        if (name[currentCharPos] == L'`')
+        if (name[currentCharPos] == WStr('`'))
         {
             // skip `xx
-            name[currentCharPos] = L'\0';
+            name[currentCharPos] = WStr('\0');
             return;
         }
         currentCharPos++;
@@ -1194,72 +1193,74 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
     *elementType = eType;
     switch (*elementType)
     {
+        // Picking the C# keywords for the built-in types
+        // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/built-in-types
         case ELEMENT_TYPE_VOID:
             StrAppend(buffer, "void", cchBuffer);
             break;
 
         case ELEMENT_TYPE_BOOLEAN:
-            StrAppend(buffer, "Boolean", cchBuffer);
+            StrAppend(buffer, "bool", cchBuffer);
             break;
 
         case ELEMENT_TYPE_CHAR:
-            StrAppend(buffer, "Char", cchBuffer);
+            StrAppend(buffer, "char", cchBuffer);
             break;
 
         case ELEMENT_TYPE_I1:
-            StrAppend(buffer, "SByte", cchBuffer);
+            StrAppend(buffer, "sbyte", cchBuffer);
             break;
 
         case ELEMENT_TYPE_U1:
-            StrAppend(buffer, "Byte", cchBuffer);
+            StrAppend(buffer, "byte", cchBuffer);
             break;
 
         case ELEMENT_TYPE_I2:
-            StrAppend(buffer, "Int16", cchBuffer);
+            StrAppend(buffer, "short", cchBuffer);
             break;
 
         case ELEMENT_TYPE_U2:
-            StrAppend(buffer, "UInt16", cchBuffer);
+            StrAppend(buffer, "ushort", cchBuffer);
             break;
 
         case ELEMENT_TYPE_I4:
-            StrAppend(buffer, "Int32", cchBuffer);
+            StrAppend(buffer, "int", cchBuffer);
             break;
 
         case ELEMENT_TYPE_U4:
-            StrAppend(buffer, "UInt32", cchBuffer);
+            StrAppend(buffer, "uint", cchBuffer);
             break;
 
         case ELEMENT_TYPE_I8:
-            StrAppend(buffer, "Int64", cchBuffer);
+            StrAppend(buffer, "long", cchBuffer);
             break;
 
         case ELEMENT_TYPE_U8:
-            StrAppend(buffer, "UInt64", cchBuffer);
+            StrAppend(buffer, "ulong", cchBuffer);
             break;
 
         case ELEMENT_TYPE_R4:
-            StrAppend(buffer, "Single", cchBuffer);
+            StrAppend(buffer, "float", cchBuffer);
             break;
 
         case ELEMENT_TYPE_R8:
-            StrAppend(buffer, "Double", cchBuffer);
+            StrAppend(buffer, "double", cchBuffer);
             break;
 
         case ELEMENT_TYPE_U:
-            StrAppend(buffer, "UIntPtr", cchBuffer);
+            StrAppend(buffer, "nuint", cchBuffer);
             break;
 
         case ELEMENT_TYPE_I:
-            StrAppend(buffer, "IntPtr", cchBuffer);
+            StrAppend(buffer, "nint", cchBuffer);
             break;
 
         case ELEMENT_TYPE_OBJECT:
-            StrAppend(buffer, "Object", cchBuffer);
+            StrAppend(buffer, "object", cchBuffer);
             break;
 
         case ELEMENT_TYPE_STRING:
-            StrAppend(buffer, "String", cchBuffer);
+            StrAppend(buffer, "string", cchBuffer);
             break;
 
         case ELEMENT_TYPE_TYPEDBYREF:
@@ -1531,7 +1532,7 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
         default:
         case ELEMENT_TYPE_END:
         case ELEMENT_TYPE_SENTINEL:
-            StrAppend(buffer, "<UNKNOWN>", cchBuffer);
+            StrAppend(buffer, "UNKNOWN", cchBuffer);
             break;
 
     } // switch
