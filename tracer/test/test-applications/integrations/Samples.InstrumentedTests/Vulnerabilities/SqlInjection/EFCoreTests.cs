@@ -1,10 +1,6 @@
 #if NET5_0_OR_GREATER
 
-using System;
-using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 

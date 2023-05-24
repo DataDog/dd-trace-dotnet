@@ -1,10 +1,9 @@
 #if !NETCOREAPP2_1
 using System;
 using System.Data;
+using System.Data.Common;
 using System.Data.Entity;
 using System.Data.Entity.Core.EntityClient;
-using System.Data.Entity.Infrastructure;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Threading;
 using FluentAssertions;
@@ -12,31 +11,23 @@ using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
-// We cannot use localDB on linux and this calls cannot be mocked
-[Trait("Category", "LinuxUnsupported")]
-public class EntityFrameworkTests : InstrumentationTestsBase, IDisposable
+public abstract class EFBaseTests : InstrumentationTestsBase, IDisposable
 {
     protected string taintedTitle = "CLR via C#";
     protected string notTaintedValue = "nottainted";
-    string CommandUnsafeText;
-    readonly string CommandSafe = "Update dbo.Books set title= title where title = @title";
-    SqlParameter titleParam;
-    string queryUnsafe;
-    private ApplicationDbContext db;
+    protected string CommandUnsafeText;
+    protected readonly string CommandSafe = "Update Books set title= title where title = @title";
+    protected DbParameter titleParam;
+    protected string queryUnsafe;
+    protected DbContext db;
+    protected string taintedTitleInjection = "s' or '1' = '1";
 
-    public EntityFrameworkTests()
+    public EFBaseTests()
     {
-        var connection = SqlDDBBCreator.Create();
-        db = new ApplicationDbContext(connection.ConnectionString);
-
-        if (db.Database.Connection.State != ConnectionState.Open)
-        {
-            db.Database.Connection.Open();
-        }
         AddTainted(taintedTitle);
+        AddTainted(taintedTitleInjection);
         CommandUnsafeText = "Update Books set title= title where title ='" + taintedTitle + "'";
         queryUnsafe = "SELECT * from Books where title like '" + taintedTitle + "'";
-        titleParam = new SqlParameter("@title", taintedTitle);
     }
 
     public void Dispose()
@@ -97,7 +88,7 @@ public class EntityFrameworkTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteSqlCommandParamSafe_VulnerabilityIsNotReported()
     {
-        var result = db.Database.ExecuteSqlCommand(@"Update dbo.Books set title=@title where title =@title", titleParam);
+        var result = db.Database.ExecuteSqlCommand(@"Update Books set title=@title where title =@title", titleParam);
         result.Should().Be(1);
         AssertNotVulnerable();
     }
@@ -105,7 +96,7 @@ public class EntityFrameworkTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteSqlCommandFormatUnsafe_VulnerabilityIsReported()
     {
-        var result = db.Database.ExecuteSqlCommand("Update dbo.Books set title='"+ taintedTitle + "' where title = '" + taintedTitle + "'");
+        var result = db.Database.ExecuteSqlCommand("Update Books set title='" + taintedTitle + "' where title = '" + taintedTitle + "'");
         result.Should().Be(1);
         AssertVulnerable();
     }
@@ -166,7 +157,6 @@ public class EntityFrameworkTests : InstrumentationTestsBase, IDisposable
         AssertNotVulnerable();
     }
 
-
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteSqlCommandAsyncSafe_VulnerabilityIsNotReported6()
     {
@@ -201,23 +191,7 @@ public class EntityFrameworkTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenEntityFramework_WhenCallingExecutSqlQueryGenericParamWithTainted_VulnerabilityIsNotReported2()
     {
-        var data = db.Database.SqlQuery<Book>(@"Select * from dbo.Books where title =@title", titleParam).ToList();
-        data.Count.Should().Be(1);
-        AssertNotVulnerable();
-    }
-
-    [Fact]
-    public void GivenEntityFramework_WhenCallingExecutSqlQueryWithTainted_VulnerabilityIsReported()
-    {
-        var data = db.Books.SqlQuery(queryUnsafe).ToList();
-        data.Count.Should().Be(1);
-        AssertVulnerable();
-    }
-
-    [Fact]
-    public void GivenEntityFramework_WhenCallingExecutSqlQueryParamWithTainted_VulnerabilityIsNotReported()
-    {
-        var data = db.Books.SqlQuery(@"Select * from dbo.Books where title =@title", titleParam).ToList();
+        var data = db.Database.SqlQuery<Book>(@"Select * from Books where title =@title", titleParam).ToList();
         data.Count.Should().Be(1);
         AssertNotVulnerable();
     }
@@ -225,14 +199,14 @@ public class EntityFrameworkTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteNonQueryWithTainted_VulnerabilityIsReported()
     {
-        GetEntityCommand().ExecuteNonQuery();
+        GetEntityCommand(taintedTitle).ExecuteNonQuery();
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteScalarWithTainted_VulnerabilityIsReported()
     {
-        var result = GetEntityCommand().ExecuteScalar();
+        var result = GetEntityCommand(taintedTitle).ExecuteScalar();
         result.Should().NotBeNull();
         AssertVulnerable();
     }
@@ -240,65 +214,66 @@ public class EntityFrameworkTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteNonQueryAsyncWithTainted_VulnerabilityIsReported()
     {
-        var query = GetEntityCommand();
-        _ = GetEntityCommand().ExecuteNonQueryAsync().Result;
+        _ = GetEntityCommand(taintedTitle).ExecuteNonQueryAsync().Result;
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteNonQueryAsyncWithTainted_VulnerabilityIsReported2()
     {
-        var query = GetEntityCommand();
-        _ = GetEntityCommand().ExecuteNonQueryAsync(CancellationToken.None).Result;
+        _ = GetEntityCommand(taintedTitle).ExecuteNonQueryAsync(CancellationToken.None).Result;
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteReaderWithTainted_VulnerabilityIsReported2()
     {
-        GetEntityCommand().ExecuteReader(CommandBehavior.SequentialAccess);
+        GetEntityCommand(taintedTitle).ExecuteReader(CommandBehavior.SequentialAccess);
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteReaderAsyncWithTainted_VulnerabilityIsReported2()
     {
-        _ = GetEntityCommand().ExecuteReaderAsync(CommandBehavior.SequentialAccess).Result;
+        _ = GetEntityCommand(taintedTitle).ExecuteReaderAsync(CommandBehavior.SequentialAccess).Result;
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteReaderAsyncWithTainted_VulnerabilityIsReported3()
     {
-        CommandUnsafeText += string.Empty;
-        var query = GetEntityCommand();
-        _ = GetEntityCommand().ExecuteReaderAsync(CommandBehavior.SequentialAccess, CancellationToken.None).Result;
+        _ = GetEntityCommand(taintedTitle).ExecuteReaderAsync(CommandBehavior.SequentialAccess, CancellationToken.None).Result;
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenEntityFramework_WhenCallingExecuteReaderWithTainted_VulnerabilityIsReported4()
+    {
+        var result = GetEntityCommand(taintedTitleInjection).ExecuteReader(CommandBehavior.SequentialAccess);
+        int rowCount = 0;
+
+        while (result.Read())
+        {
+            rowCount++;
+        }
+        rowCount.Should().Be(2);
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteScalarAsyncWithTainted_VulnerabilityIsReported()
     {
-        _ = GetEntityCommand().ExecuteScalarAsync(CancellationToken.None).Result;
+        _ = GetEntityCommand(taintedTitle).ExecuteScalarAsync(CancellationToken.None).Result;
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenEntityFramework_WhenCallingExecuteScalarAsyncWithTainted_VulnerabilityIsReported2()
     {
-        _ = GetEntityCommand().ExecuteScalarAsync().Result;
+        _ = GetEntityCommand(taintedTitle).ExecuteScalarAsync().Result;
         AssertVulnerable();
     }
 
-    private EntityCommand GetEntityCommand()
-    {
-        var queryString = "SELECT b.Title FROM ApplicationDbContext.Books AS b where b.Title ='" + taintedTitle + "'";
-        var adapter = (IObjectContextAdapter)db;
-        var objectContext = adapter.ObjectContext;
-        var conn = (EntityConnection)objectContext.Connection;
-        conn.Open();
-        var query = new EntityCommand(queryString, conn);
-        return query;
-    }
+    protected abstract EntityCommand GetEntityCommand(string title);
 }
 #endif
