@@ -374,8 +374,9 @@ HRESULT DebuggerMethodRewriter::ApplyLogCalls(
                     break;
                 }
             }
-
-            if (functionInfo.type.name._Starts_with(WStr("Datadog.")) || functionInfo.name == WStr("get_IsCompleted") ||
+            const shared::WSTRING typeName = functionInfo.type.name;
+            const shared::WSTRING datadog = WStr("Datadog.");
+            if (WStartsWith(typeName, datadog) || functionInfo.name == WStr("get_IsCompleted") ||
                 functionInfo.name == WStr("GetAwaiter") || functionInfo.name == WStr("GetResult"))
             {
                 continue;
