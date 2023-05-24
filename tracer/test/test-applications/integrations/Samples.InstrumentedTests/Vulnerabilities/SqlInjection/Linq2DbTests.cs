@@ -14,6 +14,8 @@ using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
+// We cannot use localDB on linux and this calls cannot be mocked
+[Trait("Category", "LinuxUnsupported")]
 public class Linq2DbTests : InstrumentationTestsBase, IDisposable
 {
     protected string taintedValue = "brian";

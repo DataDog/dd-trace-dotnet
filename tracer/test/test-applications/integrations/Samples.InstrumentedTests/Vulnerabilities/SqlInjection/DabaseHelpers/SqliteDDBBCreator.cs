@@ -1,5 +1,4 @@
 using System.Data.SQLite;
-using Samples.InstrumentedTests.Vulnerabilities.SqlInjection.DabaseHelpers;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
@@ -19,7 +18,7 @@ internal class SqliteDDBBCreator
         var dbConnection = new SQLiteConnection(conn);
         dbConnection.Open();
 
-        foreach (var command in QueryUtils.GetCommands())
+        foreach (var command in DDBBTestHelper.GetCommands())
         {
             new SQLiteCommand(command, dbConnection).ExecuteReader();
         }

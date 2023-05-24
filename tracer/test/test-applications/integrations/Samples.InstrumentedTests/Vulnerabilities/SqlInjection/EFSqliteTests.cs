@@ -16,7 +16,7 @@ using FluentAssertions;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
-public class EFFFSqliteTests : InstrumentationTestsBase
+public class EFSqliteTests : InstrumentationTestsBase
 {
     string CommandUnsafeText;
     readonly string CommandSafe = "Update Books set title= title where title = @title";
@@ -26,7 +26,7 @@ public class EFFFSqliteTests : InstrumentationTestsBase
     protected string taintedTitleInjection = "s' or '1' = '1";
     private ApplicationDbSqlLiteContext db;
 
-    public EFFFSqliteTests()
+    public EFSqliteTests()
     {
         var connection = SqliteDDBBCreator.Create();
         db = new ApplicationDbSqlLiteContext(connection);

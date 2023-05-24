@@ -1,7 +1,7 @@
 using System;
 using System.Data.Common;
 using System.Data.SqlClient;
-using Samples.InstrumentedTests.Vulnerabilities.SqlInjection.DabaseHelpers;
+using System.Runtime.InteropServices;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
@@ -11,6 +11,12 @@ internal static class SqlDDBBCreator
     static bool DDBBCreated = false;
     public static SqlConnection Create()
     {
+        // Linux does not support localDB
+        if (DDBBTestHelper.IsLinux())
+        {
+            return new SqlConnection("Data Source=.\\DUMMY;Initial Catalog=Dummy");
+        }
+
         var connection = OpenConnection();
 
         lock (DDBBLock)
@@ -20,7 +26,7 @@ internal static class SqlDDBBCreator
                 var dropTablesCommand = "EXEC sp_MSforeachtable 'DROP TABLE ?'";
                 new SqlCommand(dropTablesCommand, connection).ExecuteNonQuery();
 
-                foreach (var command in QueryUtils.GetCommands())
+                foreach (var command in DDBBTestHelper.GetCommands())
                 {
                     ExecuteCommand(connection, command);
                 }

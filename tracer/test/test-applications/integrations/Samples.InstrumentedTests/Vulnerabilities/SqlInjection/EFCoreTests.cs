@@ -2,17 +2,17 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
-public class DatabaseCoreAspectTests : InstrumentationTestsBase, IDisposable
+// We cannot use localDB on linux and this calls cannot be mocked
+[Trait("Category", "LinuxUnsupported")]
+public class EFCoreTests : InstrumentationTestsBase, IDisposable
 {
     protected string taintedTitle = "Think_Python";
     protected string notTaintedValue = "nottainted";
@@ -26,7 +26,7 @@ public class DatabaseCoreAspectTests : InstrumentationTestsBase, IDisposable
     FormattableString formatStr;
     ApplicationDbContextCore dbContext;
 
-    public DatabaseCoreAspectTests()
+    public EFCoreTests()
     {
         var connection = SqlDDBBCreator.Create();
         dbContext = new ApplicationDbContextCore(connection, false);

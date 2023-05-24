@@ -1,6 +1,5 @@
 #if NETCOREAPP2_1_OR_GREATER
 using Microsoft.Data.Sqlite;
-using Samples.InstrumentedTests.Vulnerabilities.SqlInjection.DabaseHelpers;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
@@ -20,7 +19,7 @@ public static class MicrosoftDataSqliteDdbbCreator
         var dbConnection = new SqliteConnection(conn);
         dbConnection.Open();
 
-        foreach (var command in QueryUtils.GetCommands())
+        foreach (var command in DDBBTestHelper.GetCommands())
         {
             new SqliteCommand(command, dbConnection).ExecuteReader();
         }
