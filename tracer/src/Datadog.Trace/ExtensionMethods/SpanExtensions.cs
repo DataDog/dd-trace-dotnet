@@ -67,7 +67,7 @@ namespace Datadog.Trace.ExtensionMethods
             {
                 try
                 {
-                    SpanContextPropagator.Instance.ExtractHeaderTags(span, headers, headerTags, defaultTagPrefix);
+                    SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, headers, headerTags, defaultTagPrefix);
                 }
                 catch (Exception ex)
                 {

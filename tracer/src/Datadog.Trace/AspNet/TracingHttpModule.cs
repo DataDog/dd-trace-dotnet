@@ -152,7 +152,7 @@ namespace Datadog.Trace.AspNet
                 scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, userAgent, tags);
                 if (headers is not null)
                 {
-                    SpanContextPropagator.Instance.ExtractHeaderTags(scope.Span, headers.Value, tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                    SpanContextPropagator.Instance.AddHeadersToSpanAsTags(scope.Span, headers.Value, tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                 }
 
                 if (tracer.Settings.IpHeaderEnabled || Security.Instance.Enabled)

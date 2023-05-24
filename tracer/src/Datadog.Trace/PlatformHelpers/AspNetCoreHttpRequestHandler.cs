@@ -74,7 +74,7 @@ namespace Datadog.Trace.PlatformHelpers
             return null;
         }
 
-        private void ExtractHeaderTags(ISpan span, HttpRequest request, Tracer tracer)
+        private void AddHeaderTagsToSpan(ISpan span, HttpRequest request, Tracer tracer)
         {
             var settings = tracer.Settings;
 
@@ -86,7 +86,7 @@ namespace Datadog.Trace.PlatformHelpers
                     var requestHeaders = request.Headers;
                     if (requestHeaders != null)
                     {
-                        SpanContextPropagator.Instance.ExtractHeaderTags(span, new HeadersCollectionAdapter(requestHeaders), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                        SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, new HeadersCollectionAdapter(requestHeaders), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                     }
                 }
                 catch (Exception ex)
@@ -122,7 +122,7 @@ namespace Datadog.Trace.PlatformHelpers
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, propagatedContext, tags: tags);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
-            ExtractHeaderTags(scope.Span, request, tracer);
+            AddHeaderTagsToSpan(scope.Span, request, tracer);
 
             if (tracer.Settings.IpHeaderEnabled || security.Enabled)
             {
