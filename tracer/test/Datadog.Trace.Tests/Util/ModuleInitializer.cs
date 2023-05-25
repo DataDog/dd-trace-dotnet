@@ -6,6 +6,8 @@
 using System;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Tests.Util
 {
@@ -16,6 +18,12 @@ namespace Datadog.Trace.Tests.Util
         {
             // disable telemetry for any tests which create a "real" telemetry instance
             Environment.SetEnvironmentVariable(ConfigurationKeys.Telemetry.Enabled, "false");
+
+            // disable config by default
+            TelemetryFactory.SetConfigForTesting(NullConfigurationTelemetry.Instance);
+
+            // disable metrics by default
+            TelemetryFactory.SetMetricsForTesting(NullMetricsTelemetryCollector.Instance);
         }
     }
 }
