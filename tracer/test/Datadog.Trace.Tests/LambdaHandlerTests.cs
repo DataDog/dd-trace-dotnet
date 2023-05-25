@@ -81,6 +81,7 @@ namespace Datadog.Trace.Tests
         [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler7+Nested::Handler", "Datadog.Trace.Tests.TrickyParamHandler+NestedGeneric`2", "Handler", "System.Threading.Tasks.Task`1[System.Tuple`2[!0,NestedGeneric`2[!0,!1]]]", "System.Tuple`2[!0,NestedGeneric`2[!0,!1]]")]
         [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.FunctionImplementation::FunctionHandlerAsync", "Datadog.Trace.Tests.AbstractAspNetCoreFunction`2", "FunctionHandlerAsync", "System.Threading.Tasks.Task`1[!1]", "!0", "Datadog.Trace.Tests.ILambdaContext")]
         [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.DerivedImplementation::ComplexNestedGeneric", "Datadog.Trace.Tests.GenericBase`2", "ComplexNestedGeneric", "Datadog.Trace.Tests.GenericBase`2[Datadog.Trace.Tests.CustomInput,InnerGeneric`2[!0,!1]]", "!0", "InnerGeneric`2[!0,NestedInSameType`2[!0,!1,!0,System.Collections.Generic.Dictionary`2[System.String,DeepNested`1[!0,!1,!1]]]]")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.DerivedImplementation::NonGenericFunction", "Datadog.Trace.Tests.GenericBase`2", "NonGenericFunction", ClrNames.Task, ClrNames.String, "Datadog.Trace.Tests.ILambdaContext")]
         [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.DerivedImplementation+NestedDerived::ComplexNestedGeneric", "Datadog.Trace.Tests.GenericBase`2", "ComplexNestedGeneric", "Datadog.Trace.Tests.GenericBase`2[Datadog.Trace.Tests.CustomInput,InnerGeneric`2[!0,!1]]", "!0", "InnerGeneric`2[!0,NestedInSameType`2[!0,!1,!0,System.Collections.Generic.Dictionary`2[System.String,DeepNested`1[!0,!1,!1]]]]")]
         public void LambdaHandlerCanHandleOpenGenericTypes(string handlerVariable, string expectedType, string expectedMethod, params string[] args)
         {
@@ -396,6 +397,8 @@ namespace Datadog.Trace.Tests
         {
             return default;
         }
+
+        public Task NonGenericFunction(string arg1, ILambdaContext arg2) => Task.CompletedTask;
 
         public class NestedInSameType<TKey, TValue> : Dictionary<TKey, TValue>
         {
