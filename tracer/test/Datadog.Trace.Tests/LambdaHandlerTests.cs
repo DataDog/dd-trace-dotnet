@@ -66,6 +66,20 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.ShadowTest::AbstractFunctionInGeneric", "Datadog.Trace.Tests.ShadowTest", "AbstractFunctionInGeneric", ClrNames.String, ClrNames.String)]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.ShadowTest::VirtualFunctionInGeneric", "Datadog.Trace.Tests.ShadowTest", "VirtualFunctionInGeneric", ClrNames.String, ClrNames.String)]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.ShadowTest::ShadowedFunctionInGeneric", "Datadog.Trace.Tests.ShadowTest", "ShadowedFunctionInGeneric", ClrNames.String, ClrNames.String)]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.ShadowTest+Nested::ShadowedFunctionInGeneric", "Datadog.Trace.Tests.ShadowTest+Nested", "ShadowedFunctionInGeneric", ClrNames.String, ClrNames.String)]
+        public void LambdaHandlerCanHandleShadowing(string handlerVariable, string expectedType, string expectedMethod, params string[] args)
+        {
+            LambdaHandler handler = new LambdaHandler(handlerVariable);
+            handler.Assembly.Should().Be("Datadog.Trace.Tests");
+            handler.FullType.Should().Be(expectedType);
+            handler.MethodName.Should().Be(expectedMethod);
+            handler.ParamTypeArray.Should().BeEquivalentTo(args, opts => opts.WithStrictOrdering());
+        }
+
+        [Theory]
         [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod1", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod1", ClrNames.Void, "!0")]
         [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod2", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod2", "!0")]
         [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod1", "Datadog.Trace.Tests.GenericBaseHandler2`2", "GenericBaseMethod1", ClrNames.Void, "!0")]
@@ -238,6 +252,20 @@ namespace Datadog.Trace.Tests
         }
     }
 
+    public class ShadowTest : GenericAbstractBase<string>
+    {
+        public override string AbstractFunctionInGeneric(string arg) => arg;
+
+        public override string VirtualFunctionInGeneric(string arg) => arg;
+
+        public string ShadowedFunctionInGeneric(string arg) => arg;
+
+        public class Nested : ShadowTest
+        {
+            public new string ShadowedFunctionInGeneric(string arg) => arg;
+        }
+    }
+
     public class BaseHandler
     {
         public void BaseHandlerMethod()
@@ -296,6 +324,15 @@ namespace Datadog.Trace.Tests
         public T GenericBaseMethod2() => default;
 
         public T2 GenericBaseMethod3<T2>() => default;
+    }
+
+    public abstract class GenericAbstractBase<T>
+    {
+        public abstract T AbstractFunctionInGeneric(T arg);
+
+        public virtual T VirtualFunctionInGeneric(T arg) => arg;
+
+        public T ShadowedGenericFunction(T arg) => arg;
     }
 
     public class GenericBaseHandler2<T1, T2>
