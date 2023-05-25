@@ -46,7 +46,7 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"ua0-600-16x","name":"SQL power injector","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"sql power injector","parameters":[{"address":"server.request.headers.no_cookies","highlight":["sql power injector"],"key_path":["user-agent","0"],"value":"Mistake Not... (sql power injector)"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"ua0-600-16x","name":"SQL power injector","tags":{"category":"attack_attempt","type":"attack_tool"}},"rule_matches":[{"operator":"match_regex","operator_value":"sql power injector","parameters":[{"address":"server.request.headers.no_cookies","highlight":["sql power injector"],"key_path":["user-agent","0"],"value":"Mistake Not... (sql power injector)"}]}]}]},
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -86,7 +86,7 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"ua0-600-16x","name":"SQL power injector","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"sql power injector","parameters":[{"address":"server.request.headers.no_cookies","highlight":["sql power injector"],"key_path":["user-agent","0"],"value":"Mistake Not... (sql power injector)"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"ua0-600-16x","name":"SQL power injector","tags":{"category":"attack_attempt","type":"attack_tool"}},"rule_matches":[{"operator":"match_regex","operator_value":"sql power injector","parameters":[{"address":"server.request.headers.no_cookies","highlight":["sql power injector"],"key_path":["user-agent","0"],"value":"Mistake Not... (sql power injector)"}]}]}]},
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -149,7 +149,7 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"ua0-600-16x","name":"SQL power injector","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"sql power injector","parameters":[{"address":"server.request.headers.no_cookies","highlight":["sql power injector"],"key_path":["user-agent","0"],"value":"Mistake Not... (sql power injector)"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"ua0-600-16x","name":"SQL power injector","tags":{"category":"attack_attempt","type":"attack_tool"}},"rule_matches":[{"operator":"match_regex","operator_value":"sql power injector","parameters":[{"address":"server.request.headers.no_cookies","highlight":["sql power injector"],"key_path":["user-agent","0"],"value":"Mistake Not... (sql power injector)"}]}]}]},
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
