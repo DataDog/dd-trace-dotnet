@@ -293,5 +293,18 @@ namespace Datadog.Trace.Tests.Telemetry
 
             settings.HeartbeatInterval.Should().Be(TimeSpan.FromSeconds(expected));
         }
+
+        [Theory]
+        [InlineData("0", false)]
+        [InlineData(null, false)]
+        [InlineData("", false)]
+        [InlineData("1", true)]
+        public void V2Enabled_DisabledByDefault(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.Telemetry.V2Enabled, value));
+            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, () => true);
+
+            settings.V2Enabled.Should().Be(expected);
+        }
     }
 }
