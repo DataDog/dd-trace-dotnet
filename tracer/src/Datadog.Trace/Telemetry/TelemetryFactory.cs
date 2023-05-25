@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 using System;
+using System.Threading;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
@@ -20,7 +21,16 @@ namespace Datadog.Trace.Telemetry
         private static readonly ConfigurationTelemetryCollector Configuration = new();
         private static readonly IntegrationTelemetryCollector Integrations = new();
 
-        // when we enable config telemetry, switch this to returning the real instance
+        /// <summary>
+        /// Gets the static metrics instance used to record telemetry
+        /// Once v2 is telemetry is supported, this will return a real instance
+        /// </summary>
+        public static IMetricsTelemetryCollector Metrics => NullMetricsTelemetryCollector.Instance;
+
+        /// <summary>
+        /// Gets the static configuration instance used to record telemetry
+        /// Once v2 is telemetry is supported, this will return a real instance
+        /// </summary>
         internal static IConfigurationTelemetry Config => NullConfigurationTelemetry.Instance;
 
         internal static ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings)
