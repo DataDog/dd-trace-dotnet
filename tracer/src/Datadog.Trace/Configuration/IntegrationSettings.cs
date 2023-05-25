@@ -25,7 +25,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         [PublicApi]
         public IntegrationSettings(string integrationName, IConfigurationSource? source)
-            : this(integrationName, source, TelemetryFactoryV2.GetConfigTelemetry())
+            : this(integrationName, source, TelemetryFactory.Config)
         {
         }
 

@@ -6,6 +6,7 @@
 using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Telemetry.Transports;
@@ -19,9 +20,12 @@ namespace Datadog.Trace.Telemetry
         private static readonly ConfigurationTelemetryCollector Configuration = new();
         private static readonly IntegrationTelemetryCollector Integrations = new();
 
+        // when we enable config telemetry, switch this to returning the real instance
+        internal static IConfigurationTelemetry Config => NullConfigurationTelemetry.Instance;
+
         internal static ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings)
         {
-            var settings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
+            var settings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config);
             if (settings.TelemetryEnabled)
             {
                 try
@@ -36,8 +40,8 @@ namespace Datadog.Trace.Telemetry
                     var transportManager = new TelemetryTransportManager(telemetryTransports);
 
                     IDependencyTelemetryCollector dependencies = settings.DependencyCollectionEnabled
-                                           ? DependencyTelemetryCollector.Instance
-                                           : NullDependencyTelemetryCollector.Instance;
+                                                                     ? DependencyTelemetryCollector.Instance
+                                                                     : NullDependencyTelemetryCollector.Instance;
 
                     return new TelemetryController(
                         Configuration,

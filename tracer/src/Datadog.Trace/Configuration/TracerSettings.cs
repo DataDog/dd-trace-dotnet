@@ -61,7 +61,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         public TracerSettings(IConfigurationSource? source)
-        : this(source, TelemetryFactoryV2.GetConfigTelemetry())
+        : this(source, TelemetryFactory.Config)
         {
         }
 
