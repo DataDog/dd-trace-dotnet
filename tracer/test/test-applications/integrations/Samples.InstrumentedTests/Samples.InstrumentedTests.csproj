@@ -41,10 +41,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="System.Data.Entity" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="xunit.runner.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

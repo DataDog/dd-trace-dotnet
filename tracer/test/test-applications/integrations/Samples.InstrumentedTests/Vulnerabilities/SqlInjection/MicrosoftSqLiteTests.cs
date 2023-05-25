@@ -156,7 +156,6 @@ public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
         new SqliteCommand(taintedQuery, dbConnection).ExecuteReaderAsync();
         AssertVulnerable();
     }
-
 #endif
 
     [Fact]
