@@ -104,7 +104,7 @@ namespace Datadog.Trace.Propagators
             Sampled = 1,
         }
 
-        public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+        public void Inject<TCarrier, TCarrierSetter>(ISpanContextInternal context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
             var traceparent = CreateTraceParentHeader(context);
@@ -118,7 +118,7 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        internal static string CreateTraceParentHeader(SpanContext context)
+        internal static string CreateTraceParentHeader(ISpanContextInternal context)
         {
             var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority ?? SamplingPriorityValues.AutoKeep;
             var sampled = samplingPriority > 0 ? "01" : "00";
@@ -126,7 +126,7 @@ namespace Datadog.Trace.Propagators
             return $"00-{context.RawTraceId}-{context.RawSpanId}-{sampled}";
         }
 
-        internal static string CreateTraceStateHeader(SpanContext context)
+        internal static string CreateTraceStateHeader(ISpanContextInternal context)
         {
             var sb = StringBuilderCache.Acquire(100);
 
@@ -576,7 +576,7 @@ namespace Datadog.Trace.Propagators
         public bool TryExtract<TCarrier, TCarrierGetter>(
             TCarrier carrier,
             TCarrierGetter carrierGetter,
-            [NotNullWhen(true)] out SpanContext? spanContext)
+            [NotNullWhen(true)] out ISpanContextInternal? spanContext)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             spanContext = null;

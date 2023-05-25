@@ -23,14 +23,14 @@ namespace Datadog.Trace.Propagators
         {
         }
 
-        public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+        public void Inject<TCarrier, TCarrierSetter>(ISpanContextInternal context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
             var header = CreateHeader(context);
             carrierSetter.Set(carrier, B3, header);
         }
 
-        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out ISpanContextInternal? spanContext)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             spanContext = null;
@@ -133,7 +133,7 @@ namespace Datadog.Trace.Propagators
             return false;
         }
 
-        internal static string CreateHeader(SpanContext context)
+        internal static string CreateHeader(ISpanContextInternal context)
         {
             var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
             var sampled = samplingPriority > 0 ? "1" : "0";

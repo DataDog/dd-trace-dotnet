@@ -27,6 +27,8 @@
     from a source generator as opposed to something that is coming from some other tool. -->
     <Compile Remove="$(GeneratedFolder)/*/**/*.cs" />
     <Compile Update="Configuration\ConfigurationKeys.*.cs" DependentUpon="ConfigurationKeys.cs" />
+    <Compile Remove="SpanData.cs" />
+    <None Include="SpanData.cs" />
   </ItemGroup>
 
   <ItemGroup>

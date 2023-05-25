@@ -127,7 +127,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         resourceName = $"{httpMethod} {controllerName}.{actionName}";
                     }
 
-                    SpanContext propagatedContext = null;
+                    ISpanContextInternal propagatedContext = null;
                     NameValueHeadersCollection? headers = null;
 
                     if (tracer.InternalActiveScope == null)

@@ -17,7 +17,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         private const string SqlCommentVersion = "ddpv";
         private const string SqlCommentEnv = "dde";
 
-        internal static string PropagateSpanData(DbmPropagationLevel propagationStyle, string configuredServiceName, SpanContext context, IntegrationId integrationId)
+        internal static string PropagateSpanData(DbmPropagationLevel propagationStyle, string configuredServiceName, ISpanContextInternal context, IntegrationId integrationId)
         {
             if ((integrationId is IntegrationId.MySql or IntegrationId.Npgsql or IntegrationId.SqlClient) &&
                 (propagationStyle is DbmPropagationLevel.Service or DbmPropagationLevel.Full))

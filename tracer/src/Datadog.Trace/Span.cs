@@ -77,7 +77,7 @@ namespace Datadog.Trace
         internal string ServiceName
         {
             get => Context.ServiceName;
-            set => Context.ServiceName = value;
+            set => ((SpanContext)Context).ServiceName = value;
         }
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace Datadog.Trace
 
         internal ITags Tags { get; set; }
 
-        internal SpanContext Context { get; }
+        internal ISpanContextInternal Context { get; }
 
         internal DateTimeOffset StartTime { get; private set; }
 

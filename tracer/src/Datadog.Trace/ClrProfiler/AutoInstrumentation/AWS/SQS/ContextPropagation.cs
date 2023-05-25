@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
     {
         private const string SqsKey = "_datadog";
 
-        private static void Inject<TMessageRequest>(SpanContext context, IDictionary messageAttributes)
+        private static void Inject<TMessageRequest>(ISpanContextInternal context, IDictionary messageAttributes)
         {
             // Consolidate headers into one JSON object with <header_name>:<value>
             var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             messageAttributes[SqsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(resultString);
         }
 
-        public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext spanContext)
+        public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, ISpanContextInternal spanContext)
         {
             // add distributed tracing headers to the message
             if (carrier.MessageAttributes == null)

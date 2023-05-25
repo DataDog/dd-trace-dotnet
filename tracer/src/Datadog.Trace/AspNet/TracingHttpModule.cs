@@ -127,7 +127,7 @@ namespace Datadog.Trace.AspNet
 
                 HttpRequest httpRequest = httpContext.Request;
                 NameValueHeadersCollection? headers = null;
-                SpanContext propagatedContext = null;
+                ISpanContextInternal propagatedContext = null;
                 if (tracer.InternalActiveScope == null)
                 {
                     try

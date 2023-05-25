@@ -38,7 +38,7 @@ namespace Datadog.Trace.Activity.Handlers
             var activeSpan = Tracer.Instance.ActiveScope?.Span as Span;
 
             // Propagate Trace and Parent Span ids
-            SpanContext? parent = null;
+            ISpanContextInternal? parent = null;
             TraceId traceId = default;
             ulong spanId = 0;
             string? rawTraceId = null;
@@ -165,7 +165,7 @@ namespace Datadog.Trace.Activity.Handlers
                 Log.Error(ex, "Error processing the OnActivityStarted callback");
             }
 
-            static Scope CreateScopeFromActivity(T activity, SpanContext? parent, TraceId traceId, ulong spanId, string? rawTraceId, string? rawSpanId)
+            static Scope CreateScopeFromActivity(T activity, ISpanContextInternal? parent, TraceId traceId, ulong spanId, string? rawTraceId, string? rawSpanId)
             {
                 var span = Tracer.Instance.StartSpan(
                     activity.OperationName,

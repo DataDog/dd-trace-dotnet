@@ -18,7 +18,7 @@ namespace Datadog.Trace
     /// <summary>
     /// The SpanContext contains all the information needed to express relationships between spans inside or outside the process boundaries.
     /// </summary>
-    public class SpanContext : ISpanContext, IReadOnlyDictionary<string, string>
+    public partial class SpanContext : ISpanContext, IReadOnlyDictionary<string, string>
     {
         private static readonly string[] KeyNames =
         {
@@ -476,5 +476,71 @@ namespace Datadog.Trace
             public const string PropagatedTags = $"{Prefix}PropagatedTags";
             public const string AdditionalW3CTraceState = $"{Prefix}AdditionalW3CTraceState";
         }
+    }
+
+    /// <summary>
+    /// ISpanContextInternal implementation
+    /// </summary>
+    public partial class SpanContext : ISpanContextInternal
+    {
+        /// <inheritdoc />
+        ISpanContext ISpanContextInternal.Parent => Parent;
+
+        /// <inheritdoc />
+        TraceId ISpanContextInternal.TraceId128 => TraceId128;
+
+        /// <inheritdoc />
+        ulong? ISpanContextInternal.ParentId => ParentId;
+
+        /// <inheritdoc />
+        string ISpanContextInternal.Origin
+        {
+            get => Origin;
+            set => Origin = value;
+        }
+
+        /// <inheritdoc />
+        TraceTagCollection ISpanContextInternal.PropagatedTags
+        {
+            get => PropagatedTags;
+            set => PropagatedTags = value;
+        }
+
+        /// <inheritdoc />
+        TraceContext ISpanContextInternal.TraceContext => TraceContext;
+
+        /// <inheritdoc />
+        int? ISpanContextInternal.SamplingPriority => SamplingPriority;
+
+        /// <inheritdoc />
+        string ISpanContextInternal.RawTraceId => RawTraceId;
+
+        /// <inheritdoc />
+        string ISpanContextInternal.RawSpanId => RawSpanId;
+
+        /// <inheritdoc />
+        string ISpanContextInternal.AdditionalW3CTraceState
+        {
+            get => AdditionalW3CTraceState;
+            set => AdditionalW3CTraceState = value;
+        }
+
+        /// <inheritdoc />
+        PathwayContext? ISpanContextInternal.PathwayContext => PathwayContext;
+
+        /// <inheritdoc />
+        [return: MaybeNull]
+        TraceTagCollection ISpanContextInternal.PrepareTagsForPropagation() => PrepareTagsForPropagation();
+
+        /// <inheritdoc />
+        [return: MaybeNull]
+        string ISpanContextInternal.PrepareTagsHeaderForPropagation() => PrepareTagsHeaderForPropagation();
+
+        /// <inheritdoc />
+        void ISpanContextInternal.SetCheckpoint(DataStreamsManager manager, CheckpointKind checkpointKind, string[] edgeTags)
+            => SetCheckpoint(manager, checkpointKind, edgeTags);
+
+        /// <inheritdoc />
+        void ISpanContextInternal.MergePathwayContext(PathwayContext? pathwayContext) => MergePathwayContext(pathwayContext);
     }
 }

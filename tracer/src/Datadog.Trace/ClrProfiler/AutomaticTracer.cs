@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler
             return null;
         }
 
-        SpanContext IDistributedTracer.GetSpanContext()
+        ISpanContextInternal IDistributedTracer.GetSpanContext()
         {
             if (_child is null)
             {

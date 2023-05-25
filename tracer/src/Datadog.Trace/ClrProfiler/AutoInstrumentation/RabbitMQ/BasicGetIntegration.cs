@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             string queue = (string)state.State;
             DateTimeOffset? startTime = state.StartTime;
 
-            SpanContext propagatedContext = null;
+            ISpanContextInternal propagatedContext = null;
             IBasicProperties basicProperties = null;
             string messageSize = null;
 

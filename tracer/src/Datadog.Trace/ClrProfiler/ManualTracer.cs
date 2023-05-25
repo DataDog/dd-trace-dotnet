@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler
 
         IReadOnlyDictionary<string, string> IDistributedTracer.GetSpanContextRaw() => _parent.GetDistributedTrace();
 
-        SpanContext IDistributedTracer.GetSpanContext()
+        ISpanContextInternal IDistributedTracer.GetSpanContext()
         {
             var values = _parent.GetDistributedTrace();
 

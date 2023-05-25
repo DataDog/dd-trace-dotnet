@@ -19,7 +19,7 @@ namespace Datadog.Trace.Propagators
         {
         }
 
-        public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+        public void Inject<TCarrier, TCarrierSetter>(ISpanContextInternal context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
             var invariantCulture = CultureInfo.InvariantCulture;
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out ISpanContextInternal? spanContext)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             spanContext = null;

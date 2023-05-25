@@ -126,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 return CallTargetState.GetDefault();
             }
 
-            SpanContext propagatedContext = null;
+            ISpanContextInternal propagatedContext = null;
 
             // try to extract propagated context values from headers
             if (basicProperties?.Headers != null)

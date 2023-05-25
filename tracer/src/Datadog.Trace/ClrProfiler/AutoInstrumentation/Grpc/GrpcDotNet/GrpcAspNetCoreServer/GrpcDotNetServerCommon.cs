@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
             return scope;
         }
 
-        private static SpanContext? ExtractPropagatedContext(HttpRequest request)
+        private static ISpanContextInternal? ExtractPropagatedContext(HttpRequest request)
         {
             try
             {

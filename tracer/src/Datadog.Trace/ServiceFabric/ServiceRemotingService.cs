@@ -56,7 +56,7 @@ namespace Datadog.Trace.ServiceFabric
             }
 
             ServiceRemotingHelpers.GetMessageHeaders(e, out var eventArgs, out var messageHeaders);
-            SpanContext? spanContext = null;
+            ISpanContextInternal? spanContext = null;
 
             try
             {

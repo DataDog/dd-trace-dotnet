@@ -33,7 +33,7 @@ namespace Datadog.Trace.Propagators
         {
         }
 
-        public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+        public void Inject<TCarrier, TCarrierSetter>(ISpanContextInternal context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
             CreateHeaders(context, out var traceId, out var spanId, out var sampled);
@@ -43,7 +43,7 @@ namespace Datadog.Trace.Propagators
             carrierSetter.Set(carrier, Sampled, sampled);
         }
 
-        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out ISpanContextInternal? spanContext)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             spanContext = null;
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Propagators
             return true;
         }
 
-        internal static void CreateHeaders(SpanContext context, out string traceId, out string spanId, out string sampled)
+        internal static void CreateHeaders(ISpanContextInternal context, out string traceId, out string spanId, out string sampled)
         {
             var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
             sampled = samplingPriority > 0 ? "1" : "0";

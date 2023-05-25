@@ -201,7 +201,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             {
                 // Try to work out which trigger type it is
                 var triggerType = "Unknown";
-                SpanContext? spanContext = null;
+                ISpanContextInternal? spanContext = null;
 #pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie, that only affects .NET Core 3.1
                 foreach (DictionaryEntry entry in context.FunctionDefinition.InputBindings)
 #pragma warning restore CS8605 // Unboxing a possibly null value.
@@ -298,7 +298,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
         }
 
-        private static SpanContext? ExtractPropagatedContextFromHttp<T>(T context, string? bindingName)
+        private static ISpanContextInternal? ExtractPropagatedContextFromHttp<T>(T context, string? bindingName)
             where T : IFunctionContext
         {
             // Need to try and grab the headers from the context

@@ -11,7 +11,7 @@ namespace Datadog.Trace.Propagators
 {
     internal interface IContextExtractor
     {
-        bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+        bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out ISpanContextInternal? spanContext)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>;
     }
 

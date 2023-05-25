@@ -1,20 +1,27 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Threading;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Ci;
+using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
+using ThreadSafeRandom = Datadog.Trace.Util.ThreadSafeRandom;
 
 namespace Datadog.Trace;
+#pragma warning disable SA1201
+#pragma warning disable SA1402
 #pragma warning disable SA1201
 
 internal partial class SpanData
@@ -575,6 +582,7 @@ internal partial class SpanData : ISpanContextInternal
         }
     }
 
+/*
     void ISpanContextInternal.SetSpanContext(ISpanContextInternal spanContext)
     {
         _pathwayContext = spanContext.PathwayContext;
@@ -590,6 +598,7 @@ internal partial class SpanData : ISpanContextInternal
         _samplingPriority = spanContext.SamplingPriority;
         _spanId = spanContext.SpanId;
     }
+*/
 
     /// <inheritdoc/>
     int IReadOnlyCollection<KeyValuePair<string, string>>.Count => KeyNames.Length;
@@ -712,6 +721,7 @@ internal partial class SpanData : ISpanContextInternal
         }
     }
 
+    /*
     void ISpanContextInternal.SetSpanContext(TraceId traceId, string serviceName)
     {
         _traceId128 = traceId == Trace.TraceId.Zero
@@ -788,7 +798,7 @@ internal partial class SpanData : ISpanContextInternal
         _spanId = spanId;
         _samplingPriority = (int?)samplingPriority;
     }
-
+*/
     internal static class Keys
     {
         private const string Prefix = "__DistributedKey-";
@@ -802,87 +812,4 @@ internal partial class SpanData : ISpanContextInternal
         public const string PropagatedTags = $"{Prefix}PropagatedTags";
         public const string AdditionalW3CTraceState = $"{Prefix}AdditionalW3CTraceState";
     }
-}
-
-#pragma warning disable SA1201
-internal interface ISpanContextInternal : ISpanContext, IReadOnlyDictionary<string, string>
-{
-    ISpanContext Parent { get; }
-
-    TraceId TraceId128 { get; }
-
-    ulong? ParentId { get; }
-
-    string Origin { get; set; }
-
-    TraceTagCollection PropagatedTags { get; set; }
-
-    TraceContext TraceContext { get; }
-
-    int? SamplingPriority { get; }
-
-    string RawTraceId { get; }
-
-    string RawSpanId { get; }
-
-    string AdditionalW3CTraceState { get; set; }
-
-    PathwayContext? PathwayContext { get; }
-
-    [return: MaybeNull]
-    TraceTagCollection PrepareTagsForPropagation();
-
-    [return: MaybeNull]
-    string PrepareTagsHeaderForPropagation();
-
-    void SetCheckpoint(DataStreamsManager manager, CheckpointKind checkpointKind, string[] edgeTags);
-
-    void MergePathwayContext(PathwayContext? pathwayContext);
-
-    void SetSpanContext(ISpanContextInternal spanContext);
-
-    void SetSpanContext(TraceId traceId, string serviceName);
-
-    void SetSpanContext(ISpanContext parent, TraceContext traceContext, string serviceName, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null);
-
-    void SetSpanContext(TraceId traceId, ulong spanId, int? samplingPriority, string serviceName, string origin, string rawTraceId, string rawSpanId);
-
-    void SetSpanContext(TraceId traceId, ulong spanId, int? samplingPriority, string serviceName, string origin);
-
-    void SetSpanContext(ulong? traceId, ulong spanId, SamplingPriority? samplingPriority = null, string serviceName = null);
-}
-
-internal interface ISpanInternal : ISpan
-{
-    TraceId TraceId128 { get; }
-
-    ulong RootSpanId { get; }
-
-    ITags Tags { get; set; }
-
-    new ISpanContextInternal Context { get; }
-
-    DateTimeOffset StartTime { get; }
-
-    TimeSpan Duration { get; }
-
-    bool IsFinished { get; }
-
-    bool IsRootSpan { get; }
-
-    bool IsTopLevel { get; }
-
-    double? GetMetric(string key);
-
-    ISpanInternal SetMetric(string key, double? value);
-
-    void Finish(TimeSpan duration);
-
-    void ResetStartTime();
-
-    void SetStartTime(DateTimeOffset startTime);
-
-    void SetDuration(TimeSpan duration);
-
-    string ToString();
 }
