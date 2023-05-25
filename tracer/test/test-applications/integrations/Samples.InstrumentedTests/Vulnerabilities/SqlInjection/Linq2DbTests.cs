@@ -1,14 +1,9 @@
-using LinqToDB;
-using LinqToDB.Common;
 using LinqToDB.Data;
 using LinqToDB.Data.DbCommandProcessor;
 using System;
 using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
 using System.Threading;
 using Xunit;
 

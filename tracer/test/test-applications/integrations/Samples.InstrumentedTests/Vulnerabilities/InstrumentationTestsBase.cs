@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 using FluentAssertions;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
@@ -159,7 +158,7 @@ public class InstrumentationTestsBase
         AssertVulnerable(0);
     }
 
-    protected bool LocationIsOk(string location, List<string>? locations = null)
+    protected bool LocationIsOk(string location, List<string> locations = null)
     {
         var vulnerabilities = GetGeneratedVulnerabilities();
         foreach (var vulnerability in vulnerabilities)
