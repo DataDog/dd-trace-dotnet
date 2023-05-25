@@ -73,8 +73,6 @@ public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
         AssertNotVulnerable();
     }
 
-#if NET5_0_OR_GREATER
-    // Not calling CreateDbCommandScope in netcore3.0, netcore3.1, netcore 2.1
     [Fact]
     public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteReaderWithTainted_VulnerabilityIsReported()
     {
@@ -82,8 +80,6 @@ public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
         AssertVulnerable();
     }
 
-
-    // Not calling CreateDbCommandScope in netcore3.0, netcore3.1, netcore 2.1
     [Fact]
     public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteReaderCommandBehaviorWithTainted_VulnerabilityIsReported()
     {
@@ -91,7 +87,6 @@ public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
         AssertVulnerable();
     }
 
-    // Not calling CreateDbCommandScope in netcore3.0, netcore3.1, netcore 2.1
     [Fact]
     public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteReaderCommandBehaviorWithTainted_Tainted()
     {
@@ -100,7 +95,6 @@ public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
         AssertVulnerable();
     }
 
-    // Not calling CreateDbCommandScope in netcore3.0, netcore3.1, netcore 2.1
     [Fact]
     public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteReaderCommandBehaviorWithTainted_Tainted2()
     {
@@ -109,7 +103,6 @@ public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
         AssertVulnerable();
     }
 
-    // Not calling CreateDbCommandScope in netcore3.0, netcore3.1, netcore 2.1
     [Fact]
     public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteReaderCommandBehaviorWithTainted_Tainted3()
     {
@@ -118,7 +111,6 @@ public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
         AssertVulnerable();
     }
 
-    // Not calling CreateDbCommandScope in netcore3.0, netcore3.1, netcore 2.1
     [Fact]
     public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteReaderAsyncCommandBehaviorWithTainted_VulnerabilityIsReported()
     {
@@ -126,7 +118,6 @@ public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
         AssertVulnerable();
     }
 
-    // Not calling CreateDbCommandScope in netcore3.0, netcore3.1, netcore 2.1
     [Fact]
     public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteReaderAsyncCancellationTokenWithTainted_VulnerabilityIsReported()
     {
@@ -134,7 +125,6 @@ public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
         AssertVulnerable();
     }
 
-    // Not calling CreateDbCommandScope in netcore3.0, netcore3.1, netcore 2.1
     [Fact]
     public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteReaderAsyncCancellationTokenCommandBehaviorWithTainted_VulnerabilityIsReported()
     {
@@ -142,14 +132,12 @@ public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
         AssertVulnerable();
     }
 
-    // Not calling CreateDbCommandScope in netcore3.0, netcore3.1, netcore 2.1
     [Fact]
     public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteReaderAsyncWithTainted_VulnerabilityIsReported()
     {
         new SqliteCommand(taintedQuery, dbConnection).ExecuteReaderAsync();
         AssertVulnerable();
     }
-#endif
 
     [Fact]
     public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteReaderCommandBehaviorWithNotTainted_VulnerabilityIsNotReported()
