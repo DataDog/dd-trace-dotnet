@@ -5,37 +5,65 @@
 #nullable enable
 using System;
 using System.Threading;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Telemetry.Collectors;
 using Datadog.Trace.Telemetry.Transports;
 
 namespace Datadog.Trace.Telemetry
 {
     internal class TelemetryFactory
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryFactory>();
+        // need to start collecting these immediately
+        private static IMetricsTelemetryCollector _metrics = new MetricsTelemetryCollector();
+        private static IConfigurationTelemetry _configurationV2 = new ConfigurationTelemetry();
 
-        private static readonly ConfigurationTelemetryCollector Configuration = new();
-        private static readonly IntegrationTelemetryCollector Integrations = new();
+        // V1 integration only
+        private ConfigurationTelemetryCollector? _configuration;
+
+        // v2 integration only
+        private ProductsTelemetryCollector? _products;
+        private ApplicationTelemetryCollectorV2? _application;
+
+        // shared
+        private IntegrationTelemetryCollector? _integrations;
+        private IDependencyTelemetryCollector? _dependencies;
+
+        private TelemetryFactory()
+        {
+        }
+
+        public static TelemetryFactory Instance { get; } = new();
 
         /// <summary>
-        /// Gets the static metrics instance used to record telemetry
-        /// Once v2 is telemetry is supported, this will return a real instance
+        /// Gets the static metrics instance used to record telemetry.
         /// </summary>
-        public static IMetricsTelemetryCollector Metrics => NullMetricsTelemetryCollector.Instance;
+        public static IMetricsTelemetryCollector Metrics => Volatile.Read(ref _metrics);
 
         /// <summary>
         /// Gets the static configuration instance used to record telemetry
-        /// Once v2 is telemetry is supported, this will return a real instance
         /// </summary>
-        internal static IConfigurationTelemetry Config => NullConfigurationTelemetry.Instance;
+        internal static IConfigurationTelemetry Config => Volatile.Read(ref _configurationV2);
 
-        internal static ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings)
+        internal static IMetricsTelemetryCollector SetMetricsForTesting(IMetricsTelemetryCollector telemetry)
+            => Interlocked.Exchange(ref _metrics, telemetry);
+
+        internal static IConfigurationTelemetry SetConfigForTesting(IConfigurationTelemetry telemetry)
+            => Interlocked.Exchange(ref _configurationV2, telemetry);
+
+        /// <summary>
+        /// For testing purposes only. Use <see cref="Instance"/> in production
+        /// </summary>
+        public static TelemetryFactory CreateFactory() => new();
+
+        public ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings)
+            => CreateTelemetryController(tracerSettings, TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config));
+
+        public ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings, TelemetrySettings settings)
         {
-            var settings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config);
+            // Deliberately not s static field, because otherwise creates a circular dependency during startup
+            var log = DatadogLogging.GetLoggerFor<TelemetryFactory>();
             if (settings.TelemetryEnabled)
             {
                 try
@@ -44,30 +72,86 @@ namespace Datadog.Trace.Telemetry
 
                     if (telemetryTransports.Length == 0)
                     {
+                        log.Debug("Telemetry collection disabled: no available transports");
                         return NullTelemetryController.Instance;
                     }
 
-                    var transportManager = new TelemetryTransportManager(telemetryTransports);
+                    _dependencies = settings.DependencyCollectionEnabled
+                                        ? new DependencyTelemetryCollector()
+                                        : NullDependencyTelemetryCollector.Instance;
 
-                    IDependencyTelemetryCollector dependencies = settings.DependencyCollectionEnabled
-                                                                     ? DependencyTelemetryCollector.Instance
-                                                                     : NullDependencyTelemetryCollector.Instance;
+                    if (!settings.V2Enabled)
+                    {
+                        // if we're not using V2, we don't need the config collector
+                        Interlocked.Exchange(ref _configurationV2, NullConfigurationTelemetry.Instance);
+                    }
 
-                    return new TelemetryController(
-                        Configuration,
-                        dependencies,
-                        Integrations,
-                        transportManager,
-                        TelemetryConstants.DefaultFlushInterval,
-                        settings.HeartbeatInterval);
+                    if (!settings.MetricsEnabled)
+                    {
+                        // if we're not using metrics, we don't need the metrics collector
+                        log.Debug("Telemetry metrics collection disabled");
+                        Interlocked.Exchange(ref _metrics, NullMetricsTelemetryCollector.Instance);
+                    }
+
+                    // Making assumptions that we never switch from one to two,
+                    // so we don't need to "clean up" the collectors.
+                    if (settings.V2Enabled)
+                    {
+                        log.Debug("Creating telemetry controller v2");
+                        return CreateV2Controller(telemetryTransports, settings);
+                    }
+                    else
+                    {
+                        log.Debug("Creating telemetry controller v1");
+                        return CreateV1Controller(telemetryTransports, settings);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Log.Warning(ex, "Error initializing telemetry. Telemetry collection disabled.");
+                    log.Warning(ex, "Telemetry collection disabled: error initializing telemetry");
+                    return NullTelemetryController.Instance;
                 }
             }
 
+            log.Debug("Telemetry collection disabled");
             return NullTelemetryController.Instance;
+        }
+
+        private ITelemetryController CreateV1Controller(
+            ITelemetryTransport[] telemetryTransports,
+            TelemetrySettings settings)
+        {
+            var transportManager = new TelemetryTransportManager(telemetryTransports);
+            var configuration = LazyInitializer.EnsureInitialized(ref _configuration)!;
+            var integrations = LazyInitializer.EnsureInitialized(ref _integrations)!;
+
+            return new TelemetryController(
+                configuration,
+                _dependencies,
+                integrations,
+                transportManager,
+                TelemetryConstants.DefaultFlushInterval,
+                settings.HeartbeatInterval);
+        }
+
+        private ITelemetryController CreateV2Controller(
+            ITelemetryTransport[] telemetryTransports,
+            TelemetrySettings settings)
+        {
+            var transportManager = new TelemetryTransportManagerV2(telemetryTransports);
+            var integrations = LazyInitializer.EnsureInitialized(ref _integrations)!;
+            var products = LazyInitializer.EnsureInitialized(ref _products)!;
+            var application = LazyInitializer.EnsureInitialized(ref _application)!;
+
+            return new TelemetryControllerV2(
+                Config,
+                _dependencies!,
+                integrations,
+                Metrics,
+                products,
+                application,
+                transportManager,
+                settings.HeartbeatInterval);
         }
     }
 }
