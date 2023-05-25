@@ -28,7 +28,8 @@ public class TelemetryTransportFactoryTests
             agentProxyEnabled: agentProxyEnabled,
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
-            v2Enabled: v2Enabled);
+            v2Enabled: v2Enabled,
+            metricsEnabled: true);
 
         var exporterSettings = new ImmutableExporterSettings(new ExporterSettings());
 

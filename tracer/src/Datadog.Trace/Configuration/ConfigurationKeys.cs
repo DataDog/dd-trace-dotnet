@@ -642,6 +642,12 @@ namespace Datadog.Trace.Configuration
             public const string DependencyCollectionEnabled = "DD_TELEMETRY_DEPENDENCY_COLLECTION_ENABLED";
 
             /// <summary>
+            /// Configuration key for whether telemetry metrics should be sent.
+            /// <see cref="TelemetrySettings.MetricsEnabled"/>
+            /// </summary>
+            public const string MetricsEnabled = "DD_TELEMETRY_METRICS_ENABLED";
+
+            /// <summary>
             /// Configuration key for whether to enable v2 of telemetry.
             /// <see cref="TelemetrySettings.V2Enabled"/>
             /// </summary>
