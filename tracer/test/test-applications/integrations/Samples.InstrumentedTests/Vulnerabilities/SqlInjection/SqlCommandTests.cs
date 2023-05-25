@@ -36,14 +36,14 @@ public class SqlCommandTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteNonQueryWithTainted_VulnerabilityIsReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteNonQuery());
+        TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteNonQuery());
         AssertVulnerable();
     }
     
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteNonQueryWithTainted_VulnerabilityIsReported2()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection, null).ExecuteNonQuery());
+        TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection, null).ExecuteNonQuery());
         AssertVulnerable();
     }
 
@@ -68,161 +68,161 @@ public class SqlCommandTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteNonQueryWithNotTainted_VulnerabilityIsNotReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteNonQuery());
+        TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteNonQuery());
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderWithTainted_VulnerabilityIsReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReader());
+        TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReader());
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderWithNotTainted_VulnerabilityIsNotReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReader());
+        TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReader());
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderCommandBehaviorWithTainted_VulnerabilityIsReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReader(CommandBehavior.Default));
+        TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReader(CommandBehavior.Default));
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderCommandBehaviorWithNotTainted_VulnerabilityIsNotReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReader(CommandBehavior.Default));
+        TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReader(CommandBehavior.Default));
         AssertNotVulnerable();
     }
     
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteScalarWithTainted_VulnerabilityIsReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteScalar());
+        TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteScalar());
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteScalarWithNotTainted_VulnerabilityIsNotReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteScalar());
+        TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteScalar());
         AssertNotVulnerable();
     }
     
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderAsyncCommandBehaviorWithTainted_VulnerabilityIsReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReaderAsync(CommandBehavior.Default));
+        TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReaderAsync(CommandBehavior.Default));
         AssertVulnerable();
     }
     
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderAsyncCommandBehaviorWithNotTainted_VulnerabilityIsNotReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReaderAsync(CommandBehavior.Default));
+        TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReaderAsync(CommandBehavior.Default));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderAsyncCancellationTokenWithTainted_VulnerabilityIsReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReaderAsync(CancellationToken.None));
+        TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReaderAsync(CancellationToken.None));
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderAsyncCancellationTokenWithNotTainted_VulnerabilityIsNotReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReaderAsync(CancellationToken.None));
+        TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReaderAsync(CancellationToken.None));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderAsyncCancellationTokenCommandBehaviorWithTainted_VulnerabilityIsReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReaderAsync(CommandBehavior.Default, CancellationToken.None));
+        TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReaderAsync(CommandBehavior.Default, CancellationToken.None));
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderAsyncCancellationTokenCommandBehaviorWithNotTainted_VulnerabilityIsNotReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReaderAsync(CommandBehavior.Default, CancellationToken.None));
+        TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReaderAsync(CommandBehavior.Default, CancellationToken.None));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderAsyncWithTainted_VulnerabilityIsReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReaderAsync());
+        TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReaderAsync());
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderAsyncWithNotTainted_VulnerabilityIsNotReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReaderAsync());
+        TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReaderAsync());
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteScalarAsyncWithTainted_VulnerabilityIsReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteScalarAsync());
+        TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteScalarAsync());
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteScalarAsyncWithNotTainted_VulnerabilityIsNotReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteScalarAsync());
+        TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteScalarAsync());
         AssertNotVulnerable();
     }
     
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteScalarAsyncCancellationTokenWithTainted_VulnerabilityIsReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteScalarAsync(CancellationToken.None));
+        TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteScalarAsync(CancellationToken.None));
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteScalarAsyncCancellationTokenWithNotTainted_VulnerabilityIsNotReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteScalarAsync(CancellationToken.None));
+        TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteScalarAsync(CancellationToken.None));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteNonQueryAsyncWithTainted_VulnerabilityIsReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteNonQueryAsync());
+        TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteNonQueryAsync());
         AssertVulnerable();
     }
     
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteNonQueryAsyncWithNotTainted_VulnerabilityIsNotReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteNonQueryAsync());
+        TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteNonQueryAsync());
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteNonQueryAsyncCancellationTokenWithTainted_VulnerabilityIsReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteNonQueryAsync(CancellationToken.None));
+        TestDDBBCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteNonQueryAsync(CancellationToken.None));
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteNonQueryAsyncCancellationTokenWithNotTainted_VulnerabilityIsNotReported()
     {
-        DDBBTestHelper.TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteNonQueryAsync(CancellationToken.None));
+        TestDDBBCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteNonQueryAsync(CancellationToken.None));
         AssertNotVulnerable();
     }
 }

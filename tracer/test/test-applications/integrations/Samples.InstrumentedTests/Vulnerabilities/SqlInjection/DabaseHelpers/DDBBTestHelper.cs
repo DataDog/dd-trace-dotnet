@@ -29,29 +29,5 @@ internal static class DDBBTestHelper
 
         return commands;
     }
-
-    public static object TestDDBBCall(Func<object> expression)
-    {
-        if (IsLinux())
-        { 
-            try
-            {
-                return expression.Invoke();
-            }
-            catch (InvalidOperationException) 
-            {
-                return null;
-            }
-        }
-        else
-        {
-            return expression.Invoke();
-        }
-    }
-
-    public static bool IsLinux()
-    {
-        return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux);
-    }
 }
 

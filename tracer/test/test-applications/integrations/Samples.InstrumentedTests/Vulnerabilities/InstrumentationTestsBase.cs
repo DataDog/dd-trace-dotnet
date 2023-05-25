@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using FluentAssertions;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
@@ -282,6 +283,30 @@ public class InstrumentationTestsBase
             var start = (int)_StartProperty.Invoke(range, Array.Empty<object>());
             var length = (int)_LengthProperty.Invoke(range, Array.Empty<object>());
             (start + length).Should().BeLessThanOrEqualTo(result.Length);
+        }
+    }
+
+    public static bool IsLinux()
+    {
+        return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux);
+    }
+
+    public static object TestDDBBCall(Func<object> expression)
+    {
+        if (IsLinux())
+        {
+            try
+            {
+                return expression.Invoke();
+            }
+            catch (InvalidOperationException)
+            {
+                return null;
+            }
+        }
+        else
+        {
+            return expression.Invoke();
         }
     }
 }
