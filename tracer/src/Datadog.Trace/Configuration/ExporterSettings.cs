@@ -26,7 +26,6 @@ namespace Datadog.Trace.Configuration
         /// Allows overriding of file system access for tests.
         /// </summary>
         private readonly Func<string, bool> _fileExists;
-        private readonly IConfigurationTelemetry _telemetry;
 
         private int _partialFlushMinSpans;
         private Uri _agentUri;
@@ -93,7 +92,6 @@ namespace Datadog.Trace.Configuration
         internal ExporterSettings(IConfigurationSource? source, Func<string, bool> fileExists, IConfigurationTelemetry telemetry)
         {
             _fileExists = fileExists;
-            _telemetry = telemetry;
 
             ValidationWarnings = new List<string>();
 
