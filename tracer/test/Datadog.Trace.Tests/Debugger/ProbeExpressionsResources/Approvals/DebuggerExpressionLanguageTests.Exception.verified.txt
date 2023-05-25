@@ -30,12 +30,8 @@ Expressions:
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[11].Value;
     var $dd_el_result = (@exception == null)
         ? "System.Exception"
-        : "System.Exception" + @"
-" + @exception.Message + @"
-" + @exception.StackTrace;
+        : "System.Exception" + ", " + @exception.Message + ", " + @exception.StackTrace;
 
     return $dd_el_result;
 }
-Result: The result of the expression is: System.Exception
-Can not cast X to Y
-
+Result: The result of the expression is: System.Exception, Can not cast X to Y, 

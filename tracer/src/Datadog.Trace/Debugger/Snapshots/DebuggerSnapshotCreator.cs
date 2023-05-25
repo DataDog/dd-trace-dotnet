@@ -856,7 +856,6 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         public DebuggerSnapshotCreator AddMessage()
         {
-            _message ??= GenerateDefaultMessage();
             _jsonWriter.WritePropertyName("message");
             _jsonWriter.WriteValue(_message);
             return this;
@@ -866,15 +865,6 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             _jsonWriter.WriteEndObject();
             return this;
-        }
-
-        private string GenerateDefaultMessage()
-        {
-            _jsonUnderlyingString.Append("}");
-            var snapshotObject = JsonConvert.DeserializeObject<Snapshot>(_jsonUnderlyingString.ToString());
-            _jsonUnderlyingString.Remove(_jsonUnderlyingString.Length - 1, 1);
-            var message = SnapshotSummary.FormatMessage(snapshotObject);
-            return message;
         }
 
         internal string GetSnapshotJson()

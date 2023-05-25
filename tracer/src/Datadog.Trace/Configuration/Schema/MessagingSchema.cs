@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Configuration.Schema
 {
@@ -63,5 +64,12 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => _defaultServiceName,
             };
         }
+
+        public KafkaTags CreateKafkaTags(string spanKind)
+            => _version switch
+            {
+                SchemaVersion.V0 => new KafkaTags(SpanKinds.Consumer),
+                _ => new KafkaV1Tags(SpanKinds.Consumer),
+            };
     }
 }

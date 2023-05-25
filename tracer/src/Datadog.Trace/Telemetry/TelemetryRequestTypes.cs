@@ -14,5 +14,6 @@ namespace Datadog.Trace.Telemetry
         public const string AppClosing = "app-closing";
 
         public const string GenerateMetrics = "generate-metrics";
+        public const string Distributions = "distributions";
     }
 }
