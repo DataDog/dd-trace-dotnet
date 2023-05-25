@@ -13,6 +13,7 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Agent
@@ -131,6 +132,7 @@ namespace Datadog.Trace.Agent
                 }
             }
 
+            TelemetryMetrics.Instance.Record(Count.TraceEnqueued);
             if (_statsd != null)
             {
                 _statsd.Increment(TracerMetricNames.Queue.EnqueuedTraces);
@@ -325,6 +327,7 @@ namespace Datadog.Trace.Agent
                             droppedP0Traces = Interlocked.Exchange(ref _droppedP0Traces, 0);
                             droppedP0Spans = Interlocked.Exchange(ref _droppedP0Spans, 0);
                             Log.Debug<int, int, long, long>("Flushing {Spans} spans across {Traces} traces. CanComputeStats is enabled with {DroppedP0Traces} droppedP0Traces and {DroppedP0Spans} droppedP0Spans", buffer.SpanCount, buffer.TraceCount, droppedP0Traces, droppedP0Spans);
+                            // Metrics for unsampled traces/spans already recorded
                         }
                         else
                         {
@@ -333,12 +336,15 @@ namespace Datadog.Trace.Agent
 
                         var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans).ConfigureAwait(false);
 
+                        TelemetryMetrics.Instance.Record(Count.TraceSent, buffer.TraceCount);
                         if (success)
                         {
                             _traceKeepRateCalculator.IncrementKeeps(buffer.TraceCount);
                         }
                         else
                         {
+                            TelemetryMetrics.Instance.Record(Count.TraceDropped, MetricTags.DropReason_ApiError, buffer.TraceCount);
+                            TelemetryMetrics.Instance.Record(Count.SpanDropped, MetricTags.DropReason_ApiError, buffer.SpanCount);
                             _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
                         }
                     }
@@ -347,6 +353,8 @@ namespace Datadog.Trace.Agent
                 {
                     Log.Error(ex, "An unhandled error occurred while flushing a buffer");
                     _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
+                    TelemetryMetrics.Instance.Record(Count.TraceDropped, MetricTags.DropReason_ApiError, buffer.TraceCount);
+                    TelemetryMetrics.Instance.Record(Count.SpanDropped, MetricTags.DropReason_ApiError, buffer.SpanCount);
                 }
                 finally
                 {
@@ -413,6 +421,8 @@ namespace Datadog.Trace.Agent
                     {
                         Interlocked.Increment(ref _droppedP0Traces);
                         Interlocked.Add(ref _droppedP0Spans, spans.Count);
+                        TelemetryMetrics.Instance.Record(Count.TraceDropped, MetricTags.DropReason_SamplingDecision);
+                        TelemetryMetrics.Instance.Record(Count.SpanDropped, MetricTags.DropReason_SamplingDecision, spans.Count);
                         return;
                     }
                     else
@@ -421,8 +431,10 @@ namespace Datadog.Trace.Agent
                         // this will override the TraceContext sampling priority when we do a SpanBuffer.TryWrite
                         chunkSamplingPriority = SamplingPriorityValues.UserKeep;
                         Interlocked.Increment(ref _droppedP0Traces); // increment since we are sampling out the entire trace
-                        Interlocked.Add(ref _droppedP0Spans, spans.Count - singleSpanSamplingSpans.Count);
+                        var spansDropped = spans.Count - singleSpanSamplingSpans.Count;
+                        Interlocked.Add(ref _droppedP0Spans, spansDropped);
                         spans = new ArraySegment<Span>(singleSpanSamplingSpans.ToArray());
+                    // TODO: Add telemetry metrics to record single span sampling
                     }
                 }
             }
@@ -486,6 +498,8 @@ namespace Datadog.Trace.Agent
         {
             Interlocked.Increment(ref _droppedTraces);
             _traceKeepRateCalculator.IncrementDrops(1);
+            TelemetryMetrics.Instance.Record(Count.SpanDropped, MetricTags.DropReason_OverfullBuffer, spans.Count);
+            TelemetryMetrics.Instance.Record(Count.TraceDropped, MetricTags.DropReason_OverfullBuffer);
 
             if (_statsd != null)
             {
