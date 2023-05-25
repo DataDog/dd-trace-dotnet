@@ -2,7 +2,6 @@ using System.Data;
 using Xunit;
 using Dapper;
 using System;
-using System.Data.SqlClient;
 using System.Threading;
 using System.Data.Common;
 

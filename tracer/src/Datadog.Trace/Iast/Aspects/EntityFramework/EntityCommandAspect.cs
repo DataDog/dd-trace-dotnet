@@ -9,8 +9,8 @@ using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects;
 
-/// <summary> DbCommandAspect class aspect </summary>
-[AspectClass("Microsoft.EntityFrameworkCore.Relational,EntityFramework")]
+/// <summary> EntityCommandAspect class aspect </summary>
+[AspectClass("EntityFramework")]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class EntityCommandAspect

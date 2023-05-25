@@ -16,7 +16,7 @@ namespace Datadog.Trace.Iast.Aspects;
 public class EntityFrameworkCoreAspect
 {
     /// <summary>
-    /// ReviewSqlString aspect
+    /// EntityFrameworkCoreAspect aspect
     /// </summary>
     /// <param name="sqlAsString"> sql query </param>
     /// <returns> resulting sql query </returns>

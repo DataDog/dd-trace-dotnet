@@ -16,7 +16,7 @@ namespace Datadog.Trace.Iast.Aspects;
 public class DbCommandAspect
 {
     /// <summary>
-    /// ReviewSqlString aspect
+    /// DbCommandAspect aspect
     /// </summary>
     /// <param name="command"> the DbCommand </param>
     /// <returns> resulting sql query </returns>

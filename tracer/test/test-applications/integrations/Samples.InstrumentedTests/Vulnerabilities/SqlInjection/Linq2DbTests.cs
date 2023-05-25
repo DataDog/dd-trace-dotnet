@@ -147,7 +147,6 @@ public class Linq2DbTests : InstrumentationTestsBase, IDisposable
         AssertVulnerable(1);
     }
 
-
     [Fact]
     public void GivenLinq2DbOperation_WhenCallingExecuteWithTainted_VulnerabilityIsReported()
     {

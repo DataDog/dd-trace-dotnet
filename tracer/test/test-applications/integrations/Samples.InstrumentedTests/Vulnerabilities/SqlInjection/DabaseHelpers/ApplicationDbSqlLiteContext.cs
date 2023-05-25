@@ -1,4 +1,4 @@
-﻿#if !NETCOREAPP2_1
+#if !NETCOREAPP2_1
 using System.Data.Entity;
 using System.Data.Entity.Core.Common;
 using System.Data.SQLite;
@@ -16,12 +16,6 @@ public class ApplicationDbSqlLiteContext : DbContext
             SetProviderFactory("System.Data.SQLite.EF6", SQLiteProviderFactory.Instance);
             SetProviderServices("System.Data.SQLite", (DbProviderServices)SQLiteProviderFactory.Instance.GetService(typeof(DbProviderServices)));
         }
-    }
-
-    public ApplicationDbSqlLiteContext(string conn) : 
-        base(new SQLiteConnection() { ConnectionString = new SQLiteConnectionStringBuilder(conn) { ForeignKeys = true }.ConnectionString }, true)
-    {
-        DbConfiguration.SetConfiguration(new SQLiteConfiguration());
     }
 
     public ApplicationDbSqlLiteContext(SQLiteConnection conn) : 

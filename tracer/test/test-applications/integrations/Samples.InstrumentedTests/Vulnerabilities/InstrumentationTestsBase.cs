@@ -126,7 +126,11 @@ public class InstrumentationTestsBase
     {
         var vulnerabilityList = GetGeneratedVulnerabilities();
         vulnerabilityList.Count.Should().Be(vulnerabilities);
-        bool locationOk = LocationIsOk(this.GetType().Name) || LocationIsOk(this.GetType().BaseType.Name);
+        var locations = new List<string>();
+        bool locationOk = LocationIsOk(this.GetType().Name, locations) || LocationIsOk(this.GetType().BaseType.Name);
+        var incorrectLocationMessage = "Incorrect vulnerability locations: ";
+        locations.ForEach(x => incorrectLocationMessage += x + " ");
+        locationOk.Should().BeTrue(incorrectLocationMessage);
     }
 
     protected void AssertVulnerable(string expectedType, string expectedEvidence = "", bool evidenceTainted = true)
@@ -155,13 +159,14 @@ public class InstrumentationTestsBase
         AssertVulnerable(0);
     }
 
-    protected bool LocationIsOk(string location)
+    protected bool LocationIsOk(string location, List<string>? locations = null)
     {
         var vulnerabilities = GetGeneratedVulnerabilities();
         foreach (var vulnerability in vulnerabilities)
         {
             var locationProperty = _locationProperty.Invoke(vulnerability, Array.Empty<object>());
             var path = _pathProperty.Invoke(locationProperty, Array.Empty<object>());
+            locations?.Add(path.ToString());
 
             if (!string.IsNullOrEmpty(path as string))
             {

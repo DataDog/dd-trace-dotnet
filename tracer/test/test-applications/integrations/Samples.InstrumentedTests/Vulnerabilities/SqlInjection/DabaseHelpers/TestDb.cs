@@ -8,8 +8,6 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
 public class TestDb : DataConnection
 {
-    public ITable<TestDb.Person> Persons { get { return this.GetTable<TestDb.Person>(); } }
-
     public TestDb(string connectionString) : base(LinqToDB.DataProvider.SqlServer.SqlServerTools.GetDataProvider(), connectionString)
     {
     }

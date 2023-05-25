@@ -1,7 +1,5 @@
 using System;
-using System.Data.Common;
 using System.Data.SqlClient;
-using System.Runtime.InteropServices;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 

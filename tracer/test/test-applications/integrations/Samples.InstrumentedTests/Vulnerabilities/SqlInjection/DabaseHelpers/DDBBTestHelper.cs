@@ -30,21 +30,6 @@ internal static class DDBBTestHelper
         return commands;
     }
 
-    public static void TestDDBBCall(Action expression)
-    {
-        if (IsLinux())
-        {
-            try
-            {
-                expression.Invoke();
-            }
-            catch (InvalidOperationException)
-            {
-            }
-        }
-        expression.Invoke();
-    }
-
     public static object TestDDBBCall(Func<object> expression)
     {
         if (IsLinux())

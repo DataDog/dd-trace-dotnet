@@ -1,5 +1,3 @@
-using System;
-
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
 public class Book
