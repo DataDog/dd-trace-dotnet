@@ -38,6 +38,7 @@ namespace Datadog.Trace
         private static volatile bool _globalInstanceInitialized;
 
         private readonly TracerManager _tracerManager;
+        private readonly bool _use128BitsTraceId;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Tracer"/> class with default settings. Replaces the
@@ -65,6 +66,8 @@ namespace Datadog.Trace
         {
             // TODO: Switch to immutable settings
             Configure(settings);
+
+            _use128BitsTraceId = Settings?.TraceId128BitGenerationEnabled ?? false;
 
             // update the count of Tracer instances
             Interlocked.Increment(ref _liveTracerCount);
@@ -383,8 +386,7 @@ namespace Datadog.Trace
                 traceContext = new TraceContext(this, tags: null);
 
                 // in a version-mismatch scenario, try to get the sampling priority from the "other" tracer
-                var samplingPriority = DistributedTracer.Instance.GetSamplingPriority();
-                traceContext.SetSamplingPriority(samplingPriority);
+                traceContext.SetSamplingPriority(DistributedTracer.Instance.GetSamplingPriority());
 
                 if (traceId == TraceId.Zero &&
                     Activity.ActivityListener.GetCurrentActivity() is Activity.DuckTypes.IW3CActivity { TraceId: { } activityTraceId })
@@ -396,17 +398,14 @@ namespace Datadog.Trace
                 }
             }
 
-            var finalServiceName = serviceName ?? DefaultServiceName;
-
             if (traceId == TraceId.Zero)
             {
                 // generate the trace id here using the 128-bit setting
                 // instead of letting the SpanContext generate it in its ctor
-                var useAllBits = Settings?.TraceId128BitGenerationEnabled ?? false;
-                traceId = RandomIdGenerator.Shared.NextTraceId(useAllBits);
+                traceId = RandomIdGenerator.Shared.NextTraceId(_use128BitsTraceId);
             }
 
-            return new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
+            return new SpanContext(parent, traceContext, serviceName ?? DefaultServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
         }
 
         internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null)

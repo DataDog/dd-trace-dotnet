@@ -17,7 +17,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Activity
 {
-    internal static class ActivityListener
+    internal static unsafe class ActivityListener
     {
         private const int InitializationBackoffPerRetry = 10000;
 
@@ -26,7 +26,8 @@ namespace Datadog.Trace.Activity
         private static int _initializationRetries = 5;
 
         private static object? _activityListenerInstance;
-        private static Func<object>? _getCurrentActivity;
+        private static DynamicMethod? _getCurrentActivityDynMethod;
+        private static delegate*<object> _getCurrentActivity;
 
         private static int _initialized = 0;
         private static int _stopped = 0;
@@ -42,9 +43,14 @@ namespace Datadog.Trace.Activity
 
         internal static object? GetCurrentActivityObject()
         {
+            if (_getCurrentActivityDynMethod is null)
+            {
+                return null;
+            }
+
             try
             {
-                return _getCurrentActivity?.Invoke();
+                return _getCurrentActivity();
             }
             catch (Exception ex)
             {
@@ -153,7 +159,8 @@ namespace Datadog.Trace.Activity
                 var activityCurrentDynMethodIl = activityCurrentDynMethod.GetILGenerator();
                 activityCurrentDynMethodIl.EmitCall(OpCodes.Call, activityCurrentMethodInfo, null);
                 activityCurrentDynMethodIl.Emit(OpCodes.Ret);
-                _getCurrentActivity = (Func<object>)activityCurrentDynMethod.CreateDelegate(typeof(Func<object>));
+                _getCurrentActivityDynMethod = activityCurrentDynMethod;
+                _getCurrentActivity = (delegate*<object>)activityCurrentDynMethod.MethodHandle.GetFunctionPointer();
             }
 
             static void ChangeActivityDefaultFormat(Type activityType)
