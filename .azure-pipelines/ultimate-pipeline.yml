@@ -1806,8 +1806,15 @@ stages:
           serverless-lambda-throwing-async-task \
           serverless-lambda-throwing-with-context \
           serverless-lambda-throwing-async-with-context \
-          serverless-lambda-throwing-async-task-with-context
-
+          serverless-lambda-throwing-async-task-with-context \
+          serverless-lambda-generic \
+          serverless-lambda-generic-async \
+          serverless-lambda-generic-virtual \
+          serverless-lambda-generic-virtual-async \
+          serverless-lambda-generic-abstract \
+          serverless-lambda-generic-abstract-async \
+          serverless-lambda-generic-complex \
+          serverless-lambda-generic-complex-nested
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
