@@ -32,6 +32,14 @@ services:
     - serverless-lambda-throwing-with-context
     - serverless-lambda-throwing-async-with-context
     - serverless-lambda-throwing-async-task-with-context
+    - serverless-lambda-generic
+    - serverless-lambda-generic-async
+    - serverless-lambda-generic-virtual
+    - serverless-lambda-generic-virtual-async
+    - serverless-lambda-generic-abstract
+    - serverless-lambda-generic-abstract-async
+    - serverless-lambda-generic-complex
+    - serverless-lambda-generic-complex-nested
     - serverless-dummy-api
     environment:
     - AWS_LAMBDA_ENDPOINT_NO_PARAM_SYNC=http://serverless-lambda-no-param-sync:8080
@@ -63,6 +71,14 @@ services:
     - AWS_LAMBDA_ENDPOINT_THROWING_WITH_CONTEXT=http://serverless-lambda-throwing-with-context:8080
     - AWS_LAMBDA_ENDPOINT_THROWING_ASYNC_WITH_CONTEXT=http://serverless-lambda-throwing-async-with-context:8080
     - AWS_LAMBDA_ENDPOINT_THROWING_ASYNC_TASK_WITH_CONTEXT=http://serverless-lambda-throwing-async-task-with-context:8080
+    - AWS_LAMBDA_ENDPOINT_GENERICBASE=http://serverless-lambda-generic:8080
+    - AWS_LAMBDA_ENDPOINT_GENERICBASE_ASYNC=http://serverless-lambda-generic-async:8080
+    - AWS_LAMBDA_ENDPOINT_GENERICBASE_VIRTUAL=http://serverless-lambda-generic-virtual:8080
+    - AWS_LAMBDA_ENDPOINT_GENERICBASE_VIRTUAL_ASYNC=http://serverless-lambda-generic-virtual-async:8080
+    - AWS_LAMBDA_ENDPOINT_GENERICBASE_ABSTRACT=http://serverless-lambda-generic-abstract:8080
+    - AWS_LAMBDA_ENDPOINT_GENERICBASE_ABSTRACT_ASYNC=http://serverless-lambda-generic-abstract-async:8080
+    - AWS_LAMBDA_ENDPOINT_GENERICBASE_COMPLEX=http://serverless-lambda-generic-complex:8080
+    - AWS_LAMBDA_ENDPOINT_GENERICBASE_COMPLEX_NESTED=http://serverless-lambda-generic-complex-nested:8080
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
 
   StartDependencies.Serverless:
@@ -97,6 +113,14 @@ services:
     - serverless-lambda-throwing-with-context
     - serverless-lambda-throwing-async-with-context
     - serverless-lambda-throwing-async-task-with-context
+    - serverless-lambda-generic
+    - serverless-lambda-generic-async
+    - serverless-lambda-generic-virtual
+    - serverless-lambda-generic-virtual-async
+    - serverless-lambda-generic-abstract
+    - serverless-lambda-generic-abstract-async
+    - serverless-lambda-generic-complex
+    - serverless-lambda-generic-complex-nested
     - serverless-dummy-api
     environment:
       - TIMEOUT_LENGTH=120
@@ -130,6 +154,14 @@ services:
       serverless-lambda-throwing-with-context:8080
       serverless-lambda-throwing-async-with-context:8080
       serverless-lambda-throwing-async-task-with-context:8080
+      serverless-lambda-generic:8080
+      serverless-lambda-generic-async:8080
+      serverless-lambda-generic-virtual:8080
+      serverless-lambda-generic-virtual-async:8080
+      serverless-lambda-generic-abstract:8080
+      serverless-lambda-generic-abstract-async:8080
+      serverless-lambda-generic-complex:8080
+      serverless-lambda-generic-complex-nested:8080
       serverless-dummy-api:9005
 
   serverless-lambda-no-param-sync:
@@ -798,6 +830,190 @@ services:
     volumes:
     - ./:/project
     - ./tracer/build_data/logs/serverless-lambda-throwing-async-task-with-context:/var/log/datadog/dotnet
+
+  serverless-lambda-generic:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
+    depends_on:
+      - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.DerivedImplementation::GenericBaseType1"
+    image: dd-trace-dotnet/serverless-lambda-generic
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+      - DUMMY_API_HOST=http://serverless-dummy-api:9005
+      - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+      - DD_TRACE_DEBUG=1
+    ports:
+      - "8080"
+    volumes:
+      - ./:/project
+      - ./tracer/build_data/logs/serverless-lambda-generic:/var/log/datadog/dotnet
+
+  serverless-lambda-generic-async:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
+    depends_on:
+      - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.DerivedImplementation::GenericBaseType2"
+    image: dd-trace-dotnet/serverless-lambda-generic-async
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+      - DUMMY_API_HOST=http://serverless-dummy-api:9005
+      - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+      - DD_TRACE_DEBUG=1
+    ports:
+      - "8080"
+    volumes:
+      - ./:/project
+      - ./tracer/build_data/logs/serverless-lambda-generic-async:/var/log/datadog/dotnet
+
+  serverless-lambda-generic-virtual:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
+    depends_on:
+      - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.DerivedImplementation::VirtualGenericBaseType3"
+    image: dd-trace-dotnet/serverless-lambda-generic-virtual
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+      - DUMMY_API_HOST=http://serverless-dummy-api:9005
+      - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+      - DD_TRACE_DEBUG=1
+    ports:
+      - "8080"
+    volumes:
+      - ./:/project
+      - ./tracer/build_data/logs/serverless-lambda-generic-virtual:/var/log/datadog/dotnet
+
+  serverless-lambda-generic-virtual-async:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
+    depends_on:
+      - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.DerivedImplementation::VirtualGenericBaseType4"
+    image: dd-trace-dotnet/serverless-lambda-generic-virtual-async
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+      - DUMMY_API_HOST=http://serverless-dummy-api:9005
+      - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+      - DD_TRACE_DEBUG=1
+    ports:
+      - "8080"
+    volumes:
+      - ./:/project
+      - ./tracer/build_data/logs/serverless-lambda-generic-virtual-async:/var/log/datadog/dotnet
+
+  serverless-lambda-generic-abstract:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
+    depends_on:
+      - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.DerivedImplementation::AbstractGenericBaseType5"
+    image: dd-trace-dotnet/serverless-lambda-generic-abstract
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+      - DUMMY_API_HOST=http://serverless-dummy-api:9005
+      - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+      - DD_TRACE_DEBUG=1
+    ports:
+      - "8080"
+    volumes:
+      - ./:/project
+      - ./tracer/build_data/logs/serverless-lambda-generic-abstract:/var/log/datadog/dotnet
+
+  serverless-lambda-generic-abstract-async:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
+    depends_on:
+      - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.DerivedImplementation::AbstractGenericBaseType6"
+    image: dd-trace-dotnet/serverless-lambda-generic-abstract-async
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+      - DUMMY_API_HOST=http://serverless-dummy-api:9005
+      - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+      - DD_TRACE_DEBUG=1
+    ports:
+      - "8080"
+    volumes:
+      - ./:/project
+      - ./tracer/build_data/logs/serverless-lambda-generic-abstract-async:/var/log/datadog/dotnet
+
+  serverless-lambda-generic-complex:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
+    depends_on:
+      - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.DerivedImplementation::ComplexNestedGeneric"
+    image: dd-trace-dotnet/serverless-lambda-generic-complex
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+      - DUMMY_API_HOST=http://serverless-dummy-api:9005
+      - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+      - DD_TRACE_DEBUG=1
+    ports:
+      - "8080"
+    volumes:
+      - ./:/project
+      - ./tracer/build_data/logs/serverless-lambda-generic-complex:/var/log/datadog/dotnet
+
+  serverless-lambda-generic-complex-nested:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
+    depends_on:
+      - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.DerivedImplementation+NestedDerived::ComplexNestedGeneric"
+    image: dd-trace-dotnet/serverless-lambda-generic-complex-nested
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+      - DUMMY_API_HOST=http://serverless-dummy-api:9005
+      - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+      - DD_TRACE_DEBUG=1
+    ports:
+      - "8080"
+    volumes:
+      - ./:/project
+      - ./tracer/build_data/logs/serverless-lambda-generic-complex-nested:/var/log/datadog/dotnet
 
   # The serverless function calls this API, which always returns 200 OK
   serverless-dummy-api:
