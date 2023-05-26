@@ -22,7 +22,7 @@ internal class Sources
         /// allowing adding aspect-oriented changes such as telemetry etc.
         /// Any documentation added to the field is copied to the public API
         /// </summary>
-        [System.AttributeUsage(System.AttributeTargets.Field, AllowMultiple = false)]
+        [System.AttributeUsage(System.AttributeTargets.Property, AllowMultiple = false)]
         internal class GeneratePublicApiAttribute : System.Attribute
         {
             /// <summary>

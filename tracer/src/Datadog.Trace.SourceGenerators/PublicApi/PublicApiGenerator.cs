@@ -38,7 +38,7 @@ public class PublicApiGenerator : IIncrementalGenerator
         var properties =
             context.SyntaxProvider.ForAttributeWithMetadataName(
                         GeneratePublicApiAttribute,
-                        static (node, _) => node.Parent?.Parent is FieldDeclarationSyntax,
+                        static (node, _) => node is PropertyDeclarationSyntax,
                         static (context, ct) => GetPublicApiProperties(context, ct))
                    .Where(static m => m is not null)!;
 
@@ -77,18 +77,18 @@ public class PublicApiGenerator : IIncrementalGenerator
     private static Result<(PublicApiProperty PropertyTag, bool IsValid)> GetPublicApiProperties(
         GeneratorAttributeSyntaxContext ctx, CancellationToken ct)
     {
-        var field = (FieldDeclarationSyntax)ctx.TargetNode.Parent!.Parent!;
-        var classDec = field.Parent as ClassDeclarationSyntax;
+        var property = (PropertyDeclarationSyntax)ctx.TargetNode;
+        var classDec = ctx.TargetNode.Parent as ClassDeclarationSyntax;
         if (classDec is null)
         {
-            // only support fields on classes
+            // only support properties on classes
             return new Result<(PublicApiProperty PropertyTag, bool IsValid)>(
                 (default, false),
-                new EquatableArray<DiagnosticInfo>(new[] { OnlySupportsClassesDiagnostic.CreateInfo(field) }));
+                new EquatableArray<DiagnosticInfo>(new[] { OnlySupportsClassesDiagnostic.CreateInfo(property) }));
         }
 
-        var fieldSymbol = ctx.TargetSymbol as IFieldSymbol;
-        if (fieldSymbol is null)
+        var propertySymbol = ctx.TargetSymbol as IPropertySymbol;
+        if (propertySymbol is null)
         {
             // something weird going on
             return new Result<(PublicApiProperty PropertyTag, bool IsValid)>((default, false), default);
@@ -99,7 +99,7 @@ public class PublicApiGenerator : IIncrementalGenerator
         int? publicApiGetter = null;
         int? publicApiSetter = null;
 
-        foreach (AttributeData attributeData in fieldSymbol.GetAttributes())
+        foreach (AttributeData attributeData in propertySymbol.GetAttributes())
         {
             if ((attributeData.AttributeClass?.Name == "GeneratePublicApiAttribute" ||
                  attributeData.AttributeClass?.Name == "GeneratePublicApi")
@@ -131,7 +131,7 @@ public class PublicApiGenerator : IIncrementalGenerator
                 if (args.Length > 1)
                 {
                     publicApiSetter = args[1].Value as int?;
-                    if ((fieldSymbol.IsReadOnly || fieldSymbol.IsConst) && publicApiSetter.HasValue)
+                    if (propertySymbol.IsReadOnly && publicApiSetter.HasValue)
                     {
                         diagnostics ??= new List<DiagnosticInfo>();
                         diagnostics.Add(SetterOnReadonlyFieldDiagnostic.CreateInfo(attributeData.ApplicationSyntaxReference?.GetSyntax()));
@@ -143,19 +143,19 @@ public class PublicApiGenerator : IIncrementalGenerator
             }
         }
 
-        var fieldName = fieldSymbol.Name;
+        var fieldName = propertySymbol.Name;
         var propertyName = GetCalculatedPropertyName(fieldName);
         if (string.IsNullOrEmpty(propertyName))
         {
             diagnostics ??= new List<DiagnosticInfo>();
-            diagnostics.Add(NamingProblemDiagnostic.CreateInfo(field));
+            diagnostics.Add(NamingProblemDiagnostic.CreateInfo(property));
             hasMisconfiguredInput = true;
         }
 
         if (!classDec.Modifiers.Any(x => x.IsKind(SyntaxKind.PartialKeyword)))
         {
             diagnostics ??= new List<DiagnosticInfo>();
-            diagnostics.Add(PartialModifierIsRequiredDiagnostic.CreateInfo(field));
+            diagnostics.Add(PartialModifierIsRequiredDiagnostic.CreateInfo(property));
         }
 
         var errors = diagnostics is { Count: > 0 }
@@ -174,8 +174,8 @@ public class PublicApiGenerator : IIncrementalGenerator
             propertyName: propertyName!,
             publicApiGetter: publicApiGetter,
             publicApiSetter: publicApiSetter,
-            returnType: fieldSymbol.Type.ToDisplayString(),
-            leadingTrivia: field.GetLeadingTrivia().ToFullString());
+            returnType: propertySymbol.Type.ToDisplayString(),
+            leadingTrivia: property.GetLeadingTrivia().ToFullString());
 
         return new Result<(PublicApiProperty PropertyTag, bool IsValid)>((tag, true), errors);
     }
