@@ -28,15 +28,16 @@ namespace Datadog.Trace
 
         private int _isFinished;
 
-        internal Span(SpanContext context, DateTimeOffset? start)
+        /*
+        internal Span(ISpanContextInternal context, DateTimeOffset? start)
             : this(context, start, null)
         {
         }
 
-        internal Span(SpanContext context, DateTimeOffset? start, ITags tags)
+        internal Span(ISpanContextInternal context, DateTimeOffset? start, ITags tags)
         {
             Tags = tags ?? new CommonTags();
-            Context = context;
+            SetSpanContextValues(context);
             StartTime = start ?? Context.TraceContext.UtcNow;
 
             if (IsLogLevelDebugEnabled)
@@ -47,6 +48,11 @@ namespace Datadog.Trace
                     "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{TagsType}])",
                     new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, Tags, tagsType });
             }
+        }
+        */
+
+        private Span()
+        {
         }
 
         /// <summary>
@@ -76,8 +82,8 @@ namespace Datadog.Trace
         /// </summary>
         internal string ServiceName
         {
-            get => Context.ServiceName;
-            set => ((SpanContext)Context).ServiceName = value;
+            get => _serviceName;
+            set => _serviceName = value;
         }
 
         /// <summary>
@@ -108,7 +114,7 @@ namespace Datadog.Trace
 
         internal ITags Tags { get; set; }
 
-        internal ISpanContextInternal Context { get; }
+        internal ISpanContextInternal Context => this;
 
         internal DateTimeOffset StartTime { get; private set; }
 

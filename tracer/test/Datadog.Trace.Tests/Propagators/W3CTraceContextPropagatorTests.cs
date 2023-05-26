@@ -101,8 +101,8 @@ namespace Datadog.Trace.Tests.Propagators
         public void CreateTraceStateHeader_WithPublicPropagatedTags()
         {
             var traceContext = new TraceContext(tracer: null);
-            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2);
-            var span = new Span(spanContext, DateTimeOffset.Now);
+            var spanContext = Span.CreateSpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2);
+            var span = Span.CreateSpan(spanContext, DateTimeOffset.Now);
 
             var user = new UserDetails("12345")
             {

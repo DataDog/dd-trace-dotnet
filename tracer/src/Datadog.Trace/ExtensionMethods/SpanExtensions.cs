@@ -33,7 +33,7 @@ namespace Datadog.Trace.ExtensionMethods
         {
             if (span == null) { ThrowHelper.ThrowArgumentNullException(nameof(span)); }
 
-            if (span.Context is SpanContext { TraceContext: { } traceContext })
+            if (span.Context is ISpanContextInternal { TraceContext: { } traceContext })
             {
                 traceContext.SetSamplingPriority((int)samplingPriority, SamplingMechanism.Manual);
             }

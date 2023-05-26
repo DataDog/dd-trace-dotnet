@@ -22,8 +22,8 @@ namespace Datadog.Trace.Tests.Sampling
         public void One_Is_Allowed()
         {
             var traceContext = new TraceContext(TracerHelper.Create());
-            var spanContext = new SpanContext(null, traceContext, "Weeeee");
-            var span = new Span(spanContext, null);
+            var spanContext = Span.CreateSpanContext(null, traceContext, "Weeeee");
+            var span = Span.CreateSpan(spanContext, null);
             var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: null);
             var allowed = rateLimiter.Allowed(span);
             Assert.True(allowed);
@@ -112,8 +112,8 @@ namespace Datadog.Trace.Tests.Sampling
         private static int AskTheRateLimiterABunchOfTimes(RateLimiter rateLimiter, int howManyTimes)
         {
             var traceContext = new TraceContext(TracerHelper.Create());
-            var spanContext = new SpanContext(null, traceContext, "Weeeee");
-            var span = new Span(spanContext, null);
+            var spanContext = Span.CreateSpanContext(null, traceContext, "Weeeee");
+            var span = Span.CreateSpan(spanContext, null);
 
             var remaining = howManyTimes;
             var allowedCount = 0;
@@ -162,10 +162,10 @@ namespace Datadog.Trace.Tests.Sampling
                             for (int j = 0; j < numberPerThread; j++)
                             {
                                 // trace id and span id are not used in rate-limiting
-                                var spanContext = new SpanContext(traceId: 1, spanId: 1, serviceName: "Weeeee");
+                                var spanContext = Span.CreateSpanContext(traceId: 1, spanId: 1, serviceName: "Weeeee");
 
                                 // pass a specific start time since there is no TraceContext
-                                var span = new Span(spanContext, DateTimeOffset.UtcNow);
+                                var span = Span.CreateSpan(spanContext, DateTimeOffset.UtcNow);
 
                                 Interlocked.Increment(ref totalAttempted);
 

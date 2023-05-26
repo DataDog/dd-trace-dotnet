@@ -16,11 +16,29 @@ namespace Datadog.Trace.Tests.Sampling
     {
         // copied these from CustomSamplingRule - maybe should combine or share?
         private static readonly ulong Id = 1;
-        private static readonly Span CartCheckoutSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "shopping-cart-service"), DateTimeOffset.Now) { OperationName = "checkout" };
-        private static readonly Span AddToCartSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "shopping-cart-service"), DateTimeOffset.Now) { OperationName = "cart-add" };
-        private static readonly Span ShippingAuthSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "shipping-auth-service"), DateTimeOffset.Now) { OperationName = "authorize" };
-        private static readonly Span ShippingRevertSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "shipping-auth-service"), DateTimeOffset.Now) { OperationName = "authorize-revert" };
-        private static readonly Span RequestShippingSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "request-shipping"), DateTimeOffset.Now) { OperationName = "submit" };
+        private static readonly Span CartCheckoutSpan;
+        private static readonly Span AddToCartSpan;
+        private static readonly Span ShippingAuthSpan;
+        private static readonly Span ShippingRevertSpan;
+        private static readonly Span RequestShippingSpan;
+
+        static SpanSamplingRuleTests()
+        {
+            CartCheckoutSpan = Span.CreateSpan(Span.CreateSpanContext(Id++, Id++, null, serviceName: "shopping-cart-service"), DateTimeOffset.Now);
+            CartCheckoutSpan.OperationName = "checkout";
+
+            AddToCartSpan = Span.CreateSpan(Span.CreateSpanContext(Id++, Id++, null, serviceName: "shopping-cart-service"), DateTimeOffset.Now);
+            AddToCartSpan.OperationName = "cart-add";
+
+            ShippingAuthSpan = Span.CreateSpan(Span.CreateSpanContext(Id++, Id++, null, serviceName: "shipping-auth-service"), DateTimeOffset.Now);
+            ShippingAuthSpan.OperationName = "authorize";
+
+            ShippingRevertSpan = Span.CreateSpan(Span.CreateSpanContext(Id++, Id++, null, serviceName: "shipping-auth-service"), DateTimeOffset.Now);
+            ShippingRevertSpan.OperationName = "authorize-revert";
+
+            RequestShippingSpan = Span.CreateSpan(Span.CreateSpanContext(Id++, Id++, null, serviceName: "request-shipping"), DateTimeOffset.Now);
+            RequestShippingSpan.OperationName = "submit";
+        }
 
         [Theory]
         [InlineData(null)]

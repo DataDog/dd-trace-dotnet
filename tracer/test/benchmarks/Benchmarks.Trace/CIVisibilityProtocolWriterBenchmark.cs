@@ -29,7 +29,7 @@ namespace Benchmarks.Trace
             var now = DateTimeOffset.UtcNow;
             for (var i = 0; i < SpanCount; i++)
             {
-                enrichedSpans[i] = new Span(new SpanContext((TraceId)i, (ulong)i, SamplingPriorityValues.UserReject, serviceName: "Benchmark", origin: null), now);
+                enrichedSpans[i] = Span.CreateSpan(Span.CreateSpanContext((TraceId)i, (ulong)i, SamplingPriorityValues.UserReject, serviceName: "Benchmark", origin: null), now);
                 enrichedSpans[i].SetTag(Tags.Env, "Benchmark");
                 enrichedSpans[i].SetMetric(Metrics.SamplingRuleDecision, 1.0);
             }

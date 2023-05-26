@@ -312,8 +312,8 @@ namespace Datadog.Trace.Tests
             var traceId = new TraceId(upper, lower);
             var trace = new TraceContext(tracer: null);
             var propagatedContext = new SpanContext(traceId, spanId: 1, samplingPriority: null, serviceName: null, origin: null);
-            var childContext = new SpanContext(propagatedContext, trace, serviceName: null);
-            var span = new Span(childContext, start: null);
+            var childContext = Span.CreateSpanContext(propagatedContext, trace, serviceName: null);
+            var span = Span.CreateSpan(childContext, start: null);
 
             span.GetTag(Tags.TraceId).Should().Be(expected);
         }

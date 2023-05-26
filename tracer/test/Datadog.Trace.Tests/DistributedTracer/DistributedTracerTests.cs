@@ -53,7 +53,7 @@ namespace Datadog.Trace.Tests.DistributedTracer
             }
 
             distributedTracer.Verify(t => t.SetSpanContext(null), Times.Once);
-            distributedTracer.Verify(t => t.SetSpanContext(It.IsAny<SpanContext>()), Times.Exactly(2));
+            distributedTracer.Verify(t => t.SetSpanContext(It.IsAny<ISpanContextInternal>()), Times.Exactly(2));
         }
     }
 }

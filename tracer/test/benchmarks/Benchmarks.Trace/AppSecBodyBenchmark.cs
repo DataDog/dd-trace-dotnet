@@ -69,7 +69,7 @@ namespace Benchmarks.Trace
 
         private void ExecuteCycle(object body)
         {
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            var span = Span.CreateSpan(Span.CreateSpanContext(1, 1), DateTimeOffset.UtcNow);
 #if !NETFRAMEWORK
             _security.CheckBody(_httpContext, span, body);
             var context = _httpContext.Features.Get<IContext>();

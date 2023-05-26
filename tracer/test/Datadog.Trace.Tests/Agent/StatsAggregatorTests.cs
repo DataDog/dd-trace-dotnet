@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tests.Agent
                 while (stopwatch.Elapsed.Minutes < 1)
                 {
                     // Flush is not called if no spans are processed
-                    aggregator.Add(new Span(new SpanContext(1, 1), DateTime.UtcNow));
+                    aggregator.Add(Span.CreateSpan(Span.CreateSpanContext(1, 1), DateTime.UtcNow));
 
                     if (mutex.Wait(TimeSpan.FromMilliseconds(100)))
                     {
@@ -84,7 +84,7 @@ namespace Datadog.Trace.Tests.Agent
             // Dispose immediately to make Flush complete without delay
             await aggregator.DisposeAsync();
 
-            aggregator.Add(new Span(new SpanContext(1, 2), DateTimeOffset.UtcNow));
+            aggregator.Add(Span.CreateSpan(Span.CreateSpanContext(1, 2), DateTimeOffset.UtcNow));
 
             await aggregator.Flush();
 
@@ -167,7 +167,7 @@ namespace Datadog.Trace.Tests.Agent
 
             Span CreateSpan(ulong id, DateTimeOffset start, long durationMs, string operationName = "name", string resourceName = "resource", string serviceName = "service", string type = "http", string httpStatusCode = "200", string origin = "rum")
             {
-                var span = new Span(new SpanContext(id, id), start);
+                var span = Span.CreateSpan(Span.CreateSpanContext(id, id), start);
                 span.SetDuration(TimeSpan.FromMilliseconds(durationMs));
 
                 span.ResourceName = resourceName;
@@ -196,20 +196,20 @@ namespace Datadog.Trace.Tests.Agent
 
             try
             {
-                var parentSpan = new Span(new SpanContext(1, 1, serviceName: "service"), start);
+                var parentSpan = Span.CreateSpan(Span.CreateSpanContext(1, 1, serviceName: "service"), start);
                 parentSpan.OperationName = "web.request";
                 parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
                 // childSpan shouldn't be recorded, because it's not top-level and doesn't have the Measured tag
-                var childSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
+                var childSpan = Span.CreateSpan(Span.CreateSpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
                 childSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
-                var measuredChildSpan1 = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
+                var measuredChildSpan1 = Span.CreateSpan(Span.CreateSpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
                 measuredChildSpan1.OperationName = "child.op1";
                 measuredChildSpan1.SetTag(Tags.Measured, "1");
                 measuredChildSpan1.SetDuration(TimeSpan.FromMilliseconds(100));
 
-                var measuredChildSpan2 = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
+                var measuredChildSpan2 = Span.CreateSpan(Span.CreateSpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
                 measuredChildSpan2.OperationName = "child.op2";
                 measuredChildSpan2.SetTag(Tags.Measured, "1");
                 measuredChildSpan2.SetDuration(TimeSpan.FromMilliseconds(100));
@@ -259,19 +259,19 @@ namespace Datadog.Trace.Tests.Agent
 
             try
             {
-                var simpleSpan = new Span(new SpanContext(1, 1, serviceName: "service"), start);
+                var simpleSpan = Span.CreateSpan(Span.CreateSpanContext(1, 1, serviceName: "service"), start);
                 simpleSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
-                var parentSpan = new Span(new SpanContext(2, 2, serviceName: "service"), start);
+                var parentSpan = Span.CreateSpan(Span.CreateSpanContext(2, 2, serviceName: "service"), start);
                 parentSpan.SetDuration(TimeSpan.FromMilliseconds(200));
 
                 // snapshotSpan shouldn't be recorded, because it has the PartialSnapshot metric (even though it is top-level)
-                var snapshotSpan = new Span(new SpanContext(5, 5, serviceName: "service"), start);
+                var snapshotSpan = Span.CreateSpan(Span.CreateSpanContext(5, 5, serviceName: "service"), start);
                 snapshotSpan.SetMetric(Tags.PartialSnapshot, 1.0);
                 snapshotSpan.SetDuration(TimeSpan.FromMilliseconds(300));
 
                 // Create a new child span that is a service entry span, which means it will have stats computed for it
-                var httpClientServiceSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service-http-client"), start);
+                var httpClientServiceSpan = Span.CreateSpan(Span.CreateSpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service-http-client"), start);
                 httpClientServiceSpan.SetDuration(TimeSpan.FromMilliseconds(400));
 
                 aggregator.Add(simpleSpan, parentSpan, snapshotSpan, httpClientServiceSpan);
@@ -329,13 +329,13 @@ namespace Datadog.Trace.Tests.Agent
 
             try
             {
-                var success1Span = new Span(new SpanContext(1, 1, serviceName: "service"), start);
+                var success1Span = Span.CreateSpan(Span.CreateSpanContext(1, 1, serviceName: "service"), start);
                 success1Span.SetDuration(TimeSpan.FromMilliseconds(100));
 
-                var success2Span = new Span(new SpanContext(2, 2, serviceName: "service"), start);
+                var success2Span = Span.CreateSpan(Span.CreateSpanContext(2, 2, serviceName: "service"), start);
                 success2Span.SetDuration(TimeSpan.FromMilliseconds(200));
 
-                var errorSpan = new Span(new SpanContext(3, 3, serviceName: "service"), start);
+                var errorSpan = Span.CreateSpan(Span.CreateSpanContext(3, 3, serviceName: "service"), start);
                 errorSpan.Error = true;
                 errorSpan.SetDuration(TimeSpan.FromMilliseconds(400));
 
@@ -376,7 +376,7 @@ namespace Datadog.Trace.Tests.Agent
                 var durations = new double[sampleCount];
                 for (int i = 0; i < sampleCount; i++)
                 {
-                    var span = new Span(new SpanContext((ulong)i, (ulong)i, serviceName: "service"), start);
+                    var span = Span.CreateSpan(Span.CreateSpanContext((ulong)i, (ulong)i, serviceName: "service"), start);
                     var duration = TimeSpan.FromMilliseconds(i * 100);
 
                     span.SetDuration(duration);

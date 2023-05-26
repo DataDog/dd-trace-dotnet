@@ -22,8 +22,8 @@ namespace Benchmarks.Trace
             _obfuscatorTraceProcessor = new ObfuscatorTraceProcessor(true);
             
             var traceContext = new TraceContext(Tracer.Instance, null);
-            var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
-            var span = new Span(spanContext, DateTimeOffset.Now);
+            var spanContext = Span.CreateSpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
+            var span = Span.CreateSpan(spanContext, DateTimeOffset.Now);
             span.ResourceName = "My Resource Name";
             span.Type = "sql";
             _spans = new ArraySegment<Span>(Enumerable.Repeat(span, 100).ToArray());
