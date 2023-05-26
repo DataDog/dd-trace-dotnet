@@ -72,7 +72,7 @@ namespace Datadog.Trace.Telemetry
 
                     if (telemetryTransports.Length == 0)
                     {
-                        log.Debug("Telemetry collection disabled: no available transports");
+                        log.Information("Telemetry collection disabled: no available transports");
                         return NullTelemetryController.Instance;
                     }
 
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Telemetry
                     if (!settings.MetricsEnabled)
                     {
                         // if we're not using metrics, we don't need the metrics collector
-                        log.Debug("Telemetry metrics collection disabled");
+                        log.Information("Telemetry metrics collection disabled");
                         var oldMetrics = Interlocked.Exchange(ref _metrics, NullMetricsTelemetryCollector.Instance);
                         if (oldMetrics is MetricsTelemetryCollector metrics)
                         {
@@ -106,12 +106,12 @@ namespace Datadog.Trace.Telemetry
                     // so we don't need to "clean up" the collectors.
                     if (settings.V2Enabled)
                     {
-                        log.Debug("Creating telemetry controller v2");
+                        log.Information("Creating telemetry controller v2");
                         return CreateV2Controller(telemetryTransports, settings);
                     }
                     else
                     {
-                        log.Debug("Creating telemetry controller v1");
+                        log.Information("Creating telemetry controller v1");
                         return CreateV1Controller(telemetryTransports, settings);
                     }
                 }
