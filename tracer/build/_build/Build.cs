@@ -415,10 +415,10 @@ partial class Build : NukeBuild
                 DotNetRun(s => s
                     .SetProjectFile(benchmarksProject)
                     .SetConfiguration(BuildConfiguration)
-                    .SetFramework(TargetFramework.NETCOREAPP3_1)
+                    .SetFramework(TargetFramework.NET6_0)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetApplicationArguments($"-r net472 netcoreapp3.1 -m -f {Filter ?? "*"} --iterationTime 2000")
+                    .SetApplicationArguments($"-r net472 netcoreapp3.1 net6.0 -m -f {Filter ?? "*"} --iterationTime 2000")
                     .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
                     .SetProcessEnvironmentVariable("DD_ENV", "CI")
                     .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)
