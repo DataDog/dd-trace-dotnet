@@ -14,10 +14,10 @@ namespace Datadog.Trace.SourceGenerators.Tests;
 public class PublicApiGeneratorTests
 {
     [Theory]
-    [InlineData("")]
-    [InlineData("const ")]
-    [InlineData("readonly ")]
-    public void CanGenerateReadOnlyProperty(string modifier)
+    [InlineData("=> null;")]
+    [InlineData("{ get; }")]
+    [InlineData("{ get; } = null;")]
+    public void CanGenerateReadOnlyProperty(string definition)
     {
         var input = $$"""
             using Datadog.Trace.Configuration;
@@ -33,7 +33,7 @@ public class PublicApiGeneratorTests
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Environment"/>
                 [GeneratePublicApi(PublicApiUsage.Environment_Get)]
-                internal {{modifier}}string? _Environment;
+                internal string? _Environment {{definition}}
             }
             """;
 
@@ -87,7 +87,7 @@ public class PublicApiGeneratorTests
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Environment"/>
                 [{{attributeName}}(PublicApiUsage.Environment_Get, PublicApiUsage.Environment_Set)]
-                internal string? _Environment;
+                internal string? _Environment { get; set; }
             }
             """;
 
@@ -148,7 +148,7 @@ public class PublicApiGeneratorTests
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Environment"/>
                 [{{attributeName}}(PublicApiUsage.Environment_Get, PublicApiUsage.Environment_Set, "some_key")]
-                internal string? _Environment;
+                internal string? _Environment { get; set; }
             }
             """;
 
@@ -206,14 +206,14 @@ public class PublicApiGeneratorTests
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Environment"/>
                 [GeneratePublicApi(PublicApiUsage.Environment_Get, PublicApiUsage.Environment_Set)]
-                internal string? _Environment;
+                internal string? _Environment { get; set; }
 
                 /// <summary>
                 /// Gets the default service name applied to all spans.
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Service"/>
                 [GeneratePublicApi(PublicApiUsage.ServiceName_Get)]
-                internal HashSet<string> ServiceNameInternal;
+                internal HashSet<string> ServiceNameInternal { get; }
             }
             """;
 
@@ -287,7 +287,7 @@ public class PublicApiGeneratorTests
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Environment"/>
                 [GeneratePublicApi(PublicApiUsage.Environment_Get, PublicApiUsage.Environment_Set)]
-                internal string? _Environment;
+                internal string? _Environment { get; set; }
             }
             """;
 
@@ -296,9 +296,10 @@ public class PublicApiGeneratorTests
     }
 
     [Theory]
-    [InlineData("const")]
-    [InlineData("readonly")]
-    public void CanNotGenerateSetterForReadOnlyProperty(string modifier)
+    [InlineData("=> null;")]
+    [InlineData("{ get; }")]
+    [InlineData("{ get; } = null;")]
+    public void CanNotGenerateSetterForReadOnlyProperty(string definition)
     {
         var input = $$"""
             using Datadog.Trace.Configuration;
@@ -314,7 +315,7 @@ public class PublicApiGeneratorTests
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Environment"/>
                 [GeneratePublicApi(PublicApiUsage.Environment_Get, PublicApiUsage.Environment_Set)]
-                internal {{modifier}} string? _Environment = "Something";
+                internal string? _Environment {{definition}}
             }
             """;
 
@@ -339,7 +340,7 @@ public class PublicApiGeneratorTests
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Environment"/>
                 [GeneratePublicApi(PublicApiUsage.Environment_Get, PublicApiUsage.Environment_Set)]
-                internal string? Environment;
+                internal string? Environment { get; set; }
             }
             """;
 
@@ -367,7 +368,7 @@ public class PublicApiGeneratorTests
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Environment"/>
                 [GeneratePublicApi(PublicApiUsage.Environment_Get, PublicApiUsage.Environment_Set, {{config}})]
-                internal string? _Environment;
+                internal string? _Environment { get; set; }
             }
             """;
 
@@ -392,7 +393,7 @@ public class PublicApiGeneratorTests
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Environment"/>
                 [GeneratePublicApi(PublicApiUsage.Environment_Get, PublicApiUsage.Environment_Set)]
-                internal string? Environment;
+                internal string? Environment { get; set; }
             }
             """;
 
