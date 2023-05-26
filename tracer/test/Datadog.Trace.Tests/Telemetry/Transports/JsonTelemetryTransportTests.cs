@@ -68,11 +68,155 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
             transport.SerializedData.Should().NotBeNullOrEmpty();
             var actualJson = JToken.Parse(transport.SerializedData);
 
-            actualJson.Should().BeEquivalentTo(expectedJson);
+            actualJson.JsonShould().BeEquivalentTo(expectedJson);
+        }
+
+        [Fact]
+        public async Task SerializedMetricsTelemetryShouldProduceJsonWithExpectedFormat()
+        {
+            var transport = new TestJsonTelemetryTransport();
+            var expectedJson = JToken.Parse(GetGenerateMetricsData());
+
+            var data = new TelemetryData(
+                requestType: TelemetryRequestTypes.GenerateMetrics,
+                runtimeId: "20338dfd-f700-4e5c-b3f6-0d470f054ae8",
+                seqId: 5672,
+                tracerTime: 1628099086,
+                application: new ApplicationTelemetryData(
+                    serviceName: "myapp",
+                    env: "prod",
+                    tracerVersion: "0.33.1",
+                    languageName: "node.js",
+                    languageVersion: "14.16.1")
+                {
+                    ServiceVersion = "1.2.3",
+                },
+                host: new HostTelemetryData
+                {
+                    Hostname = "i-09ecf74c319c49be8",
+                    ContainerId = "d39b145254d1f9c337fdd2be132f6650c6f5bc274bfa28aaa204a908a1134096",
+                    Os = "GNU/Linux",
+                    OsVersion = "ubuntu 18.04.5 LTS (Bionic Beaver)",
+                    KernelName = "Linux",
+                    KernelRelease = "5.4.0-1037-gcp",
+                    KernelVersion = "#40~18.04.1-Ubuntu SMP Fri Feb 5 15:41:35 UTC 2021"
+                },
+                payload: new GenerateMetricsPayload(
+                    libVersion: "0.33.1",
+                    libLanguage: "node.js",
+                    allMetricData: new MetricData[]
+                    {
+                        new(
+                            "tracer_init_time",
+                            new MetricSeries()
+                        {
+                            new(1575317847, 224.1),
+                            new(1575317947, 235.2),
+                        },
+                            common: true,
+                            type: MetricTypeConstants.Count)
+                        {
+                            Tags = new()
+                            {
+                                "org_id: 2",
+                                "environment:test"
+                            }
+                        },
+                        new(
+                            "app_sec_initialization_time",
+                            new MetricSeries()
+                            {
+                                new(1575317447, 2.54),
+                                new(1575317547, 6.43),
+                            },
+                            common: false,
+                            type: MetricTypeConstants.Gauge)
+                        {
+                            Namespace = MetricNamespaceConstants.ASM,
+                            Interval = 60,
+                        },
+                    }));
+
+            await transport.PushTelemetry(data);
+            transport.SerializedData.Should().NotBeNullOrEmpty();
+            var actualJson = JToken.Parse(transport.SerializedData);
+
+            actualJson.JsonShould().BeEquivalentTo(expectedJson);
+        }
+
+        [Fact]
+        public async Task SerializedDistributionMetricsTelemetryShouldProduceJsonWithExpectedFormat()
+        {
+            var transport = new TestJsonTelemetryTransport();
+            var expectedJson = JToken.Parse(GetDistributionsData());
+
+            var data = new TelemetryData(
+                requestType: TelemetryRequestTypes.Distributions,
+                runtimeId: "20338dfd-f700-4e5c-b3f6-0d470f054ae8",
+                seqId: 5672,
+                tracerTime: 1628099086,
+                application: new ApplicationTelemetryData(
+                    serviceName: "myapp",
+                    env: "prod",
+                    tracerVersion: "0.33.1",
+                    languageName: "node.js",
+                    languageVersion: "14.16.1")
+                {
+                    ServiceVersion = "1.2.3",
+                },
+                host: new HostTelemetryData
+                {
+                    Hostname = "i-09ecf74c319c49be8",
+                    ContainerId = "d39b145254d1f9c337fdd2be132f6650c6f5bc274bfa28aaa204a908a1134096",
+                    Os = "GNU/Linux",
+                    OsVersion = "ubuntu 18.04.5 LTS (Bionic Beaver)",
+                    KernelName = "Linux",
+                    KernelRelease = "5.4.0-1037-gcp",
+                    KernelVersion = "#40~18.04.1-Ubuntu SMP Fri Feb 5 15:41:35 UTC 2021"
+                },
+                payload: new DistributionsPayload(
+                    series: new DistributionMetricData[]
+                    {
+                        new(
+                            "init_time",
+                            new[] { 224.1 },
+                            common: true)
+                        {
+                            Tags = new()
+                            {
+                                "org_id: 2",
+                                "component:total"
+                            }
+                        },
+                        new(
+                            "app_sec_init_time",
+                            new[] { 424.2, 232 },
+                            common: false)
+                        {
+                            Namespace = MetricNamespaceConstants.ASM,
+                            Tags = new()
+                            {
+                                "org_id: 2",
+                                "component:native_lib"
+                            }
+                        },
+                    }));
+
+            await transport.PushTelemetry(data);
+            transport.SerializedData.Should().NotBeNullOrEmpty();
+            var actualJson = JToken.Parse(transport.SerializedData);
+
+            actualJson.JsonShould().BeEquivalentTo(expectedJson);
         }
 
         private static string GetAppStartedData()
             => GetSampleTelemetryData("telemetry_app-started.json");
+
+        private static string GetGenerateMetricsData()
+            => GetSampleTelemetryData("telemetry_generate-metrics.json");
+
+        private static string GetDistributionsData()
+            => GetSampleTelemetryData("telemetry_distributions.json");
 
         private static string GetSampleTelemetryData(string filename)
         {

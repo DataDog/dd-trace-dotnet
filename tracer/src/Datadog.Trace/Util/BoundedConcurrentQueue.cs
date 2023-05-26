@@ -84,5 +84,23 @@ namespace Datadog.Trace.Util
             Interlocked.Decrement(ref _counter);
             return false;
         }
+
+        public T[] ToArray() => _queue.ToArray();
+
+        /// <summary>
+        /// Remove all the items from the queue. Note that this is NOT thread safe,
+        /// and should not be called at the same time as <see cref="TryDequeue"/> or <see cref="TryEnqueue"/>
+        /// </summary>
+        public void Clear()
+        {
+#if NETCOREAPP
+            _queue.Clear();
+#else
+            while (_queue.TryDequeue(out _))
+            {
+            }
+#endif
+            _counter = 0;
+        }
     }
 }

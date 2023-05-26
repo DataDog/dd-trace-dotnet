@@ -173,11 +173,15 @@ internal partial class ProbeExpressionParser<T>
         }
     }
 
-    private bool IsMicrosoftException(Type type)
+    private bool IsSafeException(Type type)
+    {
+        return typeof(Exception).IsAssignableFrom(type) && IsMicrosoftType(type);
+    }
+
+    private bool IsMicrosoftType(Type type)
     {
         var @namespace = type.Namespace;
         return @namespace != null &&
-               typeof(Exception).IsAssignableFrom(type) &&
                (@namespace is "System" or "Microsoft" ||
                 @namespace.StartsWith("System.") ||
                 @namespace.StartsWith("Microsoft."));

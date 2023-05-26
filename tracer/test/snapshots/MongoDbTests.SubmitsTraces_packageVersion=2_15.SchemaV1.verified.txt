@@ -62,8 +62,10 @@
       mongodb.query: { "delete" : "employees", "ordered" : true },
       out.host: mongo,
       out.port: 27017,
+      peer.service: test-db,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -82,8 +84,10 @@
       mongodb.query: { "insert" : "employees", "ordered" : true },
       out.host: mongo,
       out.port: 27017,
+      peer.service: test-db,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -102,8 +106,10 @@
       mongodb.query: { "aggregate" : "employees", "pipeline" : [{ "$match" : { } }, { "$group" : { "_id" : 1, "n" : { "$sum" : 1 } } }], "cursor" : { } },
       out.host: mongo,
       out.port: 27017,
+      peer.service: test-db,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -122,8 +128,10 @@
       mongodb.query: { "find" : "employees", "filter" : { } },
       out.host: mongo,
       out.port: 27017,
+      peer.service: test-db,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -142,8 +150,10 @@
       mongodb.query: { "find" : "employees", "filter" : { } },
       out.host: mongo,
       out.port: 27017,
+      peer.service: test-db,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -162,8 +172,10 @@
       mongodb.query: { "delete" : "employees", "ordered" : true },
       out.host: mongo,
       out.port: 27017,
+      peer.service: test-db,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -182,8 +194,10 @@
       mongodb.query: { "insert" : "employees", "ordered" : true },
       out.host: mongo,
       out.port: 27017,
+      peer.service: test-db,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -202,8 +216,10 @@
       mongodb.query: { "aggregate" : "employees", "pipeline" : [{ "$match" : { } }, { "$group" : { "_id" : 1, "n" : { "$sum" : 1 } } }], "cursor" : { } },
       out.host: mongo,
       out.port: 27017,
+      peer.service: test-db,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -222,8 +238,10 @@
       mongodb.query: { "find" : "employees", "filter" : { } },
       out.host: mongo,
       out.port: 27017,
+      peer.service: test-db,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   }
 ]
