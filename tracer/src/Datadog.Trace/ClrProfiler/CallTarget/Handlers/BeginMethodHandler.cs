@@ -10,34 +10,30 @@ using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 {
-    internal static class BeginMethodHandler<TIntegration, TTarget>
+    internal static unsafe class BeginMethodHandler<TIntegration, TTarget>
     {
-        private static readonly InvokeDelegate _invokeDelegate;
+        private static readonly DynamicMethod _dynamicMethod;
+        private static readonly delegate*<TTarget, CallTargetState> _invokePointer;
 
         static BeginMethodHandler()
         {
+            _invokePointer = &EmptyInvoke;
+
             try
             {
-                DynamicMethod dynMethod = IntegrationMapper.CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), Array.Empty<Type>());
-                if (dynMethod != null)
+                _dynamicMethod = IntegrationMapper.CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), Array.Empty<Type>());
+                if (_dynamicMethod != null)
                 {
-                    _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                    _invokePointer = (delegate*<TTarget, CallTargetState>)_dynamicMethod.MethodHandle.GetFunctionPointer();
                 }
             }
             catch (Exception ex)
             {
                 throw new CallTargetInvokerException(ex);
             }
-            finally
-            {
-                if (_invokeDelegate is null)
-                {
-                    _invokeDelegate = instance => CallTargetState.GetDefault();
-                }
-            }
         }
 
-        internal delegate CallTargetState InvokeDelegate(TTarget instance);
+        private static CallTargetState EmptyInvoke(TTarget instance) => CallTargetState.GetDefault();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static CallTargetState Invoke(TTarget instance)
@@ -46,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             // We don't use Tracer.Instance.DistributedSpanContext directly because we already retrieved the
             // active scope from an AsyncLocal instance, and we want to avoid retrieving twice.
             var spanContextRaw = DistributedTracer.Instance.GetSpanContextRaw() ?? activeScope?.Span?.Context;
-            return new CallTargetState(activeScope, spanContextRaw, _invokeDelegate(instance));
+            return new CallTargetState(activeScope, spanContextRaw, _invokePointer(instance));
         }
     }
 }

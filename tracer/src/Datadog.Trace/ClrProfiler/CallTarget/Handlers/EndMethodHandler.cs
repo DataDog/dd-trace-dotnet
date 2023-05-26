@@ -10,39 +10,35 @@ using Datadog.Trace.AppSec;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 {
-    internal static class EndMethodHandler<TIntegration, TTarget>
+    internal static unsafe class EndMethodHandler<TIntegration, TTarget>
     {
-        private static readonly InvokeDelegate _invokeDelegate;
+        private static readonly DynamicMethod _dynamicMethod;
+        private static readonly delegate*<TTarget, Exception, in CallTargetState, CallTargetReturn> _invokePointer;
 
         static EndMethodHandler()
         {
+            _invokePointer = &EmptyInvoke;
+
             try
             {
-                DynamicMethod dynMethod = IntegrationMapper.CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget));
-                if (dynMethod != null)
+                _dynamicMethod = IntegrationMapper.CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget));
+                if (_dynamicMethod != null)
                 {
-                    _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                    _invokePointer = (delegate*<TTarget, Exception, in CallTargetState, CallTargetReturn>)_dynamicMethod.MethodHandle.GetFunctionPointer();
                 }
             }
             catch (Exception ex) when (ex is not BlockException)
             {
                 throw new CallTargetInvokerException(ex);
             }
-            finally
-            {
-                if (_invokeDelegate is null)
-                {
-                    _invokeDelegate = (TTarget instance, Exception exception, in CallTargetState state) => CallTargetReturn.GetDefault();
-                }
-            }
         }
 
-        internal delegate CallTargetReturn InvokeDelegate(TTarget instance, Exception exception, in CallTargetState state);
+        private static CallTargetReturn EmptyInvoke(TTarget instance, Exception exception, in CallTargetState state) => CallTargetReturn.GetDefault();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static CallTargetReturn Invoke(TTarget instance, Exception exception, in CallTargetState state)
         {
-            return _invokeDelegate(instance, exception, in state);
+            return _invokePointer(instance, exception, in state);
         }
     }
 }

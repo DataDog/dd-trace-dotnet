@@ -12,20 +12,23 @@ using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 {
-    internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
+    internal static unsafe class EndMethodHandler<TIntegration, TTarget, TReturn>
     {
-        private static readonly InvokeDelegate _invokeDelegate = null;
+        private static readonly DynamicMethod _dynamicMethod;
+        private static readonly delegate*<TTarget, TReturn, Exception, in CallTargetState, CallTargetReturn<TReturn>> _invokePointer;
         private static readonly ContinuationGenerator<TTarget, TReturn> _continuationGenerator = null;
 
         static EndMethodHandler()
         {
-            Type returnType = typeof(TReturn);
+            _invokePointer = &EmptyInvoke;
+
+            var returnType = typeof(TReturn);
             try
             {
-                DynamicMethod dynMethod = IntegrationMapper.CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget), returnType);
-                if (dynMethod != null)
+                _dynamicMethod = IntegrationMapper.CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget), returnType);
+                if (_dynamicMethod != null)
                 {
-                    _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                    _invokePointer = (delegate*<TTarget, TReturn, Exception, in CallTargetState, CallTargetReturn<TReturn>>)_dynamicMethod.MethodHandle.GetFunctionPointer();
                 }
             }
             catch (Exception ex)
@@ -35,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
             if (returnType.IsGenericType)
             {
-                Type genericReturnType = returnType.GetGenericTypeDefinition();
+                var genericReturnType = returnType.GetGenericTypeDefinition();
                 if (typeof(Task).IsAssignableFrom(returnType))
                 {
                     // The type is a Task<>
@@ -66,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             }
         }
 
-        internal delegate CallTargetReturn<TReturn> InvokeDelegate(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state);
+        private static CallTargetReturn<TReturn> EmptyInvoke(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state) => new(returnValue);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static CallTargetReturn<TReturn> Invoke(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
@@ -84,13 +87,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 }
             }
 
-            if (_invokeDelegate != null)
-            {
-                CallTargetReturn<TReturn> returnWrap = _invokeDelegate(instance, returnValue, exception, in state);
-                returnValue = returnWrap.GetReturnValue();
-            }
-
-            return new CallTargetReturn<TReturn>(returnValue);
+            return new CallTargetReturn<TReturn>(_invokePointer(instance, returnValue, exception, in state).GetReturnValue());
         }
     }
 }

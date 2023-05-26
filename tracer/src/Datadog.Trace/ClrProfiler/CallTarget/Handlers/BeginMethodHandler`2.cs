@@ -10,36 +10,32 @@ using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 {
-    internal static class BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2>
+    internal static unsafe class BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2>
     {
-        private static readonly InvokeDelegate _invokeDelegate;
+        private static readonly DynamicMethod _dynamicMethod;
+        private static readonly delegate*<TTarget, ref TArg1, ref TArg2, CallTargetState> _invokePointer;
 
         static BeginMethodHandler()
         {
+            _invokePointer = &EmptyInvoke;
+
             try
             {
-                Type tArg1ByRef = typeof(TArg1).IsByRef ? typeof(TArg1) : typeof(TArg1).MakeByRefType();
-                Type tArg2ByRef = typeof(TArg2).IsByRef ? typeof(TArg2) : typeof(TArg2).MakeByRefType();
-                DynamicMethod dynMethod = IntegrationMapper.CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), new[] { tArg1ByRef, tArg2ByRef });
-                if (dynMethod != null)
+                var tArg1ByRef = typeof(TArg1).IsByRef ? typeof(TArg1) : typeof(TArg1).MakeByRefType();
+                var tArg2ByRef = typeof(TArg2).IsByRef ? typeof(TArg2) : typeof(TArg2).MakeByRefType();
+                _dynamicMethod = IntegrationMapper.CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), new[] { tArg1ByRef, tArg2ByRef });
+                if (_dynamicMethod != null)
                 {
-                    _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                    _invokePointer = (delegate*<TTarget, ref TArg1, ref TArg2, CallTargetState>)_dynamicMethod.MethodHandle.GetFunctionPointer();
                 }
             }
             catch (Exception ex)
             {
                 throw new CallTargetInvokerException(ex);
             }
-            finally
-            {
-                if (_invokeDelegate is null)
-                {
-                    _invokeDelegate = (TTarget instance, ref TArg1 arg1, ref TArg2 arg2) => CallTargetState.GetDefault();
-                }
-            }
         }
 
-        internal delegate CallTargetState InvokeDelegate(TTarget instance, ref TArg1 arg1, ref TArg2 arg2);
+        private static CallTargetState EmptyInvoke(TTarget instance, ref TArg1 arg1, ref TArg2 arg2) => CallTargetState.GetDefault();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static CallTargetState Invoke(TTarget instance, ref TArg1 arg1, ref TArg2 arg2)
@@ -48,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             // We don't use Tracer.Instance.DistributedSpanContext directly because we already retrieved the
             // active scope from an AsyncLocal instance, and we want to avoid retrieving twice.
             var spanContextRaw = DistributedTracer.Instance.GetSpanContextRaw() ?? activeScope?.Span?.Context;
-            return new CallTargetState(activeScope, spanContextRaw, _invokeDelegate(instance, ref arg1, ref arg2));
+            return new CallTargetState(activeScope, spanContextRaw, _invokePointer(instance, ref arg1, ref arg2));
         }
     }
 }
