@@ -179,6 +179,10 @@ public class PublicApiGenerator : IIncrementalGenerator
             return new Result<(PublicApiProperty PropertyTag, bool IsValid)>((default, false), errors);
         }
 
+        var returnType = propertySymbol.Type.ToDisplayString();
+        // bit hacky, but it'll do
+        bool? recordValue = returnType == "string" || returnType == "string?" ? true : null;
+
         var tag = new PublicApiProperty(
             nameSpace: GetClassNamespace(classDec),
             className: classDec.Identifier.ToString() + classDec.TypeParameterList,
@@ -186,9 +190,10 @@ public class PublicApiGenerator : IIncrementalGenerator
             propertyName: propertyName!,
             publicApiGetter: publicApiGetter,
             publicApiSetter: publicApiSetter,
-            returnType: propertySymbol.Type.ToDisplayString(),
+            returnType: returnType,
             leadingTrivia: property.GetLeadingTrivia().ToFullString(),
-            telemetryConfigKey: telemetryConfigKey);
+            telemetryConfigKey: telemetryConfigKey,
+            recordValue: recordValue);
 
         return new Result<(PublicApiProperty PropertyTag, bool IsValid)>((tag, true), errors);
     }
@@ -257,8 +262,9 @@ public class PublicApiGenerator : IIncrementalGenerator
         public readonly string ReturnType;
         public readonly string LeadingTrivia;
         public readonly string? TelemetryConfigKey;
+        public readonly bool? RecordValue;
 
-        public PublicApiProperty(string nameSpace, string className, string fieldName, int? publicApiGetter, int? publicApiSetter, string propertyName, string returnType, string leadingTrivia, string? telemetryConfigKey)
+        public PublicApiProperty(string nameSpace, string className, string fieldName, int? publicApiGetter, int? publicApiSetter, string propertyName, string returnType, string leadingTrivia, string? telemetryConfigKey, bool? recordValue)
         {
             Namespace = nameSpace;
             ClassName = className;
@@ -269,6 +275,7 @@ public class PublicApiGenerator : IIncrementalGenerator
             ReturnType = returnType;
             LeadingTrivia = leadingTrivia;
             TelemetryConfigKey = telemetryConfigKey;
+            RecordValue = recordValue;
         }
     }
 }

@@ -147,10 +147,17 @@ internal class Sources
 
                 if (property is { TelemetryConfigKey: { } config })
                 {
+                    var recordValue = property.RecordValue switch
+                    {
+                        null => string.Empty,
+                        true => ", recordValue: true",
+                        false => ", recordValue: false",
+                    };
+
                     sb.AppendLine(
                         $$"""
                                     Datadog.Trace.Telemetry.TelemetryFactory.Config.Record(
-                                        "{{config}}", value, recordValue: true, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+                                        "{{config}}", value{{recordValue}}, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
                         """);
                 }
 
