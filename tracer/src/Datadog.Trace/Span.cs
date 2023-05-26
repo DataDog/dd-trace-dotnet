@@ -28,29 +28,6 @@ namespace Datadog.Trace
 
         private int _isFinished;
 
-        /*
-        internal Span(ISpanContextInternal context, DateTimeOffset? start)
-            : this(context, start, null)
-        {
-        }
-
-        internal Span(ISpanContextInternal context, DateTimeOffset? start, ITags tags)
-        {
-            Tags = tags ?? new CommonTags();
-            SetSpanContextValues(context);
-            StartTime = start ?? Context.TraceContext.UtcNow;
-
-            if (IsLogLevelDebugEnabled)
-            {
-                var tagsType = Tags.GetType();
-
-                Log.Debug(
-                    "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{TagsType}])",
-                    new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, Tags, tagsType });
-            }
-        }
-        */
-
         private Span()
         {
         }
