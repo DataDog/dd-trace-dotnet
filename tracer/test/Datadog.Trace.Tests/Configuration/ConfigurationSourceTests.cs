@@ -81,7 +81,7 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { CreateFunc(s => s.AnalyticsEnabled), false };
 #pragma warning restore 618
             yield return new object[] { CreateFunc(s => s.CustomSamplingRules), null };
-            yield return new object[] { CreateFunc(s => s.MaxTracesSubmittedPerSecond), 100 };
+            yield return new object[] { CreateFunc(s => s.MaxTracesSubmittedPerSecondInternal), 100 };
             yield return new object[] { CreateFunc(s => s.TracerMetricsEnabled), false };
             yield return new object[] { CreateFunc(s => s.Exporter.DogStatsdPort), 8125 };
             yield return new object[] { CreateFunc(s => s.PropagationStyleInject), new[] { "tracecontext", "Datadog" } };

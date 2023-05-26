@@ -320,7 +320,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource((ConfigurationKeys.TraceRateLimit, value), (ConfigurationKeys.MaxTracesSubmittedPerSecond, legacyValue));
             var settings = new TracerSettings(source);
 
-            settings.MaxTracesSubmittedPerSecond.Should().Be(expected);
+            settings.MaxTracesSubmittedPerSecondInternal.Should().Be(expected);
 #pragma warning restore 618
         }
 
