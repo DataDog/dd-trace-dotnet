@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tests
                 }
             }
 
-            var distributedTraceContext = new SpanContext(traceId, parentSpanId);
+            var distributedTraceContext = Span.CreateSpanContext(traceId, parentSpanId);
             var secondTracer = TracerHelper.Create();
             var spanCreationSettings = new SpanCreationSettings() { Parent = distributedTraceContext };
 

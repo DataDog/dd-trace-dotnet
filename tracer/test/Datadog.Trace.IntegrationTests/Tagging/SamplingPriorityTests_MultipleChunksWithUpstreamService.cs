@@ -33,7 +33,7 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
     [Fact]
     public async Task SingleChunk()
     {
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
+        var propagatedContext = Span.CreateSpanContext(traceId: 1, spanId: 10);
         var settings = new SpanCreationSettings { Parent = propagatedContext };
 
         using (var scope1 = _tracer.StartActive("1", settings))
@@ -82,7 +82,7 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
         ISpan span12;
         ISpan span121;
 
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
+        var propagatedContext = Span.CreateSpanContext(traceId: 1, spanId: 10);
         var settings = new SpanCreationSettings { Parent = propagatedContext };
 
         using (var scope1 = _tracer.StartActive("1", settings))
@@ -156,7 +156,7 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
         ISpan span12;
         ISpan span121;
 
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
+        var propagatedContext = Span.CreateSpanContext(traceId: 1, spanId: 10);
         var settings = new SpanCreationSettings { Parent = propagatedContext };
 
         using (var scope1 = _tracer.StartActive("1", settings))
@@ -229,7 +229,7 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
         ISpan span12;
         ISpan span121;
 
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
+        var propagatedContext = Span.CreateSpanContext(traceId: 1, spanId: 10);
         var settings = new SpanCreationSettings { Parent = propagatedContext };
 
         using (var scope1 = _tracer.StartActive("1", settings))
@@ -302,7 +302,7 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
         ISpan span12;
         ISpan span121;
 
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
+        var propagatedContext = Span.CreateSpanContext(traceId: 1, spanId: 10);
         var settings = new SpanCreationSettings { Parent = propagatedContext };
 
         using (var scope1 = _tracer.StartActive("1", settings))

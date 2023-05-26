@@ -124,7 +124,7 @@ namespace Datadog.Trace.Propagators
                 }
 
                 var samplingPriority = rawSampled == '1' ? 1 : 0;
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId);
+                spanContext = Span.CreateSpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId);
 #endif
 
                 return true;

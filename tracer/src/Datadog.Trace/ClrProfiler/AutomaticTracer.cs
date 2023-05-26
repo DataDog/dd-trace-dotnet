@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler
 
             var value = DistributedTrace.Value;
 
-            if (value is SpanContext spanContext)
+            if (value is ISpanContextInternal spanContext)
             {
                 return spanContext;
             }

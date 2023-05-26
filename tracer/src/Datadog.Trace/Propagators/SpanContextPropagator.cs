@@ -79,7 +79,7 @@ namespace Datadog.Trace.Propagators
         /// Propagates the specified context by adding new headers to a <see cref="IHeadersCollection"/>.
         /// This locks the sampling priority for <paramref name="context"/>.
         /// </summary>
-        /// <param name="context">A <see cref="SpanContext"/> value that will be propagated into <paramref name="headers"/>.</param>
+        /// <param name="context">A <see cref="ISpanContextInternal"/> value that will be propagated into <paramref name="headers"/>.</param>
         /// <param name="headers">A <see cref="IHeadersCollection"/> to add new headers to.</param>
         /// <typeparam name="TCarrier">Type of header collection</typeparam>
         public void Inject<TCarrier>(ISpanContextInternal context, TCarrier headers)
@@ -92,7 +92,7 @@ namespace Datadog.Trace.Propagators
         /// Propagates the specified context by adding new headers to a <see cref="IHeadersCollection"/>.
         /// This locks the sampling priority for <paramref name="context"/>.
         /// </summary>
-        /// <param name="context">A <see cref="SpanContext"/> value that will be propagated into <paramref name="carrier"/>.</param>
+        /// <param name="context">A <see cref="ISpanContextInternal"/> value that will be propagated into <paramref name="carrier"/>.</param>
         /// <param name="carrier">The headers to add to.</param>
         /// <param name="setter">The action that can set a header in the carrier.</param>
         /// <typeparam name="TCarrier">Type of header collection</typeparam>
@@ -118,11 +118,11 @@ namespace Datadog.Trace.Propagators
         }
 
         /// <summary>
-        /// Extracts a <see cref="SpanContext"/> from the values found in the specified headers.
+        /// Extracts a <see cref="ISpanContextInternal"/> from the values found in the specified headers.
         /// </summary>
         /// <param name="headers">The headers that contain the values to be extracted.</param>
         /// <typeparam name="TCarrier">Type of header collection</typeparam>
-        /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from <paramref name="headers"/>.</returns>
+        /// <returns>A new <see cref="ISpanContextInternal"/> that contains the values obtained from <paramref name="headers"/>.</returns>
         public ISpanContextInternal? Extract<TCarrier>(TCarrier headers)
             where TCarrier : IHeadersCollection
         {
@@ -130,12 +130,12 @@ namespace Datadog.Trace.Propagators
         }
 
         /// <summary>
-        /// Extracts a <see cref="SpanContext"/> from the values found in the specified headers.
+        /// Extracts a <see cref="ISpanContextInternal"/> from the values found in the specified headers.
         /// </summary>
         /// <param name="carrier">The headers that contain the values to be extracted.</param>
         /// <param name="getter">The function that can extract a list of values for a given header name.</param>
         /// <typeparam name="TCarrier">Type of header collection</typeparam>
-        /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from <paramref name="carrier"/>.</returns>
+        /// <returns>A new <see cref="ISpanContextInternal"/> that contains the values obtained from <paramref name="carrier"/>.</returns>
         public ISpanContextInternal? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
         {
             if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
@@ -161,10 +161,10 @@ namespace Datadog.Trace.Propagators
         }
 
         /// <summary>
-        /// Extracts a <see cref="SpanContext"/> from its serialized dictionary.
+        /// Extracts a <see cref="ISpanContextInternal"/> from its serialized dictionary.
         /// </summary>
         /// <param name="serializedSpanContext">The serialized dictionary.</param>
-        /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from the serialized dictionary.</returns>
+        /// <returns>A new <see cref="ISpanContextInternal"/> that contains the values obtained from the serialized dictionary.</returns>
         internal ISpanContextInternal? Extract(IReadOnlyDictionary<string, string?>? serializedSpanContext)
         {
             if (serializedSpanContext == null)

@@ -305,7 +305,7 @@ namespace Datadog.Trace
             {
                 // don't set the span's parent,
                 // even if there is an active span
-                parent = SpanContext.None;
+                parent = Span.ContextNone;
             }
 
             var span = StartSpan(operationName, tags: null, parent, serviceName: null, startTime);

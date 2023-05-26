@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tests.DistributedTracer
 
             automaticTracer.GetDistributedTrace().Should().BeNull();
 
-            automaticTracer.SetDistributedTrace(new SpanContext(1, 2));
+            automaticTracer.SetDistributedTrace(Span.CreateSpanContext(1, 2));
 
             ((IDistributedTracer)automaticTracer).GetSpanContext().Should().BeNull("automatic tracer shouldn't read the distributed trace unless there is a child tracer");
         }
@@ -37,7 +37,7 @@ namespace Datadog.Trace.Tests.DistributedTracer
 
             automaticTracer.GetDistributedTrace().Should().BeNull();
 
-            var expectedSpanContext = new SpanContext((TraceId)1, 2, SamplingPriorityValues.UserKeep, "Service", "Origin");
+            var expectedSpanContext = Span.CreateSpanContext((TraceId)1, 2, SamplingPriorityValues.UserKeep, "Service", "Origin");
 
             automaticTracer.SetDistributedTrace(expectedSpanContext);
 
@@ -53,7 +53,7 @@ namespace Datadog.Trace.Tests.DistributedTracer
             automaticTracer.Register(Mock.Of<ICommonTracer>());
 
             var distributedTracer = (IDistributedTracer)automaticTracer;
-            var expectedSpanContext = new SpanContext(1, 2);
+            var expectedSpanContext = Span.CreateSpanContext(1, 2);
 
             distributedTracer.SetSpanContext(expectedSpanContext);
             distributedTracer.GetSpanContext().Should().BeEquivalentTo(expectedSpanContext);

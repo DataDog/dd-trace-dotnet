@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             var sender = new Mock<ICIVisibilityProtocolWriterSender>();
             var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object);
 
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow, new TestSpanTags());
+            var span = Span.CreateSpan(Span.CreateSpanContext(1, 1), DateTimeOffset.UtcNow, new TestSpanTags());
             span.Type = SpanTypes.Test;
             span.SetTag(TestTags.Type, TestTags.TypeTest);
 
@@ -124,7 +124,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                     return flushTcs.Task;
                 });
 
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            var span = Span.CreateSpan(Span.CreateSpanContext(1, 1), DateTimeOffset.UtcNow);
             var expectedPayload = new Ci.Agent.Payloads.CITestCyclePayload(settings);
             expectedPayload.TryProcessEvent(new SpanEvent(span));
             expectedPayload.TryProcessEvent(new SpanEvent(span));
@@ -185,7 +185,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 
             for (ulong i = 0; i < numSpans; i++)
             {
-                var span = new Span(new SpanContext(i, i), DateTimeOffset.UtcNow);
+                var span = Span.CreateSpan(Span.CreateSpanContext(i, i), DateTimeOffset.UtcNow);
                 agentlessWriter.WriteEvent(new SpanEvent(span));
             }
 
@@ -223,7 +223,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         {
             int headerSize = Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>.HeaderSize;
 
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            var span = Span.CreateSpan(Span.CreateSpanContext(1, 1), DateTimeOffset.UtcNow);
             var spanEvent = new SpanEvent(span);
             var individualType = MessagePackSerializer.Serialize<Ci.IEvent>(spanEvent, Ci.Agent.MessagePack.CIFormatterResolver.Instance);
 

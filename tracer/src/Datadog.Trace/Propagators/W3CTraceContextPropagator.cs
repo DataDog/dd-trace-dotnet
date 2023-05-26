@@ -619,7 +619,7 @@ namespace Datadog.Trace.Propagators
                 traceTags.RemoveTag(Tags.Propagated.DecisionMaker);
             }
 
-            spanContext = new SpanContext(
+            spanContext = Span.CreateSpanContext(
                 traceId: traceParent.TraceId,
                 spanId: traceParent.ParentId,
                 samplingPriority: samplingPriority,

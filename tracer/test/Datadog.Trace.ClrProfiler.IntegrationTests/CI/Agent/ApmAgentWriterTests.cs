@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task WriteTrace_2Traces_SendToApi()
         {
-            var spans1 = new ArraySegment<Span>(new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) });
+            var spans1 = new ArraySegment<Span>(new[] { Span.CreateSpan(Span.CreateSpanContext(1, 1), DateTimeOffset.UtcNow) });
             var traceChunk1 = new TraceChunkModel(spans1);
             var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk1, SpanFormatterResolver.Instance);
 
@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()), Times.Once);
             _api.Invocations.Clear();
 
-            var spans2 = new ArraySegment<Span>(new[] { new Span(new SpanContext(2, 2), DateTimeOffset.UtcNow) });
+            var spans2 = new ArraySegment<Span>(new[] { Span.CreateSpan(Span.CreateSpanContext(2, 2), DateTimeOffset.UtcNow) });
             var traceChunk2 = new TraceChunkModel(spans2);
             var expectedData2 = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk2, SpanFormatterResolver.Instance);
 

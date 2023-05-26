@@ -63,14 +63,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [MemberData(nameof(GetJsonItems))]
         public void CheckEnvironmentVariables(JsonDataItem jsonData)
         {
-            SpanContext context = new SpanContext(null, null, null);
+            var context = Span.CreateSpanContext(null, null, null);
             DateTimeOffset time = DateTimeOffset.UtcNow;
             foreach (Dictionary<string, string>[] testItem in jsonData.Data)
             {
                 Dictionary<string, string> envData = testItem[0];
                 Dictionary<string, string> spanData = testItem[1];
 
-                Span span = new Span(context, time);
+                Span span = Span.CreateSpan(context, time);
 
                 SetEnvironmentFromDictionary(envData);
                 CIEnvironmentValues.Instance.ReloadEnvironmentData();

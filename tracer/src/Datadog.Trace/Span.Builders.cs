@@ -169,7 +169,7 @@ internal partial class Span
             null or { TraceId: 0 } => fallback,
 
             // use the 128-bit trace id from SpanContext if possible
-            SpanContext sc => sc.TraceId128,
+            ISpanContextInternal sc => sc.TraceId128,
 
             // otherwise use the 64-bit trace id from ISpanContext
             _ => (TraceId)context.TraceId

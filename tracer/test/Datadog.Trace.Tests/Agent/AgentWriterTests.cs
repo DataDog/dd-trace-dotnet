@@ -444,7 +444,7 @@ namespace Datadog.Trace.Tests.Agent
             var traceContext = new TraceContext(tracer.Object);
             var rootSpanContext = Span.CreateSpanContext(null, traceContext, null);
             var rootSpan = Span.CreateSpan(rootSpanContext, DateTimeOffset.UtcNow);
-            var childSpan = Span.CreateSpan(new SpanContext(rootSpanContext, traceContext, null), DateTimeOffset.UtcNow);
+            var childSpan = Span.CreateSpan(Span.CreateSpanContext(rootSpanContext, traceContext, null), DateTimeOffset.UtcNow);
             traceContext.AddSpan(rootSpan);
             traceContext.AddSpan(childSpan);
             var spans = new ArraySegment<Span>(new[] { rootSpan, childSpan });

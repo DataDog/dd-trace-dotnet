@@ -40,7 +40,7 @@ namespace Datadog.Trace.OpenTracing
 
             IHeadersCollection headers = new TextMapHeadersCollection(map);
 
-            if (context is OpenTracingSpanContext otSpanContext && otSpanContext.Context is SpanContext ddSpanContext)
+            if (context is OpenTracingSpanContext otSpanContext && otSpanContext.Context is ISpanContextInternal ddSpanContext)
             {
                 // this is a Datadog context
                 SpanContextPropagator.Instance.Inject(ddSpanContext, headers);

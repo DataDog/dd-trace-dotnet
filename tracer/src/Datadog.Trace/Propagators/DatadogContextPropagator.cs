@@ -81,11 +81,8 @@ namespace Datadog.Trace.Propagators
             // and the upper 64 bits in "_dd.p.tid"
             var traceId = GetFullTraceId((ulong)traceIdLower, traceTags);
 
-            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin)
-                          {
-                              PropagatedTags = traceTags
-                          };
-
+            spanContext = Span.CreateSpanContext(traceId, parentId, samplingPriority, serviceName: null, origin);
+            spanContext.PropagatedTags = traceTags;
             return true;
         }
 

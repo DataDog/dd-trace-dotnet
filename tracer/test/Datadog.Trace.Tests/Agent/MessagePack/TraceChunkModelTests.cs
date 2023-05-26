@@ -491,7 +491,7 @@ public class TraceChunkModelTests
 
     private Span CreateSpan(ulong traceId, ulong spanId, ulong parentId)
     {
-        var parentContent = new SpanContext(traceId, parentId);
+        var parentContent = Span.CreateSpanContext(traceId, parentId);
         var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
         var spanContext = Span.CreateSpanContext(parentContent, traceContext, serviceName: null, spanId: spanId);
         return Span.CreateSpan(spanContext, DateTimeOffset.UtcNow);

@@ -19,7 +19,7 @@ public class SpanContextDataStreamsManagerTests
     public void SetCheckpoint_SetsTheSpanPathwayContext()
     {
         var dsm = GetEnabledDataStreamManager();
-        var spanContext = new SpanContext(traceId: 123, spanId: 1234);
+        var spanContext = Span.CreateSpanContext(traceId: 123, spanId: 1234);
         spanContext.PathwayContext.Should().BeNull();
 
         spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, new[] { "some-edge" });
@@ -32,7 +32,7 @@ public class SpanContextDataStreamsManagerTests
     {
         var ctx = new PathwayContext();
 
-        var spanContext = new SpanContext(traceId: 123, spanId: 1234);
+        var spanContext = Span.CreateSpanContext(traceId: 123, spanId: 1234);
         spanContext.PathwayContext.Should().BeNull();
 
         spanContext.MergePathwayContext(ctx);
@@ -43,7 +43,7 @@ public class SpanContextDataStreamsManagerTests
     public void MergePathwayContext_WhenOtherContextIsNull_KeepsContext()
     {
         var dsm = GetEnabledDataStreamManager();
-        var spanContext = new SpanContext(traceId: 123, spanId: 1234);
+        var spanContext = Span.CreateSpanContext(traceId: 123, spanId: 1234);
         spanContext.SetCheckpoint(dsm,  CheckpointKind.Produce, new[] { "some-edge" });
         spanContext.PathwayContext.Should().NotBeNull();
         var previous = spanContext.PathwayContext;
@@ -58,7 +58,7 @@ public class SpanContextDataStreamsManagerTests
         int iterations = 1000_000;
         // When we have a context and there's a new context we pick one randomly
         var dsm = GetEnabledDataStreamManager();
-        var spanContext = new SpanContext(traceId: 123, spanId: 1234);
+        var spanContext = Span.CreateSpanContext(traceId: 123, spanId: 1234);
         spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, new[] { "some-edge" });
 
         // Make sure we have a different hash for comparison purposes

@@ -51,8 +51,8 @@ namespace Datadog.Trace.Tests.Propagators
             traceContext.Origin = "rum";
             traceContext.Tags.SetTags(PropagatedTagsCollection);
 
-            var context = new SpanContext(
-                parent: SpanContext.None,
+            var context = Span.CreateSpanContext(
+                parent: Span.ContextNone,
                 traceContext,
                 serviceName: null,
                 (TraceId)123456789,
@@ -88,8 +88,8 @@ namespace Datadog.Trace.Tests.Propagators
             traceContext.Origin = "rum";
             traceContext.Tags.SetTags(PropagatedTagsCollection);
 
-            var context = new SpanContext(
-                parent: SpanContext.None,
+            var context = Span.CreateSpanContext(
+                parent: Span.ContextNone,
                 traceContext,
                 serviceName: null,
                 (TraceId)123456789,

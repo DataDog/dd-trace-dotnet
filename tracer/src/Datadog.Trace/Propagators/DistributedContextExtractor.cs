@@ -29,7 +29,7 @@ namespace Datadog.Trace.Propagators
                 return false;
             }
 
-            var traceIdLower = ParseUtility.ParseUInt64(carrier, carrierGetter, SpanContext.Keys.TraceId);
+            var traceIdLower = ParseUtility.ParseUInt64(carrier, carrierGetter, Span.Keys.TraceId);
 
             if (traceIdLower is null or 0)
             {
@@ -37,7 +37,7 @@ namespace Datadog.Trace.Propagators
                 return false;
             }
 
-            var rawTraceId = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.RawTraceId);
+            var rawTraceId = ParseUtility.ParseString(carrier, carrierGetter, Span.Keys.RawTraceId);
             TraceId traceId = default;
 
             if (!string.IsNullOrEmpty(rawTraceId))
@@ -45,12 +45,12 @@ namespace Datadog.Trace.Propagators
                 _ = HexString.TryParseTraceId(rawTraceId!, out traceId);
             }
 
-            var parentId = ParseUtility.ParseUInt64(carrier, carrierGetter, SpanContext.Keys.ParentId) ?? 0;
-            var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, SpanContext.Keys.SamplingPriority);
-            var origin = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.Origin);
-            var rawSpanId = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.RawSpanId);
-            var propagatedTraceTags = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.PropagatedTags);
-            var w3CTraceState = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.AdditionalW3CTraceState);
+            var parentId = ParseUtility.ParseUInt64(carrier, carrierGetter, Span.Keys.ParentId) ?? 0;
+            var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, Span.Keys.SamplingPriority);
+            var origin = ParseUtility.ParseString(carrier, carrierGetter, Span.Keys.Origin);
+            var rawSpanId = ParseUtility.ParseString(carrier, carrierGetter, Span.Keys.RawSpanId);
+            var propagatedTraceTags = ParseUtility.ParseString(carrier, carrierGetter, Span.Keys.PropagatedTags);
+            var w3CTraceState = ParseUtility.ParseString(carrier, carrierGetter, Span.Keys.AdditionalW3CTraceState);
 
             var traceTags = TagPropagation.ParseHeader(propagatedTraceTags);
 
@@ -59,12 +59,9 @@ namespace Datadog.Trace.Propagators
                 traceId = GetFullTraceId((ulong)traceIdLower, traceTags);
             }
 
-            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin, rawTraceId, rawSpanId)
-                          {
-                              PropagatedTags = traceTags,
-                              AdditionalW3CTraceState = w3CTraceState,
-                          };
-
+            spanContext = Span.CreateSpanContext(traceId, parentId, samplingPriority, serviceName: null, origin, rawTraceId, rawSpanId);
+            spanContext.PropagatedTags = traceTags;
+            spanContext.AdditionalW3CTraceState = w3CTraceState;
             return true;
         }
 

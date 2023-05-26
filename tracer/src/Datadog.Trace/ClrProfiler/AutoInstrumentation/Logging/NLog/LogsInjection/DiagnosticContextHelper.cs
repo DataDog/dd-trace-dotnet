@@ -70,9 +70,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             if (spanContext is not null)
             {
                 // For mismatch version support we need to keep requesting old keys.
-                var hasTraceId = spanContext.TryGetValue(SpanContext.Keys.TraceId, out string traceId) ||
+                var hasTraceId = spanContext.TryGetValue(Span.Keys.TraceId, out string traceId) ||
                                  spanContext.TryGetValue(HttpHeaderNames.TraceId, out traceId);
-                var hasSpanId = spanContext.TryGetValue(SpanContext.Keys.ParentId, out string spanId) ||
+                var hasSpanId = spanContext.TryGetValue(Span.Keys.ParentId, out string spanId) ||
                                 spanContext.TryGetValue(HttpHeaderNames.ParentId, out spanId);
                 if (hasTraceId && hasSpanId)
                 {
@@ -99,9 +99,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             if (spanContext is not null)
             {
                 // For mismatch version support we need to keep requesting old keys.
-                var hasTraceId = spanContext.TryGetValue(SpanContext.Keys.TraceId, out string traceId) ||
+                var hasTraceId = spanContext.TryGetValue(Span.Keys.TraceId, out string traceId) ||
                                  spanContext.TryGetValue(HttpHeaderNames.TraceId, out traceId);
-                var hasSpanId = spanContext.TryGetValue(SpanContext.Keys.ParentId, out string spanId) ||
+                var hasSpanId = spanContext.TryGetValue(Span.Keys.ParentId, out string spanId) ||
                                 spanContext.TryGetValue(HttpHeaderNames.ParentId, out spanId);
                 if (hasTraceId && hasSpanId)
                 {

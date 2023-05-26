@@ -79,7 +79,7 @@ namespace Datadog.Trace.Activity.Handlers
                             _ = HexString.TryParseUInt64(parentSpanId, out var newActivitySpanId);
 
                             parent = Tracer.Instance.CreateSpanContext(
-                                SpanContext.None,
+                                Span.ContextNone,
                                 traceId: newActivityTraceId,
                                 spanId: newActivitySpanId,
                                 rawTraceId: activityTraceId,

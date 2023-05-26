@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tests.Propagators
         public void CreateTraceParentHeader(ulong traceIdUpper, ulong traceIdLower, ulong spanId, int? samplingPriority, string expected)
         {
             var traceId = new TraceId(traceIdUpper, traceIdLower);
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, "origin");
+            var context = Span.CreateSpanContext(traceId, spanId, samplingPriority, serviceName: null, "origin");
             var traceparent = W3CTraceContextPropagator.CreateTraceParentHeader(context);
 
             traceparent.Should().Be(expected);
@@ -90,7 +90,7 @@ namespace Datadog.Trace.Tests.Propagators
             };
 
             traceContext.SetSamplingPriority(samplingPriority, mechanism: null, notifyDistributedTracer: false);
-            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2);
+            var spanContext = Span.CreateSpanContext(parent: Span.ContextNone, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2);
 
             var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
 
@@ -101,7 +101,7 @@ namespace Datadog.Trace.Tests.Propagators
         public void CreateTraceStateHeader_WithPublicPropagatedTags()
         {
             var traceContext = new TraceContext(tracer: null);
-            var spanContext = Span.CreateSpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2);
+            var spanContext = Span.CreateSpanContext(parent: Span.ContextNone, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2);
             var span = Span.CreateSpan(spanContext, DateTimeOffset.Now);
 
             var user = new UserDetails("12345")
@@ -127,7 +127,7 @@ namespace Datadog.Trace.Tests.Propagators
             traceContext.SetSamplingPriority(2);
 
             var traceId = new TraceId(0x1234567890abcdef, 0x1122334455667788);
-            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: traceId, spanId: 2);
+            var spanContext = Span.CreateSpanContext(parent: Span.ContextNone, traceContext, serviceName: null, traceId: traceId, spanId: 2);
 
             var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
 
@@ -146,7 +146,7 @@ namespace Datadog.Trace.Tests.Propagators
             };
 
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, mechanism: null, notifyDistributedTracer: false);
-            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)123456789, spanId: 987654321, rawTraceId: null, rawSpanId: null);
+            var spanContext = Span.CreateSpanContext(parent: Span.ContextNone, traceContext, serviceName: null, traceId: (TraceId)123456789, spanId: 987654321, rawTraceId: null, rawSpanId: null);
             var headers = new Mock<IHeadersCollection>();
 
             W3CPropagator.Inject(spanContext, headers.Object);
@@ -166,7 +166,7 @@ namespace Datadog.Trace.Tests.Propagators
             };
 
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, mechanism: null, notifyDistributedTracer: false);
-            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)123456789, spanId: 987654321, rawTraceId: null, rawSpanId: null);
+            var spanContext = Span.CreateSpanContext(parent: Span.ContextNone, traceContext, serviceName: null, traceId: (TraceId)123456789, spanId: 987654321, rawTraceId: null, rawSpanId: null);
             var headers = new Mock<IHeadersCollection>();
 
             W3CPropagator.Inject(spanContext, headers.Object, (carrier, name, value) => carrier.Set(name, value));
@@ -509,7 +509,7 @@ namespace Datadog.Trace.Tests.Propagators
                                 rawTraceId: traceId,
                                 rawParentId: parentId));
 
-            var spanContext = new SpanContext(
+            var spanContext = Span.CreateSpanContext(
                 traceParent.TraceId,
                 traceParent.ParentId,
                 samplingPriority: SamplingPriorityValues.AutoKeep,

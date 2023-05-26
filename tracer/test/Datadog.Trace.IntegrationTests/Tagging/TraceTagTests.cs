@@ -36,16 +36,16 @@ namespace Datadog.Trace.IntegrationTests
                 using (var childScope = _tracer.StartActive("child1"))
                 {
                     // add a trace tag using the first child span
-                    ((SpanContext)childScope.Span.Context).TraceContext.Tags.SetTag("key1", "value1");
+                    ((ISpanContextInternal)childScope.Span.Context).TraceContext.Tags.SetTag("key1", "value1");
                 }
 
                 // add a trace tag using the root span
-                ((SpanContext)rootScope.Span.Context).TraceContext.Tags.SetTag("key2", "value2");
+                ((ISpanContextInternal)rootScope.Span.Context).TraceContext.Tags.SetTag("key2", "value2");
 
                 using (var childScope = _tracer.StartActive("child2"))
                 {
                     // add a trace tag using the second child span
-                    ((SpanContext)childScope.Span.Context).TraceContext.Tags.SetTag("key3", "value3");
+                    ((ISpanContextInternal)childScope.Span.Context).TraceContext.Tags.SetTag("key3", "value3");
                 }
             }
 

@@ -81,7 +81,7 @@ namespace Datadog.Trace.Tests
         public void StartActive_IgnoreActiveScope_RootSpan()
         {
             var firstScope = _tracer.StartActive("First");
-            var secondScope = (Scope)_tracer.StartActive("Second", new SpanCreationSettings { Parent = SpanContext.None });
+            var secondScope = (Scope)_tracer.StartActive("Second", new SpanCreationSettings { Parent = Span.ContextNone });
             var secondSpan = secondScope.Span;
 
             Assert.True(secondSpan.IsRootSpan);
@@ -230,7 +230,7 @@ namespace Datadog.Trace.Tests
             const ulong parentId = 7;
             const int samplingPriority = SamplingPriorityValues.UserKeep;
 
-            var parent = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin: null);
+            var parent = Span.CreateSpanContext(traceId, parentId, samplingPriority, serviceName: null, origin: null);
             var spanCreationSettings = new SpanCreationSettings() { Parent = parent };
             var child = (Scope)_tracer.StartActive("Child", spanCreationSettings);
             var childSpan = child.Span;
@@ -324,7 +324,7 @@ namespace Datadog.Trace.Tests
         {
             var firstSpan = _tracer.StartSpan("First");
             _tracer.ActivateSpan(firstSpan);
-            var secondSpan = _tracer.StartSpan("Second", parent: SpanContext.None);
+            var secondSpan = _tracer.StartSpan("Second", parent: Span.ContextNone);
 
             Assert.True(secondSpan.IsRootSpan);
         }
@@ -461,7 +461,7 @@ namespace Datadog.Trace.Tests
             const int samplingPriority = SamplingPriorityValues.UserKeep;
             const string origin = "synthetics";
 
-            var propagatedContext = new SpanContext(traceId, spanId, samplingPriority, null, origin);
+            var propagatedContext = Span.CreateSpanContext(traceId, spanId, samplingPriority, null, origin);
             Assert.Equal(origin, propagatedContext.Origin);
 
             var spanCreationSettings = new SpanCreationSettings() { Parent = propagatedContext };
@@ -489,7 +489,7 @@ namespace Datadog.Trace.Tests
             const int samplingPriority = SamplingPriorityValues.UserKeep;
             const string origin = "synthetics";
 
-            var propagatedContext = new SpanContext(traceId, spanId, samplingPriority, null, origin);
+            var propagatedContext = Span.CreateSpanContext(traceId, spanId, samplingPriority, null, origin);
 
             var spanCreationSettings = new SpanCreationSettings() { Parent = propagatedContext };
             using var firstScope = (Scope)_tracer.StartActive("First Span", spanCreationSettings);

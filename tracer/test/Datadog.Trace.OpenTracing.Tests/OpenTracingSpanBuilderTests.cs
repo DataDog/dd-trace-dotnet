@@ -45,7 +45,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         public void Start_NoParentProvided_RootSpan()
         {
             var span = (OpenTracingSpan)_tracer.BuildSpan(null).Start();
-            var ddSpanContext = span.Context.Context as SpanContext;
+            var ddSpanContext = span.Context.Context as ISpanContextInternal;
 
             Assert.NotNull(ddSpanContext);
             Assert.Null(ddSpanContext.ParentId);

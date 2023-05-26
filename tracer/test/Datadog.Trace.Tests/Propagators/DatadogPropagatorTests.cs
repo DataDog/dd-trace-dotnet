@@ -69,7 +69,8 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_IHeadersCollection()
         {
-            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin) { PropagatedTags = PropagatedTagsCollection };
+            var context = Span.CreateSpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
+            context.PropagatedTags = PropagatedTagsCollection;
             var headers = new Mock<IHeadersCollection>();
 
             Propagator.Inject(context, headers.Object);
@@ -96,7 +97,7 @@ namespace Datadog.Trace.Tests.Propagators
             traceContext.Origin = Origin;
             traceContext.Tags.SetTags(PropagatedTagsCollection);
 
-            var context = new SpanContext(parent: null, traceContext, serviceName: null, TraceId, SpanId);
+            var context = Span.CreateSpanContext(parent: null, traceContext, serviceName: null, TraceId, SpanId);
             var headers = new Mock<IHeadersCollection>();
             Propagator.Inject(context, headers.Object);
 
@@ -120,7 +121,7 @@ namespace Datadog.Trace.Tests.Propagators
                 new("x-datadog-tags", @"_dd.p.tid=1234567890abcdef"),
             };
 
-            var context = new SpanContext(traceId, spanId, SamplingPriority, serviceName: null, Origin);
+            var context = Span.CreateSpanContext(traceId, spanId, SamplingPriority, serviceName: null, Origin);
             var headers = new Mock<IHeadersCollection>();
 
             Propagator.Inject(context, headers.Object);
@@ -143,7 +144,7 @@ namespace Datadog.Trace.Tests.Propagators
                 // verify that "_dd.p.tid" tag is not injected for 64-bit trace ids
             };
 
-            var context = new SpanContext(traceId, spanId, SamplingPriority, serviceName: null, Origin);
+            var context = Span.CreateSpanContext(traceId, spanId, SamplingPriority, serviceName: null, Origin);
             var headers = new Mock<IHeadersCollection>();
 
             Propagator.Inject(context, headers.Object);
@@ -154,7 +155,8 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_CarrierAndDelegate()
         {
-            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin) { PropagatedTags = PropagatedTagsCollection };
+            var context = Span.CreateSpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
+            context.PropagatedTags = PropagatedTagsCollection;
 
             // using IHeadersCollection for convenience, but carrier could be any type
             var headers = new Mock<IHeadersCollection>();
@@ -167,7 +169,8 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_TraceIdSpanIdOnly()
         {
-            var context = new SpanContext(TraceId, SpanId, samplingPriority: null, serviceName: null, origin: null) { PropagatedTags = null };
+            var context = Span.CreateSpanContext(TraceId, SpanId, samplingPriority: null, serviceName: null, origin: null);
+            context.PropagatedTags = null;
             var headers = new Mock<IHeadersCollection>();
 
             Propagator.Inject(context, headers.Object);
@@ -181,7 +184,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_InvalidSampling()
         {
-            var context = new SpanContext(TraceId, SpanId, samplingPriority: 12, serviceName: null, origin: null);
+            var context = Span.CreateSpanContext(TraceId, SpanId, samplingPriority: 12, serviceName: null, origin: null);
             var headers = new Mock<IHeadersCollection>();
 
             Propagator.Inject(context, headers.Object);
@@ -296,7 +299,8 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void SpanContextRoundTrip()
         {
-            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin) { PropagatedTags = PropagatedTagsCollection };
+            var context = Span.CreateSpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
+            context.PropagatedTags = PropagatedTagsCollection;
             var result = Propagator.Extract(context);
 
             result.Should().NotBeSameAs(context);
@@ -306,7 +310,8 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Identity()
         {
-            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin) { PropagatedTags = PropagatedTagsCollection };
+            var context = Span.CreateSpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
+            context.PropagatedTags = PropagatedTagsCollection;
             var headers = new NameValueHeadersCollection(new NameValueCollection());
 
             Propagator.Inject(context, headers);

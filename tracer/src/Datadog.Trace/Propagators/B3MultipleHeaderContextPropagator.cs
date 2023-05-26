@@ -63,7 +63,7 @@ namespace Datadog.Trace.Propagators
             }
 
             var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, Sampled);
-            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId);
+            spanContext = Span.CreateSpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId);
             return true;
         }
 

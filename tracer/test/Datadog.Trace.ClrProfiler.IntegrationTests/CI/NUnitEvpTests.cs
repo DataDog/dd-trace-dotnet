@@ -344,8 +344,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
         private static void CheckCIEnvironmentValuesDecoration(MockCIVisibilityTest targetTest)
         {
-            var context = new SpanContext(parent: null, traceContext: null, serviceName: null);
-            var span = new Span(context, DateTimeOffset.UtcNow);
+            var context = Span.CreateSpanContext(parent: null, traceContext: null, serviceName: null);
+            var span = Span.CreateSpan(context, DateTimeOffset.UtcNow);
             CIEnvironmentValues.Instance.DecorateSpan(span);
 
             AssertEqual(CommonTags.CIProvider);

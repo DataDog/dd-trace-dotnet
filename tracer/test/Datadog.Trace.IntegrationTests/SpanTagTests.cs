@@ -61,7 +61,7 @@ namespace Datadog.Trace.IntegrationTests
             using (var scope = _tracer.StartActive("root"))
             {
                 // drop it
-                ((SpanContext)scope.Span.Context).TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
+                ((ISpanContextInternal)scope.Span.Context).TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
             }
 
             var trace = _testApi.Wait();
@@ -84,7 +84,7 @@ namespace Datadog.Trace.IntegrationTests
             using (var rootScope = _tracer.StartActive("root"))
             {
                 // drop it
-                ((SpanContext)rootScope.Span.Context).TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
+                ((ISpanContextInternal)rootScope.Span.Context).TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
 
                 using (var childScope = _tracer.StartActive("child1"))
                 {
@@ -128,7 +128,7 @@ namespace Datadog.Trace.IntegrationTests
             using (var rootScope = _tracer.StartActive("root"))
             {
                 // keep it (should be kept by default, but enforcing it in this test)
-                ((SpanContext)rootScope.Span.Context).TraceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
+                ((ISpanContextInternal)rootScope.Span.Context).TraceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
 
                 using (var childScope = _tracer.StartActive("child1"))
                 {
@@ -139,7 +139,7 @@ namespace Datadog.Trace.IntegrationTests
                 }
 
                 // drop it
-                ((SpanContext)rootScope.Span.Context).TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
+                ((ISpanContextInternal)rootScope.Span.Context).TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
             }
 
             var traces = _testApi.Wait();
@@ -213,8 +213,9 @@ namespace Datadog.Trace.IntegrationTests
             var expectedMaxPerSecond = 1000.0f;
             var expectedSamplingMechanism = 8;
 
-            var spanContext = new SpanContext(4, 5, samplingPriority: null, serviceName: "serviceName");
-            var span = new Span(spanContext, DateTimeOffset.Now) { OperationName = "test" };
+            var spanContext = Span.CreateSpanContext(4, 5, samplingPriority: null, serviceName: "serviceName");
+            var span = Span.CreateSpan(spanContext, DateTimeOffset.Now);
+            span.OperationName = "test";
             var spans = new Span[1];
             spans[0] = span;
             _writer.WriteTrace(new ArraySegment<Span>(spans));
