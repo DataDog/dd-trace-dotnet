@@ -99,6 +99,9 @@ public class PublicApiGenerator : IIncrementalGenerator
         int? publicApiGetter = null;
         int? publicApiSetter = null;
         string? telemetryConfigKey = null;
+        bool? recordValue = null;
+        string? conversion = null;
+        var returnType = propertySymbol.Type.ToDisplayString();
 
         foreach (AttributeData attributeData in propertySymbol.GetAttributes())
         {
@@ -149,6 +152,16 @@ public class PublicApiGenerator : IIncrementalGenerator
                         diagnostics.Add(EmptyStringDiagnostic.CreateInfo(attributeData.ApplicationSyntaxReference?.GetSyntax()));
                         hasMisconfiguredInput = true;
                     }
+
+                    // bit hacky, but it'll do
+                    (recordValue, conversion) = returnType switch
+                    {
+                        "System.Collections.Generic.HashSet<string>" => ((bool?)true, "string.Join(\";\", value)"),
+                        "System.Collections.Generic.Dictionary<string, string>" => (true, "string.Join(\",\", System.Linq.Enumerable.Select(value, kvp => $\"{kvp.Key}:{kvp.Value}\"))"),
+                        "System.Collections.Generic.IDictionary<string, string>" => (true, "string.Join(\",\", System.Linq.Enumerable.Select(value, kvp => $\"{kvp.Key}:{kvp.Value}\"))"),
+                        "string" or "string?" => (true, null),
+                        _ => (null, null),
+                    };
                 }
 
                 break;
@@ -186,9 +199,11 @@ public class PublicApiGenerator : IIncrementalGenerator
             propertyName: propertyName!,
             publicApiGetter: publicApiGetter,
             publicApiSetter: publicApiSetter,
-            returnType: propertySymbol.Type.ToDisplayString(),
+            returnType: returnType,
             leadingTrivia: property.GetLeadingTrivia().ToFullString(),
-            telemetryConfigKey: telemetryConfigKey);
+            telemetryConfigKey: telemetryConfigKey,
+            recordValue: recordValue,
+            conversion: conversion);
 
         return new Result<(PublicApiProperty PropertyTag, bool IsValid)>((tag, true), errors);
     }
@@ -257,8 +272,10 @@ public class PublicApiGenerator : IIncrementalGenerator
         public readonly string ReturnType;
         public readonly string LeadingTrivia;
         public readonly string? TelemetryConfigKey;
+        public readonly bool? RecordValue;
+        public readonly string? Conversion;
 
-        public PublicApiProperty(string nameSpace, string className, string fieldName, int? publicApiGetter, int? publicApiSetter, string propertyName, string returnType, string leadingTrivia, string? telemetryConfigKey)
+        public PublicApiProperty(string nameSpace, string className, string fieldName, int? publicApiGetter, int? publicApiSetter, string propertyName, string returnType, string leadingTrivia, string? telemetryConfigKey, bool? recordValue, string? conversion)
         {
             Namespace = nameSpace;
             ClassName = className;
@@ -269,6 +286,8 @@ public class PublicApiGenerator : IIncrementalGenerator
             ReturnType = returnType;
             LeadingTrivia = leadingTrivia;
             TelemetryConfigKey = telemetryConfigKey;
+            RecordValue = recordValue;
+            Conversion = conversion;
         }
     }
 }
