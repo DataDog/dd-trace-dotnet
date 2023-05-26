@@ -13,6 +13,25 @@
 #include "shared/src/native-src/dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 
+#define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
+
+void StrAppend(char* buffer, const char* str, size_t& cchBuffer);
+
+void FixGenericSyntax(WCHAR* name);
+void FixGenericSyntax(char* name);
+
+PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte);
+PCCOR_SIGNATURE ParseElementType(
+    IMetaDataImport* pMDImport,
+    PCCOR_SIGNATURE signature,
+    ClassID* classTypeArgs,
+    ClassID* methodTypeArgs,
+    ULONG* elementType,
+    char* buffer,
+    size_t cchBuffer,
+    mdToken* typeToken);
+
+
 FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* debugInfoStore) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _resolveNativeFrames{pConfiguration->IsNativeFramesEnabled()},
@@ -505,7 +524,7 @@ std::pair<std::string, mdTypeDef> FrameStore::GetMethodName(
         // get the method signature
         std::string signature = GetMethodSignature(_pCorProfilerInfo, pMetadataImport, functionId, mdTokenFunc);
 
-        return std::make_pair(std::move(methodName + signature), mdTokenType);
+        return std::make_pair(methodName + signature, mdTokenType);
     }
 
     // Append generic parameters if any
@@ -931,8 +950,8 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
     ClassID classId = 0;
     ModuleID moduleId;
     // for generic support
-    std::unique_ptr<ClassID[]> methodTypeArgs = NULL;
-    std::unique_ptr<ClassID[]> classTypeArgs = NULL;
+    std::unique_ptr<ClassID[]> methodTypeArgs = nullptr;
+    std::unique_ptr<ClassID[]> classTypeArgs = nullptr;
     ULONG genericArgCount = 0;
     UINT32 methodTypeArgCount = 0;
     ULONG32 classTypeArgCount = 0;
@@ -1305,7 +1324,7 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
             }
             if (SUCCEEDED(hr))
             {
-                StrAppend(buffer, shared::ToString(shared::WSTRING(zName)).c_str(), cchBuffer);
+                StrAppend(buffer, shared::ToString(zName).c_str(), cchBuffer);
             }
             else
             {
@@ -1500,10 +1519,10 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
                 }
                 if (SUCCEEDED(hr))
                 {
-#ifndef _WINDOWS
-                    strcpy(classname, shared::ToString(shared::WSTRING(zName)).c_str());
+#ifdef _WINDOWS
+                    strncpy_s(classname, shared::ToString(zName).c_str(), ARRAY_LEN(classname));
 #else
-                    strncpy_s(classname, shared::ToString(shared::WSTRING(zName)).c_str(), ARRAY_LEN(classname));
+                    strcpy(classname, shared::ToString(zName).c_str());
 #endif
                 }
 

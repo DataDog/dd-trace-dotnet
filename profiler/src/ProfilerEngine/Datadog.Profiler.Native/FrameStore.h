@@ -13,24 +13,6 @@
 
 class IConfiguration;
 
-#define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
-
-void StrAppend(char* buffer, const char* str, size_t& cchBuffer);
-
-void FixGenericSyntax(WCHAR* name);
-void FixGenericSyntax(char* name);
-
-PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte);
-PCCOR_SIGNATURE ParseElementType(
-    IMetaDataImport* pMDImport,
-    PCCOR_SIGNATURE signature,
-    ClassID* classTypeArgs,
-    ClassID* methodTypeArgs,
-    ULONG* elementType,
-    char* buffer,
-    size_t cchBuffer,
-    mdToken* typeToken);
-
 class FrameStore : public IFrameStore
 {
 private:
