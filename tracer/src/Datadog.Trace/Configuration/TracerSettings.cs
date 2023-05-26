@@ -18,7 +18,9 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Configuration
@@ -26,7 +28,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// Contains Tracer settings.
     /// </summary>
-    public class TracerSettings
+    public partial class TracerSettings
     {
         private readonly IConfigurationTelemetry _telemetry;
 
@@ -122,7 +124,7 @@ namespace Datadog.Trace.Configuration
 #pragma warning restore 618
 
 #pragma warning disable 618 // this parameter has been replaced but may still be used
-            MaxTracesSubmittedPerSecond = config
+            MaxTracesSubmittedPerSecondInternal = config
                                          .WithKeys(ConfigurationKeys.TraceRateLimit, ConfigurationKeys.MaxTracesSubmittedPerSecond)
 #pragma warning restore 618
                                          .AsInt32(defaultValue: 100);
@@ -452,7 +454,11 @@ namespace Datadog.Trace.Configuration
         /// Default is <c>100</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TraceRateLimit"/>
-        public int MaxTracesSubmittedPerSecond { get; set; }
+        [GeneratePublicApi(
+            PublicApiUsage.TracerSettings_MaxTracesSubmittedPerSecond_Get,
+            PublicApiUsage.TracerSettings_MaxTracesSubmittedPerSecond_Set,
+            ConfigurationKeys.TraceRateLimit)]
+        internal int MaxTracesSubmittedPerSecondInternal { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating custom sampling rules.

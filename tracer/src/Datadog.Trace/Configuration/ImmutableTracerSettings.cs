@@ -70,7 +70,7 @@ namespace Datadog.Trace.Configuration
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = settings.AnalyticsEnabled;
 #pragma warning restore 618
-            MaxTracesSubmittedPerSecond = settings.MaxTracesSubmittedPerSecond;
+            MaxTracesSubmittedPerSecond = settings.MaxTracesSubmittedPerSecondInternal;
             CustomSamplingRules = settings.CustomSamplingRules;
             SpanSamplingRules = settings.SpanSamplingRules;
             GlobalSamplingRate = settings.GlobalSamplingRate;
