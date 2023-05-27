@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -123,6 +124,9 @@ namespace Datadog.Trace
                 {
                     return _instance;
                 }
+
+                string miniAgentPath = Environment.GetEnvironmentVariable("DD_MINI_AGENT_PATH");
+                Process.Start(miniAgentPath);
 
                 Tracer instance;
                 lock (GlobalInstanceLock)
