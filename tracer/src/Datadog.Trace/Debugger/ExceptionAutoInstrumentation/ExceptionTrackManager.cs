@@ -189,7 +189,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         private static bool IsUserCode(string methodFullName) // Not Real
         {
-            if (methodFullName.Contains("Calculate"))
+            if (methodFullName.Contains("eShopWeb"))
             {
                 return true;
             }
