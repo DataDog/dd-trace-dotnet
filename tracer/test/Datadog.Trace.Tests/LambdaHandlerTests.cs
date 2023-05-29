@@ -5,7 +5,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.TestHelpers;
@@ -14,6 +14,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests
 {
+#pragma warning disable SA1402 // File may only contain a single type
     public class LambdaHandlerTests
     {
         [Fact]
@@ -64,17 +65,45 @@ namespace Datadog.Trace.Tests
             handler.ParamTypeArray[1].Should().Be(ClrNames.Int32);
         }
 
-        [Theory(Skip = "We don't currently support open generics in Lambda")]
-        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod1", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod1")]
-        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod2", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod2")]
-        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod3", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
+        [Theory]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.ShadowTest::AbstractFunctionInGeneric", "Datadog.Trace.Tests.ShadowTest", "AbstractFunctionInGeneric", ClrNames.String, ClrNames.String)]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.ShadowTest::VirtualFunctionInGeneric", "Datadog.Trace.Tests.ShadowTest", "VirtualFunctionInGeneric", ClrNames.String, ClrNames.String)]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.ShadowTest::ShadowedFunctionInGeneric", "Datadog.Trace.Tests.ShadowTest", "ShadowedFunctionInGeneric", ClrNames.String, ClrNames.String)]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.ShadowTest+Nested::ShadowedFunctionInGeneric", "Datadog.Trace.Tests.ShadowTest+Nested", "ShadowedFunctionInGeneric", ClrNames.String, ClrNames.String)]
+        public void LambdaHandlerCanHandleShadowing(string handlerVariable, string expectedType, string expectedMethod, params string[] args)
+        {
+            LambdaHandler handler = new LambdaHandler(handlerVariable);
+            handler.Assembly.Should().Be("Datadog.Trace.Tests");
+            handler.FullType.Should().Be(expectedType);
+            handler.MethodName.Should().Be(expectedMethod);
+            handler.ParamTypeArray.Should().BeEquivalentTo(args, opts => opts.WithStrictOrdering());
+        }
+
+        [Theory]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod1", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod1", ClrNames.Void, "!0")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod2", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod2", "!0")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod1", "Datadog.Trace.Tests.GenericBaseHandler2`2", "GenericBaseMethod1", ClrNames.Void, "!0")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod2", "Datadog.Trace.Tests.GenericBaseHandler2`2", "GenericBaseMethod2", "!0")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod3", "Datadog.Trace.Tests.GenericBaseHandler2`2", "GenericBaseMethod3", ClrNames.Void, "!1")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod4", "Datadog.Trace.Tests.GenericBaseHandler2`2", "GenericBaseMethod4", "!1")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod5", "Datadog.Trace.Tests.GenericBaseHandler2`2", "GenericBaseMethod5", "!1", "!0")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod6", "Datadog.Trace.Tests.GenericBaseHandler2`2", "GenericBaseMethod6", ClrNames.Void, "!0", "!1")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler5::GenericBaseMethod7", "Datadog.Trace.Tests.GenericBaseHandler2`2", "GenericBaseMethod7", "System.Threading.Tasks.Task`1[!0]", "System.Threading.Tasks.Task`1[!1]")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler6::GenericBaseMethod5", "Datadog.Trace.Tests.GenericBaseHandler2`2", "GenericBaseMethod5", "!1", "!0")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler6::GenericBaseMethod6", "Datadog.Trace.Tests.GenericBaseHandler2`2", "GenericBaseMethod6", ClrNames.Void, "!0", "!1")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler6::GenericBaseMethod7", "Datadog.Trace.Tests.GenericBaseHandler2`2", "GenericBaseMethod7", "System.Threading.Tasks.Task`1[!0]", "System.Threading.Tasks.Task`1[!1]")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler7+Nested::Handler", "Datadog.Trace.Tests.TrickyParamHandler+NestedGeneric`2", "Handler", "System.Threading.Tasks.Task`1[System.Tuple`2[!0,NestedGeneric`2[!0,!1]]]", "System.Tuple`2[!0,NestedGeneric`2[!0,!1]]")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.FunctionImplementation::FunctionHandlerAsync", "Datadog.Trace.Tests.AbstractAspNetCoreFunction`2", "FunctionHandlerAsync", "System.Threading.Tasks.Task`1[!1]", "!0", "Datadog.Trace.Tests.ILambdaContext")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.DerivedImplementation::ComplexNestedGeneric", "Datadog.Trace.Tests.GenericBase`2", "ComplexNestedGeneric", "Datadog.Trace.Tests.GenericBase`2[Datadog.Trace.Tests.CustomInput,InnerGeneric`2[!0,!1]]", "!0", "InnerGeneric`2[!0,NestedInSameType`2[!0,!1,!0,System.Collections.Generic.Dictionary`2[System.String,DeepNested`1[!0,!1,!1]]]]")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.DerivedImplementation::NonGenericFunction", "Datadog.Trace.Tests.GenericBase`2", "NonGenericFunction", ClrNames.Task, ClrNames.String, "Datadog.Trace.Tests.ILambdaContext")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.DerivedImplementation+NestedDerived::ComplexNestedGeneric", "Datadog.Trace.Tests.GenericBase`2", "ComplexNestedGeneric", "Datadog.Trace.Tests.GenericBase`2[Datadog.Trace.Tests.CustomInput,InnerGeneric`2[!0,!1]]", "!0", "InnerGeneric`2[!0,NestedInSameType`2[!0,!1,!0,System.Collections.Generic.Dictionary`2[System.String,DeepNested`1[!0,!1,!1]]]]")]
         public void LambdaHandlerCanHandleOpenGenericTypes(string handlerVariable, string expectedType, string expectedMethod, params string[] args)
         {
             LambdaHandler handler = new LambdaHandler(handlerVariable);
             handler.Assembly.Should().Be("Datadog.Trace.Tests");
             handler.FullType.Should().Be(expectedType);
             handler.MethodName.Should().Be(expectedMethod);
-            handler.ParamTypeArray.Should().BeSameAs(args);
+            handler.ParamTypeArray.Should().BeEquivalentTo(args, opts => opts.WithStrictOrdering());
         }
 
         [Theory]
@@ -96,17 +125,15 @@ namespace Datadog.Trace.Tests
         [InlineData("SomeType::::")]
         public void LambdaHandlerThrowsWhenUnknownTypes(string handlerVariable)
         {
-            Assert.Throws<Exception>(() => new LambdaHandler(handlerVariable));
+            Assert.Throws<ArgumentException>(() => new LambdaHandler(handlerVariable));
         }
 
         [Theory]
-        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod1")]
-        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod2")]
         [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod3")]
-        public void LambdaHandlerThrowsWhenInstrumentingGenericTypes(string handlerVariable)
+        public void LambdaHandlerThrowsWhenInstrumentingGenericMethods(string handlerVariable)
         {
             // We don't support this yet (we could, we just haven't done the work for it yet)
-            Assert.Throws<Exception>(() => new LambdaHandler(handlerVariable));
+            Assert.Throws<ArgumentException>(() => new LambdaHandler(handlerVariable));
         }
 
         [Theory]
@@ -158,7 +185,6 @@ namespace Datadog.Trace.Tests
         }
     }
 
-#pragma warning disable SA1402 // File may only contain a single type
     public class TestHandler : BaseHandler
     {
         public void HandlerMethod()
@@ -211,6 +237,35 @@ namespace Datadog.Trace.Tests
     {
     }
 
+    public class TestHandler5 : GenericBaseHandler2<int, string>
+    {
+    }
+
+    public class TestHandler6 : GenericBaseHandler2<int, int>
+    {
+    }
+
+    public class TestHandler7
+    {
+        public class Nested : TrickyParamHandler.NestedGeneric<int, string>
+        {
+        }
+    }
+
+    public class ShadowTest : GenericAbstractBase<string>
+    {
+        public override string AbstractFunctionInGeneric(string arg) => arg;
+
+        public override string VirtualFunctionInGeneric(string arg) => arg;
+
+        public string ShadowedFunctionInGeneric(string arg) => arg;
+
+        public class Nested : ShadowTest
+        {
+            public new string ShadowedFunctionInGeneric(string arg) => arg;
+        }
+    }
+
     public class BaseHandler
     {
         public void BaseHandlerMethod()
@@ -244,6 +299,22 @@ namespace Datadog.Trace.Tests
         public abstract T AbstractGenericBaseMethod2(int value);
     }
 
+    public class AbstractAspNetCoreFunction
+    {
+    }
+
+    public class AbstractAspNetCoreFunction<TREQUEST, TRESPONSE> : AbstractAspNetCoreFunction
+    {
+        public virtual async Task<TRESPONSE> FunctionHandlerAsync(TREQUEST request, ILambdaContext lambdaContext)
+        {
+            return await Task.FromResult<TRESPONSE>(default(TRESPONSE));
+        }
+    }
+
+    public class FunctionImplementation : AbstractAspNetCoreFunction<string, string>
+    {
+    }
+
     public class GenericBaseHandler<T>
     {
         public void GenericBaseMethod1(T value)
@@ -253,6 +324,38 @@ namespace Datadog.Trace.Tests
         public T GenericBaseMethod2() => default;
 
         public T2 GenericBaseMethod3<T2>() => default;
+    }
+
+    public abstract class GenericAbstractBase<T>
+    {
+        public abstract T AbstractFunctionInGeneric(T arg);
+
+        public virtual T VirtualFunctionInGeneric(T arg) => arg;
+
+        public T ShadowedGenericFunction(T arg) => arg;
+    }
+
+    public class GenericBaseHandler2<T1, T2>
+    {
+        public void GenericBaseMethod1(T1 value)
+        {
+        }
+
+        public T1 GenericBaseMethod2() => default;
+
+        public void GenericBaseMethod3(T2 value)
+        {
+        }
+
+        public T2 GenericBaseMethod4() => default;
+
+        public T2 GenericBaseMethod5(T1 value) => default;
+
+        public void GenericBaseMethod6(T1 val1, T2 val2)
+        {
+        }
+
+        public Task<T1> GenericBaseMethod7(Task<T2> value) => Task.FromResult<T1>(default);
     }
 
     public class TrickyParamHandler
@@ -290,10 +393,63 @@ namespace Datadog.Trace.Tests
 
         public class NestedGeneric<TKey, TValue> : Dictionary<TKey, TValue>
         {
+            public Task<Tuple<TKey, NestedGeneric<TKey, TValue>>> Handler(Tuple<TKey, NestedGeneric<TKey, TValue>> key) => default;
         }
     }
 
     public class TestMockSpan : MockSpan
+    {
+    }
+
+    public class ILambdaContext
+    {
+    }
+
+    public class DerivedImplementation : GenericBase<CustomInput, string>
+    {
+        public class NestedDerived : GenericBase<CustomInput, object>
+        {
+        }
+    }
+
+    public class Function
+    {
+        public class NestedClass
+        {
+            public class InnerGeneric<TKey, TValue> : Dictionary<TKey, TValue>
+            {
+            }
+        }
+
+        public class NestedGeneric<TKey, TValue> : Dictionary<TKey, TValue>
+        {
+        }
+    }
+
+    public abstract class GenericBase<TRequest, TResponse>
+    {
+        public GenericBase<CustomInput, Function.NestedClass.InnerGeneric<TRequest, TResponse>> ComplexNestedGeneric(
+            TRequest request,
+            Function.NestedClass.InnerGeneric<TRequest, NestedInSameType<TRequest, Dictionary<string, Nested.DeepNested<TResponse>>>> context)
+        {
+            return default;
+        }
+
+        public Task NonGenericFunction(string arg1, ILambdaContext arg2) => Task.CompletedTask;
+
+        public class NestedInSameType<TKey, TValue> : Dictionary<TKey, TValue>
+        {
+        }
+
+        public class Nested
+        {
+            public class DeepNested<TNested> : HashSet<TNested>
+            {
+            }
+        }
+    }
+
+    public class CustomInput
     {
     }
 }

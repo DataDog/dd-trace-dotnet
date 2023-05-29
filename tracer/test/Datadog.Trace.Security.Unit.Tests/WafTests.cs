@@ -63,7 +63,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Theory]
-        [InlineData("user-agent", "Arachni/v1", "security_scanner", "ua0-600-12x")]
+        [InlineData("user-agent", "Arachni/v1", "attack_tool", "ua0-600-12x")]
         [InlineData("referer", "<script >", "xss", "crs-941-110")]
         [InlineData("x-file-name", "routing.yml", "command_injection", "crs-932-180")]
         [InlineData("x-filename", "routing.yml", "command_injection", "crs-932-180")]
