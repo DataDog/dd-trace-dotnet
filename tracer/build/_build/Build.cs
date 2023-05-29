@@ -412,13 +412,21 @@ partial class Build : NukeBuild
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                 );
 
+                var framework = TargetFramework.NETCOREAPP3_1;
+                var runtimes = "net472 netcoreapp3.1";
+                if (IsOsx)
+                {
+                    framework = TargetFramework.NET6_0;
+                    runtimes = "net6.0";
+                }
+                
                 DotNetRun(s => s
                     .SetProjectFile(benchmarksProject)
                     .SetConfiguration(BuildConfiguration)
-                    .SetFramework(TargetFramework.NETCOREAPP3_1)
+                    .SetFramework(framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetApplicationArguments($"-r net472 netcoreapp3.1 -m -f {Filter ?? "*"} --iterationTime 2000")
+                    .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --iterationTime 2000")
                     .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
                     .SetProcessEnvironmentVariable("DD_ENV", "CI")
                     .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)
