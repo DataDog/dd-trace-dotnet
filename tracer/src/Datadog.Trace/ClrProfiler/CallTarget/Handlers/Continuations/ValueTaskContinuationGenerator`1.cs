@@ -6,6 +6,7 @@
 #if NETCOREAPP3_1_OR_GREATER
 using System;
 using System.Threading.Tasks;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 #pragma warning disable SA1649 // File name must match first type name
@@ -24,12 +25,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 if (result.Method.ReturnType == typeof(Task) ||
                     (result.Method.ReturnType.IsGenericType && typeof(Task).IsAssignableFrom(result.Method.ReturnType)))
                 {
-                    var asyncContinuation = (AsyncContinuationMethodDelegate)result.Method.CreateDelegate(typeof(AsyncContinuationMethodDelegate), CallTargetInvoker.DummyDelegateInstanceObject);
+                    var asyncContinuation = (AsyncContinuationMethodDelegate)result.Method.CreateInstanceDelegate(typeof(AsyncContinuationMethodDelegate));
                     Resolver = new AsyncCallbackHandler(asyncContinuation, result.PreserveContext);
                 }
                 else
                 {
-                    var continuation = (ContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ContinuationMethodDelegate), CallTargetInvoker.DummyDelegateInstanceObject);
+                    var continuation = (ContinuationMethodDelegate)result.Method.CreateInstanceDelegate(typeof(ContinuationMethodDelegate));
                     Resolver = new SyncCallbackHandler(continuation, result.PreserveContext);
                 }
             }

@@ -8,7 +8,9 @@
 using System;
 using System.Reflection;
 using System.Reflection.Emit;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
@@ -25,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             DynamicMethod createHeadersMethod = new DynamicMethod(
                 $"NullableStringHelper",
                 nullableStringType,
-                null,
+                new[] { typeof(object) },
                 typeof(DuckType).Module,
                 true);
 
@@ -33,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             il.Emit(OpCodes.Newobj, ctor);
             il.Emit(OpCodes.Ret);
 
-            Activator = (Func<object>)createHeadersMethod.CreateDelegate(typeof(Func<object>));
+            Activator = (Func<object>)createHeadersMethod.CreateInstanceDelegate(typeof(Func<object>));
         }
 
         /// <summary>

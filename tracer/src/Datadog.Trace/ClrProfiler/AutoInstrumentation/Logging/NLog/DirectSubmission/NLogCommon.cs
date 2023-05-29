@@ -10,7 +10,9 @@ using System.Reflection;
 using System.Reflection.Emit;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -390,7 +392,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             DynamicMethod createLoggingRuleMethod = new DynamicMethod(
                 $"NLogCommon_CreateLoggingRuleActivator",
                 loggingRuleType,
-                null,
+                new[] { typeof(object) },
                 typeof(DuckType).Module,
                 true);
 
@@ -398,7 +400,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             il.Emit(OpCodes.Newobj, ctor);
             il.Emit(OpCodes.Ret);
 
-            return (Func<object>)createLoggingRuleMethod.CreateDelegate(typeof(Func<object>));
+            return (Func<object>)createLoggingRuleMethod.CreateInstanceDelegate(typeof(Func<object>));
         }
     }
 }

@@ -6,7 +6,9 @@
 using System;
 using System.Reflection;
 using System.Reflection.Emit;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 {
@@ -23,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             DynamicMethod createHeadersMethod = new DynamicMethod(
                 $"KafkaCachedMessageHeadersHelpers",
                 headersType,
-                null,
+                new[] { typeof(object) },
                 typeof(DuckType).Module,
                 true);
 
@@ -31,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             il.Emit(OpCodes.Newobj, ctor);
             il.Emit(OpCodes.Ret);
 
-            _activator = (Func<object>)createHeadersMethod.CreateDelegate(typeof(Func<object>));
+            _activator = (Func<object>)createHeadersMethod.CreateInstanceDelegate(typeof(Func<object>));
         }
 
         /// <summary>

@@ -6,6 +6,7 @@
 using System;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 {
@@ -50,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 ILGenerator il = dMethod.GetILGenerator();
                 il.Emit(OpCodes.Ldarg_1);
                 il.Emit(OpCodes.Ret);
-                _converter = (ConvertDelegate)dMethod.CreateDelegate(typeof(ConvertDelegate), CallTargetInvoker.DummyDelegateInstanceObject);
+                _converter = (ConvertDelegate)dMethod.CreateInstanceDelegate(typeof(ConvertDelegate));
             }
 
             private delegate TTo ConvertDelegate(TFrom value);

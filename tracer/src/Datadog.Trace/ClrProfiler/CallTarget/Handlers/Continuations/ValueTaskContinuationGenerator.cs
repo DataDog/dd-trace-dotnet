@@ -6,6 +6,7 @@
 #if NETCOREAPP3_1_OR_GREATER
 using System;
 using System.Threading.Tasks;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
@@ -22,12 +23,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 if (result.Method.ReturnType == typeof(Task) ||
                     (result.Method.ReturnType.IsGenericType && typeof(Task).IsAssignableFrom(result.Method.ReturnType)))
                 {
-                    var asyncContinuation = (AsyncObjectContinuationMethodDelegate)result.Method.CreateDelegate(typeof(AsyncObjectContinuationMethodDelegate), CallTargetInvoker.DummyDelegateInstanceObject);
+                    var asyncContinuation = (AsyncObjectContinuationMethodDelegate)result.Method.CreateInstanceDelegate(typeof(AsyncObjectContinuationMethodDelegate));
                     Resolver = new AsyncCallbackHandler(asyncContinuation, result.PreserveContext);
                 }
                 else
                 {
-                    var continuation = (ObjectContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ObjectContinuationMethodDelegate), CallTargetInvoker.DummyDelegateInstanceObject);
+                    var continuation = (ObjectContinuationMethodDelegate)result.Method.CreateInstanceDelegate(typeof(ObjectContinuationMethodDelegate));
                     Resolver = new SyncCallbackHandler(continuation, result.PreserveContext);
                 }
             }
