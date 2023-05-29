@@ -18,10 +18,10 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         {
             try
             {
-                DynamicMethod dynMethod = IntegrationMapper.CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget));
+                var dynMethod = IntegrationMapper.CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget));
                 if (dynMethod != null)
                 {
-                    _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                    _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate), CallTargetInvoker.DummyDelegateInstanceObject);
                 }
             }
             catch (Exception ex) when (ex is not BlockException)
@@ -30,10 +30,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             }
             finally
             {
-                if (_invokeDelegate is null)
-                {
-                    _invokeDelegate = (TTarget instance, Exception exception, in CallTargetState state) => CallTargetReturn.GetDefault();
-                }
+                _invokeDelegate ??= (TTarget instance, Exception exception, in CallTargetState state) => CallTargetReturn.GetDefault();
             }
         }
 

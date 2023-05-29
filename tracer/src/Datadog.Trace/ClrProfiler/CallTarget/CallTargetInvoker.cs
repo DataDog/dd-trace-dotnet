@@ -17,6 +17,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class CallTargetInvoker
     {
+        internal static readonly object DummyDelegateInstanceObject = new();
+
         static CallTargetInvoker()
         {
             // The first time the CallTargetInvoker is called

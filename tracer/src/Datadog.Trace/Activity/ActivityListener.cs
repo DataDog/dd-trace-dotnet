@@ -11,6 +11,7 @@ using System.Reflection.Emit;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -149,11 +150,11 @@ namespace Datadog.Trace.Activity
                     throw new NullReferenceException("Activity.Current property cannot be found in the Activity type.");
                 }
 
-                var activityCurrentDynMethod = new DynamicMethod("ActivityCurrent", typeof(object), Type.EmptyTypes, typeof(ActivityListener).Module, true);
+                var activityCurrentDynMethod = new DynamicMethod("ActivityCurrent", typeof(object), new [] { typeof(object) }, typeof(ActivityListener).Module, true);
                 var activityCurrentDynMethodIl = activityCurrentDynMethod.GetILGenerator();
                 activityCurrentDynMethodIl.EmitCall(OpCodes.Call, activityCurrentMethodInfo, null);
                 activityCurrentDynMethodIl.Emit(OpCodes.Ret);
-                _getCurrentActivity = (Func<object>)activityCurrentDynMethod.CreateDelegate(typeof(Func<object>));
+                _getCurrentActivity = (Func<object>)activityCurrentDynMethod.CreateDelegate(typeof(Func<object>), CallTargetInvoker.DummyDelegateInstanceObject);
             }
 
             static void ChangeActivityDefaultFormat(Type activityType)

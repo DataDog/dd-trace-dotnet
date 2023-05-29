@@ -22,12 +22,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 if (result.Method.ReturnType == typeof(Task) ||
                     (result.Method.ReturnType.IsGenericType && typeof(Task).IsAssignableFrom(result.Method.ReturnType)))
                 {
-                    var asyncContinuation = (AsyncObjectContinuationMethodDelegate)result.Method.CreateDelegate(typeof(AsyncObjectContinuationMethodDelegate));
+                    var asyncContinuation = (AsyncObjectContinuationMethodDelegate)result.Method.CreateDelegate(typeof(AsyncObjectContinuationMethodDelegate), CallTargetInvoker.DummyDelegateInstanceObject);
                     Resolver = new AsyncCallbackHandler(asyncContinuation, result.PreserveContext);
                 }
                 else
                 {
-                    var continuation = (ObjectContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ObjectContinuationMethodDelegate));
+                    var continuation = (ObjectContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ObjectContinuationMethodDelegate), CallTargetInvoker.DummyDelegateInstanceObject);
                     Resolver = new SyncCallbackHandler(continuation, result.PreserveContext);
                 }
             }

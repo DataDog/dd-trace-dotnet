@@ -14,28 +14,32 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 {
     internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
     {
-        private static readonly InvokeDelegate _invokeDelegate = null;
+        private static readonly InvokeDelegate _invokeDelegate;
         private static readonly ContinuationGenerator<TTarget, TReturn> _continuationGenerator = null;
 
         static EndMethodHandler()
         {
-            Type returnType = typeof(TReturn);
+            var returnType = typeof(TReturn);
             try
             {
-                DynamicMethod dynMethod = IntegrationMapper.CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget), returnType);
+                var dynMethod = IntegrationMapper.CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget), returnType);
                 if (dynMethod != null)
                 {
-                    _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                    _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate), CallTargetInvoker.DummyDelegateInstanceObject);
                 }
             }
             catch (Exception ex)
             {
                 throw new CallTargetInvokerException(ex);
             }
+            finally
+            {
+                _invokeDelegate ??= (TTarget instance, TReturn value, Exception exception, in CallTargetState state) => new CallTargetReturn<TReturn>(value);
+            }
 
             if (returnType.IsGenericType)
             {
-                Type genericReturnType = returnType.GetGenericTypeDefinition();
+                var genericReturnType = returnType.GetGenericTypeDefinition();
                 if (typeof(Task).IsAssignableFrom(returnType))
                 {
                     // The type is a Task<>
@@ -84,13 +88,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 }
             }
 
-            if (_invokeDelegate != null)
-            {
-                CallTargetReturn<TReturn> returnWrap = _invokeDelegate(instance, returnValue, exception, in state);
-                returnValue = returnWrap.GetReturnValue();
-            }
-
-            return new CallTargetReturn<TReturn>(returnValue);
+            return _invokeDelegate(instance, returnValue, exception, in state);
         }
     }
 }
