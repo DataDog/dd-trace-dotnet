@@ -7,8 +7,10 @@
 
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Reflection;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -25,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
     MethodName = "FireOnStarting",
     ReturnTypeName = ClrNames.Task,
     MinimumVersion = "2.0.0.0",
-    MaximumVersion = "7.*.*.*.*",
+    MaximumVersion = "7.*.*.*",
     IntegrationName = IntegrationName,
     InstrumentationCategory = InstrumentationCategory.AppSec)]
 [InstrumentMethod(
@@ -34,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
     MethodName = "FireOnStarting",
     ReturnTypeName = ClrNames.Task,
     MinimumVersion = "2.0.0.0",
-    MaximumVersion = "7.*.*.*.*",
+    MaximumVersion = "7.*.*.*",
     IntegrationName = IntegrationName,
     InstrumentationCategory = InstrumentationCategory.AppSec)]
 
@@ -59,8 +61,16 @@ public static class FireOnStartCommon
         var security = Security.Instance;
         if (security.Enabled)
         {
-            var responseHeaders = instance.DuckCast<HttpProtocolStruct>().ResponseHeaders;
-            Console.WriteLine("Fire!");
+            var responseHeaders = instance.DuckCast<HttpProtocolStruct>().ResponseHeaders as IHeaderDictionary;
+            if (responseHeaders is not null)
+            {
+                Span span = Tracer.Instance.InternalActiveScope?.Root?.Span;
+
+                if (span is not null)
+                {
+                    SecurityCoordinatorHelpers.CheckReturnedHeaders(security, span, responseHeaders);
+                }
+            }
         }
 
         return new CallTargetReturn<TResponseContext>(responseContext);

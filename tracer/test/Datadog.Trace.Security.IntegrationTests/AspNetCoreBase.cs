@@ -42,6 +42,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData(AddressesConstants.RequestQuery, HttpStatusCode.OK, "/Health/?[$slice]=value")]
         [InlineData(AddressesConstants.RequestQuery, HttpStatusCode.OK, "/Health/?arg&[$slice]")]
         [InlineData(AddressesConstants.RequestPathParams, HttpStatusCode.OK, "/health/params/appscan_fingerprint")]
+        [InlineData(AddressesConstants.ResponseHeaderNoCookies, HttpStatusCode.OK, "/Home/LangHeader")]
         [Trait("RunOnWindows", "True")]
         public async Task TestRequest(string test, HttpStatusCode expectedStatusCode, string url)
         {

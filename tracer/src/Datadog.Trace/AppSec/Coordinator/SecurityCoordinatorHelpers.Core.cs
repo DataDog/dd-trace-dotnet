@@ -7,6 +7,8 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Activity.Handlers;
+using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Routing;
@@ -15,6 +17,8 @@ namespace Datadog.Trace.AppSec.Coordinator;
 
 internal static class SecurityCoordinatorHelpers
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SecurityCoordinatorHelpers));
+
     internal static void CheckAndBlock(this Security security, HttpContext context, Span span)
     {
         if (security.Enabled)
@@ -26,6 +30,51 @@ internal static class SecurityCoordinatorHelpers
                 var result = securityCoordinator.Scan();
                 securityCoordinator.CheckAndBlock(result);
             }
+        }
+    }
+
+    private static Dictionary<string, string[]> GetResponseHeadersForWaf(IHeaderDictionary headers)
+    {
+        var headersDic = new Dictionary<string, string[]>(headers.Count);
+        var headerKeys = headers.Keys;
+        foreach (string originalKey in headerKeys)
+        {
+            var keyForDictionary = originalKey.ToLowerInvariant() ?? string.Empty;
+            if (keyForDictionary != "cookie")
+            {
+                if (!headersDic.ContainsKey(keyForDictionary))
+                {
+                    headersDic.Add(keyForDictionary, headers[originalKey].ToArray());
+                }
+            }
+        }
+
+        return headersDic;
+    }
+
+    internal static void CheckReturnedHeaders(this Security security, Span span, IHeaderDictionary headers)
+    {
+        try
+        {
+            if (security.Enabled && CoreHttpContextStore.Instance.Get() is { } httpContext)
+            {
+                var transport = new SecurityCoordinator.HttpTransport(httpContext);
+                if (!transport.IsBlocked)
+                {
+                    var securityCoordinator = new SecurityCoordinator(security, httpContext, span, transport);
+                    // var args = securityCoordinator.GetBasicRequestArgsForWaf();
+                    var args = new Dictionary<string, object>
+                    {
+                        { AddressesConstants.ResponseHeaderNoCookies, GetResponseHeadersForWaf(headers) }
+                    };
+                    var result = securityCoordinator.RunWaf(args);
+                    securityCoordinator.CheckAndBlock(result);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error extracting HTTP headers to create header tags.");
         }
     }
 
