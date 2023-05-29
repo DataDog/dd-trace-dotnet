@@ -76,12 +76,15 @@ namespace Datadog.Trace.Pdb
             // and the PDB may not be copied to this folder until later or never, as it is only copied on demand (usually when an exception is thrown).
             // In these cases, we'll try to find it in the application directory (e.g. C:\inetpub\wwwroot\MyApp\bin\MyApp.pdb).
             string fileName = Path.GetFileName(pdbInSameFolder);
-            var pdbInAppDirectory = Directory.EnumerateFiles(System.Web.Hosting.HostingEnvironment.ApplicationPhysicalPath, fileName, SearchOption.AllDirectories).FirstOrDefault();
-
-            if (pdbInAppDirectory != null)
+            string applicationDirectory = System.Web.Hosting.HostingEnvironment.ApplicationPhysicalPath;
+            if (applicationDirectory != null)
             {
-                pdbFullPath = pdbInAppDirectory;
-                return true;
+                var pdbInAppDirectory = Directory.EnumerateFiles(applicationDirectory, fileName, SearchOption.AllDirectories).FirstOrDefault();
+                if (pdbInAppDirectory != null)
+                {
+                    pdbFullPath = pdbInAppDirectory;
+                    return true;
+                }
             }
 #endif
 

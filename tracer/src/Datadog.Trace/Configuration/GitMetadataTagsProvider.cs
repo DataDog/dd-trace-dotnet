@@ -73,7 +73,7 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
         catch (Exception e)
         {
             Log.Error(e, "Error while extracting SourceLink information");
-            gitMetadata = GitMetadata.Empty;
+            gitMetadata = _cachedGitTags = GitMetadata.Empty;
             return true;
         }
     }
