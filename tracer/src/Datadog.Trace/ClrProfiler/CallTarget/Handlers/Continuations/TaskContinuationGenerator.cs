@@ -4,8 +4,10 @@
 // </copyright>
 
 using System;
+using System.Reflection.Emit;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
@@ -13,22 +15,22 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
     internal class TaskContinuationGenerator<TIntegration, TTarget, TReturn> : ContinuationGenerator<TTarget, TReturn>
     {
         private static readonly CallbackHandler Resolver;
+        private static readonly DynamicMethod Method;
 
         static TaskContinuationGenerator()
         {
             var result = IntegrationMapper.CreateAsyncEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(object));
             if (result.Method is not null)
             {
+                Method = result.Method;
                 if (result.Method.ReturnType == typeof(Task) ||
                     (result.Method.ReturnType.IsGenericType && typeof(Task).IsAssignableFrom(result.Method.ReturnType)))
                 {
-                    var asyncContinuation = (AsyncObjectContinuationMethodDelegate)result.Method.CreateDelegate(typeof(AsyncObjectContinuationMethodDelegate));
-                    Resolver = new AsyncCallbackHandler(asyncContinuation, result.PreserveContext);
+                    Resolver = new AsyncCallbackHandler(result.Method.GetFunctionPointer(), result.PreserveContext);
                 }
                 else
                 {
-                    var continuation = (ObjectContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ObjectContinuationMethodDelegate));
-                    Resolver = new SyncCallbackHandler(continuation, result.PreserveContext);
+                    Resolver = new SyncCallbackHandler(result.Method.GetFunctionPointer(), result.PreserveContext);
                 }
             }
             else
@@ -52,27 +54,27 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
         private class SyncCallbackHandler : CallbackHandler
         {
-            private readonly ObjectContinuationMethodDelegate _continuation;
+            private readonly IntPtr _continuation;
             private readonly bool _preserveContext;
 
-            public SyncCallbackHandler(ObjectContinuationMethodDelegate continuation, bool preserveContext)
+            public SyncCallbackHandler(IntPtr continuation, bool preserveContext)
             {
                 _continuation = continuation;
                 _preserveContext = preserveContext;
             }
 
-            public override TReturn ExecuteCallback(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+            public override unsafe TReturn ExecuteCallback(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
             {
                 if (exception != null || returnValue == null)
                 {
-                    _continuation(instance, default, exception, in state);
+                    ((delegate*<TTarget, object, Exception, in CallTargetState, object>)_continuation)(instance, default, exception, in state);
                     return returnValue;
                 }
 
                 Task previousTask = FromTReturn<Task>(returnValue);
                 if (previousTask.Status == TaskStatus.RanToCompletion)
                 {
-                    _continuation(instance, default, null, in state);
+                    ((delegate*<TTarget, object, Exception, in CallTargetState, object>)_continuation)(instance, default, null, in state);
                     return returnValue;
                 }
 
@@ -110,7 +112,10 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                     // *
                     // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
                     // *
-                    _continuation(target, null, exception, in state);
+                    unsafe
+                    {
+                        ((delegate*<TTarget, object, Exception, in CallTargetState, object>)_continuation)(target, null, exception, in state);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -129,10 +134,10 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
         private class AsyncCallbackHandler : CallbackHandler
         {
-            private readonly AsyncObjectContinuationMethodDelegate _asyncContinuation;
+            private readonly IntPtr _asyncContinuation;
             private readonly bool _preserveContext;
 
-            public AsyncCallbackHandler(AsyncObjectContinuationMethodDelegate asyncContinuation, bool preserveContext)
+            public AsyncCallbackHandler(IntPtr asyncContinuation, bool preserveContext)
             {
                 _asyncContinuation = asyncContinuation;
                 _preserveContext = preserveContext;
@@ -176,7 +181,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                     // *
                     // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
                     // *
-                    await _asyncContinuation(target, null, exception, in state).ConfigureAwait(_preserveContext);
+                    Task<object> task;
+                    unsafe
+                    {
+                        task = ((delegate*<TTarget, object, Exception, in CallTargetState, Task<object>>)_asyncContinuation)(target, null, exception, in state);
+                    }
+
+                    await task.ConfigureAwait(_preserveContext);
                 }
                 catch (Exception ex)
                 {
