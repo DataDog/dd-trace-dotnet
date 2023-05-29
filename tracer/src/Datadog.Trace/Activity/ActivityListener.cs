@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -160,7 +161,7 @@ namespace Datadog.Trace.Activity
                 activityCurrentDynMethodIl.EmitCall(OpCodes.Call, activityCurrentMethodInfo, null);
                 activityCurrentDynMethodIl.Emit(OpCodes.Ret);
                 _getCurrentActivityDynMethod = activityCurrentDynMethod;
-                _getCurrentActivity = (delegate*<object>)activityCurrentDynMethod.MethodHandle.GetFunctionPointer();
+                _getCurrentActivity = (delegate*<object>)activityCurrentDynMethod.GetFunctionPointer();
             }
 
             static void ChangeActivityDefaultFormat(Type activityType)

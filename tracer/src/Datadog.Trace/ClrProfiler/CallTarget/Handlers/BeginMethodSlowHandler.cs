@@ -6,6 +6,7 @@
 using System;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 {
@@ -23,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 _dynamicMethod = IntegrationMapper.CreateSlowBeginMethodDelegate(typeof(TIntegration), typeof(TTarget));
                 if (_dynamicMethod != null)
                 {
-                    _invokePointer = (delegate*<TTarget, object[], CallTargetState>)_dynamicMethod.MethodHandle.GetFunctionPointer();
+                    _invokePointer = (delegate*<TTarget, object[], CallTargetState>)_dynamicMethod.GetFunctionPointer();
                 }
             }
             catch (Exception ex)

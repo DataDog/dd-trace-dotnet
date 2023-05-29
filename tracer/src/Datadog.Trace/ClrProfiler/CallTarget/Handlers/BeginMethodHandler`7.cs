@@ -6,6 +6,8 @@
 using System;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.ExtensionMethods;
+
 #pragma warning disable SA1649 // File name must match first type name
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
@@ -31,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 _dynamicMethod = IntegrationMapper.CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), new[] { tArg1ByRef, tArg2ByRef, tArg3ByRef, tArg4ByRef, tArg5ByRef, tArg6ByRef, tArg7ByRef });
                 if (_dynamicMethod != null)
                 {
-                    _invokePointer = (delegate*<TTarget, ref TArg1, ref TArg2, ref TArg3, ref TArg4, ref TArg5, ref TArg6, ref TArg7, CallTargetState>)_dynamicMethod.MethodHandle.GetFunctionPointer();
+                    _invokePointer = (delegate*<TTarget, ref TArg1, ref TArg2, ref TArg3, ref TArg4, ref TArg5, ref TArg6, ref TArg7, CallTargetState>)_dynamicMethod.GetFunctionPointer();
                 }
             }
             catch (Exception ex)
