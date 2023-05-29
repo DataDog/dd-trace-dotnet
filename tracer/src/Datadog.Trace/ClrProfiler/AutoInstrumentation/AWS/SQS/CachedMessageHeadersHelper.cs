@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         private const string StringDataType = "String";
 
         private static readonly Func<string, object> _createMessageAttributeValue;
-        private static readonly Func<IDictionary> _createDict;
+        private static readonly Type _dictionaryType;
 
         static CachedMessageHeadersHelper()
         {
@@ -48,27 +48,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             _createMessageAttributeValue = (Func<string, object>)createMessageAttributeValueMethod.CreateDelegate(typeof(Func<string, object>));
 
             // Initialize delegate for creating a Dictionary<string, MessageAttributeValue> object
-            var genericDictType = typeof(Dictionary<,>);
-            var constructedDictType = genericDictType.MakeGenericType(new Type[] { typeof(string), messageAttributeValueType });
-            ConstructorInfo dictionaryCtor = constructedDictType.GetConstructor(System.Type.EmptyTypes);
-
-            DynamicMethod createDictMethod = new DynamicMethod(
-                $"KafkaCachedMessageHeadersHelpers",
-                constructedDictType,
-                null,
-                typeof(DuckType).Module,
-                true);
-
-            ILGenerator dictIL = createDictMethod.GetILGenerator();
-            dictIL.Emit(OpCodes.Newobj, dictionaryCtor);
-            dictIL.Emit(OpCodes.Ret);
-
-            _createDict = (Func<IDictionary>)createDictMethod.CreateDelegate(typeof(Func<IDictionary>));
+            _dictionaryType = typeof(Dictionary<,>).MakeGenericType(typeof(string), messageAttributeValueType);
         }
 
         public static IDictionary CreateMessageAttributes()
         {
-            return _createDict();
+            return (IDictionary)Activator.CreateInstance(_dictionaryType);
         }
 
         public static object CreateMessageAttributeValue(string value)
