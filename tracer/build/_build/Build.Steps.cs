@@ -1875,8 +1875,13 @@ partial class Build
 
             static List<(string Assembly, string Type)> GetTypeReferences(string dllPath)
             {
+                // Open dll to extract all referenced types from the assembly (TypeRef table)
                 using var asmDefinition = Mono.Cecil.AssemblyDefinition.ReadAssembly(dllPath);
                 var lst = new List<(string Assembly, string Type)>(asmDefinition.MainModule.GetTypeReferences().Select(t => (t.Scope.Name, t.FullName)));
+
+                // Get target assemblies from Calltarget integrations.
+                // We need to play safe and select the complete assembly and not the type due to the impossibility
+                // to extract the target types from DuckTyping proxies. 
                 lst.AddRange(GetTypesFromAttributes(asmDefinition));
                 return lst;
             }
@@ -1889,6 +1894,7 @@ partial class Build
                     {
                         foreach (var attr in type.CustomAttributes)
                         {
+                            // Instrument Method Attribute (CallTarget integrations)
                             if (attr.AttributeType.FullName == "Datadog.Trace.ClrProfiler.InstrumentMethodAttribute")
                             {
                                 foreach (var prp in attr.Properties)
@@ -1897,6 +1903,34 @@ partial class Build
                                     {
                                         yield return (asmValue, null);
                                     }
+
+                                    if (prp.Name == "AssemblyNames" && prp.Argument.Value is Mono.Cecil.CustomAttributeArgument[] attributeArguments)
+                                    {
+                                        foreach (var attrArg in attributeArguments)
+                                        {
+                                            if (attrArg.Value?.ToString() is { Length: > 0 } attrArgValue)
+                                            {
+                                                yield return (attrArgValue, null);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (asmDefinition.MainModule.Assembly.HasCustomAttributes)
+                {
+                    foreach (var attr in asmDefinition.MainModule.Assembly.CustomAttributes)
+                    {
+                        if (attr.AttributeType.FullName == "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute")
+                        {
+                            foreach (var prp in attr.Properties)
+                            {
+                                if (prp.Name == "AssemblyName" && prp.Argument.Value.ToString() is { Length: > 0 } asmValue)
+                                {
+                                    yield return (asmValue, null);
                                 }
                             }
                         }

@@ -11,7 +11,7 @@
     <NoRestore>true</NoRestore>
     <PublishBuildOutput>false</PublishBuildOutput>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <NuspecFile>Datadog.Trace.Trimming.nuspec</NuspecFile>
     <NuspecProperties>version=$(Version)</NuspecProperties>

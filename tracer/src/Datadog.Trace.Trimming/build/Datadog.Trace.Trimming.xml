@@ -59,6 +59,8 @@
    <assembly fullname="Microsoft.Azure.WebJobs.Host" />
    <assembly fullname="Microsoft.Azure.WebJobs.Script.Grpc" />
    <assembly fullname="Microsoft.Azure.WebJobs.Script.WebHost" />
+   <assembly fullname="Microsoft.Data.SqlClient" />
+   <assembly fullname="Microsoft.Data.Sqlite" />
    <assembly fullname="Microsoft.Extensions.Logging" />
    <assembly fullname="Microsoft.Extensions.Logging.Abstractions" />
    <assembly fullname="Microsoft.Extensions.Primitives">
@@ -68,10 +70,16 @@
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.TestFramework" />
    <assembly fullname="MongoDB.Driver.Core" />
+   <assembly fullname="MySql.Data" />
+   <assembly fullname="MySqlConnector" />
+   <assembly fullname="netstandard" />
    <assembly fullname="NLog" />
+   <assembly fullname="Npgsql" />
    <assembly fullname="nunit.framework" />
    <assembly fullname="OpenTelemetry" />
    <assembly fullname="OpenTelemetry.Api" />
+   <assembly fullname="Oracle.DataAccess" />
+   <assembly fullname="Oracle.ManagedDataAccess" />
    <assembly fullname="RabbitMQ.Client" />
    <assembly fullname="Serilog" />
    <assembly fullname="ServiceStack.Redis" />
@@ -148,6 +156,7 @@
       <type fullname="System.ConsoleCancelEventArgs" />
       <type fullname="System.ConsoleCancelEventHandler" />
    </assembly>
+   <assembly fullname="System.Data" />
    <assembly fullname="System.Data.Common">
       <type fullname="System.Data.Common.DbConnectionStringBuilder" />
       <type fullname="System.Data.DataColumn" />
@@ -162,6 +171,8 @@
       <type fullname="System.Data.InternalDataCollectionBase" />
       <type fullname="System.Data.SqlTypes.SqlBinary" />
    </assembly>
+   <assembly fullname="System.Data.SqlClient" />
+   <assembly fullname="System.Data.SQLite" />
    <assembly fullname="System.Diagnostics.Debug">
       <type fullname="System.Diagnostics.Debugger" />
       <type fullname="System.Diagnostics.DebuggerBrowsableAttribute" />
@@ -299,6 +310,7 @@
       <type fullname="System.Net.Http.SocketsHttpHandler" />
       <type fullname="System.Net.Http.StreamContent" />
    </assembly>
+   <assembly fullname="System.Net.Http.WinHttpHandler" />
    <assembly fullname="System.Net.NameResolution">
       <type fullname="System.Net.Dns" />
       <type fullname="System.Net.IPHostEntry" />
@@ -843,6 +855,7 @@
       <type fullname="System.Runtime.Serialization.DataMemberAttribute" />
       <type fullname="System.Runtime.Serialization.IgnoreDataMemberAttribute" />
    </assembly>
+   <assembly fullname="System.Security.Cryptography" />
    <assembly fullname="System.Security.Cryptography.Algorithms">
       <type fullname="System.Security.Cryptography.AsymmetricSignatureFormatter" />
       <type fullname="System.Security.Cryptography.MD5" />
@@ -938,4 +951,6 @@
       <type fullname="System.Xml.XmlText" />
       <type fullname="System.Xml.XmlWhitespace" />
    </assembly>
+   <assembly fullname="xunit.execution.desktop" />
+   <assembly fullname="xunit.execution.dotnet" />
 </linker>
