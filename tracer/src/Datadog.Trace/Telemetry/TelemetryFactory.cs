@@ -83,14 +83,23 @@ namespace Datadog.Trace.Telemetry
                     if (!settings.V2Enabled)
                     {
                         // if we're not using V2, we don't need the config collector
-                        Interlocked.Exchange(ref _configurationV2, NullConfigurationTelemetry.Instance);
+                        var oldConfig = Interlocked.Exchange(ref _configurationV2, NullConfigurationTelemetry.Instance);
+                        if (oldConfig is ConfigurationTelemetry config)
+                        {
+                            config.Clear();
+                        }
                     }
 
                     if (!settings.MetricsEnabled)
                     {
                         // if we're not using metrics, we don't need the metrics collector
                         log.Debug("Telemetry metrics collection disabled");
-                        Interlocked.Exchange(ref _metrics, NullMetricsTelemetryCollector.Instance);
+                        var oldMetrics = Interlocked.Exchange(ref _metrics, NullMetricsTelemetryCollector.Instance);
+                        if (oldMetrics is MetricsTelemetryCollector metrics)
+                        {
+                            // "clears" all the data stored so far
+                            metrics.Clear();
+                        }
                     }
 
                     // Making assumptions that we never switch from one to two,
