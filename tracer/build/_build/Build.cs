@@ -289,7 +289,7 @@ partial class Build : NukeBuild
 
     Target PackNuGet => _ => _
         .Description("Creates the NuGet packages from the compiled src directory")
-        .After(Clean, CompileManagedSrc)
+        .After(Clean, CompileManagedSrc, CreateRootDescriptorsFile)
         .DependsOn(CreateRequiredDirectories)
         .Executes(() =>
         {

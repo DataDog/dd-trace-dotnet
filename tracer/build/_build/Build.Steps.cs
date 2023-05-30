@@ -154,6 +154,7 @@ partial class Build
         Solution.GetProject(Projects.DatadogTraceOpenTracing),
         Solution.GetProject(Projects.DatadogTraceAnnotations),
         Solution.GetProject(Projects.DatadogTraceBenchmarkDotNet),
+        Solution.GetProject(Projects.DatadogTraceTrimming),
     };
 
     Project[] ParallelIntegrationTests => new[]
@@ -1832,12 +1833,12 @@ partial class Build
 
     Target CreateRootDescriptorsFile => _ => _
        .Description("Create RootDescriptors.xml file")
-       .DependsOn(PublishManagedTracer)
+       .DependsOn(CompileManagedSrc)
        .Executes(() =>
         {
-            var loaderTypes = GetTypeReferences(SourceDirectory / "bin/ProfilerResources/netcoreapp2.0/Datadog.Trace.ClrProfiler.Managed.Loader.dll");
-            var tracer3_1Types = GetTypeReferences(MonitoringHomeDirectory / TargetFramework.NETCOREAPP3_1 / Projects.DatadogTrace + ".dll");
-            var tracer6_0Types = GetTypeReferences(MonitoringHomeDirectory / TargetFramework.NET6_0 / Projects.DatadogTrace + ".dll");
+            var loaderTypes = GetTypeReferences(SourceDirectory / "bin" / "ProfilerResources" / "netcoreapp2.0" / "Datadog.Trace.ClrProfiler.Managed.Loader.dll");
+            var tracer3_1Types = GetTypeReferences(Solution.GetProject(Projects.DatadogTrace).Directory / "bin" / BuildConfiguration / TargetFramework.NETCOREAPP3_1 / Projects.DatadogTrace + ".dll");
+            var tracer6_0Types = GetTypeReferences(Solution.GetProject(Projects.DatadogTrace).Directory / "bin" / BuildConfiguration / TargetFramework.NET6_0 / Projects.DatadogTrace + ".dll");
 
             var types = loaderTypes.Concat(tracer3_1Types).Concat(tracer6_0Types)
                                    .Distinct().OrderBy(t => t.Assembly).ThenBy(t => t.Type);
