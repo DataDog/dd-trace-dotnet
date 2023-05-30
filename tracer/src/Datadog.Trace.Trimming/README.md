@@ -1,0 +1,1 @@
+# Datadog.Trace.Trimming NuGet package
