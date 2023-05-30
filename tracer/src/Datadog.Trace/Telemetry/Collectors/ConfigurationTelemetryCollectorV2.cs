@@ -80,5 +80,18 @@ namespace Datadog.Trace.Configuration.Telemetry
                 };
             }
         }
+
+        public void Clear()
+        {
+            // clears any data stored in the buffers
+            while (_backBuffer.TryDequeue(out _))
+            {
+            }
+
+            var config = Interlocked.Exchange(ref _entries, _backBuffer);
+            while (config.TryDequeue(out _))
+            {
+            }
+        }
     }
 }
