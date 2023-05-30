@@ -4,9 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Mono.Cecil;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -1825,7 +1827,76 @@ partial class Build
             CopyDirectoryRecursively(MonitoringHomeDirectory, target, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
         });
 
+    Target CreateRootDescriptorsFile => _ => _
+       .Description("Create RootDescriptors.xml file")
+       .DependsOn(PublishManagedTracer)
+       .Executes(() =>
+        {
+            var loaderTypes = GetTypeReferences(SourceDirectory / "bin/ProfilerResources/netcoreapp2.0/Datadog.Trace.ClrProfiler.Managed.Loader.dll");
+            var tracer3_1Types = GetTypeReferences(MonitoringHomeDirectory / TargetFramework.NETCOREAPP3_1 / Projects.DatadogTrace + ".dll");
+            var tracer6_0Types = GetTypeReferences(MonitoringHomeDirectory / TargetFramework.NET6_0 / Projects.DatadogTrace + ".dll");
 
+            var types = loaderTypes.Concat(tracer3_1Types).Concat(tracer6_0Types)
+                                   .Distinct().OrderBy(t => t.Assembly).ThenBy(t => t.Type);
+
+            var sb = new StringBuilder(65_536);
+            sb.AppendLine("<linker>");
+            foreach (var module in types.GroupBy(g => g.Assembly))
+            {
+                if (module.Count() == 1 && module.First().Type == null)
+                {
+                    sb.AppendLine($"   <assembly fullname=\"{module.Key}\" />");
+                }
+                else
+                {
+                    sb.AppendLine($"   <assembly fullname=\"{module.Key}\">");
+                    foreach (var type in module)
+                    {
+                        if (!string.IsNullOrEmpty(type.Type))
+                        {
+                            sb.AppendLine($"      <type fullname=\"{type.Type}\" />");
+                        }
+                    }
+                
+                    sb.AppendLine("""   </assembly>""");
+                }
+            }
+
+            sb.AppendLine("</linker>");
+            File.WriteAllText("RootDescriptors.xml", sb.ToString());
+
+            static List<(string Assembly, string Type)> GetTypeReferences(string dllPath)
+            {
+                using var asmDefinition = Mono.Cecil.AssemblyDefinition.ReadAssembly(dllPath);
+                var lst = new List<(string Assembly, string Type)>(asmDefinition.MainModule.GetTypeReferences().Select(t => (t.Scope.Name, t.FullName)));
+                lst.AddRange(GetTypesFromAttributes(asmDefinition));
+                return lst;
+            }
+
+            static IEnumerable<(string Assembly, string Type)> GetTypesFromAttributes(AssemblyDefinition asmDefinition)
+            {
+                foreach (var type in asmDefinition.MainModule.Types)
+                {
+                    if (type.HasCustomAttributes)
+                    {
+                        foreach (var attr in type.CustomAttributes)
+                        {
+                            if (attr.AttributeType.FullName == "Datadog.Trace.ClrProfiler.InstrumentMethodAttribute")
+                            {
+                                foreach (var prp in attr.Properties)
+                                {
+                                    if (prp.Name == "AssemblyName" && prp.Argument.Value.ToString() is { Length: > 0 } asmValue)
+                                    {
+                                        yield return (asmValue, null);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    
     Target CheckBuildLogsForErrors => _ => _
        .Unlisted()
        .Description("Reads the logs from build_data and checks for error lines")
