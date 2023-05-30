@@ -412,13 +412,11 @@ partial class Build : NukeBuild
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                 );
 
-                var framework = TargetFramework.NETCOREAPP3_1;
-                var runtimes = "net472 netcoreapp3.1";
-                if (IsOsx)
-                {
-                    framework = TargetFramework.NET6_0;
-                    runtimes = "net6.0";
-                }
+            var (framework, runtimes) = IsOsx switch
+            {
+                true => (TargetFramework.NETCOREAPP3_1, "net6.0"),
+                false => (TargetFramework.NET6_0, "net472 netcoreapp3.1.0"),
+            };
                 
                 DotNetRun(s => s
                     .SetProjectFile(benchmarksProject)
