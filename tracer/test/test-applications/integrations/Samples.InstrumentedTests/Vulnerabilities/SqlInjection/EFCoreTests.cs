@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
-// We cannot use localDB on linux and this calls cannot be mocked
+// We cannot use localDB on linux and these calls cannot be mocked
 [Trait("Category", "LinuxUnsupported")]
 public class EFCoreTests : EFCoreBaseTests
 {

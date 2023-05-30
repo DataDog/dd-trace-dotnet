@@ -9,6 +9,8 @@ using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects;
 
+#nullable enable
+
 /// <summary> DbCommandAspect class aspect </summary>
 [AspectClass("System.Data,System.Data.Common")]
 [global::System.ComponentModel.Browsable(false)]

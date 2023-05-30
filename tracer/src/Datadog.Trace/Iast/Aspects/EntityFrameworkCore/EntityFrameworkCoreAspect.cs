@@ -6,6 +6,8 @@
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
 
+#nullable enable
+
 namespace Datadog.Trace.Iast.Aspects;
 
 #if !NETFRAMEWORK
