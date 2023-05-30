@@ -390,8 +390,11 @@ bool OpSysTools::IsSafeToStartProfiler(double coresThreshold)
         // Check if process is running is a secure-execution mode
         auto at_secure = getauxval(AT_SECURE);
         Log::Info("Is process running in a secure execution mode ? ", std::boolalpha, at_secure);
-        Log::Info("Process User ID: ", getuid(), ", process effective User ID: ", geteuid());
-        Log::Info("Process Group ID: ", getgid(), ", process effective Group ID: ", getegid());
+        // Reasons for which AT_SECURE is true:
+        //   User ID != Effective User ID
+        Log::Info("Process User ID differs from Effective User ID ? ", std::boolalpha, getuid() != geteuid());
+        //   Group ID != Effective Group ID
+        Log::Info("Process Group ID differs from Effective Group ID ? ", std::boolalpha, getgid() != getegid());
         // TODO check capabilities (for now checking capabilities requires additional packages/libraries)
         // if at_secure is true, we know that it due to the capabilities
 
