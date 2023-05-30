@@ -22,6 +22,7 @@
 #define _GNU_SOURCE
 #include <errno.h>
 #include "cgroup.h"
+#include <sys/auxv.h>
 #endif
 
 #include <chrono>
@@ -385,6 +386,14 @@ bool OpSysTools::IsSafeToStartProfiler(double coresThreshold)
                 Log::Info("Unable to get information about shared library containing '", customFnName, "'");
             }
         }
+
+        // Check if process is running is a secure-execution mode
+        auto at_secure = getauxval(AT_SECURE);
+        Log::Info("Is process running in a secure execution mode ? ", std::boolalpha, at_secure);
+        Log::Info("Process User ID: ", getuid(), ", process effective User ID: ", geteuid());
+        Log::Info("Process Group ID: ", getgid(), ", process effective Group ID: ", getegid());
+        // TODO check capabilities (for now checking capabilities requires additional packages/libraries)
+        // if at_secure is true, we know that it due to the capabilities
 
         return false;
     }
