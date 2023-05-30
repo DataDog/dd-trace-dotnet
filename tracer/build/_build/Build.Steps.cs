@@ -1863,7 +1863,11 @@ partial class Build
             }
 
             sb.AppendLine("</linker>");
-            File.WriteAllText("RootDescriptors.xml", sb.ToString());
+
+            var projectFolder = Solution.GetProject(Projects.DatadogTraceTrimming).Directory;
+            var descriptorFilePath = projectFolder / "build" / $"{Projects.DatadogTraceTrimming}.xml";
+            File.WriteAllText(descriptorFilePath, sb.ToString());
+            Serilog.Log.Information("File saved: {File}", descriptorFilePath);
 
             static List<(string Assembly, string Type)> GetTypeReferences(string dllPath)
             {
