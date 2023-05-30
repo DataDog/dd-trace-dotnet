@@ -17,7 +17,6 @@ namespace Datadog.Trace.Telemetry
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryFactory>();
 
         private static readonly ConfigurationTelemetryCollector Configuration = new();
-        private static readonly DependencyTelemetryCollector Dependencies = new();
         private static readonly IntegrationTelemetryCollector Integrations = new();
 
         internal static ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings)
@@ -36,9 +35,13 @@ namespace Datadog.Trace.Telemetry
 
                     var transportManager = new TelemetryTransportManager(telemetryTransports);
 
+                    IDependencyTelemetryCollector dependencies = settings.DependencyCollectionEnabled
+                                           ? DependencyTelemetryCollector.Instance
+                                           : NullDependencyTelemetryCollector.Instance;
+
                     return new TelemetryController(
                         Configuration,
-                        Dependencies,
+                        dependencies,
                         Integrations,
                         transportManager,
                         TelemetryConstants.DefaultFlushInterval,

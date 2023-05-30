@@ -633,6 +633,13 @@ namespace Datadog.Trace.Configuration
             /// <see cref="TelemetrySettings.HeartbeatInterval"/>
             /// </summary>
             public const string HeartbeatIntervalSeconds = "DD_TELEMETRY_HEARTBEAT_INTERVAL";
+
+            /// <summary>
+            /// Configuration key for whether dependency data is sent via telemetry.
+            /// Required for some ASM features. Default value is <c>true</c> (enabled).
+            /// <see cref="TelemetrySettings.DependencyCollectionEnabled"/>
+            /// </summary>
+            public const string DependencyCollectionEnabled = "DD_TELEMETRY_DEPENDENCY_COLLECTION_ENABLED";
         }
 
         internal static class TagPropagation

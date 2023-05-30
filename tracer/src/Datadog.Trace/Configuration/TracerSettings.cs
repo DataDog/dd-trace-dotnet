@@ -10,6 +10,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Schema;
@@ -27,6 +28,8 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public class TracerSettings
     {
+        private readonly IConfigurationTelemetry _telemetry;
+
         /// <summary>
         /// Default obfuscation query string regex if none specified via env DD_OBFUSCATION_QUERY_STRING_REGEXP
         /// </summary>
@@ -66,8 +69,8 @@ namespace Datadog.Trace.Configuration
         {
             var commaSeparator = new[] { ',' };
             source ??= NullConfigurationSource.Instance;
-            Telemetry = telemetry;
-            var config = new ConfigurationBuilder(source, Telemetry);
+            _telemetry = telemetry;
+            var config = new ConfigurationBuilder(source, _telemetry);
 
             Environment = config
                          .WithKeys(ConfigurationKeys.Environment)
@@ -104,9 +107,9 @@ namespace Datadog.Trace.Configuration
 
             DisabledIntegrationNames = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
 
-            Integrations = new IntegrationSettingsCollection(source, Telemetry);
+            Integrations = new IntegrationSettingsCollection(source, _telemetry);
 
-            Exporter = new ExporterSettings(source, Telemetry);
+            Exporter = new ExporterSettings(source, _telemetry);
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = config.WithKeys(ConfigurationKeys.GlobalAnalyticsEnabled)
@@ -275,7 +278,7 @@ namespace Datadog.Trace.Configuration
                 DisabledIntegrationNames.Add(nameof(Configuration.IntegrationId.OpenTelemetry));
             }
 
-            LogSubmissionSettings = new DirectLogSubmissionSettings(source, Telemetry);
+            LogSubmissionSettings = new DirectLogSubmissionSettings(source, _telemetry);
 
             TraceMethods = config
                           .WithKeys(ConfigurationKeys.TraceMethods)
@@ -318,7 +321,7 @@ namespace Datadog.Trace.Configuration
                                         .AsBool(false);
             if (IsRunningInAzureAppService)
             {
-                AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, Telemetry);
+                AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
                 if (AzureAppServiceMetadata.IsUnsafeToTrace)
                 {
                     TraceEnabled = false;
@@ -349,8 +352,6 @@ namespace Datadog.Trace.Configuration
                                          .WithKeys(ConfigurationKeys.FeatureFlags.TraceId128BitLoggingEnabled)
                                          .AsBool(false);
         }
-
-        internal IConfigurationTelemetry Telemetry { get; }
 
         /// <summary>
         /// Gets or sets the default environment name applied to all spans.

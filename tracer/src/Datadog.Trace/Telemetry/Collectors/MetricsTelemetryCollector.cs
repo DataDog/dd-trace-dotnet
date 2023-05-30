@@ -272,10 +272,16 @@ internal class MetricsTelemetryCollector : IMetricsTelemetryCollector
                 var metric = (Distribution)i;
                 if (queue.Count > 0 && metric.GetName() is { } metricName)
                 {
+                    var points = new List<double>(queue.Count);
+                    while (queue.TryDequeue(out var point))
+                    {
+                        points.Add(point);
+                    }
+
                     data.Add(
                         new DistributionMetricData(
                             metricName,
-                            points: queue.ToArray(),
+                            points: points,
                             common: metric.IsCommon()));
                 }
             }
@@ -287,10 +293,16 @@ internal class MetricsTelemetryCollector : IMetricsTelemetryCollector
             var metric = (Distribution)helper.Metric;
             if (metric.GetName() is { } metricName)
             {
+                var points = new List<double>(kvp.Value.Count);
+                while (kvp.Value.TryDequeue(out var point))
+                {
+                    points.Add(point);
+                }
+
                 data.Add(
                     new DistributionMetricData(
                         metricName,
-                        points: kvp.Value.ToArray(),
+                        points: points,
                         common: metric.IsCommon()) { Tags = helper.GetTags(), });
             }
         }
