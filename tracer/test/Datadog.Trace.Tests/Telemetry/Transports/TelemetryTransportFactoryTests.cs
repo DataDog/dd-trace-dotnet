@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Transports;
@@ -16,18 +18,18 @@ namespace Datadog.Trace.Tests.Telemetry.Transports;
 public class TelemetryTransportFactoryTests
 {
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(false, true)]
-    [InlineData(true, false)]
-    [InlineData(true, true)]
-    public void UsesCorrectTransports(bool agentProxyEnabled, bool agentlessEnabled)
+    [MemberData(nameof(Data.Transports), MemberType = typeof(Data))]
+    public void UsesCorrectTransports(bool agentProxyEnabled, bool agentlessEnabled, bool v2Enabled)
     {
         var telemetrySettings = new TelemetrySettings(
             telemetryEnabled: true,
             configurationError: null,
             agentlessSettings: agentlessEnabled ? new TelemetrySettings.AgentlessSettings(new Uri("http://localhost"), "SOME_API_KEY") : null,
             agentProxyEnabled: agentProxyEnabled,
-            heartbeatInterval: TimeSpan.FromSeconds(1));
+            heartbeatInterval: TimeSpan.FromSeconds(1),
+            dependencyCollectionEnabled: true,
+            v2Enabled: v2Enabled,
+            metricsEnabled: true);
 
         var exporterSettings = new ImmutableExporterSettings(new ExporterSettings());
 
@@ -44,5 +46,16 @@ public class TelemetryTransportFactoryTests
         {
             transports.Should().ContainSingle(x => x is AgentlessTelemetryTransport);
         }
+    }
+
+    public static class Data
+    {
+        private static readonly bool[] TrueFalse = { true, false };
+
+        public static IEnumerable<object[]> Transports
+            => from agentProxyEnabled in TrueFalse
+               from agentlessEnabled in TrueFalse
+               from v2Enabled in TrueFalse
+               select new object[] { agentProxyEnabled, agentlessEnabled, v2Enabled };
     }
 }

@@ -53,7 +53,7 @@ public class PublicApiGeneratorTests
                 {
                     get
                     {
-                        Datadog.Trace.Telemetry.Metrics.TelemetryMetrics.Instance.Record(
+                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                             (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)0);
                         return _Environment;
                     }
@@ -107,13 +107,13 @@ public class PublicApiGeneratorTests
                 {
                     get
                     {
-                        Datadog.Trace.Telemetry.Metrics.TelemetryMetrics.Instance.Record(
+                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                             (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)0);
                         return _Environment;
                     }
                     set
                     {
-                        Datadog.Trace.Telemetry.Metrics.TelemetryMetrics.Instance.Record(
+                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                             (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)1);
                         _Environment = value;
                     }
@@ -171,13 +171,13 @@ public class PublicApiGeneratorTests
                 {
                     get
                     {
-                        Datadog.Trace.Telemetry.Metrics.TelemetryMetrics.Instance.Record(
+                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                             (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)0);
                         return _Environment;
                     }
                     set
                     {
-                        Datadog.Trace.Telemetry.Metrics.TelemetryMetrics.Instance.Record(
+                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                             (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)1);
                         _Environment = value;
                     }
@@ -192,7 +192,7 @@ public class PublicApiGeneratorTests
                 {
                     get
                     {
-                        Datadog.Trace.Telemetry.Metrics.TelemetryMetrics.Instance.Record(
+                        Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                             (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)2);
                         return ServiceNameInternal;
                     }

@@ -353,12 +353,15 @@ shared/src/Datadog.Trace.ClrProfiler.Native/CMakeCache.txt
 shared/src/Datadog.Trace.ClrProfiler.Native/cmake_install.cmake
 shared/src/Datadog.Trace.ClrProfiler.Native/cmake-build-debug/
 !shared/src/Datadog.Trace.ClrProfiler.Native/lib/**
+cmake-build-debug/*
 
 #profiler build files
 profiler/_build/
 
 # global build folder
 obj/*
+obj_arm64/*
+obj_x86_64/*
 
 # cmake build files
 .ionide/
