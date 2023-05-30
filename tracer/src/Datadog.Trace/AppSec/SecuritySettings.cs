@@ -121,7 +121,7 @@ namespace Datadog.Trace.AppSec
 
         public static SecuritySettings FromDefaultSources()
         {
-            return new SecuritySettings(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
+            return new SecuritySettings(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
         }
 
         private static ParsingResult<int> ParseWafTimeout(string wafTimeoutString)

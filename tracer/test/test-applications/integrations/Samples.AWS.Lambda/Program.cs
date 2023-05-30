@@ -100,6 +100,24 @@ namespace Samples.AWS.Lambda
             Thread.Sleep(1000);
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_THROWING_ASYNC_TASK_WITH_CONTEXT"));
 
+            // Generic types
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_GENERICBASE"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_GENERICBASE_ASYNC"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_GENERICBASE_VIRTUAL"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_GENERICBASE_VIRTUAL_ASYNC"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_GENERICBASE_ABSTRACT"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_GENERICBASE_ABSTRACT_ASYNC"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_GENERICBASE_COMPLEX"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_GENERICBASE_COMPLEX_NESTED"));
+
             static async Task Post(string url)
             {
                 HttpClient client = new HttpClient();
@@ -255,6 +273,63 @@ namespace Samples.AWS.Lambda
         }
     }
 
+    public class DerivedImplementation : GenericBase<CustomInput, CustomStruct>
+    {
+        public override CustomStruct VirtualGenericBaseType3(CustomInput request, ILambdaContext context)
+        {
+            HandleRequest(request);
+            return default;
+        }
+
+        public override async Task<CustomStruct> VirtualGenericBaseType4(CustomInput request, ILambdaContext context)
+        {
+            HandleRequest(request);
+            await Task.Delay(100);
+            return default;
+        }
+
+        public override CustomStruct AbstractGenericBaseType5(CustomInput request, ILambdaContext context)
+        {
+            HandleRequest(request);
+            return default;
+        }
+
+        public override async Task<CustomStruct> AbstractGenericBaseType6(CustomInput request, ILambdaContext context)
+        {
+            HandleRequest(request);
+            await Task.Delay(100);
+            return default;
+        }
+
+        protected override CustomStruct HandleRequest(CustomInput request, [CallerMemberName] string memberName = null)
+        {
+            HandleRequest(memberName);
+            return default;
+        }
+
+        public class NestedDerived : GenericBase<CustomInput, CustomStruct>
+        {
+            public override CustomStruct AbstractGenericBaseType5(CustomInput request, ILambdaContext context)
+            {
+                HandleRequest(request);
+                return default;
+            }
+
+            public override async Task<CustomStruct> AbstractGenericBaseType6(CustomInput request, ILambdaContext context)
+            {
+                HandleRequest(request);
+                await Task.Delay(100);
+                return default;
+            }
+
+            protected override CustomStruct HandleRequest(CustomInput request, [CallerMemberName] string memberName = null)
+            {
+                HandleRequest(memberName);
+                return default;
+            }
+        }
+    }
+
     public class CustomInput
     {
         public string Field1 { get; set; }
@@ -275,6 +350,59 @@ namespace Samples.AWS.Lambda
         public string Key3 { get; set; }
 
         public override string ToString() => $"({Key1}, {Key2}, {Key3})";
+    }
+
+    public abstract class GenericBase<TRequest, TResponse> : BaseFunction
+    {
+        public TResponse GenericBaseType1(TRequest request, ILambdaContext context)
+        {
+            return HandleRequest(request);
+        }
+
+        public async Task<TResponse> GenericBaseType2(TRequest request, ILambdaContext context)
+        {
+            HandleRequest(request);
+            await Task.Delay(1000);
+            return default;
+        }
+
+        public virtual TResponse VirtualGenericBaseType3(TRequest request, ILambdaContext context)
+        {
+            return HandleRequest(request);
+        }
+
+        public virtual async Task<TResponse> VirtualGenericBaseType4(TRequest request, ILambdaContext context)
+        {
+            HandleRequest(request);
+            await Task.Delay(1000);
+            return default;
+        }
+
+        [LambdaSerializer(typeof(CustomSerializer))]
+        public GenericBase<CustomInput, Function.NestedClass.InnerGeneric<TRequest, TResponse>> ComplexNestedGeneric(
+            Function.NestedClass.InnerGeneric<TRequest, NestedInSameType<TRequest, Dictionary<string, Nested.DeepNested<TResponse>>>> request,
+            ILambdaContext context)
+        {
+            HandleRequest((TRequest)default);
+            return default;
+        }
+
+        public abstract TResponse AbstractGenericBaseType5(TRequest request, ILambdaContext context);
+
+        public abstract Task<TResponse> AbstractGenericBaseType6(TRequest request, ILambdaContext context);
+
+        protected abstract TResponse HandleRequest(TRequest request, [CallerMemberName] string memberName = null);
+        
+        public class NestedInSameType<TKey, TValue> : Dictionary<TKey, TValue>
+        {
+        }
+
+        public class Nested
+        {
+            public class DeepNested<TNested> : HashSet<TNested>
+            {
+            }
+        }
     }
 
     public class BaseFunction
@@ -361,6 +489,15 @@ namespace Samples.AWS.Lambda
             }
 
             response.Close();
+        }
+    }
+
+    public class CustomSerializer : ILambdaSerializer
+    {
+        public T Deserialize<T>(Stream requestStream) => default;
+
+        public void Serialize<T>(T response, Stream responseStream)
+        {
         }
     }
 }

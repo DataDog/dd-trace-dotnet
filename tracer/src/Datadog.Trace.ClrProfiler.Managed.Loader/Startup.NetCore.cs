@@ -35,6 +35,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
             var fullPath = Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory);
 
+            if (!Directory.Exists(fullPath))
+            {
+                StartupLogger.Log($"The tracer home directory cannot be found at '{fullPath}', based on the DD_DOTNET_TRACER_HOME value '{tracerHomeDirectory}'");
+                return null;
+            }
+
             // We use the List/Array approach due the number of files in the tracer home folder (7 in netstandard, 2 netcoreapp3.1+)
             var assemblies = new List<CachedAssembly>();
             foreach (var file in Directory.EnumerateFiles(fullPath, "*.dll", SearchOption.TopDirectoryOnly))

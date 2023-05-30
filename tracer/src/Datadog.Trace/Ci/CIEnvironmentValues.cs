@@ -752,9 +752,6 @@ namespace Datadog.Trace.Ci
                 AuthorDate = authorDate;
             }
 
-            // Clean pipeline url
-            PipelineUrl = PipelineUrl?.Replace("/-/pipelines/", "/pipelines/");
-
             // Node
             NodeName = EnvironmentHelpers.GetEnvironmentVariable(Constants.GitlabRunnerId);
             if (EnvironmentHelpers.GetEnvironmentVariable(Constants.GitlabRunnerTags) is { } runnerTags)
