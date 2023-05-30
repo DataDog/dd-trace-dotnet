@@ -83,10 +83,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             };
 
             // Don't populate further with command line information if shell collection is disabled
-            /* if (!Security.Instance.EnableShellCollection)
+            if (!Tracer.Instance.Settings.CommandsCollectionEnabled)
             {
                 return tags;
-            }*/
+            }
 
             if (useShellExecute)
             {
