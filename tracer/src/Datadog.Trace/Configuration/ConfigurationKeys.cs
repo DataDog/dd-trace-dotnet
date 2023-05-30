@@ -640,6 +640,18 @@ namespace Datadog.Trace.Configuration
             /// <see cref="TelemetrySettings.DependencyCollectionEnabled"/>
             /// </summary>
             public const string DependencyCollectionEnabled = "DD_TELEMETRY_DEPENDENCY_COLLECTION_ENABLED";
+
+            /// <summary>
+            /// Configuration key for whether telemetry metrics should be sent.
+            /// <see cref="TelemetrySettings.MetricsEnabled"/>
+            /// </summary>
+            public const string MetricsEnabled = "DD_TELEMETRY_METRICS_ENABLED";
+
+            /// <summary>
+            /// Configuration key for whether to enable v2 of telemetry.
+            /// <see cref="TelemetrySettings.V2Enabled"/>
+            /// </summary>
+            public const string V2Enabled = "DD_INTERNAL_TELEMETRY_V2_ENABLED";
         }
 
         internal static class TagPropagation
