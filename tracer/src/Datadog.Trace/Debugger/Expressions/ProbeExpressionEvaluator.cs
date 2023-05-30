@@ -11,6 +11,7 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
@@ -257,7 +258,10 @@ internal class ProbeExpressionEvaluator
                         if (compiledExpressions[j].Errors != null)
                         {
                             errors = compiledExpressions[j].Errors;
-                            Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", errors));
+                            if (Log.IsEnabled(LogEventLevel.Debug))
+                            {
+                                Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", errors));
+                            }
                         }
 
                         resultBuilder.Add(new ExpressionEvaluationResult.DecorationResult { TagName = key, Value = value, Errors = errors });
@@ -265,7 +269,11 @@ internal class ProbeExpressionEvaluator
                     catch (Exception e)
                     {
                         var errors = new List<EvaluationError> { new() { Message = e.Message, Expression = GetRelevantExpression(compiledExpressions[j]) } };
-                        Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", errors));
+                        if (Log.IsEnabled(LogEventLevel.Debug))
+                        {
+                            Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", errors));
+                        }
+
                         if (compiledExpressions[j].Errors != null)
                         {
                             errors.AddRange(compiledExpressions[j].Errors);
@@ -281,7 +289,10 @@ internal class ProbeExpressionEvaluator
         catch (Exception e)
         {
             (result.Errors ??= new List<EvaluationError>()).Add(new EvaluationError { Expression = null, Message = e.Message });
-            Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), e.Message);
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), e.Message);
+            }
         }
     }
 
@@ -333,7 +344,11 @@ internal class ProbeExpressionEvaluator
     {
         if (SpanDecorations == null)
         {
-            Log.Debug($"{nameof(ProbeExpressionEvaluator)}.{nameof(CompileDecorations)}: {nameof(SpanDecorations)} is null");
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("{Class}.{Method}: {SpanDecorations} is null", nameof(ProbeExpressionEvaluator), nameof(CompileDecorations), nameof(SpanDecorations));
+            }
+
             return null;
         }
 
@@ -359,7 +374,11 @@ internal class ProbeExpressionEvaluator
             compiledExpressions[i] = new KeyValuePair<CompiledExpression<bool>, CompiledExpression<string>[]>(when, compiledTags);
         }
 
-        Log.Debug($"{nameof(ProbeExpressionEvaluator)}.{nameof(CompileDecorations)}: Finished to compile span decorations");
+        if (Log.IsEnabled(LogEventLevel.Debug))
+        {
+            Log.Debug("{Class}.{Method}: Finished to compile span decorations", nameof(ProbeExpressionEvaluator), nameof(CompileDecorations));
+        }
+
         return compiledExpressions;
     }
 

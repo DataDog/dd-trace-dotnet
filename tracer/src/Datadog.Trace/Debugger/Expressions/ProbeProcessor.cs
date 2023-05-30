@@ -18,6 +18,7 @@ namespace Datadog.Trace.Debugger.Expressions
 {
     internal class ProbeProcessor
     {
+        private const string DynamicPrefix = "_dd.di.";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeProcessor));
 
         private ProbeExpressionEvaluator _evaluator;
@@ -308,12 +309,11 @@ namespace Datadog.Trace.Debugger.Expressions
                 return;
             }
 
-            const string dynamicPrefix = "_dd.di.";
             for (int i = 0; i < evaluationResult.Decorations.Length; i++)
             {
                 var decoration = evaluationResult.Decorations[i];
-                var evaluationErrorTag = $"{dynamicPrefix}{decoration.TagName}.evaluation_error";
-                var probeIdTag = $"{dynamicPrefix}{decoration.TagName}.probe_id";
+                var evaluationErrorTag = $"{DynamicPrefix}{decoration.TagName}.evaluation_error";
+                var probeIdTag = $"{DynamicPrefix}{decoration.TagName}.probe_id";
                 switch (ProbeInfo.TargetSpan)
                 {
                     case TargetSpan.Root:
