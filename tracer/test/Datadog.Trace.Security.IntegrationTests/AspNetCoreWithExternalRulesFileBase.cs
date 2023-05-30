@@ -54,7 +54,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [SkippableTheory]
         [InlineData(AddressesConstants.ResponseHeaderNoCookies, HttpStatusCode.OK, "/Home/LangHeader")]
         [Trait("RunOnWindows", "True")]
-        public async Task TestRequest(string test, HttpStatusCode expectedStatusCode, string url)
+        public async Task TestHeaderRequest(string test, HttpStatusCode expectedStatusCode, string url)
         {
             await TryStartApp();
             var agent = Fixture.Agent;
