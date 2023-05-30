@@ -72,6 +72,10 @@ internal static class SecurityCoordinatorHelpers
                 }
             }
         }
+        catch (BlockException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             Log.Error(ex, "Error extracting HTTP headers to create header tags.");

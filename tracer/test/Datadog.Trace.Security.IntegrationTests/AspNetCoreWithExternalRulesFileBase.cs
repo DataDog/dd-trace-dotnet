@@ -50,6 +50,19 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             await TestAppSecRequestWithVerifyAsync(agent, url, body, 5, 1, settings, contentType);
         }
+
+        [SkippableTheory]
+        [InlineData(AddressesConstants.ResponseHeaderNoCookies, HttpStatusCode.OK, "/Home/LangHeader")]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestRequest(string test, HttpStatusCode expectedStatusCode, string url)
+        {
+            await TryStartApp();
+            var agent = Fixture.Agent;
+
+            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+            var settings = VerifyHelper.GetSpanVerifierSettings(test, (int)expectedStatusCode, sanitisedUrl);
+            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
+        }
     }
 
     public abstract class AspNetCoreWithExternalRulesFileBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
