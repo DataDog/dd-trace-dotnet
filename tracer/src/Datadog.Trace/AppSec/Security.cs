@@ -68,7 +68,6 @@ namespace Datadog.Trace.AppSec
                 _noLocalRules = _settings.Rules == null;
                 _configurationStatus = new ConfigurationStatus(_settings.Rules);
                 _waf = waf;
-                EnableShellCollection = _settings.EnabledShellCollection;
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
 
                 if (_settings.Enabled && _waf == null)
@@ -121,8 +120,6 @@ namespace Datadog.Trace.AppSec
         }
 
         internal bool Enabled { get; private set; }
-
-        internal bool EnableShellCollection { get; private set; }
 
         internal string? InitializationError { get; private set; }
 

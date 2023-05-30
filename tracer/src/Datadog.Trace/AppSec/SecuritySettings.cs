@@ -40,12 +40,8 @@ namespace Datadog.Trace.AppSec
                                .WithKeys(ConfigurationKeys.AppSec.Enabled)
                                .AsBool();
 
-            var enabledShellCollectionEnvVar = config.WithKeys(ConfigurationKeys.AppSec.EnableShellCollection)
-                                                     .AsBool();
-
             Enabled = enabledEnvVar ?? false;
             CanBeToggled = enabledEnvVar == null;
-            EnabledShellCollection = enabledShellCollectionEnvVar ?? false;
 
             Rules = config.WithKeys(ConfigurationKeys.AppSec.Rules).AsString();
             CustomIpHeader = config.WithKeys(ConfigurationKeys.AppSec.CustomIpHeader).AsString();
@@ -85,8 +81,6 @@ namespace Datadog.Trace.AppSec
         public bool Enabled { get; }
 
         public bool CanBeToggled { get; }
-
-        public bool EnabledShellCollection { get; }
 
         public string? CustomIpHeader { get; }
 
