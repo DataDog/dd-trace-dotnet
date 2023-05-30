@@ -3,17 +3,30 @@
 
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
+using System;
 
 namespace Datadog.Trace.Tagging
 {
     partial class AwsSnsTags
     {
-        // TopicNameBytes = System.Text.Encoding.UTF8.GetBytes("aws.topic.name");
-        private static readonly byte[] TopicNameBytes = new byte[] { 97, 119, 115, 46, 116, 111, 112, 105, 99, 46, 110, 97, 109, 101 };
-        // TopicArnBytes = System.Text.Encoding.UTF8.GetBytes("aws.topic.arn");
-        private static readonly byte[] TopicArnBytes = new byte[] { 97, 119, 115, 46, 116, 111, 112, 105, 99, 46, 97, 114, 110 };
-        // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+        // TopicNameBytes = MessagePack.Serialize("aws.topic.name");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> TopicNameBytes => new byte[] { 174, 97, 119, 115, 46, 116, 111, 112, 105, 99, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] TopicNameBytes = new byte[] { 174, 97, 119, 115, 46, 116, 111, 112, 105, 99, 46, 110, 97, 109, 101 };
+#endif
+        // TopicArnBytes = MessagePack.Serialize("aws.topic.arn");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> TopicArnBytes => new byte[] { 173, 97, 119, 115, 46, 116, 111, 112, 105, 99, 46, 97, 114, 110 };
+#else
+        private static readonly byte[] TopicArnBytes = new byte[] { 173, 97, 119, 115, 46, 116, 111, 112, 105, 99, 46, 97, 114, 110 };
+#endif
+        // SpanKindBytes = MessagePack.Serialize("span.kind");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
 
         public override string? GetTag(string key)
         {
