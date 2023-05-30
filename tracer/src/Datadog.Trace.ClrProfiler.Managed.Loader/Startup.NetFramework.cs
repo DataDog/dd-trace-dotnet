@@ -9,8 +9,6 @@ using System;
 using System.IO;
 using System.Reflection;
 
-#nullable enable
-
 namespace Datadog.Trace.ClrProfiler.Managed.Loader
 {
     /// <summary>
@@ -18,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        private static string? ResolveManagedProfilerDirectory()
+        private static string ResolveManagedProfilerDirectory()
         {
             var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
             var fullPath = Path.Combine(tracerHomeDirectory, "net461");
@@ -31,12 +29,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return fullPath;
         }
 
-        private static Assembly? AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
+        private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
         {
             return ResolveAssembly(args.Name);
         }
 
-        private static Assembly? ResolveAssembly(string name)
+        private static Assembly ResolveAssembly(string name)
         {
             var assemblyName = new AssemblyName(name);
             StartupLogger.Debug("Assembly Resolve event received for: {0}", name);
