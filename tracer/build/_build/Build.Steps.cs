@@ -1110,6 +1110,21 @@ partial class Build
                     // we have to build this one for all frameworks (because of reasons)
                     .When(!project.Name.Contains("MultiDomainHost"), x => x.SetFramework(Framework))
                     .SetProjectFile(project)));
+
+            var projectsToPublish = includeIntegration
+               .Select(x => Solution.GetProject(x))
+               .Where(x => x.Name switch
+                {
+                    "Samples.Trimming" => Framework == TargetFramework.NET6_0,
+                    _ => false,
+                });
+
+            var rid = IsArm64 ? "win-arm64" : "win-x64";
+            DotNetPublish(config => config
+               .SetConfiguration(BuildConfiguration)
+               .SetFramework(Framework)
+               .SetRuntime(rid)
+               .CombineWith(projectsToPublish, (s, project) => s.SetProject(project)));
         });
 
     Target PublishIisSamples => _ => _
@@ -1443,6 +1458,7 @@ partial class Build
                 "MismatchedTracerVersions",
                 "IBM.Data.DB2.DBCommand",
                 "Sandbox.AutomaticInstrumentation", // Doesn't run on Linux
+                "Samples.Trimming",
             };
 
             // These sample projects are built using RestoreAndBuildSamplesForPackageVersions
@@ -1503,7 +1519,6 @@ partial class Build
                         "Samples.GraphQL7" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
                         "Samples.HotChocolate" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
                         "Samples.AWS.Lambda" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET7_0,
-                        "Samples.Trimming" => Framework == TargetFramework.NET6_0,
                         var name when projectsToSkip.Contains(name) => false,
                         var name when multiPackageProjects.Contains(name) => false,
                         "Samples.AspNetCoreRazorPages" => true,
@@ -1531,6 +1546,26 @@ partial class Build
                     .CombineWith(projectsToBuild, (c, project) => c
                         .SetProject(project)));
 
+            var projectsToPublish = sampleProjects
+               .Select(x => Solution.GetProject(x))
+               .Where(x => x.Name switch
+                {
+                    "Samples.Trimming" => Framework == TargetFramework.NET6_0,
+                    _ => false,
+                });
+
+            var rid = (IsLinux, IsArm64) switch
+            {
+                (true, false) => "linux-x64",
+                (true, true) => "linux-arm64",
+                (false, false) => "osx-x64",
+                (false, true) => "osx-arm64",
+            };
+            DotNetPublish(config => config
+               .SetConfiguration(BuildConfiguration)
+               .SetFramework(Framework)
+               .SetRuntime(rid)
+               .CombineWith(projectsToPublish, (s, project) => s.SetProject(project)));
         });
 
     Target CompileMultiApiPackageVersionSamples => _ => _
