@@ -9,6 +9,7 @@
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -20,6 +21,27 @@ namespace Datadog.Trace.Security.IntegrationTests
         public AspNetCoreSecurityDisabledWithExternalRulesFile(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, string ruleFile = null, string testName = null)
             : base(sampleName, fixture, outputHelper, shutdownPath, enableSecurity: false, ruleFile: ruleFile, testName: testName)
         {
+        }
+    }
+
+    public abstract class AspNetCoreSecurityEnabledWithExternalRulesFileIIS : AspNetCoreWithExternalRulesFileBaseIIS
+    {
+        public AspNetCoreSecurityEnabledWithExternalRulesFileIIS(string sampleName, IisFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, string ruleFile = null, string testName = null)
+            : base(sampleName, fixture, outputHelper, shutdownPath, enableSecurity: true, ruleFile: ruleFile, testName: testName)
+        {
+        }
+
+        [SkippableTheory]
+        [InlineData(AddressesConstants.ResponseHeaderNoCookies, HttpStatusCode.OK, "/Home/LangHeader")]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestHeaderRequest(string test, HttpStatusCode expectedStatusCode, string url)
+        {
+            TryStartApp();
+            var agent = Fixture.Agent;
+
+            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+            var settings = VerifyHelper.GetSpanVerifierSettings(test, (int)expectedStatusCode, sanitisedUrl);
+            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
         }
     }
 
@@ -105,6 +127,37 @@ namespace Datadog.Trace.Security.IntegrationTests
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
             await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings, userAgent: "Hello/V");
+        }
+    }
+
+    public abstract class AspNetCoreWithExternalRulesFileBaseIIS : AspNetBase, IClassFixture<IisFixture>
+    {
+        public AspNetCoreWithExternalRulesFileBaseIIS(string sampleName, IisFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, bool enableSecurity = true, string ruleFile = null, string testName = null)
+            : base(sampleName, outputHelper, shutdownPath ?? "/shutdown", testName: testName, samplesDir: "test\\test-applications\\security")
+        {
+            EnableSecurity = enableSecurity;
+            Fixture = fixture;
+            RuleFile = ruleFile;
+        }
+
+        protected IisFixture Fixture { get; }
+
+        protected bool EnableSecurity { get; }
+
+        protected string RuleFile { get; }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+        }
+
+        public void TryStartApp()
+        {
+            SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, RuleFile);
+            SetEnvironmentVariable(ConfigurationKeys.AppSec.Enabled, EnableSecurity.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "True");
+            Fixture.TryStartIis(this, IisAppType.AspNetCoreOutOfProcess);
+            SetHttpPort(Fixture.HttpPort);
         }
     }
 }
