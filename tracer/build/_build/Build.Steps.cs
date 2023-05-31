@@ -1115,7 +1115,7 @@ partial class Build
                .Select(x => Solution.GetProject(x))
                .Where(x => x.Name switch
                 {
-                    "Samples.Trimming" => Framework == TargetFramework.NET6_0,
+                    "Samples.Trimming" => Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET7_0,
                     _ => false,
                 });
 
@@ -1550,7 +1550,7 @@ partial class Build
                .Select(x => Solution.GetProject(x))
                .Where(x => x.Name switch
                 {
-                    "Samples.Trimming" => Framework == TargetFramework.NET6_0,
+                    "Samples.Trimming" => Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET7_0,
                     _ => false,
                 });
 
