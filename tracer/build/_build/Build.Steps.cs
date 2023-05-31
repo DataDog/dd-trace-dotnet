@@ -1836,12 +1836,17 @@ partial class Build
        .DependsOn(CompileManagedSrc)
        .Executes(() =>
         {
+            var datadogTraceDirectory = Solution.GetProject(Projects.DatadogTrace).Directory;
             var loaderTypes = GetTypeReferences(SourceDirectory / "bin" / "ProfilerResources" / "netcoreapp2.0" / "Datadog.Trace.ClrProfiler.Managed.Loader.dll");
-            var tracer3_1Types = GetTypeReferences(Solution.GetProject(Projects.DatadogTrace).Directory / "bin" / BuildConfiguration / TargetFramework.NETCOREAPP3_1 / Projects.DatadogTrace + ".dll");
-            var tracer6_0Types = GetTypeReferences(Solution.GetProject(Projects.DatadogTrace).Directory / "bin" / BuildConfiguration / TargetFramework.NET6_0 / Projects.DatadogTrace + ".dll");
+            var tracer3_1Types = GetTypeReferences(datadogTraceDirectory / "bin" / BuildConfiguration / TargetFramework.NETCOREAPP3_1 / Projects.DatadogTrace + ".dll");
+            var tracer6_0Types = GetTypeReferences(datadogTraceDirectory / "bin" / BuildConfiguration / TargetFramework.NET6_0 / Projects.DatadogTrace + ".dll");
 
-            var types = loaderTypes.Concat(tracer3_1Types).Concat(tracer6_0Types)
-                                   .Distinct().OrderBy(t => t.Assembly).ThenBy(t => t.Type);
+            var types = loaderTypes
+                       .Concat(tracer3_1Types)
+                       .Concat(tracer6_0Types)
+                       .Distinct()
+                       .OrderBy(t => t.Assembly)
+                       .ThenBy(t => t.Type);
 
             var sb = new StringBuilder(65_536);
             sb.AppendLine("<linker>");
@@ -1882,11 +1887,11 @@ partial class Build
                 // Get target assemblies from Calltarget integrations.
                 // We need to play safe and select the complete assembly and not the type due to the impossibility
                 // to extract the target types from DuckTyping proxies. 
-                lst.AddRange(GetTypesFromAttributes(asmDefinition));
+                lst.AddRange(GetTargetAssembliesFromAttributes(asmDefinition));
                 return lst;
             }
 
-            static IEnumerable<(string Assembly, string Type)> GetTypesFromAttributes(AssemblyDefinition asmDefinition)
+            static IEnumerable<(string Assembly, string Type)> GetTargetAssembliesFromAttributes(AssemblyDefinition asmDefinition)
             {
                 foreach (var type in asmDefinition.MainModule.Types)
                 {
@@ -1894,7 +1899,10 @@ partial class Build
                     {
                         foreach (var attr in type.CustomAttributes)
                         {
-                            // Instrument Method Attribute (CallTarget integrations)
+                            // Extract InstrumentMethodAttribute (CallTarget integrations)
+                            // We need to check both properties `AssemblyName` and `AssemblyNames` 
+                            // because the actual data is embedded to the argument parameter in the assembly
+                            // (doesn't work as a normally property works at runtime)
                             if (attr.AttributeType.FullName == "Datadog.Trace.ClrProfiler.InstrumentMethodAttribute")
                             {
                                 foreach (var prp in attr.Properties)
@@ -1920,6 +1928,8 @@ partial class Build
                     }
                 }
 
+                // Extract AdoNetClientInstrumentMethodsAttribute (ADO.NET CallTarget integrations)
+                // We look for the target integration assembly.
                 if (asmDefinition.MainModule.Assembly.HasCustomAttributes)
                 {
                     foreach (var attr in asmDefinition.MainModule.Assembly.CustomAttributes)

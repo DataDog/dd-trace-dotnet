@@ -124,6 +124,7 @@
       "tracer\\test\\test-applications\\integrations\\Samples.TraceAnnotations.VersionMismatch.NewerNuGet\\Samples.TraceAnnotations.VersionMismatch.NewerNuGet.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.TraceAnnotations\\Samples.TraceAnnotations.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.TracingWithoutLimits\\Samples.TracingWithoutLimits.csproj",
+      "tracer\\test\\test-applications\\integrations\\Samples.Trimming\\Samples.Trimming.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.VersionConflict.1x\\Samples.VersionConflict.1x.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.VersionConflict.2x\\Samples.VersionConflict.2x.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.Wcf\\Samples.Wcf.csproj",

@@ -516,6 +516,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Security.AspNetCore
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.Trimming", "tracer\src\Datadog.Trace.Trimming\Datadog.Trace.Trimming.csproj", "{CEAC4ECE-1BFA-4C88-BED5-E4DE054D70A4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Trimming", "tracer\test\test-applications\integrations\Samples.Trimming\Samples.Trimming.csproj", "{289713D4-5259-4CC4-8CAA-DBF3BDCDCBC0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1214,6 +1216,10 @@ Global
 		{CEAC4ECE-1BFA-4C88-BED5-E4DE054D70A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CEAC4ECE-1BFA-4C88-BED5-E4DE054D70A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CEAC4ECE-1BFA-4C88-BED5-E4DE054D70A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{289713D4-5259-4CC4-8CAA-DBF3BDCDCBC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{289713D4-5259-4CC4-8CAA-DBF3BDCDCBC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{289713D4-5259-4CC4-8CAA-DBF3BDCDCBC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{289713D4-5259-4CC4-8CAA-DBF3BDCDCBC0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1412,6 +1418,7 @@ Global
 		{87D57940-9A6E-473C-A4D6-777E3BAFD5F9} = {0972AD57-B16B-494F-AE0A-091DD6F3B42B}
 		{C5E7978A-DE2A-4944-86DB-4721A110E720} = {0972AD57-B16B-494F-AE0A-091DD6F3B42B}
 		{CEAC4ECE-1BFA-4C88-BED5-E4DE054D70A4} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
+		{289713D4-5259-4CC4-8CAA-DBF3BDCDCBC0} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
