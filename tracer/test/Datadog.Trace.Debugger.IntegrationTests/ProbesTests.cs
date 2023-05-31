@@ -394,6 +394,9 @@ public class ProbesTests : TestHelper
 
         Assert.Equal(expectedSpanCount, spans.Count);
 
+        VerifierSettings.DerivePathInfo(
+            (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..\\..", "Approvals", "snapshots")));
+
         await VerifyHelper.VerifySpans(spans, settings).DisableRequireUniquePrefix();
     }
 
@@ -426,6 +429,9 @@ public class ProbesTests : TestHelper
                                             .MatchesOneOf("debugger.probeid", Enumerable.Select<ProbeDefinition, string>(snapshotProbes, p => p.Id).ToArray()));
                 // Assert.True(result.Success, result.ToString());
             }
+
+            VerifierSettings.DerivePathInfo(
+                (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..\\..", "Approvals", "snapshots")));
 
             await VerifyHelper.VerifySpans(spans, settings).DisableRequireUniquePrefix();
         }

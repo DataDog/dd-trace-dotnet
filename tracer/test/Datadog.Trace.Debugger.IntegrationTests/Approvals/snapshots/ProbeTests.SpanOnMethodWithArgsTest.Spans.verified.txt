@@ -1,9 +1,9 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
     Name: dd.dynamic.span,
-    Resource: GUIDt.Method,
+    Resource: SpanOnMethodWithArgsTest.Method,
     Service: Probes,
     Tags: {
       component: trace,
