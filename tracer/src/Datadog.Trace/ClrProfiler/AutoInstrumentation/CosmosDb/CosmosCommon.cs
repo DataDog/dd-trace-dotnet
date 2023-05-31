@@ -129,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
 
-                var serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
+                var serviceName = tracer.CurrentTraceSettings.ServiceNames.GetServiceName(tracer, ServiceName);
                 var scope = tracer.StartActiveInternal(OperationName, tags: tags, serviceName: serviceName);
 
                 var span = scope.Span;

@@ -13,6 +13,7 @@ using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
 using Moq;
@@ -28,21 +29,21 @@ namespace Datadog.Trace.Tests.Agent
         public AgentWriterTests()
         {
             _api = new Mock<IApi>();
-            _agentWriter = new AgentWriter(_api.Object, statsAggregator: null, statsd: null, spanSampler: null);
+            _agentWriter = new AgentWriter(_api.Object, statsAggregator: null, statsd: null);
         }
 
         [Fact]
         public async Task SpanSampling_CanComputeStats_ShouldNotSend_WhenSpanSamplingDoesNotMatch()
         {
             var api = new Mock<IApi>();
-            var rules = new List<SpanSamplingRule>() { new SpanSamplingRule("*", "*", 0.0f) }; // don't sample any rule
-            var spanSampler = new SpanSampler(rules);
+            var settings = SpanSamplingRule("*", "*", 0.0f); // don't sample any rule
             var statsAggregator = new Mock<IStatsAggregator>();
             statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
             statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
             statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
-            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, spanSampler: spanSampler, automaticFlush: false);
-            var tracer = new Tracer(new TracerSettings(), agent, sampler: null, scopeManager: null, statsd: null);
+            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
+
+            var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "service");
@@ -68,10 +69,9 @@ namespace Datadog.Trace.Tests.Agent
             statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
             statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
             statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
-            var rules = new List<SpanSamplingRule>() { new SpanSamplingRule("*", "*") };
-            var spanSampler = new SpanSampler(rules);
-            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, spanSampler: spanSampler, automaticFlush: false);
-            var tracer = new Tracer(new TracerSettings(), agent, sampler: null, scopeManager: null, statsd: null);
+            var settings = SpanSamplingRule("*", "*");
+            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
+            var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
             var spanContext = new SpanContext(null, traceContext, "service");
@@ -100,10 +100,9 @@ namespace Datadog.Trace.Tests.Agent
             statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
             statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
             statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
-            var rules = new List<SpanSamplingRule>() { new SpanSamplingRule("*", "*") };
-            var spanSampler = new SpanSampler(rules);
-            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, spanSampler: spanSampler, automaticFlush: false);
-            var tracer = new Tracer(new TracerSettings(), agent, sampler: null, scopeManager: null, statsd: null);
+            var settings = SpanSamplingRule("*", "*");
+            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
+            var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
             traceContext.SetSamplingPriority(new SamplingDecision(SamplingPriorityValues.UserReject, SamplingMechanism.Manual));
@@ -137,10 +136,9 @@ namespace Datadog.Trace.Tests.Agent
             statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
             statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
             statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
-            var rules = new List<SpanSamplingRule>() { new SpanSamplingRule("*", "operation") };
-            var spanSampler = new SpanSampler(rules);
-            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, spanSampler: spanSampler, automaticFlush: false);
-            var tracer = new Tracer(new TracerSettings(), agent, sampler: null, scopeManager: null, statsd: null);
+            var settings = SpanSamplingRule("*", "operation");
+            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
+            var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
             traceContext.SetSamplingPriority(new SamplingDecision(SamplingPriorityValues.UserReject, SamplingMechanism.Manual));
@@ -155,8 +153,8 @@ namespace Datadog.Trace.Tests.Agent
             traceContext.AddSpan(keptChildSpan); // IS single span sampled
 
             // run spans that will be kept through the span sampler - so that we can get the correct tags on them for asserting
-            spanSampler.MakeSamplingDecision(rootSpan);
-            spanSampler.MakeSamplingDecision(keptChildSpan);
+            traceContext.CurrentTraceSettings.SpanSampler!.MakeSamplingDecision(rootSpan);
+            traceContext.CurrentTraceSettings.SpanSampler!.MakeSamplingDecision(keptChildSpan);
 
             rootSpan.SetMetric(Metrics.TracesKeepRate, 0);
 
@@ -190,7 +188,7 @@ namespace Datadog.Trace.Tests.Agent
             statsAggregator.Setup(x => x.ProcessTrace(spans)).Returns(spans);
             statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
 
-            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator.Object, statsd: null, spanSampler: null, automaticFlush: false);
+            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator.Object, statsd: null, automaticFlush: false);
 
             agent.WriteTrace(spans);
 
@@ -226,7 +224,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task FlushTwice()
         {
-            var w = new AgentWriter(_api.Object, statsAggregator: null, statsd: null, spanSampler: null);
+            var w = new AgentWriter(_api.Object, statsAggregator: null, statsd: null);
             await w.FlushAndCloseAsync();
             await w.FlushAndCloseAsync();
         }
@@ -237,7 +235,7 @@ namespace Datadog.Trace.Tests.Agent
             // The flush thread should be able to recover from an error when calling the API
             // Also, it should free the faulty buffer
             var api = new Mock<IApi>();
-            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null, spanSampler: null);
+            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null);
             var mutex = new ManualResetEventSlim();
 
             agent.Flushed += () => mutex.Set();
@@ -261,7 +259,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             // Make sure that the agent is able to switch to the secondary buffer when the primary is full/busy
             var api = new Mock<IApi>();
-            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null, spanSampler: null);
+            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null);
 
             var barrier = new Barrier(2);
 
@@ -319,7 +317,7 @@ namespace Datadog.Trace.Tests.Agent
             var sizeOfTrace = ComputeSize(CreateTraceChunk(1));
 
             // Make the buffer size big enough for a single trace
-            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null, spanSampler: null, automaticFlush: false, maxBufferSize: (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1);
+            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null, automaticFlush: false, maxBufferSize: (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1);
 
             agent.WriteTrace(CreateTraceChunk(1));
             agent.WriteTrace(CreateTraceChunk(1));
@@ -349,7 +347,7 @@ namespace Datadog.Trace.Tests.Agent
             var sizeOfTrace = ComputeSize(CreateTraceChunk(1));
 
             // Make the buffer size big enough for a single trace
-            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator: null, statsd.Object, spanSampler: null, automaticFlush: false, (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1);
+            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator: null, statsd.Object, automaticFlush: false, (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1);
 
             // Fill the two buffers
             agent.WriteTrace(CreateTraceChunk(1));
@@ -399,7 +397,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public Task WakeUpSerializationTask()
         {
-            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator: null, statsd: null, spanSampler: null, batchInterval: 0);
+            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator: null, statsd: null, batchInterval: 0);
 
             // To reduce flakiness, first we make sure the serialization thread is started
             WaitForDequeue(agent);
@@ -441,7 +439,7 @@ namespace Datadog.Trace.Tests.Agent
             var api = new Mock<IApi>();
             api.Setup(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()))
                .ReturnsAsync(() => true);
-            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null, spanSampler: null, calculator, automaticFlush: false, maxBufferSize: (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1, batchInterval: 100);
+            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null, calculator, automaticFlush: false, maxBufferSize: (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1, batchInterval: 100);
 
             // Fill both buffers
             agent.WriteTrace(spans);
@@ -476,7 +474,7 @@ namespace Datadog.Trace.Tests.Agent
         public void AgentWriterEnqueueFlushTasks()
         {
             var api = new Mock<IApi>();
-            var agentWriter = new AgentWriter(api.Object, statsAggregator: null, statsd: null, spanSampler: null, automaticFlush: false);
+            var agentWriter = new AgentWriter(api.Object, statsAggregator: null, statsd: null, automaticFlush: false);
             var flushTcs = new TaskCompletionSource<bool>();
             int invocation = 0;
 
@@ -548,6 +546,21 @@ namespace Datadog.Trace.Tests.Agent
             }
 
             return new ArraySegment<Span>(spans);
+        }
+
+        private static TracerSettings SpanSamplingRule(string serviceName, string operationName, float sampleRate = 1.0f)
+        {
+            var rules = new SpanSamplingRule.SpanSamplingRuleConfig[]
+            {
+                new()
+                {
+                    ServiceNameGlob = serviceName,
+                    OperationNameGlob = operationName,
+                    SampleRate = sampleRate
+                }
+            };
+
+            return new TracerSettings { SpanSamplingRules = JsonConvert.SerializeObject(rules) };
         }
     }
 }

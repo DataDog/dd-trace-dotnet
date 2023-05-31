@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                     EnvironmentVariables = variablesTruncated,
                 };
 
-                var serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
+                var serviceName = tracer.CurrentTraceSettings.ServiceNames.GetServiceName(tracer, ServiceName);
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
                 scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
                 scope.Span.ResourceName = filename;

@@ -105,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 tags = new HttpTags();
 
-                string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
+                string serviceName = tracer.CurrentTraceSettings.ServiceNames.GetServiceName(tracer, ServiceName);
                 span = tracer.StartSpan(OperationName, tags, serviceName: serviceName, traceId: traceId, spanId: spanId, startTime: startTime, addToTraceContext: addToTraceContext);
 
                 span.Type = SpanTypes.Http;
@@ -124,7 +124,7 @@ namespace Datadog.Trace.ClrProfiler
                 if (!addToTraceContext && span.Context.TraceContext.SamplingPriority == null)
                 {
                     // If we don't add the span to the trace context, then we need to manually call the sampler
-                    var samplingDecision = tracer.TracerManager.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
+                    var samplingDecision = tracer.CurrentTraceSettings.TraceSampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
                     span.Context.TraceContext.SetSamplingPriority(samplingDecision);
                 }
             }

@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
@@ -19,7 +18,6 @@ using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -112,7 +110,7 @@ namespace Datadog.Trace
                          ? (statsd ?? CreateDogStatsdClient(settings, defaultServiceName))
                          : null;
             sampler ??= GetSampler(settings);
-            agentWriter ??= GetAgentWriter(settings, settings.TracerMetricsEnabled ? statsd : null, sampler, discoveryService);
+            agentWriter ??= GetAgentWriter(settings, settings.TracerMetricsEnabled ? statsd : null, rates => sampler.SetDefaultSampleRates(rates), discoveryService);
             scopeManager ??= new AsyncLocalScopeManager();
 
             if (runtimeMetricsEnabled)
@@ -183,7 +181,6 @@ namespace Datadog.Trace
         protected virtual TracerManager CreateTracerManagerFrom(
             ImmutableTracerSettings settings,
             IAgentWriter agentWriter,
-            ITraceSampler sampler,
             IScopeManager scopeManager,
             IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetrics,
@@ -194,7 +191,7 @@ namespace Datadog.Trace
             string defaultServiceName,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             IRemoteConfigurationManager remoteConfigurationManager)
-            => new TracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, remoteConfigurationManager);
+            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, remoteConfigurationManager);
 
         protected virtual ITraceSampler GetSampler(ImmutableTracerSettings settings)
         {
@@ -235,16 +232,14 @@ namespace Datadog.Trace
             return new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules));
         }
 
-        protected virtual IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ITraceSampler sampler, IDiscoveryService discoveryService)
+        protected virtual IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
         {
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
-            var api = new Api(apiRequestFactory, statsd, rates => sampler.SetDefaultSampleRates(rates), settings.Exporter.PartialFlushEnabled);
+            var api = new Api(apiRequestFactory, statsd, updateSampleRates, settings.Exporter.PartialFlushEnabled);
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
-            var spanSampler = GetSpanSampler(settings);
-
-            return new AgentWriter(api, statsAggregator, statsd, spanSampler, maxBufferSize: settings.TraceBufferSize);
+            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize);
         }
 
         protected virtual IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)

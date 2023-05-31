@@ -55,7 +55,6 @@ namespace Datadog.Trace
         public TracerManager(
             ImmutableTracerSettings settings,
             IAgentWriter agentWriter,
-            ITraceSampler sampler,
             IScopeManager scopeManager,
             IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetricsWriter,
@@ -70,7 +69,6 @@ namespace Datadog.Trace
         {
             Settings = settings;
             AgentWriter = agentWriter;
-            Sampler = sampler;
             ScopeManager = scopeManager;
             Statsd = statsd;
             RuntimeMetrics = runtimeMetricsWriter;
@@ -131,11 +129,6 @@ namespace Datadog.Trace
         /// </summary>
         public IScopeManager ScopeManager { get; }
 
-        /// <summary>
-        /// Gets the <see cref="ITraceSampler"/> instance used by this <see cref="IDatadogTracer"/> instance.
-        /// </summary>
-        public ITraceSampler Sampler { get; }
-
         public DirectLogSubmissionManager DirectLogSubmission { get; }
 
         /// Gets the global <see cref="QueryStringManager"/> instance.
@@ -158,6 +151,8 @@ namespace Datadog.Trace
         public IRemoteConfigurationManager RemoteConfigurationManager { get; }
 
         private RuntimeMetricsWriter RuntimeMetrics { get; }
+
+        public PerTraceSettings PerTraceSettings { get; set; }
 
         /// <summary>
         /// Replaces the global <see cref="TracerManager"/> settings. This affects all <see cref="Tracer"/> instances
