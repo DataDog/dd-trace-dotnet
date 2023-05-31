@@ -1,0 +1,84 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.SimpleNotificationService-http-client,
+    Type: http,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.HttpClientHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_4,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.SimpleNotificationService-http-client,
+    Type: http,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.HttpClientHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_6,
+    Name: sns.request,
+    Resource: SNS.Publish,
+    Service: Samples.AWS.SimpleNotificationService-aws-sns,
+    Type: http,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: Publish,
+      aws.requestId: Guid_2,
+      aws.service: SNS,
+      aws.topic.arn: arn:aws:sns:us-east-1:000000000000:MyTopic,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]
