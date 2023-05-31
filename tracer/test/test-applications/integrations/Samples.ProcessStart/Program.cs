@@ -120,7 +120,7 @@ namespace Samples.ProcessStart
             }
             catch (Win32Exception) { }
 
-#if NETFRAMEWORK || NETSTANDARD2_0
+#if !NETFRAMEWORK && !NETSTANDARD2_0
             try
             {
                 // Test - Non-existing executable with UseShellExecute = true and ArgumentList = { "arg1", "arg2" }
