@@ -19,14 +19,14 @@ public class Linq2DbTests : InstrumentationTestsBase, IDisposable
     readonly string querySafe = "SELECT * from Persons where Name like 'Emilio'";
     protected SqlConnection dbConnection;
     TestDb dataConnection;
-    DbCommand command;
+    DbCommand commandUnsafe;
 
     public Linq2DbTests()
     {
         AddTainted(taintedValue);
         queryUnsafe = "SELECT * from Persons where Name like '" + taintedValue + "'";
         dbConnection = SqlDDBBCreator.Create();
-        command = new SqlCommand(queryUnsafe, dbConnection);
+        commandUnsafe = new SqlCommand(queryUnsafe, dbConnection);
         dataConnection = new TestDb(dbConnection.ConnectionString);
     }
 
@@ -41,7 +41,7 @@ public class Linq2DbTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenLinq2DbOperation_WhenCallingExecuteReaderExtWithTainted_VulnerabilityIsReported()
     {
-        DbCommandProcessorExtensions.ExecuteReaderExt(command, CommandBehavior.Default);
+        DbCommandProcessorExtensions.ExecuteReaderExt(commandUnsafe, CommandBehavior.Default);
         AssertVulnerable();
     }
 
@@ -55,35 +55,35 @@ public class Linq2DbTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenLinq2DbOperation_WhenCallingExecuteNonQueryExtWithTainted_VulnerabilityIsReported()
     {
-        DbCommandProcessorExtensions.ExecuteNonQueryExt(command);
+        DbCommandProcessorExtensions.ExecuteNonQueryExt(commandUnsafe);
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenLinq2DbOperation_WhenCallingExecuteScalarExtWithTainted_VulnerabilityIsReported()
     {
-        DbCommandProcessorExtensions.ExecuteScalarExt(command);
+        DbCommandProcessorExtensions.ExecuteScalarExt(commandUnsafe);
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenLinq2DbOperation_WhenCallingExecuteScalarExtAsyncWithTainted_VulnerabilityIsReported()
     {
-        _ = DbCommandProcessorExtensions.ExecuteScalarExtAsync(command, CancellationToken.None).Result;
+        _ = DbCommandProcessorExtensions.ExecuteScalarExtAsync(commandUnsafe, CancellationToken.None).Result;
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenLinq2DbOperation_WhenCallingExecuteNonQueryExtAsyncWithTainted_VulnerabilityIsReported()
     {
-        _ = DbCommandProcessorExtensions.ExecuteNonQueryExtAsync(command, CancellationToken.None).Result;
+        _ = DbCommandProcessorExtensions.ExecuteNonQueryExtAsync(commandUnsafe, CancellationToken.None).Result;
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenLinq2DbOperation_WhenCallingExecuteReaderExtAsyncWithTainted_VulnerabilityIsReported()
     {
-        _ = DbCommandProcessorExtensions.ExecuteReaderExtAsync(command, CommandBehavior.Default, CancellationToken.None).Result;
+        _ = DbCommandProcessorExtensions.ExecuteReaderExtAsync(commandUnsafe, CommandBehavior.Default, CancellationToken.None).Result;
         AssertVulnerable();
     }
 
