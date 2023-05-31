@@ -64,7 +64,7 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    public void Report(string triggerData, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings, bool blocked, int? status)
+    public void Report(string triggerData, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings, bool blocked, int? status = null)
     {
         _localRootSpan.SetTag(Tags.AppSecEvent, "true");
         if (blocked)

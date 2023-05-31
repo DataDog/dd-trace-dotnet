@@ -221,14 +221,13 @@ internal readonly partial struct SecurityCoordinator
         {
             var reporting = MakeReportingFunction(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings);
 
-            BlockingAction? blockingAction = null;
             if (result.ShouldBlock)
             {
-                blockingAction = ChooseBlockingMethodAndBlock(result.Actions[0], reporting);
+                ChooseBlockingMethodAndBlock(result.Actions[0], reporting);
             }
 
             // here we assume if the we haven't blocked we'll have collected the correct status elsewhere
-            reporting(blockingAction?.StatusCode, result.ShouldBlock);
+            reporting(null, result.ShouldBlock);
         }
     }
 
@@ -246,7 +245,7 @@ internal readonly partial struct SecurityCoordinator
         };
     }
 
-    private BlockingAction ChooseBlockingMethodAndBlock(string blockActionId, Action<int?, bool> reporting)
+    private void ChooseBlockingMethodAndBlock(string blockActionId, Action<int?, bool> reporting)
     {
         var blockingAction = _security.GetBlockingAction(blockActionId, new[] { _context.Request.Headers["Accept"] });
         var isWebApiRequest = _context.CurrentHandler?.GetType().FullName == WebApiControllerHandlerTypeFullname;
@@ -270,7 +269,6 @@ internal readonly partial struct SecurityCoordinator
 
         // we will only hit this next line if we didn't throw
         WriteAndEndResponse(blockingAction);
-        return blockingAction;
     }
 
     private void WriteAndEndResponse(BlockingAction blockingAction)
@@ -313,10 +311,9 @@ internal readonly partial struct SecurityCoordinator
         var headerKeys = request.Headers.Keys;
         foreach (string originalKey in headerKeys)
         {
-            var keyForDictionary = originalKey ?? string.Empty;
-            if (!keyForDictionary.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
+            var keyForDictionary = originalKey?.ToLowerInvariant() ?? string.Empty;
+            if (keyForDictionary != "cookie")
             {
-                keyForDictionary = keyForDictionary.ToLowerInvariant();
                 if (!headersDic.ContainsKey(keyForDictionary))
                 {
                     headersDic.Add(keyForDictionary, request.Headers.GetValues(originalKey));

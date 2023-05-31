@@ -34,6 +34,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
     }
 
+    // in classic mode, you can't access either request or response headers
+    // so the verify files for these tests don't contain the attack data
     [Collection("IisTests")]
     public class AspNetMvc5ClassicWithSecurity : AspNetMvc5
     {

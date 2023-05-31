@@ -238,6 +238,31 @@ namespace Datadog.Trace.AspNet
                 {
                     try
                     {
+                        var rootScope = scope.Root;
+                        var rootSpan = rootScope.Span;
+
+                        // the security needs to come before collecting the response code,
+                        // since blocking will change the response code
+                        var security = Security.Instance;
+                        if (security.Enabled)
+                        {
+                            var securityCoordinator = new SecurityCoordinator(security, app.Context, rootSpan);
+                            if (!securityCoordinator.IsBlocked)
+                            {
+                                // path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
+                                var args = securityCoordinator.GetBasicRequestArgsForWaf();
+                                args.Add(AddressesConstants.RequestPathParams, securityCoordinator.GetPathParams());
+                                WrapResponseHeadersAction(app.Context, () =>
+                                {
+                                    args.Add(AddressesConstants.ResponseHeaderNoCookies, securityCoordinator.GetResponseHeadersForWaf());
+                                });
+                                securityCoordinator.CheckAndBlock(args);
+                            }
+
+                            securityCoordinator.AddResponseHeadersToSpanAndCleanup();
+                            securityContextCleaned = true;
+                        }
+
                         // HttpServerUtility.TransferRequest presents an issue: The IIS request pipeline is run a second time
                         // from the same incoming HTTP request, but the HttpContext and HttpRequest objects from the two pipeline
                         // requests are completely isolated. Fortunately, the second request (somehow) maintains the original
@@ -250,9 +275,6 @@ namespace Datadog.Trace.AspNet
                         //
                         // Note: HttpServerUtility.TransferRequest cannot be invoked more than once, so we'll have at most two nested (in-process)
                         // aspnet.request spans at any given time: https://referencesource.microsoft.com/#System.Web/Hosting/IIS7WorkerRequest.cs,2400
-                        var rootScope = scope.Root;
-                        var rootSpan = rootScope.Span;
-
                         if (!rootSpan.HasHttpStatusCode())
                         {
                             var response = app.Context.Response;
@@ -282,26 +304,6 @@ namespace Datadog.Trace.AspNet
                         {
                             string path = UriHelpers.GetCleanUriPath(app.Request.Url, app.Request.ApplicationPath);
                             scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
-                        }
-
-                        var security = Security.Instance;
-                        if (security.Enabled)
-                        {
-                            var securityCoordinator = new SecurityCoordinator(security, app.Context, rootSpan);
-                            if (!securityCoordinator.IsBlocked)
-                            {
-                                // path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
-                                var args = securityCoordinator.GetBasicRequestArgsForWaf();
-                                args.Add(AddressesConstants.RequestPathParams, securityCoordinator.GetPathParams());
-                                WrapResponseHeadersAction(app.Context, () =>
-                                {
-                                    args.Add(AddressesConstants.ResponseHeaderNoCookies, securityCoordinator.GetResponseHeadersForWaf());
-                                });
-                                securityCoordinator.CheckAndBlock(args);
-                            }
-
-                            securityCoordinator.AddResponseHeadersToSpanAndCleanup();
-                            securityContextCleaned = true;
                         }
                     }
                     finally
