@@ -76,6 +76,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             _subscriptionManager = subscriptionManager;
             _cancellationSource = new CancellationTokenSource();
             discoveryService.SubscribeToChanges(SetRcmEnabled);
+
+            _ = StartPollingAsync()
+               .ContinueWith(t => { Log.Error(t.Exception, "Remote Configuration management polling failed"); }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
         public static RemoteConfigurationManager? Instance { get; private set; }
@@ -150,7 +153,25 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             action(inst);
         }
 
-        public async Task StartPollingAsync()
+        public void Dispose()
+        {
+            _discoveryService.RemoveSubscription(SetRcmEnabled);
+            _cancellationSource.Cancel();
+        }
+
+        public void SetCapability(BigInteger index, bool available)
+        {
+            if (available)
+            {
+                _capabilities |= index;
+            }
+            else
+            {
+                _capabilities &= ~index;
+            }
+        }
+
+        private async Task StartPollingAsync()
         {
             lock (LockObject)
             {
@@ -161,8 +182,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 }
 
                 _isPollingStarted = true;
-                LifetimeManager.Instance.AddShutdownTask(OnShutdown);
             }
+
+            // Make sure not to block the caller
+            await Task.Yield();
 
             while (!_cancellationSource.IsCancellationRequested)
             {
@@ -182,24 +205,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 {
                     // We are shutting down, so don't do anything about it
                 }
-            }
-        }
-
-        public void OnShutdown()
-        {
-            _discoveryService.RemoveSubscription(SetRcmEnabled);
-            _cancellationSource.Cancel();
-        }
-
-        public void SetCapability(BigInteger index, bool available)
-        {
-            if (available)
-            {
-                _capabilities |= index;
-            }
-            else
-            {
-                _capabilities &= ~index;
             }
         }
 

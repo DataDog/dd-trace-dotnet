@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -133,21 +132,6 @@ public class LiveDebuggerTests
         public List<ApplyDetails> Update(Dictionary<string, List<RemoteConfiguration>> configByProducts, Dictionary<string, List<RemoteConfigurationPath>> removedConfigsByProduct)
         {
             throw new NotImplementedException();
-        }
-    }
-
-    private class RemoteConfigurationManagerMock : IRemoteConfigurationManager
-    {
-        internal bool Called { get; private set; }
-
-        public Task StartPollingAsync()
-        {
-            Called = true;
-            return Task.CompletedTask;
-        }
-
-        public void SetCapability(BigInteger index, bool available)
-        {
         }
     }
 
