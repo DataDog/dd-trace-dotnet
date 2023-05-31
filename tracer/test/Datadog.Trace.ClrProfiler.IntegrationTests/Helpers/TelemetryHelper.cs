@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     internal static class TelemetryHelper
     {
-        public static MockTelemetryAgent ConfigureTelemetry(this TestHelper helper)
+        public static MockTelemetryAgent ConfigureTelemetry(this TestHelper helper, bool? enableV2 = null)
         {
             int telemetryPort = TcpPortProvider.GetOpenPort();
             var telemetry = new MockTelemetryAgent(telemetryPort);
@@ -29,6 +29,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             helper.SetEnvironmentVariable("DD_TRACE_TELEMETRY_URL", $"http://localhost:{telemetry.Port}");
             // API key is required when using the custom url
             helper.SetEnvironmentVariable("DD_API_KEY", "INVALID_KEY_FOR_TESTS");
+
+            switch (enableV2)
+            {
+                case true:
+                    helper.SetEnvironmentVariable("DD_INTERNAL_TELEMETRY_V2_ENABLED", "1");
+                    break;
+                case false:
+                    helper.SetEnvironmentVariable("DD_INTERNAL_TELEMETRY_V2_ENABLED", "0");
+                    break;
+            }
+
             return telemetry;
         }
 
