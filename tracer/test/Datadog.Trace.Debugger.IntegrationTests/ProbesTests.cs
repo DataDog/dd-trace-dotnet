@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -386,7 +387,6 @@ public class ProbesTests : TestHelper
         settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{40}"), "GUID");
         settings.AddSimpleScrubber("out.host: localhost", "out.host: debugger");
         settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: debugger");
-        settings.AddSimpleScrubber(" (Parameter 'propertyOrFieldName') ", " ");
         var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
         settings.UseFileName($"{nameof(ProbeTests)}.{testName}.{testNameSuffix}");
 
@@ -397,7 +397,24 @@ public class ProbesTests : TestHelper
         VerifierSettings.DerivePathInfo(
             (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..\\..", "Approvals", "snapshots")));
 
+        SanitizeSpanTags(spans);
+
         await VerifyHelper.VerifySpans(spans, settings).DisableRequireUniquePrefix();
+    }
+
+    private void SanitizeSpanTags(IImmutableList<MockSpan> spans)
+    {
+        const string errorTagStartWith = "_dd.di.";
+        const string errorTagEndWith = ".evaluation_error";
+
+        foreach (var span in spans)
+        {
+            var toSanitize = span.Tags.Where(tag => tag.Key.StartsWith(errorTagStartWith) && tag.Key.EndsWith(errorTagEndWith)).ToList();
+            foreach (var keyValuePair in toSanitize)
+            {
+                span.Tags[keyValuePair.Key] = keyValuePair.Value.Substring(0, keyValuePair.Value.IndexOf(',')) + " }";
+            }
+        }
     }
 
     private async Task VerifySpanProbeResults(ProbeDefinition[] snapshotProbes, ProbeTestDescription testDescription, ProbeAttributeBase[] probeData, MockTracerAgent agent, bool isMultiPhase, int phaseNumber)
