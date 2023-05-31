@@ -15,7 +15,7 @@
 
 #define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
 
-void StrAppend(char* buffer, const char* str, size_t& cchBuffer);
+void StrAppend(std::stringstream& builder, const char* str);
 
 void FixGenericSyntax(WCHAR* name);
 void FixGenericSyntax(char* name);
@@ -27,8 +27,7 @@ PCCOR_SIGNATURE ParseElementType(
     ClassID* classTypeArgs,
     ClassID* methodTypeArgs,
     ULONG* elementType,
-    char* buffer,
-    size_t cchBuffer,
+    std::stringstream& builder,
     mdToken* typeToken);
 
 
@@ -143,6 +142,9 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
         return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
     }
 
+    // get the method signature
+     std::string signature = GetMethodSignature(_pCorProfilerInfo, pMetadataImport.Get(), functionId, mdTokenFunc);
+
     // get type related description (assembly, namespace and type name)
     // look into the cache first
     TypeDesc* pTypeDesc = nullptr;  // if already in the cache
@@ -160,7 +162,7 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
             // It's safe to cache, because there is no reason that the next calls to
             // BuildTypeDesc will succeed.
             auto& value = _methods[functionId];
-            value = {UnknownManagedAssembly, UnknownManagedType + " |fn:" + std::move(methodName), "", 0};
+            value = {UnknownManagedAssembly, UnknownManagedType + " |fn:" + std::move(methodName) + " |sg:" + std::move(signature), "", 0};
             return value;
         }
 
@@ -186,6 +188,7 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
     builder << " |ns:" << pTypeDesc->Namespace;
     builder << " |ct:" << pTypeDesc->Type;
     builder << " |fn:" << methodName;
+    builder << " |sg:" << signature;
 
     auto debugInfo = _pDebugInfoStore->Get(moduleId, mdTokenFunc);
 
@@ -521,10 +524,11 @@ std::pair<std::string, mdTypeDef> FrameStore::GetMethodName(
     auto [methodName, mdTokenType] = GetMethodNameFromMetadata(pMetadataImport, mdTokenFunc);
     if ((methodName.empty()) || (genericParametersCount == 0))
     {
-        // get the method signature
-        std::string signature = GetMethodSignature(_pCorProfilerInfo, pMetadataImport, functionId, mdTokenFunc);
+        //// get the method signature
+        //std::string signature = GetMethodSignature(_pCorProfilerInfo, pMetadataImport, functionId, mdTokenFunc);
 
-        return std::make_pair(methodName + signature, mdTokenType);
+        //return std::make_pair(methodName + signature, mdTokenType);
+        return std::make_pair(methodName, mdTokenType);
     }
 
     // Append generic parameters if any
@@ -564,10 +568,11 @@ std::pair<std::string, mdTypeDef> FrameStore::GetMethodName(
     }
     builder << "}";
 
-    // get the method signature
-    std::string signature = GetMethodSignature(_pCorProfilerInfo, pMetadataImport, functionId, mdTokenFunc);
+    //// get the method signature
+    //std::string signature = GetMethodSignature(_pCorProfilerInfo, pMetadataImport, functionId, mdTokenFunc);
 
-    return std::make_pair(methodName + builder.str() + signature, mdTokenType);
+    //return std::make_pair(methodName + builder.str() + signature, mdTokenType);
+    return std::make_pair(methodName + builder.str(), mdTokenType);
 }
 
 bool FrameStore::GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, std::string& assemblyName)
@@ -941,7 +946,7 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
     // read https://chnasarre.medium.com/decyphering-method-signature-with-clr-profiling-api-8328a72a216e for more details
     ULONG elementType;
     ULONG callConv;
-    char buffer[2 * 260];
+    std::stringstream builder;
 
     // get the calling convention
     pSigBlob += CorSigUncompressData(pSigBlob, &callConv);
@@ -999,8 +1004,8 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
     // Get the return type
     //
     mdToken returnTypeToken;
-    buffer[0] = '\0';
-    pSigBlob = ParseElementType(pMetaData, pSigBlob, classTypeArgs.get(), methodTypeArgs.get(), &elementType, buffer, ARRAY_LEN(buffer) - 1, &returnTypeToken);
+    std::stringstream returnTypeBuilder; // we don't use it today
+    pSigBlob = ParseElementType(pMetaData, pSigBlob, classTypeArgs.get(), methodTypeArgs.get(), &elementType, returnTypeBuilder, &returnTypeToken);
     // if the return type returned back empty, should correspond to "void"
     // NOTE: elementType should be ELEMENT_TYPE_VOID in that case
 
@@ -1034,7 +1039,6 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
 
     DWORD bIsValueType;
     ULONG currentGenericParam = 0;
-    std::stringstream builder;
     builder << "(";
     for (ULONG i = 0;
          (SUCCEEDED(hr) && (pSigBlob != NULL) && (i < (argCount)));
@@ -1045,52 +1049,44 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
         // note that we need to convert from WCHAR* to char* for the name
 
         // get the parameter type
-        buffer[0] = '\0';
 
         // In case of generic function, get the type details from the runtime and not from the metadata
-        // we don't know in advance which parameter is a generic parameter and this is given by elementType == MVAR
+        // We don't know in advance which parameter is a generic parameter and this is given by elementType == MVAR
         mdToken parameterTypeToken = mdTypeDefNil;
-        pSigBlob = ParseElementType(pMetaData, pSigBlob, classTypeArgs.get(), methodTypeArgs.get(), &elementType, buffer, ARRAY_LEN(buffer) - 1, &parameterTypeToken);
+        std::stringstream parameterBuilder;
+        pSigBlob = ParseElementType(pMetaData, pSigBlob, classTypeArgs.get(), methodTypeArgs.get(), &elementType, parameterBuilder, &parameterTypeToken);
         if ((methodTypeArgs != NULL) && (elementType == ELEMENT_TYPE_MVAR))
         {
-            // Assume that currentGenericParam < methodTypeArgCount
-            ModuleID moduleId;
-            mdTypeDef mdType;
-            hr = pInfo->GetClassIDInfo2(methodTypeArgs[currentGenericParam], &moduleId, &mdType, NULL, 0, NULL, NULL);
-            if (SUCCEEDED(hr))
+            // the offset in the array is at the end of the type name read from the metadata
+            // ex: M7 --> offset 7
+            int offset = std::stoi(parameterBuilder.str().substr(1));
+            if (offset < genericArgCount)
             {
-                ComPtr<IMetaDataImport2> pImport2;
-                hr = pInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(pImport2.GetAddressOf()));
-                if (SUCCEEDED(hr))
+                std::string sTypeName;
+                if (GetTypeName(methodTypeArgs[offset], sTypeName))
                 {
-                    WCHAR paramTypeName[260];
-
-                    // get elementType from type name because the metadata can't give us the instanciated generic signature
-                    hr = pImport2->GetTypeDefProps(mdType, paramTypeName, ARRAY_LEN(paramTypeName) - 1, 0, NULL, NULL);
-                    if (FAILED(hr))
-                    {
-                        builder << "?";
-                    }
-                    else
-                    {
-                        // convert from UTF16 to UTF8
-                        builder << shared::ToString(shared::WSTRING(paramTypeName));
-                        builder << " ";
-                        // convert from UTF16 to UTF8
-                        builder << shared::ToString(shared::WSTRING(name));
-                    }
+                    builder << sTypeName;
+                    builder << " ";
+                    // convert from UTF16 to UTF8
+                    builder << shared::ToString(shared::WSTRING(name));
                 }
                 else
                 {
                     builder << "?";
                 }
             }
-
-            currentGenericParam++;
+            else
+            {
+                // case detected during tests with System.MemoryExtensions.IndexOfAny<T>(ReadOnlySpan<T>, T, T) for example
+                // but should be treated now
+                builder << "M" << offset << "?";
+                // convert from UTF16 to UTF8
+                builder << shared::ToString(shared::WSTRING(name));
+            }
         }
         else
         {
-            builder << buffer;
+            builder << parameterBuilder.str();
             builder << " ";
             // convert from UTF16 to UTF8
             builder << shared::ToString(shared::WSTRING(name));
@@ -1176,18 +1172,9 @@ void FixGenericSyntax(char* name)
     }
 }
 
-void StrAppend(char* buffer, const char* str, size_t& cchBuffer)
+void StrAppend(std::stringstream& builder, const char* str)
 {
-    size_t bufLen = strlen(buffer) + 1;
-    if (bufLen <= cchBuffer)
-    {
-#ifdef _WINDOWS
-        strncat_s(buffer, cchBuffer, str, cchBuffer - bufLen);
-#else
-        strcat(buffer, str);
-#endif
-        cchBuffer -= bufLen;
-    }
+    builder << str;
 }
 
 PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte)
@@ -1203,8 +1190,7 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
                                  ClassID* classTypeArgs,
                                  ClassID* methodTypeArgs,
                                  ULONG* elementType,
-                                 char* buffer,
-                                 size_t cchBuffer,
+                                 std::stringstream& builder,
                                  mdToken* typeToken // type ref/def token for reference and value types
 )
 {
@@ -1215,75 +1201,75 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
         // Picking the C# keywords for the built-in types
         // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/built-in-types
         case ELEMENT_TYPE_VOID:
-            StrAppend(buffer, "void", cchBuffer);
+            StrAppend(builder, "void");
             break;
 
         case ELEMENT_TYPE_BOOLEAN:
-            StrAppend(buffer, "bool", cchBuffer);
+            StrAppend(builder, "bool");
             break;
 
         case ELEMENT_TYPE_CHAR:
-            StrAppend(buffer, "char", cchBuffer);
+            StrAppend(builder, "char");
             break;
 
         case ELEMENT_TYPE_I1:
-            StrAppend(buffer, "sbyte", cchBuffer);
+            StrAppend(builder, "sbyte");
             break;
 
         case ELEMENT_TYPE_U1:
-            StrAppend(buffer, "byte", cchBuffer);
+            StrAppend(builder, "byte");
             break;
 
         case ELEMENT_TYPE_I2:
-            StrAppend(buffer, "short", cchBuffer);
+            StrAppend(builder, "short");
             break;
 
         case ELEMENT_TYPE_U2:
-            StrAppend(buffer, "ushort", cchBuffer);
+            StrAppend(builder, "ushort");
             break;
 
         case ELEMENT_TYPE_I4:
-            StrAppend(buffer, "int", cchBuffer);
+            StrAppend(builder, "int");
             break;
 
         case ELEMENT_TYPE_U4:
-            StrAppend(buffer, "uint", cchBuffer);
+            StrAppend(builder, "uint");
             break;
 
         case ELEMENT_TYPE_I8:
-            StrAppend(buffer, "long", cchBuffer);
+            StrAppend(builder, "long");
             break;
 
         case ELEMENT_TYPE_U8:
-            StrAppend(buffer, "ulong", cchBuffer);
+            StrAppend(builder, "ulong");
             break;
 
         case ELEMENT_TYPE_R4:
-            StrAppend(buffer, "float", cchBuffer);
+            StrAppend(builder, "float");
             break;
 
         case ELEMENT_TYPE_R8:
-            StrAppend(buffer, "double", cchBuffer);
+            StrAppend(builder, "double");
             break;
 
         case ELEMENT_TYPE_U:
-            StrAppend(buffer, "nuint", cchBuffer);
+            StrAppend(builder, "nuint");
             break;
 
         case ELEMENT_TYPE_I:
-            StrAppend(buffer, "nint", cchBuffer);
+            StrAppend(builder, "nint");
             break;
 
         case ELEMENT_TYPE_OBJECT:
-            StrAppend(buffer, "object", cchBuffer);
+            StrAppend(builder, "object");
             break;
 
         case ELEMENT_TYPE_STRING:
-            StrAppend(buffer, "string", cchBuffer);
+            StrAppend(builder, "string");
             break;
 
         case ELEMENT_TYPE_TYPEDBYREF:
-            StrAppend(buffer, "refany", cchBuffer);
+            StrAppend(builder, "refany");
             break;
 
         case ELEMENT_TYPE_CLASS:
@@ -1310,44 +1296,44 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
                 hr = pMDImport->GetTypeRefProps(token,
                                                 &resScope,
                                                 zName,
-                                                260,
+                                                ARRAY_LEN(classname),
                                                 &length);
             }
             else
             {
                 hr = pMDImport->GetTypeDefProps(token,
                                                 zName,
-                                                260,
+                                                ARRAY_LEN(classname),
                                                 NULL,
                                                 NULL,
                                                 NULL);
             }
             if (SUCCEEDED(hr))
             {
-                StrAppend(buffer, shared::ToString(zName).c_str(), cchBuffer);
+                StrAppend(builder, shared::ToString(zName).c_str());
             }
             else
             {
-                StrAppend(buffer, "?", cchBuffer);
+                StrAppend(builder, "?");
             }
         }
         break;
 
         case ELEMENT_TYPE_SZARRAY:
-            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, buffer, cchBuffer, typeToken);
-            StrAppend(buffer, "[]", cchBuffer);
+            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, builder, typeToken);
+            StrAppend(builder, "[]");
             break;
 
         case ELEMENT_TYPE_ARRAY:
         {
             ULONG rank;
-            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, buffer, cchBuffer, typeToken);
+            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, builder, typeToken);
             rank = CorSigUncompressData(signature);
 
             // The second condition is to guard against overflow bugs & shut up PREFAST
             if (rank == 0 || rank >= 65536)
             {
-                StrAppend(buffer, "[?]", cchBuffer);
+                StrAppend(builder, "[?]");
             }
             else
             {
@@ -1379,7 +1365,7 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
                             lower[i] = CorSigUncompressData(signature);
                         }
 
-                        StrAppend(buffer, "[", cchBuffer);
+                        StrAppend(builder, "[");
                         for (i = 0; i < rank; i++)
                         {
                             if ((sizes[i] != 0) && (lower[i] != 0))
@@ -1409,16 +1395,16 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
 #endif
                                     }
                                 }
-                                StrAppend(buffer, sizeBuffer, cchBuffer);
+                                StrAppend(builder, sizeBuffer);
                             }
 
                             if (i < (rank - 1))
                             {
-                                StrAppend(buffer, ",", cchBuffer);
+                                StrAppend(builder, ",");
                             }
                         }
 
-                        StrAppend(buffer, "]", cchBuffer);
+                        StrAppend(builder, "]");
                     }
                 }
             }
@@ -1427,13 +1413,13 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
 
         case ELEMENT_TYPE_PINNED:
             // I'm not sure what to do with this...
-            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, buffer, cchBuffer, typeToken);
-            StrAppend(buffer, "* ", cchBuffer);
+            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, builder, typeToken);
+            StrAppend(builder, "* ");
             break;
 
         case ELEMENT_TYPE_PTR:
-            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, buffer, cchBuffer, typeToken);
-            StrAppend(buffer, "*", cchBuffer);
+            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, builder, typeToken);
+            StrAppend(builder, "*");
             break;
 
         case ELEMENT_TYPE_BYREF:
@@ -1441,36 +1427,24 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
             // that contains the real object address in case of reference type.
             // --> we need to return if it is a BYREF parameter as an 'isReference' out parameter in this method
             // Note that the "real" type just follows
-            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, buffer, cchBuffer, typeToken);
-            StrAppend(buffer, "&", cchBuffer);
+            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, builder, typeToken);
+            StrAppend(builder, "&");
             break;
 
         // handle generics
         case ELEMENT_TYPE_VAR: // for type
         {
             // read the number
-            StrAppend(buffer, "T", cchBuffer);
+            StrAppend(builder, "T");
             ULONG n = CorSigUncompressData(signature);
-            char number[16];
-#ifdef _WINDOWS
-            sprintf_s(number, ARRAY_LEN(number) - 1, "%u", n);
-#else
-            sprintf(number, "%u", n);
-#endif
-            StrAppend(buffer, number, cchBuffer);
+            builder << n;
         }
         break;
         case ELEMENT_TYPE_MVAR: // for method
         {
-            StrAppend(buffer, "M", cchBuffer);
+            StrAppend(builder, "M");
             ULONG n = CorSigUncompressData(signature);
-            char number[16];
-#ifdef _WINDOWS
-            sprintf_s(number, ARRAY_LEN(number) - 1, "%u", n);
-#else
-            sprintf(number, "%u", n);
-#endif
-            StrAppend(buffer, number, cchBuffer);
+            builder << n;
         }
         break;
 
@@ -1484,7 +1458,7 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
                 // signature = ParseByte(signature, &elementType);
                 if ((elementType != ELEMENT_TYPE_CLASS) && (elementType != ELEMENT_TYPE_VALUETYPE))
                 {
-                    StrAppend(buffer, "<T?>", cchBuffer);
+                    StrAppend(builder, "<T?>");
                     break;
                 }
 
@@ -1522,14 +1496,14 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
 #ifdef _WINDOWS
                     strncpy_s(classname, shared::ToString(zName).c_str(), ARRAY_LEN(classname));
 #else
-                    strcpy(classname, shared::ToString(zName).c_str());
+                    strncpy(classname, shared::ToString(zName).c_str(), ARRAY_LEN(classname));
 #endif
                 }
 
                 FixGenericSyntax((char*)classname);
-                StrAppend(buffer, classname, cchBuffer);
+                StrAppend(builder, classname);
 
-                StrAppend(buffer, "<", cchBuffer);
+                StrAppend(builder, "<");
 
                 // get generic parameters count
                 ULONG genericParameterCount = CorSigUncompressData(signature);
@@ -1537,21 +1511,21 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
                 // get each generic parameter
                 for (ULONG current = 1; current <= genericParameterCount; current++)
                 {
-                    signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, buffer, cchBuffer, NULL);
+                    signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, builder, NULL);
 
                     if (current != genericParameterCount)
                     {
-                        StrAppend(buffer, ", ", cchBuffer);
+                        StrAppend(builder, ", ");
                     }
                 }
-                StrAppend(buffer, ">", cchBuffer);
+                StrAppend(builder, ">");
                 break;
             }
 
         default:
         case ELEMENT_TYPE_END:
         case ELEMENT_TYPE_SENTINEL:
-            StrAppend(buffer, "UNKNOWN", cchBuffer);
+            StrAppend(builder, "UNKNOWN");
             break;
 
     } // switch

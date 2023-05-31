@@ -16,7 +16,7 @@ class IConfiguration;
 class FrameStore : public IFrameStore
 {
 private:
-    const std::string UnknownManagedFrame = "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |fn:Unknown-Method";
+    const std::string UnknownManagedFrame = "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |fn:Unknown-Method |sg:(?)";
     const std::string UnknownManagedType = "|lm:Unknown-Assembly |ns: |ct:Unknown-Type ";
     const std::string UnknownManagedAssembly = "Unknown-Assembly";
 
@@ -98,7 +98,7 @@ private:  // global helpers
         const char* arraySuffix,
         bool isEncoded
         );
-    static std::string GetMethodSignature(
+    std::string GetMethodSignature(
         ICorProfilerInfo4* pInfo,
         IMetaDataImport2* pMetadataImport,
         FunctionID functionId,
