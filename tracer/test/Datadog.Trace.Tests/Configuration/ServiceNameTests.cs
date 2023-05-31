@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using FluentAssertions;
 using Xunit;
 
@@ -71,8 +72,8 @@ namespace Datadog.Trace.Tests.Configuration
             var collectionV0 = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, "v0" }, { ConfigurationKeys.ServiceNameMappings, $"{serviceName}:{expected}" } };
             var collectionV1 = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, "v1" }, { ConfigurationKeys.ServiceNameMappings, $"{serviceName}:{expected}" } };
 
-            var tracerV0 = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collectionV0)));
-            var tracerV1 = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collectionV1)));
+            var tracerV0 = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collectionV0), NullConfigurationTelemetry.Instance));
+            var tracerV1 = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collectionV1), NullConfigurationTelemetry.Instance));
 
             tracerV0.Settings.GetServiceName(tracerV0, serviceName).Should().Be(expected);
             tracerV1.Settings.GetServiceName(tracerV1, serviceName).Should().Be(expected);

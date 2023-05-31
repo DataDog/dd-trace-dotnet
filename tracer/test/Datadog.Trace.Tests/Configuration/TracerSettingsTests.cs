@@ -10,6 +10,7 @@ using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
@@ -41,7 +42,7 @@ namespace Datadog.Trace.Tests.Configuration
             var collection = new NameValueCollection { { environmentVariableKey, value } };
 
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
@@ -59,7 +60,7 @@ namespace Datadog.Trace.Tests.Configuration
             var collection = new NameValueCollection { { envKey, envValue }, { ConfigurationKeys.GlobalTags, tagsLine } };
 
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
             Assert.True(settings.GlobalTags.Any());
 
             var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
@@ -79,7 +80,7 @@ namespace Datadog.Trace.Tests.Configuration
                 { ConfigurationKeys.TraceEnabled, value }
             };
 
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings));
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings), NullConfigurationTelemetry.Instance);
 
             Assert.Equal(areTracesEnabled, tracerSettings.TraceEnabled);
 
@@ -104,7 +105,7 @@ namespace Datadog.Trace.Tests.Configuration
                 { ConfigurationKeys.AgentUri, original }
             };
 
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings));
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings), NullConfigurationTelemetry.Instance);
 
             Assert.Equal(expected, tracerSettings.Exporter.AgentUri.ToString());
         }
@@ -146,7 +147,7 @@ namespace Datadog.Trace.Tests.Configuration
             var collection = new NameValueCollection { };
 
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
             settings.ServiceNameMappings.Should().BeNullOrEmpty();
 
             var mappings = new Dictionary<string, string> { { "elasticsearch", "custom-name" } };
@@ -160,7 +161,7 @@ namespace Datadog.Trace.Tests.Configuration
             var collection = new NameValueCollection { };
 
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
             settings.ServiceNameMappings.Should().BeNullOrEmpty();
 
             var mappings = new Dictionary<string, string> { { "elasticsearch", "custom-name" } };
@@ -175,14 +176,14 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void Constructor_HandlesNullSource()
         {
-            var tracerSettings = new TracerSettings(null);
+            var tracerSettings = new TracerSettings(null, NullConfigurationTelemetry.Instance);
             tracerSettings.Should().NotBeNull();
         }
 
         [Fact]
         public void Constructor_HandlesEmptyource()
         {
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()));
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()), NullConfigurationTelemetry.Instance);
             tracerSettings.Should().NotBeNull();
         }
 
@@ -203,7 +204,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void Environment(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.Environment, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.Environment.Should().Be(expected);
         }
@@ -219,7 +220,7 @@ namespace Datadog.Trace.Tests.Configuration
             const string legacyServiceName = "DD_SERVICE_NAME";
 
             var source = CreateConfigurationSource((ConfigurationKeys.ServiceName, value), (legacyServiceName, legacyValue));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.ServiceName.Should().Be(expected);
         }
@@ -229,7 +230,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void ServiceVersion(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.ServiceVersion, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.ServiceVersion.Should().Be(expected);
         }
@@ -239,7 +240,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void GitCommitSha(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.GitCommitSha, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.GitCommitSha.Should().Be(expected);
         }
@@ -249,7 +250,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void GitRepositoryUrl(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.GitRepositoryUrl, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.GitRepositoryUrl.Should().Be(expected);
         }
@@ -259,7 +260,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void GitMetadataEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.GitMetadataEnabled, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.GitMetadataEnabled.Should().Be(expected);
         }
@@ -275,7 +276,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.DisabledIntegrations, value),
                 (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, isOpenTelemetryEnabled ? "1" : "0"));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.DisabledIntegrationNames.Should().BeEquivalentTo(expected);
         }
@@ -286,7 +287,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
 #pragma warning disable 618 // App analytics is deprecated, but still used
             var source = CreateConfigurationSource((ConfigurationKeys.GlobalAnalyticsEnabled, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.AnalyticsEnabled.Should().Be(expected);
 #pragma warning restore 618
@@ -300,7 +301,7 @@ namespace Datadog.Trace.Tests.Configuration
                 ($"DD_{IntegrationRegistry.Names[1]}_ENABLED", "0"),
                 ($"DD_{IntegrationRegistry.Names[2]}_ENABLED", "1"));
 
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.Integrations[IntegrationRegistry.Names[0]].Enabled.Should().BeNull();
             settings.Integrations[IntegrationRegistry.Names[1]].Enabled.Should().BeFalse();
@@ -318,7 +319,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
 #pragma warning disable 618 // this parameter has been replaced but may still be used
             var source = CreateConfigurationSource((ConfigurationKeys.TraceRateLimit, value), (ConfigurationKeys.MaxTracesSubmittedPerSecond, legacyValue));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.MaxTracesSubmittedPerSecondInternal.Should().Be(expected);
 #pragma warning restore 618
@@ -337,7 +338,7 @@ namespace Datadog.Trace.Tests.Configuration
             const string legacyGlobalTagsKey = "DD_TRACE_GLOBAL_TAGS";
 
             var source = CreateConfigurationSource((ConfigurationKeys.GlobalTags, value), (legacyGlobalTagsKey, legacyValue));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.GlobalTags.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
         }
@@ -354,7 +355,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.HeaderTags, value),
                 (ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled, normalizationFixEnabled ? "1" : "0"));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.HeaderTags.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
         }
@@ -368,7 +369,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void MetadataSchemaVersion(string value, object expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.MetadataSchemaVersion, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.MetadataSchemaVersion.Should().Be((SchemaVersion)expected);
         }
@@ -382,7 +383,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void ServiceNameMappings(string value, string[] expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.ServiceNameMappings, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.ServiceNameMappings.Should().BeEquivalentTo(expected?.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
         }
@@ -392,7 +393,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void TracerMetricsEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.TracerMetricsEnabled, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.TracerMetricsEnabled.Should().Be(expected);
         }
@@ -402,7 +403,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void StatsComputationEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.StatsComputationEnabled, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.StatsComputationEnabled.Should().Be(expected);
         }
@@ -412,7 +413,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void StatsComputationInterval(string value, int expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.StatsComputationInterval, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.StatsComputationInterval.Should().Be(expected);
         }
@@ -422,7 +423,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void RuntimeMetricsEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.RuntimeMetricsEnabled, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.RuntimeMetricsEnabled.Should().Be(expected);
         }
@@ -432,7 +433,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void CustomSamplingRules(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CustomSamplingRules, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.CustomSamplingRules.Should().Be(expected);
         }
@@ -442,7 +443,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void SpanSamplingRules(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.SpanSamplingRules, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.SpanSamplingRules.Should().Be(expected);
         }
@@ -452,7 +453,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void GlobalSamplingRate(string value, double? expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.GlobalSamplingRate, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.GlobalSamplingRate.Should().Be(expected);
         }
@@ -462,7 +463,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void StartupDiagnosticLogEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.StartupDiagnosticLogEnabled, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.StartupDiagnosticLogEnabled.Should().Be(expected);
         }
@@ -472,7 +473,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void TraceBufferSize(string value, int expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.BufferSize, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.TraceBufferSize.Should().Be(expected);
         }
@@ -482,7 +483,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void TraceBatchInterval(string value, int expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.SerializationBatchInterval, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.TraceBatchInterval.Should().Be(expected);
         }
@@ -492,7 +493,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void RouteTemplateResourceNamesEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.RouteTemplateResourceNamesEnabled.Should().Be(expected);
         }
@@ -512,7 +513,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.ExpandRouteTemplatesEnabled, value),
                 (ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, fallbackValue));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.ExpandRouteTemplatesEnabled.Should().Be(expected);
         }
@@ -522,7 +523,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void KafkaCreateConsumerScopeEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.KafkaCreateConsumerScopeEnabled, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.KafkaCreateConsumerScopeEnabled.Should().Be(expected);
         }
@@ -532,7 +533,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void DelayWcfInstrumentationEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.DelayWcfInstrumentationEnabled.Should().Be(expected);
         }
@@ -542,7 +543,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void WcfObfuscationEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.WcfObfuscationEnabled.Should().Be(expected);
         }
@@ -552,7 +553,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void ObfuscationQueryStringRegex(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.ObfuscationQueryStringRegex, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.ObfuscationQueryStringRegex.Should().Be(expected);
         }
@@ -562,7 +563,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void QueryStringReportingEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.QueryStringReportingEnabled, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.QueryStringReportingEnabled.Should().Be(expected);
         }
@@ -572,7 +573,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void QueryStringReportingSize(string value, int expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.QueryStringReportingSize, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.QueryStringReportingSize.Should().Be(expected);
         }
@@ -586,7 +587,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void ObfuscationQueryStringRegexTimeout(string value, double expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.ObfuscationQueryStringRegexTimeout, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.ObfuscationQueryStringRegexTimeout.Should().Be(expected);
         }
@@ -607,7 +608,7 @@ namespace Datadog.Trace.Tests.Configuration
             const string fallbackKey = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
 
             var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, value), (fallbackKey, fallbackValue));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.IsActivityListenerEnabled.Should().Be(expected);
         }
@@ -630,7 +631,7 @@ namespace Datadog.Trace.Tests.Configuration
                     (ConfigurationKeys.PropagationStyle, fallbackValue),
                     (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, isActivityListenerEnabled ? "1" : "0"));
 
-                var settings = new TracerSettings(source);
+                var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
                 settings.PropagationStyleInject.Should().BeEquivalentTo(isActivityListenerEnabled ? expected.Concat("tracecontext") : expected);
             }
@@ -654,7 +655,7 @@ namespace Datadog.Trace.Tests.Configuration
                     (ConfigurationKeys.PropagationStyle, fallbackValue),
                     (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, isActivityListenerEnabled ? "1" : "0"));
 
-                var settings = new TracerSettings(source);
+                var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
                 settings.PropagationStyleExtract.Should().BeEquivalentTo(isActivityListenerEnabled ? expected.Concat("tracecontext") : expected);
             }
@@ -665,7 +666,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void TraceMethods(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.TraceMethods, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.TraceMethods.Should().Be(expected);
         }
@@ -679,7 +680,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void GrpcTags(string value, string[] expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.GrpcTags, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.GrpcTags.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
         }
@@ -695,7 +696,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void OutgoingTagPropagationHeaderMaxLength(string value, int expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.TagPropagation.HeaderMaxLength, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.OutgoingTagPropagationHeaderMaxLength.Should().Be(expected);
         }
@@ -710,7 +711,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.IpHeader, value),
                 (ConfigurationKeys.AppSec.CustomIpHeader, fallbackValue));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.IpHeader.Should().Be(expected);
         }
@@ -720,7 +721,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void IpHeaderEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.IpHeaderEnabled, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.IpHeaderEnabled.Should().Be(expected);
         }
@@ -730,7 +731,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void IsDataStreamsMonitoringEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DataStreamsMonitoring.Enabled, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.IsDataStreamsMonitoringEnabled.Should().Be(expected);
         }
@@ -740,7 +741,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void IsRareSamplerEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.RareSamplerEnabled, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.IsRareSamplerEnabled.Should().Be(expected);
         }
@@ -750,7 +751,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void IsRunningInAzureAppService(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.IsRunningInAzureAppService.Should().Be(expected);
         }
@@ -759,7 +760,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void DisableTracerIfNoApiKeyInAas()
         {
             var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1"));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.TraceEnabled.Should().BeFalse();
         }
@@ -792,7 +793,7 @@ namespace Datadog.Trace.Tests.Configuration
                     Serverless.SetMetadataTestsOnly(metadata);
                 }
 
-                var settings = new TracerSettings(source);
+                var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
                 settings.HttpClientExcludedUrlSubstrings.Should().BeEquivalentTo(expected);
             }
@@ -812,7 +813,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void DbmPropagationMode(string value, object expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DbmPropagationMode, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.DbmPropagationMode.Should().Be((DbmPropagationLevel)expected);
         }
@@ -822,7 +823,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void TraceId128BitGenerationEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.TraceId128BitGenerationEnabled.Should().Be(expected);
         }
@@ -832,7 +833,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void TraceId128BitLoggingEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.TraceId128BitLoggingEnabled, value));
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.TraceId128BitLoggingEnabled.Should().Be(expected);
         }

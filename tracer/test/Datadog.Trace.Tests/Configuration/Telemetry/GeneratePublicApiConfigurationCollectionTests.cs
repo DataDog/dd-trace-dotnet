@@ -12,6 +12,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Configuration;
 
+[Collection("TelemetryTests")]
 [TelemetryRestorer]
 public class GeneratePublicApiConfigurationCollectionTests
 {

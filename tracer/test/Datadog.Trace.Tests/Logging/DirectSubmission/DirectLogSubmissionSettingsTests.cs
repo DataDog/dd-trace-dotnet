@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -24,11 +25,11 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         public void WhenDirectLogSubmissionUrlIsProvided_UseIt(string ddSite)
         {
             var expected = "http://some_url.com";
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
+            var tracerSettings = GetTracerSettings(new()
             {
                 { ConfigurationKeys.DirectLogSubmission.Url, expected },
                 { ConfigurationKeys.Site, ddSite },
-            }));
+            });
 
             tracerSettings.LogSubmissionSettings.DirectLogSubmissionUrl.Should().Be(expected);
         }
@@ -40,11 +41,11 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         {
             var domain = "my-domain.net";
             var expected = "https://http-intake.logs.my-domain.net:443";
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
+            var tracerSettings = GetTracerSettings(new()
             {
                 { ConfigurationKeys.DirectLogSubmission.Url, url },
                 { ConfigurationKeys.Site, domain },
-            }));
+            });
 
             tracerSettings.LogSubmissionSettings.DirectLogSubmissionUrl.Should().Be(expected);
         }
@@ -53,7 +54,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         public void WhenNeitherSiteOrUrlAreProvided_UsesDefault()
         {
             var expected = "https://http-intake.logs.datadoghq.com:443";
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()));
+            var tracerSettings = GetTracerSettings(new());
 
             tracerSettings.LogSubmissionSettings.DirectLogSubmissionUrl.Should().Be(expected);
         }
@@ -63,10 +64,10 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         {
             var expected = new Dictionary<string, string> { { "test1", "value1" }, { "test2", "value2" }, };
 
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
+            var tracerSettings = GetTracerSettings(new()
             {
                 { ConfigurationKeys.GlobalTags, "test1:value1, test2:value2" },
-            }));
+            });
 
             tracerSettings.LogSubmissionSettings.DirectLogSubmissionGlobalTags
                           .Should()
@@ -78,10 +79,10 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         {
             var expected = new Dictionary<string, string> { { "test1", "value1" }, { "test2", "value2" }, };
 
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
+            var tracerSettings = GetTracerSettings(new()
             {
                 { "DD_TRACE_GLOBAL_TAGS", "test1:value1, test2:value2" },
-            }));
+            });
 
             tracerSettings.LogSubmissionSettings.DirectLogSubmissionGlobalTags
                .Should()
@@ -93,12 +94,12 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         {
             var expected = new Dictionary<string, string> { { "test1", "value1" }, { "test2", "value2" }, };
 
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
+            var tracerSettings = GetTracerSettings(new()
             {
                 { ConfigurationKeys.DirectLogSubmission.GlobalTags, "test1:value1, test2:value2" },
                 { ConfigurationKeys.GlobalTags, "test3:value3, test4:value4" },
                 { "DD_TRACE_GLOBAL_TAGS", "test5:value5, test6:value6" },
-            }));
+            });
 
             tracerSettings.LogSubmissionSettings.DirectLogSubmissionGlobalTags
                           .Should()
@@ -108,12 +109,12 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         [Fact]
         public void LogSpecificGlobalTagsOverrideTracerGlobalTagsEvenWhenEmpty()
         {
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
+            var tracerSettings = GetTracerSettings(new()
             {
                 { ConfigurationKeys.DirectLogSubmission.GlobalTags, string.Empty },
                 { ConfigurationKeys.GlobalTags, "test3:value3, test4:value4" },
                 { "DD_TRACE_GLOBAL_TAGS", "test5:value5, test6:value6" },
-            }));
+            });
 
             tracerSettings.LogSubmissionSettings.DirectLogSubmissionGlobalTags
                           .Should()
@@ -233,5 +234,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
 
             settings.LogsInjectionEnabled.Should().Be(expected);
         }
+
+        private TracerSettings GetTracerSettings(NameValueCollection settings)
+            => new TracerSettings(new NameValueConfigurationSource(settings), NullConfigurationTelemetry.Instance);
     }
 }

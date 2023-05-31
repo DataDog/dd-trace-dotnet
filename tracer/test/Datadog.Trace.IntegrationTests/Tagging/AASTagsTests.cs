@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -30,7 +31,7 @@ public class AASTagsTests
     public async Task AasTagsShouldBeSerialized()
     {
         var source = GetMockVariables();
-        var settings = new TracerSettings(source);
+        var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, spanSampler: null);
         var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
@@ -47,7 +48,7 @@ public class AASTagsTests
     [Fact]
     public async Task NoAasTagsIfNotInAASContext()
     {
-        var settings = new TracerSettings(null);
+        var settings = new TracerSettings(null, NullConfigurationTelemetry.Instance);
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, spanSampler: null);
         var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
@@ -71,7 +72,7 @@ public class AASTagsTests
         // Each non local root spans should contain only aas.site.name and aas.site.type tags
 
         var source = GetMockVariables();
-        var settings = new TracerSettings(source);
+        var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, spanSampler: null);
         var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 

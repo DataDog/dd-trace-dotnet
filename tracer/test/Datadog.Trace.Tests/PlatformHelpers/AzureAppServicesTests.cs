@@ -85,7 +85,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         public void IsRelevant_True_WhenVariableSetTrue()
         {
             var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(null, null, null, null);
-            var settings = new TracerSettings(vars);
+            var settings = new TracerSettings(vars, NullConfigurationTelemetry.Instance);
             Assert.True(settings.IsRunningInAzureAppService);
         }
 
@@ -125,7 +125,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         public void IsRelevant_False_WhenVariableDoesNotExist()
         {
             var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(null, null, null, null, addContextKey: false);
-            var metadata = new TracerSettings(vars);
+            var metadata = new TracerSettings(vars, NullConfigurationTelemetry.Instance);
             Assert.False(metadata.IsRunningInAzureAppService);
         }
 
@@ -204,7 +204,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         {
             // AAS Tags are handled at serialization now. So no tags should be set on spans
             var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
-            var settings = new TracerSettings(vars);
+            var settings = new TracerSettings(vars, NullConfigurationTelemetry.Instance);
             var tracer = TracerHelper.Create(settings);
             var spans = new List<ISpan>();
             var iterations = 5;

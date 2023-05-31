@@ -16,8 +16,8 @@ using Xunit.Sdk;
 
 namespace Datadog.Trace.Tests.Telemetry;
 
-[CollectionDefinition(nameof(TelemetryFactoryTests), DisableParallelization = true)]
-[Collection(nameof(TelemetryFactoryTests))]
+[CollectionDefinition("TelemetryTests", DisableParallelization = true)]
+[Collection("TelemetryTests")]
 [TelemetryRestorer]
 public class TelemetryFactoryTests
 {

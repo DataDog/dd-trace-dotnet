@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
@@ -540,7 +541,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         private static Tracer GetTracer(IAgentWriter writer = null, IConfigurationSource configSource = null)
         {
-            var settings = new TracerSettings(configSource);
+            var settings = new TracerSettings(configSource, NullConfigurationTelemetry.Instance);
             var agentWriter = writer ?? new Mock<IAgentWriter>().Object;
             var samplerMock = new Mock<ITraceSampler>();
 

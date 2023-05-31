@@ -189,7 +189,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var collection = new NameValueCollection { { key, value } };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
             object actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
         }
@@ -231,7 +231,7 @@ namespace Datadog.Trace.Tests.Configuration
             {
                 Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
                 IConfigurationSource source = new EnvironmentConfigurationSource();
-                return new TracerSettings(source);
+                return new TracerSettings(source, NullConfigurationTelemetry.Instance);
             }
         }
 
@@ -246,7 +246,7 @@ namespace Datadog.Trace.Tests.Configuration
             var config = new Dictionary<string, string> { [key] = value };
             string json = JsonConvert.SerializeObject(config);
             IConfigurationSource source = new JsonConfigurationSource(json);
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             object actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
@@ -303,7 +303,7 @@ namespace Datadog.Trace.Tests.Configuration
             object expectedValue)
         {
             IConfigurationSource source = new JsonConfigurationSource(value);
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             var actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
@@ -333,7 +333,7 @@ namespace Datadog.Trace.Tests.Configuration
             object expectedValue)
         {
             IConfigurationSource source = new JsonConfigurationSource(value);
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             var actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
@@ -352,7 +352,7 @@ namespace Datadog.Trace.Tests.Configuration
             };
 
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
 
             Assert.Equal(expectedValue, settings.HeaderTags);
         }

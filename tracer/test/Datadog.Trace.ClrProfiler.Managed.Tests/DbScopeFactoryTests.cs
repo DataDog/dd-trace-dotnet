@@ -8,6 +8,7 @@ using System.Collections.Specialized;
 using System.Data;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using DbType = Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.DbType;
@@ -82,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             // Set up tracer
             var collection = new NameValueCollection { { ConfigurationKeys.ServiceNameMappings, $"{dbType}:my-custom-type" } };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var tracerSettings = new TracerSettings(source);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
             var tracer = TracerHelper.Create(tracerSettings);
 
             // Create scope
@@ -101,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             // Set up tracer
             var collection = new NameValueCollection { { ConfigurationKeys.ServiceNameMappings, "something:my-custom-type" } };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var tracerSettings = new TracerSettings(source);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
             var tracer = TracerHelper.Create(tracerSettings);
 
             // Create scope
