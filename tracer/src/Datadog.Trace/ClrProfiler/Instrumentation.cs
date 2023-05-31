@@ -23,6 +23,7 @@ using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.ServiceFabric;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.ClrProfiler
@@ -106,7 +107,7 @@ namespace Datadog.Trace.ClrProfiler
                     Log.Error(ex, "ByRef instrumentation cannot be enabled: ");
                 }
 
-                TelemetryMetrics.Instance.Record(Distribution.InitTime, MetricTags.Component_ByRefPinvoke, sw.ElapsedMilliseconds);
+                TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_ByRefPinvoke, sw.ElapsedMilliseconds);
                 sw.Restart();
 
                 try
@@ -120,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler
                     Log.Error(ex, "CallTarget state ByRef cannot be enabled: ");
                 }
 
-                TelemetryMetrics.Instance.Record(Distribution.InitTime, MetricTags.Component_CallTargetStateByRefPinvoke, sw.ElapsedMilliseconds);
+                TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_CallTargetStateByRefPinvoke, sw.ElapsedMilliseconds);
                 sw.Restart();
 
                 try
@@ -135,7 +136,7 @@ namespace Datadog.Trace.ClrProfiler
                     Log.Error(ex, "Error initializing TraceAttribute instrumentation");
                 }
 
-                TelemetryMetrics.Instance.Record(Distribution.InitTime, MetricTags.Component_TraceAttributesPinvoke, sw.ElapsedMilliseconds);
+                TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_TraceAttributesPinvoke, sw.ElapsedMilliseconds);
                 sw.Restart();
             }
 
@@ -143,7 +144,7 @@ namespace Datadog.Trace.ClrProfiler
 
             var tracer = Tracer.Instance;
 
-            TelemetryMetrics.Instance.Record(Distribution.InitTime, MetricTags.Component_Managed, sw.ElapsedMilliseconds);
+            TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_Managed, sw.ElapsedMilliseconds);
             sw.Restart();
 
             try
@@ -158,7 +159,7 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error sending CallTarget integration definitions to native library");
             }
 
-            TelemetryMetrics.Instance.Record(Distribution.InitTime, MetricTags.Component_CallTargetDefsPinvoke, sw.ElapsedMilliseconds);
+            TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_CallTargetDefsPinvoke, sw.ElapsedMilliseconds);
             sw.Restart();
 
             try
@@ -170,7 +171,7 @@ namespace Datadog.Trace.ClrProfiler
                 Serverless.Error("Error while loading Serverless definitions", ex);
             }
 
-            TelemetryMetrics.Instance.Record(Distribution.InitTime, MetricTags.Component_Serverless, sw.ElapsedMilliseconds);
+            TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_Serverless, sw.ElapsedMilliseconds);
             sw.Restart();
 
             try
@@ -185,7 +186,7 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error sending CallTarget derived integration definitions to native library");
             }
 
-            TelemetryMetrics.Instance.Record(Distribution.InitTime, MetricTags.Component_CallTargetDerivedDefsPinvoke, sw.ElapsedMilliseconds);
+            TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_CallTargetDerivedDefsPinvoke, sw.ElapsedMilliseconds);
             sw.Restart();
 
             try
@@ -200,7 +201,7 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error sending CallTarget interface integration definitions to native library");
             }
 
-            TelemetryMetrics.Instance.Record(Distribution.InitTime, MetricTags.Component_CallTargetInterfaceDefsPinvoke, sw.ElapsedMilliseconds);
+            TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_CallTargetInterfaceDefsPinvoke, sw.ElapsedMilliseconds);
             sw.Restart();
 
             if (tracer is null)
@@ -234,7 +235,7 @@ namespace Datadog.Trace.ClrProfiler
                     Log.Error(ex, "Error initializing TraceMethods instrumentation");
                 }
 
-                TelemetryMetrics.Instance.Record(Distribution.InitTime, MetricTags.Component_TraceMethodsPinvoke, sw.ElapsedMilliseconds);
+                TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_TraceMethodsPinvoke, sw.ElapsedMilliseconds);
                 sw.Restart();
             }
 
@@ -269,7 +270,7 @@ namespace Datadog.Trace.ClrProfiler
                     Log.Error(ex, "DDIAST-0001-01: IAST could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
                 }
 
-                TelemetryMetrics.Instance.Record(Distribution.InitTime, MetricTags.Component_Iast, sw.ElapsedMilliseconds);
+                TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_Iast, sw.ElapsedMilliseconds);
                 sw.Restart();
             }
 
@@ -292,7 +293,7 @@ namespace Datadog.Trace.ClrProfiler
 
             Log.Debug("Initialization finished.");
 
-            TelemetryMetrics.Instance.Record(Distribution.InitTime, MetricTags.Total, swTotal.ElapsedMilliseconds);
+            TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Total, swTotal.ElapsedMilliseconds);
         }
 
         private static void RunShutdown()
@@ -454,7 +455,7 @@ namespace Datadog.Trace.ClrProfiler
 
                     var sw = Stopwatch.StartNew();
                     var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
-                    TelemetryMetrics.Instance.Record(Distribution.InitTime, MetricTags.Component_DiscoveryService, sw.ElapsedMilliseconds);
+                    TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_DiscoveryService, sw.ElapsedMilliseconds);
 
                     if (isDiscoverySuccessful)
                     {
@@ -506,7 +507,7 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Failed to initialize Remote Configuration management.");
             }
 
-            TelemetryMetrics.Instance.Record(Distribution.InitTime, MetricTags.Component_RCM, sw.ElapsedMilliseconds);
+            TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_RCM, sw.ElapsedMilliseconds);
         }
 
         internal static async Task InitializeLiveDebugger(LiveDebugger liveDebugger)
@@ -521,7 +522,7 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Failed to initialize Live Debugger");
             }
 
-            TelemetryMetrics.Instance.Record(Distribution.InitTime, MetricTags.Component_DynamicInstrumentation, sw.ElapsedMilliseconds);
+            TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_DynamicInstrumentation, sw.ElapsedMilliseconds);
         }
     }
 }

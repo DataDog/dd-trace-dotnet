@@ -25,7 +25,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         [PublicApi]
         public ImmutableExporterSettings(IConfigurationSource source)
-            : this(new ExporterSettings(source, TelemetryFactoryV2.GetConfigTelemetry()))
+            : this(new ExporterSettings(source, TelemetryFactory.Config))
         {
         }
 

@@ -66,7 +66,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         [PublicApi]
         public ExporterSettings()
-            : this(null, TelemetryFactoryV2.GetConfigTelemetry())
+            : this(null, TelemetryFactory.Config)
         {
         }
 
@@ -77,7 +77,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         [PublicApi]
         public ExporterSettings(IConfigurationSource? source)
-            : this(source, File.Exists, TelemetryFactoryV2.GetConfigTelemetry())
+            : this(source, File.Exists, TelemetryFactory.Config)
         {
         }
 

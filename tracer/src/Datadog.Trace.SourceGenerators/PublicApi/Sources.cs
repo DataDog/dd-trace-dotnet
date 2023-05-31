@@ -108,7 +108,7 @@ internal class Sources
                     {
                         get
                         {
-                            Datadog.Trace.Telemetry.Metrics.TelemetryMetrics.Instance.Record(
+                            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                                 (Datadog.Trace.Telemetry.Metrics.PublicApiUsage){{property.PublicApiGetter}});
                             return {{property.FieldName}};
                         }
@@ -119,7 +119,7 @@ internal class Sources
                     $$"""
                         set
                         {
-                            Datadog.Trace.Telemetry.Metrics.TelemetryMetrics.Instance.Record(
+                            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                                 (Datadog.Trace.Telemetry.Metrics.PublicApiUsage){{property.PublicApiSetter}});
                             {{property.FieldName}} = value;
                         }

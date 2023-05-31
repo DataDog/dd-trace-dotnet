@@ -45,6 +45,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             => new(source, telemetry);
 
         public static RemoteConfigurationSettings FromDefaultSource()
-            => FromSource(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
+            => FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
     }
 }

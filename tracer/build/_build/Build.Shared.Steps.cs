@@ -124,21 +124,22 @@ partial class Build
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {
-            EnsureExistingDirectory(NativeBuildDirectory);
+            DeleteDirectory(NativeLoaderProject.Directory / "bin");
 
             var lstNativeBinaries = new List<string>();
             foreach (var arch in OsxArchs)
             {
-                DeleteDirectory(NativeBuildDirectory);
+                var buildDirectory = NativeBuildDirectory + "_" + arch;
+                EnsureExistingDirectory(buildDirectory);
 
                 var envVariables = new Dictionary<string, string> { ["CMAKE_OSX_ARCHITECTURES"] = arch };
 
                 // Build native
                 CMake.Value(
-                    arguments: $"-B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}",
+                    arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}",
                     environmentVariables: envVariables);
                 CMake.Value(
-                    arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoader}",
+                    arguments: $"--build {buildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoader}",
                     environmentVariables: envVariables);
 
                 var sourceFile = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.dylib";
@@ -154,6 +155,8 @@ partial class Build
 
                 // Copy binary to the temporal destination
                 CopyFile(sourceFile, destFile, FileExistsPolicy.Overwrite);
+                DeleteFile(sourceFile);
+                DeleteFile(NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.static.a");
 
                 // Add library to the list
                 lstNativeBinaries.Add(destFile);
