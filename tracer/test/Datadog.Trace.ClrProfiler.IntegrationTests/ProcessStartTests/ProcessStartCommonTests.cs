@@ -78,6 +78,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     $"{testName}.SubmitsTracesOsx" :
                     $"{testName}.SubmitsTraces";
 
+            if (collectCommands && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // The collect command will have different spans depending on the dotnet version
+                // Because ArgumentList is not available in .NET Core 2.0 or .NET Framework
+                // and some tests are performed on ArgumentList
+#if NETFRAMEWORK || NETCOREAPP2_0
+                filename += ".netfxOrNetCore2";
+#endif
+            }
+
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(filename + $".Schema{metadataSchemaVersion.ToUpper()}")
                               .DisableRequireUniquePrefix();
