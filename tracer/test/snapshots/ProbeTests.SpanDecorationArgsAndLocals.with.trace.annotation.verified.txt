@@ -35,7 +35,7 @@
       language: dotnet,
       SpanDecorationArgsAndLocals: Run,
       version: 1.0.0,
-      _dd.dynamic.SpanDecorationArgsAndLocals.probe_id: Guid_3
+      _dd.di.SpanDecorationArgsAndLocals.probe_id: Guid_3
     }
   }
 ]

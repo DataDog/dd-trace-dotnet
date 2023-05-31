@@ -64,8 +64,18 @@
                 "value": "Maintenance"
               },
               "room": {
-                "isNull": "true",
-                "type": "Room"
+                "fields": {
+                  "Id": {
+                    "type": "String",
+                    "value": "Foo"
+                  },
+                  "Status": {
+                    "type": "RoomStatus",
+                    "value": "Maintenance"
+                  }
+                },
+                "type": "Room",
+                "value": "Room"
               }
             },
             "staticFields": {

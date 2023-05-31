@@ -13,7 +13,7 @@
       runtime-id: Guid_2,
       SpanDecorationSameTagsFirstErrorAsync: RunAsync,
       version: 1.0.0,
-      _dd.dynamic.SpanDecorationSameTagsFirstErrorAsync.probe_id: Guid_3,
+      _dd.di.SpanDecorationSameTagsFirstErrorAsync.probe_id: Guid_3,
       _dd.p.dm: -0
     },
     Metrics: {

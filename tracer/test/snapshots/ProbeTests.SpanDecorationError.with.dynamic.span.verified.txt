@@ -11,10 +11,10 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_2,
-      SpanDecorationError: Datadog.Trace.Debugger.Expressions.UndefinedValue,
+      SpanDecorationError: Instance=Datadog.Trace.Debugger.Expressions.UndefinedValue,
       version: 1.0.0,
-      _dd.dynamic.SpanDecorationError.evaluation_error: EvaluationError { Expression = this.error, Message = 'error' is not a member of type 'Samples.Probes.TestRuns.SmokeTests.SpanDecorationError' (Parameter 'propertyOrFieldName') },
-      _dd.dynamic.SpanDecorationError.probe_id: Guid_3,
+      _dd.di.SpanDecorationError.evaluation_error: EvaluationError { Expression = this.error, Message = 'error' is not a member of type 'Samples.Probes.TestRuns.SmokeTests.SpanDecorationError' },
+      _dd.di.SpanDecorationError.probe_id: Guid_3,
       _dd.p.dm: -0
     },
     Metrics: {

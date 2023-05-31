@@ -36,8 +36,8 @@
       SpanDecorationTwoTags: Run,
       SpanDecorationTwoTags2: 3,
       version: 1.0.0,
-      _dd.dynamic.SpanDecorationTwoTags.probe_id: Guid_3,
-      _dd.dynamic.SpanDecorationTwoTags2.probe_id: Guid_3
+      _dd.di.SpanDecorationTwoTags.probe_id: Guid_3,
+      _dd.di.SpanDecorationTwoTags2.probe_id: Guid_3
     }
   }
 ]

@@ -386,6 +386,7 @@ public class ProbesTests : TestHelper
         settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{40}"), "GUID");
         settings.AddSimpleScrubber("out.host: localhost", "out.host: debugger");
         settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: debugger");
+        settings.AddSimpleScrubber(" (Parameter 'propertyOrFieldName') ", " ");
         var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
         settings.UseFileName($"{nameof(ProbeTests)}.{testName}.{testNameSuffix}");
 

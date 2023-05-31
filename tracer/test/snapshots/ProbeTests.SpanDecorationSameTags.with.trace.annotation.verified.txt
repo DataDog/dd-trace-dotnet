@@ -35,7 +35,7 @@
       language: dotnet,
       SpanDecorationSameTags: 3,
       version: 1.0.0,
-      _dd.dynamic.SpanDecorationSameTags.probe_id: Guid_3
+      _dd.di.SpanDecorationSameTags.probe_id: Guid_3
     }
   }
 ]

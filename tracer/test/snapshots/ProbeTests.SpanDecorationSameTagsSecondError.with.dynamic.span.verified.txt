@@ -11,10 +11,10 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_2,
-      SpanDecorationSameTagsSecondError: Datadog.Trace.Debugger.Expressions.UndefinedValue,
+      SpanDecorationSameTagsSecondError: Instance=Datadog.Trace.Debugger.Expressions.UndefinedValue,
       version: 1.0.0,
-      _dd.dynamic.SpanDecorationSameTagsSecondError.evaluation_error: EvaluationError { Expression = this.error, Message = 'error' is not a member of type 'Samples.Probes.TestRuns.SmokeTests.SpanDecorationSameTagsSecondError' (Parameter 'propertyOrFieldName') },
-      _dd.dynamic.SpanDecorationSameTagsSecondError.probe_id: Guid_3,
+      _dd.di.SpanDecorationSameTagsSecondError.evaluation_error: EvaluationError { Expression = this.error, Message = 'error' is not a member of type 'Samples.Probes.TestRuns.SmokeTests.SpanDecorationSameTagsSecondError' },
+      _dd.di.SpanDecorationSameTagsSecondError.probe_id: Guid_3,
       _dd.p.dm: -0
     },
     Metrics: {

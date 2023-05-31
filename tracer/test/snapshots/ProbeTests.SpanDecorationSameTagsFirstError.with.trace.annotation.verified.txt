@@ -35,7 +35,7 @@
       language: dotnet,
       SpanDecorationSameTagsFirstError: Run,
       version: 1.0.0,
-      _dd.dynamic.SpanDecorationSameTagsFirstError.probe_id: Guid_3
+      _dd.di.SpanDecorationSameTagsFirstError.probe_id: Guid_3
     }
   }
 ]

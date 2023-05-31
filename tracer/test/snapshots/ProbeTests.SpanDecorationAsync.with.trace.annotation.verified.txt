@@ -35,7 +35,7 @@
       language: dotnet,
       SpanDecorationAsync: RunAsync,
       version: 1.0.0,
-      _dd.dynamic.SpanDecorationAsync.probe_id: Guid_3
+      _dd.di.SpanDecorationAsync.probe_id: Guid_3
     }
   }
 ]
