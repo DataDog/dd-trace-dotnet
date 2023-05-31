@@ -304,23 +304,21 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        public string GetSampleApplicationPath(string packageVersion = "", string framework = "")
+        public string GetSampleApplicationPath(string packageVersion = "", string framework = "", bool usePublishWithRID = false)
         {
-            var appFileName = GetSampleApplicationFileName();
-            var sampleAppPath = Path.Combine(GetSampleApplicationOutputDirectory(packageVersion: packageVersion, framework: framework), appFileName);
+            var appFileName = GetSampleApplicationFileName(usePublishWithRID);
+            var sampleAppPath = Path.Combine(GetSampleApplicationOutputDirectory(packageVersion: packageVersion, framework: framework, usePublishWithRID: usePublishWithRID), appFileName);
             return sampleAppPath;
         }
 
-        public string GetSampleApplicationFileName()
+        public string GetSampleApplicationFileName(bool usePublishWithRID = false)
         {
-            string extension = "exe";
-
-            if (IsCoreClr() || _samplesDirectory.Contains("aspnet"))
+            if (usePublishWithRID)
             {
-                extension = "dll";
+                return EnvironmentTools.IsWindows() ? $"{FullSampleName}.exe" : FullSampleName;
             }
 
-            return $"{FullSampleName}.{extension}";
+            return IsCoreClr() || _samplesDirectory.Contains("aspnet") ? $"{FullSampleName}.dll" : $"{FullSampleName}.exe";
         }
 
         public string GetTestCommandForSampleApplicationPath(string packageVersion = "", string framework = "")
@@ -413,7 +411,7 @@ namespace Datadog.Trace.TestHelpers
             return projectDir;
         }
 
-        public string GetSampleApplicationOutputDirectory(string packageVersion = "", string framework = "", bool usePublishFolder = true)
+        public string GetSampleApplicationOutputDirectory(string packageVersion = "", string framework = "", bool usePublishFolder = true, bool usePublishWithRID = false)
         {
             var targetFramework = string.IsNullOrEmpty(framework) ? GetTargetFramework() : framework;
             var binDir = Path.Combine(
@@ -429,13 +427,24 @@ namespace Datadog.Trace.TestHelpers
                     EnvironmentTools.GetBuildConfiguration(),
                     "publish");
             }
-            else if (EnvironmentTools.GetOS() == "win")
+            else if (EnvironmentTools.GetOS() == "win" && !usePublishWithRID)
             {
                 outputDir = Path.Combine(
                     binDir,
                     packageVersion,
                     EnvironmentTools.GetBuildConfiguration(),
                     targetFramework);
+            }
+            else if (usePublishWithRID)
+            {
+                var rid = $"{EnvironmentTools.GetOS()}-{(EnvironmentTools.GetPlatform() == "Arm64" ? "arm64" : "x64")}";
+                outputDir = Path.Combine(
+                    binDir,
+                    packageVersion,
+                    EnvironmentTools.GetBuildConfiguration(),
+                    targetFramework,
+                    rid,
+                    "publish");
             }
             else if (usePublishFolder)
             {
