@@ -39,12 +39,6 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] CommandShellBytes = new byte[] { 169, 99, 109, 100, 46, 115, 104, 101, 108, 108 };
 #endif
-        // ExitCodeBytes = MessagePack.Serialize("cmd.exit_code");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> ExitCodeBytes => new byte[] { 173, 99, 109, 100, 46, 101, 120, 105, 116, 95, 99, 111, 100, 101 };
-#else
-        private static readonly byte[] ExitCodeBytes = new byte[] { 173, 99, 109, 100, 46, 101, 120, 105, 116, 95, 99, 111, 100, 101 };
-#endif
         // TruncatedBytes = MessagePack.Serialize("cmd.truncated");
 #if NETCOREAPP
         private static ReadOnlySpan<byte> TruncatedBytes => new byte[] { 173, 99, 109, 100, 46, 116, 114, 117, 110, 99, 97, 116, 101, 100 };
@@ -61,7 +55,6 @@ namespace Datadog.Trace.Tagging
                 "cmd.component" => Component,
                 "cmd.exec" => CommandExec,
                 "cmd.shell" => CommandShell,
-                "cmd.exit_code" => ExitCode,
                 "cmd.truncated" => Truncated,
                 _ => base.GetTag(key),
             };
@@ -82,9 +75,6 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "cmd.shell": 
                     CommandShell = value;
-                    break;
-                case "cmd.exit_code": 
-                    ExitCode = value;
                     break;
                 case "cmd.truncated": 
                     Truncated = value;
@@ -123,11 +113,6 @@ namespace Datadog.Trace.Tagging
             if (CommandShell is not null)
             {
                 processor.Process(new TagItem<string>("cmd.shell", CommandShell, CommandShellBytes));
-            }
-
-            if (ExitCode is not null)
-            {
-                processor.Process(new TagItem<string>("cmd.exit_code", ExitCode, ExitCodeBytes));
             }
 
             if (Truncated is not null)
@@ -172,13 +157,6 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("cmd.shell (tag):")
                   .Append(CommandShell)
-                  .Append(',');
-            }
-
-            if (ExitCode is not null)
-            {
-                sb.Append("cmd.exit_code (tag):")
-                  .Append(ExitCode)
                   .Append(',');
             }
 

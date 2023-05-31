@@ -18,11 +18,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 {
     internal static class ProcessStartCommon
     {
-        internal const IntegrationId IntegrationId = Configuration.IntegrationId.Process;
+        private const IntegrationId IntegrationId = Configuration.IntegrationId.Process;
+        private const string OperationName = "command_execution";
+        private const string ServiceName = "command";
+        private const int MaxCommandLineLength = 4096;
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessStartCommon));
-        internal const string OperationName = "command_execution";
-        internal const string ServiceName = "command";
-        internal const int MaxCommandLineLength = 4096;
 
         internal static Scope CreateScope(ProcessStartInfo info)
         {
@@ -38,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             return null;
         }
 
-        internal static Scope CreateScope(string filename, IDictionary<string, string> environmentVariables, bool useShellExecute, string arguments, Collection<string> argumentList = null)
+        private static Scope CreateScope(string filename, IDictionary<string, string> environmentVariables, bool useShellExecute, string arguments, Collection<string> argumentList = null)
         {
             var tracer = Tracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
@@ -70,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             return scope;
         }
 
-        internal static ProcessCommandStartTags PopulateTags(string filename, IDictionary<string, string> environmentVariables, bool useShellExecute, string arguments, Collection<string> argumentList)
+        private static ProcessCommandStartTags PopulateTags(string filename, IDictionary<string, string> environmentVariables, bool useShellExecute, string arguments, Collection<string> argumentList)
         {
             // Environment variables
             var variablesTruncated = EnvironmentVariablesScrubber.ScrubEnvironmentVariables(environmentVariables);
@@ -158,7 +159,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             return tags;
         }
 
-        internal static string Truncate(string value, int maxLength, out bool truncated)
+        private static string Truncate(string value, int maxLength, out bool truncated)
         {
             truncated = false;
             if (string.IsNullOrEmpty(value) || value.Length <= maxLength)
@@ -168,25 +169,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 
             truncated = true;
             return value.Substring(0, maxLength);
-        }
-
-        internal static void SetExitCode(object instance)
-        {
-            try
-            {
-                if (!instance.TryDuckCast<ProcessProxy>(out var process))
-                {
-                    return;
-                }
-
-                var scope = Tracer.Instance.InternalActiveScope;
-                var span = scope?.Span;
-                span?.Tags.SetTag(Trace.Tags.ProcessExitCode, process.ExitCode.ToString());
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error setting exit code.");
-            }
         }
     }
 }

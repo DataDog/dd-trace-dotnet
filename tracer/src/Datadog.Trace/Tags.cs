@@ -626,7 +626,6 @@ namespace Datadog.Trace
         internal const string ProcessComponent = "cmd.component";
         internal const string ProcessCommandExec = "cmd.exec";
         internal const string ProcessCommandShell = "cmd.shell";
-        internal const string ProcessExitCode = "cmd.exit_code";
         internal const string ProcessTruncated = "cmd.truncated";
 
         internal const string TagPropagationError = "_dd.propagation_error";

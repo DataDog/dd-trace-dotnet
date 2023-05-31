@@ -21,7 +21,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private static readonly Regex StackRegex = new(@"      error.stack:(\n|\r){1,2}.*(\n|\r){1,2}.*,(\r|\n){1,2}");
         private static readonly Regex ErrorMsgRegex = new(@"      error.msg:.*,(\r|\n){1,2}");
-        private static readonly Regex ExitCodeRegex = new(@"cmd\.exit_code: (\d+),", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         public ProcessStartCommonTests(ITestOutputHelper output)
             : base("ProcessStart", output)
@@ -71,7 +70,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddRegexScrubber(ExitCodeRegex, string.Empty);
             settings.AddRegexScrubber(StackRegex, string.Empty);
             settings.AddRegexScrubber(ErrorMsgRegex, string.Empty);
             var filename = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ?

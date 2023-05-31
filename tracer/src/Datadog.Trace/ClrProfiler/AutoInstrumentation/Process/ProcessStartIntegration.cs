@@ -62,7 +62,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         /// <returns>CallTargetReturn</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
-            // ProcessStartCommon.SetExitCode(instance);
             state.Scope.DisposeWithException(exception);
             return new CallTargetReturn<TReturn>(returnValue);
         }

@@ -25,9 +25,6 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.ProcessCommandShell)]
         public string CommandShell { get; set; }
 
-        [Tag(Trace.Tags.ProcessExitCode)]
-        public string ExitCode { get; set; }
-
         [Tag(Trace.Tags.ProcessTruncated)]
         public string Truncated { get; set; }
     }
