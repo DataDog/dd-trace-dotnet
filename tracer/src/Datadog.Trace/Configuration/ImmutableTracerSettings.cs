@@ -9,7 +9,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
@@ -261,7 +260,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public IReadOnlyDictionary<string, string> GrpcTags { get; }
 
-        internal bool HeaderTagsNormalizationFixEnabled { get; set; }
+        internal bool HeaderTagsNormalizationFixEnabled { get; }
 
         /// <summary>
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
