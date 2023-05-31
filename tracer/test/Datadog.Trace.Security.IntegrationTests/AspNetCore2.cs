@@ -49,10 +49,12 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
     }
 
+    [Collection("IisTests")]
+    [Trait("Category", "LinuxUnsupported")]
     public class AspNetCore2TestsSecurityEnabledWithDefaultExternalRulesFileIIS : AspNetCoreSecurityEnabledWithExternalRulesFileIIS
     {
         public AspNetCore2TestsSecurityEnabledWithDefaultExternalRulesFileIIS(IisFixture fixture, ITestOutputHelper outputHelper)
-            : base("AspNetCore2", fixture, outputHelper, "/shutdown", ruleFile: AppDomain.CurrentDomain.BaseDirectory + DefaultRuleFile, testName: "AspNetCore2.SecurityEnabled")
+            : base("AspNetCore2", fixture, outputHelper, "/shutdown", IisAppType.AspNetCoreOutOfProcess, ruleFile: AppDomain.CurrentDomain.BaseDirectory + DefaultRuleFile, testName: "AspNetCore2.SecurityEnabled")
         {
         }
     }

@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using VerifyTests;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -26,8 +27,8 @@ namespace Datadog.Trace.Security.IntegrationTests
 
     public abstract class AspNetCoreSecurityEnabledWithExternalRulesFileIIS : AspNetCoreWithExternalRulesFileBaseIIS
     {
-        public AspNetCoreSecurityEnabledWithExternalRulesFileIIS(string sampleName, IisFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, string ruleFile = null, string testName = null)
-            : base(sampleName, fixture, outputHelper, shutdownPath, enableSecurity: true, ruleFile: ruleFile, testName: testName)
+        public AspNetCoreSecurityEnabledWithExternalRulesFileIIS(string sampleName, IisFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, IisAppType appType, string ruleFile = null, string testName = null)
+            : base(sampleName, fixture, outputHelper, shutdownPath, appType, enableSecurity: true, ruleFile: ruleFile, testName: testName)
         {
         }
 
@@ -38,7 +39,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             TryStartApp();
             var agent = Fixture.Agent;
-
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, (int)expectedStatusCode, sanitisedUrl);
             await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
@@ -78,6 +78,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestHeaderRequest(string test, HttpStatusCode expectedStatusCode, string url)
         {
+            VerifierSettings.DisableRequireUniquePrefix();
             await TryStartApp();
             var agent = Fixture.Agent;
 
@@ -132,12 +133,13 @@ namespace Datadog.Trace.Security.IntegrationTests
 
     public abstract class AspNetCoreWithExternalRulesFileBaseIIS : AspNetBase, IClassFixture<IisFixture>
     {
-        public AspNetCoreWithExternalRulesFileBaseIIS(string sampleName, IisFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, bool enableSecurity = true, string ruleFile = null, string testName = null)
+        public AspNetCoreWithExternalRulesFileBaseIIS(string sampleName, IisFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, IisAppType appType, bool enableSecurity = true, string ruleFile = null, string testName = null)
             : base(sampleName, outputHelper, shutdownPath ?? "/shutdown", testName: testName, samplesDir: "test\\test-applications\\security")
         {
             EnableSecurity = enableSecurity;
             Fixture = fixture;
             RuleFile = ruleFile;
+            AppType = appType;
         }
 
         protected IisFixture Fixture { get; }
@@ -145,6 +147,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         protected bool EnableSecurity { get; }
 
         protected string RuleFile { get; }
+
+        protected IisAppType AppType { get; }
 
         public override void Dispose()
         {
@@ -156,7 +160,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, RuleFile);
             SetEnvironmentVariable(ConfigurationKeys.AppSec.Enabled, EnableSecurity.ToString());
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "True");
-            Fixture.TryStartIis(this, IisAppType.AspNetCoreOutOfProcess);
+            Fixture.TryStartIis(this, AppType);
             SetHttpPort(Fixture.HttpPort);
         }
     }
