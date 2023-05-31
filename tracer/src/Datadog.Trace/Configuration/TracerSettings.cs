@@ -13,7 +13,6 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -123,18 +122,18 @@ namespace Datadog.Trace.Configuration
                                          .AsInt32(defaultValue: 100);
 
             GlobalTags = config
-                         // backwards compatibility for names used in the past
+                        // backwards compatibility for names used in the past
                         .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
                         .AsDictionary()
-                         // Filter out tags with empty keys or empty values, and trim whitespace
+                       // Filter out tags with empty keys or empty values, and trim whitespace
                        ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                         .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim())
-                         // default value (empty)
+                      // default value (empty)
                       ?? (IDictionary<string, string>)new ConcurrentDictionary<string, string>();
 
             var inputHeaderTags = config
-                                 .WithKeys(ConfigurationKeys.HeaderTags)
-                                 .AsDictionary(allowOptionalMappings: true) ??
+                                     .WithKeys(ConfigurationKeys.HeaderTags)
+                                     .AsDictionary(allowOptionalMappings: true) ??
                                   // default value (empty)
                                   new Dictionary<string, string>();
 
@@ -164,10 +163,10 @@ namespace Datadog.Trace.Configuration
                                         validator: null);
 
             ServiceNameMappings = config
-                                     .WithKeys(ConfigurationKeys.ServiceNameMappings)
-                                     .AsDictionary()
-                                    ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                                    .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+               .WithKeys(ConfigurationKeys.ServiceNameMappings)
+               .AsDictionary()
+              ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+               .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
             TracerMetricsEnabled = config
                                   .WithKeys(ConfigurationKeys.TracerMetricsEnabled)
@@ -292,9 +291,9 @@ namespace Datadog.Trace.Configuration
                           .AsString(string.Empty);
 
             var grpcTags = config
-                          .WithKeys(ConfigurationKeys.GrpcTags)
-                          .AsDictionary(allowOptionalMappings: true)
-                           // default value (empty)
+                              .WithKeys(ConfigurationKeys.GrpcTags)
+                              .AsDictionary(allowOptionalMappings: true)
+                              // default value (empty)
                         ?? new Dictionary<string, string>();
 
             // Filter out tags with empty keys or empty values, and trim whitespaces

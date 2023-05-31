@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -23,7 +22,6 @@ namespace Datadog.Trace.Configuration
     public class ImmutableTracerSettings
     {
         private readonly DomainMetadata _domainMetadata;
-        private readonly ConcurrentDictionary<string, string> _serviceNameCache = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImmutableTracerSettings"/> class
@@ -91,7 +89,7 @@ namespace Datadog.Trace.Configuration
             PeerServiceTagsEnabled = settings.PeerServiceTagsEnabled;
             RemoveClientServiceNamesEnabled = settings.RemoveClientServiceNamesEnabled;
             MetadataSchemaVersion = settings.MetadataSchemaVersion;
-            ServiceNameMappings = settings.ServiceNameMappings;
+            ServiceNameMappings = settings.ServiceNameMappings ?? new Dictionary<string, string>();
             TraceBufferSize = settings.TraceBufferSize;
             TraceBatchInterval = settings.TraceBatchInterval;
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
@@ -324,7 +322,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets configuration values for changing service names based on configuration
         /// </summary>
-        internal IDictionary<string, string>? ServiceNameMappings { get; }
+        internal IDictionary<string, string> ServiceNameMappings { get; }
 
         /// <summary>
         /// Gets a value indicating the size in bytes of the trace buffer
