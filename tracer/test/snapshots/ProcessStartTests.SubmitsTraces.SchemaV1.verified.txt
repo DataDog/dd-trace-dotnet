@@ -92,6 +92,7 @@ Path=testPath
     Type: system,
     Error: 1,
     Tags: {
+      cmd.component: process,
       cmd.environment_variables:
 Path=testPath
 ,
