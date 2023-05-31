@@ -11,6 +11,8 @@ namespace Datadog.Trace.Iast;
 
 internal static class IastUtils
 {
+    // From: https://probablydance.com/2018/06/16/fibonacci-hashing-the-optimization-that-the-world-forgot-or-a-better-alternative-to-integer-modulo/
+    // (Although, not sure how relevant it is in this case)
     private const int GoldenRatio = 1618033987;
 
     private const int StartHash = 17;

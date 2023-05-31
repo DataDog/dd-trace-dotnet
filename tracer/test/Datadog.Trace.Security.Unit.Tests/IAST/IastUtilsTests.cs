@@ -18,10 +18,23 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
         [InlineData("ab", -24234380)]
         [InlineData("abc", 1247340381)]
         [InlineData("𐐷", -1450785452)]
-        public void Test_GetStaticHashCode(string input, int result)
+        public void GetStaticHashCode_IsDeterministic(string input, int result)
         {
             var i = input.GetStaticHashCode();
             i.Should().Be(result);
+        }
+
+        [Fact]
+        public void GetStaticHashCode_Vulnerability_GetHashCode_IsDeterministic()
+        {
+            var source = new Source(2, "name", "sqlvalue1");
+            var source2 = new Source(3, "name2", "sql_value2");
+            var ranges = new Range[] { new Range(0, 2, source), new Range(2, 2, source2) };
+            var evidence = new Evidence("sql_query", ranges);
+            var vulnerability = new Vulnerability("sqli", new Location(), evidence);
+
+            var i = vulnerability.GetHashCode();
+            i.Should().Be(453619706);
         }
     }
 }
