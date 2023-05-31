@@ -99,10 +99,23 @@ namespace Datadog.Trace.IntegrationTests
         private static ITelemetryTransport GetAgentOnlyTransport(Uri telemetryUri)
         {
             var transport = TelemetryTransportFactory.Create(
-                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, agentProxyEnabled: true, heartbeatInterval: HeartbeatInterval),
+                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, agentProxyEnabled: true, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, v2Enabled: false, metricsEnabled: false),
                 new ImmutableExporterSettings(new ExporterSettings { AgentUri = telemetryUri }));
             transport.Should().HaveCount(1);
             transport[0].Should().BeOfType<AgentTelemetryTransport>();
+            return transport[0];
+        }
+
+        private static ITelemetryTransport GetAgentlessOnlyTransport(Uri telemetryUri, string apiKey)
+        {
+            var agentlessSettings = new TelemetrySettings.AgentlessSettings(telemetryUri, apiKey);
+
+            var transport = TelemetryTransportFactory.Create(
+                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings, agentProxyEnabled: false, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, v2Enabled: false, metricsEnabled: false),
+                new ImmutableExporterSettings(new ExporterSettings()));
+
+            transport.Should().HaveCount(1);
+            transport[0].Should().BeOfType<AgentlessTelemetryTransport>();
             return transport[0];
         }
 

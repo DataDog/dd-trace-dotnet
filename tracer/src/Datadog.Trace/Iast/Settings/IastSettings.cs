@@ -92,6 +92,6 @@ internal class IastSettings
 
     public static IastSettings FromDefaultSources()
     {
-        return new IastSettings(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
+        return new IastSettings(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
     }
 }
