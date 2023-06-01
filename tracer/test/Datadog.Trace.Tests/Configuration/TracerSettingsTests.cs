@@ -407,6 +407,51 @@ namespace Datadog.Trace.Tests.Configuration
             settings.StatsComputationEnabled.Should().Be(expected);
         }
 
+        [Fact]
+        public void StatsComputationEnabledWhenDeprecatedGCPFunction()
+        {
+            System.Environment.SetEnvironmentVariable("FUNCTION_NAME", "function_name");
+            System.Environment.SetEnvironmentVariable("GCP_PROJECT", "project_name");
+
+            var source = CreateConfigurationSource();
+            var settings = new TracerSettings(source);
+
+            settings.StatsComputationEnabled.Should().Be(true);
+
+            System.Environment.SetEnvironmentVariable("FUNCTION_NAME", null);
+            System.Environment.SetEnvironmentVariable("GCP_PROJECT", null);
+        }
+
+        [Fact]
+        public void StatsComputationEnabledWhenNewerGCPFunction()
+        {
+            System.Environment.SetEnvironmentVariable("K_SERVICE", "function_name");
+            System.Environment.SetEnvironmentVariable("FUNCTION_TARGET", "target_name");
+
+            var source = CreateConfigurationSource();
+            var settings = new TracerSettings(source);
+
+            settings.StatsComputationEnabled.Should().Be(true);
+
+            System.Environment.SetEnvironmentVariable("K_SERVICE", null);
+            System.Environment.SetEnvironmentVariable("FUNCTION_TARGET", null);
+        }
+
+        [Fact]
+        public void StatsComputationEnabledWhenAzureFunction()
+        {
+            System.Environment.SetEnvironmentVariable("AzureWebJobsScriptRoot", "/home/site/wwwroot");
+            System.Environment.SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "4");
+
+            var source = CreateConfigurationSource();
+            var settings = new TracerSettings(source);
+
+            settings.StatsComputationEnabled.Should().Be(true);
+
+            System.Environment.SetEnvironmentVariable("AzureWebJobsScriptRoot", null);
+            System.Environment.SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", null);
+        }
+
         [Theory]
         [MemberData(nameof(Int32TestCases), 10)]
         public void StatsComputationInterval(string value, int expected)

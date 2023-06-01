@@ -137,7 +137,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             callTargetDefinitions = null;
         }
 
-        internal static void MaybeStartMiniAgent()
+        internal static void MaybeStartMiniAgent(Process process)
         {
             if (!IsGCPFunction && !IsAzureFunction)
             {
@@ -167,7 +167,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
             try
             {
-                Process process = new Process();
                 process.StartInfo.FileName = rustBinaryPath;
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.RedirectStandardOutput = true;

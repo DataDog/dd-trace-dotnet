@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -133,7 +134,7 @@ namespace Datadog.Trace
                         return _instance;
                     }
 
-                    Serverless.MaybeStartMiniAgent();
+                    Serverless.MaybeStartMiniAgent(new Process());
 
                     instance = new Tracer(tracerManager: null); // don't replace settings, use existing
                     _instance = instance;

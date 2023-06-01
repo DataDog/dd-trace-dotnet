@@ -5,10 +5,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests
@@ -202,6 +204,16 @@ namespace Datadog.Trace.Tests
         public void GetIntegrationTypeVoid()
         {
             Serverless.GetIntegrationType("System.Void", 1).Should().Be("Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS.LambdaNoParamVoid");
+        }
+
+        [Fact]
+        public void DoesntSpawnMiniAgentInNonFunctionEnvironments()
+        {
+            var processMock = new Mock<Process>();
+            processMock.Setup(mock => mock.Start());
+            Assert.Equal(typeof(string), processMock.Object.GetType());
+            // Serverless.MaybeStartMiniAgent(processMock.Object);
+            processMock.Verify(x => x.Start(), Times.Never());
         }
     }
 }
