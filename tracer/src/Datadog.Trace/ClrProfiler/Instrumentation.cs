@@ -445,7 +445,6 @@ namespace Datadog.Trace.ClrProfiler
         {
             // Service Name must be lowercase, otherwise the agent will not be able to find the service
             var serviceName = TraceUtil.NormalizeTag(tracer.Settings.ServiceName ?? tracer.DefaultServiceName);
-            var configurationManager = tracer.TracerManager.RemoteConfigurationManager;
             var discoveryService = tracer.TracerManager.DiscoveryService;
 
             Task.Run(
