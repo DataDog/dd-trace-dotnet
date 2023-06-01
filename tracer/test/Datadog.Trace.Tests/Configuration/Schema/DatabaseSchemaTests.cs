@@ -4,8 +4,11 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Linq;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
+using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
 
@@ -14,48 +17,92 @@ namespace Datadog.Trace.Tests.Configuration.Schema
     public class DatabaseSchemaTests
     {
         private const string DefaultServiceName = "MyApplication";
-        private readonly NamingSchema _namingSchemaV0;
-        private readonly NamingSchema _namingSchemaV1;
-
-        public DatabaseSchemaTests()
+        private readonly string[] _unmappedKeys = { "elasticsearch", "postgres", "custom-service" };
+        private readonly Dictionary<string, string> _mappings = new()
         {
-            var mappings = new Dictionary<string, string>
+            { "sql-server", "custom-db" },
+            { "http-client", "some-service" },
+            { "mongodb", "my-mongo" },
+        };
+
+        public static IEnumerable<object[]> GetAllConfigs()
+            => from schemaVersion in new object[] { SchemaVersion.V0, SchemaVersion.V1 }
+               from peerServiceTagsEnabled in new[] { true, false }
+               from removeClientServiceNamesEnabled in new[] { true, false }
+               select new[] { schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled };
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void GetOperationNameIsCorrect(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var databaseType = "DbCommand";
+            var expectedValue = $"{databaseType}.query";
+
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            namingSchema.Database.GetOperationName(databaseType).Should().Be(expectedValue);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void RetrievesMappedServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+
+            foreach (var kvp in _mappings)
             {
-                { "sql-server", "custom-db" },
-                { "http-client", "some-service" },
-                { "mongodb", "my-mongo" },
+                namingSchema.Database.GetServiceName(kvp.Key).Should().Be(kvp.Value);
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void RetrievesUnmappedServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+
+            foreach (var key in _unmappedKeys)
+            {
+                var expectedServiceName = schemaVersion switch
+                {
+                    SchemaVersion.V0 when removeClientServiceNamesEnabled == false => $"{DefaultServiceName}-{key}",
+                    _ => DefaultServiceName,
+                };
+
+                namingSchema.Database.GetServiceName(key).Should().Be(expectedServiceName);
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void CreateMongoDbTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var expectedType = schemaVersion switch
+            {
+                SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(MongoDbTags),
+                _ => typeof(MongoDbV1Tags),
             };
 
-            _namingSchemaV0 = new NamingSchema(SchemaVersion.V0, DefaultServiceName, mappings);
-            _namingSchemaV1 = new NamingSchema(SchemaVersion.V1, DefaultServiceName, mappings);
-        }
-
-        [Fact]
-        public void GetOperationNameIsCorrect()
-        {
-            var databaseType = "DbCommand";
-
-            _namingSchemaV0.Database.GetOperationName(databaseType).Should().Be($"{databaseType}.query");
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            namingSchema.Database.CreateMongoDbTags().Should().BeOfType(expectedType);
         }
 
         [Theory]
-        [InlineData("sql-server", "custom-db")]
-        [InlineData("http-client", "some-service")]
-        [InlineData("mongodb", "my-mongo")]
-        public void RetrievesMappedServiceNames(string serviceName, string expected)
+        [MemberData(nameof(GetAllConfigs))]
+        public void CreateSqlTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
-            _namingSchemaV0.Database.GetServiceName(serviceName).Should().Be(expected);
-            _namingSchemaV1.Database.GetServiceName(serviceName).Should().Be(expected);
-        }
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var expectedType = schemaVersion switch
+            {
+                SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(SqlTags),
+                _ => typeof(SqlV1Tags),
+            };
 
-        [Theory]
-        [InlineData("elasticsearch")]
-        [InlineData("postgres")]
-        [InlineData("custom-service")]
-        public void RetrievesUnmappedServiceNames(string serviceName)
-        {
-            _namingSchemaV0.Database.GetServiceName(serviceName).Should().Be($"{DefaultServiceName}-{serviceName}");
-            _namingSchemaV1.Database.GetServiceName(serviceName).Should().Be(DefaultServiceName);
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            namingSchema.Database.CreateSqlTags().Should().BeOfType(expectedType);
         }
     }
 }
