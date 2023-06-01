@@ -506,6 +506,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.InstrumentedTests",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.V4Isolated", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated\Samples.AzureFunctions.V4Isolated.csproj", "{BDEE131F-CCF5-49BD-9764-9C4A8864CE4E}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AWS.SimpleNotificationService", "tracer\test\test-applications\integrations\Samples.AWS.SimpleNotificationService\Samples.AWS.SimpleNotificationService.csproj", "{901AC4F9-7DE5-4D13-85FD-384382E29F11}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.GraphQL7", "tracer\test\test-applications\integrations\Samples.GraphQL7\Samples.GraphQL7.csproj", "{A996927A-9222-43F4-8552-810B69FF04DF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Security.IntegrationTests", "tracer\test\Datadog.Trace.Security.IntegrationTests\Datadog.Trace.Security.IntegrationTests.csproj", "{E774F1F8-B87C-4082-BD15-04B880B4C016}"
