@@ -4,21 +4,22 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 {
     internal static class CachedMetadataHelper<TMarkerType>
     {
-        private static readonly Type MetadataType;
+        private static readonly ActivatorHelper MetadataActivator;
 
         static CachedMetadataHelper()
         {
-            MetadataType = typeof(TMarkerType).Assembly.GetType("Grpc.Core.Metadata");
+            MetadataActivator = new ActivatorHelper(typeof(TMarkerType).Assembly.GetType("Grpc.Core.Metadata"));
         }
 
         /// <summary>
         /// Creates a Grpc.Core.Metadata object
         /// </summary>
-        public static object CreateMetadata() => Activator.CreateInstance(MetadataType);
+        public static object CreateMetadata() => MetadataActivator.CreateInstance();
     }
 }

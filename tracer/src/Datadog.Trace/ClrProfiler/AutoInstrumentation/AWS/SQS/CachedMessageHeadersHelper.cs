@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
@@ -17,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         private const string StringDataType = "String";
 
         private static readonly Func<string, object> _createMessageAttributeValue;
-        private static readonly Type _dictionaryType;
+        private static readonly ActivatorHelper DictionaryActivator;
 
         static CachedMessageHeadersHelper()
         {
@@ -48,12 +49,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             _createMessageAttributeValue = (Func<string, object>)createMessageAttributeValueMethod.CreateDelegate(typeof(Func<string, object>));
 
             // Initialize delegate for creating a Dictionary<string, MessageAttributeValue> object
-            _dictionaryType = typeof(Dictionary<,>).MakeGenericType(typeof(string), messageAttributeValueType);
+            DictionaryActivator = new ActivatorHelper(typeof(Dictionary<,>).MakeGenericType(typeof(string), messageAttributeValueType));
         }
 
         public static IDictionary CreateMessageAttributes()
         {
-            return (IDictionary)Activator.CreateInstance(_dictionaryType);
+            return (IDictionary)DictionaryActivator.CreateInstance();
         }
 
         public static object CreateMessageAttributeValue(string value)

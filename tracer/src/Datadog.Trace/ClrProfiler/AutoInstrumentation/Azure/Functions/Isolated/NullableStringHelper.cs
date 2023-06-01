@@ -7,16 +7,17 @@
 #nullable enable
 using System;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
     internal static class NullableStringHelper<TMarkerType>
     {
-        private static readonly Type NullableStringType;
+        private static readonly ActivatorHelper NullableActivator;
 
         static NullableStringHelper()
         {
-            NullableStringType = typeof(TMarkerType).Assembly.GetType("NullableString")!;
+            NullableActivator = new ActivatorHelper(typeof(TMarkerType).Assembly.GetType("NullableString"));
         }
 
         /// <summary>
@@ -24,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         /// </summary>
         public static object CreateNullableString(string value)
         {
-            var nullableString = Activator.CreateInstance(NullableStringType)!;
+            var nullableString = NullableActivator.CreateInstance();
             nullableString.DuckCast<INullableString>().Value = value;
             return nullableString;
         }

@@ -5,16 +5,17 @@
 
 using System;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 {
     internal static class CachedMessageHeadersHelper<TMarkerType>
     {
-        private static readonly Type _headersType;
+        private static readonly ActivatorHelper HeadersActivator;
 
         static CachedMessageHeadersHelper()
         {
-            _headersType = typeof(TMarkerType).Assembly.GetType("Confluent.Kafka.Headers");
+            HeadersActivator = new ActivatorHelper(typeof(TMarkerType).Assembly.GetType("Confluent.Kafka.Headers"));
         }
 
         /// <summary>
@@ -23,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <returns>A proxy for the new Headers object</returns>
         public static IHeaders CreateHeaders()
         {
-            var headers = Activator.CreateInstance(_headersType);
+            var headers = HeadersActivator.CreateInstance();
             return headers.DuckCast<IHeaders>();
         }
     }
