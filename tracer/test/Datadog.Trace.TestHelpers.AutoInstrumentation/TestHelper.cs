@@ -152,7 +152,8 @@ namespace Datadog.Trace.TestHelpers
                 aspNetCorePort: aspNetCorePort,
                 processToProfile: executable,
                 enableSecurity: enableSecurity,
-                externalRulesFile: externalRulesFile);
+                externalRulesFile: externalRulesFile,
+                ignoreProfilerProcessesVar: usePublishWithRID);
 
             Output.WriteLine($"ProcessId: {process.Id}");
 

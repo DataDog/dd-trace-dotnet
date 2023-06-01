@@ -185,7 +185,8 @@ namespace Datadog.Trace.TestHelpers
             IDictionary<string, string> environmentVariables,
             string processToProfile = null,
             bool? enableSecurity = null,
-            string externalRulesFile = null)
+            string externalRulesFile = null,
+            bool ignoreProfilerProcessesVar = false)
         {
             string profilerEnabled = AutomaticInstrumentationEnabled ? "1" : "0";
             environmentVariables["DD_DOTNET_TRACER_HOME"] = MonitoringHome;
@@ -218,7 +219,7 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["DD_TRACE_DEBUG"] = "1";
             }
 
-            if (!string.IsNullOrEmpty(processToProfile))
+            if (!string.IsNullOrEmpty(processToProfile) && !ignoreProfilerProcessesVar)
             {
                 environmentVariables["DD_PROFILER_PROCESSES"] = Path.GetFileName(processToProfile);
             }
