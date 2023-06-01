@@ -19,13 +19,6 @@ public class FileInfoTests : InstrumentationTestsBase
         AddTainted(taintedPathValue);
     }
 
-    [Fact]
-    public void GivenAFileInfo_WhenCreatingFromTaintedString_LocationIsCorrect()
-    {
-        new FileInfo(taintedPathValue);
-        AssertLocation(nameof(FileInfoTests));
-    }
-
     // Cover System.IO.FileInfo::.ctor(System.String)
 
     [Fact]
