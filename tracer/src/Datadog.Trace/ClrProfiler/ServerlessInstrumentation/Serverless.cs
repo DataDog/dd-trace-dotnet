@@ -4,8 +4,10 @@
 // </copyright>
 
 using System;
+using System.Diagnostics;
 using System.IO;
 
+using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
@@ -14,6 +16,11 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
     {
         private const string DefinitionsId = "68224F20D001430F9400668DD25245BA";
         private const string LogLevelEnvName = "DD_LOG_LEVEL";
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Serverless));
+
+        internal static readonly bool IsGCPFunction = GetIsGCPFunction();
+
+        internal static readonly bool IsAzureFunction = GetIsAzureFunction();
 
         private static NativeCallTargetDefinition[] callTargetDefinitions = null;
 
@@ -124,6 +131,97 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             }
 
             callTargetDefinitions = null;
+        }
+
+        internal static void MaybeStartMiniAgent()
+        {
+            if (!IsGCPFunction && !IsAzureFunction)
+            {
+                return;
+            }
+
+            Log.Information("Trying to start the mini agent");
+
+            string rustBinaryPath;
+            if (Environment.GetEnvironmentVariable("DD_MINI_AGENT_PATH") != null)
+            {
+                rustBinaryPath = Environment.GetEnvironmentVariable("DD_MINI_AGENT_PATH");
+            }
+            else
+            {
+                // Environment.OSVersion.Platform can return PlatformID.Unix on MacOS, this is OK as GCP & Azure don't have MacOs functions.
+                if (Environment.OSVersion.Platform != PlatformID.Unix && Environment.OSVersion.Platform != PlatformID.Win32NT)
+                {
+                    Log.Error("Serverless Mini Agent is only supported on Windows and Linux.");
+                    return;
+                }
+
+                string rustBinaryPathRoot = IsGCPFunction ? "/workspace" : "/home/site/wwwroot";
+                string rustBinaryPathOsFolder = Environment.OSVersion.Platform == PlatformID.Win32NT ? "datadog-serverless-agent-windows-amd64" : "datadog-serverless-agent-linux-amd64";
+                rustBinaryPath = string.Format("{0}/node_modules/@datadog/sma/{1}/datadog-serverless-trace-mini-agent", rustBinaryPathRoot, rustBinaryPathOsFolder);
+            }
+
+            try
+            {
+                Process process = new Process();
+                process.StartInfo.FileName = rustBinaryPath;
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.OutputDataReceived += new DataReceivedEventHandler((sender, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data))
+                    {
+                        LogMiniAgentToCorrectLevel(e.Data);
+                    }
+                });
+                process.Start();
+                process.BeginOutputReadLine();
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error Starting Serverless Mini Agent");
+            }
+        }
+
+        private static void LogMiniAgentToCorrectLevel(string data)
+        {
+            string[] split = data.Split(' ');
+            int logPrefixCutoff = data.IndexOf("]");
+            if (split.Length < 1 || logPrefixCutoff < 0)
+            {
+                return;
+            }
+
+            string level = split[1];
+            string processed = "[Datadog Serverless Mini Agent" + data.Substring(logPrefixCutoff);
+            switch (level)
+            {
+                case "ERROR":
+                    Log.Error("{Data}", processed);
+                    break;
+                case "WARN":
+                    Log.Warning("{Data}", processed);
+                    break;
+                case "INFO":
+                    Log.Information("{Data}", processed);
+                    break;
+                case "DEBUG":
+                    Log.Debug("{Data}", processed);
+                    break;
+            }
+        }
+
+        private static bool GetIsGCPFunction()
+        {
+            bool isDeprecatedGCPFunction = Environment.GetEnvironmentVariable("FUNCTION_NAME") != null && Environment.GetEnvironmentVariable("GCP_PROJECT") != null;
+            bool isNewerGCPFunction = Environment.GetEnvironmentVariable("K_SERVICE") != null && Environment.GetEnvironmentVariable("FUNCTION_TARGET") != null;
+
+            return isDeprecatedGCPFunction || isNewerGCPFunction;
+        }
+
+        private static bool GetIsAzureFunction()
+        {
+            return Environment.GetEnvironmentVariable("AzureWebJobsScriptRoot") != null && Environment.GetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION") != null;
         }
 
         private static NativeCallTargetDefinition[] GetServerlessDefinitions(string handlerName)

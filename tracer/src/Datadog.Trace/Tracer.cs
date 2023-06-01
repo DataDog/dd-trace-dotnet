@@ -5,12 +5,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Sampling;
@@ -125,9 +125,6 @@ namespace Datadog.Trace
                     return _instance;
                 }
 
-                string miniAgentPath = Environment.GetEnvironmentVariable("DD_MINI_AGENT_PATH");
-                Process.Start(miniAgentPath);
-
                 Tracer instance;
                 lock (GlobalInstanceLock)
                 {
@@ -135,6 +132,8 @@ namespace Datadog.Trace
                     {
                         return _instance;
                     }
+
+                    Serverless.MaybeStartMiniAgent();
 
                     instance = new Tracer(tracerManager: null); // don't replace settings, use existing
                     _instance = instance;

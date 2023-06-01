@@ -318,6 +318,30 @@ namespace Datadog.Trace
                     return serviceName;
                 }
 
+                if (Serverless.IsGCPFunction)
+                {
+                    if (Environment.GetEnvironmentVariable("FUNCTION_NAME") != null)
+                    {
+                        // Google Cloud Function Name set by deprecated runtimes
+                        return Environment.GetEnvironmentVariable("FUNCTION_NAME");
+                    }
+
+                    if (Environment.GetEnvironmentVariable("K_SERVICE") != null)
+                    {
+                        // Google Cloud Function Name set by newer runtimes
+                        return Environment.GetEnvironmentVariable("K_SERVICE");
+                    }
+                }
+
+                if (Serverless.IsAzureFunction)
+                {
+                    if (Environment.GetEnvironmentVariable("FUNCTION_NAME") != null)
+                    {
+                        // set by Azure Functions
+                        return Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME");
+                    }
+                }
+
                 try
                 {
                     if (TryLoadAspNetSiteName(out var siteName))
