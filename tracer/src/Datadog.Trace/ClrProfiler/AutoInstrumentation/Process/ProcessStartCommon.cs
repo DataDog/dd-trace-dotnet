@@ -29,10 +29,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         {
             if (info != null)
             {
-#if NETFRAMEWORK || NETSTANDARD2_0
-                return CreateScope(info.FileName, info.UseShellExecute ? null : info.Environment, info.UseShellExecute, info.Arguments);
-#else
+#if NETCOREAPP3_1_OR_GREATER
                 return CreateScope(info.FileName, info.UseShellExecute ? null : info.Environment, info.UseShellExecute, info.Arguments, info.ArgumentList);
+#else
+                return CreateScope(info.FileName, info.UseShellExecute ? null : info.Environment, info.UseShellExecute, info.Arguments);
 #endif
             }
 

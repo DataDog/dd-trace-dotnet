@@ -120,32 +120,32 @@ namespace Samples.ProcessStart
             }
             catch (Win32Exception) { }
 
-#if !NETFRAMEWORK && !NETSTANDARD2_0
+#if NETCOREAPP3_1_OR_GREATER
             try
             {
                 // Test - Non-existing executable with UseShellExecute = true and ArgumentList = { "arg1", "arg2" }
-                Process.Start(new ProcessStartInfo("nonexisting1.exe") { UseShellExecute = true, ArgumentList = { "arg1", "arg2" } });
+                Process.Start(new ProcessStartInfo("nonexisting4.exe") { UseShellExecute = true, ArgumentList = { "arg1", "arg2" } });
             }
             catch (Win32Exception) { }
 
             try
             {
                 // Test - Non-existing executable with UseShellExecute = false and ArgumentList = { "arg3", "arg4" }
-                Process.Start(new ProcessStartInfo("nonexisting1.exe") { UseShellExecute = false, ArgumentList = { "arg3", "arg4" } });
+                Process.Start(new ProcessStartInfo("nonexisting4.exe") { UseShellExecute = false, ArgumentList = { "arg1", "arg2" } });
             }
             catch (Win32Exception) { }
             
             try
             {
                 // Test - Non-existing executable with UseShellExecute = true and ArgumentList = "arg1 " + largeString
-                Process.Start(new ProcessStartInfo("nonexisting3.exe") { UseShellExecute = false, ArgumentList = { "arg1", largeString } });
+                Process.Start(new ProcessStartInfo("nonexisting5.exe") { UseShellExecute = true, ArgumentList = { "arg1", largeString } });
             }
             catch (Win32Exception) { }
             
             try
             {
                 // Test - Non-existing executable with UseShellExecute = false and ArgumentList = "arg1 " + largeString
-                Process.Start(new ProcessStartInfo("nonexisting3.exe") { UseShellExecute = false, ArgumentList = { "arg3", largeString } });
+                Process.Start(new ProcessStartInfo("nonexisting5.exe") { UseShellExecute = false, ArgumentList = { "arg1", largeString } });
             }
             catch (Win32Exception) { }
 #endif
