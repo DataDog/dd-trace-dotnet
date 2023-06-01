@@ -104,6 +104,14 @@ private:  // global helpers
         FunctionID functionId,
         mdMethodDef mdTokenFunc
         );
+    PCCOR_SIGNATURE ParseElementType(
+        IMetaDataImport* pMDImport,
+        PCCOR_SIGNATURE signature,
+        ClassID* classTypeArgs,
+        ClassID* methodTypeArgs,
+        ULONG* elementType,
+        std::stringstream& builder,
+        mdToken* typeToken);
     static std::pair<std::string, mdTypeDef> GetMethodNameFromMetadata(
         IMetaDataImport2* pMetadataImport,
         mdMethodDef mdTokenFunc

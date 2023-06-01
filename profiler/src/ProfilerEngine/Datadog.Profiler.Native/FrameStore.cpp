@@ -21,15 +21,6 @@ void FixGenericSyntax(WCHAR* name);
 void FixGenericSyntax(char* name);
 
 PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte);
-PCCOR_SIGNATURE ParseElementType(
-    IMetaDataImport* pMDImport,
-    PCCOR_SIGNATURE signature,
-    ClassID* classTypeArgs,
-    ClassID* methodTypeArgs,
-    ULONG* elementType,
-    std::stringstream& builder,
-    mdToken* typeToken);
-
 
 FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* debugInfoStore) :
     _pCorProfilerInfo{pCorProfilerInfo},
@@ -524,11 +515,7 @@ std::pair<std::string, mdTypeDef> FrameStore::GetMethodName(
     auto [methodName, mdTokenType] = GetMethodNameFromMetadata(pMetadataImport, mdTokenFunc);
     if ((methodName.empty()) || (genericParametersCount == 0))
     {
-        //// get the method signature
-        //std::string signature = GetMethodSignature(_pCorProfilerInfo, pMetadataImport, functionId, mdTokenFunc);
-
-        //return std::make_pair(methodName + signature, mdTokenType);
-        return std::make_pair(methodName, mdTokenType);
+        return std::make_pair(std::move(methodName), mdTokenType);
     }
 
     // Append generic parameters if any
@@ -568,10 +555,6 @@ std::pair<std::string, mdTypeDef> FrameStore::GetMethodName(
     }
     builder << "}";
 
-    //// get the method signature
-    //std::string signature = GetMethodSignature(_pCorProfilerInfo, pMetadataImport, functionId, mdTokenFunc);
-
-    //return std::make_pair(methodName + builder.str() + signature, mdTokenType);
     return std::make_pair(methodName + builder.str(), mdTokenType);
 }
 
@@ -590,7 +573,7 @@ bool FrameStore::GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, st
     INVOKE(pInfo->GetAssemblyInfo(assemblyId, nameCharCount, &nameCharCount, buffer.get(), nullptr, nullptr));
 
     // convert from UTF16 to UTF8
-    assemblyName = shared::ToString(shared::WSTRING(buffer.get()));
+    assemblyName = shared::ToString(buffer.get());
     return true;
 }
 
@@ -633,7 +616,7 @@ std::string FrameStore::GetTypeNameFromMetadata(IMetaDataImport2* pMetadata, mdT
     FixTrailingGeneric(pBuffer);
 
     // convert from UTF16 to UTF8
-    return shared::ToString(shared::WSTRING(pBuffer));
+    return shared::ToString(pBuffer);
 }
 
 std::pair<std::string, std::string> FrameStore::GetTypeWithNamespace(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType, bool isArray, const char* arraySuffix)
@@ -716,7 +699,7 @@ std::string FrameStore::FormatGenericTypeParameters(IMetaDataImport2* pMetadata,
             if (SUCCEEDED(hr))
             {
                 // need to convert from UTF16 to UTF8
-                builder << shared::ToString(shared::WSTRING(paramName));
+                builder << shared::ToString(paramName);
             }
             else
             {
@@ -925,7 +908,7 @@ std::pair<std::string, mdTypeDef> FrameStore::GetMethodNameFromMetadata(IMetaDat
     }
 
     // convert from UTF16 to UTF8
-    return std::make_pair(shared::ToString(shared::WSTRING(buffer.get())), mdTokenType);
+    return std::make_pair(shared::ToString(buffer.get()), mdTokenType);
 }
 
 std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataImport2* pMetaData, FunctionID functionId, mdMethodDef mdTokenFunc)
@@ -953,7 +936,6 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
 
     ULONG argCount = 0;
     ClassID classId = 0;
-    ModuleID moduleId;
     // for generic support
     std::unique_ptr<ClassID[]> methodTypeArgs = nullptr;
     std::unique_ptr<ClassID[]> classTypeArgs = nullptr;
@@ -962,6 +944,8 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
     ULONG32 classTypeArgCount = 0;
     if ((callConv & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0)
     {
+        ModuleID moduleId;
+
         //
         // Grab the generic type argument count
         //
@@ -970,10 +954,10 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
         // get the generic details for the function
         methodTypeArgs = std::make_unique<ClassID[]>(genericArgCount);
         hr = pInfo->GetFunctionInfo2(functionId, NULL, &classId, &moduleId, NULL, genericArgCount, &methodTypeArgCount, methodTypeArgs.get());
-        assert(!SUCCEEDED(hr) || (genericArgCount == methodTypeArgCount));
+        assert(FAILED(hr) || (genericArgCount == methodTypeArgCount));
         if (FAILED(hr))
         {
-            methodTypeArgs = NULL;
+            methodTypeArgs = nullptr;
         }
 
         // get the generic details for the type implementing the function
@@ -984,15 +968,9 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
             hr = pInfo->GetClassIDInfo2(classId, NULL, NULL, NULL, classTypeArgCount, &classTypeArgCount, classTypeArgs.get());
             if (FAILED(hr))
             {
-                classTypeArgs = NULL;
+                classTypeArgs = nullptr;
             }
         }
-
-        hr = S_OK;
-    }
-    else
-    {
-        hr = pInfo->GetFunctionInfo(functionId, NULL, &moduleId, NULL);
     }
 
     //
@@ -1004,7 +982,7 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
     // Get the return type
     //
     mdToken returnTypeToken;
-    std::stringstream returnTypeBuilder; // we don't use it today
+    std::stringstream returnTypeBuilder; // it is not used today
     pSigBlob = ParseElementType(pMetaData, pSigBlob, classTypeArgs.get(), methodTypeArgs.get(), &elementType, returnTypeBuilder, &returnTypeToken);
     // if the return type returned back empty, should correspond to "void"
     // NOTE: elementType should be ELEMENT_TYPE_VOID in that case
@@ -1030,9 +1008,6 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
     hr = pMetaData->EnumParams(&hEnum, mdTokenFunc, paramDefs.get(), argCount, &paramCount);
     pMetaData->CloseEnum(hEnum);
 
-    // sanity checks but one time, paramCount was greater than argCount so remove it
-    //assert(paramCount == argCount);
-
     ULONG pos;
     WCHAR name[260];
     ULONG length;
@@ -1049,48 +1024,17 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
         // note that we need to convert from WCHAR* to char* for the name
 
         // get the parameter type
-
+        //
         // In case of generic function, get the type details from the runtime and not from the metadata
         // We don't know in advance which parameter is a generic parameter and this is given by elementType == MVAR
         mdToken parameterTypeToken = mdTypeDefNil;
         std::stringstream parameterBuilder;
         pSigBlob = ParseElementType(pMetaData, pSigBlob, classTypeArgs.get(), methodTypeArgs.get(), &elementType, parameterBuilder, &parameterTypeToken);
-        if ((methodTypeArgs != NULL) && (elementType == ELEMENT_TYPE_MVAR))
-        {
-            // the offset in the array is at the end of the type name read from the metadata
-            // ex: M7 --> offset 7
-            int offset = std::stoi(parameterBuilder.str().substr(1));
-            if (offset < genericArgCount)
-            {
-                std::string sTypeName;
-                if (GetTypeName(methodTypeArgs[offset], sTypeName))
-                {
-                    builder << sTypeName;
-                    builder << " ";
-                    // convert from UTF16 to UTF8
-                    builder << shared::ToString(shared::WSTRING(name));
-                }
-                else
-                {
-                    builder << "?";
-                }
-            }
-            else
-            {
-                // case detected during tests with System.MemoryExtensions.IndexOfAny<T>(ReadOnlySpan<T>, T, T) for example
-                // but should be treated now
-                builder << "M" << offset << "?";
-                // convert from UTF16 to UTF8
-                builder << shared::ToString(shared::WSTRING(name));
-            }
-        }
-        else
-        {
-            builder << parameterBuilder.str();
-            builder << " ";
-            // convert from UTF16 to UTF8
-            builder << shared::ToString(shared::WSTRING(name));
-        }
+        builder << parameterBuilder.str();
+
+        builder << " ";
+        // convert from UTF16 to UTF8
+        builder << shared::ToString(name);
 
         if (i < argCount - 1)
         {
@@ -1101,8 +1045,6 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
 
     return builder.str();
 }
-
-
 
 std::pair<std::string, std::string> FrameStore::GetManagedTypeName(ICorProfilerInfo4* pInfo, ClassID classId)
 {
@@ -1141,51 +1083,9 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(ICorProfilerI
     return std::make_pair(typeName.substr(0, pos), typeName.substr(pos + 1));
 }
 
-
-void FixGenericSyntax(WCHAR* name)
-{
-    ULONG currentCharPos = 0;
-    while (name[currentCharPos] != WStr('\0'))
-    {
-        if (name[currentCharPos] == WStr('`'))
-        {
-            // skip `xx
-            name[currentCharPos] = WStr('\0');
-            return;
-        }
-        currentCharPos++;
-    }
-}
-
-void FixGenericSyntax(char* name)
-{
-    ULONG currentCharPos = 0;
-    while (name[currentCharPos] != '\0')
-    {
-        if (name[currentCharPos] == '`')
-        {
-            // skip `xx
-            name[currentCharPos] = '\0';
-            return;
-        }
-        currentCharPos++;
-    }
-}
-
-void StrAppend(std::stringstream& builder, const char* str)
-{
-    builder << str;
-}
-
-PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte)
-{
-    *pByte = *pbSig++;
-    return pbSig;
-}
-
 // use Peter Sollich way in ClrProfiler to parse the binary signature
 // https://github.com/microsoftarchive/clrprofiler/blob/master/CLRProfiler/profilerOBJ/ProfilerInfo.cpp#L1838
-PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
+PCCOR_SIGNATURE FrameStore::ParseElementType(IMetaDataImport* pMDImport,
                                  PCCOR_SIGNATURE signature,
                                  ClassID* classTypeArgs,
                                  ClassID* methodTypeArgs,
@@ -1442,9 +1342,17 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
         break;
         case ELEMENT_TYPE_MVAR: // for method
         {
-            StrAppend(builder, "M");
             ULONG n = CorSigUncompressData(signature);
-            builder << n;
+            std::string sTypeName;
+            if (GetTypeName(methodTypeArgs[n], sTypeName))
+            {
+                builder << sTypeName;
+            }
+            else
+            {
+                StrAppend(builder, "M");
+                builder << n;
+            }
         }
         break;
 
@@ -1531,4 +1439,45 @@ PCCOR_SIGNATURE ParseElementType(IMetaDataImport* pMDImport,
     } // switch
 
     return signature;
+}
+
+void FixGenericSyntax(WCHAR* name)
+{
+    ULONG currentCharPos = 0;
+    while (name[currentCharPos] != WStr('\0'))
+    {
+        if (name[currentCharPos] == WStr('`'))
+        {
+            // skip `xx
+            name[currentCharPos] = WStr('\0');
+            return;
+        }
+        currentCharPos++;
+    }
+}
+
+void FixGenericSyntax(char* name)
+{
+    ULONG currentCharPos = 0;
+    while (name[currentCharPos] != '\0')
+    {
+        if (name[currentCharPos] == '`')
+        {
+            // skip `xx
+            name[currentCharPos] = '\0';
+            return;
+        }
+        currentCharPos++;
+    }
+}
+
+void StrAppend(std::stringstream& builder, const char* str)
+{
+    builder << str;
+}
+
+PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte)
+{
+    *pByte = *pbSig++;
+    return pbSig;
 }
