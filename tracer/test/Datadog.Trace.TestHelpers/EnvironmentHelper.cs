@@ -438,7 +438,16 @@ namespace Datadog.Trace.TestHelpers
             }
             else if (usePublishWithRID)
             {
-                var rid = $"{EnvironmentTools.GetOS()}-{(EnvironmentTools.GetPlatform() == "Arm64" ? "arm64" : "x64")}";
+                string rid;
+                if (IsAlpine())
+                {
+                    rid = $"{EnvironmentTools.GetOS()}-musl-{(EnvironmentTools.GetPlatform() == "Arm64" ? "arm64" : "x64")}";
+                }
+                else
+                {
+                    rid = $"{EnvironmentTools.GetOS()}-{(EnvironmentTools.GetPlatform() == "Arm64" ? "arm64" : "x64")}";
+                }
+
                 outputDir = Path.Combine(
                     binDir,
                     packageVersion,

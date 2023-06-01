@@ -1556,8 +1556,8 @@ partial class Build
 
             var rid = (IsLinux, IsArm64) switch
             {
-                (true, false) => "linux-x64",
-                (true, true) => "linux-arm64",
+                (true, false) => IsAlpine ? "linux-musl-x64" : "linux-x64",
+                (true, true) => IsAlpine ? "linux-musl-arm64" : "linux-arm64",
                 (false, false) => "osx-x64",
                 (false, true) => "osx-arm64",
             };
