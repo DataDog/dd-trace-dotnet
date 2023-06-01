@@ -28,8 +28,7 @@ public class AppTrimmingTests : TestHelper
 
         using var agent = EnvironmentHelper.GetMockAgent();
         var aspnetPort = TcpPortProvider.GetOpenPort();
-        SetEnvironmentVariable("ASPNETCORE_URLS", $"http://localhost:{aspnetPort}");
-        using var processResult = RunSampleAndWaitForExit(agent, usePublishWithRID: true);
+        using var processResult = RunSampleAndWaitForExit(agent, aspNetCorePort: aspnetPort, usePublishWithRID: true);
         var spans = agent.WaitForSpans(30);
 
         // Target app does 10 request, so it generates 30 spans (Http Request + AspNetCore + AspNetCore.Mvc)
