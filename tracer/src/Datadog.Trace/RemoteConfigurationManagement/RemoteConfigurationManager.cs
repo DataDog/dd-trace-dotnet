@@ -76,9 +76,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             _subscriptionManager = subscriptionManager;
             _cancellationSource = new CancellationTokenSource();
             discoveryService.SubscribeToChanges(SetRcmEnabled);
-
-            _ = StartPollingAsync()
-               .ContinueWith(t => { Log.Error(t.Exception, "Remote Configuration management polling failed"); }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
         public static RemoteConfigurationManager? Instance { get; private set; }
@@ -151,6 +148,12 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
 
             action(inst);
+        }
+
+        public void Start()
+        {
+            _ = Task.Run(StartPollingAsync)
+               .ContinueWith(t => { Log.Error(t.Exception, "Remote Configuration management polling failed"); }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
         public void Dispose()

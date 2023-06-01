@@ -207,6 +207,7 @@ namespace Datadog.Trace
             // Must be idempotent and thread safe
             DirectLogSubmission?.Sink.Start();
             Telemetry?.Start();
+            RemoteConfigurationManager.Start();
         }
 
         /// <summary>
