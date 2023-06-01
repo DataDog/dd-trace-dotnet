@@ -77,22 +77,14 @@ namespace Datadog.Trace.AspNet
 
         internal static void AddHeaderTagsFromHttpResponse(HttpContext httpContext, Scope scope)
         {
-            if (!Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty())
-            {
-                WrapResponseHeadersAction(httpContext, () =>
-                {
-                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
-                });
-            }
-        }
-
-        private static void WrapResponseHeadersAction(HttpContext httpContext, Action wrappedAction)
-        {
-            if (httpContext != null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders)
+            if (!Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty() &&
+                httpContext != null &&
+                HttpRuntime.UsingIntegratedPipeline &&
+                _canReadHttpResponseHeaders)
             {
                 try
                 {
-                    wrappedAction();
+                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
                 catch (PlatformNotSupportedException ex)
                 {
@@ -249,13 +241,29 @@ namespace Datadog.Trace.AspNet
                             var securityCoordinator = new SecurityCoordinator(security, app.Context, rootSpan);
                             if (!securityCoordinator.IsBlocked)
                             {
-                                // path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
                                 var args = securityCoordinator.GetBasicRequestArgsForWaf();
                                 args.Add(AddressesConstants.RequestPathParams, securityCoordinator.GetPathParams());
-                                WrapResponseHeadersAction(app.Context, () =>
+
+                                if (HttpRuntime.UsingIntegratedPipeline &&
+                                    _canReadHttpResponseHeaders)
                                 {
-                                    args.Add(AddressesConstants.ResponseHeaderNoCookies, securityCoordinator.GetResponseHeadersForWaf());
-                                });
+                                    // path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
+                                    try
+                                    {
+                                        args.Add(AddressesConstants.ResponseHeaderNoCookies, securityCoordinator.GetResponseHeadersForWaf());
+                                    }
+                                    catch (PlatformNotSupportedException ex)
+                                    {
+                                        // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
+                                        Log.Error(ex, "Unable to access response headers when creating header tags. Disabling for the rest of the application lifetime.");
+                                        _canReadHttpResponseHeaders = false;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Log.Error(ex, "Error extracting HTTP headers to create header tags.");
+                                    }
+                                }
+
                                 securityCoordinator.CheckAndBlock(args);
                             }
 
