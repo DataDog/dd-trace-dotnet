@@ -42,6 +42,7 @@ internal class SqlInjectionTokenizer : ITokenizer
         { IntegrationId.Oracle, _oracleDialectPattern },
         { IntegrationId.Npgsql, _postgresqlDialectPattern },
         { IntegrationId.MySql, _mySqlDialectPattern },
+        { IntegrationId.Sqlite, _mySqlDialectPattern }
     };
 
     public List<Range> GetTokens(string value, IntegrationId? integrationId = null)
