@@ -40,15 +40,15 @@ public class DataStreamsMonitoringTests : TestHelper
     ///
     /// In mermaid (view at https://mermaid.live/), this looks like:
     /// sequenceDiagram
-    ///    participant A as Root Service<br>(12926600137239154356)
-    ///    participant T1 as Topic 1<br>(2704081292861755358)
-    ///    participant C1 as Consumer 1<br>(5289074475783863123)
-    ///    participant T2a as Topic 2<br>(2821413369272395429)
-    ///    participant C2a as Consumer 2<br>(9753735904472423641)
-    ///    participant T3a as Topic 3<br>(5363062531028060751)
-    ///    participant T2 as Topic 2<br>(246622801349204431)
-    ///    participant C2 as Consumer 2<br>(3398817358352474903)
-    ///    participant T3 as Topic 3<br>(16689539899325095461 )
+    ///    participant A as Root Service (12926600137239154356)
+    ///    participant T1 as Topic 1 (2704081292861755358)
+    ///    participant C1 as Consumer 1 (5289074475783863123)
+    ///    participant T2a as Topic 2 (2821413369272395429)
+    ///    participant C2a as Consumer 2 (9753735904472423641)
+    ///    participant T3a as Topic 3 (5363062531028060751)
+    ///    participant T2 as Topic 2 (246622801349204431)
+    ///    participant C2 as Consumer 2 (3398817358352474903)
+    ///    participant T3 as Topic 3 (16689539899325095461 )
     ///
     ///    A->>+T1: Produce
     ///    T1-->>-C1: Consume
@@ -77,7 +77,6 @@ public class DataStreamsMonitoringTests : TestHelper
 
         using var assertionScope = new AssertionScope();
         var payload = NormalizeDataStreams(agent.DataStreams);
-        agent.AssertConfiguration(ConfigTelemetryData.DataStreamsMonitoringEnabled, true);
         // using span verifier to add all the default scrubbers
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddSimpleScrubber(TracerConstants.AssemblyVersion, "2.x.x.x");
@@ -137,8 +136,6 @@ public class DataStreamsMonitoringTests : TestHelper
         using var assertionScope = new AssertionScope();
 
         var payload = NormalizeDataStreams(agent.DataStreams);
-
-        agent.AssertConfiguration(ConfigTelemetryData.DataStreamsMonitoringEnabled, true);
 
         // using span verifier to add all the default scrubbers
         var settings = VerifyHelper.GetSpanVerifierSettings();
