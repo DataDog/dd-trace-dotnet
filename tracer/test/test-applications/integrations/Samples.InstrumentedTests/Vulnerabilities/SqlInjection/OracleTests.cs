@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Reflection;
 using System.Threading;
 using Oracle.ManagedDataAccess.Client;
 using Xunit;
@@ -30,9 +31,6 @@ public class OracleTests : InstrumentationTestsBase, IDisposable
 
     public void Dispose()
     {
-        _connection.Close();
-        _connection.Dispose();
-        _connection = null;
     }
 
     // We exclude the tests that only pass when using a real MySql Connection
@@ -41,7 +39,14 @@ public class OracleTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteNonQueryWithTainted_VulnerabilityIsReported()
     {
-        TestProcessCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteNonQuery());
+        TestDummyDDBBCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteNonQuery());
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAOracleCommand_WhenCallingExecuteNonQueryWithTainted_VulnerabilityIsReported2()
+    {
+        TestDummyDDBBCall(() => new OracleCommand(QueryUnsafe).ExecuteNonQuery());
         AssertVulnerable();
     }
 
@@ -60,183 +65,161 @@ public class OracleTests : InstrumentationTestsBase, IDisposable
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteNonQueryWithNotTainted_VulnerabilityIsNotReported()
     {
-        TestProcessCall(() => new OracleCommand(CommandSafe, _connection).ExecuteNonQuery());
+        TestDummyDDBBCall(() => new OracleCommand(CommandSafe, _connection).ExecuteNonQuery());
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteReaderWithTainted_VulnerabilityIsReported()
     {
-        TestProcessCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteReader());
+        TestDummyDDBBCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteReader());
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteReaderWithNotTainted_VulnerabilityIsNotReported()
     {
-        TestProcessCall(() => new OracleCommand(QuerySafe, _connection).ExecuteReader());
+        TestDummyDDBBCall(() => new OracleCommand(QuerySafe, _connection).ExecuteReader());
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteReaderCommandBehaviorWithTainted_VulnerabilityIsReported()
     {
-        TestProcessCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteReader(CommandBehavior.Default));
+        TestDummyDDBBCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteReader(CommandBehavior.Default));
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteReaderCommandBehaviorWithNotTainted_VulnerabilityIsNotReported()
     {
-        TestProcessCall(() => new OracleCommand(QuerySafe, _connection).ExecuteReader(CommandBehavior.Default));
+        TestDummyDDBBCall(() => new OracleCommand(QuerySafe, _connection).ExecuteReader(CommandBehavior.Default));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteScalarWithTainted_VulnerabilityIsReported()
     {
-        TestProcessCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteScalar());
+        TestDummyDDBBCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteScalar());
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteScalarWithNotTainted_VulnerabilityIsNotReported()
     {
-        TestProcessCall(() => new OracleCommand(QuerySafe, _connection).ExecuteScalar());
+        TestDummyDDBBCall(() => new OracleCommand(QuerySafe, _connection).ExecuteScalar());
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteReaderAsyncCommandBehaviorWithTainted_VulnerabilityIsReported()
     {
-        TestProcessCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteReaderAsync(CommandBehavior.Default).Wait());
+        TestDummyDDBBCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteReaderAsync(CommandBehavior.Default).Wait());
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteReaderAsyncCommandBehaviorWithNotTainted_VulnerabilityIsNotReported()
     {
-        TestProcessCall(() => new OracleCommand(QuerySafe, _connection).ExecuteReaderAsync(CommandBehavior.Default).Wait());
+        TestDummyDDBBCall(() => new OracleCommand(QuerySafe, _connection).ExecuteReaderAsync(CommandBehavior.Default).Wait());
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteReaderAsyncCancellationTokenWithTainted_VulnerabilityIsReported()
     {
-        TestProcessCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteReaderAsync(CancellationToken.None).Wait());
+        TestDummyDDBBCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteReaderAsync(CancellationToken.None).Wait());
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteReaderAsyncCancellationTokenWithNotTainted_VulnerabilityIsNotReported()
     {
-        TestProcessCall(() => new OracleCommand(QuerySafe, _connection).ExecuteReaderAsync(CancellationToken.None).Wait());
+        TestDummyDDBBCall(() => new OracleCommand(QuerySafe, _connection).ExecuteReaderAsync(CancellationToken.None).Wait());
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteReaderAsyncCancellationTokenCommandBehaviorWithTainted_VulnerabilityIsReported()
     {
-        TestProcessCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteReaderAsync(CommandBehavior.Default, CancellationToken.None).Wait());
+        TestDummyDDBBCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteReaderAsync(CommandBehavior.Default, CancellationToken.None).Wait());
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteReaderAsyncCancellationTokenCommandBehaviorWithNotTainted_VulnerabilityIsNotReported()
     {
-        TestProcessCall(() => new OracleCommand(QuerySafe, _connection).ExecuteReaderAsync(CommandBehavior.Default, CancellationToken.None).Wait());
+        TestDummyDDBBCall(() => new OracleCommand(QuerySafe, _connection).ExecuteReaderAsync(CommandBehavior.Default, CancellationToken.None).Wait());
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteReaderAsyncWithTainted_VulnerabilityIsReported()
     {
-        TestProcessCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteReaderAsync().Wait());
+        TestDummyDDBBCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteReaderAsync().Wait());
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteReaderAsyncWithNotTainted_VulnerabilityIsNotReported()
     {
-        TestProcessCall(() => new OracleCommand(QuerySafe, _connection).ExecuteReaderAsync().Wait());
+        TestDummyDDBBCall(() => new OracleCommand(QuerySafe, _connection).ExecuteReaderAsync().Wait());
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteScalarAsyncWithTainted_VulnerabilityIsReported()
     {
-        TestProcessCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteScalarAsync().Wait());
+        TestDummyDDBBCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteScalarAsync().Wait());
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteScalarAsyncWithNotTainted_VulnerabilityIsNotReported()
     {
-        TestProcessCall(() => new OracleCommand(QuerySafe, _connection).ExecuteScalarAsync().Wait());
+        TestDummyDDBBCall(() => new OracleCommand(QuerySafe, _connection).ExecuteScalarAsync().Wait());
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteScalarAsyncCancellationTokenWithTainted_VulnerabilityIsReported()
     {
-        TestProcessCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteScalarAsync(CancellationToken.None).Wait());
+        TestDummyDDBBCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteScalarAsync(CancellationToken.None).Wait());
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteScalarAsyncCancellationTokenWithNotTainted_VulnerabilityIsNotReported()
     {
-        TestProcessCall(() => new OracleCommand(QuerySafe, _connection).ExecuteScalarAsync(CancellationToken.None).Wait());
+        TestDummyDDBBCall(() => new OracleCommand(QuerySafe, _connection).ExecuteScalarAsync(CancellationToken.None).Wait());
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteNonQueryAsyncWithTainted_VulnerabilityIsReported()
     {
-        TestProcessCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteNonQueryAsync().Wait());
+        TestDummyDDBBCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteNonQueryAsync().Wait());
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteNonQueryAsyncWithNotTainted_VulnerabilityIsNotReported()
     {
-        TestProcessCall(() => new OracleCommand(QuerySafe, _connection).ExecuteNonQueryAsync().Wait());
+        TestDummyDDBBCall(() => new OracleCommand(QuerySafe, _connection).ExecuteNonQueryAsync().Wait());
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteNonQueryAsyncCancellationTokenWithTainted_VulnerabilityIsReported()
     {
-        TestProcessCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteNonQueryAsync(CancellationToken.None).Wait());
+        TestDummyDDBBCall(() => new OracleCommand(QueryUnsafe, _connection).ExecuteNonQueryAsync(CancellationToken.None).Wait());
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAOracleCommand_WhenCallingExecuteNonQueryAsyncCancellationTokenWithNotTainted_VulnerabilityIsNotReported()
     {
-        TestProcessCall(() => new OracleCommand(QuerySafe, _connection).ExecuteNonQueryAsync(CancellationToken.None).Wait());
+        TestDummyDDBBCall(() => new OracleCommand(QuerySafe, _connection).ExecuteNonQueryAsync(CancellationToken.None).Wait());
         AssertNotVulnerable();
-    }
-
-    private void TestProcessCall(Action expression)
-    {
-        try
-        {
-            expression.Invoke();
-        }
-        catch (Exception) 
-        { 
-        }
-    }
-
-    private void TestProcessCall(Func<object> expression)
-    {
-        try
-        {
-            expression.Invoke();
-        }
-        catch (Exception)
-        { 
-        }
     }
 }
