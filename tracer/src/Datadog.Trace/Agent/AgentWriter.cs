@@ -415,6 +415,7 @@ namespace Datadog.Trace.Agent
                 {
                     // If stats computation determined that we can drop the P0 Trace,
                     // skip all other processing
+                    TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.P0Drop);
                     if (singleSpanSamplingSpans.Count == 0)
                     {
                         Interlocked.Increment(ref _droppedP0Traces);
@@ -432,13 +433,17 @@ namespace Datadog.Trace.Agent
                         var spansDropped = spans.Count - singleSpanSamplingSpans.Count;
                         Interlocked.Add(ref _droppedP0Spans, spansDropped);
                         spans = new ArraySegment<Span>(singleSpanSamplingSpans.ToArray());
+                        TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.P0Drop, spansDropped);
+                        TelemetryFactory.Metrics.RecordCountSpanEnqueuedForSerialization(MetricTags.SpanEnqueueReason.SingleSpanSampling, spans.Count);
                         TelemetryFactory.Metrics.RecordCountTracePartialFlush(MetricTags.PartialFlushReason.SingleSpanIngestion);
                     }
                 }
             }
             else
             {
+                // not using stats, so trace always kept
                 TelemetryFactory.Metrics.RecordCountTraceChunkEnqueued(MetricTags.TraceChunkEnqueueReason.Default);
+                TelemetryFactory.Metrics.RecordCountSpanEnqueuedForSerialization(MetricTags.SpanEnqueueReason.Default, spans.Count);
             }
 
             // Add the current keep rate to the root span
