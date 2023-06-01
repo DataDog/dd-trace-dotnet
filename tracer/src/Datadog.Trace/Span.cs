@@ -7,10 +7,13 @@ using System;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -435,6 +438,8 @@ namespace Datadog.Trace
                 {
                     WriteCloseDebugMessage();
                 }
+
+                TelemetryFactory.Metrics.RecordCountSpanFinished();
             }
         }
 
