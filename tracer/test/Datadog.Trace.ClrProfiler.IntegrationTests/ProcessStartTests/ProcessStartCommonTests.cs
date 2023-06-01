@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // The collect command will have different spans depending on the dotnet version
                 // Because ArgumentList is not available in .NET Core 2.0 or .NET Framework
                 // and some tests are performed on ArgumentList
-#if NETFRAMEWORK || NETCOREAPP2_0
+#if !NETCOREAPP3_1_OR_GREATER
                 filename += ".netfxOrNetCore2";
 #endif
             }
