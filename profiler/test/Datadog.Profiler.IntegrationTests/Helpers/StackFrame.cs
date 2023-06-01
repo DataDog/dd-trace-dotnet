@@ -14,6 +14,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public readonly string Namespace;
         public readonly string Type;
         public readonly string Function;
+        public readonly string Signature;
         public readonly string Filename;
         public readonly long StartLine;
 
@@ -25,7 +26,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public StackFrame(string rawStackFrame, string filename, long startLine)
         {
             // |lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw1_2
-            var match = Regex.Match(rawStackFrame, @"^\|lm:(?<module>.*) \|ns:(?<namespace>.*) \|ct:(?<type>.*) \|fn:(?<function>.*)$");
+            var match = Regex.Match(rawStackFrame, @"^\|lm:(?<module>.*) \|ns:(?<namespace>.*) \|ct:(?<type>.*) \|fn:(?<function>.*) \|sg:(?<signature>.*)$");
 
             if (!match.Success)
             {
@@ -36,25 +37,27 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             Namespace = match.Groups["namespace"].Value;
             Type = match.Groups["type"].Value;
             Function = match.Groups["function"].Value;
+            Signature = match.Groups["signature"].Value;
             Filename = filename;
             StartLine = startLine;
         }
 
-        public StackFrame(string module, string ns, string type, string function)
+        public StackFrame(string module, string ns, string type, string function, string signature)
         {
             Module = module;
             Namespace = ns;
             Type = type;
             Function = function;
+            Signature = signature;
         }
 
-        public override string ToString() => $"|lm:{Module} |ns:{Namespace} |ct:{Type} |fn:{Function}";
+        public override string ToString() => $"|lm:{Module} |ns:{Namespace} |ct:{Type} |fn:{Function} |sg:{Signature}";
 
         public bool Equals(StackFrame other)
         {
             // for now we do not take into account Filename and StartLine.
             // Expecially Filename since the path can vary in CI
-            return Module == other.Module && Namespace == other.Namespace && Type == other.Type && Function == other.Function;
+            return Module == other.Module && Namespace == other.Namespace && Type == other.Type && Function == other.Function && Signature == other.Signature;
         }
 
         public override bool Equals(object obj)
@@ -70,6 +73,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 hashCode = (hashCode * 397) ^ (Namespace != null ? Namespace.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Type != null ? Type.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Function != null ? Function.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (Signature != null ? Signature.GetHashCode() : 0);
                 return hashCode;
             }
         }
