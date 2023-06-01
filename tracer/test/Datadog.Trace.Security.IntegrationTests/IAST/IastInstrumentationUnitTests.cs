@@ -367,11 +367,6 @@ public class IastInstrumentationUnitTests : TestHelper
                     arguments += " --TestCaseFilter:\"Category!=LinuxUnsupported\"";
                 }
             }
-
-            if (EnvironmentTools.IsArm64Linux())
-            {
-                arguments += " --TestCaseFilter:\"Category!=ArmUnsupported\"";
-            }
 #endif
             SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests"));
             SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "0");
