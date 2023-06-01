@@ -14,12 +14,16 @@ namespace Datadog.Trace.Configuration.Schema
     internal class DatabaseSchema
     {
         private readonly SchemaVersion _version;
+        private readonly bool _peerServiceTagsEnabled;
+        private readonly bool _removeClientServiceNamesEnabled;
         private readonly string _defaultServiceName;
         private readonly IDictionary<string, string>? _serviceNameMappings;
 
-        public DatabaseSchema(SchemaVersion version, string defaultServiceName, IDictionary<string, string>? serviceNameMappings)
+        public DatabaseSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IDictionary<string, string>? serviceNameMappings)
         {
             _version = version;
+            _peerServiceTagsEnabled = peerServiceTagsEnabled;
+            _removeClientServiceNamesEnabled = removeClientServiceNamesEnabled;
             _defaultServiceName = defaultServiceName;
             _serviceNameMappings = serviceNameMappings;
         }
@@ -35,7 +39,7 @@ namespace Datadog.Trace.Configuration.Schema
 
             return _version switch
             {
-                SchemaVersion.V0 => $"{_defaultServiceName}-{databaseType}",
+                SchemaVersion.V0 when _removeClientServiceNamesEnabled == false => $"{_defaultServiceName}-{databaseType}",
                 _ => _defaultServiceName,
             };
         }
@@ -43,14 +47,14 @@ namespace Datadog.Trace.Configuration.Schema
         public MongoDbTags CreateMongoDbTags()
             => _version switch
             {
-                SchemaVersion.V0 => new MongoDbTags(),
+                SchemaVersion.V0 when _peerServiceTagsEnabled == false => new MongoDbTags(),
                 _ => new MongoDbV1Tags(),
             };
 
         public SqlTags CreateSqlTags()
             => _version switch
             {
-                SchemaVersion.V0 => new SqlTags(),
+                SchemaVersion.V0 when _peerServiceTagsEnabled == false => new SqlTags(),
                 _ => new SqlV1Tags(),
             };
     }

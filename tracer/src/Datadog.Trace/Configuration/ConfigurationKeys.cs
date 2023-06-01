@@ -413,6 +413,22 @@ namespace Datadog.Trace.Configuration
         public const string MetadataSchemaVersion = "DD_TRACE_SPAN_ATTRIBUTE_SCHEMA";
 
         /// <summary>
+        /// Configuration key for automatically populating the peer.service tag
+        /// from predefined precursor attributes when the span attribute schema is v0.
+        /// This is ignored when the span attribute schema is v1 or later.
+        /// Default value is false
+        /// </summary>
+        public const string PeerServiceDefaultsEnabled = "DD_TRACE_PEER_SERVICE_DEFAULTS_ENABLED";
+
+        /// <summary>
+        /// Configuration key for unifying client service names when the span
+        /// attribute schema is v0. This is ignored when the span attribute
+        /// schema is v1 or later.
+        /// Default value is false
+        /// </summary>
+        public const string RemoveClientServiceNamesEnabled = "DD_TRACE_REMOVE_CLIENT_SERVICE_NAMES_ENABLED";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility
