@@ -95,6 +95,7 @@ namespace Datadog.Trace
             settings ??= ImmutableTracerSettings.FromDefaultSources();
 
             var defaultServiceName = settings.ServiceName ??
+                                     Serverless.GetFunctionName() ??
                                      GetApplicationName(settings) ??
                                      UnknownServiceName;
 
