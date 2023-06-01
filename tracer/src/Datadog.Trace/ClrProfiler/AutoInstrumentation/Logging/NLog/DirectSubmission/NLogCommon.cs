@@ -383,7 +383,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         // internal for testing
         internal static Func<object> CreateLoggingRuleActivator(Assembly nlogAssembly)
         {
-            var activator = new ActivatorHelper(nlogAssembly.GetType("NLog.Config.LoggingRule"));
+            var activator = new ActivatorHelper(nlogAssembly.GetType("NLog.Config.LoggingRule")!);
             return () => activator.CreateInstance()!;
         }
     }

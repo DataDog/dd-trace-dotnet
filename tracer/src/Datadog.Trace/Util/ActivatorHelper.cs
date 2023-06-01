@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Reflection.Emit;
 using System.Threading.Tasks;
@@ -29,7 +31,7 @@ internal class ActivatorHelper
 
     private object DefaultActivator()
     {
-        return Activator.CreateInstance(_type);
+        return Activator.CreateInstance(_type)!;
     }
 
     private void CreateCustomActivator()

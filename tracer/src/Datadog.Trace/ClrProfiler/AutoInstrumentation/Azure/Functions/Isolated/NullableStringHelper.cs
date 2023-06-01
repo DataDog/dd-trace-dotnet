@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
         static NullableStringHelper()
         {
-            NullableActivator = new ActivatorHelper(typeof(TMarkerType).Assembly.GetType("NullableString"));
+            NullableActivator = new ActivatorHelper(typeof(TMarkerType).Assembly.GetType("NullableString")!);
         }
 
         /// <summary>
