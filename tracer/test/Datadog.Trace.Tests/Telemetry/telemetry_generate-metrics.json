@@ -22,8 +22,6 @@
     "kernel_version": "#40~18.04.1-Ubuntu SMP Fri Feb 5 15:41:35 UTC 2021"
   },
   "payload": {
-    "lib_version": "0.33.1",
-    "lib_language": "node.js",
     "namespace": "tracers",
     "series": [
       {

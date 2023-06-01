@@ -12,23 +12,9 @@ namespace Datadog.Trace.Telemetry;
 internal class GenerateMetricsPayload : IPayload
 {
     public GenerateMetricsPayload(ICollection<MetricData> series)
-    : this(libVersion: TracerConstants.AssemblyVersion, libLanguage: TracerConstants.Language, series)
     {
         Series = series;
     }
-
-    public GenerateMetricsPayload(string libVersion, string libLanguage, ICollection<MetricData> allMetricData)
-    {
-        LibVersion = libVersion;
-        LibLanguage = libLanguage;
-        Series = allMetricData;
-    }
-
-    // currently required, but should be removed soon
-    public string LibVersion { get; set; }
-
-    // currently required, but should be removed soon
-    public string LibLanguage { get; set; }
 
     /// <summary>
     /// Gets or sets the default namespace for the metrics.

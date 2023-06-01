@@ -77,7 +77,7 @@ namespace AllocSimulator
         private void ReadStringTable(FileStream fileStream, ref int pos)
         {
             int currentString = 0;
-            byte[] stringBuffer = new byte[1024];  // expect type names less than 1024 characters long
+            byte[] stringBuffer = new byte[2048];  // expect type names less than 2048 characters long
             int currentChar = 0;  // = length of the string after \0 is read
             byte[] buffer = new byte[1];
 

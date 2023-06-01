@@ -58,6 +58,45 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> AwsSns =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET462
+                new object[] { "3.1.2.1" },
+                new object[] { "3.3.102.17" },
+                new object[] { "3.7.101.62" },
+#endif
+#if NETCOREAPP2_1
+                new object[] { "3.3.102.17" },
+                new object[] { "3.7.101.62" },
+#endif
+#if NETCOREAPP3_0
+                new object[] { "3.3.102.17" },
+                new object[] { "3.7.101.62" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "3.3.102.17" },
+                new object[] { "3.7.101.62" },
+#endif
+#if NET5_0
+                new object[] { "3.3.102.17" },
+                new object[] { "3.7.101.62" },
+#endif
+#if NET6_0
+                new object[] { "3.3.102.17" },
+                new object[] { "3.7.101.62" },
+#endif
+#if NET7_0
+                new object[] { "3.3.102.17" },
+                new object[] { "3.7.101.62" },
+#endif
+#endif
+            };
+
       public static IEnumerable<object[]> MongoDB =>
 
             new List<object[]>

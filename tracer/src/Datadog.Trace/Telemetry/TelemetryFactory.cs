@@ -4,8 +4,10 @@
 // </copyright>
 #nullable enable
 using System;
+using System.Threading;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Telemetry.Transports;
@@ -17,12 +19,23 @@ namespace Datadog.Trace.Telemetry
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryFactory>();
 
         private static readonly ConfigurationTelemetryCollector Configuration = new();
-        private static readonly DependencyTelemetryCollector Dependencies = new();
         private static readonly IntegrationTelemetryCollector Integrations = new();
+
+        /// <summary>
+        /// Gets the static metrics instance used to record telemetry
+        /// Once v2 is telemetry is supported, this will return a real instance
+        /// </summary>
+        public static IMetricsTelemetryCollector Metrics => NullMetricsTelemetryCollector.Instance;
+
+        /// <summary>
+        /// Gets the static configuration instance used to record telemetry
+        /// Once v2 is telemetry is supported, this will return a real instance
+        /// </summary>
+        internal static IConfigurationTelemetry Config => NullConfigurationTelemetry.Instance;
 
         internal static ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings)
         {
-            var settings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
+            var settings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config);
             if (settings.TelemetryEnabled)
             {
                 try
@@ -36,9 +49,13 @@ namespace Datadog.Trace.Telemetry
 
                     var transportManager = new TelemetryTransportManager(telemetryTransports);
 
+                    IDependencyTelemetryCollector dependencies = settings.DependencyCollectionEnabled
+                                                                     ? DependencyTelemetryCollector.Instance
+                                                                     : NullDependencyTelemetryCollector.Instance;
+
                     return new TelemetryController(
                         Configuration,
-                        Dependencies,
+                        dependencies,
                         Integrations,
                         transportManager,
                         TelemetryConstants.DefaultFlushInterval,
