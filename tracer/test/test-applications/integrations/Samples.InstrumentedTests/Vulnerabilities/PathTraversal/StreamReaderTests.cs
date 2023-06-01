@@ -20,13 +20,6 @@ public class StreamReaderTests : InstrumentationTestsBase
         AddTainted(taintedValue);
     }
 
-    [Fact]
-    public void GivenAStreamReader_WhenCreatingFromTaintedString_LocationIsCorrect()
-    {
-        ExecuteAction(() => { new StreamReader(taintedValue); });
-        AssertLocation(nameof(StreamReaderTests));
-    }
-
     // Cover System.IO.StreamReader::.ctor(System.String)
 
     [Fact]

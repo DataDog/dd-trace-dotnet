@@ -28,7 +28,7 @@ namespace Datadog.Trace.Coverage.Collector
             _collectionContext = collectionContext;
             _isDebugEnabled = GlobalSettings.Instance.DebugEnabled;
 
-            if (DatadogLoggingFactory.GetConfiguration(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry()).File is { } fileConfig)
+            if (DatadogLoggingFactory.GetConfiguration(GlobalConfigurationSource.Instance, TelemetryFactory.Config).File is { } fileConfig)
             {
                 var loggerConfiguration = new LoggerConfiguration().Enrich.FromLogContext().MinimumLevel.Debug();
 

@@ -33,7 +33,7 @@ namespace Datadog.Trace.Logging
                     LoggingLevelSwitch.MinimumLevel = LogEventLevel.Debug;
                 }
 
-                var config = DatadogLoggingFactory.GetConfiguration(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
+                var config = DatadogLoggingFactory.GetConfiguration(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
 
                 if (config.File is { LogFileRetentionDays: > 0 } fileConfig)
                 {

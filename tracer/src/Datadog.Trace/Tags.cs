@@ -349,7 +349,17 @@ namespace Datadog.Trace
         /// <summary>
         /// The queue name associated with the AWS SDK span.
         /// </summary>
+        internal const string AwsTopicName = "aws.topic.name";
+
+        /// <summary>
+        /// The queue name associated with the AWS SDK span.
+        /// </summary>
         internal const string AwsQueueName = "aws.queue.name";
+
+        /// <summary>
+        /// The topic arn associated with the AWS SDK span.
+        /// </summary>
+        internal const string AwsTopicArn = "aws.topic.arn";
 
         /// <summary>
         /// The queue URL associated with the AWS SDK span.
