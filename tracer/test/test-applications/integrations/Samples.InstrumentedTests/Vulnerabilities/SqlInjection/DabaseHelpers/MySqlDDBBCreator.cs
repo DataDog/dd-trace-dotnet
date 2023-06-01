@@ -59,7 +59,7 @@ internal static class MySqlDDBBCreator
                 connection.Open();
                 return connection;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 connection?.Dispose();
             }
