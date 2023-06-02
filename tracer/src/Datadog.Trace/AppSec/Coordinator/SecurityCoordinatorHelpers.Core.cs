@@ -7,7 +7,6 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Activity.Handlers;
 using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -35,21 +34,23 @@ internal static class SecurityCoordinatorHelpers
 
     private static Dictionary<string, string[]> GetResponseHeadersForWaf(IHeaderDictionary headers)
     {
-        var headersDic = new Dictionary<string, string[]>(headers.Count);
-        var headerKeys = headers.Keys;
-        foreach (string originalKey in headerKeys)
+        var headersDictionary = new Dictionary<string, string[]>(headers.Count);
+        foreach (var originalKey in headers.Keys)
         {
-            var keyForDictionary = originalKey.ToLowerInvariant() ?? string.Empty;
-            if (keyForDictionary != "cookie")
+            if (!string.IsNullOrEmpty(originalKey))
             {
-                if (!headersDic.ContainsKey(keyForDictionary))
+                var keyForDictionary = originalKey.ToLowerInvariant();
+                if (keyForDictionary != "cookie")
                 {
-                    headersDic.Add(keyForDictionary, headers[originalKey].ToArray());
+                    if (!headersDictionary.TryAdd(keyForDictionary, headers[originalKey].ToArray()))
+                    {
+                        Log.Warning("Header {Key} couldn't be added as argument to the waf", keyForDictionary);
+                    }
                 }
             }
         }
 
-        return headersDic;
+        return headersDictionary;
     }
 
     internal static void CheckReturnedHeaders(this Security security, Span span, IHeaderDictionary headers)
@@ -62,7 +63,6 @@ internal static class SecurityCoordinatorHelpers
                 if (!transport.IsBlocked)
                 {
                     var securityCoordinator = new SecurityCoordinator(security, httpContext, span, transport);
-                    // var args = securityCoordinator.GetBasicRequestArgsForWaf();
                     var args = new Dictionary<string, object>
                     {
                         { AddressesConstants.ResponseHeaderNoCookies, GetResponseHeadersForWaf(headers) }

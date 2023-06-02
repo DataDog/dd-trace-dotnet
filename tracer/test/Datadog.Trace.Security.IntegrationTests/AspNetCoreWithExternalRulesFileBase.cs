@@ -159,7 +159,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, RuleFile);
             SetEnvironmentVariable(ConfigurationKeys.AppSec.Enabled, EnableSecurity.ToString());
-            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "True");
             Fixture.TryStartIis(this, AppType);
             SetHttpPort(Fixture.HttpPort);
         }
