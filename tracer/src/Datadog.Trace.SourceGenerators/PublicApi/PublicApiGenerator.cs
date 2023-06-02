@@ -101,6 +101,7 @@ public class PublicApiGenerator : IIncrementalGenerator
         string? telemetryConfigKey = null;
         bool? recordValue = null;
         string? conversion = null;
+        string? obsoleteMessage = null;
         var returnType = propertySymbol.Type.ToDisplayString();
 
         foreach (AttributeData attributeData in propertySymbol.GetAttributes())
@@ -163,8 +164,26 @@ public class PublicApiGenerator : IIncrementalGenerator
                         _ => (null, null),
                     };
                 }
+            }
+            else if (attributeData.AttributeClass?.ToDisplayString() == "System.ObsoleteAttribute")
+            {
+                var args = attributeData.ConstructorArguments;
+                if (args.Length == 0)
+                {
+                    obsoleteMessage = string.Empty;
+                    continue;
+                }
 
-                break;
+                foreach (TypedConstant typedConstant in args)
+                {
+                    if (typedConstant.Kind == TypedConstantKind.Error)
+                    {
+                        hasMisconfiguredInput = true;
+                        break;
+                    }
+                }
+
+                obsoleteMessage = args[0].Value as string;
             }
         }
 
@@ -203,7 +222,8 @@ public class PublicApiGenerator : IIncrementalGenerator
             leadingTrivia: property.GetLeadingTrivia().ToFullString(),
             telemetryConfigKey: telemetryConfigKey,
             recordValue: recordValue,
-            conversion: conversion);
+            conversion: conversion,
+            obsoleteMessage: obsoleteMessage);
 
         return new Result<(PublicApiProperty PropertyTag, bool IsValid)>((tag, true), errors);
     }
@@ -274,8 +294,9 @@ public class PublicApiGenerator : IIncrementalGenerator
         public readonly string? TelemetryConfigKey;
         public readonly bool? RecordValue;
         public readonly string? Conversion;
+        public readonly string? ObsoleteMessage;
 
-        public PublicApiProperty(string nameSpace, string className, string fieldName, int? publicApiGetter, int? publicApiSetter, string propertyName, string returnType, string leadingTrivia, string? telemetryConfigKey, bool? recordValue, string? conversion)
+        public PublicApiProperty(string nameSpace, string className, string fieldName, int? publicApiGetter, int? publicApiSetter, string propertyName, string returnType, string leadingTrivia, string? telemetryConfigKey, bool? recordValue, string? conversion, string? obsoleteMessage)
         {
             Namespace = nameSpace;
             ClassName = className;
@@ -288,6 +309,7 @@ public class PublicApiGenerator : IIncrementalGenerator
             TelemetryConfigKey = telemetryConfigKey;
             RecordValue = recordValue;
             Conversion = conversion;
+            ObsoleteMessage = obsoleteMessage;
         }
     }
 }
