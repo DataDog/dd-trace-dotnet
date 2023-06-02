@@ -64,7 +64,7 @@ public static class FireOnStartCommon
             var responseHeaders = instance.DuckCast<HttpProtocolStruct>().ResponseHeaders as IHeaderDictionary;
             if (responseHeaders is not null)
             {
-                Span span = Tracer.Instance.InternalActiveScope?.Root?.Span;
+                var span = Tracer.Instance.InternalActiveScope?.Root?.Span;
 
                 if (span is not null)
                 {

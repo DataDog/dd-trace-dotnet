@@ -42,8 +42,17 @@ internal static class SecurityCoordinatorHelpers
                 var keyForDictionary = originalKey.ToLowerInvariant();
                 if (keyForDictionary != "cookie")
                 {
+#if NETCOREAPP
                     if (!headersDictionary.TryAdd(keyForDictionary, headers[originalKey].ToArray()))
                     {
+#else
+                    if (!headersDictionary.ContainsKey(keyForDictionary))
+                    {
+                        headersDictionary.Add(keyForDictionary, headers[originalKey].ToArray());
+                    }
+                    else
+                    {
+#endif
                         Log.Warning("Header {Key} couldn't be added as argument to the waf", keyForDictionary);
                     }
                 }
