@@ -66,7 +66,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         [PublicApi]
         public ExporterSettings()
-            : this(null, TelemetryFactory.Config)
+            : this(null, new ConfigurationTelemetry())
         {
         }
 
@@ -122,7 +122,7 @@ namespace Datadog.Trace.Configuration
             var metricsPipeName = config.WithKeys(ConfigurationKeys.MetricsPipeName).AsString();
             var metricsUnixDomainSocketPath = config.WithKeys(ConfigurationKeys.MetricsUnixDomainSocketPath).AsString();
 
-            ConfigureTraceTransport(traceAgentUrl, tracesPipeName, agentHost, agentPort, tracesUnixDomainSocketPath, telemetry);
+            ConfigureTraceTransport(traceAgentUrl, tracesPipeName, agentHost, agentPort, tracesUnixDomainSocketPath);
             ConfigureMetricsTransport(traceAgentUrl, agentHost, dogStatsdPort, metricsPipeName, metricsUnixDomainSocketPath);
 
             TracesPipeTimeoutMs = config
@@ -148,7 +148,7 @@ namespace Datadog.Trace.Configuration
             get => _agentUri;
             set
             {
-                SetAgentUriAndTransport(value, TelemetryFactory.Config);
+                SetAgentUriAndTransport(value);
                 // In the case the url was a UDS one, we do not change anything.
                 if (TracesTransport == TracesTransportType.Default)
                 {
@@ -285,14 +285,14 @@ namespace Datadog.Trace.Configuration
         }
 
         [MemberNotNull(nameof(_agentUri))]
-        private void ConfigureTraceTransport(string? agentUri, string? tracesPipeName, string? agentHost, int? agentPort, string? tracesUnixDomainSocketPath, IConfigurationTelemetry telemetry)
+        private void ConfigureTraceTransport(string? agentUri, string? tracesPipeName, string? agentHost, int? agentPort, string? tracesUnixDomainSocketPath)
         {
             // Check the parameters in order of precedence
             // For some cases, we allow falling back on another configuration (eg invalid url as the application will need to be restarted to fix it anyway).
             // For other cases (eg a configured unix domain socket path not found), we don't fallback as the problem could be fixed outside the application.
             if (!string.IsNullOrWhiteSpace(agentUri))
             {
-                if (TrySetAgentUriAndTransport(agentUri!, telemetry))
+                if (TrySetAgentUriAndTransport(agentUri!))
                 {
                     return;
                 }
@@ -302,7 +302,7 @@ namespace Datadog.Trace.Configuration
             {
                 TracesTransport = TracesTransportType.WindowsNamedPipe;
                 TracesPipeName = tracesPipeName;
-                RecordTransport(telemetry, nameof(TracesTransportType.WindowsNamedPipe));
+                RecordTransport(nameof(TracesTransportType.WindowsNamedPipe));
 
                 // The Uri isn't needed anymore in that case, just populating it for retro compatibility.
                 if (!Uri.TryCreate($"http://{agentHost ?? DefaultAgentHost}:{agentPort ?? DefaultAgentPort}", UriKind.Absolute, out var uri))
@@ -319,7 +319,7 @@ namespace Datadog.Trace.Configuration
             // But while it's here, we need to handle it properly
             if (!string.IsNullOrWhiteSpace(tracesUnixDomainSocketPath))
             {
-                if (TrySetAgentUriAndTransport(UnixDomainSocketPrefix + tracesUnixDomainSocketPath, telemetry))
+                if (TrySetAgentUriAndTransport(UnixDomainSocketPrefix + tracesUnixDomainSocketPath))
                 {
                     return;
                 }
@@ -331,7 +331,7 @@ namespace Datadog.Trace.Configuration
                 // The agent will fail to start if it can not bind a port, so we need to override 8126 to prevent port conflict
                 // Port 0 means it will pick some random available port
 
-                if (TrySetAgentUriAndTransport(agentHost ?? DefaultAgentHost, agentPort ?? DefaultAgentPort, telemetry))
+                if (TrySetAgentUriAndTransport(agentHost ?? DefaultAgentHost, agentPort ?? DefaultAgentPort))
                 {
                     return;
                 }
@@ -342,24 +342,24 @@ namespace Datadog.Trace.Configuration
                 // setting the urls as well for retro compatibility in the almost impossible case where someone
                 // used this config and accessed the AgentUri property as well (to avoid a potential null ref)
                 // Using Set not TrySet because we know this is a valid Uri and ensures _agentUri is always non-null
-                SetAgentUriAndTransport(new Uri(UnixDomainSocketPrefix + DefaultTracesUnixDomainSocket), telemetry);
+                SetAgentUriAndTransport(new Uri(UnixDomainSocketPrefix + DefaultTracesUnixDomainSocket));
                 return;
             }
 
             ValidationWarnings.Add("No transport configuration found, using default values");
 
             // we know this URL is valid so don't use TrySet, otherwise can't guarantee _agentUri is non null
-            SetAgentUriAndTransport(CreateDefaultUri(), telemetry);
+            SetAgentUriAndTransport(CreateDefaultUri());
         }
 
         [MemberNotNullWhen(true, nameof(_agentUri))]
-        private bool TrySetAgentUriAndTransport(string host, int port, IConfigurationTelemetry telemetry)
+        private bool TrySetAgentUriAndTransport(string host, int port)
         {
-            return TrySetAgentUriAndTransport($"http://{host}:{port}", telemetry);
+            return TrySetAgentUriAndTransport($"http://{host}:{port}");
         }
 
         [MemberNotNullWhen(true, nameof(_agentUri))]
-        private bool TrySetAgentUriAndTransport(string url, IConfigurationTelemetry telemetry)
+        private bool TrySetAgentUriAndTransport(string url)
         {
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
             {
@@ -367,18 +367,18 @@ namespace Datadog.Trace.Configuration
                 return false;
             }
 
-            SetAgentUriAndTransport(uri, telemetry);
+            SetAgentUriAndTransport(uri);
             return true;
         }
 
         [MemberNotNull(nameof(_agentUri))]
-        private void SetAgentUriAndTransport(Uri uri, IConfigurationTelemetry telemetry)
+        private void SetAgentUriAndTransport(Uri uri)
         {
             if (uri.OriginalString.StartsWith(UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase))
             {
                 TracesTransport = TracesTransportType.UnixDomainSocket;
                 TracesUnixDomainSocketPath = uri.PathAndQuery;
-                RecordTransport(telemetry, nameof(TracesTransportType.UnixDomainSocket));
+                RecordTransport(nameof(TracesTransportType.UnixDomainSocket));
 
                 var absoluteUri = uri.AbsoluteUri.Replace(UnixDomainSocketPrefix, string.Empty);
                 if (!Path.IsPathRooted(absoluteUri))
@@ -396,7 +396,7 @@ namespace Datadog.Trace.Configuration
             else
             {
                 TracesTransport = TracesTransportType.Default;
-                RecordTransport(telemetry, nameof(TracesTransportType.Default));
+                RecordTransport(nameof(TracesTransportType.Default));
             }
 
             SetAgentUriReplacingLocalhost(uri);
@@ -422,8 +422,8 @@ namespace Datadog.Trace.Configuration
 
         private Uri CreateDefaultUri() => new Uri($"http://{DefaultAgentHost}:{DefaultAgentPort}");
 
-        private void RecordTransport(IConfigurationTelemetry telemetry, string transport)
-            => telemetry.Record(
+        private void RecordTransport(string transport)
+            => _telemetry.Record(
                 ConfigTelemetryData.AgentTraceTransport,
                 transport,
                 recordValue: true,
