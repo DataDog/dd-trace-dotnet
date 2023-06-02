@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast;
@@ -21,8 +22,8 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceContext>();
 
-        private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
-        private readonly long _timestamp = Stopwatch.GetTimestamp();
+        private readonly TracerClock _clock;
+
         private IastRequestContext _iastRequestContext;
 
         private ArrayBuilder<Span> _spans;
@@ -46,6 +47,7 @@ namespace Datadog.Trace
 
             Tracer = tracer;
             Tags = tags ?? new TraceTagCollection();
+            _clock = TracerClock.Instance;
         }
 
         public Span RootSpan
@@ -54,7 +56,7 @@ namespace Datadog.Trace
             private set => _rootSpan = value;
         }
 
-        public DateTimeOffset UtcNow => _utcStart.Add(Elapsed);
+        public DateTimeOffset UtcNow => _clock.UtcNow;
 
         public IDatadogTracer Tracer { get; }
 
@@ -89,8 +91,6 @@ namespace Datadog.Trace
         /// Gets the IAST context.
         /// </summary>
         internal IastRequestContext IastRequestContext => _iastRequestContext;
-
-        private TimeSpan Elapsed => StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp);
 
         internal void EnableIastInRequest()
         {
@@ -228,9 +228,42 @@ namespace Datadog.Trace
             }
         }
 
+        public TimeSpan ElapsedSince(DateTimeOffset date) => _clock.ElapsedSince(date);
+    }
+
+#pragma warning disable SA1402
+    internal class TracerClock
+#pragma warning restore SA1402
+    {
+        private static TracerClock _instance;
+
+        private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
+        private readonly long _timestamp = Stopwatch.GetTimestamp();
+
+        static TracerClock()
+        {
+            _instance = new TracerClock();
+            _ = UpdateClockAsync();
+        }
+
+        public static TracerClock Instance => _instance;
+
+        public DateTimeOffset UtcNow => _utcStart.Add(Elapsed);
+
+        private TimeSpan Elapsed => StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp);
+
         public TimeSpan ElapsedSince(DateTimeOffset date)
         {
             return Elapsed + (_utcStart - date);
+        }
+
+        private static async Task UpdateClockAsync()
+        {
+            while (true)
+            {
+                await Task.Delay(TimeSpan.FromMinutes(5)).ConfigureAwait(false);
+                _instance = new TracerClock();
+            }
         }
     }
 }
