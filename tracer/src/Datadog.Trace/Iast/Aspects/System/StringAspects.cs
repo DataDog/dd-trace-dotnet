@@ -831,7 +831,11 @@ public class StringAspects
     public static string Format(IFormatProvider provider, string format, object[] args)
     {
         string result = string.Format(provider, format, args);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, args);
+        // create a new array with format and the elements of args
+        object[] newArgs = new object[args.Length + 1];
+        newArgs[0] = format;
+        Array.Copy(args, 0, newArgs, 1, args.Length);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, newArgs);
         return result;
     }
 }

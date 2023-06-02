@@ -16,6 +16,8 @@ public class StringFormatTests : InstrumentationTestsBase
     public StringFormatTests()
     {
         AddTainted(taintedValue);
+        AddTainted(formatTaintedValue);
+        AddTainted(taintedValue2);
     }
 
     // Testing public static string Format(IFormatProvider provider, string format, params object[] args)
@@ -29,14 +31,20 @@ public class StringFormatTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingFormatWithProvider_ResultIsTainted2()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-formattaintedTAINTED2-+:", String.Format(new FormatProviderForTest(), formatTaintedValue, new object[] { taintedValue, taintedValue2 }), () => String.Format(new FormatProviderForTest(), formatTaintedValue, new object[] { taintedValue, taintedValue2 }));
+        AssertTaintedFormatWithOriginalCallCheck(":+-formatUntaintedStringTAINTED2-+:", String.Format(new FormatProviderForTest(), formatTaintedValue, new object[] { UntaintedString, taintedValue2 }), () => String.Format(new FormatProviderForTest(), formatTaintedValue, new object[] { UntaintedString, taintedValue2 }));
+    }
+
+    [Fact]
+    public void GivenATaintedObject_WhenCallingFormatWithProvider_ResultIsTainted8()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-formatUntaintedStringUntaintedString-+:", String.Format(new FormatProviderForTest(), formatTaintedValue, new object[] { UntaintedString, UntaintedString }), () => String.Format(new FormatProviderForTest(), formatTaintedValue, new object[] { UntaintedString, UntaintedString }));
     }
 
     [Fact]
     public void GivenATaintedObject_WhenCallingFormatWithProvider_ResultIsTainted3()
     {
-        string str = "Literal with tainteds {0}{1} and untainted {2} and tainted {3} and another untainted {4}-+:";
-        AssertTaintedFormatWithOriginalCallCheck(":+-Literal with tainteds TaintedStringTAINTED2 and untainted UntaintedString and tainted TAINTED2 and another untainted OtherUntaintedString",
+        string str = "Literal with tainteds {0}{1} and untainted {2} and tainted {3} and another untainted {4}";
+        AssertTaintedFormatWithOriginalCallCheck(":+-Literal with tainteds taintedTAINTED2 and untainted UntaintedString and tainted TAINTED2 and another untainted OtherUntaintedString-+:",
             String.Format(str, taintedValue, taintedValue2, UntaintedString, taintedValue2, OtherUntaintedString),
             () => String.Format(str, taintedValue, taintedValue2, UntaintedString, taintedValue2, OtherUntaintedString));
     }
@@ -86,7 +94,7 @@ public class StringFormatTests : InstrumentationTestsBase
     // Testing public static string Format(IFormatProvider provider, string format, object arg0, object arg1, object arg2)
 
     [Fact]
-    public void GivenATaintedObject_WhenCallingFormatWithProvider_ResultIsTainted8()
+    public void GivenATaintedObject_WhenCallingFormatWithProvider_ResultIsTainted9()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-formattainted TAINTED2 TAINTED2-+:",
             String.Format(new FormatProviderForTest(), "format{0} {1} {2}", taintedValue, taintedValue2, taintedValue2),
@@ -124,7 +132,7 @@ public class StringFormatTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedFormatObject_WhenCallingFormatWithOneObjectLess_FormatException()
     {
-        Assert.Throws<InvalidOperationException>(() => String.Format(formatTaintedValue, taintedValue));
+        Assert.Throws<FormatException>(() => String.Format(formatTaintedValue, taintedValue));
     }
 
     // Testing public static string Format(string format, object arg0, object arg1)

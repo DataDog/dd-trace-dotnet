@@ -219,6 +219,14 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.String::PadLeft(System.Int32,System.Char)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] PadLeft(System.String,System.Int32,System.Char)",
 "  [AspectMethodReplace(\"System.String::PadRight(System.Int32)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] PadRight(System.String,System.Int32)",
 "  [AspectMethodReplace(\"System.String::PadRight(System.Int32,System.Char)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] PadRight(System.String,System.Int32,System.Char)",
+"  [AspectMethodReplace(\"System.String::Format(System.String,System.Object)\",\"\",[0],[False],[None],Propagation,[])] Format(System.String,System.Object)",
+"  [AspectMethodReplace(\"System.String::Format(System.String,System.Object,System.Object)\",\"\",[0],[False],[None],Propagation,[])] Format(System.String,System.Object,System.Object)",
+"  [AspectMethodReplace(\"System.String::Format(System.String,System.Object,System.Object,System.Object)\",\"\",[0],[False],[None],Propagation,[])] Format(System.String,System.Object,System.Object,System.Object)",
+"  [AspectMethodReplace(\"System.String::Format(System.String,System.Object[])\",\"\",[0],[False],[None],Propagation,[])] Format(System.String,System.Object[])",
+"  [AspectMethodReplace(\"System.String::Format(System.IFormatProvider,System.String,System.Object)\",\"\",[0],[False],[None],Propagation,[])] Format(System.IFormatProvider,System.String,System.Object)",
+"  [AspectMethodReplace(\"System.String::Format(System.IFormatProvider,System.String,System.Object,System.Object)\",\"\",[0],[False],[None],Propagation,[])] Format(System.IFormatProvider,System.String,System.Object,System.Object)",
+"  [AspectMethodReplace(\"System.String::Format(System.IFormatProvider,System.String,System.Object,System.Object,System.Object)\",\"\",[0],[False],[None],Propagation,[])] Format(System.IFormatProvider,System.String,System.Object,System.Object,System.Object)",
+"  [AspectMethodReplace(\"System.String::Format(System.IFormatProvider,System.String,System.Object[])\",\"\",[0],[False],[None],Propagation,[])] Format(System.IFormatProvider,System.String,System.Object[])",
         };
     }
 }
