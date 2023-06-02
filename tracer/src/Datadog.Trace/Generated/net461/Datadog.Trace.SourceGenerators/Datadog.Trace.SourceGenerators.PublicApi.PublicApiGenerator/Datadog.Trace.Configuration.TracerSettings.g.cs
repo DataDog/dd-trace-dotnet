@@ -6,6 +6,163 @@ partial class TracerSettings
 {
 
         /// <summary>
+        /// Gets or sets the default environment name applied to all spans.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.Environment"/>
+    [Datadog.Trace.SourceGenerators.PublicApi]
+    public string? Environment
+    {
+        get
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)78);
+            return EnvironmentInternal;
+        }
+        set
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)79);
+            _telemetry.Record("DD_ENV", value, recordValue: true, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+            EnvironmentInternal = value;
+        }
+    }
+
+        /// <summary>
+        /// Gets or sets the service name applied to top-level spans and used to build derived service names.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.ServiceName"/>
+    [Datadog.Trace.SourceGenerators.PublicApi]
+    public string? ServiceName
+    {
+        get
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)97);
+            return ServiceNameInternal;
+        }
+        set
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)98);
+            _telemetry.Record("DD_SERVICE", value, recordValue: true, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+            ServiceNameInternal = value;
+        }
+    }
+
+        /// <summary>
+        /// Gets or sets the version tag applied to all spans.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.ServiceVersion"/>
+    [Datadog.Trace.SourceGenerators.PublicApi]
+    public string? ServiceVersion
+    {
+        get
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)99);
+            return ServiceVersionInternal;
+        }
+        set
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)100);
+            _telemetry.Record("DD_VERSION", value, recordValue: true, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+            ServiceVersionInternal = value;
+        }
+    }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether tracing is enabled.
+        /// Default is <c>true</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.TraceEnabled"/>
+    [Datadog.Trace.SourceGenerators.PublicApi]
+    public bool TraceEnabled
+    {
+        get
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)105);
+            return TraceEnabledInternal;
+        }
+        set
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)106);
+            _telemetry.Record("DD_TRACE_ENABLED", value, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+            TraceEnabledInternal = value;
+        }
+    }
+
+        /// <summary>
+        /// Gets or sets the names of disabled integrations.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DisabledIntegrations"/>
+    [Datadog.Trace.SourceGenerators.PublicApi]
+    public System.Collections.Generic.HashSet<string> DisabledIntegrationNames
+    {
+        get
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)76);
+            return DisabledIntegrationNamesInternal;
+        }
+        set
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)77);
+            _telemetry.Record("DD_DISABLED_INTEGRATIONS", string.Join(";", value), recordValue: true, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+            DisabledIntegrationNamesInternal = value;
+        }
+    }
+
+        /// <summary>
+        /// Gets or sets the transport settings that dictate how the tracer connects to the agent.
+        /// </summary>
+    [Datadog.Trace.SourceGenerators.PublicApi]
+    public Datadog.Trace.Configuration.ExporterSettings Exporter
+    {
+        get
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)80);
+            return ExporterInternal;
+        }
+        set
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)81);
+            ExporterInternal = value;
+        }
+    }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether default Analytics are enabled.
+        /// Settings this value is a shortcut for setting
+        /// <see cref="Configuration.IntegrationSettings.AnalyticsEnabled"/> on some predetermined integrations.
+        /// See the documentation for more details.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GlobalAnalyticsEnabled"/>
+    [System.Obsolete("App Analytics has been replaced by Tracing without Limits. For more information see https://docs.datadoghq.com/tracing/legacy_app_analytics/")]
+    [Datadog.Trace.SourceGenerators.PublicApi]
+    public bool AnalyticsEnabled
+    {
+        get
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)70);
+            return AnalyticsEnabledInternal;
+        }
+        set
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)71);
+            _telemetry.Record("DD_TRACE_ANALYTICS_ENABLED", value, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+            AnalyticsEnabledInternal = value;
+        }
+    }
+
+        /// <summary>
         /// Gets or sets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
         /// Default is <c>100</c>.
         /// </summary>
@@ -23,9 +180,218 @@ partial class TracerSettings
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                 (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)96);
-            Datadog.Trace.Telemetry.TelemetryFactory.Config.Record(
-                "DD_TRACE_RATE_LIMIT", value, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+            _telemetry.Record("DD_TRACE_RATE_LIMIT", value, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
             MaxTracesSubmittedPerSecondInternal = value;
+        }
+    }
+
+        /// <summary>
+        /// Gets or sets a value indicating custom sampling rules.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
+    [Datadog.Trace.SourceGenerators.PublicApi]
+    public string? CustomSamplingRules
+    {
+        get
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)72);
+            return CustomSamplingRulesInternal;
+        }
+        set
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)73);
+            _telemetry.Record("DD_TRACE_SAMPLING_RULES", value, recordValue: true, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+            CustomSamplingRulesInternal = value;
+        }
+    }
+
+        /// <summary>
+        /// Gets or sets a value indicating a global rate for sampling.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GlobalSamplingRate"/>
+    [Datadog.Trace.SourceGenerators.PublicApi]
+    public double? GlobalSamplingRate
+    {
+        get
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)82);
+            return GlobalSamplingRateInternal;
+        }
+        set
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)83);
+            _telemetry.Record("DD_TRACE_SAMPLE_RATE", value, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+            GlobalSamplingRateInternal = value;
+        }
+    }
+
+        /// <summary>
+        /// Gets a collection of <see cref="IntegrationSettings"/> keyed by integration name.
+        /// </summary>
+    [Datadog.Trace.SourceGenerators.PublicApi]
+    public Datadog.Trace.Configuration.IntegrationSettingsCollection Integrations
+    {
+        get
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)90);
+            return IntegrationsInternal;
+        }
+    }
+
+        /// <summary>
+        /// Gets or sets the global tags, which are applied to all <see cref="Span"/>s.
+        /// </summary>
+    [Datadog.Trace.SourceGenerators.PublicApi]
+    public System.Collections.Generic.IDictionary<string, string> GlobalTags
+    {
+        get
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)84);
+            return GlobalTagsInternal;
+        }
+        set
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)85);
+            _telemetry.Record("DD_TAGS", string.Join(",", System.Linq.Enumerable.Select(value, kvp => $"{kvp.Key}:{kvp.Value}")), recordValue: true, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+            GlobalTagsInternal = value;
+        }
+    }
+
+        /// <summary>
+        /// Gets or sets the map of header keys to tag names, which are applied to the root <see cref="Span"/>
+        /// of incoming and outgoing HTTP requests.
+        /// </summary>
+    [Datadog.Trace.SourceGenerators.PublicApi]
+    public System.Collections.Generic.IDictionary<string, string> HeaderTags
+    {
+        get
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)88);
+            return HeaderTagsInternal;
+        }
+        set
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)89);
+            _telemetry.Record("DD_TRACE_HEADER_TAGS", string.Join(",", System.Linq.Enumerable.Select(value, kvp => $"{kvp.Key}:{kvp.Value}")), recordValue: true, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+            HeaderTagsInternal = value;
+        }
+    }
+
+        /// <summary>
+        /// Gets or sets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>
+        /// of incoming and outgoing GRPC requests.
+        /// </summary>
+    [Datadog.Trace.SourceGenerators.PublicApi]
+    public System.Collections.Generic.IDictionary<string, string> GrpcTags
+    {
+        get
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)86);
+            return GrpcTagsInternal;
+        }
+        set
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)87);
+            _telemetry.Record("DD_TRACE_GRPC_TAGS", string.Join(",", System.Linq.Enumerable.Select(value, kvp => $"{kvp.Key}:{kvp.Value}")), recordValue: true, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+            GrpcTagsInternal = value;
+        }
+    }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether internal metrics
+        /// are enabled and sent to DogStatsd.
+        /// </summary>
+    [Datadog.Trace.SourceGenerators.PublicApi]
+    public bool TracerMetricsEnabled
+    {
+        get
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)107);
+            return TracerMetricsEnabledInternal;
+        }
+        set
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)108);
+            _telemetry.Record("DD_TRACE_METRICS_ENABLED", value, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+            TracerMetricsEnabledInternal = value;
+        }
+    }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether stats are computed on the tracer side
+        /// </summary>
+    [Datadog.Trace.SourceGenerators.PublicApi]
+    public bool StatsComputationEnabled
+    {
+        get
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)103);
+            return StatsComputationEnabledInternal;
+        }
+        set
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)104);
+            _telemetry.Record("DD_TRACE_STATS_COMPUTATION_ENABLED", value, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+            StatsComputationEnabledInternal = value;
+        }
+    }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether a span context should be created on exiting a successful Kafka
+        /// Consumer.Consume() call, and closed on entering Consumer.Consume().
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.KafkaCreateConsumerScopeEnabled"/>
+    [Datadog.Trace.SourceGenerators.PublicApi]
+    public bool KafkaCreateConsumerScopeEnabled
+    {
+        get
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)91);
+            return KafkaCreateConsumerScopeEnabledInternal;
+        }
+        set
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)92);
+            _telemetry.Record("DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED", value, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+            KafkaCreateConsumerScopeEnabledInternal = value;
+        }
+    }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the diagnostic log at startup is enabled
+        /// </summary>
+    [Datadog.Trace.SourceGenerators.PublicApi]
+    public bool StartupDiagnosticLogEnabled
+    {
+        get
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)101);
+            return StartupDiagnosticLogEnabledInternal;
+        }
+        set
+        {
+            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)102);
+            _telemetry.Record("DD_TRACE_STARTUP_LOGS", value, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+            StartupDiagnosticLogEnabledInternal = value;
         }
     }
 }

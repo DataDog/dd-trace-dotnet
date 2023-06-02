@@ -79,15 +79,15 @@ namespace Datadog.Trace.Configuration
             _telemetry = telemetry;
             var config = new ConfigurationBuilder(source, _telemetry);
 
-            Environment = config
+            EnvironmentInternal = config
                          .WithKeys(ConfigurationKeys.Environment)
                          .AsString();
 
-            ServiceName = config
+            ServiceNameInternal = config
                          .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
                          .AsString();
 
-            ServiceVersion = config
+            ServiceVersionInternal = config
                             .WithKeys(ConfigurationKeys.ServiceVersion)
                             .AsString();
 
@@ -103,7 +103,7 @@ namespace Datadog.Trace.Configuration
                                 .WithKeys(ConfigurationKeys.GitMetadataEnabled)
                                 .AsBool(defaultValue: true);
 
-            TraceEnabled = config
+            TraceEnabledInternal = config
                           .WithKeys(ConfigurationKeys.TraceEnabled)
                           .AsBool(defaultValue: true);
 
@@ -112,14 +112,14 @@ namespace Datadog.Trace.Configuration
                                                               ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
                                            Enumerable.Empty<string>();
 
-            DisabledIntegrationNames = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
+            DisabledIntegrationNamesInternal = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
 
-            Integrations = new IntegrationSettingsCollection(source, _telemetry);
+            IntegrationsInternal = new IntegrationSettingsCollection(source, _telemetry);
 
-            Exporter = new ExporterSettings(source, _telemetry);
+            ExporterInternal = new ExporterSettings(source, _telemetry);
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
-            AnalyticsEnabled = config.WithKeys(ConfigurationKeys.GlobalAnalyticsEnabled)
+            AnalyticsEnabledInternal = config.WithKeys(ConfigurationKeys.GlobalAnalyticsEnabled)
                                                    .AsBool(defaultValue: false);
 #pragma warning restore 618
 
@@ -129,7 +129,7 @@ namespace Datadog.Trace.Configuration
 #pragma warning restore 618
                                          .AsInt32(defaultValue: 100);
 
-            GlobalTags = config
+            GlobalTagsInternal = config
                          // backwards compatibility for names used in the past
                         .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
                         .AsDictionary()
@@ -150,7 +150,7 @@ namespace Datadog.Trace.Configuration
                                                    .AsBool(defaultValue: true);
 
             // Filter out tags with empty keys or empty values, and trim whitespaces
-            HeaderTags = InitializeHeaderTags(inputHeaderTags, headerTagsNormalizationFixEnabled);
+            HeaderTagsInternal = InitializeHeaderTags(inputHeaderTags, headerTagsNormalizationFixEnabled);
             MetadataSchemaVersion = config
                                    .WithKeys(ConfigurationKeys.MetadataSchemaVersion)
                                    .GetAs(
@@ -169,11 +169,11 @@ namespace Datadog.Trace.Configuration
                                     ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                                     .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
-            TracerMetricsEnabled = config
+            TracerMetricsEnabledInternal = config
                                   .WithKeys(ConfigurationKeys.TracerMetricsEnabled)
                                   .AsBool(defaultValue: false);
 
-            StatsComputationEnabled = config
+            StatsComputationEnabledInternal = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
                                      .AsBool(defaultValue: false);
 
@@ -181,13 +181,13 @@ namespace Datadog.Trace.Configuration
 
             RuntimeMetricsEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsEnabled).AsBool(defaultValue: false);
 
-            CustomSamplingRules = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString();
+            CustomSamplingRulesInternal = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString();
 
             SpanSamplingRules = config.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString();
 
-            GlobalSamplingRate = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble();
+            GlobalSamplingRateInternal = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble();
 
-            StartupDiagnosticLogEnabled = config.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBool(defaultValue: true);
+            StartupDiagnosticLogEnabledInternal = config.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBool(defaultValue: true);
 
             var httpServerErrorStatusCodes = config
                                             .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes)
@@ -217,7 +217,7 @@ namespace Datadog.Trace.Configuration
                                          .WithKeys(ConfigurationKeys.ExpandRouteTemplatesEnabled)
                                          .AsBool(defaultValue: !RouteTemplateResourceNamesEnabled); // disabled by default if route template resource names enabled
 
-            KafkaCreateConsumerScopeEnabled = config
+            KafkaCreateConsumerScopeEnabledInternal = config
                                              .WithKeys(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
                                              .AsBool(defaultValue: true);
 
@@ -282,7 +282,7 @@ namespace Datadog.Trace.Configuration
             }
             else
             {
-                DisabledIntegrationNames.Add(nameof(Configuration.IntegrationId.OpenTelemetry));
+                DisabledIntegrationNamesInternal.Add(nameof(Configuration.IntegrationId.OpenTelemetry));
             }
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source, _telemetry);
@@ -298,7 +298,7 @@ namespace Datadog.Trace.Configuration
                         ?? new Dictionary<string, string>();
 
             // Filter out tags with empty keys or empty values, and trim whitespaces
-            GrpcTags = InitializeHeaderTags(grpcTags, headerTagsNormalizationFixEnabled: true);
+            GrpcTagsInternal = InitializeHeaderTags(grpcTags, headerTagsNormalizationFixEnabled: true);
 
             OutgoingTagPropagationHeaderMaxLength = config
                                                    .WithKeys(ConfigurationKeys.TagPropagation.HeaderMaxLength)
@@ -331,7 +331,7 @@ namespace Datadog.Trace.Configuration
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
                 if (AzureAppServiceMetadata.IsUnsafeToTrace)
                 {
-                    TraceEnabled = false;
+                    TraceEnabledInternal = false;
                 }
             }
 
@@ -375,19 +375,31 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets the default environment name applied to all spans.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.Environment"/>
-        public string? Environment { get; set; }
+        [GeneratePublicApi(
+            PublicApiUsage.TracerSettings_Environment_Get,
+            PublicApiUsage.TracerSettings_Environment_Set,
+            ConfigurationKeys.Environment)]
+        internal string? EnvironmentInternal { get; set; }
 
         /// <summary>
         /// Gets or sets the service name applied to top-level spans and used to build derived service names.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ServiceName"/>
-        public string? ServiceName { get; set; }
+        [GeneratePublicApi(
+            PublicApiUsage.TracerSettings_ServiceName_Get,
+            PublicApiUsage.TracerSettings_ServiceName_Set,
+            ConfigurationKeys.ServiceName)]
+        internal string? ServiceNameInternal { get; set; }
 
         /// <summary>
         /// Gets or sets the version tag applied to all spans.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ServiceVersion"/>
-        public string? ServiceVersion { get; set; }
+        [GeneratePublicApi(
+            PublicApiUsage.TracerSettings_ServiceVersion_Get,
+            PublicApiUsage.TracerSettings_ServiceVersion_Set,
+            ConfigurationKeys.ServiceVersion)]
+        internal string? ServiceVersionInternal { get; set; }
 
         /// <summary>
         /// Gets or sets the application's git repository url.
@@ -413,18 +425,29 @@ namespace Datadog.Trace.Configuration
         /// Default is <c>true</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TraceEnabled"/>
-        public bool TraceEnabled { get; set; }
+        [GeneratePublicApi(
+            PublicApiUsage.TracerSettings_TraceEnabled_Get,
+            PublicApiUsage.TracerSettings_TraceEnabled_Set,
+            ConfigurationKeys.TraceEnabled)]
+        internal bool TraceEnabledInternal { get; set; }
 
         /// <summary>
         /// Gets or sets the names of disabled integrations.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DisabledIntegrations"/>
-        public HashSet<string> DisabledIntegrationNames { get; set; }
+        [GeneratePublicApi(
+            PublicApiUsage.TracerSettings_DisabledIntegrationNames_Get,
+            PublicApiUsage.TracerSettings_DisabledIntegrationNames_Set,
+            ConfigurationKeys.DisabledIntegrations)]
+        internal HashSet<string> DisabledIntegrationNamesInternal { get; set; }
 
         /// <summary>
         /// Gets or sets the transport settings that dictate how the tracer connects to the agent.
         /// </summary>
-        public ExporterSettings Exporter { get; set; }
+        [GeneratePublicApi(
+            PublicApiUsage.TracerSettings_Exporter_Get,
+            PublicApiUsage.TracerSettings_Exporter_Set)]
+        internal ExporterSettings ExporterInternal { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether default Analytics are enabled.
@@ -434,7 +457,13 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GlobalAnalyticsEnabled"/>
         [Obsolete(DeprecationMessages.AppAnalytics)]
-        public bool AnalyticsEnabled { get; set; }
+        [GeneratePublicApi(
+            PublicApiUsage.TracerSettings_AnalyticsEnabled_Get,
+            PublicApiUsage.TracerSettings_AnalyticsEnabled_Set,
+#pragma warning disable 618 // App analytics is deprecated, but still used
+            ConfigurationKeys.GlobalAnalyticsEnabled)]
+#pragma warning restore 618
+        internal bool AnalyticsEnabledInternal { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether correlation identifiers are
@@ -443,10 +472,21 @@ namespace Datadog.Trace.Configuration
         /// enables Direct Log Submission.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.LogsInjectionEnabled"/>
+        [PublicApi]
         public bool LogsInjectionEnabled
         {
-            get => LogSubmissionSettings?.LogsInjectionEnabled ?? false;
-            set => LogSubmissionSettings.LogsInjectionEnabled = value;
+            get
+            {
+                TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_LogsInjectionEnabled_Get);
+                return LogSubmissionSettings.LogsInjectionEnabled ?? false;
+            }
+
+            set
+            {
+                TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_LogsInjectionEnabled_Set);
+                _telemetry.Record(ConfigurationKeys.LogsInjectionEnabled, value, ConfigurationOrigins.Code);
+                LogSubmissionSettings.LogsInjectionEnabled = value;
+            }
         }
 
         /// <summary>
@@ -464,7 +504,11 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating custom sampling rules.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
-        public string? CustomSamplingRules { get; set; }
+        [GeneratePublicApi(
+            PublicApiUsage.TracerSettings_CustomSamplingRules_Get,
+            PublicApiUsage.TracerSettings_CustomSamplingRules_Set,
+            ConfigurationKeys.CustomSamplingRules)]
+        internal string? CustomSamplingRulesInternal { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating span sampling rules.
@@ -476,23 +520,36 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating a global rate for sampling.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GlobalSamplingRate"/>
-        public double? GlobalSamplingRate { get; set; }
+        [GeneratePublicApi(
+            PublicApiUsage.TracerSettings_GlobalSamplingRate_Get,
+            PublicApiUsage.TracerSettings_GlobalSamplingRate_Set,
+            ConfigurationKeys.GlobalSamplingRate)]
+        internal double? GlobalSamplingRateInternal { get; set; }
 
         /// <summary>
-        /// Gets a collection of <see cref="Integrations"/> keyed by integration name.
+        /// Gets a collection of <see cref="IntegrationSettings"/> keyed by integration name.
         /// </summary>
-        public IntegrationSettingsCollection Integrations { get; }
+        [GeneratePublicApi(PublicApiUsage.TracerSettings_Integrations_Get)]
+        internal IntegrationSettingsCollection IntegrationsInternal { get; }
 
         /// <summary>
         /// Gets or sets the global tags, which are applied to all <see cref="Span"/>s.
         /// </summary>
-        public IDictionary<string, string> GlobalTags { get; set; }
+        [GeneratePublicApi(
+            PublicApiUsage.TracerSettings_GlobalTags_Get,
+            PublicApiUsage.TracerSettings_GlobalTags_Set,
+            ConfigurationKeys.GlobalTags)]
+        internal IDictionary<string, string> GlobalTagsInternal { get; set; }
 
         /// <summary>
         /// Gets or sets the map of header keys to tag names, which are applied to the root <see cref="Span"/>
         /// of incoming and outgoing HTTP requests.
         /// </summary>
-        public IDictionary<string, string> HeaderTags { get; set; }
+        [GeneratePublicApi(
+            PublicApiUsage.TracerSettings_HeaderTags_Get,
+            PublicApiUsage.TracerSettings_HeaderTags_Set,
+            ConfigurationKeys.HeaderTags)]
+        internal IDictionary<string, string> HeaderTagsInternal { get; set; }
 
         /// <summary>
         /// Gets or sets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
@@ -508,18 +565,30 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>
         /// of incoming and outgoing GRPC requests.
         /// </summary>
-        public IDictionary<string, string> GrpcTags { get; set; }
+        [GeneratePublicApi(
+            PublicApiUsage.TracerSettings_GrpcTags_Get,
+            PublicApiUsage.TracerSettings_GrpcTags_Set,
+            ConfigurationKeys.GrpcTags)]
+        internal IDictionary<string, string> GrpcTagsInternal { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether internal metrics
         /// are enabled and sent to DogStatsd.
         /// </summary>
-        public bool TracerMetricsEnabled { get; set; }
+        [GeneratePublicApi(
+            PublicApiUsage.TracerSettings_TracerMetricsEnabled_Get,
+            PublicApiUsage.TracerSettings_TracerMetricsEnabled_Set,
+            ConfigurationKeys.TracerMetricsEnabled)]
+        internal bool TracerMetricsEnabledInternal { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether stats are computed on the tracer side
         /// </summary>
-        public bool StatsComputationEnabled { get; set; }
+        [GeneratePublicApi(
+            PublicApiUsage.TracerSettings_StatsComputationEnabled_Get,
+            PublicApiUsage.TracerSettings_StatsComputationEnabled_Set,
+            ConfigurationKeys.StatsComputationEnabled)]
+        internal bool StatsComputationEnabledInternal { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the use
@@ -531,10 +600,19 @@ namespace Datadog.Trace.Configuration
         /// set it using the <c>DD_TRACE_DIAGNOSTIC_SOURCE_ENABLED</c>
         /// environment variable or in configuration files.
         /// </remark>
+        [PublicApi]
         public bool DiagnosticSourceEnabled
         {
-            get => GlobalSettings.Instance.DiagnosticSourceEnabled;
-            set { }
+            get
+            {
+                TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_DiagnosticSourceEnabled_Get);
+                return GlobalSettings.Instance.DiagnosticSourceEnabled;
+            }
+
+            set
+            {
+                TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_DiagnosticSourceEnabled_Set);
+            }
         }
 
         /// <summary>
@@ -542,7 +620,11 @@ namespace Datadog.Trace.Configuration
         /// Consumer.Consume() call, and closed on entering Consumer.Consume().
         /// </summary>
         /// <seealso cref="ConfigurationKeys.KafkaCreateConsumerScopeEnabled"/>
-        public bool KafkaCreateConsumerScopeEnabled { get; set; }
+        [GeneratePublicApi(
+            PublicApiUsage.TracerSettings_KafkaCreateConsumerScopeEnabled_Get,
+            PublicApiUsage.TracerSettings_KafkaCreateConsumerScopeEnabled_Set,
+            ConfigurationKeys.KafkaCreateConsumerScopeEnabled)]
+        internal bool KafkaCreateConsumerScopeEnabledInternal { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to enable the updated WCF instrumentation that delays execution
@@ -582,7 +664,11 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled
         /// </summary>
-        public bool StartupDiagnosticLogEnabled { get; set; }
+        [GeneratePublicApi(
+            PublicApiUsage.TracerSettings_StartupDiagnosticLogEnabled_Get,
+            PublicApiUsage.TracerSettings_StartupDiagnosticLogEnabled_Set,
+            ConfigurationKeys.StartupDiagnosticLogEnabled)]
+        internal bool StartupDiagnosticLogEnabledInternal { get; set; }
 
         /// <summary>
         /// Gets or sets the time interval (in seconds) for sending stats
@@ -780,7 +866,7 @@ namespace Datadog.Trace.Configuration
         internal void CollectTelemetry()
         {
             TelemetryFactory.Config.Merge(_telemetry);
-            Exporter.CollectTelemetry();
+            ExporterInternal.CollectTelemetry();
         }
 
         private static IDictionary<string, string> InitializeHeaderTags(IDictionary<string, string> configurationDictionary, bool headerTagsNormalizationFixEnabled)
