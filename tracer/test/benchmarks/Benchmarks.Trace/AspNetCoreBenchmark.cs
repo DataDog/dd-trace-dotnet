@@ -24,7 +24,7 @@ namespace Benchmarks.Trace
 
         static AspNetCoreBenchmark()
         {
-            var settings = new TracerSettings { StartupDiagnosticLogEnabled = false };
+            var settings = new TracerSettings { StartupDiagnosticLogEnabledInternal = false };
 
             Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
 

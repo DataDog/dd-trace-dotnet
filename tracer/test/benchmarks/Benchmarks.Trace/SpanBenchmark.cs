@@ -19,8 +19,8 @@ namespace Benchmarks.Trace
         {
             var settings = new TracerSettings
             {
-                TraceEnabled = false,
-                StartupDiagnosticLogEnabled = false
+                TraceEnabledInternal = false,
+                StartupDiagnosticLogEnabledInternal = false
             };
 
             Tracer = new Tracer(settings, new DummyAgentWriter(), null, null, null);

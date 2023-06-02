@@ -50,13 +50,13 @@ namespace Datadog.Trace.IntegrationTests
 
             var settings = new TracerSettings
             {
-                StatsComputationEnabled = true,
-                ServiceName = "default-service",
-                ServiceVersion = "v1",
-                Environment = "test",
-                Exporter = new ExporterSettings
+                StatsComputationEnabledInternal = true,
+                ServiceNameInternal = "default-service",
+                ServiceVersionInternal = "v1",
+                EnvironmentInternal = "test",
+                ExporterInternal = new ExporterSettings
                 {
-                    AgentUri = new Uri($"http://localhost:{agent.Port}"),
+                    AgentUriInternal = new Uri($"http://localhost:{agent.Port}"),
                 }
             };
 
@@ -198,13 +198,13 @@ namespace Datadog.Trace.IntegrationTests
 
             var settings = new TracerSettings
             {
-                StatsComputationEnabled = true,
-                ServiceName = "default-service",
-                ServiceVersion = "v1",
-                Environment = "test",
-                Exporter = new ExporterSettings
+                StatsComputationEnabledInternal = true,
+                ServiceNameInternal = "default-service",
+                ServiceVersionInternal = "v1",
+                EnvironmentInternal = "test",
+                ExporterInternal = new ExporterSettings
                 {
-                    AgentUri = new Uri($"http://localhost:{agent.Port}"),
+                    AgentUriInternal = new Uri($"http://localhost:{agent.Port}"),
                 }
             };
 
@@ -355,15 +355,15 @@ namespace Datadog.Trace.IntegrationTests
 
             var settings = new TracerSettings
             {
-                GlobalSamplingRate = globalSamplingRate,
-                StatsComputationEnabled = statsComputationEnabled,
+                GlobalSamplingRateInternal = globalSamplingRate,
+                StatsComputationEnabledInternal = statsComputationEnabled,
                 StatsComputationInterval = StatsComputationIntervalSeconds,
                 IsRareSamplerEnabled = statsComputationEnabled,
-                ServiceVersion = "V",
-                Environment = "Test",
-                Exporter = new ExporterSettings
+                ServiceVersionInternal = "V",
+                EnvironmentInternal = "Test",
+                ExporterInternal = new ExporterSettings
                 {
-                    AgentUri = new Uri($"http://localhost:{agent.Port}"),
+                    AgentUriInternal = new Uri($"http://localhost:{agent.Port}"),
                 }
             };
 
@@ -584,9 +584,9 @@ namespace Datadog.Trace.IntegrationTests
 
             void AssertStats(MockClientStatsPayload stats, Span span, long totalDuration)
             {
-                stats.Env.Should().Be(settings.Environment);
+                stats.Env.Should().Be(settings.EnvironmentInternal);
                 stats.Hostname.Should().Be(HostMetadata.Instance.Hostname);
-                stats.Version.Should().Be(settings.ServiceVersion);
+                stats.Version.Should().Be(settings.ServiceVersionInternal);
                 stats.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
                 stats.AgentAggregation.Should().Be(null);
                 stats.Lang.Should().Be(TracerConstants.Language);

@@ -73,13 +73,13 @@ namespace Datadog.Trace.Tests
             {
                 var oldSettings = new TracerSettings
                 {
-                    Exporter = new ExporterSettings()
+                    ExporterInternal = new ExporterSettings()
                     {
-                        AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                        AgentUriInternal = new Uri($"http://127.0.0.1:{agent.Port}"),
                     },
-                    TracerMetricsEnabled = false,
-                    StartupDiagnosticLogEnabled = false,
-                    GlobalTags = new Dictionary<string, string> { { "test-tag", "original-value" } },
+                    TracerMetricsEnabledInternal = false,
+                    StartupDiagnosticLogEnabledInternal = false,
+                    GlobalTagsInternal = new Dictionary<string, string> { { "test-tag", "original-value" } },
                 };
                 Tracer.Configure(oldSettings);
 
@@ -87,13 +87,13 @@ namespace Datadog.Trace.Tests
 
                 var newSettings = new TracerSettings
                 {
-                    Exporter = new ExporterSettings()
+                    ExporterInternal = new ExporterSettings()
                     {
-                        AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                        AgentUriInternal = new Uri($"http://127.0.0.1:{agent.Port}"),
                     },
-                    TracerMetricsEnabled = false,
-                    StartupDiagnosticLogEnabled = false,
-                    GlobalTags = new Dictionary<string, string> { { "test-tag", "new-value" } },
+                    TracerMetricsEnabledInternal = false,
+                    StartupDiagnosticLogEnabledInternal = false,
+                    GlobalTagsInternal = new Dictionary<string, string> { { "test-tag", "new-value" } },
                 };
 
                 Tracer.Configure(newSettings);

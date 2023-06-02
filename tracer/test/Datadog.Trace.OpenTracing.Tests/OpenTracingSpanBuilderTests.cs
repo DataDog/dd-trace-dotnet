@@ -23,7 +23,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         {
             var settings = new TracerSettings
             {
-                ServiceName = DefaultServiceName
+                ServiceNameInternal = DefaultServiceName
             };
 
             var writerMock = new Mock<IAgentWriter>(MockBehavior.Strict);

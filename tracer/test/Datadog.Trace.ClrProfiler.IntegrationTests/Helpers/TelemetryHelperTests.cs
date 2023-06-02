@@ -66,7 +66,7 @@ public class TelemetryHelperTests
         collector.IntegrationGeneratedSpan(IntegrationId.Msmq);
         var tracerSettings = new TracerSettings(null, NullConfigurationTelemetry.Instance)
         {
-            DisabledIntegrationNames = new HashSet<string> { nameof(IntegrationId.Kafka), nameof(IntegrationId.Msmq) }
+            DisabledIntegrationNamesInternal = new HashSet<string> { nameof(IntegrationId.Kafka), nameof(IntegrationId.Msmq) }
         };
 
         collector.RecordTracerSettings(new(tracerSettings));
@@ -101,7 +101,7 @@ public class TelemetryHelperTests
         collector.IntegrationGeneratedSpan(IntegrationId.Msmq);
         var tracerSettings = new TracerSettings(null, NullConfigurationTelemetry.Instance)
         {
-            DisabledIntegrationNames = new HashSet<string> { nameof(IntegrationId.Kafka), nameof(IntegrationId.Msmq) }
+            DisabledIntegrationNamesInternal = new HashSet<string> { nameof(IntegrationId.Kafka), nameof(IntegrationId.Msmq) }
         };
 
         collector.RecordTracerSettings(new(tracerSettings));

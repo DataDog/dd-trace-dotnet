@@ -66,16 +66,16 @@ namespace Datadog.Trace.Tests.Configuration
             var equalityCheckers = new List<Func<ExporterSettings, ImmutableExporterSettings, bool>>()
             {
                 (e, i) => e.MetricsPipeName == i.MetricsPipeName,
-                (e, i) => e.TracesPipeName == i.TracesPipeName,
-                (e, i) => e.DogStatsdPort == i.DogStatsdPort,
+                (e, i) => e.TracesPipeNameInternal == i.TracesPipeName,
+                (e, i) => e.DogStatsdPortInternal == i.DogStatsdPort,
                 (e, i) => e.MetricsTransport == i.MetricsTransport,
                 (e, i) => e.TracesTransport == i.TracesTransport,
                 (e, i) => e.TracesPipeTimeoutMs == i.TracesPipeTimeoutMs,
-                (e, i) => e.AgentUri == i.AgentUri,
-                (e, i) => e.PartialFlushEnabled == i.PartialFlushEnabled,
-                (e, i) => e.PartialFlushMinSpans == i.PartialFlushMinSpans,
-                (e, i) => e.MetricsUnixDomainSocketPath == i.MetricsUnixDomainSocketPath,
-                (e, i) => e.TracesUnixDomainSocketPath == i.TracesUnixDomainSocketPath,
+                (e, i) => e.AgentUriInternal == i.AgentUri,
+                (e, i) => e.PartialFlushEnabledInternal == i.PartialFlushEnabled,
+                (e, i) => e.PartialFlushMinSpansInternal == i.PartialFlushMinSpans,
+                (e, i) => e.MetricsUnixDomainSocketPathInternal == i.MetricsUnixDomainSocketPath,
+                (e, i) => e.TracesUnixDomainSocketPathInternal == i.TracesUnixDomainSocketPath,
                 (e, i) => e.ValidationWarnings.Count == i.ValidationWarnings.Count,
             };
 
@@ -87,12 +87,12 @@ namespace Datadog.Trace.Tests.Configuration
 
             var exporterSettings = new ExporterSettings();
 
-            exporterSettings.AgentUri = new Uri("http://127.0.0.1:8282");
-            exporterSettings.MetricsUnixDomainSocketPath = "metricsuds";
-            exporterSettings.TracesUnixDomainSocketPath = "tracesuds";
+            exporterSettings.AgentUriInternal = new Uri("http://127.0.0.1:8282");
+            exporterSettings.MetricsUnixDomainSocketPathInternal = "metricsuds";
+            exporterSettings.TracesUnixDomainSocketPathInternal = "tracesuds";
             exporterSettings.MetricsPipeName = "metricspipe";
-            exporterSettings.TracesPipeName = "tracespipe";
-            exporterSettings.DogStatsdPort = 1234;
+            exporterSettings.TracesPipeNameInternal = "tracespipe";
+            exporterSettings.DogStatsdPortInternal = 1234;
             exporterSettings.MetricsTransport = Vendors.StatsdClient.Transport.TransportType.NamedPipe;
             exporterSettings.TracesTransport = TracesTransportType.WindowsNamedPipe;
             exporterSettings.TracesPipeTimeoutMs = 5556;

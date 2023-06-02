@@ -21,10 +21,10 @@ namespace Benchmarks.Trace
         {
             var logInjectionSettings = new TracerSettings
             {
-                StartupDiagnosticLogEnabled = false,
+                StartupDiagnosticLogEnabledInternal = false,
                 LogsInjectionEnabled = true,
-                Environment = "env",
-                ServiceVersion = "version"
+                EnvironmentInternal = "env",
+                ServiceVersionInternal = "version"
             };
 
             LogInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);

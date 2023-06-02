@@ -18,7 +18,7 @@ namespace Benchmarks.Trace
         {
             var settings = new TracerSettings
             {
-                StartupDiagnosticLogEnabled = false
+                StartupDiagnosticLogEnabledInternal = false
             };
 
             Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));

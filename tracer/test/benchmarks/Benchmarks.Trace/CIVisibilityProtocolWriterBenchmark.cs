@@ -20,8 +20,8 @@ namespace Benchmarks.Trace
         static CIVisibilityProtocolWriterBenchmark()
         {
             var settings = CIVisibilitySettings.FromDefaultSources();
-            settings.TracerSettings.StartupDiagnosticLogEnabled = false;
-            settings.TracerSettings.TraceEnabled = false;
+            settings.TracerSettings.StartupDiagnosticLogEnabledInternal = false;
+            settings.TracerSettings.TraceEnabledInternal = false;
 
             EventWriter = new CIVisibilityProtocolWriter(settings, new FakeCIVisibilityProtocolWriter());
 

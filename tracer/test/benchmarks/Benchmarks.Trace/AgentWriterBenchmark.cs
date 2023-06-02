@@ -24,10 +24,10 @@ namespace Benchmarks.Trace
         {
             var settings = TracerSettings.FromDefaultSources();
 
-            settings.StartupDiagnosticLogEnabled = false;
-            settings.TraceEnabled = false;
+            settings.StartupDiagnosticLogEnabledInternal = false;
+            settings.TraceEnabledInternal = false;
 
-            var api = new Api(new FakeApiRequestFactory(settings.Exporter.AgentUri), statsd: null, updateSampleRates: null, partialFlushEnabled: false);
+            var api = new Api(new FakeApiRequestFactory(settings.ExporterInternal.AgentUriInternal), statsd: null, updateSampleRates: null, partialFlushEnabled: false);
 
             AgentWriter = new AgentWriter(api, statsAggregator: null, statsd: null, spanSampler: null, automaticFlush: false);
 

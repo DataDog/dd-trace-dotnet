@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
-            Assert.True(settings.GlobalTags.Any());
+            Assert.True(settings.GlobalTagsInternal.Any());
 
             var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings));
 
-            Assert.Equal(areTracesEnabled, tracerSettings.TraceEnabled);
+            Assert.Equal(areTracesEnabled, tracerSettings.TraceEnabledInternal);
 
             _writerMock.Invocations.Clear();
 
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings));
 
-            Assert.Equal(expected, tracerSettings.Exporter.AgentUri.ToString());
+            Assert.Equal(expected, tracerSettings.ExporterInternal.AgentUriInternal.ToString());
         }
 
         [Theory]
@@ -205,7 +205,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource((ConfigurationKeys.Environment, value));
             var settings = new TracerSettings(source);
 
-            settings.Environment.Should().Be(expected);
+            settings.EnvironmentInternal.Should().Be(expected);
         }
 
         [Theory]
@@ -221,7 +221,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource((ConfigurationKeys.ServiceName, value), (legacyServiceName, legacyValue));
             var settings = new TracerSettings(source);
 
-            settings.ServiceName.Should().Be(expected);
+            settings.ServiceNameInternal.Should().Be(expected);
         }
 
         [Theory]
@@ -231,7 +231,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource((ConfigurationKeys.ServiceVersion, value));
             var settings = new TracerSettings(source);
 
-            settings.ServiceVersion.Should().Be(expected);
+            settings.ServiceVersionInternal.Should().Be(expected);
         }
 
         [Theory]
@@ -277,7 +277,7 @@ namespace Datadog.Trace.Tests.Configuration
                 (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, isOpenTelemetryEnabled ? "1" : "0"));
             var settings = new TracerSettings(source);
 
-            settings.DisabledIntegrationNames.Should().BeEquivalentTo(expected);
+            settings.DisabledIntegrationNamesInternal.Should().BeEquivalentTo(expected);
         }
 
         [Theory]
@@ -288,7 +288,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource((ConfigurationKeys.GlobalAnalyticsEnabled, value));
             var settings = new TracerSettings(source);
 
-            settings.AnalyticsEnabled.Should().Be(expected);
+            settings.AnalyticsEnabledInternal.Should().Be(expected);
 #pragma warning restore 618
         }
 
@@ -302,9 +302,9 @@ namespace Datadog.Trace.Tests.Configuration
 
             var settings = new TracerSettings(source);
 
-            settings.Integrations[IntegrationRegistry.Names[0]].Enabled.Should().BeNull();
-            settings.Integrations[IntegrationRegistry.Names[1]].Enabled.Should().BeFalse();
-            settings.Integrations[IntegrationRegistry.Names[2]].Enabled.Should().BeTrue();
+            settings.IntegrationsInternal[IntegrationRegistry.Names[0]].Enabled.Should().BeNull();
+            settings.IntegrationsInternal[IntegrationRegistry.Names[1]].Enabled.Should().BeFalse();
+            settings.IntegrationsInternal[IntegrationRegistry.Names[2]].Enabled.Should().BeTrue();
         }
 
         [Theory]
@@ -339,7 +339,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource((ConfigurationKeys.GlobalTags, value), (legacyGlobalTagsKey, legacyValue));
             var settings = new TracerSettings(source);
 
-            settings.GlobalTags.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
+            settings.GlobalTagsInternal.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
         }
 
         [Theory]
@@ -356,7 +356,7 @@ namespace Datadog.Trace.Tests.Configuration
                 (ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled, normalizationFixEnabled ? "1" : "0"));
             var settings = new TracerSettings(source);
 
-            settings.HeaderTags.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
+            settings.HeaderTagsInternal.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
         }
 
         [Theory]
@@ -394,7 +394,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource((ConfigurationKeys.TracerMetricsEnabled, value));
             var settings = new TracerSettings(source);
 
-            settings.TracerMetricsEnabled.Should().Be(expected);
+            settings.TracerMetricsEnabledInternal.Should().Be(expected);
         }
 
         [Theory]
@@ -404,7 +404,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource((ConfigurationKeys.StatsComputationEnabled, value));
             var settings = new TracerSettings(source);
 
-            settings.StatsComputationEnabled.Should().Be(expected);
+            settings.StatsComputationEnabledInternal.Should().Be(expected);
         }
 
         [Theory]
@@ -434,7 +434,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource((ConfigurationKeys.CustomSamplingRules, value));
             var settings = new TracerSettings(source);
 
-            settings.CustomSamplingRules.Should().Be(expected);
+            settings.CustomSamplingRulesInternal.Should().Be(expected);
         }
 
         [Theory]
@@ -454,7 +454,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource((ConfigurationKeys.GlobalSamplingRate, value));
             var settings = new TracerSettings(source);
 
-            settings.GlobalSamplingRate.Should().Be(expected);
+            settings.GlobalSamplingRateInternal.Should().Be(expected);
         }
 
         [Theory]
@@ -464,7 +464,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource((ConfigurationKeys.StartupDiagnosticLogEnabled, value));
             var settings = new TracerSettings(source);
 
-            settings.StartupDiagnosticLogEnabled.Should().Be(expected);
+            settings.StartupDiagnosticLogEnabledInternal.Should().Be(expected);
         }
 
         [Theory]
@@ -524,7 +524,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource((ConfigurationKeys.KafkaCreateConsumerScopeEnabled, value));
             var settings = new TracerSettings(source);
 
-            settings.KafkaCreateConsumerScopeEnabled.Should().Be(expected);
+            settings.KafkaCreateConsumerScopeEnabledInternal.Should().Be(expected);
         }
 
         [Theory]
@@ -681,7 +681,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource((ConfigurationKeys.GrpcTags, value));
             var settings = new TracerSettings(source);
 
-            settings.GrpcTags.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
+            settings.GrpcTagsInternal.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
         }
 
         [Theory]
@@ -761,7 +761,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource((ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1"));
             var settings = new TracerSettings(source);
 
-            settings.TraceEnabled.Should().BeFalse();
+            settings.TraceEnabledInternal.Should().BeFalse();
         }
 
         [Theory]

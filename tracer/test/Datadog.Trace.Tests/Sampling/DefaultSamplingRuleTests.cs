@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void KeyParsing(string key, string expectedService, string expectedEnv, float expectedRate)
         {
             // create span, setting service and environment
-            var settings = new TracerSettings { ServiceName = expectedService };
+            var settings = new TracerSettings { ServiceNameInternal = expectedService };
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
             using var scope = (Scope)tracer.StartActive("root");
             scope.Span.Context.TraceContext.Environment = expectedEnv;

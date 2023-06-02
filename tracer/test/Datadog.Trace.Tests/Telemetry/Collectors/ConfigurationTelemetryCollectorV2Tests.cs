@@ -200,9 +200,9 @@ public class ConfigurationTelemetryCollectorV2Tests
             var collector = new ConfigurationTelemetry();
             var s = new TracerSettings(NullConfigurationSource.Instance, collector)
             {
-                ServiceName = serviceName,
-                Environment = env,
-                ServiceVersion = serviceVersion
+                ServiceNameInternal = serviceName,
+                EnvironmentInternal = env,
+                ServiceVersionInternal = serviceVersion
             };
 
             return GetLatestValueFromConfig(collector.GetData(), ConfigTelemetryData.FullTrustAppDomain);

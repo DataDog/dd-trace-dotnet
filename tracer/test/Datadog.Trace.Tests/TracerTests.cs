@@ -401,7 +401,7 @@ namespace Datadog.Trace.Tests
         [InlineData("test")]
         public void SetEnv(string env)
         {
-            var settings = new TracerSettings { Environment = env };
+            var settings = new TracerSettings { EnvironmentInternal = env };
             var tracer = TracerHelper.Create(settings);
             var scope = (Scope)tracer.StartActive("operation");
 
@@ -414,7 +414,7 @@ namespace Datadog.Trace.Tests
         [InlineData("1.2.3")]
         public void SetVersion(string version)
         {
-            var settings = new TracerSettings { ServiceVersion = version };
+            var settings = new TracerSettings { ServiceVersionInternal = version };
             var tracer = TracerHelper.Create(settings);
             var scope = (Scope)tracer.StartActive("operation");
 
@@ -434,7 +434,7 @@ namespace Datadog.Trace.Tests
         {
             var settings = new TracerSettings()
             {
-                ServiceName = tracerServiceName,
+                ServiceNameInternal = tracerServiceName,
             };
 
             var tracer = TracerHelper.Create(settings);
@@ -529,7 +529,7 @@ namespace Datadog.Trace.Tests
 
             var settings = new TracerSettings
             {
-                StartupDiagnosticLogEnabled = false
+                StartupDiagnosticLogEnabledInternal = false
             };
 
             var tracer = new Tracer(settings, agent.Object, Mock.Of<ITraceSampler>(), Mock.Of<IScopeManager>(), Mock.Of<IDogStatsd>());
@@ -546,7 +546,7 @@ namespace Datadog.Trace.Tests
 
             var settings = new TracerSettings
             {
-                StartupDiagnosticLogEnabled = false
+                StartupDiagnosticLogEnabledInternal = false
             };
             var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
@@ -588,7 +588,7 @@ namespace Datadog.Trace.Tests
 
             var settings = new TracerSettings
             {
-                StartupDiagnosticLogEnabled = false
+                StartupDiagnosticLogEnabledInternal = false
             };
             var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
@@ -678,7 +678,7 @@ namespace Datadog.Trace.Tests
 
             var settings = new TracerSettings
             {
-                StartupDiagnosticLogEnabled = false
+                StartupDiagnosticLogEnabledInternal = false
             };
             var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 

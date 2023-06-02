@@ -207,7 +207,7 @@ namespace Datadog.Trace.IntegrationTests
         {
             var transport = TelemetryTransportFactory.Create(
                 new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, agentProxyEnabled: true, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, v2Enabled: false, metricsEnabled: false),
-                new ImmutableExporterSettings(new ExporterSettings { AgentUri = telemetryUri }));
+                new ImmutableExporterSettings(new ExporterSettings { AgentUriInternal = telemetryUri }));
             transport.Should().HaveCount(1);
             transport[0].Should().BeOfType<AgentTelemetryTransport>();
             return transport[0];

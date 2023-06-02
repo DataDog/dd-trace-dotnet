@@ -54,9 +54,9 @@ namespace Datadog.Trace.Tests
 
             var settings = new TracerSettings()
             {
-                ServiceName = service,
-                ServiceVersion = version,
-                Environment = env
+                ServiceNameInternal = service,
+                ServiceVersionInternal = version,
+                EnvironmentInternal = env
             };
             var tracer = TracerHelper.Create(settings);
             Tracer.UnsafeSetTracerInstance(tracer);

@@ -103,7 +103,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void Choose_Between_Sampling_Mechanisms()
         {
-            var settings = new TracerSettings { ServiceName = ServiceName };
+            var settings = new TracerSettings { ServiceNameInternal = ServiceName };
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
 
             using var scope = (Scope)tracer.StartActive(OperationName);
@@ -135,7 +135,7 @@ namespace Datadog.Trace.Tests.Sampling
             var autoKeeps = 0;
             var userKeeps = 0;
 
-            var settings = new TracerSettings { ServiceName = ServiceName };
+            var settings = new TracerSettings { ServiceNameInternal = ServiceName };
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
 
             while (sampleSize-- > 0)

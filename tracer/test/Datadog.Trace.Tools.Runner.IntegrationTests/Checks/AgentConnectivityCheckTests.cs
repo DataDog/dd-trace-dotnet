@@ -166,7 +166,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             var settings = new ExporterSettings
             {
-                AgentUri = new System.Uri($"unix://{tracesUdsPath}"),
+                AgentUriInternal = new System.Uri($"unix://{tracesUdsPath}"),
             };
 
             var result = await AgentConnectivityCheck.RunAsync(new ImmutableExporterSettings(settings));
@@ -193,6 +193,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             console.Output.Should().Contain(AgentDetectionFailed);
         }
 
-        private static ImmutableExporterSettings CreateSettings(string url) => new(new ExporterSettings { AgentUri = new(url) });
+        private static ImmutableExporterSettings CreateSettings(string url) => new(new ExporterSettings { AgentUriInternal = new(url) });
     }
 }

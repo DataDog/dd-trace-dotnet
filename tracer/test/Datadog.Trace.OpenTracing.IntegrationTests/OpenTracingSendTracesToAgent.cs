@@ -22,11 +22,11 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
             {
                 var settings = new TracerSettings
                 {
-                    Exporter = new ExporterSettings()
+                    ExporterInternal = new ExporterSettings()
                     {
-                        AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                        AgentUriInternal = new Uri($"http://127.0.0.1:{agent.Port}"),
                     },
-                    TracerMetricsEnabled = false,
+                    TracerMetricsEnabledInternal = false,
                 };
 
                 var innerTracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
@@ -52,11 +52,11 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
             {
                 var settings = new TracerSettings
                 {
-                    Exporter = new ExporterSettings()
+                    ExporterInternal = new ExporterSettings()
                     {
-                        AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                        AgentUriInternal = new Uri($"http://127.0.0.1:{agent.Port}"),
                     },
-                    TracerMetricsEnabled = false,
+                    TracerMetricsEnabledInternal = false,
                 };
 
                 var innerTracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
@@ -84,11 +84,11 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
             {
                 var settings = new TracerSettings
                 {
-                    Exporter = new ExporterSettings()
+                    ExporterInternal = new ExporterSettings()
                     {
-                        AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                        AgentUriInternal = new Uri($"http://127.0.0.1:{agent.Port}"),
                     },
-                    TracerMetricsEnabled = false,
+                    TracerMetricsEnabledInternal = false,
                 };
 
                 var innerTracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);

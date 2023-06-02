@@ -63,8 +63,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             _ = dbType;
 
             var tracerSettings = new TracerSettings();
-            tracerSettings.Integrations[integrationName].Enabled = true;
-            tracerSettings.Integrations[nameof(IntegrationId.AdoNet)].Enabled = false;
+            tracerSettings.IntegrationsInternal[integrationName].Enabled = true;
+            tracerSettings.IntegrationsInternal[nameof(IntegrationId.AdoNet)].Enabled = false;
             var tracer = TracerHelper.Create(tracerSettings);
 
             // Create scope
@@ -153,7 +153,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         {
             // Set up tracer
             var tracerSettings = new TracerSettings();
-            tracerSettings.Integrations[integrationName].Enabled = enabled;
+            tracerSettings.IntegrationsInternal[integrationName].Enabled = enabled;
             return TracerHelper.Create(tracerSettings);
         }
 

@@ -29,16 +29,16 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var param = "http://someUrl";
             var uri = new Uri(param);
-            var settings = new ExporterSettings { AgentUri = uri };
+            var settings = new ExporterSettings { AgentUriInternal = uri };
             var settingsFromSource = Setup("DD_TRACE_AGENT_URL", param);
 
             AssertHttpIsConfigured(settingsFromSource, uri);
             // The Uri is used to connect to dogstatsd as well, by getting the host from the uri
             Assert.Equal(expected: MetricsTransportType.UDP, actual: settingsFromSource.MetricsTransport);
-            Assert.Equal(expected: ExporterSettings.DefaultDogstatsdPort, actual: settingsFromSource.DogStatsdPort);
+            Assert.Equal(expected: ExporterSettings.DefaultDogstatsdPort, actual: settingsFromSource.DogStatsdPortInternal);
             AssertHttpIsConfigured(settings, uri);
             Assert.Equal(expected: MetricsTransportType.UDP, actual: settings.MetricsTransport);
-            Assert.Equal(expected: ExporterSettings.DefaultDogstatsdPort, actual: settings.DogStatsdPort);
+            Assert.Equal(expected: ExporterSettings.DefaultDogstatsdPort, actual: settings.DogStatsdPortInternal);
         }
 
         [Theory]
@@ -50,7 +50,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             var settingsFromSource = Setup(FileExistsMock(path.Replace("\\", "/")), $"DD_TRACE_AGENT_URL:unix://{path}");
             AssertUdsIsConfigured(settingsFromSource, path.Replace("\\", "/"));
-            settingsFromSource.AgentUri.Should().Be(uri);
+            settingsFromSource.AgentUriInternal.Should().Be(uri);
             settingsFromSource.ValidationWarnings.Should().BeEmpty();
         }
 
@@ -70,8 +70,8 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var settingsFromSource = Setup("DD_TRACE_AGENT_URL", param);
             Assert.Equal(expected: TracesTransportType.UnixDomainSocket, actual: settingsFromSource.TracesTransport);
-            Assert.Equal(expected: expectedSocket, actual: settingsFromSource.TracesUnixDomainSocketPath);
-            Assert.Equal(new Uri(param), settingsFromSource.AgentUri);
+            Assert.Equal(expected: expectedSocket, actual: settingsFromSource.TracesUnixDomainSocketPathInternal);
+            Assert.Equal(new Uri(param), settingsFromSource.AgentUriInternal);
             CheckDefaultValues(settingsFromSource, "TracesUnixDomainSocketPath", "AgentUri", "TracesTransport");
             settingsFromSource.ValidationWarnings.Should().Contain($"The provided Uri {param} contains a relative path which may not work. This is the path to the socket that will be used: /socket.soc");
         }
@@ -85,8 +85,8 @@ namespace Datadog.Trace.Tests.Configuration
             var uri = new Uri(ExporterSettings.UnixDomainSocketPrefix + param);
 
             Assert.Equal(expected: TracesTransportType.UnixDomainSocket, actual: settingsFromSource.TracesTransport);
-            Assert.Equal(expected: expectedSocket, actual: settingsFromSource.TracesUnixDomainSocketPath);
-            Assert.Equal(uri, settingsFromSource.AgentUri);
+            Assert.Equal(expected: expectedSocket, actual: settingsFromSource.TracesUnixDomainSocketPathInternal);
+            Assert.Equal(uri, settingsFromSource.AgentUriInternal);
             CheckDefaultValues(settingsFromSource, "TracesUnixDomainSocketPath", "AgentUri", "TracesTransport");
             settingsFromSource.ValidationWarnings.Should().Contain($"The provided Uri {uri.AbsoluteUri} contains a relative path which may not work. This is the path to the socket that will be used: {expectedSocket}");
             settingsFromSource.ValidationWarnings.Should().Contain($"The socket provided {expectedSocket} cannot be found. The tracer will still rely on this socket to send traces.");
@@ -114,22 +114,22 @@ namespace Datadog.Trace.Tests.Configuration
         public void TracesPipeName()
         {
             var param = @"C:\temp\someval";
-            var settings = new ExporterSettings() { TracesPipeName = param };
+            var settings = new ExporterSettings() { TracesPipeNameInternal = param };
             var settingsFromSource = Setup("DD_TRACE_PIPE_NAME", param);
 
             AssertPipeIsConfigured(settingsFromSource, param);
-            settings.TracesPipeName.Should().Be(param);
+            settings.TracesPipeNameInternal.Should().Be(param);
         }
 
         [Fact]
         public void MetricsUnixDomainSocketPath()
         {
             var param = "/var/path";
-            var settings = new ExporterSettings() { MetricsUnixDomainSocketPath = param };
+            var settings = new ExporterSettings() { MetricsUnixDomainSocketPathInternal = param };
             var settingsFromSource = Setup("DD_DOGSTATSD_SOCKET", param);
 
             AssertMetricsUdsIsConfigured(settingsFromSource, param);
-            settings.MetricsUnixDomainSocketPath.Should().Be(param);
+            settings.MetricsUnixDomainSocketPathInternal.Should().Be(param);
             // AssertUdsIsConfigured(settings, param); //This is actually not working as we don't recompute the transport when setting the property
         }
 
@@ -151,11 +151,11 @@ namespace Datadog.Trace.Tests.Configuration
         public void DogStatsdPort()
         {
             var param = 9333;
-            var settings = new ExporterSettings() { DogStatsdPort = param };
+            var settings = new ExporterSettings() { DogStatsdPortInternal = param };
             var settingsFromSource = Setup("DD_DOGSTATSD_PORT", param.ToString());
 
-            settings.DogStatsdPort.Should().Be(param);
-            settingsFromSource.DogStatsdPort.Should().Be(param);
+            settings.DogStatsdPortInternal.Should().Be(param);
+            settingsFromSource.DogStatsdPortInternal.Should().Be(param);
 
             CheckDefaultValues(settings, "DogStatsdPort");
             CheckDefaultValues(settingsFromSource, "DogStatsdPort");
@@ -165,11 +165,11 @@ namespace Datadog.Trace.Tests.Configuration
         public void PartialFlushEnabled()
         {
             var param = true;
-            var settings = new ExporterSettings() { PartialFlushEnabled = param };
+            var settings = new ExporterSettings() { PartialFlushEnabledInternal = param };
             var settingsFromSource = Setup("DD_TRACE_PARTIAL_FLUSH_ENABLED", param.ToString());
 
-            settings.PartialFlushEnabled.Should().Be(param);
-            settingsFromSource.PartialFlushEnabled.Should().Be(param);
+            settings.PartialFlushEnabledInternal.Should().Be(param);
+            settingsFromSource.PartialFlushEnabledInternal.Should().Be(param);
 
             CheckDefaultValues(settings, "PartialFlushEnabled");
             CheckDefaultValues(settingsFromSource, "PartialFlushEnabled");
@@ -179,11 +179,11 @@ namespace Datadog.Trace.Tests.Configuration
         public void PartialFlushMinSpans()
         {
             var param = 200;
-            var settings = new ExporterSettings() { PartialFlushMinSpans = param };
+            var settings = new ExporterSettings() { PartialFlushMinSpansInternal = param };
             var settingsFromSource = Setup("DD_TRACE_PARTIAL_FLUSH_MIN_SPANS", param.ToString());
 
-            settings.PartialFlushMinSpans.Should().Be(param);
-            settingsFromSource.PartialFlushMinSpans.Should().Be(param);
+            settings.PartialFlushMinSpansInternal.Should().Be(param);
+            settingsFromSource.PartialFlushMinSpansInternal.Should().Be(param);
 
             CheckDefaultValues(settings, "PartialFlushMinSpans");
             CheckDefaultValues(settingsFromSource, "PartialFlushMinSpans");
@@ -194,8 +194,8 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var param = -200;
             var settingsFromSource = Setup("DD_TRACE_PARTIAL_FLUSH_MIN_SPANS", param.ToString());
-            settingsFromSource.PartialFlushMinSpans.Should().Be(500);
-            Assert.Throws<ArgumentException>(() => new ExporterSettings() { PartialFlushMinSpans = param });
+            settingsFromSource.PartialFlushMinSpansInternal.Should().Be(500);
+            Assert.Throws<ArgumentException>(() => new ExporterSettings() { PartialFlushMinSpansInternal = param });
         }
 
         [Fact]
@@ -207,7 +207,7 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new ExporterSettings();
             AssertHttpIsConfigured(settings, new Uri("http://127.0.0.1:8126/"));
 
-            settings.AgentUri = new Uri("unix:///var/datadog/myscocket.soc");
+            settings.AgentUriInternal = new Uri("unix:///var/datadog/myscocket.soc");
             AssertUdsIsConfigured(settings, "/var/datadog/myscocket.soc");
         }
 
@@ -273,7 +273,7 @@ namespace Datadog.Trace.Tests.Configuration
             var expectedPort = 11125;
             var config = Setup(DefaultSocketFilesExist(), "DD_DOGSTATSD_PORT:11125");
             Assert.Equal(expected: MetricsTransportType.UDP, actual: config.MetricsTransport);
-            Assert.Equal(expected: expectedPort, actual: config.DogStatsdPort);
+            Assert.Equal(expected: expectedPort, actual: config.DogStatsdPortInternal);
         }
 
         [Fact]
@@ -323,32 +323,32 @@ namespace Datadog.Trace.Tests.Configuration
         private void AssertHttpIsConfigured(ExporterSettings settings, Uri expectedUri)
         {
             Assert.Equal(expected: TracesTransportType.Default, actual: settings.TracesTransport);
-            Assert.Equal(expected: expectedUri, actual: settings.AgentUri);
-            Assert.False(string.Equals(settings.AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase));
+            Assert.Equal(expected: expectedUri, actual: settings.AgentUriInternal);
+            Assert.False(string.Equals(settings.AgentUriInternal.Host, "localhost", StringComparison.OrdinalIgnoreCase));
             CheckDefaultValues(settings, "AgentUri", "TracesTransport");
         }
 
         private void AssertUdsIsConfigured(ExporterSettings settings, string socketPath)
         {
             Assert.Equal(expected: TracesTransportType.UnixDomainSocket, actual: settings.TracesTransport);
-            Assert.Equal(expected: socketPath, actual: settings.TracesUnixDomainSocketPath);
-            Assert.False(string.Equals(settings.AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase));
+            Assert.Equal(expected: socketPath, actual: settings.TracesUnixDomainSocketPathInternal);
+            Assert.False(string.Equals(settings.AgentUriInternal.Host, "localhost", StringComparison.OrdinalIgnoreCase));
             CheckDefaultValues(settings, "TracesUnixDomainSocketPath", "AgentUri", "TracesTransport");
         }
 
         private void AssertMetricsUdsIsConfigured(ExporterSettings settings, string socketPath)
         {
             Assert.Equal(expected: MetricsTransportType.UDS, actual: settings.MetricsTransport);
-            Assert.Equal(expected: socketPath, actual: settings.MetricsUnixDomainSocketPath);
+            Assert.Equal(expected: socketPath, actual: settings.MetricsUnixDomainSocketPathInternal);
             CheckDefaultValues(settings, "MetricsUnixDomainSocketPath", "MetricsTransport", "DogStatsdPort");
         }
 
         private void AssertPipeIsConfigured(ExporterSettings settings, string pipeName)
         {
             Assert.Equal(expected: TracesTransportType.WindowsNamedPipe, actual: settings.TracesTransport);
-            Assert.Equal(expected: pipeName, actual: settings.TracesPipeName);
-            Assert.NotNull(settings.AgentUri);
-            Assert.False(string.Equals(settings.AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase));
+            Assert.Equal(expected: pipeName, actual: settings.TracesPipeNameInternal);
+            Assert.NotNull(settings.AgentUriInternal);
+            Assert.False(string.Equals(settings.AgentUriInternal.Host, "localhost", StringComparison.OrdinalIgnoreCase));
             CheckDefaultValues(settings, "TracesPipeName", "AgentUri", "TracesTransport", "TracesPipeTimeoutMs");
         }
 
@@ -391,7 +391,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             if (!paramToIgnore.Contains("AgentUri"))
             {
-                settings.AgentUri.AbsoluteUri.Should().Be("http://127.0.0.1:8126/");
+                settings.AgentUriInternal.AbsoluteUri.Should().Be("http://127.0.0.1:8126/");
             }
 
             if (!paramToIgnore.Contains("TracesTransport"))
@@ -406,7 +406,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             if (!paramToIgnore.Contains("TracesPipeName"))
             {
-                settings.TracesPipeName.Should().BeNull();
+                settings.TracesPipeNameInternal.Should().BeNull();
             }
 
             if (!paramToIgnore.Contains("TracesPipeTimeoutMs"))
@@ -421,27 +421,27 @@ namespace Datadog.Trace.Tests.Configuration
 
             if (!paramToIgnore.Contains("TracesUnixDomainSocketPath"))
             {
-                settings.TracesUnixDomainSocketPath.Should().BeNull();
+                settings.TracesUnixDomainSocketPathInternal.Should().BeNull();
             }
 
             if (!paramToIgnore.Contains("MetricsUnixDomainSocketPath"))
             {
-                settings.MetricsUnixDomainSocketPath.Should().BeNull();
+                settings.MetricsUnixDomainSocketPathInternal.Should().BeNull();
             }
 
             if (!paramToIgnore.Contains("DogStatsdPort"))
             {
-                settings.DogStatsdPort.Should().Be(ExporterSettings.DefaultDogstatsdPort);
+                settings.DogStatsdPortInternal.Should().Be(ExporterSettings.DefaultDogstatsdPort);
             }
 
             if (!paramToIgnore.Contains("PartialFlushEnabled"))
             {
-                settings.PartialFlushEnabled.Should().BeFalse();
+                settings.PartialFlushEnabledInternal.Should().BeFalse();
             }
 
             if (!paramToIgnore.Contains("PartialFlushMinSpans"))
             {
-                settings.PartialFlushMinSpans.Should().Be(500);
+                settings.PartialFlushMinSpansInternal.Should().Be(500);
             }
         }
     }

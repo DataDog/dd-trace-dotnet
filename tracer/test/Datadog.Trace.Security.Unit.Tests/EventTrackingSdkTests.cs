@@ -24,7 +24,7 @@ public class EventTrackingSdkTests
 
         var settings = new TracerSettings
         {
-            StartupDiagnosticLogEnabled = false
+            StartupDiagnosticLogEnabledInternal = false
         };
         var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
@@ -48,7 +48,7 @@ public class EventTrackingSdkTests
 
         var settings = new TracerSettings
         {
-            StartupDiagnosticLogEnabled = false
+            StartupDiagnosticLogEnabledInternal = false
         };
         var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
@@ -83,7 +83,7 @@ public class EventTrackingSdkTests
 
         var settings = new TracerSettings
         {
-            StartupDiagnosticLogEnabled = false
+            StartupDiagnosticLogEnabledInternal = false
         };
         var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
@@ -108,7 +108,7 @@ public class EventTrackingSdkTests
 
         var settings = new TracerSettings
         {
-            StartupDiagnosticLogEnabled = false
+            StartupDiagnosticLogEnabledInternal = false
         };
         var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
@@ -144,7 +144,7 @@ public class EventTrackingSdkTests
 
         var settings = new TracerSettings
         {
-            StartupDiagnosticLogEnabled = false
+            StartupDiagnosticLogEnabledInternal = false
         };
         var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
@@ -165,7 +165,7 @@ public class EventTrackingSdkTests
     {
         var scopeManager = new AsyncLocalScopeManager();
 
-        var settings = new TracerSettings { StartupDiagnosticLogEnabled = false };
+        var settings = new TracerSettings { StartupDiagnosticLogEnabledInternal = false };
         var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");

@@ -20,9 +20,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
         {
             var settings = new TracerSettings
             {
-                ServiceName = "TestService",
-                ServiceVersion = "1.2.3",
-                Environment = "test"
+                ServiceNameInternal = "TestService",
+                ServiceVersionInternal = "1.2.3",
+                EnvironmentInternal = "test"
             };
 
             var tracer = new Tracer(settings, new Mock<IAgentWriter>().Object, null, null, new NoOpStatsd());
@@ -39,9 +39,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
         {
             var settings = new TracerSettings
             {
-                ServiceName = "TestService",
-                ServiceVersion = "1.2.3",
-                Environment = "test"
+                ServiceNameInternal = "TestService",
+                ServiceVersionInternal = "1.2.3",
+                EnvironmentInternal = "test"
             };
 
             var tracer = new Tracer(settings, new Mock<IAgentWriter>().Object, null, null, new NoOpStatsd());

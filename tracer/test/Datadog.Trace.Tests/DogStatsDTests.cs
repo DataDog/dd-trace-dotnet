@@ -106,12 +106,12 @@ namespace Datadog.Trace.Tests
             {
                 var settings = new TracerSettings
                 {
-                    Exporter = new ExporterSettings()
+                    ExporterInternal = new ExporterSettings()
                     {
-                        AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                        AgentUriInternal = new Uri($"http://127.0.0.1:{agent.Port}"),
                     },
-                    TracerMetricsEnabled = tracerMetricsEnabled,
-                    StartupDiagnosticLogEnabled = false,
+                    TracerMetricsEnabledInternal = tracerMetricsEnabled,
+                    StartupDiagnosticLogEnabledInternal = false,
                 };
 
                 var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd);

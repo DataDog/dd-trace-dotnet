@@ -58,7 +58,7 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             const string env = "serializer-tests";
             const string serviceVersion = "1.2.3";
-            var settings = new TracerSettings() { ServiceName = ServiceName, Environment = env, ServiceVersion = serviceVersion };
+            var settings = new TracerSettings() { ServiceNameInternal = ServiceName, EnvironmentInternal = env, ServiceVersionInternal = serviceVersion };
 
             var collector = new ConfigurationTelemetryCollector();
 
@@ -121,7 +121,7 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             const string env = "serializer-tests";
             const string serviceVersion = "1.2.3";
-            var settings = new TracerSettings() { ServiceName = ServiceName, Environment = env, ServiceVersion = serviceVersion, IsRunningInAzureAppService = true };
+            var settings = new TracerSettings() { ServiceNameInternal = ServiceName, EnvironmentInternal = env, ServiceVersionInternal = serviceVersion, IsRunningInAzureAppService = true };
             settings.AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(
                 new NameValueConfigurationSource(new NameValueCollection
                 {
@@ -152,7 +152,7 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             const string env = "serializer-tests";
             const string serviceVersion = "1.2.3";
-            var settings = new TracerSettings() { ServiceName = ServiceName, Environment = env, ServiceVersion = serviceVersion, IsRunningInAzureAppService = true };
+            var settings = new TracerSettings() { ServiceNameInternal = ServiceName, EnvironmentInternal = env, ServiceVersionInternal = serviceVersion, IsRunningInAzureAppService = true };
             settings.AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(
                 new NameValueConfigurationSource(new NameValueCollection
                 {
@@ -184,7 +184,7 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             const string env = "serializer-tests";
             const string serviceVersion = "1.2.3";
-            var settings = new TracerSettings() { ServiceName = ServiceName, Environment = env, ServiceVersion = serviceVersion };
+            var settings = new TracerSettings() { ServiceNameInternal = ServiceName, EnvironmentInternal = env, ServiceVersionInternal = serviceVersion };
 
             var collector = new ConfigurationTelemetryCollector();
 
@@ -251,7 +251,7 @@ namespace Datadog.Trace.Tests.Telemetry
             {
                 const string env = "serializer-tests";
                 const string serviceVersion = "1.2.3";
-                var settings = new TracerSettings() { ServiceName = ServiceName, Environment = env, ServiceVersion = serviceVersion };
+                var settings = new TracerSettings() { ServiceNameInternal = ServiceName, EnvironmentInternal = env, ServiceVersionInternal = serviceVersion };
 
                 var collector = new ConfigurationTelemetryCollector();
 

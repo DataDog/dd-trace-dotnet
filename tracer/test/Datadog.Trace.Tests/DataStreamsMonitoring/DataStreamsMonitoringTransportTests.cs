@@ -52,7 +52,7 @@ public class DataStreamsMonitoringTransportTests
         using var agent = Create((TracesTransportType)transport);
 
         var bucketDurationMs = 100; // 100 ms
-        var tracerSettings = new TracerSettings { Exporter = GetExporterSettings(agent) };
+        var tracerSettings = new TracerSettings { ExporterInternal = GetExporterSettings(agent) };
         var api = new DataStreamsApi(
             DataStreamsTransportStrategy.GetAgentIntakeFactory(tracerSettings.Build().Exporter));
 
@@ -109,10 +109,10 @@ public class DataStreamsMonitoringTransportTests
     private ExporterSettings GetExporterSettings(MockTracerAgent agent)
         => agent switch
         {
-            MockTracerAgent.TcpUdpAgent x => new ExporterSettings { AgentUri = new Uri($"http://localhost:{x.Port}") },
-            MockTracerAgent.NamedPipeAgent x => new ExporterSettings { TracesPipeName = x.TracesWindowsPipeName, TracesTransport = TracesTransportType.WindowsNamedPipe },
+            MockTracerAgent.TcpUdpAgent x => new ExporterSettings { AgentUriInternal = new Uri($"http://localhost:{x.Port}") },
+            MockTracerAgent.NamedPipeAgent x => new ExporterSettings { TracesPipeNameInternal = x.TracesWindowsPipeName, TracesTransport = TracesTransportType.WindowsNamedPipe },
 #if NETCOREAPP3_1_OR_GREATER
-            MockTracerAgent.UdsAgent x =>  new ExporterSettings { TracesTransport = TracesTransportType.UnixDomainSocket, TracesUnixDomainSocketPath = x.TracesUdsPath },
+            MockTracerAgent.UdsAgent x =>  new ExporterSettings { TracesTransport = TracesTransportType.UnixDomainSocket, TracesUnixDomainSocketPathInternal = x.TracesUdsPath },
 #endif
             _ => throw new InvalidOperationException("Unknown agent type " + agent.GetType()),
         };
