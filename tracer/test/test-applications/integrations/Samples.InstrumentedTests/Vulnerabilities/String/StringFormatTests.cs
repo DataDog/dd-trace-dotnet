@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using System.Text;
+using FluentAssertions;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
@@ -125,6 +127,7 @@ public class StringFormatTests : InstrumentationTestsBase
             () => String.Format(null, null, "r"),
             () => String.Format(null, null, "r"));
     }
+
 
     // Testing public static string Format(IFormatProvider provider, string format, object arg0, object arg1, object arg2)
 
