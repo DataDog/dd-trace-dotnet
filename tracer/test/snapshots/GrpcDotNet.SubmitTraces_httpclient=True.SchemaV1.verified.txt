@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -1651,17 +1651,12 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Service: Samples.GrpcDotNet,
     Type: http,
     ParentId: Id_81,
-    Error: 1,
     Tags: {
       component: HttpMessageHandler,
       env: integration_tests,
-      error.msg: The operation was canceled.,
-      error.stack:
-System.Threading.Tasks.TaskCanceledException: The operation was canceled.
-at System.Net.Http.CancellationHelper.ThrowOperationCanceledException(Exception innerException, CancellationToken cancellationToken),
-      error.type: System.Threading.Tasks.TaskCanceledException,
       http-client-handler-type: System.Net.Http.HttpClientHandler,
       http.method: POST,
+      http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/VerySlow,
       peer.service: 127.0.0.1,
       span.kind: client,
@@ -1778,17 +1773,12 @@ at System.Net.Http.CancellationHelper.ThrowOperationCanceledException(Exception 
     Service: Samples.GrpcDotNet,
     Type: http,
     ParentId: Id_87,
-    Error: 1,
     Tags: {
       component: HttpMessageHandler,
       env: integration_tests,
-      error.msg: The operation was canceled.,
-      error.stack:
-System.Threading.Tasks.TaskCanceledException: The operation was canceled.
-at System.Net.Http.CancellationHelper.ThrowOperationCanceledException(Exception innerException, CancellationToken cancellationToken),
-      error.type: System.Threading.Tasks.TaskCanceledException,
       http-client-handler-type: System.Net.Http.HttpClientHandler,
       http.method: POST,
+      http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/VerySlow,
       peer.service: 127.0.0.1,
       span.kind: client,
