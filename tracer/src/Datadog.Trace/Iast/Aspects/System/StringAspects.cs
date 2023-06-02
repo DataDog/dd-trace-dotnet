@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -709,6 +710,128 @@ public class StringAspects
     {
         var result = target.PadRight(totalWidth, paddingChar);
         PropagationModuleImpl.PropagateTaint(target, result);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="format"> format of the string </param>
+    /// <param name="arg0"> format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.String,System.Object)")]
+    public static string Format(string format, object arg0)
+    {
+        string result = string.Format(format, arg0);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, arg0);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="format"> format of the string </param>
+    /// <param name="arg0"> first format argument </param>
+    /// <param name="arg1"> second format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.String,System.Object,System.Object)")]
+    public static string Format(string format, object arg0, object arg1)
+    {
+        string result = string.Format(format, arg0, arg1);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, arg0, arg1);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="format"> format of the string </param>
+    /// <param name="arg0"> first format argument </param>
+    /// <param name="arg1"> second format argument </param>
+    /// <param name="arg2"> third format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.String,System.Object,System.Object,System.Object)")]
+    public static string Format(string format, object arg0, object arg1, object arg2)
+    {
+        string result = string.Format(format, arg0, arg1, arg2);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, arg0, arg2);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="format"> format of the string </param>
+    /// <param name="args"> first format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.String,System.Object[])")]
+    public static string Format(string format, object[] args)
+    {
+        string result = string.Format(format, args);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, args);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="provider"> format provider </param>
+    /// <param name="format"> format of the string </param>
+    /// <param name="arg0"> first format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.IFormatProvider,System.String,System.Object)")]
+    public static string Format(IFormatProvider provider, string format, object arg0)
+    {
+        string result = string.Format(provider, format, arg0);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="provider"> format provider </param>
+    /// <param name="format"> format of the string </param>
+    /// <param name="arg0"> first format argument </param>
+    /// <param name="arg1"> second format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.IFormatProvider,System.String,System.Object,System.Object)")]
+    public static string Format(IFormatProvider provider, string format, object arg0, object arg1)
+    {
+        string result = string.Format(provider, format, arg0, arg1);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0, arg1);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="provider"> format provider </param>
+    /// <param name="format"> format of the string </param>
+    /// <param name="arg0"> first format argument </param>
+    /// <param name="arg1"> second format argument </param>
+    /// <param name="arg2"> third format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.IFormatProvider,System.String,System.Object,System.Object,System.Object)")]
+    public static string Format(IFormatProvider provider, string format, object arg0, object arg1, object arg2)
+    {
+        string result = string.Format(provider, format, arg0, arg1, arg2);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0, arg1, arg2);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="provider"> format provider </param>
+    /// <param name="format"> format of the string </param>
+    /// <param name="args"> first format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.IFormatProvider,System.String,System.Object[])")]
+    public static string Format(IFormatProvider provider, string format, object[] args)
+    {
+        string result = string.Format(provider, format, args);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, args);
         return result;
     }
 }

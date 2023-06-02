@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Iast.Propagation;
@@ -42,6 +43,45 @@ internal static class PropagationModuleImpl
         {
             Log.Error(err, "PropagationModuleImpl.AddTainted exception");
         }
+    }
+
+    public static object? PropagateResultWhenInputTainted(string result, params object[]? inputs)
+    {
+        if (result is null || inputs is null)
+        {
+            return result;
+        }
+
+        var iastContext = IastModule.GetIastContext();
+        if (iastContext == null)
+        {
+            return result;
+        }
+
+        var taintedObjects = iastContext.GetTaintedObjects();
+
+        if (taintedObjects == null)
+        {
+            return result;
+        }
+
+        if (inputs is not null)
+        {
+            foreach (var inputElement in inputs)
+            {
+                if (inputElement is not null)
+                {
+                    var tainted = taintedObjects.Get(inputElement);
+                    if (tainted is not null && tainted.Ranges.Count() > 0)
+                    {
+                        taintedObjects.Taint(result, new Range[] { new Range(0, result.Length, tainted.Ranges[0]?.Source) });
+                        return result;
+                    }
+                }
+            }
+        }
+
+        return result;
     }
 
     public static object? PropagateTaint(object? input, object result, int offset = 0)
