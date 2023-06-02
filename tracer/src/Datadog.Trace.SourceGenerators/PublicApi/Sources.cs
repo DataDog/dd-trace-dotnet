@@ -101,6 +101,17 @@ internal class Sources
                 sb.AppendLine(property.LeadingTrivia.TrimEnd());
             }
 
+            if (property.ObsoleteMessage is { } obsolete)
+            {
+                sb.Append("    [System.Obsolete");
+                if (obsolete != string.Empty)
+                {
+                    sb.Append("(\"").Append(obsolete).Append("\")");
+                }
+
+                sb.Append(']').AppendLine();
+            }
+
             sb.AppendLine(
                 $$"""
                     [Datadog.Trace.SourceGenerators.PublicApi]

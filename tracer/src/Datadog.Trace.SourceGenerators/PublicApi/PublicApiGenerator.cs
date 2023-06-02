@@ -98,6 +98,7 @@ public class PublicApiGenerator : IIncrementalGenerator
         bool hasMisconfiguredInput = false;
         int? publicApiGetter = null;
         int? publicApiSetter = null;
+        string? obsoleteMessage = null;
 
         foreach (AttributeData attributeData in propertySymbol.GetAttributes())
         {
@@ -138,8 +139,26 @@ public class PublicApiGenerator : IIncrementalGenerator
                         hasMisconfiguredInput = true;
                     }
                 }
+            }
+            else if (attributeData.AttributeClass?.ToDisplayString() == "System.ObsoleteAttribute")
+            {
+                var args = attributeData.ConstructorArguments;
+                if (args.Length == 0)
+                {
+                    obsoleteMessage = string.Empty;
+                    continue;
+                }
 
-                break;
+                foreach (TypedConstant typedConstant in args)
+                {
+                    if (typedConstant.Kind == TypedConstantKind.Error)
+                    {
+                        hasMisconfiguredInput = true;
+                        break;
+                    }
+                }
+
+                obsoleteMessage = args[0].Value as string;
             }
         }
 
@@ -175,7 +194,8 @@ public class PublicApiGenerator : IIncrementalGenerator
             publicApiGetter: publicApiGetter,
             publicApiSetter: publicApiSetter,
             returnType: propertySymbol.Type.ToDisplayString(),
-            leadingTrivia: property.GetLeadingTrivia().ToFullString());
+            leadingTrivia: property.GetLeadingTrivia().ToFullString(),
+            obsoleteMessage: obsoleteMessage);
 
         return new Result<(PublicApiProperty PropertyTag, bool IsValid)>((tag, true), errors);
     }
@@ -259,8 +279,9 @@ public class PublicApiGenerator : IIncrementalGenerator
         public readonly string PropertyName;
         public readonly string ReturnType;
         public readonly string LeadingTrivia;
+        public readonly string? ObsoleteMessage;
 
-        public PublicApiProperty(string nameSpace, string className, string fieldName, int? publicApiGetter, int? publicApiSetter, string propertyName, string returnType, string leadingTrivia)
+        public PublicApiProperty(string nameSpace, string className, string fieldName, int? publicApiGetter, int? publicApiSetter, string propertyName, string returnType, string leadingTrivia, string? obsoleteMessage)
         {
             Namespace = nameSpace;
             ClassName = className;
@@ -270,6 +291,7 @@ public class PublicApiGenerator : IIncrementalGenerator
             PropertyName = propertyName;
             ReturnType = returnType;
             LeadingTrivia = leadingTrivia;
+            ObsoleteMessage = obsoleteMessage;
         }
     }
 }
