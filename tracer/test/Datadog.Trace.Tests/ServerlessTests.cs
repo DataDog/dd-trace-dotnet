@@ -211,8 +211,7 @@ namespace Datadog.Trace.Tests
         {
             var processMock = new Mock<Process>();
             processMock.Setup(mock => mock.Start());
-            Assert.Equal(typeof(string), processMock.Object.GetType());
-            // Serverless.MaybeStartMiniAgent(processMock.Object);
+            Serverless.MaybeStartMiniAgent(processMock.Object);
             processMock.Verify(x => x.Start(), Times.Never());
         }
     }

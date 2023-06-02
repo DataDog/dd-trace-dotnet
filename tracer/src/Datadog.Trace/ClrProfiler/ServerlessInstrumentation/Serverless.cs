@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
         internal const string AzureFunctionNameEnvVar = "WEBSITE_SITE_NAME";
         internal const string GCPFunctionNameDeprecatedEnvVar = "FUNCTION_NAME";
         internal const string GCPFunctionNameNewerEnvVar = "K_SERVICE";
-        internal const string UnknownFunctionName = "unknown_function";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Serverless));
 
         internal static readonly bool IsGCPFunction = GetIsGCPFunction();
@@ -239,7 +239,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
                 return Environment.GetEnvironmentVariable(GCPFunctionNameDeprecatedEnvVar) ?? Environment.GetEnvironmentVariable(GCPFunctionNameNewerEnvVar) ?? UnknownFunctionName;
             }
 
-            return UnknownFunctionName;
+            return null;
         }
 
         private static NativeCallTargetDefinition[] GetServerlessDefinitions(string handlerName)

@@ -413,8 +413,7 @@ namespace Datadog.Trace.Tests.Configuration
             System.Environment.SetEnvironmentVariable("FUNCTION_NAME", "function_name");
             System.Environment.SetEnvironmentVariable("GCP_PROJECT", "project_name");
 
-            var source = CreateConfigurationSource();
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings();
 
             settings.StatsComputationEnabled.Should().Be(true);
 
@@ -428,8 +427,7 @@ namespace Datadog.Trace.Tests.Configuration
             System.Environment.SetEnvironmentVariable("K_SERVICE", "function_name");
             System.Environment.SetEnvironmentVariable("FUNCTION_TARGET", "target_name");
 
-            var source = CreateConfigurationSource();
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings();
 
             settings.StatsComputationEnabled.Should().Be(true);
 
@@ -443,8 +441,7 @@ namespace Datadog.Trace.Tests.Configuration
             System.Environment.SetEnvironmentVariable("AzureWebJobsScriptRoot", "/home/site/wwwroot");
             System.Environment.SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "4");
 
-            var source = CreateConfigurationSource();
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettings();
 
             settings.StatsComputationEnabled.Should().Be(true);
 
