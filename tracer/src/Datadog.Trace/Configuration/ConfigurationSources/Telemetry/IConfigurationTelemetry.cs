@@ -25,4 +25,6 @@ internal interface IConfigurationTelemetry
     void Record(string key, int? value, ConfigurationOrigins origin, TelemetryErrorCode? error = null);
 
     public ICollection<ConfigurationKeyValue>? GetData();
+
+    public void Merge(IConfigurationTelemetry source);
 }

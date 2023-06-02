@@ -60,8 +60,13 @@ namespace Datadog.Trace.Configuration
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
+        /// <remarks>
+        /// We deliberately don't use the static <see cref="TelemetryFactory.Config"/> collector here
+        /// as we don't want to automatically record these values, only once they're "activated",
+        /// in <see cref="Tracer.Configure"/>
+        /// </remarks>
         public TracerSettings(IConfigurationSource? source)
-        : this(source, TelemetryFactory.Config)
+        : this(source, new ConfigurationTelemetry())
         {
         }
 
@@ -764,6 +769,12 @@ namespace Datadog.Trace.Configuration
         public ImmutableTracerSettings Build()
         {
             return new ImmutableTracerSettings(this);
+        }
+
+        internal void CollectTelemetry()
+        {
+            TelemetryFactory.Config.Merge(_telemetry);
+            Exporter.CollectTelemetry();
         }
 
         private static IDictionary<string, string> InitializeHeaderTags(IDictionary<string, string> configurationDictionary, bool headerTagsNormalizationFixEnabled)

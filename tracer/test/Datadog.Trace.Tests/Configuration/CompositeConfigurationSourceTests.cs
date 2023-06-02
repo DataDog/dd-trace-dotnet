@@ -316,6 +316,10 @@ public class CompositeConfigurationSourceTests
 
         public ICollection<ConfigurationKeyValue> GetData() => null;
 
+        public void Merge(IConfigurationTelemetry source)
+        {
+        }
+
         public void SetErrorOnCurrentEntry(string key, TelemetryErrorCode error)
         {
         }

@@ -20,6 +20,21 @@ namespace Datadog.Trace.Configuration.Telemetry
 
         public bool HasChanges() => !_entries.IsEmpty || !_backBuffer.IsEmpty;
 
+        public void Merge(IConfigurationTelemetry source)
+        {
+            if (source is ConfigurationTelemetry telemetry)
+            {
+                while (telemetry._entries.TryDequeue(out var entry))
+                {
+                    // We're assuming that these entries "overwrite" any existing entries
+                    // However, as we don't know in which order they were created, we need
+                    // to update the SeqId to make sure they're given precedence
+                    entry.SeqId = Interlocked.Increment(ref _seqId);
+                    _entries.Enqueue(entry);
+                }
+            }
+        }
+
         /// <summary>
         /// Get the latest data to send to the intake.
         /// </summary>

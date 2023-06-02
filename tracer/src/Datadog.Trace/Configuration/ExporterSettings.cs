@@ -75,9 +75,14 @@ namespace Datadog.Trace.Configuration
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
+        /// <remarks>
+        /// We deliberately don't use the static <see cref="TelemetryFactory.Config"/> collector here
+        /// as we don't want to automatically record these values, only once they're "activated",
+        /// in <see cref="Tracer.Configure"/>
+        /// </remarks>
         [PublicApi]
         public ExporterSettings(IConfigurationSource? source)
-            : this(source, File.Exists, TelemetryFactory.Config)
+            : this(source, File.Exists, new ConfigurationTelemetry())
         {
         }
 
@@ -226,6 +231,8 @@ namespace Datadog.Trace.Configuration
         internal MetricsTransportType MetricsTransport { get; set; }
 
         internal List<string> ValidationWarnings { get; }
+
+        internal void CollectTelemetry() => TelemetryFactory.Config.Merge(_telemetry);
 
         private void ConfigureMetricsTransport(string? traceAgentUrl, string? agentHost, int dogStatsdPort, string? metricsPipeName, string? metricsUnixDomainSocketPath)
         {

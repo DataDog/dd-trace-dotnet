@@ -46,6 +46,36 @@ public class ConfigurationTelemetryCollectorV2Tests
         collector.HasChanges().Should().BeFalse();
     }
 
+    [Fact]
+    public void MergedChangesHavePrecedence()
+    {
+        var collector = new ConfigurationTelemetry();
+        var secondary = new ConfigurationTelemetry();
+
+        var settings1 = new TracerSettings(
+            new NameValueConfigurationSource(
+                new NameValueCollection { { ConfigurationKeys.ServiceVersion, "1.2.3" } }),
+            secondary);
+
+        secondary.HasChanges().Should().BeTrue();
+        collector.HasChanges().Should().BeFalse();
+
+        // Using collector directly
+        var settings2 = new TracerSettings(
+            new NameValueConfigurationSource(
+                new NameValueCollection { { ConfigurationKeys.ServiceVersion, "2.0.0" } }),
+            collector);
+
+        collector.HasChanges().Should().BeTrue();
+
+        // Merged changes should take precedence over existing
+        collector.Merge(secondary);
+
+        var data = collector.GetData();
+        GetLatestValueFromConfig(data, ConfigurationKeys.ServiceVersion).Should().Be("1.2.3");
+        collector.HasChanges().Should().BeFalse();
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
