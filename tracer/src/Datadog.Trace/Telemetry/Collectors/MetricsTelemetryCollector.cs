@@ -453,12 +453,12 @@ internal class MetricsTelemetryCollector : IMetricsTelemetryCollector
 
             for (var i = 0; i < DistributionExtensions.Length; i++)
             {
-                Distributions[i].Clear();
+                while (Distributions[i].TryDequeue(out _)) { }
             }
 
             foreach (var kvp in DistributionsWithTags)
             {
-                kvp.Value.Clear();
+                while (kvp.Value.TryDequeue(out _)) { }
             }
         }
     }
