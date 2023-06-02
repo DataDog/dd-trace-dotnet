@@ -64,7 +64,10 @@ Path=testPath
     Error: 1,
     Tags: {
       cmd.component: process,
-      cmd.shell: nonexisting2.exe arg1,
+      cmd.environment_variables:
+Path=testPath
+,
+      cmd.exec: ["nonexisting2.exe","arg2"],
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
@@ -90,10 +93,7 @@ Path=testPath
     Error: 1,
     Tags: {
       cmd.component: process,
-      cmd.environment_variables:
-Path=testPath
-,
-      cmd.exec: ["nonexisting2.exe","arg2"],
+      cmd.shell: nonexisting2.exe arg1,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
