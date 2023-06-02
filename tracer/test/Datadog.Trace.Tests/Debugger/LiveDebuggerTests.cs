@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -130,6 +131,16 @@ public class LiveDebuggerTests
         }
 
         public List<ApplyDetails> Update(Dictionary<string, List<RemoteConfiguration>> configByProducts, Dictionary<string, List<RemoteConfigurationPath>> removedConfigsByProduct)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SetCapability(BigInteger index, bool available)
+        {
+            throw new NotImplementedException();
+        }
+
+        public byte[] GetCapabilities()
         {
             throw new NotImplementedException();
         }
