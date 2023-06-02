@@ -19,8 +19,14 @@
       "tracer\\test\\Datadog.Trace.TestHelpers.AutoInstrumentation\\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj",
       "tracer\\test\\Datadog.Trace.TestHelpers\\Datadog.Trace.TestHelpers.csproj",
       "tracer\\test\\Datadog.Trace.Tests\\Datadog.Trace.Tests.csproj",
+      "tracer\\test\\Datadog.Trace.Tools.Runner.IntegrationTests\\Datadog.Trace.Tools.Runner.IntegrationTests.csproj",
+      "tracer\\test\\Datadog.Trace.TestHelpers.AutoInstrumentation\\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj",
       "tracer\\test\\test-applications\\debugger\\Samples.Probes\\Samples.Probes.csproj",
       "tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.External\\Samples.Probes.External.csproj",
+      "tracer\\test\\Datadog.Trace.Tools.Runner.Tests\\Datadog.Trace.Tools.Runner.Tests.csproj",
+      "tracer\\src\\Datadog.Trace.Annotations\\Datadog.Trace.Annotations.csproj",
+      "tracer\\src\\Datadog.Trace.AspNet\\Datadog.Trace.AspNet.csproj",
+      "tracer\\src\\Datadog.Trace.Tools.Runner\\Datadog.Trace.Tools.Runner.csproj",
       "tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.TestRuns\\Samples.Probes.TestRuns.csproj"
     ]
   }
