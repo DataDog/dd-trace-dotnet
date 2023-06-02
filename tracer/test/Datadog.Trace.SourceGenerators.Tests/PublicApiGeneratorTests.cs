@@ -128,13 +128,10 @@ public class PublicApiGeneratorTests
     }
 
     [Theory]
-    [InlineData("GeneratePublicApi", "_telemetry")]
-    [InlineData("GeneratePublicApi", "Telemetry")]
-    [InlineData("GeneratePublicApiAttribute", "_telemetry")]
-    [InlineData("GeneratePublicApiAttribute", "Telemetry")]
-    [InlineData("Datadog.Trace.SourceGenerators.GeneratePublicApiAttribute", "_telemetry")]
-    [InlineData("Datadog.Trace.SourceGenerators.GeneratePublicApiAttribute", "Telemetry")]
-    public void CanGenerateReadWritePropertyWithConfig(string attributeName, string telemetryProperty)
+    [InlineData("GeneratePublicApi")]
+    [InlineData("GeneratePublicApiAttribute")]
+    [InlineData("Datadog.Trace.SourceGenerators.GeneratePublicApiAttribute")]
+    public void CanGenerateReadWritePropertyWithConfig(string attributeName)
     {
         var input = $$"""
             using Datadog.Trace.Configuration;
@@ -150,12 +147,8 @@ public class PublicApiGeneratorTests
                 /// Gets the default environment name applied to all spans.
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Environment"/>
-                [{{attributeName}}(PublicApiUsage.Environment_Get, PublicApiUsage.Environment_Set, nameof({{telemetryProperty}}), "some_key")]
+                [{{attributeName}}(PublicApiUsage.Environment_Get, PublicApiUsage.Environment_Set, "some_key")]
                 internal string? _Environment;
-
-                private readonly IConfigurationTelemetry _telemetry = null!;
-
-                internal IConfigurationTelemetry _telemetry { get; } = null!;
             }
             """;
 
@@ -183,7 +176,7 @@ public class PublicApiGeneratorTests
                     {
                         Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                             (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)1);
-                        {{telemetryProperty}}.Record("some_key", value, recordValue: true, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+                        _telemetry.Record("some_key", value, recordValue: true, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
                         _Environment = value;
                     }
                 }
@@ -355,11 +348,9 @@ public class PublicApiGeneratorTests
     }
 
     [Theory]
-    [InlineData("nameof(_telemetry)", "null")]
-    [InlineData("nameof(_telemetry)", "\"\"")]
-    [InlineData("null", "\"some_key\"")]
-    [InlineData("\"\"", "\"some_key\"")]
-    public void ErrorsWhenNullOrEmptyTelemetryStrings(string telemetry, string config)
+    [InlineData("null")]
+    [InlineData("\"\"")]
+    public void ErrorsWhenNullOrEmptyTelemetryStrings(string config)
     {
         var input = $$"""
             using Datadog.Trace.Configuration;
@@ -375,10 +366,8 @@ public class PublicApiGeneratorTests
                 /// Gets the default environment name applied to all spans.
                 /// </summary>
                 /// <seealso cref="ConfigurationKeys.Environment"/>
-                [GeneratePublicApi(PublicApiUsage.Environment_Get, PublicApiUsage.Environment_Set, {{telemetry}}, {{config}})]
+                [GeneratePublicApi(PublicApiUsage.Environment_Get, PublicApiUsage.Environment_Set, {{config}})]
                 internal string? _Environment;
-
-                private readonly IConfigurationTelemetry _telemetry = null!;
             }
             """;
 

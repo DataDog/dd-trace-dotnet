@@ -31,17 +31,14 @@ internal class Sources
             /// </summary>
             /// <param name="getApiUsage">Gets the name of the public API used for the property getter</param>
             /// <param name="setApiUsage">Gets the name of the public API used for the property setter</param>
-            /// <param name="telemetryProperty">Gets the name of the <see cref="Datadog.Trace.Configuration.Telemetry.IConfigurationTelemetry"/> property/field where updates to the configuration should be recorded</param>
             /// <param name="telemetryKey">Gets the configuration key to use when recording the telemetry value</param>
             public GeneratePublicApiAttribute(
                 Datadog.Trace.Telemetry.Metrics.PublicApiUsage getApiUsage,
                 Datadog.Trace.Telemetry.Metrics.PublicApiUsage setApiUsage,
-                string telemetryProperty,
                 string telemetryKey)
             {
                 Getter = getApiUsage;
                 Setter = setApiUsage;
-                TelemetryProperty = telemetryProperty;
                 TelemetryKey = telemetryKey;
             }
 
@@ -78,11 +75,6 @@ internal class Sources
             /// Gets the name of the public API used for the setter
             /// </summary>
             public Datadog.Trace.Telemetry.Metrics.PublicApiUsage? Setter { get; }
-
-            /// <summary>
-            /// Gets the name of the public API used for the setter
-            /// </summary>
-            public string? TelemetryProperty { get; }
 
             /// <summary>
             /// Gets the name of the public API used for the setter
@@ -153,11 +145,11 @@ internal class Sources
                                     (Datadog.Trace.Telemetry.Metrics.PublicApiUsage){{property.PublicApiSetter}});
                     """);
 
-                if (property is { TelemetryProperty: { } prop, TelemetryConfigKey: { } config })
+                if (property is { TelemetryConfigKey: { } config })
                 {
                     sb.AppendLine(
                         $$"""
-                                    {{prop}}.Record("{{config}}", value, recordValue: true, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
+                                    _telemetry.Record("{{config}}", value, recordValue: true, Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code);
                         """);
                 }
 
