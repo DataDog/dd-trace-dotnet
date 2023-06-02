@@ -83,7 +83,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var spans2 = await SendRequestsAsync(agent, url);
 
             // test reset works (& need to reset if the process is going to be reused)
-            await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { CustomRules = new JArray() }, AsmProduct, nameof(TestCustomRules)) });
+           await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductId, string Id)>());
 
             var spans3 = await SendRequestsAsync(agent, url);
 
