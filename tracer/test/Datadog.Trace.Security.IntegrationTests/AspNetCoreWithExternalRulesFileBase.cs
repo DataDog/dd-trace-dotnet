@@ -33,9 +33,9 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
 
         [SkippableTheory]
-        [InlineData(AddressesConstants.ResponseHeaderNoCookies, HttpStatusCode.OK, "/Home/LangHeader")]
+        [InlineData(AddressesConstants.ResponseHeaderNoCookies, HttpStatusCode.Forbidden, "/Home/LangHeader")]
         [Trait("RunOnWindows", "True")]
-        public async Task TestHeaderRequest(string test, HttpStatusCode expectedStatusCode, string url)
+        public async Task TestBlockedHeader(string test, HttpStatusCode expectedStatusCode, string url)
         {
             TryStartApp();
             var agent = Fixture.Agent;
@@ -74,9 +74,9 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
 
         [SkippableTheory]
-        [InlineData(AddressesConstants.ResponseHeaderNoCookies, HttpStatusCode.OK, "/Home/LangHeader")]
+        [InlineData(AddressesConstants.ResponseHeaderNoCookies, HttpStatusCode.Forbidden, "/Home/LangHeader")]
         [Trait("RunOnWindows", "True")]
-        public async Task TestHeaderRequest(string test, HttpStatusCode expectedStatusCode, string url)
+        public async Task TestBlockedHeader(string test, HttpStatusCode expectedStatusCode, string url)
         {
             VerifierSettings.DisableRequireUniquePrefix();
             await TryStartApp();
