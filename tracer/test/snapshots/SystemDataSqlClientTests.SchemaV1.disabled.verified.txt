@@ -12,7 +12,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -31,7 +31,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -50,7 +50,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -69,7 +69,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -88,7 +88,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -107,7 +107,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -126,7 +126,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -145,7 +145,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -164,7 +164,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -183,7 +183,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -202,7 +202,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -221,7 +221,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -240,7 +240,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -259,7 +259,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -278,7 +278,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -297,7 +297,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -316,7 +316,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -335,7 +335,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -354,7 +354,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -373,7 +373,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -392,7 +392,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -411,7 +411,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -430,7 +430,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -449,7 +449,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -468,7 +468,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -487,7 +487,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -506,7 +506,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -525,7 +525,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -544,7 +544,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -563,7 +563,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -582,7 +582,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -601,7 +601,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -620,7 +620,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -639,7 +639,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -658,7 +658,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -677,7 +677,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -696,7 +696,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -715,7 +715,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -734,7 +734,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -753,7 +753,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -772,7 +772,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -791,7 +791,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -810,7 +810,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -829,7 +829,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -848,7 +848,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -867,7 +867,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -886,7 +886,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -905,7 +905,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -924,7 +924,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -943,7 +943,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -962,7 +962,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -981,7 +981,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1000,7 +1000,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1019,7 +1019,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1038,7 +1038,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1057,7 +1057,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1076,7 +1076,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1095,7 +1095,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1114,7 +1114,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1133,7 +1133,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1152,7 +1152,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1171,7 +1171,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1190,7 +1190,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1209,7 +1209,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1228,7 +1228,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1247,7 +1247,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1266,7 +1266,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1285,7 +1285,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1304,7 +1304,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1323,7 +1323,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1342,7 +1342,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1361,7 +1361,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1380,7 +1380,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1399,7 +1399,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1418,7 +1418,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1437,7 +1437,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1456,7 +1456,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1475,7 +1475,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1494,7 +1494,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1513,7 +1513,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1532,7 +1532,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1551,7 +1551,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1570,7 +1570,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1589,7 +1589,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1608,7 +1608,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1627,7 +1627,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1646,7 +1646,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1665,7 +1665,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1684,7 +1684,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1703,7 +1703,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1722,7 +1722,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1741,7 +1741,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1760,7 +1760,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1779,7 +1779,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1798,7 +1798,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1817,7 +1817,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1836,7 +1836,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1855,7 +1855,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1874,7 +1874,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1893,7 +1893,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1912,7 +1912,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1931,7 +1931,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1950,7 +1950,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1969,7 +1969,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -1988,7 +1988,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2007,7 +2007,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2026,7 +2026,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2045,7 +2045,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2064,7 +2064,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2083,7 +2083,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2102,7 +2102,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2121,7 +2121,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2140,7 +2140,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2159,7 +2159,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2178,7 +2178,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2197,7 +2197,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2216,7 +2216,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2235,7 +2235,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2254,7 +2254,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2273,7 +2273,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2292,7 +2292,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2311,7 +2311,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2330,7 +2330,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2349,7 +2349,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2368,7 +2368,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2387,7 +2387,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2406,7 +2406,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2425,7 +2425,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2444,7 +2444,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2463,7 +2463,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2482,7 +2482,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2501,7 +2501,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2520,7 +2520,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2539,7 +2539,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2558,7 +2558,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2577,7 +2577,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2596,7 +2596,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2615,7 +2615,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2634,7 +2634,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2653,7 +2653,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2672,7 +2672,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2691,7 +2691,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2710,7 +2710,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2729,7 +2729,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2748,7 +2748,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2767,7 +2767,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2786,7 +2786,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2805,7 +2805,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2824,7 +2824,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2843,7 +2843,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2862,7 +2862,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2881,7 +2881,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2900,7 +2900,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2919,7 +2919,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2938,7 +2938,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2957,7 +2957,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2976,7 +2976,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -2995,7 +2995,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -3014,7 +3014,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -3033,7 +3033,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -3052,7 +3052,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -3071,7 +3071,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -3090,7 +3090,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -3109,7 +3109,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -3128,7 +3128,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -3147,7 +3147,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -3166,7 +3166,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
@@ -3185,7 +3185,7 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
-      peer.service: (localdb)\MSSQLLocalDB,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
       _dd.peer.service.source: network.destination.name
