@@ -119,16 +119,16 @@ public class MicrosoftSqLiteTests : InstrumentationTestsBase, IDisposable
     }
 
     [Fact]
-    public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteReaderAsyncCancellationTokenCommandBehaviorWithTainted_VulnerabilityIsReported()
+    public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteReaderAsyncCancellationTokenWithTainted_VulnerabilityIsReported()
     {
-        new SqliteCommand(taintedQuery, dbConnection).ExecuteReaderAsync(CommandBehavior.Default, CancellationToken.None);
+        new SqliteCommand(taintedQuery, dbConnection).ExecuteReaderAsync(CancellationToken.None);
         AssertVulnerable();
     }
 
     [Fact]
-    public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteReaderAsyncCancellationTokenWithTainted_VulnerabilityIsReported()
+    public void GivenAMicrosoftDataSqliteCommand_WhenCallingExecuteReaderAsyncCancellationTokenCommandBehaviorWithTainted_VulnerabilityIsReported()
     {
-        new SqliteCommand(taintedQuery, dbConnection).ExecuteReaderAsync(CancellationToken.None);
+        new SqliteCommand(taintedQuery, dbConnection).ExecuteReaderAsync(CommandBehavior.Default, CancellationToken.None);
         AssertVulnerable();
     }
 
