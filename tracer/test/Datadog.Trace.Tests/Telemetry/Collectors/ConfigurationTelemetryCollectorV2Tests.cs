@@ -120,6 +120,17 @@ public class ConfigurationTelemetryCollectorV2Tests
     }
 
     [Fact]
+    public void HasNoDataAfterCallingClear()
+    {
+        var collector = new ConfigurationTelemetry();
+
+        _ = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection { { ConfigurationKeys.ServiceVersion, "1.2.3" } }), collector);
+
+        collector.Clear();
+        collector.GetData().Should().BeNull();
+    }
+
+    [Fact]
     public void ConfigurationDataShouldMarkAsManagedOnlyWhenProfilerNotAttached()
     {
         var collector = new ConfigurationTelemetry();

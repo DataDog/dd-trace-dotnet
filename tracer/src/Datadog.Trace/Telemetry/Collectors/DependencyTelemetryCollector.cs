@@ -14,13 +14,9 @@ namespace Datadog.Trace.Telemetry
 {
     internal class DependencyTelemetryCollector : IDependencyTelemetryCollector
     {
-        private static DependencyTelemetryCollector? _instance;
-
         // value is true when sent to the backend
         private readonly ConcurrentDictionary<DependencyTelemetryData, bool> _assemblies = new();
         private int _hasChangesFlag = 0;
-
-        internal static DependencyTelemetryCollector Instance => LazyInitializer.EnsureInitialized(ref _instance)!;
 
         /// <summary>
         /// Called when an assembly is loaded

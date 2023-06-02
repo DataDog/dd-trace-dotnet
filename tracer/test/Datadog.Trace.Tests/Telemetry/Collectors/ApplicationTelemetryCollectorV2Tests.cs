@@ -7,6 +7,7 @@ using System.Collections.Specialized;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Collectors;
 using FluentAssertions;
 using Xunit;
@@ -39,17 +40,22 @@ public class ApplicationTelemetryCollectorV2Tests
 
         collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName);
 
-        var data = collector.GetApplicationData();
+        // calling twice should give same results
+        AssertData(collector.GetApplicationData());
+        AssertData(collector.GetApplicationData());
 
-        data.Should().NotBeNull();
-        data.ServiceName.Should().Be(ServiceName);
-        data.Env.Should().Be(env);
-        data.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
-        data.LanguageName.Should().Be("dotnet");
-        data.ServiceVersion.Should().Be(serviceVersion);
-        data.LanguageVersion.Should().Be(FrameworkDescription.Instance.ProductVersion);
-        data.RuntimeName.Should().NotBeNullOrEmpty().And.Be(FrameworkDescription.Instance.Name);
-        data.RuntimeVersion.Should().Be(FrameworkDescription.Instance.ProductVersion);
+        void AssertData(ApplicationTelemetryDataV2 data)
+        {
+            data.Should().NotBeNull();
+            data.ServiceName.Should().Be(ServiceName);
+            data.Env.Should().Be(env);
+            data.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
+            data.LanguageName.Should().Be("dotnet");
+            data.ServiceVersion.Should().Be(serviceVersion);
+            data.LanguageVersion.Should().Be(FrameworkDescription.Instance.ProductVersion);
+            data.RuntimeName.Should().NotBeNullOrEmpty().And.Be(FrameworkDescription.Instance.Name);
+            data.RuntimeVersion.Should().Be(FrameworkDescription.Instance.ProductVersion);
+        }
     }
 
     [Fact]
@@ -74,8 +80,14 @@ public class ApplicationTelemetryCollectorV2Tests
 
         collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName);
 
-        var data = collector.GetHostData();
-        data.Should().NotBeNull();
-        data.Hostname.Should().Be(HostMetadata.Instance.Hostname ?? string.Empty);
+        // calling twice should give same results
+        AssertData(collector.GetHostData());
+        AssertData(collector.GetHostData());
+
+        static void AssertData(HostTelemetryDataV2 data)
+        {
+            data.Should().NotBeNull();
+            data.Hostname.Should().Be(HostMetadata.Instance.Hostname ?? string.Empty);
+        }
     }
 }

@@ -69,7 +69,7 @@ internal class TelemetryDataBuilderV2
                 const int maxPerMessage = 2000;
                 // Only 2000 dependencies should be included per message, so need to split into separate requests
                 var depsToSend = dependencies.Count > maxPerMessage
-                                     ? dependencies.Skip(skip).Take(2000).ToList()
+                                     ? dependencies.Skip(skip).Take(maxPerMessage).ToList()
                                      : dependencies;
                 skip += depsToSend.Count;
 

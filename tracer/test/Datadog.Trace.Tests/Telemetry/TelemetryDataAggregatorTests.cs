@@ -31,11 +31,14 @@ public class TelemetryDataAggregatorTests
         result.Products.Should().BeSameAs(previous.Products);
     }
 
-    [Fact]
-    public void GetCombinedConfiguration_WhenHaveCurrent_AndNoPrevious_ReturnsCurrent()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GetCombinedConfiguration_WhenHaveCurrent_AndNoPrevious_ReturnsCurrent(bool previousIsNull)
     {
+        TelemetryInput? previous = previousIsNull ? null : new TelemetryInput();
         var next = GetPopulatedTelemetryInput();
-        var aggregator = new TelemetryDataAggregator(null);
+        var aggregator = new TelemetryDataAggregator(previous);
 
         var result = aggregator.Combine(next);
 
