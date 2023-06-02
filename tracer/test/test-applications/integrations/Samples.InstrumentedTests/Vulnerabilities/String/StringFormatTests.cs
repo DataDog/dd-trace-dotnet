@@ -1,7 +1,5 @@
 using System;
-using System.Linq;
 using System.Text;
-using FluentAssertions;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
