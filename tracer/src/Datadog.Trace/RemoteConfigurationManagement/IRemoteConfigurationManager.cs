@@ -4,14 +4,11 @@
 // </copyright>
 
 using System;
-using System.Numerics;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal interface IRemoteConfigurationManager : IDisposable
     {
         void Start();
-
-        void SetCapability(BigInteger index, bool available);
     }
 }
