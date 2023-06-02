@@ -1,5 +1,5 @@
 ﻿{
-  "api_version": "v1",
+  "api_version": "v2",
   "request_type": "generate-metrics",
   "tracer_time": 1628099086,
   "runtime_id": "20338dfd-f700-4e5c-b3f6-0d470f054ae8",
@@ -10,16 +10,18 @@
     "tracer_version": "0.33.1",
     "language_name": "node.js",
     "service_version": "1.2.3",
-    "language_version": "14.16.1"
+    "language_version": "14.16.1",
+    "runtime_name": "dotnet",
+    "runtime_version": "7.0.3"
   },
   "host": {
     "hostname": "i-09ecf74c319c49be8",
-    "container_id": "d39b145254d1f9c337fdd2be132f6650c6f5bc274bfa28aaa204a908a1134096",
     "os": "GNU/Linux",
     "os_version": "ubuntu 18.04.5 LTS (Bionic Beaver)",
     "kernel_name": "Linux",
     "kernel_release": "5.4.0-1037-gcp",
-    "kernel_version": "#40~18.04.1-Ubuntu SMP Fri Feb 5 15:41:35 UTC 2021"
+    "kernel_version": "#40~18.04.1-Ubuntu SMP Fri Feb 5 15:41:35 UTC 2021",
+    "architecture": "x86_64"
   },
   "payload": {
     "namespace": "tracers",

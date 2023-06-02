@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System.Collections.Generic;
 using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration.Telemetry;
@@ -28,4 +29,6 @@ internal class NullConfigurationTelemetry : IConfigurationTelemetry
     public void Record(string key, int value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
     {
     }
+
+    public ICollection<ConfigurationKeyValue>? GetData() => null;
 }
