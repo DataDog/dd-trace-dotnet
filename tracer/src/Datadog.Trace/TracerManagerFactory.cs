@@ -61,7 +61,7 @@ namespace Datadog.Trace
                 telemetry: null,
                 discoveryService: null,
                 dataStreamsManager: null,
-                remoteConfigurationManager: previous?.RemoteConfigurationManager);
+                remoteConfigurationManager: null);
 
             try
             {
