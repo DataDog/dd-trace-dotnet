@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using AgileObjects.NetStandardPolyfills;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.SourceGenerators;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -59,6 +60,25 @@ namespace Datadog.Trace.Tests.Configuration
                                      .Select(x => x.Name);
 
             immutableProperties.Should().Contain(mutableProperties);
+        }
+
+        [Fact]
+        public void CopiesTelemetryFromTracerSettings()
+        {
+            var config = new ConfigurationTelemetry();
+            var tracerSettings = new TracerSettings(NullConfigurationSource.Instance, config);
+
+            var immutable = tracerSettings.Build();
+            var immutableTelemetry = immutable.Telemetry;
+
+            // Just basic check that we have the same number of config values
+            immutableTelemetry.Should()
+                              .BeOfType<ConfigurationTelemetry>()
+                              .Which
+                              .GetQueueForTesting()
+                              .Count.Should()
+                              .Be(config.GetQueueForTesting().Count)
+                              .And.NotBe(0);
         }
     }
 }

@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tests.Configuration
         // These properties are present on ExporterSettings, but not on ImmutableExporterSettings
         private static readonly string[] ExcludedProperties =
         {
-            // No exclusions yet
+            nameof(ExporterSettings.Telemetry),
         };
 
         [Fact]
@@ -90,6 +90,7 @@ namespace Datadog.Trace.Tests.Configuration
                                    .Where(// Exclude "internal" properties
                                         x => !(x.HasAttribute<GeneratePublicApiAttribute>()
                                             || x.Name == "AgentUriInternal"
+                                            || x.Name == "Telemetry"
                                             || x.Name == "PartialFlushMinSpansInternal"));
 
             // Ensure that all properties are represented

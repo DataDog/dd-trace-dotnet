@@ -39,4 +39,8 @@ internal class NullConfigurationTelemetry : IConfigurationTelemetry
     }
 
     public ICollection<ConfigurationKeyValue>? GetData() => null;
+
+    public void CopyTo(IConfigurationTelemetry destination)
+    {
+    }
 }
