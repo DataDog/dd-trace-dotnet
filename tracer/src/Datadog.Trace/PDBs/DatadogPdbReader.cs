@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss;
@@ -28,6 +29,7 @@ namespace Datadog.Trace.Pdb
     /// </summary>
     internal class DatadogPdbReader : IDisposable
     {
+        private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<DatadogPdbReader>();
         private readonly SymbolReader _symbolReader;
         private readonly ModuleDefMD _module;
 
@@ -62,31 +64,41 @@ namespace Datadog.Trace.Pdb
 
         private static bool TryFindPdbFile(Assembly assembly, [NotNullWhen(true)] out string pdbFullPath)
         {
-            string pdbInSameFolder = Path.ChangeExtension(assembly.Location, "pdb");
-
-            if (File.Exists(pdbInSameFolder))
+            try
             {
-                pdbFullPath = pdbInSameFolder;
-                return true;
-            }
+                string pdbInSameFolder = Path.ChangeExtension(assembly.Location, "pdb");
 
-#if NETFRAMEWORK
-            // When using Dynamic Compilation in IIS-based .NET Framework applications, the PDB file may not be found in the same folder as the DLL.
-            // This is because the DLL is loaded from the shadow copy folder (e.g. C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Temporary ASP.NET Files\root\1234567890abcdef\MyApp.dll)
-            // and the PDB may not be copied to this folder until later or never, as it is only copied on demand (usually when an exception is thrown).
-            // In these cases, we'll try to find it in the application directory (e.g. C:\inetpub\wwwroot\MyApp\bin\MyApp.pdb).
-            string fileName = Path.GetFileName(pdbInSameFolder);
-            string applicationDirectory = System.Web.Hosting.HostingEnvironment.ApplicationPhysicalPath;
-            if (applicationDirectory != null)
-            {
-                var pdbInAppDirectory = Directory.EnumerateFiles(applicationDirectory, fileName, SearchOption.AllDirectories).FirstOrDefault();
-                if (pdbInAppDirectory != null)
+                if (File.Exists(pdbInSameFolder))
                 {
-                    pdbFullPath = pdbInAppDirectory;
+                    pdbFullPath = pdbInSameFolder;
                     return true;
                 }
-            }
+
+#if NETFRAMEWORK
+                // When using Dynamic Compilation in IIS-based .NET Framework applications, the PDB file may not be found in the same folder as the DLL.
+                // This is because the DLL is loaded from the shadow copy folder (e.g. C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Temporary ASP.NET Files\root\1234567890abcdef\MyApp.dll)
+                // and the PDB may not be copied to this folder until later or never, as it is only copied on demand (usually when an exception is thrown).
+                // In these cases, we'll try to find it in the application directory (e.g. C:\inetpub\wwwroot\MyApp\bin\MyApp.pdb).
+                string fileName = Path.GetFileName(pdbInSameFolder);
+                string applicationDirectory = System.Web.Hosting.HostingEnvironment.ApplicationPhysicalPath;
+                if (applicationDirectory != null)
+                {
+                    var pdbInAppDirectory = Directory.EnumerateFiles(applicationDirectory, fileName, SearchOption.AllDirectories).FirstOrDefault();
+                    if (pdbInAppDirectory != null)
+                    {
+                        pdbFullPath = pdbInAppDirectory;
+                        return true;
+                    }
+                }
 #endif
+
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error while trying to find PDB file for {Assembly} ({Location})", assembly, assembly.Location);
+                pdbFullPath = null;
+                return false;
+            }
 
             pdbFullPath = null;
             return false;
