@@ -94,18 +94,17 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         }
 
                         var snapshot = debuggerSnapshots[debuggerSnapshotIndex];
-
                         // if (snapshot.ProbeId != probeId)
                         // {
                         //     capturedExceptionFullCausalityChain = false;
                         //     break;
                         // }
 
-                        string prefix = $"error.debug.{debuggerSnapshotIndex}.";
-                        span.Tags.SetTag(prefix + "frame_data.function", currentFrame.MethodName);
-                        span.Tags.SetTag(prefix + "frame_data.class_name", currentFrame.TypeName);
+                        string prefix = $"_dd.debug.error.{debuggerSnapshotIndex}.";
+                        span.Tags.SetTag(prefix + "function", currentFrame.MethodName);
+                        span.Tags.SetTag(prefix + "class_name", currentFrame.TypeName);
                         span.Tags.SetTag(prefix + "snapshot.id", snapshot.SnapshotId.ToString());
-
+                        span.Tags.SetTag("error.debug-info-captured", "true");
                         debuggerSnapshotIndex++;
                     }
 
