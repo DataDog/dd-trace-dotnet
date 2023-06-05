@@ -22,6 +22,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
@@ -64,6 +65,7 @@ namespace Datadog.Trace
             DataStreamsManager dataStreamsManager,
             string defaultServiceName,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
+            IRemoteConfigurationManager remoteConfigurationManager,
             ITraceProcessor[] traceProcessors = null)
         {
             Settings = settings;
@@ -91,6 +93,8 @@ namespace Datadog.Trace
             }
 
             TagProcessors = lstTagProcessors.ToArray();
+
+            RemoteConfigurationManager = remoteConfigurationManager;
         }
 
         /// <summary>
@@ -151,6 +155,8 @@ namespace Datadog.Trace
 
         public DataStreamsManager DataStreamsManager { get; }
 
+        public IRemoteConfigurationManager RemoteConfigurationManager { get; }
+
         private RuntimeMetricsWriter RuntimeMetrics { get; }
 
         /// <summary>
@@ -201,6 +207,7 @@ namespace Datadog.Trace
             // Must be idempotent and thread safe
             DirectLogSubmission?.Sink.Start();
             Telemetry?.Start();
+            RemoteConfigurationManager.Start();
         }
 
         /// <summary>
@@ -256,10 +263,17 @@ namespace Datadog.Trace
                     await oldManager.DataStreamsManager.DisposeAsync().ConfigureAwait(false);
                 }
 
+                var configurationManagerReplaced = false;
+                if (oldManager.RemoteConfigurationManager != newManager.RemoteConfigurationManager && oldManager.RemoteConfigurationManager is not null)
+                {
+                    configurationManagerReplaced = true;
+                    oldManager.RemoteConfigurationManager.Dispose();
+                }
+
                 Log.Information(
                     exception: null,
-                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}, Telemetry: {TelemetryReplaced}, Discovery: {DiscoveryReplaced}, DataStreamsManager: {DataStreamsManagerReplaced}",
-                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, telemetryReplaced, discoveryReplaced, dataStreamsReplaced });
+                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}, Telemetry: {TelemetryReplaced}, Discovery: {DiscoveryReplaced}, DataStreamsManager: {DataStreamsManagerReplaced}, RemoteConfigurationManager: {ConfigurationManagerReplaced}",
+                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, telemetryReplaced, discoveryReplaced, dataStreamsReplaced, configurationManagerReplaced });
             }
             catch (Exception ex)
             {
@@ -591,10 +605,13 @@ namespace Datadog.Trace
                     var discoveryService = instance.DiscoveryService?.DisposeAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing Data streams.");
                     var dataStreamsTask = instance.DataStreamsManager?.DisposeAsync() ?? Task.CompletedTask;
+                    Log.Debug("Disposing RemoteConfigurationManager");
+                    instance.RemoteConfigurationManager?.Dispose();
 
                     Log.Debug("Waiting for disposals.");
                     await Task.WhenAll(flushTracesTask, logSubmissionTask, telemetryTask, discoveryService, dataStreamsTask).ConfigureAwait(false);
 
+                    Log.Debug("Disposing Runtime Metrics");
                     instance.RuntimeMetrics?.Dispose();
 
                     Log.Debug("Finished waiting for disposals.");

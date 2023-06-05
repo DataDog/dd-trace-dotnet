@@ -390,18 +390,16 @@ namespace Datadog.Trace.AppSec
 
         private void SetRemoteConfigCapabilites()
         {
-            RemoteConfigurationManager.CallbackWithInitializedInstance(
-                rcm =>
-                {
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeToggled);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, _noLocalRules);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, _noLocalRules);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusion, _noLocalRules);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmRequestBlocking, _noLocalRules);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmResponseBlocking, _noLocalRules);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomRules, _noLocalRules);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _noLocalRules);
-                });
+            var rcm = RcmSubscriptionManager.Instance;
+
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeToggled);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusion, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRequestBlocking, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmResponseBlocking, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomRules, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _noLocalRules);
         }
 
         private void InitWafAndInstrumentations(bool fromRemoteConfig = false)
