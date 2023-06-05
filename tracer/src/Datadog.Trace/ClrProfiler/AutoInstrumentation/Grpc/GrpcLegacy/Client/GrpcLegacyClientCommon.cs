@@ -54,14 +54,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                     out var startTime,
                     out var parentContext);
 
-                var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, GrpcCommon.ServiceName);
+                string operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("grpc");
+                string serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "grpc-client");
                 var tags = new GrpcClientTags();
                 var methodFullName = callInvocationDetails.Method;
 
                 GrpcCommon.AddGrpcTags(tags, tracer, methodKind, name: methodName, path: methodFullName, serviceName: grpcService);
 
                 var span = tracer.StartSpan(
-                    GrpcCommon.OperationName,
+                    operationName,
                     parent: parentContext,
                     tags: tags,
                     spanId: existingSpanContext?.SpanId ?? 0,
@@ -201,9 +202,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
         private static Span CreateInactiveSpan(Tracer tracer, string? methodFullName)
         {
-            var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, GrpcCommon.ServiceName);
+            string operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("grpc");
+            string serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "grpc-client");
             var tags = new GrpcClientTags();
-            var span = tracer.StartSpan(GrpcCommon.OperationName, tags, serviceName: serviceName, addToTraceContext: false);
+            var span = tracer.StartSpan(operationName, tags, serviceName: serviceName, addToTraceContext: false);
             tags.SetAnalyticsSampleRate(IntegrationId.Grpc, tracer.Settings, enabledWithGlobalSetting: false);
 
             span.Type = SpanTypes.Grpc;

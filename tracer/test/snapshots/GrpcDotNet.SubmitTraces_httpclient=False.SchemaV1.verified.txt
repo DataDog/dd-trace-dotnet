@@ -22,7 +22,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_3,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/StreamingBothWays,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -122,7 +122,7 @@
   {
     TraceId: Id_6,
     SpanId: Id_8,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/StreamingFromClient,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -222,7 +222,7 @@
   {
     TraceId: Id_11,
     SpanId: Id_13,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -326,7 +326,7 @@
   {
     TraceId: Id_16,
     SpanId: Id_18,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -430,7 +430,7 @@
   {
     TraceId: Id_21,
     SpanId: Id_23,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -534,7 +534,7 @@
   {
     TraceId: Id_26,
     SpanId: Id_28,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -642,7 +642,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_31,
     SpanId: Id_33,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -746,7 +746,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_36,
     SpanId: Id_38,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -850,7 +850,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_41,
     SpanId: Id_43,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -954,7 +954,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_46,
     SpanId: Id_48,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -1062,7 +1062,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_51,
     SpanId: Id_53,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/StreamingFromServer,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -1162,7 +1162,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_56,
     SpanId: Id_58,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/Unary,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -1262,7 +1262,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_61,
     SpanId: Id_63,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/Unary,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -1362,7 +1362,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_66,
     SpanId: Id_68,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/VerySlow,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -1464,7 +1464,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_71,
     SpanId: Id_73,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/VerySlow,
     Service: Samples.GrpcDotNet,
     Type: grpc,
