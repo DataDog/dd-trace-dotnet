@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Diagnostics;
 using System.IO;
 
 using Datadog.Trace.Logging;
@@ -22,13 +21,13 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Serverless));
 
-        internal static readonly bool IsGCPFunction = GetIsGCPFunction();
-
-        internal static readonly bool IsAzureFunction = GetIsAzureFunction();
-
         private static NativeCallTargetDefinition[] callTargetDefinitions = null;
 
         internal static LambdaMetadata Metadata { get; private set; } = LambdaMetadata.Create();
+
+        internal static bool IsGCPFunction { get; private set; } = GetIsGCPFunction();
+
+        internal static bool IsAzureFunction { get; private set; } = GetIsAzureFunction();
 
         internal static void SetMetadataTestsOnly(LambdaMetadata metadata)
         {
@@ -137,9 +136,11 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             callTargetDefinitions = null;
         }
 
-        internal static void MaybeStartMiniAgent(Process process)
+        internal static void MaybeStartMiniAgent(MiniAgentManager manager)
         {
-            if (!IsGCPFunction && !IsAzureFunction)
+            var isGCPFunction = GetIsGCPFunction();
+            var isAzureFunction = GetIsAzureFunction();
+            if (!isGCPFunction && !isAzureFunction)
             {
                 return;
             }
@@ -167,50 +168,11 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
             try
             {
-                process.StartInfo.FileName = rustBinaryPath;
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.RedirectStandardOutput = true;
-                process.OutputDataReceived += new DataReceivedEventHandler((sender, e) =>
-                {
-                    if (!string.IsNullOrEmpty(e.Data))
-                    {
-                        LogMiniAgentToCorrectLevel(e.Data);
-                    }
-                });
-                process.Start();
-                process.BeginOutputReadLine();
+                manager.Start(rustBinaryPath);
             }
             catch (Exception e)
             {
                 Log.Error(e, "Error Starting Serverless Mini Agent");
-            }
-        }
-
-        private static void LogMiniAgentToCorrectLevel(string data)
-        {
-            string[] split = data.Split(' ');
-            int logPrefixCutoff = data.IndexOf("]");
-            if (split.Length < 1 || logPrefixCutoff < 0)
-            {
-                return;
-            }
-
-            string level = split[1];
-            string processed = "[Datadog Serverless Mini Agent" + data.Substring(logPrefixCutoff);
-            switch (level)
-            {
-                case "ERROR":
-                    Log.Error("{Data}", processed);
-                    break;
-                case "WARN":
-                    Log.Warning("{Data}", processed);
-                    break;
-                case "INFO":
-                    Log.Information("{Data}", processed);
-                    break;
-                case "DEBUG":
-                    Log.Debug("{Data}", processed);
-                    break;
             }
         }
 
@@ -227,16 +189,23 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             return Environment.GetEnvironmentVariable("AzureWebJobsScriptRoot") != null && Environment.GetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION") != null;
         }
 
+        // Used for unit tests
+        internal static void SetIsGCPAzureEnvVarsTestsOnly()
+        {
+            IsAzureFunction = GetIsAzureFunction();
+            IsGCPFunction = GetIsGCPFunction();
+        }
+
         internal static string GetFunctionName()
         {
             if (IsAzureFunction)
             {
-                return Environment.GetEnvironmentVariable(AzureFunctionNameEnvVar) ?? UnknownFunctionName;
+                return Environment.GetEnvironmentVariable(AzureFunctionNameEnvVar);
             }
 
             if (IsGCPFunction)
             {
-                return Environment.GetEnvironmentVariable(GCPFunctionNameDeprecatedEnvVar) ?? Environment.GetEnvironmentVariable(GCPFunctionNameNewerEnvVar) ?? UnknownFunctionName;
+                return Environment.GetEnvironmentVariable(GCPFunctionNameDeprecatedEnvVar) ?? Environment.GetEnvironmentVariable(GCPFunctionNameNewerEnvVar);
             }
 
             return null;

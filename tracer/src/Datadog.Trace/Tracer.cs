@@ -134,7 +134,7 @@ namespace Datadog.Trace
                         return _instance;
                     }
 
-                    Serverless.MaybeStartMiniAgent(new Process());
+                    Serverless.MaybeStartMiniAgent(new MiniAgentManager());
 
                     instance = new Tracer(tracerManager: null); // don't replace settings, use existing
                     _instance = instance;

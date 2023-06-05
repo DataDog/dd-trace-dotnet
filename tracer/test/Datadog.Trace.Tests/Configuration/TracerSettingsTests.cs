@@ -17,6 +17,7 @@ using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.Configuration
 {
@@ -24,11 +25,13 @@ namespace Datadog.Trace.Tests.Configuration
     {
         private readonly Mock<IAgentWriter> _writerMock;
         private readonly Mock<ITraceSampler> _samplerMock;
+        private readonly ITestOutputHelper _output;
 
-        public TracerSettingsTests()
+        public TracerSettingsTests(ITestOutputHelper output)
         {
             _writerMock = new Mock<IAgentWriter>();
             _samplerMock = new Mock<ITraceSampler>();
+            _output = output;
         }
 
         [Theory]
@@ -413,6 +416,8 @@ namespace Datadog.Trace.Tests.Configuration
             System.Environment.SetEnvironmentVariable("FUNCTION_NAME", "function_name");
             System.Environment.SetEnvironmentVariable("GCP_PROJECT", "project_name");
 
+            Serverless.SetIsGCPAzureEnvVarsTestsOnly();
+
             var settings = new TracerSettings();
 
             settings.StatsComputationEnabled.Should().Be(true);
@@ -427,6 +432,8 @@ namespace Datadog.Trace.Tests.Configuration
             System.Environment.SetEnvironmentVariable("K_SERVICE", "function_name");
             System.Environment.SetEnvironmentVariable("FUNCTION_TARGET", "target_name");
 
+            Serverless.SetIsGCPAzureEnvVarsTestsOnly();
+
             var settings = new TracerSettings();
 
             settings.StatsComputationEnabled.Should().Be(true);
@@ -440,6 +447,8 @@ namespace Datadog.Trace.Tests.Configuration
         {
             System.Environment.SetEnvironmentVariable("AzureWebJobsScriptRoot", "/home/site/wwwroot");
             System.Environment.SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "4");
+
+            Serverless.SetIsGCPAzureEnvVarsTestsOnly();
 
             var settings = new TracerSettings();
 
