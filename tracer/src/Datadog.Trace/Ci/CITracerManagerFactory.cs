@@ -48,15 +48,17 @@ namespace Datadog.Trace.Ci
             DataStreamsManager dataStreamsManager,
             string defaultServiceName,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
+            ITraceSampler traceSampler,
+            ISpanSampler spanSampler,
             IRemoteConfigurationManager remoteConfigurationManager)
         {
             if (_useLockedManager)
             {
-                return new CITracerManager.LockedManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, remoteConfigurationManager);
+                return new CITracerManager.LockedManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager);
             }
             else
             {
-                return new CITracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, remoteConfigurationManager);
+                return new CITracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager);
             }
         }
 

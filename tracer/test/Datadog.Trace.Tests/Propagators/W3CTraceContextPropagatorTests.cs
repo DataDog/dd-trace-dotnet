@@ -123,7 +123,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void CreateTraceStateHeader_With128Bit_TraceId()
         {
-            var traceContext = new TraceContext(tracer: null);
+            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
             traceContext.SetSamplingPriority(2);
 
             var traceId = new TraceId(0x1234567890abcdef, 0x1122334455667788);

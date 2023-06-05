@@ -5,23 +5,63 @@
 
 #nullable enable
 
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Configuration
 {
     internal class PerTraceSettings
     {
-        public PerTraceSettings(ITraceSampler? traceSampler, ISpanSampler? spanSampler, ServiceNames serviceNames)
+        private readonly ConcurrentDictionary<string, string> _serviceNameCache = new();
+
+        public PerTraceSettings(ITraceSampler? traceSampler, ISpanSampler? spanSampler, IDictionary<string, string> serviceNames, NamingSchema schema)
         {
             TraceSampler = traceSampler;
             SpanSampler = spanSampler;
             ServiceNames = serviceNames;
+            Schema = schema;
         }
 
         public ITraceSampler? TraceSampler { get; }
 
         public ISpanSampler? SpanSampler { get; }
 
-        public ServiceNames ServiceNames { get; }
+        public IDictionary<string, string> ServiceNames { get; }
+
+        public NamingSchema Schema { get; }
+
+        internal string GetServiceName(Tracer tracer, string serviceName)
+        {
+            if (ServiceNames is not null && ServiceNames.TryGetValue(serviceName, out var name))
+            {
+                return name;
+            }
+
+            if (Schema.Version != SchemaVersion.V0)
+            {
+                return tracer.DefaultServiceName;
+            }
+
+            if (!_serviceNameCache.TryGetValue(serviceName, out var finalServiceName))
+            {
+                finalServiceName = $"{tracer.DefaultServiceName}-{serviceName}";
+                _serviceNameCache.TryAdd(serviceName, finalServiceName);
+            }
+
+            return finalServiceName;
+        }
+
+        internal bool TryGetServiceName(string key, out string? serviceName)
+        {
+            if (ServiceNames is not null && ServiceNames.TryGetValue(key, out serviceName))
+            {
+                return true;
+            }
+
+            serviceName = null;
+            return false;
+        }
     }
 }

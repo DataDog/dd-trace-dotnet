@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             try
             {
                 tags = new RabbitMQTags(spanKind);
-                string serviceName = tracer.CurrentTraceSettings.ServiceNames.GetServiceName(tracer, ServiceName);
+                string serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, ServiceName);
                 scope = tracer.StartActiveInternal(OperationName, parent: parentContext, tags: tags, serviceName: serviceName, startTime: startTime);
                 var span = scope.Span;
 

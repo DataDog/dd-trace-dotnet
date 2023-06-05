@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                     out var startTime,
                     out var parentContext);
 
-                var serviceName = tracer.CurrentTraceSettings.ServiceNames.GetServiceName(tracer, GrpcCommon.ServiceName);
+                var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, GrpcCommon.ServiceName);
                 var tags = new GrpcClientTags();
                 var methodFullName = callInvocationDetails.Method;
 
@@ -201,7 +201,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
         private static Span CreateInactiveSpan(Tracer tracer, string? methodFullName)
         {
-            var serviceName = tracer.CurrentTraceSettings.ServiceNames.GetServiceName(tracer, GrpcCommon.ServiceName);
+            var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, GrpcCommon.ServiceName);
             var tags = new GrpcClientTags();
             var span = tracer.StartSpan(GrpcCommon.OperationName, tags, serviceName: serviceName, addToTraceContext: false);
             tags.SetAnalyticsSampleRate(IntegrationId.Grpc, tracer.Settings, enabledWithGlobalSetting: false);

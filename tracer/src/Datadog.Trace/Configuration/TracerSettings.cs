@@ -13,7 +13,6 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -132,18 +131,14 @@ namespace Datadog.Trace.Configuration
                          // default value (empty)
                       ?? (IDictionary<string, string>)new ConcurrentDictionary<string, string>();
 
-            var inputHeaderTags = config
-                                 .WithKeys(ConfigurationKeys.HeaderTags)
-                                 .AsDictionary(allowOptionalMappings: true) ??
-                                  // default value (empty)
-                                  new Dictionary<string, string>();
-
             var headerTagsNormalizationFixEnabled = config
                                                    .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
                                                    .AsBool(defaultValue: true);
 
             // Filter out tags with empty keys or empty values, and trim whitespaces
-            HeaderTags = InitializeHeaderTags(inputHeaderTags, headerTagsNormalizationFixEnabled);
+            HeaderTags = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled)
+                ?? new Dictionary<string, string>();
+
             MetadataSchemaVersion = config
                                    .WithKeys(ConfigurationKeys.MetadataSchemaVersion)
                                    .GetAs(
@@ -156,11 +151,7 @@ namespace Datadog.Trace.Configuration
                                         },
                                         validator: null);
 
-            ServiceNameMappings = config
-                                     .WithKeys(ConfigurationKeys.ServiceNameMappings)
-                                     .AsDictionary()
-                                    ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                                    .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+            ServiceNameMappings = InitializeServiceNameMappings(config, ConfigurationKeys.ServiceNameMappings);
 
             TracerMetricsEnabled = config
                                   .WithKeys(ConfigurationKeys.TracerMetricsEnabled)
@@ -284,14 +275,9 @@ namespace Datadog.Trace.Configuration
                           .WithKeys(ConfigurationKeys.TraceMethods)
                           .AsString(string.Empty);
 
-            var grpcTags = config
-                          .WithKeys(ConfigurationKeys.GrpcTags)
-                          .AsDictionary(allowOptionalMappings: true)
-                           // default value (empty)
-                        ?? new Dictionary<string, string>();
-
             // Filter out tags with empty keys or empty values, and trim whitespaces
-            GrpcTags = InitializeHeaderTags(grpcTags, headerTagsNormalizationFixEnabled: true);
+            GrpcTags = InitializeHeaderTags(config, ConfigurationKeys.GrpcTags, headerTagsNormalizationFixEnabled: true)
+                ?? new Dictionary<string, string>();
 
             OutgoingTagPropagationHeaderMaxLength = config
                                                    .WithKeys(ConfigurationKeys.TagPropagation.HeaderMaxLength)
@@ -768,17 +754,20 @@ namespace Datadog.Trace.Configuration
             return new ImmutableTracerSettings(this);
         }
 
-        internal static IDictionary<string, string>? InitializeServiceNameMappings(IConfigurationSource source, string key)
+        internal static IDictionary<string, string>? InitializeServiceNameMappings(ConfigurationBuilder config, string key)
         {
-            var mappings = source.GetDictionary(key);
-
-            return mappings?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+            return config
+               .WithKeys(key)
+               .AsDictionary()
+              ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
         }
 
-        internal static IDictionary<string, string>? InitializeHeaderTags(IConfigurationSource source, string key, bool headerTagsNormalizationFixEnabled)
+        internal static IDictionary<string, string>? InitializeHeaderTags(ConfigurationBuilder config, string key, bool headerTagsNormalizationFixEnabled)
         {
-            var configurationDictionary = source.GetDictionary(key, allowOptionalMappings: true);
+            var configurationDictionary = config
+                   .WithKeys(key)
+                   .AsDictionary(allowOptionalMappings: true);
 
             if (configurationDictionary == null)
             {

@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
                 var method = grpcCall.Method;
                 GrpcCommon.AddGrpcTags(tags, tracer, method.GrpcType, name: method.Name, path: method.FullName, serviceName: method.ServiceName);
 
-                var serviceName = tracer.CurrentTraceSettings.ServiceNames.GetServiceName(tracer, GrpcCommon.ServiceName);
+                var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, GrpcCommon.ServiceName);
 
                 scope = tracer.StartActiveInternal(GrpcCommon.OperationName, tags: tags, serviceName: serviceName, startTime: null);
 

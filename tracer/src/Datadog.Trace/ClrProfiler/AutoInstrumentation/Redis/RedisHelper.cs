@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 return null;
             }
 
-            string serviceName = tracer.CurrentTraceSettings.ServiceNames.GetServiceName(tracer, ServiceName);
+            string serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, ServiceName);
             Scope scope = null;
 
             try

@@ -25,6 +25,6 @@ namespace Datadog.Trace.Configuration
 
         public IReadOnlyDictionary<string, string>? HeaderTags { get; init; }
 
-        public ServiceNames? ServiceNameMappings { get; init; }
+        public IDictionary<string, string>? ServiceNameMappings { get; init; }
     }
 }

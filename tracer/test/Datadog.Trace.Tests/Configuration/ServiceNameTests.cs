@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using Datadog.Trace.Configuration;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Configuration
@@ -35,8 +36,8 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("mongodb", "my-mongo")]
         public void RetrievesMappedServiceNames(string serviceName, string expected)
         {
-            _tracerV0.Settings.GetServiceName(_tracerV0, serviceName).Should().Be(expected);
-            _tracerV1.Settings.GetServiceName(_tracerV1, serviceName).Should().Be(expected);
+            _tracerV0.CurrentTraceSettings.GetServiceName(_tracerV0, serviceName).Should().Be(expected);
+            _tracerV1.CurrentTraceSettings.GetServiceName(_tracerV1, serviceName).Should().Be(expected);
         }
 
         [Theory]
@@ -45,8 +46,8 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("custom-service")]
         public void RetrievesUnmappedServiceNames(string serviceName)
         {
-            _tracerV0.Settings.GetServiceName(_tracerV0, serviceName).Should().Be($"{_tracerV0.DefaultServiceName}-{serviceName}");
-            _tracerV1.Settings.GetServiceName(_tracerV1, serviceName).Should().Be(_tracerV1.DefaultServiceName);
+            _tracerV0.CurrentTraceSettings.GetServiceName(_tracerV0, serviceName).Should().Be($"{_tracerV0.DefaultServiceName}-{serviceName}");
+            _tracerV1.CurrentTraceSettings.GetServiceName(_tracerV1, serviceName).Should().Be(_tracerV1.DefaultServiceName);
         }
 
         [Theory]
@@ -58,8 +59,8 @@ namespace Datadog.Trace.Tests.Configuration
             var tracerV0 = new LockedTracer(new TracerSettings() { MetadataSchemaVersion = SchemaVersion.V0 });
             var tracerV1 = new LockedTracer(new TracerSettings() { MetadataSchemaVersion = SchemaVersion.V1 });
 
-            tracerV0.Settings.GetServiceName(tracerV0, serviceName).Should().Be($"{tracerV0.DefaultServiceName}-{serviceName}");
-            tracerV1.Settings.GetServiceName(tracerV1, serviceName).Should().Be(tracerV1.DefaultServiceName);
+            tracerV0.CurrentTraceSettings.GetServiceName(tracerV0, serviceName).Should().Be($"{tracerV0.DefaultServiceName}-{serviceName}");
+            tracerV1.CurrentTraceSettings.GetServiceName(tracerV1, serviceName).Should().Be(tracerV1.DefaultServiceName);
         }
 
         [Fact]
@@ -74,8 +75,8 @@ namespace Datadog.Trace.Tests.Configuration
             var tracerV0 = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collectionV0)));
             var tracerV1 = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collectionV1)));
 
-            tracerV0.Settings.GetServiceName(tracerV0, serviceName).Should().Be(expected);
-            tracerV1.Settings.GetServiceName(tracerV1, serviceName).Should().Be(expected);
+            tracerV0.CurrentTraceSettings.GetServiceName(tracerV0, serviceName).Should().Be(expected);
+            tracerV1.CurrentTraceSettings.GetServiceName(tracerV1, serviceName).Should().Be(expected);
         }
 
         private class LockedTracer : Tracer
@@ -89,7 +90,7 @@ namespace Datadog.Trace.Tests.Configuration
         private class LockedTracerManager : TracerManager, ILockedTracer
         {
             public LockedTracerManager(TracerSettings tracerSettings)
-                : base(new ImmutableTracerSettings(tracerSettings), null, null, null, null, null, null, null, null, null, null, null, null)
+                : base(new ImmutableTracerSettings(tracerSettings), null, Mock.Of<IScopeManager>(), null, null, null, null, null, null, null, null, null, null)
             {
             }
         }

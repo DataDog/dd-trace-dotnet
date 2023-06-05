@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -23,7 +22,14 @@ namespace Datadog.Trace.Configuration
     public record ImmutableTracerSettings
     {
         private readonly DomainMetadata _domainMetadata;
-        private readonly ConcurrentDictionary<string, string> _serviceNameCache = new();
+        private readonly bool _isDataStreamsMonitoringEnabled;
+        private readonly bool _logsInjectionEnabled;
+        private readonly ReadOnlyDictionary<string, string> _headerTags;
+        private readonly IDictionary<string, string> _serviceNameMappings;
+        private readonly double? _globalSamplingRate;
+        private readonly bool _runtimeMetricsEnabled;
+        private readonly string? _spanSamplingRules;
+        private readonly string? _customSamplingRules;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImmutableTracerSettings"/> class
@@ -90,7 +96,7 @@ namespace Datadog.Trace.Configuration
             HttpServerErrorStatusCodes = settings.HttpServerErrorStatusCodes;
             HttpClientErrorStatusCodes = settings.HttpClientErrorStatusCodes;
             MetadataSchemaVersion = settings.MetadataSchemaVersion;
-            ServiceNameMappings = settings.ServiceNameMappings;
+            _serviceNameMappings = settings.ServiceNameMappings ?? new Dictionary<string, string>();
             TraceBufferSize = settings.TraceBufferSize;
             TraceBatchInterval = settings.TraceBatchInterval;
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
@@ -506,38 +512,6 @@ namespace Datadog.Trace.Configuration
             var integrationSettings = Integrations[integration];
             var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && AnalyticsEnabled);
             return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
-        }
-
-        internal string GetServiceName(Tracer tracer, string serviceName)
-        {
-            if (ServiceNameMappings is not null && ServiceNameMappings.TryGetValue(serviceName, out var name))
-            {
-                return name;
-            }
-
-            if (MetadataSchemaVersion != SchemaVersion.V0)
-            {
-                return tracer.DefaultServiceName;
-            }
-
-            if (!_serviceNameCache.TryGetValue(serviceName, out var finalServiceName))
-            {
-                finalServiceName = $"{tracer.DefaultServiceName}-{serviceName}";
-                _serviceNameCache.TryAdd(serviceName, finalServiceName);
-            }
-
-            return finalServiceName;
-        }
-
-        internal bool TryGetServiceName(string key, out string? serviceName)
-        {
-            if (ServiceNameMappings is not null && ServiceNameMappings.TryGetValue(key, out serviceName))
-            {
-                return true;
-            }
-
-            serviceName = null;
-            return false;
         }
     }
 }

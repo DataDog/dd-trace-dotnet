@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
                     tags.MessageWithTransaction = messagePartofTransaction.ToString();
                 }
 
-                var serviceName = tracer.CurrentTraceSettings.ServiceNames.GetServiceName(tracer, MsmqConstants.ServiceName);
+                var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, MsmqConstants.ServiceName);
 
                 scope = tracer.StartActiveInternal(MsmqConstants.OperationName, serviceName: serviceName, tags: tags);
 

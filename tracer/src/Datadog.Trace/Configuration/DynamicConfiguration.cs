@@ -10,7 +10,9 @@ using System.Linq;
 using System.Text;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration
 {
@@ -43,7 +45,7 @@ namespace Datadog.Trace.Configuration
 
             if (apmLibrary.Count == 1)
             {
-                configurationSource = new JsonConfigurationSource(Encoding.UTF8.GetString(apmLibrary[0].Contents));
+                configurationSource = new JsonConfigurationSource(Encoding.UTF8.GetString(apmLibrary[0].Contents), ConfigurationOrigins.RemoteConfig);
             }
             else
             {
@@ -51,50 +53,46 @@ namespace Datadog.Trace.Configuration
 
                 foreach (var item in apmLibrary)
                 {
-                    compositeConfigurationSource.Add(new JsonConfigurationSource(Encoding.UTF8.GetString(item.Contents)));
+                    compositeConfigurationSource.Add(new JsonConfigurationSource(Encoding.UTF8.GetString(item.Contents), ConfigurationOrigins.RemoteConfig));
                 }
 
                 configurationSource = compositeConfigurationSource;
             }
 
-            OnConfigurationChanged(configurationSource);
+            var configurationBuilder = new ConfigurationBuilder(configurationSource, TelemetryFactory.Config);
+
+            OnConfigurationChanged(configurationBuilder);
 
             // TODO: Are we supposed to acknowledge something?
             return Enumerable.Empty<ApplyDetails>();
         }
 
-        private static void OnConfigurationChanged(IConfigurationSource settings)
+        private static void OnConfigurationChanged(ConfigurationBuilder settings)
         {
             var oldSettings = Tracer.Instance.Settings;
 
             var headerTags = TracerSettings.InitializeHeaderTags(settings, "TraceHeaderTags", oldSettings.HeaderTagsNormalizationFixEnabled);
             var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(settings, "TraceServiceMapping");
-            ServiceNames? serviceNames = null;
-
-            if (serviceNameMappings != null)
-            {
-                serviceNames = new ServiceNames(serviceNameMappings, oldSettings.MetadataSchemaVersion);
-            }
 
             var dynamicSettings = new ImmutableDynamicSettings
             {
-                RuntimeMetricsEnabled = settings.GetBool("RuntimeMetricsEnabled"),
-                DataStreamsMonitoringEnabled = settings.GetBool("DataStreamsEnabled"),
-                CustomSamplingRules = settings.GetString("CustomSamplingRules"),
-                GlobalSamplingRate = settings.GetDouble("TraceSampleRate"),
-                SpanSamplingRules = settings.GetString("SpanSamplingRules"),
-                LogsInjectionEnabled = settings.GetBool("LogsInjectionEnabled"),
+                RuntimeMetricsEnabled = settings.WithKeys("RuntimeMetricsEnabled").AsBool(),
+                DataStreamsMonitoringEnabled = settings.WithKeys("DataStreamsEnabled").AsBool(),
+                CustomSamplingRules = settings.WithKeys("CustomSamplingRules").AsString(),
+                GlobalSamplingRate = settings.WithKeys("TraceSampleRate").AsDouble(),
+                SpanSamplingRules = settings.WithKeys("SpanSamplingRules").AsString(),
+                LogsInjectionEnabled = settings.WithKeys("LogsInjectionEnabled").AsBool(),
                 HeaderTags = headerTags as IReadOnlyDictionary<string, string>,
-                ServiceNameMappings = serviceNames
+                ServiceNameMappings = serviceNameMappings
             };
 
             var newSettings = oldSettings with { DynamicSettings = dynamicSettings };
 
-            var debugLogsEnabled = settings.GetBool("DebugLogsEnabled");
+            var debugLogsEnabled = settings.WithKeys("DebugLogsEnabled").AsBool();
 
             if (debugLogsEnabled != null && debugLogsEnabled.Value != GlobalSettings.Instance.DebugEnabled)
             {
-                GlobalSettings.SetDebugEnabled(debugLogsEnabled.Value);
+                GlobalSettings.SetDebugEnabledInternal(debugLogsEnabled.Value);
                 Security.Instance.SetDebugEnabled(debugLogsEnabled.Value);
 
                 NativeMethods.UpdateSettings(new[] { "DD_TRACE_DEBUG" }, new[] { debugLogsEnabled.Value ? "1" : "0" });
