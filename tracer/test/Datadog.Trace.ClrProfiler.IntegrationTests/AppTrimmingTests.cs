@@ -8,7 +8,7 @@ using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
-#if NET7_0
+#if NET6_0_OR_GREATER
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
