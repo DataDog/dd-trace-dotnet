@@ -29,7 +29,7 @@
      while (probeMetadataMapIterator != _probeMetadataMap.end())
      {
          auto probeMetadataPair = *probeMetadataMapIterator;
-         const auto methods = probeMetadataPair.second->methods;
+         const auto methods = probeMetadataPair.second->methodIndexMap;
 
          if (methods.find(lookupMethodIdentifier) != methods.end())
          {
@@ -48,9 +48,8 @@
 
      if (_probeMetadataMap.find(probeId) == _probeMetadataMap.end())
      {
-         auto methods = std::set<trace::MethodIdentifier>();
-         auto indices = std::set<int>();
-         _probeMetadataMap[probeId] = std::make_shared<ProbeMetadata>(probeId, std::move(methods), ProbeStatus::RECEIVED, std::move(indices));
+         auto methods = std::unordered_map<trace::MethodIdentifier, int>();
+         _probeMetadataMap[probeId] = std::make_shared<ProbeMetadata>(probeId, std::move(methods), ProbeStatus::RECEIVED);
      }
  }
 
@@ -63,10 +62,10 @@ void debugger::ProbesMetadataTracker::AddMethodToProbe(const shared::WSTRING& pr
 {
      std::lock_guard lock(_probeMetadataMapMutex);
 
-     const auto methodIdentifierToAdd = trace::MethodIdentifier(moduleId, methodId);
      CreateNewProbeIfNotExists(probeId);
 
-     _probeMetadataMap[probeId]->methods.emplace(methodIdentifierToAdd);
+     const auto methodIdentifierToAdd = trace::MethodIdentifier(moduleId, methodId);
+     _probeMetadataMap[probeId]->methodIndexMap.emplace(methodIdentifierToAdd, -1);
 
      // Mark the probe as Installed (if it was not marked as Error before)
      if (_probeMetadataMap[probeId]->status != ProbeStatus::_ERROR)
@@ -75,24 +74,40 @@ void debugger::ProbesMetadataTracker::AddMethodToProbe(const shared::WSTRING& pr
      }
 }
 
-bool debugger::ProbesMetadataTracker::TryGetNextInstrumentedProbeIndex(const shared::WSTRING& probeId, int& probeIndex)
+bool debugger::ProbesMetadataTracker::TryGetNextInstrumentedProbeIndex(const shared::WSTRING& probeId, const ModuleID moduleId, 
+                                                                        const mdMethodDef methodId, int& probeIndex)
 {
      std::lock_guard lock(_probeMetadataMapMutex);
 
-     if (ProbeExists(probeId))
+     std::shared_ptr<ProbeMetadata> probeMetadata;
+     if (TryGetMetadata(probeId, probeMetadata))
      {
-         // Try reuse existing index, if one is available
-         if (!_freeProbeIndices.empty())
+         const auto methodIdentifier = trace::MethodIdentifier(moduleId, methodId);
+
+         // Check if an index previously given
+         const auto iter = probeMetadata->methodIndexMap.find(methodIdentifier);
+         if (iter != probeMetadata->methodIndexMap.end() && iter->second > -1)
          {
-             probeIndex = _freeProbeIndices.front();
-             _freeProbeIndices.pop();
+             // Exist
+             probeIndex = iter->second;
          }
          else
          {
-             probeIndex = std::atomic_fetch_add(&_nextInstrumentedProbeIndex, 1);
+             // Does not exist
+             // Try reuse existing index, if one is available
+             if (!_freeProbeIndices.empty())
+             {
+                 probeIndex = _freeProbeIndices.front();
+                 _freeProbeIndices.pop();
+             }
+             else
+             {
+                 probeIndex = std::atomic_fetch_add(&_nextInstrumentedProbeIndex, 1);
+             }
+
+            probeMetadata->methodIndexMap.insert_or_assign(methodIdentifier, probeIndex);
          }
 
-         _probeMetadataMap[probeId]->probeIndices.emplace(probeIndex);
          return true;
      }
 
@@ -144,9 +159,12 @@ int debugger::ProbesMetadataTracker::RemoveProbes(const std::vector<shared::WSTR
             {
                 // Add all the indices that were associated with the removing probe
                 // into the `free probe indices` for later reuse.
-                for (const auto& probeIndex : iter->second->probeIndices)
+                for (const auto& methodAndIndexPair : iter->second->methodIndexMap)
                 {
-                    _freeProbeIndices.push(probeIndex);
+                    if (methodAndIndexPair.second > -1)
+                    {
+                        _freeProbeIndices.push(methodAndIndexPair.second);
+                    }
                 }
                 
                 _probeMetadataMap.erase(iter);
@@ -158,7 +176,24 @@ int debugger::ProbesMetadataTracker::RemoveProbes(const std::vector<shared::WSTR
     return removedProbesCount;
  }
 
-int debugger::ProbesMetadataTracker::GetNextInstrumentedMethodIndex()
+int debugger::ProbesMetadataTracker::GetInstrumentedMethodIndex(const ModuleID moduleId, const mdMethodDef methodId)
  {
-    return std::atomic_fetch_add(&_nextInstrumentedMethodIndex, 1);
+    std::lock_guard lock(_probeMetadataMapMutex);
+
+    const auto methodIdentifier = trace::MethodIdentifier(moduleId, methodId);
+
+    // Check if an index previously given
+    const auto iter = _methodIndexMap.find(methodIdentifier);
+    if (iter == _methodIndexMap.end())
+    {
+        // Does not exist, create a new index
+        _methodIndexMap[methodIdentifier] = std::atomic_fetch_add(&_nextInstrumentedMethodIndex, 1);
+    }
+
+     return _methodIndexMap[methodIdentifier];
  }
+
+int debugger::ProbesMetadataTracker::GetNextInstrumentationSequence()
+{
+     return std::atomic_fetch_add(&_nextInstrumentationSequence, 1);
+}

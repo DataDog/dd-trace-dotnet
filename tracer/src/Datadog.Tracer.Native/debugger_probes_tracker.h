@@ -19,6 +19,7 @@ namespace debugger
     private:
         std::recursive_mutex _probeMetadataMapMutex;
         std::unordered_map<shared::WSTRING, std::shared_ptr<ProbeMetadata>> _probeMetadataMap{};
+        std::unordered_map<trace::MethodIdentifier, int> _methodIndexMap{};
         // Holds incremental index that is used on the managed side for grabbing an InstrumentedMethodInfo instance (per
         // instrumented method)
         inline static std::atomic<int> _nextInstrumentedMethodIndex{0};
@@ -28,6 +29,9 @@ namespace debugger
         // Holds indices that were previously used and freed upon probes removal.
         // the `_probeMetadataMapMutex` is used for syncing
         inline static std::queue<int> _freeProbeIndices{};
+        // Holds incremental number that is uniquely given for each and every instrumentation instance. If a probe is added/removed from
+        // a specific method, then this method is going to get a new number.
+        inline static std::atomic<int> _nextInstrumentationSequence{0};
 
     public:
         ProbesMetadataTracker() = default;
@@ -37,11 +41,13 @@ namespace debugger
         void CreateNewProbeIfNotExists(const shared::WSTRING& probeId);
         bool ProbeExists(const shared::WSTRING& probeId);
         void AddMethodToProbe(const shared::WSTRING& probeId, ModuleID moduleId, mdMethodDef methodId);
-        bool TryGetNextInstrumentedProbeIndex(const shared::WSTRING& probeId, int& probeIndex);
+        bool TryGetNextInstrumentedProbeIndex(const shared::WSTRING& probeId, const ModuleID moduleId,
+                                              const mdMethodDef methodId, int& probeIndex);
         bool SetProbeStatus(const shared::WSTRING& probeId, ProbeStatus newStatus);
         bool SetErrorProbeStatus(const shared::WSTRING& probeId, const shared::WSTRING& errorMessage);
         int RemoveProbes(const std::vector<shared::WSTRING>& probes);
-        static int GetNextInstrumentedMethodIndex();
+        int GetInstrumentedMethodIndex(const ModuleID moduleId, const mdMethodDef methodId);
+        static int GetNextInstrumentationSequence();
     };
 
 } // namespace debugger

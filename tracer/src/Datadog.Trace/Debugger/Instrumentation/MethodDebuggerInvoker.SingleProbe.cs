@@ -1,4 +1,4 @@
-// <copyright file="MethodDebuggerInvoker.cs" company="Datadog">
+// <copyright file="MethodDebuggerInvoker.SingleProbe.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,6 +11,7 @@ using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 
 namespace Datadog.Trace.Debugger.Instrumentation
 {
@@ -19,25 +20,65 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class MethodDebuggerInvoker
+    public static partial class MethodDebuggerInvoker
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MethodDebuggerInvoker));
+
+        /// <summary>
+        /// Determines if the instrumentation should call <see cref="UpdateProbeInfo"/>.
+        /// </summary>
+        /// <param name="methodMetadataIndex">The unqiue index of the method.</param>
+        /// <param name="instrumentationSequence">The unique identifier of the instrumentation.</param>
+        /// <returns>true if <see cref="UpdateProbeInfo"/> should be called, false otherwise.</returns>
+        public static bool ShouldUpdateProbeInfo(int methodMetadataIndex, int instrumentationSequence)
+        {
+            if (!MethodMetadataCollection.Instance.IndexExists(methodMetadataIndex))
+            {
+                return true;
+            }
+
+            return MethodMetadataCollection.Instance.Get(methodMetadataIndex).InstrumentationSequence != instrumentationSequence;
+        }
+
+        /// <summary>
+        /// Updates the ProbeIds and ProbeMetadataIndices associated with the <see cref="MethodMetadataInfo"/> associated with the given <paramref name="methodMetadataIndex"/> and sets the corresponding <paramref name="instrumentationSequence"/>.
+        /// </summary>
+        /// <param name="probeIds">Probe Ids</param>
+        /// <param name="probeMetadataIndices">Probe Metadata Indices</param>
+        /// <param name="methodMetadataIndex">The unique index of the method.</param>
+        /// <param name="instrumentationSequence">The sequence of this particular instrumentation.</param>
+        /// <param name="methodHandle">The handle of the executing method</param>
+        /// <param name="typeHandle">The handle of the type</param>
+        public static void UpdateProbeInfo(
+            string[] probeIds,
+            int[] probeMetadataIndices,
+            int methodMetadataIndex,
+            int instrumentationSequence,
+            RuntimeMethodHandle methodHandle,
+            RuntimeTypeHandle typeHandle)
+        {
+            if (!MethodMetadataCollection.Instance.TryCreateNonAsyncMethodMetadataIfNotExists(methodMetadataIndex, in methodHandle, in typeHandle))
+            {
+                Log.Warning("BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. methodMetadataId = {MethodMetadataIndex}, instrumentationSequence = {InstrumentationSequence}", new object[] { methodMetadataIndex, instrumentationSequence });
+                return;
+            }
+
+            MethodMetadataCollection.Instance.Get(methodMetadataIndex).Update(probeIds, probeMetadataIndices, instrumentationSequence);
+        }
 
         /// <summary>
         /// Begin Method Invoker
         /// </summary>
         /// <typeparam name="TTarget">Target type</typeparam>
-        /// <param name="probeId">The id of the probe</param>
-        /// <param name="probeMetadataIndex">The index used to lookup for the <see cref="ProbeData"/></param>
         /// <param name="instance">Instance value</param>
-        /// <param name="methodHandle">The handle of the executing method</param>
-        /// <param name="typeHandle">The handle of the type</param>
         /// <param name="methodMetadataIndex">The index used to lookup for the <see cref="MethodMetadataInfo"/> associated with the executing method</param>
+        /// <param name="probeMetadataIndex">The index used to lookup for the <see cref="ProbeData"/></param>
+        /// <param name="probeId">The id of the probe</param>
         /// <returns>Live debugger state</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static MethodDebuggerState BeginMethod_StartMarker<TTarget>(string probeId, int probeMetadataIndex, TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex)
+        public static MethodDebuggerState BeginMethod_StartMarker<TTarget>(TTarget instance, int methodMetadataIndex, int probeMetadataIndex, string probeId)
         {
-            if (!MethodMetadataCollection.Instance.TryCreateNonAsyncMethodMetadataIfNotExists(methodMetadataIndex, in methodHandle, in typeHandle))
+            if (!MethodMetadataCollection.Instance.IndexExists(methodMetadataIndex))
             {
                 Log.Warning("BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {Type}, instance type name = {Name}, methodMetadaId = {MethodMetadataIndex}, probeId = {ProbeId}", new object[] { typeof(TTarget), instance?.GetType().Name, methodMetadataIndex, probeId });
                 return CreateInvalidatedDebuggerState();
@@ -50,7 +91,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return CreateInvalidatedDebuggerState();
             }
 
-            var state = new MethodDebuggerState(probeId/* probeIds[i] */, scope: default, methodMetadataIndex, ref probeData, instance);
+            var state = new MethodDebuggerState(probeId, scope: default, methodMetadataIndex, ref probeData, instance);
 
             if (!state.SnapshotCreator.ProbeHasCondition &&
                 !state.ProbeData.Sampler.Sample())
@@ -262,6 +303,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
             var defaultState = MethodDebuggerState.GetDefault();
             defaultState.IsActive = false;
             return defaultState;
+        }
+
+        private static MethodDebuggerState[] CreateInvalidatedDebuggerStates()
+        {
+            return MethodDebuggerState.DisabledStates;
         }
 
         internal static bool TryGetLocalName(int index, string[] localNamesFromPdb, out string localName)

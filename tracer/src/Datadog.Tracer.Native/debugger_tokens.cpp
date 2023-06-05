@@ -48,7 +48,10 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
         unsigned callTargetStateBuffer;
         auto callTargetStateSize = CorSigCompressToken(stateTypeRef, &callTargetStateBuffer);
 
+        const auto isMultiProbe = probeType == NonAsyncMethodMultiProbe; // || AsyncMethodMultiProbe
+
         unsigned long signatureLength = 10 + callTargetStateSize;
+        signatureLength += isMultiProbe ? 1 : 0;
 
         COR_SIGNATURE signature[signatureBufferSize];
         unsigned offset = 0;
@@ -69,6 +72,10 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
 
         // DebuggerState
         signature[offset++] = ELEMENT_TYPE_BYREF;
+        if (isMultiProbe)
+        {
+            signature[offset++] = ELEMENT_TYPE_SZARRAY;
+        }
         signature[offset++] = ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
@@ -249,6 +256,18 @@ HRESULT DebuggerTokens::EnsureBaseCalltargetTokens()
         }
     }
 
+    // *** Ensure RentArrayTypeRef type ref
+    if (rentArrayTypeRef == mdTypeRefNil)
+    {
+        hr = module_metadata->metadata_emit->DefineTypeRefByName(
+            profilerAssemblyRef, instrumentation_allocator_invoker_name.data(), &rentArrayTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper asyncMethodDebuggerInvokerTypeRef could not be defined.");
+            return hr;
+        }
+    }
+
     return S_OK;
 }
 
@@ -278,7 +297,7 @@ const WSTRING& DebuggerTokens::GetCallTargetReturnGenericType()
 
 int DebuggerTokens::GetAdditionalLocalsCount()
 {
-    return 2;
+    return 3;
 }
 
 void DebuggerTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize, bool isAsyncMethod)
@@ -306,6 +325,20 @@ void DebuggerTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], 
     signatureBuffer[signatureOffset++] = ELEMENT_TYPE_VALUETYPE;
     memcpy(&signatureBuffer[signatureOffset], &spanStateTypeRefBuffer, spanStateTypeRefSize);
     signatureOffset += spanStateTypeRefSize;
+    
+    // CallTarget states of multi-probe scenario
+
+    // Gets the calltarget state of line probe type buffer and size
+    unsigned methodDebuggerStatesTypeRefBuffer;
+    const auto methodDebuggerStatesTypeRefSize = CorSigCompressToken(GetDebuggerState(NonAsyncMethodMultiProbe), &methodDebuggerStatesTypeRefBuffer);
+
+    // Enlarge the *new* signature size
+    signatureSize += (2 + methodDebuggerStatesTypeRefSize);
+
+    signatureBuffer[signatureOffset++] = ELEMENT_TYPE_SZARRAY;
+    signatureBuffer[signatureOffset++] = ELEMENT_TYPE_VALUETYPE;
+    memcpy(&signatureBuffer[signatureOffset], &methodDebuggerStatesTypeRefBuffer, methodDebuggerStatesTypeRefSize);
+    signatureOffset += methodDebuggerStatesTypeRefSize;
 }
 
 /**
@@ -399,8 +432,9 @@ HRESULT DebuggerTokens::CreateBeginMethodStartMarkerRefSignature(ProbeType probe
     auto runtimeTypeHandleSize = CorSigCompressToken(runtimeTypeHandleRef, &runtimeTypeHandleBuffer);
 
     bool isAsyncMethod = probeType == AsyncMethodProbe;
-
-    unsigned long signatureLength = (isAsyncMethod ? 13 : 11) + callTargetStateSize +
+    bool isMultiProbe = probeType == NonAsyncMethodMultiProbe; // || probeType == AsyncMethodMultiProbe
+    
+    unsigned long signatureLength = (isAsyncMethod ? 13 : 9) + callTargetStateSize +
                                     runtimeMethodHandleSize + runtimeTypeHandleSize;
 
     COR_SIGNATURE signature[signatureBufferSize];
@@ -408,7 +442,8 @@ HRESULT DebuggerTokens::CreateBeginMethodStartMarkerRefSignature(ProbeType probe
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
     signature[offset++] = 0x01;                        // generic arguments count
-    signature[offset++] = isAsyncMethod ? 0x07 : 0x06; // arguments count
+    signature[offset++] = isAsyncMethod ? 0x07 :
+                          isMultiProbe ? 0x03 : 0x04; // arguments count
 
     if (isAsyncMethod)
     {
@@ -416,30 +451,40 @@ HRESULT DebuggerTokens::CreateBeginMethodStartMarkerRefSignature(ProbeType probe
     }
     else
     {
+        if (isMultiProbe)
+        {
+            signature[offset++] = ELEMENT_TYPE_SZARRAY;
+        }
+
         signature[offset++] = ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
     }
 
-    signature[offset++] = ELEMENT_TYPE_STRING;
-
-    signature[offset++] = ELEMENT_TYPE_I4; // probeMetadataIndex
-
     signature[offset++] = ELEMENT_TYPE_MVAR;
     signature[offset++] = 0x00;
-
-    // RuntimeMethodHandle
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signature[offset], &runtimeMethodHandleBuffer, runtimeMethodHandleSize);
-    offset += runtimeMethodHandleSize;
-
-    // RuntimeTypeHandle
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signature[offset], &runtimeTypeHandleBuffer, runtimeTypeHandleSize);
-    offset += runtimeTypeHandleSize;
-
     signature[offset++] = ELEMENT_TYPE_I4; // methodMetadataIndex
 
+    if (!isMultiProbe)
+    {
+        signature[offset++] = ELEMENT_TYPE_I4; // instrumentationSequence
+        signature[offset++] = ELEMENT_TYPE_STRING; // probeId
+    }
+    else
+    {
+        signature[offset++] = ELEMENT_TYPE_I4; // probeMetadataIndex
+    }
+
+    //// RuntimeMethodHandle
+    //signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+    //memcpy(&signature[offset], &runtimeMethodHandleBuffer, runtimeMethodHandleSize);
+    //offset += runtimeMethodHandleSize;
+
+    //// RuntimeTypeHandle
+    //signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+    //memcpy(&signature[offset], &runtimeTypeHandleBuffer, runtimeTypeHandleSize);
+    //offset += runtimeTypeHandleSize;
+    
     WSTRING methodName;
     if (isAsyncMethod)
     {
@@ -622,8 +667,11 @@ HRESULT DebuggerTokens::CreateEndMethodStartMarkerRefSignature(ProbeType probeTy
     unsigned callTargetStateBuffer;
     const auto callTargetStateSize = CorSigCompressToken(stateTypeRef, &callTargetStateBuffer);
 
+    const auto isMultiProbe = probeType == NonAsyncMethodMultiProbe; // || AsyncMethodMultiProbe
+
     auto signatureLength = (isVoid ? 8 : 14) + returnTypeSize + exTypeRefSize + callTargetStateSize;
     signatureLength++; // ByRef
+    signatureLength += isMultiProbe ? 1 : 0;
 
     COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
@@ -668,6 +716,10 @@ HRESULT DebuggerTokens::CreateEndMethodStartMarkerRefSignature(ProbeType probeTy
 
     signature[offset++] = ELEMENT_TYPE_BYREF;
 
+    if (isMultiProbe)
+    {
+        signature[offset++] = ELEMENT_TYPE_SZARRAY;
+    }
     signature[offset++] = ELEMENT_TYPE_VALUETYPE;
     memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
     offset += callTargetStateSize;
@@ -694,6 +746,7 @@ HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, ProbeType pr
 
         mdTypeRef stateTypeRef = GetDebuggerState(probeType);
         mdTypeRef methodOrLineTypeRef = GetDebuggerInvoker(probeType);
+        const auto isMultiProbe = probeType == NonAsyncMethodMultiProbe; // || AsyncMethodMultiProbe
 
         unsigned exTypeRefBuffer;
         auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
@@ -702,6 +755,8 @@ HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, ProbeType pr
         auto callTargetStateSize = CorSigCompressToken(stateTypeRef, &callTargetStateBuffer);
 
         auto signatureLength = 7 + exTypeRefSize + callTargetStateSize;
+        signatureLength += isMultiProbe ? 1 : 0;
+
         COR_SIGNATURE signature[signatureBufferSize];
         unsigned offset = 0;
 
@@ -715,6 +770,10 @@ HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, ProbeType pr
 
         // DebuggerState
         signature[offset++] = ELEMENT_TYPE_BYREF;
+        if (isMultiProbe)
+        {
+            signature[offset++] = ELEMENT_TYPE_SZARRAY;
+        }
         signature[offset++] = ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
@@ -758,15 +817,15 @@ HRESULT DebuggerTokens::WriteBeginOrEndMethod_EndMarker(void* rewriterWrapperPtr
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
     ModuleMetadata* module_metadata = GetMetadata();
     auto [beginOrEndEndMarker, beginOrEndMethodName ] = GetBeginOrEndMethodEndMarker(probeType, isBeginMethod);
+    const auto isMultiProbe = probeType == NonAsyncMethodMultiProbe; // || AsyncMethodMultiProbe
 
     if (beginOrEndEndMarker == mdMemberRefNil)
     {
         unsigned callTargetStateBuffer;
         const auto callTargetStateSize = CorSigCompressToken(stateTypeRef, &callTargetStateBuffer);
 
-        unsigned long signatureLength = 4 + callTargetStateSize;
-
-        signatureLength += 1; // ByRef
+        unsigned long signatureLength = 5 + callTargetStateSize;
+        signatureLength += isMultiProbe ? 1 : 0;
 
         COR_SIGNATURE signature[signatureBufferSize];
         unsigned offset = 0;
@@ -777,6 +836,10 @@ HRESULT DebuggerTokens::WriteBeginOrEndMethod_EndMarker(void* rewriterWrapperPtr
 
         // DebuggerState
         signature[offset++] = ELEMENT_TYPE_BYREF;
+        if (isMultiProbe)
+        {
+            signature[offset++] = ELEMENT_TYPE_SZARRAY;
+        }
         signature[offset++] = ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
@@ -1109,6 +1172,202 @@ HRESULT DebuggerTokens::WriteEndSpan(void* rewriterWrapperPtr, ILInstr** instruc
     *instruction = rewriterWrapper->CallMember(endSpanRef, false);
     return S_OK;
 }
+
+HRESULT DebuggerTokens::WriteShouldUpdateProbeInfo(void* rewriterWrapperPtr, ILInstr** instruction, ProbeType probeType)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    if (shouldUpdateProbeInfoRef == mdMemberRefNil)
+    {
+        mdTypeRef typeRef = GetDebuggerInvoker(probeType);
+        
+        unsigned long signatureLength = 5;
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
+        signature[offset++] = 0x02; // arguments count
+        signature[offset++] = ELEMENT_TYPE_BOOLEAN;
+
+        signature[offset++] = ELEMENT_TYPE_I4;
+        signature[offset++] = ELEMENT_TYPE_I4;
+
+        auto hr = module_metadata->metadata_emit->DefineMemberRef(
+            typeRef, managed_profiler_debugger_should_update_probe_info_name.data(), signature, signatureLength,
+            &shouldUpdateProbeInfoRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper beginMethod could not be defined.");
+            return hr;
+        }
+    }
+
+    *instruction = rewriterWrapper->CallMember(shouldUpdateProbeInfoRef, false);
+    return S_OK;
+}
+
+HRESULT DebuggerTokens::WriteUpdateProbeInfo(void* rewriterWrapperPtr, ILInstr** instruction, ProbeType probeType)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    if (updateProbeInfoRef == mdMemberRefNil)
+    {
+        mdTypeRef typeRef = GetDebuggerInvoker(probeType);
+
+        unsigned runtimeMethodHandleBuffer;
+        auto runtimeMethodHandleSize = CorSigCompressToken(runtimeMethodHandleRef, &runtimeMethodHandleBuffer);
+
+        unsigned runtimeTypeHandleBuffer;
+        auto runtimeTypeHandleSize = CorSigCompressToken(runtimeTypeHandleRef, &runtimeTypeHandleBuffer);
+
+        unsigned long signatureLength = 11 + runtimeMethodHandleSize + runtimeTypeHandleSize;
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
+        signature[offset++] = 0x06; // arguments count
+        signature[offset++] = ELEMENT_TYPE_VOID;
+
+        // probeIds
+        signature[offset++] = ELEMENT_TYPE_SZARRAY;
+        signature[offset++] = ELEMENT_TYPE_STRING;
+
+        // probeMetadataIndices
+        signature[offset++] = ELEMENT_TYPE_SZARRAY;
+        signature[offset++] = ELEMENT_TYPE_I4;
+
+        signature[offset++] = ELEMENT_TYPE_I4;
+        signature[offset++] = ELEMENT_TYPE_I4;
+
+         // RuntimeMethodHandle
+         signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+         memcpy(&signature[offset], &runtimeMethodHandleBuffer, runtimeMethodHandleSize);
+         offset += runtimeMethodHandleSize;
+
+         // RuntimeTypeHandle
+         signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+         memcpy(&signature[offset], &runtimeTypeHandleBuffer, runtimeTypeHandleSize);
+         offset += runtimeTypeHandleSize;
+
+        auto hr = module_metadata->metadata_emit->DefineMemberRef(
+            typeRef, managed_profiler_debugger_update_probe_info_name.data(), signature, signatureLength,
+            &updateProbeInfoRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper beginMethod could not be defined.");
+            return hr;
+        }
+    }
+
+    *instruction = rewriterWrapper->CallMember(updateProbeInfoRef, false);
+    return S_OK;
+}
+
+HRESULT DebuggerTokens::WriteRentArray(void* rewriterWrapperPtr, const TypeSignature& type, ILInstr** instruction)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    if (rentArrayRef == mdMemberRefNil)
+    {
+        unsigned long signatureLength = 7;
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
+        signature[offset++] = 0x01; // one generic
+        signature[offset++] = 0x01; // (size)
+
+        signature[offset++] = ELEMENT_TYPE_SZARRAY;
+        signature[offset++] = ELEMENT_TYPE_MVAR;
+        signature[offset++] = 0x00;
+        
+        // size
+        signature[offset++] = ELEMENT_TYPE_I4;
+
+        auto hr = module_metadata->metadata_emit->DefineMemberRef(rentArrayTypeRef,
+                                                                  managed_profiler_debugger_rent_array_name.data(),
+                                                                  signature,
+                                                                  signatureLength, &rentArrayRef);
+        if (FAILED(hr))
+        {
+            return hr;
+        }
+    }
+
+    mdMethodSpec logArgMethodSpec = mdMethodSpecNil;
+
+    auto signatureLength = 2;
+
+    PCCOR_SIGNATURE argumentSignatureBuffer;
+    ULONG argumentSignatureSize;
+    const auto [elementType, argTypeFlags] = type.GetElementTypeAndFlags();
+    if (argTypeFlags & TypeFlagByRef)
+    {
+        PCCOR_SIGNATURE argSigBuff;
+        auto signatureSize = type.GetSignature(argSigBuff);
+        if (argSigBuff[0] == ELEMENT_TYPE_BYREF)
+        {
+            argumentSignatureBuffer = argSigBuff + 1;
+            argumentSignatureSize = signatureSize - 1;
+            signatureLength += signatureSize - 1;
+        }
+        else
+        {
+            argumentSignatureBuffer = argSigBuff;
+            argumentSignatureSize = signatureSize;
+            signatureLength += signatureSize;
+        }
+    }
+    else
+    {
+        auto signatureSize = type.GetSignature(argumentSignatureBuffer);
+        argumentSignatureSize = signatureSize;
+        signatureLength += signatureSize;
+    }
+
+    COR_SIGNATURE signature[signatureBufferSize];
+    unsigned offset = 0;
+    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
+    signature[offset++] = 0x01;
+
+    memcpy(&signature[offset], argumentSignatureBuffer, argumentSignatureSize);
+    offset += argumentSignatureSize;
+
+    hr = module_metadata->metadata_emit->DefineMethodSpec(rentArrayRef, signature, signatureLength,
+                                                          &logArgMethodSpec);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error creating log exception method spec.");
+        return hr;
+    }
+
+    *instruction = rewriterWrapper->CallMember(logArgMethodSpec, false);
+    return S_OK;
+}
+
 
 HRESULT DebuggerTokens::GetIsFirstEntryToMoveNextFieldToken(const mdToken type, mdFieldDef& token)
 {
