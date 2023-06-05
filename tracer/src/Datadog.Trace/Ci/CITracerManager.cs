@@ -38,7 +38,8 @@ namespace Datadog.Trace.Ci
             string defaultServiceName,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
-            ISpanSampler spanSampler)
+            ISpanSampler spanSampler,
+            IRemoteConfigurationManager remoteConfigurationManager)
             : base(
                 settings,
                 agentWriter,

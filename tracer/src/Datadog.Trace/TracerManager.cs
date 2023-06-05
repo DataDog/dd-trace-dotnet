@@ -151,7 +151,7 @@ namespace Datadog.Trace
 
         public IRemoteConfigurationManager RemoteConfigurationManager { get; }
 
-        private RuntimeMetricsWriter RuntimeMetrics { get; }
+        public RuntimeMetricsWriter RuntimeMetrics { get; }
 
         public PerTraceSettings PerTraceSettings { get; set; }
 
@@ -172,6 +172,8 @@ namespace Datadog.Trace
                 _instance = newManager;
                 _globalInstanceInitialized = true;
             }
+
+            _instance.Start();
 
             if (oldManager is not null)
             {
@@ -200,6 +202,8 @@ namespace Datadog.Trace
         /// </summary>
         internal void Start()
         {
+            Log.Information("*** TracerManager.Start ***");
+
             // Must be idempotent and thread safe
             DirectLogSubmission?.Sink.Start();
             Telemetry?.Start();

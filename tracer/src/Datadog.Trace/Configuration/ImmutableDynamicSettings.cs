@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.Configuration
 {
-    internal class ImmutableDynamicSettings
+    internal record ImmutableDynamicSettings // Declared as record for the equality comparer
     {
         public bool? RuntimeMetricsEnabled { get; init; }
 

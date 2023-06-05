@@ -11,6 +11,7 @@ using System.Text;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry;
 
@@ -85,6 +86,11 @@ namespace Datadog.Trace.Configuration
                 HeaderTags = headerTags as IReadOnlyDictionary<string, string>,
                 ServiceNameMappings = serviceNameMappings
             };
+
+            if (dynamicSettings.Equals(oldSettings.DynamicSettings))
+            {
+                return;
+            }
 
             var newSettings = oldSettings with { DynamicSettings = dynamicSettings };
 
