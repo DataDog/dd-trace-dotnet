@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Diagnostics;
 using Datadog.Trace.Logging;
 
@@ -14,23 +15,40 @@ internal class MiniAgentManager
 
     internal virtual void Start(string path)
     {
-        Process process = new Process();
-        process.StartInfo.FileName = path;
-        process.StartInfo.UseShellExecute = false;
-        process.StartInfo.RedirectStandardOutput = true;
-        process.OutputDataReceived += new DataReceivedEventHandler((sender, e) =>
+        try
         {
-            if (!string.IsNullOrEmpty(e.Data))
+            Log.Debug("Trying to spawn the Serverless Mini Agent at path: {Path}", path);
+            Process process = new Process();
+            process.StartInfo.FileName = path;
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.RedirectStandardError = true;
+
+            var miniAgentLogsHandler = new DataReceivedEventHandler((sender, e) =>
             {
-                LogMiniAgentToCorrectLevel(e.Data);
-            }
-        });
-        process.Start();
-        process.BeginOutputReadLine();
+                ProcessMiniAgentLogData(e.Data);
+            });
+
+            process.OutputDataReceived += miniAgentLogsHandler;
+            process.ErrorDataReceived += miniAgentLogsHandler;
+
+            process.Start();
+            process.BeginErrorReadLine();
+            process.BeginOutputReadLine();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error spawning the Serverless Mini Agent.");
+        }
     }
 
-    private static void LogMiniAgentToCorrectLevel(string data)
+    private static void ProcessMiniAgentLogData(string data)
     {
+        if (string.IsNullOrEmpty(data))
+        {
+            return;
+        }
+
         string[] split = data.Split(' ');
         int logPrefixCutoff = data.IndexOf("]");
         if (split.Length < 1 || logPrefixCutoff < 0)

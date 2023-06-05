@@ -163,17 +163,10 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
                 string rustBinaryPathRoot = IsGCPFunction ? "/workspace" : "/home/site/wwwroot";
                 string rustBinaryPathOsFolder = Environment.OSVersion.Platform == PlatformID.Win32NT ? "datadog-serverless-agent-windows-amd64" : "datadog-serverless-agent-linux-amd64";
-                rustBinaryPath = string.Format("{0}/node_modules/@datadog/sma/{1}/datadog-serverless-trace-mini-agent", rustBinaryPathRoot, rustBinaryPathOsFolder);
+                rustBinaryPath = string.Format("{0}/{1}/datadog-serverless-trace-mini-agent", rustBinaryPathRoot, rustBinaryPathOsFolder);
             }
 
-            try
-            {
-                manager.Start(rustBinaryPath);
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Error Starting Serverless Mini Agent");
-            }
+            manager.Start(rustBinaryPath);
         }
 
         private static bool GetIsGCPFunction()
