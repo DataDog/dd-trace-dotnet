@@ -25,6 +25,22 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
         [Theory]
         [MemberData(nameof(GetAllConfigs))]
+        public void GetOperationNameForProtocolIsCorrect(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var protocol = "some-rpc";
+            var expectedValue = schemaVersion switch
+            {
+                SchemaVersion.V0 => $"{protocol}.request",
+                _ => $"{protocol}.server.request",
+            };
+
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, new Dictionary<string, string>());
+            namingSchema.Server.GetOperationNameForProtocol(protocol).Should().Be(expectedValue);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
         public void GetOperationNameForComponentIsCorrect(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally

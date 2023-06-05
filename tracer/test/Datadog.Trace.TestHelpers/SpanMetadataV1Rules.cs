@@ -215,7 +215,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsGrpcV1(this MockSpan span, ISet<string> excludeTags) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
-                .Matches(Name, "grpc.request")
+                .MatchesOneOf(Name, "grpc.request", "grpc.server.request")
                 .Matches(Type, "grpc"))
             .Tags(s => s
                 .IsPresent("grpc.method.kind")
