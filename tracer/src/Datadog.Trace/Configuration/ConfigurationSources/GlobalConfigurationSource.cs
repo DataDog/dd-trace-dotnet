@@ -53,7 +53,7 @@ internal class GlobalConfigurationSource
     {
         try
         {
-            var telemetry = TelemetryFactoryV2.GetConfigTelemetry();
+            var telemetry = TelemetryFactory.Config;
 
             // if environment variable is not set, look for default file name in the current directory
             var configurationFileName = new ConfigurationBuilder(configurationSource, telemetry)

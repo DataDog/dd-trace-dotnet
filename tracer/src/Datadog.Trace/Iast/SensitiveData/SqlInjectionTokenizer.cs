@@ -20,7 +20,7 @@ namespace Datadog.Trace.Iast.SensitiveData;
 internal class SqlInjectionTokenizer : ITokenizer
 {
     private const string StringLiteral = "'(?:''|[^'])*'";
-    private const string OracleEscapedLiteral = "q'\\S.*\\S'";
+    private const string OracleEscapedLiteral = "q'<.*?>'|q'\\(.*?\\)'|q'\\{.*?\\}'|q'\\[.*?\\]'|q'(?<ESCAPE>.).*?\\k<ESCAPE>'";
     private const string PostgresqlEscapedLiteral = "\\$([^$]*)\\$.*?\\$\\1\\$";
     private const string MysqlStringLiteral = "\"(?:\\\"|[^\"])*\"|'(?:(?:'')|[^'])*'";
     private const string LineComment = "--.*$";
@@ -42,6 +42,7 @@ internal class SqlInjectionTokenizer : ITokenizer
         { IntegrationId.Oracle, _oracleDialectPattern },
         { IntegrationId.Npgsql, _postgresqlDialectPattern },
         { IntegrationId.MySql, _mySqlDialectPattern },
+        { IntegrationId.Sqlite, _mySqlDialectPattern }
     };
 
     public List<Range> GetTokens(string value, IntegrationId? integrationId = null)

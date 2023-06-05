@@ -500,11 +500,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.NetActivitySdk", "t
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Owin.Iis.WebApi2", "tracer\test\test-applications\aspnet\Samples.Owin.Iis.WebApi2\Samples.Owin.Iis.WebApi2.csproj", "{B417E258-A21F-4546-B78F-8A7A4879472A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.BenchmarkDotNet.Tests", "tracer\test\Datadog.Trace.BenchmarkDotNet.Tests\Datadog.Trace.BenchmarkDotNet.Tests.csproj", "{CC549AFF-0EC0-4AD4-93E3-F05C8A74F4D9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.BenchmarkDotNet.Tests", "tracer\test\Datadog.Trace.BenchmarkDotNet.Tests\Datadog.Trace.BenchmarkDotNet.Tests.csproj", "{CC549AFF-0EC0-4AD4-93E3-F05C8A74F4D9}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.InstrumentedTests", "tracer\test\test-applications\integrations\Samples.InstrumentedTests\Samples.InstrumentedTests.csproj", "{64E32F7A-8989-480E-AFE7-3BD343424F6A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.V4Isolated", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated\Samples.AzureFunctions.V4Isolated.csproj", "{BDEE131F-CCF5-49BD-9764-9C4A8864CE4E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AWS.SimpleNotificationService", "tracer\test\test-applications\integrations\Samples.AWS.SimpleNotificationService\Samples.AWS.SimpleNotificationService.csproj", "{901AC4F9-7DE5-4D13-85FD-384382E29F11}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.GraphQL7", "tracer\test\test-applications\integrations\Samples.GraphQL7\Samples.GraphQL7.csproj", "{A996927A-9222-43F4-8552-810B69FF04DF}"
 EndProject
@@ -513,6 +515,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Security.AspNetCore5", "tracer\test\test-applications\security\Samples.Security.AspNetCore5\Samples.Security.AspNetCore5.csproj", "{87D57940-9A6E-473C-A4D6-777E3BAFD5F9}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Security.AspNetCore2", "tracer\test\test-applications\security\Samples.Security.AspNetCore2\Samples.Security.AspNetCore2.csproj", "{C5E7978A-DE2A-4944-86DB-4721A110E720}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ActivitySampleHelper", "tracer\test\test-applications\integrations\dependency-libs\ActivitySampleHelper\ActivitySampleHelper.csproj", "{51AF3B29-D107-4E22-8A85-DF02A8A898E5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1208,6 +1212,10 @@ Global
 		{C5E7978A-DE2A-4944-86DB-4721A110E720}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C5E7978A-DE2A-4944-86DB-4721A110E720}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C5E7978A-DE2A-4944-86DB-4721A110E720}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51AF3B29-D107-4E22-8A85-DF02A8A898E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51AF3B29-D107-4E22-8A85-DF02A8A898E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51AF3B29-D107-4E22-8A85-DF02A8A898E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51AF3B29-D107-4E22-8A85-DF02A8A898E5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1405,12 +1413,15 @@ Global
 		{E774F1F8-B87C-4082-BD15-04B880B4C016} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{87D57940-9A6E-473C-A4D6-777E3BAFD5F9} = {0972AD57-B16B-494F-AE0A-091DD6F3B42B}
 		{C5E7978A-DE2A-4944-86DB-4721A110E720} = {0972AD57-B16B-494F-AE0A-091DD6F3B42B}
+		{51AF3B29-D107-4E22-8A85-DF02A8A898E5} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{3c6dd42e-9214-4747-92ba-78de29aace59}*SharedItemsImports = 4
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{472dba92-4fea-4b9a-ba70-0e97b942e12d}*SharedItemsImports = 5
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{65492dd4-ccd9-437a-b383-e7eb7ab872d2}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{6d86109f-b7c9-477d-86d7-45735a3a0818}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{7b0822f6-80de-4b49-8125-93975678d0d5}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{99a62ccf-8e7f-4d57-8383-d38c371c8087}*SharedItemsImports = 4

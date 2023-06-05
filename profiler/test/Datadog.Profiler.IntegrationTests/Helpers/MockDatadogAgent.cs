@@ -218,7 +218,7 @@ namespace Datadog.Profiler.IntegrationTests
                     x => Output.WriteLine(x),
                     _readinessNotifier);
 
-                _profilesListenerTask = Task.Run(_namedPipeServer.Start);
+                _profilesListenerTask = _namedPipeServer.Start();
             }
 
             public string ProfilesPipeName { get; }

@@ -9,6 +9,11 @@ namespace AllocSimulator
     {
         public void OnAllocationTick(string type, int key, long size, long allocationsAmount);
 
-        public IEnumerable<AllocInfo> GetAllocs();
+        public IEnumerable<AllocInfo> GetUpscaledAllocs();
+
+        public IEnumerable<AllocInfo> GetSampledAllocs();
+
+        public void Upscale(AllocInfo sampled, ref AllocInfo upscaled);
+
     }
 }

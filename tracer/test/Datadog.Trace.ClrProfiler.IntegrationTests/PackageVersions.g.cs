@@ -28,6 +28,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> AwsSqs => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsSqs : PackageVersionsLatestSpecific.AwsSqs;
 
+        public static IEnumerable<object[]> AwsSns => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsSns : PackageVersionsLatestSpecific.AwsSns;
+
         public static IEnumerable<object[]> MongoDB => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MongoDB : PackageVersionsLatestSpecific.MongoDB;
 
         public static IEnumerable<object[]> ElasticSearch7 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.ElasticSearch7 : PackageVersionsLatestSpecific.ElasticSearch7;

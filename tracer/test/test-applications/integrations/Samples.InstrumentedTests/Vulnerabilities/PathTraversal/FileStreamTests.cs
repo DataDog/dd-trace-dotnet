@@ -20,13 +20,6 @@ public class FileStreamTests : InstrumentationTestsBase
         AddTainted(taintedPathValue);
     }
 
-    [Fact]
-    public void GivenAFileStream_WhenCreatingFromTaintedString_LocationIsCorrect()
-    {
-        ExecuteAction(() => { new FileStream(taintedPathValue, FileMode.Open); });
-        AssertLocation(nameof(FileStreamTests));
-    }
-
     // Cover System.IO.FileStream::.ctor(System.String,System.IO.FileMode)
 
     [Fact]

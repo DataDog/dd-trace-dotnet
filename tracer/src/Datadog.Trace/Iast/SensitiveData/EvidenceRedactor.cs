@@ -30,6 +30,7 @@ internal class EvidenceRedactor
         { VulnerabilityTypeName.LdapInjection, new LdapTokenizer() },
         { VulnerabilityTypeName.CommandInjection, new CommandTokenizer() },
         { VulnerabilityTypeName.Ssrf, new UrlTokenizer() },
+        { VulnerabilityTypeName.UnvalidatedRedirect, new UrlTokenizer() },
     };
 
     public EvidenceRedactor(string keysPattern, string valuesPattern, TimeSpan timeout, IDatadogLogger? logger = null)

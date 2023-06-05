@@ -36,18 +36,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if !NETCOREAPP3_1_OR_GREATER
                 .Where(x => x != TracesTransportType.UnixDomainSocket)
 #endif
-                .Select(x => new object[] { x });
+                .SelectMany(x => new[] { new object[] { x, true }, new object[] { x, false } });
 
         [SkippableTheory]
         [MemberData(nameof(Data))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task TransportsWorkCorrectly(Enum transport)
+        public async Task TransportsWorkCorrectly(Enum transport, bool useV2Telemetry)
         {
             var transportType = (TracesTransportType)transport;
             if (transportType != TracesTransportType.WindowsNamedPipe)
             {
-                await RunTest(transportType);
+                await RunTest(transportType, useV2Telemetry);
                 return;
             }
 
@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 try
                 {
                     attemptsRemaining--;
-                    await RunTest(transportType);
+                    await RunTest(transportType, useV2Telemetry);
                     return;
                 }
                 catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
@@ -68,9 +68,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private async Task RunTest(TracesTransportType transportType)
+        private async Task RunTest(TracesTransportType transportType, bool useV2Telemetry)
         {
-            const int expectedSpanCount = 2;
+            const int expectedSpanCount = 1;
 
             if (transportType == TracesTransportType.WindowsNamedPipe && !EnvironmentTools.IsWindows())
             {
@@ -79,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             EnvironmentHelper.EnableTransport(GetTransport(transportType));
 
-            using var telemetry = this.ConfigureTelemetry();
+            using var telemetry = this.ConfigureTelemetry(useV2Telemetry);
             using var agent = GetAgent(transportType);
             agent.Output = Output;
 
