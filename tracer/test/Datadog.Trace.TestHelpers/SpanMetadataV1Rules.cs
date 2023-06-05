@@ -236,13 +236,15 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsHttpMessageHandlerV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .Matches(Name, "http.request")
+                .Matches(Name, "http.client.request")
                 .Matches(Type, "http"))
             .Tags(s => s
                 .IsPresent("http-client-handler-type")
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
+                .IsPresent("peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "network.destination.name", "peer.service")
                 .IsPresent("component")
                 .Matches("span.kind", "client"));
 
@@ -438,13 +440,15 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsWebRequestV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .Matches(Name, "http.request")
+                .Matches(Name, "http.client.request")
                 .Matches(Type, "http"))
             .Tags(s => s
                 .IsOptional("http-client-handler-type")
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
+                .IsPresent("peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "network.destination.name", "peer.service")
                 .MatchesOneOf("component", "HttpMessageHandler", "WebRequest")
                 .Matches("span.kind", "client"));
     }
