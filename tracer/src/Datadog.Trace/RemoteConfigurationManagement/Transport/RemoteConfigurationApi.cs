@@ -80,7 +80,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
                 return null;
             }
 
-            return await apiResponse.ReadAsTypeAsync<GetRcmResponse>().ConfigureAwait(false);
+            var response = await apiResponse.ReadAsStringAsync().ConfigureAwait(false);
+            Log.Debug("Recieved Remote Configuration Response: {Response}", response);
+
+            return JsonConvert.DeserializeObject<GetRcmResponse>(response);
         }
     }
 }
