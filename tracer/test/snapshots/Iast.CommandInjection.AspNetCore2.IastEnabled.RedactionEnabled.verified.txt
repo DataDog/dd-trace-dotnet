@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -33,7 +33,7 @@
             "source": 0
           },
           {
-            "redacted": true
+            "value": " "
           },
           {
             "redacted": true,

@@ -109,7 +109,7 @@ public class ConfigurationBuilderTests
             }
 
             telemetry
-               .GetLatest()
+               .GetQueueForTesting()
                .OrderBy(x => x.SeqId)
                .Should()
                .BeEquivalentTo(

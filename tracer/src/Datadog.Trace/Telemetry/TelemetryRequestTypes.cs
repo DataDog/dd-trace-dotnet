@@ -10,10 +10,15 @@ namespace Datadog.Trace.Telemetry
         public const string AppStarted = "app-started";
         public const string AppDependenciesLoaded = "app-dependencies-loaded";
         public const string AppIntegrationsChanged = "app-integrations-change";
+        public const string AppClientConfigurationChanged = "app-client-configuration-change";
+        public const string AppProductChanged = "app-product-change";
         public const string AppHeartbeat = "app-heartbeat";
         public const string AppClosing = "app-closing";
+        public const string AppExtendedHeartbeat = "app-extended-heartbeat";
 
         public const string GenerateMetrics = "generate-metrics";
         public const string Distributions = "distributions";
+
+        public const string MessageBatch = "message-batch";
     }
 }

@@ -110,6 +110,13 @@ internal class MetricsTelemetryCollector : IMetricsTelemetryCollector
         return new(metricData, distributionData);
     }
 
+    public void Clear()
+    {
+        _reserveBuffer.Clear();
+        var buffer = Interlocked.Exchange(ref _buffer, _reserveBuffer);
+        buffer.Clear();
+    }
+
     [Conditional("DEBUG")]
     private static void AssertTags(Count metric, int actualTags)
         => Debug.Assert(metric.ExpectedTags() == actualTags, $"Expected {metric} to have {metric.ExpectedTags()} tags, but found {actualTags}");
@@ -446,12 +453,12 @@ internal class MetricsTelemetryCollector : IMetricsTelemetryCollector
 
             for (var i = 0; i < DistributionExtensions.Length; i++)
             {
-                Distributions[i].Clear();
+                while (Distributions[i].TryDequeue(out _)) { }
             }
 
             foreach (var kvp in DistributionsWithTags)
             {
-                kvp.Value.Clear();
+                while (kvp.Value.TryDequeue(out _)) { }
             }
         }
     }

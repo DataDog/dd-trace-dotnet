@@ -34,7 +34,7 @@
             "source": 0
           },
           {
-            "redacted": true
+            "value": " "
           },
           {
             "redacted": true,
