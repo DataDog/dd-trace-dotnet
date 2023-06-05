@@ -28,12 +28,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTracesV0() => await RunTest("v0", nameof(ProcessStartCommandsCollectionTests), true);
+        public async Task SubmitsTracesV0() => await RunTest("v0", nameof(ProcessStartCommandsCollectionTests), 10, true);
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTracesV1() => await RunTest("v1", nameof(ProcessStartCommandsCollectionTests), true);
+        public async Task SubmitsTracesV1() => await RunTest("v1", nameof(ProcessStartCommandsCollectionTests), 10, true);
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
