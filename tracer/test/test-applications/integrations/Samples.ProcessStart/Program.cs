@@ -78,74 +78,74 @@ namespace Samples.ProcessStart
         {
             try
             {
-                // Test - Non-existing executable with UseShellExecute = true
-                Process.Start(new ProcessStartInfo("nonexisting1.exe") { UseShellExecute = true });
-            }
-            catch (Win32Exception) { }
-
-            try
-            {
                 // Test - Non-existing executable with UseShellExecute = false
-                Process.Start(new ProcessStartInfo("nonexisting1.exe") { UseShellExecute = false });
+                Process.Start(new ProcessStartInfo("nonexisting1-false.exe") { UseShellExecute = false });
             }
             catch (Win32Exception) { }
 
             try
             {
-                // Test - Non-existing executable with UseShellExecute = true and Arguments = "arg1"
-                Process.Start(new ProcessStartInfo("nonexisting2.exe") { UseShellExecute = true, Arguments = "arg1" });
+                // Test - Non-existing executable with UseShellExecute = true
+                Process.Start(new ProcessStartInfo("nonexisting1-true.exe") { UseShellExecute = true });
             }
             catch (Win32Exception) { }
 
             try
             {
-                // Test - Non-existing executable with UseShellExecute = false and Arguments = "arg2"
-                Process.Start(new ProcessStartInfo("nonexisting2.exe") { UseShellExecute = false, Arguments = "arg2" });
+                // Test - Non-existing executable with UseShellExecute = false and Arguments = "arg1-false"
+                Process.Start(new ProcessStartInfo("nonexisting2-false.exe") { UseShellExecute = false, Arguments = "arg1-false" });
+            }
+            catch (Win32Exception) { }
+
+            try
+            {
+                // Test - Non-existing executable with UseShellExecute = true and Arguments = "arg1-true"
+                Process.Start(new ProcessStartInfo("nonexisting2-true.exe") { UseShellExecute = true, Arguments = "arg1-true" });
             }
             catch (Win32Exception) { }
 
             var largeString = new string('a', 4096);
-            
+
             try
             {
-                // Test - Non-existing executable with UseShellExecute = false and Arguments = "arg2"
-                Process.Start(new ProcessStartInfo("nonexisting3.exe") { UseShellExecute = false, Arguments = "arg1 " + largeString });
+                // Test 4 - Non-existing executable with UseShellExecute = true and Arguments = "arg1-false" + largeString
+                Process.Start(new ProcessStartInfo("nonexisting3-false.exe") { UseShellExecute = false, Arguments = "arg1-false " + largeString });
             }
             catch (Win32Exception) { }
-            
+
             try
             {
-                // Test 4 - Non-existing executable with UseShellExecute = true and Arguments = "arg1" + largeString
-                Process.Start(new ProcessStartInfo("nonexisting3.exe") { UseShellExecute = true, Arguments = "arg1 " + largeString });
+                // Test - Non-existing executable with UseShellExecute = false and Arguments = "arg1-true"
+                Process.Start(new ProcessStartInfo("nonexisting3-true.exe") { UseShellExecute = true, Arguments = "arg1-true " + largeString });
             }
             catch (Win32Exception) { }
 
 #if NETCOREAPP3_1_OR_GREATER
             try
             {
-                // Test - Non-existing executable with UseShellExecute = true and ArgumentList = { "arg1", "arg2" }
-                Process.Start(new ProcessStartInfo("nonexisting4.exe") { UseShellExecute = true, ArgumentList = { "arg1", "arg2" } });
+                // Test - Non-existing executable with UseShellExecute = false and ArgumentList = { "arg1-false", "arg2-false" }
+                Process.Start(new ProcessStartInfo("nonexisting4-false.exe") { UseShellExecute = false, ArgumentList = { "arg1-false", "arg2-false" } });
             }
             catch (Win32Exception) { }
 
             try
             {
-                // Test - Non-existing executable with UseShellExecute = false and ArgumentList = { "arg3", "arg4" }
-                Process.Start(new ProcessStartInfo("nonexisting4.exe") { UseShellExecute = false, ArgumentList = { "arg1", "arg2" } });
+                // Test - Non-existing executable with UseShellExecute = true and ArgumentList = { "arg1-true", "arg2-true" }
+                Process.Start(new ProcessStartInfo("nonexisting4-true.exe") { UseShellExecute = true, ArgumentList = { "arg1-true", "arg2-true" } });
             }
             catch (Win32Exception) { }
-            
+
             try
             {
-                // Test - Non-existing executable with UseShellExecute = true and ArgumentList = "arg1 " + largeString
-                Process.Start(new ProcessStartInfo("nonexisting5.exe") { UseShellExecute = true, ArgumentList = { "arg1", largeString } });
+                // Test - Non-existing executable with UseShellExecute = false and ArgumentList = "arg1-false " + largeString
+                Process.Start(new ProcessStartInfo("nonexisting5-false.exe") { UseShellExecute = false, ArgumentList = { "arg1-false", largeString } });
             }
             catch (Win32Exception) { }
-            
+
             try
             {
-                // Test - Non-existing executable with UseShellExecute = false and ArgumentList = "arg1 " + largeString
-                Process.Start(new ProcessStartInfo("nonexisting5.exe") { UseShellExecute = false, ArgumentList = { "arg1", largeString } });
+                // Test - Non-existing executable with UseShellExecute = true and ArgumentList = "arg1-true " + largeString
+                Process.Start(new ProcessStartInfo("nonexisting5-true.exe") { UseShellExecute = true, ArgumentList = { "arg1-true", largeString } });
             }
             catch (Win32Exception) { }
 #endif
