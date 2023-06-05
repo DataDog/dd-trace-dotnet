@@ -343,25 +343,25 @@ namespace Datadog.Trace
 
                 if (Serverless.IsGCPFunction)
                 {
-                    if (Environment.GetEnvironmentVariable("FUNCTION_NAME") != null)
+                    if (Environment.GetEnvironmentVariable(Serverless.GCPFunctionNameDeprecatedEnvVar) != null)
                     {
                         // Google Cloud Function Name set by deprecated runtimes
-                        return Environment.GetEnvironmentVariable("FUNCTION_NAME");
+                        return Environment.GetEnvironmentVariable(Serverless.GCPFunctionNameDeprecatedEnvVar);
                     }
 
-                    if (Environment.GetEnvironmentVariable("K_SERVICE") != null)
+                    if (Environment.GetEnvironmentVariable(Serverless.GCPFunctionNameNewerEnvVar) != null)
                     {
                         // Google Cloud Function Name set by newer runtimes
-                        return Environment.GetEnvironmentVariable("K_SERVICE");
+                        return Environment.GetEnvironmentVariable(Serverless.GCPFunctionNameNewerEnvVar);
                     }
                 }
 
                 if (Serverless.IsAzureFunction)
                 {
-                    if (Environment.GetEnvironmentVariable("FUNCTION_NAME") != null)
+                    if (Environment.GetEnvironmentVariable(Serverless.AzureFunctionNameEnvVar) != null)
                     {
                         // set by Azure Functions
-                        return Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME");
+                        return Environment.GetEnvironmentVariable(Serverless.AzureFunctionNameEnvVar);
                     }
                 }
 
