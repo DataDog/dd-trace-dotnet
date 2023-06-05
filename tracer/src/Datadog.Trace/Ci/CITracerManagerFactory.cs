@@ -12,6 +12,7 @@ using Datadog.Trace.Ci.Sampling;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Logging.DirectSubmission;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
@@ -46,15 +47,16 @@ namespace Datadog.Trace.Ci
             IDiscoveryService discoveryService,
             DataStreamsManager dataStreamsManager,
             string defaultServiceName,
-            IGitMetadataTagsProvider gitMetadataTagsProvider)
+            IGitMetadataTagsProvider gitMetadataTagsProvider,
+            IRemoteConfigurationManager remoteConfigurationManager)
         {
             if (_useLockedManager)
             {
-                return new CITracerManager.LockedManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider);
+                return new CITracerManager.LockedManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, remoteConfigurationManager);
             }
             else
             {
-                return new CITracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider);
+                return new CITracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, remoteConfigurationManager);
             }
         }
 

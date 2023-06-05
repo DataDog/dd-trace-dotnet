@@ -89,7 +89,7 @@ namespace Datadog.Trace.Tests.Configuration
         private class LockedTracerManager : TracerManager, ILockedTracer
         {
             public LockedTracerManager(TracerSettings tracerSettings)
-                : base(new ImmutableTracerSettings(tracerSettings), null, null, null, null, null, null, null, null, null, null, null)
+                : base(new ImmutableTracerSettings(tracerSettings), null, null, null, null, null, null, null, null, null, null, null, null)
             {
             }
         }
