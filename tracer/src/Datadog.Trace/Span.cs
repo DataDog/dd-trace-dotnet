@@ -5,6 +5,7 @@
 
 using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -41,11 +42,7 @@ namespace Datadog.Trace
 
             if (IsLogLevelDebugEnabled)
             {
-                var tagsType = Tags.GetType();
-
-                Log.Debug(
-                    "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{TagsType}])",
-                    new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, Tags, tagsType });
+                WriteCtorDebugMessage();
             }
         }
 
@@ -429,9 +426,7 @@ namespace Datadog.Trace
 
                 if (IsLogLevelDebugEnabled)
                 {
-                    Log.Debug(
-                        "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])",
-                        new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, ServiceName, ResourceName, OperationName, Tags });
+                    WriteCloseDebugMessage();
                 }
             }
         }
@@ -461,6 +456,24 @@ namespace Datadog.Trace
         internal void SetDuration(TimeSpan duration)
         {
             Duration = duration;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void WriteCtorDebugMessage()
+        {
+            var tagsType = Tags.GetType();
+
+            Log.Debug(
+                "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{TagsType}])",
+                new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, Tags, tagsType });
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void WriteCloseDebugMessage()
+        {
+            Log.Debug(
+                "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])",
+                new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, ServiceName, ResourceName, OperationName, Tags });
         }
     }
 }
