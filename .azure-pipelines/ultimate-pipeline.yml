@@ -374,7 +374,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macOS-10.15
+      vmImage: macos-11
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -506,7 +506,7 @@ stages:
   - job: managed
     timeoutInMinutes: 60 #default value
     pool:
-      vmImage: macOS-10.15
+      vmImage: macos-11
     steps:
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
