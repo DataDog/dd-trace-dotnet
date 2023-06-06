@@ -28,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public GrpcLegacyTests(ITestOutputHelper output)
             : base("GrpcLegacy", output, usesAspNetCore: false)
         {
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -374,7 +375,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         if (httpClientIntegrationType != HttpClientIntegrationType.Disabled)
                         {
                             var httpClientSpans = spans
-                                                .Where(x => x.Name == "http.request" && x.Resource.EndsWith("VerySlow"))
+                                                .Where(x => x.Type == SpanTypes.Http && x.Resource.EndsWith("VerySlow"))
                                                 .ToList();
                             httpClientSpans.Should().HaveCount(2);
 

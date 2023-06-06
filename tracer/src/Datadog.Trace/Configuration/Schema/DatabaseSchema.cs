@@ -7,6 +7,7 @@
 
 using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Configuration.Schema
 {
@@ -44,6 +45,13 @@ namespace Datadog.Trace.Configuration.Schema
             {
                 SchemaVersion.V0 => new MongoDbTags(),
                 _ => new MongoDbV1Tags(),
+            };
+
+        public SqlTags CreateSqlTags()
+            => _version switch
+            {
+                SchemaVersion.V0 => new SqlTags(),
+                _ => new SqlV1Tags(),
             };
     }
 }

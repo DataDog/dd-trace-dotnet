@@ -11,7 +11,7 @@ using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration.Telemetry;
 
-internal class ConfigurationTelemetry : IConfigurationTelemetry
+internal partial class ConfigurationTelemetry : IConfigurationTelemetry
 {
     private static long _seqId;
     private ConcurrentQueue<ConfigurationTelemetryEntry> _entries = new();
@@ -40,9 +40,10 @@ internal class ConfigurationTelemetry : IConfigurationTelemetry
     public void Record(string key, int value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
         => _entries.Enqueue(ConfigurationTelemetryEntry.Number(key, value, origin, error));
 
-    // TODO: finalize public API
-    public ConcurrentQueue<ConfigurationTelemetryEntry>? GetLatest()
-        => Interlocked.Exchange(ref _entries, new());
+    /// <summary>
+    /// Gets the currently enqueued values. Should only be used for testing
+    /// </summary>
+    internal ConcurrentQueue<ConfigurationTelemetryEntry> GetQueueForTesting() => _entries;
 
     public class ConfigurationTelemetryEntry
     {

@@ -308,6 +308,8 @@ public class CompositeConfigurationSourceTests
         public void Record(string key, int value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
             => IncrementAccess(key);
 
+        public ICollection<ConfigurationKeyValue> GetData() => null;
+
         public void SetErrorOnCurrentEntry(string key, TelemetryErrorCode error)
         {
         }

@@ -9,7 +9,7 @@ using Datadog.Trace.Configuration.Schema;
 using FluentAssertions;
 using Xunit;
 
-namespace Datadog.Trace.Tests.Configuration
+namespace Datadog.Trace.Tests.Configuration.Schema
 {
     public class MessagingSchemaTests
     {

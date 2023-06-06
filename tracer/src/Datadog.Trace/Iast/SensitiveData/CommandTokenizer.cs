@@ -19,7 +19,7 @@ namespace Datadog.Trace.Iast.SensitiveData;
 /// </summary>
 internal class CommandTokenizer : ITokenizer
 {
-    private static Regex _pattern = new Regex(@"^(?:\s*(?:sudo|doas|cmd|cmd.exe)\s+)?\b\S+\b(.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static Regex _pattern = new(@"^(?:\s*(?:sudo|doas|cmd|cmd.exe)\s+)?\b\S+\b\s+(.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public List<Range> GetTokens(string value, IntegrationId? integrationId = null)
     {

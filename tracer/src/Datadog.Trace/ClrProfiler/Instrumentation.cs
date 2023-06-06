@@ -450,7 +450,7 @@ namespace Datadog.Trace.ClrProfiler
             Task.Run(
                 async () =>
                 {
-                    // TODO: RCM and LiveDebugger should be initialized in TracerManagerFactory so they can respond
+                    // TODO: LiveDebugger should be initialized in TracerManagerFactory so it can respond
                     // to changes in ExporterSettings etc.
 
                     var sw = Stopwatch.StartNew();
@@ -459,20 +459,11 @@ namespace Datadog.Trace.ClrProfiler
 
                     if (isDiscoverySuccessful)
                     {
-                        var rcmSettings = RemoteConfigurationSettings.FromDefaultSource();
-                        var rcmApi = RemoteConfigurationApiFactory.Create(tracer.Settings.Exporter, rcmSettings, discoveryService);
-
-                        var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, tracer.Settings, tracer.TracerManager.GitMetadataTagsProvider, RcmSubscriptionManager.Instance);
-
                         var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, tracer.Settings, serviceName, tracer.TracerManager.Telemetry);
 
-                        Log.Debug("Initializing Remote Configuration management.");
+                        Log.Debug("Initializing live debugger.");
 
-                        await Task
-                             .WhenAll(
-                                  InitializeRemoteConfigurationManager(configurationManager),
-                                  InitializeLiveDebugger(liveDebugger))
-                             .ConfigureAwait(false);
+                        await InitializeLiveDebugger(liveDebugger).ConfigureAwait(false);
                     }
                 });
         }
@@ -493,21 +484,6 @@ namespace Datadog.Trace.ClrProfiler
                 tc.TrySetResult(true);
                 discoveryService.RemoveSubscription(Callback);
             }
-        }
-
-        internal static async Task InitializeRemoteConfigurationManager(IRemoteConfigurationManager remoteConfigurationManager)
-        {
-            var sw = Stopwatch.StartNew();
-            try
-            {
-                await remoteConfigurationManager.StartPollingAsync().ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to initialize Remote Configuration management.");
-            }
-
-            TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_RCM, sw.ElapsedMilliseconds);
         }
 
         internal static async Task InitializeLiveDebugger(LiveDebugger liveDebugger)
