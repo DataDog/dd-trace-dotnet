@@ -15,13 +15,26 @@ internal class TracerClock
 {
     private static TracerClock _instance;
 
-    private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
-    private readonly long _timestamp = Stopwatch.GetTimestamp();
+    private readonly DateTimeOffset _utcStart;
+    private readonly long _timestamp;
 
     static TracerClock()
     {
         _instance = new TracerClock();
         _ = UpdateClockAsync();
+    }
+
+    private TracerClock()
+    {
+        _utcStart = DateTimeOffset.UtcNow;
+        _timestamp = Stopwatch.GetTimestamp();
+
+        // The following is to prevent the case of GC hitting between _utcStart and _timestamp set
+        while (Elapsed.TotalMilliseconds > 16)
+        {
+            _utcStart = DateTimeOffset.UtcNow;
+            _timestamp = Stopwatch.GetTimestamp();
+        }
     }
 
     public static TracerClock Instance => _instance;

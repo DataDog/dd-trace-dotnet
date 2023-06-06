@@ -22,6 +22,8 @@ namespace Datadog.Trace.AppSec
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ObjectExtractor));
         private static readonly IReadOnlyDictionary<string, object> EmptyDictionary = new ReadOnlyDictionary<string, object>(new Dictionary<string, object>(0));
 
+        private static readonly Type GenericListType = typeof(List<>);
+        private static readonly Type GenericDictionaryType = typeof(Dictionary<,>);
         private static readonly ConcurrentDictionary<Type, FieldExtractor[]> TypeToExtractorMap = new();
 
         private static readonly HashSet<Type> AdditionalPrimitives = new()
@@ -161,23 +163,32 @@ namespace Datadog.Trace.AppSec
 
         private static object ExtractType(Type itemType, object value, int depth, HashSet<object> visited)
         {
-            if (itemType.IsArray || (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(List<>)))
+            if (itemType.IsArray)
             {
                 return ExtractListOrArray(value, depth, visited);
             }
-            else if (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+
+            if (itemType.IsGenericType)
             {
-                return ExtractDictionary(value, itemType, depth, visited);
+                var genericTypeDefinition = itemType.GetGenericTypeDefinition();
+
+                if (genericTypeDefinition == GenericListType)
+                {
+                    return ExtractListOrArray(value, depth, visited);
+                }
+
+                if (genericTypeDefinition == GenericDictionaryType)
+                {
+                    return ExtractDictionary(value, itemType, depth, visited);
+                }
             }
-            else if (IsOurKindOfPrimitive(itemType))
+
+            if (IsOurKindOfPrimitive(itemType))
             {
                 return value?.ToString();
             }
-            else
-            {
-                var nestedDict = ExtractProperties(value, depth, visited);
-                return nestedDict;
-            }
+
+            return ExtractProperties(value, depth, visited);
         }
 
         private static Dictionary<string, object> ExtractDictionary(object value, Type dictType, int depth, HashSet<object> visited)
