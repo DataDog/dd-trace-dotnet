@@ -69,12 +69,12 @@ internal class IntelligentTestRunnerClient
         _settings = settings ?? CIVisibility.Settings;
 
         _workingDirectory = workingDirectory;
-        _environment = TraceUtil.NormalizeTag(_settings.TracerSettings.Environment ?? "none") ?? "none";
-        _serviceName = NormalizerTraceProcessor.NormalizeService(_settings.TracerSettings.ServiceName) ?? string.Empty;
+        _environment = TraceUtil.NormalizeTag(_settings.TracerSettings.EnvironmentInternal ?? "none") ?? "none";
+        _serviceName = NormalizerTraceProcessor.NormalizeService(_settings.TracerSettings.ServiceNameInternal) ?? string.Empty;
         _customConfigurations = null;
 
         // Extract custom tests configurations from DD_TAGS
-        _customConfigurations = GetCustomTestsConfigurations(_settings.TracerSettings.GlobalTags);
+        _customConfigurations = GetCustomTestsConfigurations(_settings.TracerSettings.GlobalTagsInternal);
 
         _getRepositoryUrlTask = GetRepositoryUrlAsync();
         _getBranchNameTask = GetBranchNameAsync();
@@ -128,7 +128,7 @@ internal class IntelligentTestRunnerClient
         {
             // Use Agent EVP Proxy
             _useEvpProxy = true;
-            var agentUrl = _settings.TracerSettings.Exporter.AgentUri;
+            var agentUrl = _settings.TracerSettings.ExporterInternal.AgentUri;
             _settingsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{settingsUrlPath}");
             _searchCommitsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{searchCommitsUrlPath}");
             _packFileUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v2/{packFileUrlPath}");
