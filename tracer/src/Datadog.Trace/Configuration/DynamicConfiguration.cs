@@ -11,7 +11,6 @@ using System.Text;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry;
 
@@ -104,7 +103,7 @@ namespace Datadog.Trace.Configuration
                 NativeMethods.UpdateSettings(new[] { "DD_TRACE_DEBUG" }, new[] { debugLogsEnabled.Value ? "1" : "0" });
             }
 
-            TracerManager.ReplaceGlobalManager(newSettings, TracerManagerFactory.Instance);
+            Tracer.Configure(newSettings);
         }
     }
 }

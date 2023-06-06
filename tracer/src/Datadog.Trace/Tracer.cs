@@ -62,8 +62,9 @@ namespace Datadog.Trace
                 + nameof(Tracer) + "." + nameof(Configure) + "() to replace the global Tracer settings for the application")]
         public Tracer(TracerSettings settings)
         {
-            // TODO: Switch to immutable settings
-            Configure(settings);
+            // Don't call Configure because it will call Start on the TracerManager
+            // before this new instance of Tracer is assigned to Tracer.Instance
+            TracerManager.ReplaceGlobalManager(settings?.Build(), TracerManagerFactory.Instance);
 
             // update the count of Tracer instances
             Interlocked.Increment(ref _liveTracerCount);
@@ -249,8 +250,12 @@ namespace Datadog.Trace
         /// <param name="settings"> A <see cref="TracerSettings"/> instance with the desired settings,
         /// or null to use the default configuration sources. This is used to configure global settings</param>
         public static void Configure(TracerSettings settings)
+            => Configure(settings?.Build());
+
+        internal static void Configure(ImmutableTracerSettings settings)
         {
-            TracerManager.ReplaceGlobalManager(settings?.Build(), TracerManagerFactory.Instance);
+            TracerManager.ReplaceGlobalManager(settings, TracerManagerFactory.Instance);
+            Tracer.Instance.TracerManager.Start();
         }
 
         /// <summary>

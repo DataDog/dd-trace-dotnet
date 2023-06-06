@@ -173,8 +173,6 @@ namespace Datadog.Trace
                 _globalInstanceInitialized = true;
             }
 
-            _instance.Start();
-
             if (oldManager is not null)
             {
                 // Clean up the old TracerManager instance
@@ -202,8 +200,6 @@ namespace Datadog.Trace
         /// </summary>
         internal void Start()
         {
-            Log.Information("*** TracerManager.Start ***");
-
             // Must be idempotent and thread safe
             DirectLogSubmission?.Sink.Start();
             Telemetry?.Start();
