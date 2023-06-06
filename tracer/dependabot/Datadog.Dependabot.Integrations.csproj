@@ -28,28 +28,28 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.106.34 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.106.34" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.107.2 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.107.2" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!-- Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.101.62 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.101.62" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.101.77 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.101.77" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.102.2 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.102.2" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.102.16 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.102.16" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.33.0 -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.33.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.34.0 -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.34.0" />
 
     <!-- Integration: Couchbase.NetClient -->
     <!-- Assembly: Couchbase.NetClient -->
-    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.4.5 -->
-    <PackageReference Include="CouchbaseNetClient" Version="3.4.5" />
+    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.4.6 -->
+    <PackageReference Include="CouchbaseNetClient" Version="3.4.6" />
 
     <!-- Integration: Elasticsearch.Net -->
     <!-- Assembly: Elasticsearch.Net -->
@@ -73,8 +73,8 @@
 
     <!-- Integration: HotChocolate.Execution -->
     <!-- Assembly: HotChocolate.Execution -->
-    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.0.5 -->
-    <PackageReference Include="HotChocolate.AspNetCore" Version="13.0.5" />
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.2.1 -->
+    <PackageReference Include="HotChocolate.AspNetCore" Version="13.2.1" />
 
     <!-- Integration: System.Net.Http -->
     <!-- Assembly: System.Net.Http -->
@@ -108,18 +108,18 @@
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.19.1 -->
-    <PackageReference Include="MongoDB.Driver.Core" Version="2.19.1" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.19.2 -->
+    <PackageReference Include="MongoDB.Driver.Core" Version="2.19.2" />
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.19.1 -->
-    <PackageReference Include="MongoDB.Driver" Version="2.19.1" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.19.2 -->
+    <PackageReference Include="MongoDB.Driver" Version="2.19.2" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!-- Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
-    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/3.0.2 -->
-    <PackageReference Include="MSTest.TestAdapter" Version="3.0.2" />
+    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/3.0.4 -->
+    <PackageReference Include="MSTest.TestAdapter" Version="3.0.4" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.TestFramework -->
     <!-- Assembly: Microsoft.VisualStudio.TestPlatform.TestFramework -->
@@ -138,8 +138,8 @@
 
     <!-- Integration: NLog -->
     <!-- Assembly: NLog -->
-    <!-- Latest package https://www.nuget.org/packages/NLog/5.1.4 -->
-    <PackageReference Include="NLog" Version="5.1.4" />
+    <!-- Latest package https://www.nuget.org/packages/NLog/5.2.0 -->
+    <PackageReference Include="NLog" Version="5.2.0" />
 
     <!-- Integration: Npgsql -->
     <!-- Assembly: Npgsql -->
@@ -153,13 +153,13 @@
 
     <!-- Integration: OpenTelemetry -->
     <!-- Assembly: OpenTelemetry -->
-    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry/1.4.0 -->
-    <PackageReference Include="OpenTelemetry" Version="1.4.0" />
+    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry/1.5.0 -->
+    <PackageReference Include="OpenTelemetry" Version="1.5.0" />
 
     <!-- Integration: OpenTelemetry.Api -->
     <!-- Assembly: OpenTelemetry.Api -->
-    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry.Api/1.4.0 -->
-    <PackageReference Include="OpenTelemetry.Api" Version="1.4.0" />
+    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry.Api/1.5.0 -->
+    <PackageReference Include="OpenTelemetry.Api" Version="1.5.0" />
 
     <!-- Integration: Oracle.ManagedDataAccess -->
     <!-- Assembly: Oracle.ManagedDataAccess -->
@@ -178,8 +178,8 @@
 
     <!-- Integration: ServiceStack.Redis -->
     <!-- Assembly: ServiceStack.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/6.8.0 -->
-    <PackageReference Include="ServiceStack.Redis" Version="6.8.0" />
+    <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/6.9.0 -->
+    <PackageReference Include="ServiceStack.Redis" Version="6.9.0" />
 
     <!-- Integration: Microsoft.Data.SqlClient -->
     <!-- Assembly: Microsoft.Data.SqlClient -->
@@ -213,7 +213,7 @@
 
     <!-- Integration: System.ServiceModel -->
     <!-- Assembly: System.ServiceModel -->
-    <!-- Latest package https://www.nuget.org/packages/System.ServiceModel.Http/4.10.2 -->
+    <!-- Latest package https://www.nuget.org/packages/System.ServiceModel.Http/6.0.0 -->
     <PackageReference Include="System.ServiceModel.Http" Version="4.10.2" />
 
     <!-- Integration: System.Net.Requests -->
