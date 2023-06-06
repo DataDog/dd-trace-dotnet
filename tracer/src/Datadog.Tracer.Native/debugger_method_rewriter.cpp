@@ -802,6 +802,13 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
         rewriterWrapper.StLocal(returnValueIndex);
     }
 
+    rewriterWrapper.LoadInt32(instrumentedMethodIndex);
+    rewriterWrapper.LoadInt32(instrumentationSequence);
+    rewriterWrapper.LoadLocalAddress(stateLocalIndex);
+
+    hr = debuggerTokens->WriteDispose(&rewriterWrapper, &endMethodCallInstr, probeType);
+    IfFailRet(hr);
+
     ILInstr* endMethodTryLeave = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
 
     // *** EndMethod call catch

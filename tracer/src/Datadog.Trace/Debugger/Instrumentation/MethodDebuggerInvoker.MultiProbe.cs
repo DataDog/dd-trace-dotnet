@@ -184,12 +184,14 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// Used to clean up resources. Called upon entering the (instrumentation's) finally block.
         /// </summary>
+        /// <param name="methodMetadataIndex">The unique index of the method.</param>
+        /// <param name="instrumentationSequence">The unique identifier of the instrumentation.</param>
         /// <param name="states">Debugger states</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Dispose(ref MethodDebuggerState[] states)
+        public static void Dispose(int methodMetadataIndex, int instrumentationSequence, ref MethodDebuggerState[] states)
         {
             // Should clean up states array. E.g: If we retrieved it from an Object Pool, we should return it here.
-            InstrumentationAllocator.ReturnArray(states);
+            InstrumentationAllocator.ReturnArray(ref states);
         }
     }
 }

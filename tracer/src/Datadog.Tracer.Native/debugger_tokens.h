@@ -51,6 +51,7 @@ static const WSTRING managed_profiler_debugger_returntype_generics = WStr("Datad
 static const WSTRING managed_profiler_debugger_should_update_probe_info_name = WStr("ShouldUpdateProbeInfo");
 static const WSTRING managed_profiler_debugger_update_probe_info_name = WStr("UpdateProbeInfo");
 static const WSTRING managed_profiler_debugger_rent_array_name = WStr("RentArray");
+static const WSTRING managed_profiler_debugger_dispose_name = WStr("Dispose");
 
 static const WSTRING managed_profiler_debugger_line_type = WStr("Datadog.Trace.Debugger.Instrumentation.LineDebuggerInvoker");
 static const WSTRING managed_profiler_debugger_linestatetype = WStr("Datadog.Trace.Debugger.Instrumentation.LineDebuggerState");
@@ -88,7 +89,6 @@ private:
     // Method probe members:
     mdMemberRef shouldUpdateProbeInfoRef = mdMemberRefNil;
     mdMemberRef updateProbeInfoRef = mdMemberRefNil;
-
     // InstrumentationAllocator
     mdTypeRef rentArrayTypeRef = mdTypeRefNil;
     mdMemberRef rentArrayRef = mdMemberRefNil;
@@ -102,6 +102,7 @@ private:
     mdMemberRef methodLogArgSingleProbeRef = mdMemberRefNil;
     mdMemberRef methodLogLocalSingleProbeRef = mdMemberRefNil;
     mdMemberRef methodLogExceptionSingleProbeRef = mdMemberRefNil;
+    mdMemberRef methodDisposeSingleProbeRef = mdMemberRefNil;
 
     //  Multi Probe
     mdMemberRef beginMethodStartMarkerMultiProbeRef = mdMemberRefNil;
@@ -112,6 +113,7 @@ private:
     mdMemberRef methodLogArgMultiProbeRef = mdMemberRefNil;
     mdMemberRef methodLogLocalMultiProbeRef = mdMemberRefNil;
     mdMemberRef methodLogExceptionMultiProbeRef = mdMemberRefNil;
+    mdMemberRef methodDisposeMultiProbeRef = mdMemberRefNil;
 
     // Async method probe members:
     mdTypeRef asyncMethodDebuggerStateTypeRef = mdTypeRefNil;
@@ -399,6 +401,35 @@ private:
         }
     }
 
+    [[nodiscard]] mdMemberRef GetDisposeMemberRef(const ProbeType probeType) const
+    {
+        switch (probeType)
+        {
+            case NonAsyncMethodSingleProbe:
+            return methodDisposeSingleProbeRef;
+            case NonAsyncMethodMultiProbe:
+            return methodDisposeMultiProbeRef;
+            default:
+            break;
+        }
+        return mdTypeRefNil;
+    }
+
+    void SetDisposeMemberRef(const ProbeType probeType, const mdMemberRef disposeMemberRef)
+    {
+        switch (probeType)
+        {
+            case NonAsyncMethodSingleProbe:
+            methodDisposeSingleProbeRef = disposeMemberRef;
+            break;
+            case NonAsyncMethodMultiProbe:
+            methodDisposeMultiProbeRef = disposeMemberRef;
+            break;
+            default:
+            break;
+        }
+    }
+
     [[nodiscard]] mdMemberRef GetLogArgMemberRef(const ProbeType probeType) const
     {
         switch (probeType)
@@ -541,6 +572,8 @@ public:
     HRESULT WriteRentArray(void* rewriterWrapperPtr, const TypeSignature& currentType, ILInstr** instruction);
 
     HRESULT GetIsFirstEntryToMoveNextFieldToken(mdToken type, mdFieldDef& token);
+
+    HRESULT WriteDispose(void* rewriterWrapperPtr, ILInstr** instruction, ProbeType probeType);
 };
 
 } // namespace debugger

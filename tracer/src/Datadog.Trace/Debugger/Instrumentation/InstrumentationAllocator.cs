@@ -39,7 +39,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <typeparam name="T">The type of the rented array.</typeparam>
         /// <param name="rentedArray">The rented array to return.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ReturnArray<T>(T[] rentedArray)
+        public static void ReturnArray<T>(ref T[] rentedArray)
         {
             // TODO
         }
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <typeparam name="T">The type of the rented object.</typeparam>
         /// <param name="rentedObject">The rented object to return.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ReturnObject<T>(T rentedObject)
+        public static void ReturnObject<T>(ref T rentedObject)
         {
             // TODO
         }

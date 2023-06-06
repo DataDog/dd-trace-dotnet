@@ -27,7 +27,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// Determines if the instrumentation should call <see cref="UpdateProbeInfo"/>.
         /// </summary>
-        /// <param name="methodMetadataIndex">The unqiue index of the method.</param>
+        /// <param name="methodMetadataIndex">The unique index of the method.</param>
         /// <param name="instrumentationSequence">The unique identifier of the instrumentation.</param>
         /// <returns>true if <see cref="UpdateProbeInfo"/> should be called, false otherwise.</returns>
         public static bool ShouldUpdateProbeInfo(int methodMetadataIndex, int instrumentationSequence)
@@ -357,6 +357,19 @@ namespace Datadog.Trace.Debugger.Instrumentation
             {
                 // ignored
             }
+        }
+
+        /// <summary>
+        /// Used to clean up resources. Called upon entering the (instrumentation's) finally block.
+        /// </summary>
+        /// <param name="methodMetadataIndex">The unique index of the method.</param>
+        /// <param name="instrumentationSequence">The unique identifier of the instrumentation.</param>
+        /// <param name="state">Debugger states</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Dispose(int methodMetadataIndex, int instrumentationSequence, ref MethodDebuggerState state)
+        {
+            // Should clean up the state. E.g: If we retrieved it from an Object Pool, we should return it here.
+            InstrumentationAllocator.ReturnObject(ref state);
         }
 
         /// <summary>

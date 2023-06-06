@@ -1267,7 +1267,7 @@ HRESULT DebuggerTokens::WriteUpdateProbeInfo(void* rewriterWrapperPtr, ILInstr**
 
         auto hr = module_metadata->metadata_emit->DefineMemberRef(
             typeRef, managed_profiler_debugger_update_probe_info_name.data(), signature, signatureLength,
-            &updateProbeInfoRef);
+             &updateProbeInfoRef);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper beginMethod could not be defined.");
@@ -1379,4 +1379,67 @@ HRESULT DebuggerTokens::GetIsFirstEntryToMoveNextFieldToken(const mdToken type, 
     module_metadata->metadata_import->CloseEnum(henum);
     return hr;
 }
+
+HRESULT DebuggerTokens::WriteDispose(void* rewriterWrapperPtr, ILInstr** instruction, ProbeType probeType)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    auto [invokerTypeRef, stateTypeRef] = GetDebuggerInvokerAndState(probeType);
+
+    auto disposeRef = GetDisposeMemberRef(probeType);
+    if (disposeRef == mdMemberRefNil)
+    {
+        mdTypeRef typeRef = GetDebuggerInvoker(probeType);
+
+        unsigned callTargetStateBuffer;
+        auto callTargetStateSize = CorSigCompressToken(stateTypeRef, &callTargetStateBuffer);
+
+        const auto isMultiProbe = probeType == NonAsyncMethodMultiProbe; // || AsyncMethodMultiProbe
+        
+        unsigned long signatureLength = 7 + callTargetStateSize;
+        signatureLength += isMultiProbe ? 1 : 0;
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
+        signature[offset++] = 0x03; // arguments count
+        signature[offset++] = ELEMENT_TYPE_VOID;
+
+        signature[offset++] = ELEMENT_TYPE_I4;
+        signature[offset++] = ELEMENT_TYPE_I4;
+
+        // DebuggerState
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+        if (isMultiProbe)
+        {
+            signature[offset++] = ELEMENT_TYPE_SZARRAY;
+        }
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
+        offset += callTargetStateSize;
+
+        auto hr = module_metadata->metadata_emit->DefineMemberRef(
+            typeRef, managed_profiler_debugger_dispose_name.data(), signature, signatureLength,
+            &disposeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper beginMethod could not be defined.");
+            return hr;
+        }
+
+        SetDisposeMemberRef(probeType, disposeRef);
+    }
+
+    *instruction = rewriterWrapper->CallMember(disposeRef, false);
+    return S_OK;
+}
+
 } // namespace debugger
