@@ -1,4 +1,4 @@
-// <copyright file="DynamicConfiguration.cs" company="Datadog">
+// <copyright file="DynamicConfigurationManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,6 +8,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration.Telemetry;
@@ -16,15 +17,37 @@ using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration
 {
-    internal class DynamicConfiguration
+    internal class DynamicConfigurationManager : IDynamicConfigurationManager
     {
         internal const string ProductName = "APM_LIBRARY";
 
-        public static void Initialize()
-        {
-            var subscription = new Subscription(ConfigurationUpdated, ProductName);
+        private readonly IRcmSubscriptionManager _subscriptionManager;
+        private ISubscription? _subscription;
 
-            RcmSubscriptionManager.Instance.SubscribeToChanges(subscription);
+        public DynamicConfigurationManager(IRcmSubscriptionManager subscriptionManager)
+        {
+            _subscriptionManager = subscriptionManager;
+        }
+
+        public void Start()
+        {
+            if (Interlocked.Exchange(ref _subscription, new Subscription(ConfigurationUpdated, ProductName)) == null)
+            {
+                _subscriptionManager.SubscribeToChanges(_subscription!);
+            }
+        }
+
+        public void Dispose()
+        {
+            if (_subscription != null)
+            {
+                _subscriptionManager.Unsubscribe(_subscription);
+            }
+        }
+
+        internal static void OnlyForTests_ApplyConfiguration(ConfigurationBuilder settings)
+        {
+            OnConfigurationChanged(settings);
         }
 
         private static IEnumerable<ApplyDetails> ConfigurationUpdated(Dictionary<string, List<RemoteConfiguration>> configByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)

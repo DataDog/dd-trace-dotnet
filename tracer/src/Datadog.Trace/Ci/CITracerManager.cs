@@ -39,7 +39,8 @@ namespace Datadog.Trace.Ci
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
-            IRemoteConfigurationManager remoteConfigurationManager)
+            IRemoteConfigurationManager remoteConfigurationManager,
+            IDynamicConfigurationManager dynamicConfigurationManager)
             : base(
                 settings,
                 agentWriter,
@@ -55,6 +56,7 @@ namespace Datadog.Trace.Ci
                 traceSampler,
                 spanSampler,
                 remoteConfigurationManager,
+                dynamicConfigurationManager,
                 GetProcessors(settings.Exporter.PartialFlushEnabled, agentWriter is CIVisibilityProtocolWriter))
         {
         }
@@ -138,7 +140,8 @@ namespace Datadog.Trace.Ci
                 IGitMetadataTagsProvider gitMetadataTagsProvider,
                 ITraceSampler traceSampler,
                 ISpanSampler spanSampler,
-                IRemoteConfigurationManager remoteConfigurationManager)
+                IRemoteConfigurationManager remoteConfigurationManager,
+                IDynamicConfigurationManager dynamicConfigurationManager)
             : base(
                 settings,
                 agentWriter,
@@ -153,7 +156,8 @@ namespace Datadog.Trace.Ci
                 gitMetadataTagsProvider,
                 traceSampler,
                 spanSampler,
-                remoteConfigurationManager)
+                remoteConfigurationManager,
+                dynamicConfigurationManager)
             {
             }
         }

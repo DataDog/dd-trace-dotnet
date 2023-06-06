@@ -52,16 +52,5 @@ namespace Datadog.Trace.Configuration
 
             return finalServiceName;
         }
-
-        internal bool TryGetServiceName(string key, out string? serviceName)
-        {
-            if (ServiceNames is not null && ServiceNames.TryGetValue(key, out serviceName))
-            {
-                return true;
-            }
-
-            serviceName = null;
-            return false;
-        }
     }
 }
