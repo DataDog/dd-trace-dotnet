@@ -93,8 +93,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var expectedSpanCount = expectedAsyncCount + expectedSyncCount;
 
-            const string expectedOperationName = "http.request";
-
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
@@ -106,7 +104,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
-                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+                agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
+                var spans = agent.WaitForSpans(expectedSpanCount);
                 Assert.Equal(expectedSpanCount, spans.Count);
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
@@ -183,15 +182,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetInstrumentationVerification();
             ConfigureInstrumentation(instrumentation, enableSocketsHandler);
 
-            const string expectedOperationName = "http.request";
-
             using var telemetry = this.ConfigureTelemetry();
             int httpPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
             {
-                var spans = agent.WaitForSpans(1, 2000, operationName: expectedOperationName);
+                agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
+                var spans = agent.WaitForSpans(1, 2000);
                 Assert.Equal(0, spans.Count);
 
                 var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);

@@ -1,8 +1,8 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: http.request,
+    Name: http.client.request,
     Resource: POST localhost:00000/,
     Service: Samples.AWS.SimpleNotificationService,
     Type: http,
@@ -13,9 +13,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      peer.service: aws_sns,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: network.destination.name
     },
     Metrics: {
       process_id: 0,
@@ -28,7 +30,7 @@
   {
     TraceId: Id_3,
     SpanId: Id_4,
-    Name: http.request,
+    Name: http.client.request,
     Resource: POST localhost:00000/,
     Service: Samples.AWS.SimpleNotificationService,
     Type: http,
@@ -39,9 +41,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      peer.service: aws_sns,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: network.destination.name
     },
     Metrics: {
       process_id: 0,
