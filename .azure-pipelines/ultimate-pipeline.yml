@@ -143,7 +143,7 @@ stages:
   - job: fetch
     timeoutInMinutes: 60 #default value
     pool:
-      vmImage: ubuntu-18.04
+      vmImage: ubuntu-20.04
 
     steps:
     - checkout: none
@@ -1183,7 +1183,7 @@ stages:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_linux_matrix'] ]
 
     pool:
-      vmImage: ubuntu-18.04
+      vmImage: ubuntu-20.04
 
     # Enable the Datadog Agent service for this job
     services:
@@ -1585,12 +1585,12 @@ stages:
         debian:
           baseImage: debian
           artifactSuffix: linux-x64
-          poolImage: ubuntu-18.04
+          poolImage: ubuntu-20.04
           poolName:
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
-          poolImage: ubuntu-18.04
+          poolImage: ubuntu-20.04
           poolName:
         arm64:
           baseImage: debian
@@ -1654,7 +1654,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      vmImage: ubuntu-18.04
+      vmImage: ubuntu-20.04
 
     steps:
     - template: steps/clone-repo.yml
@@ -1753,7 +1753,7 @@ stages:
     - job: upload
       timeoutInMinutes: 60 #default value
       pool:
-        vmImage: ubuntu-18.04
+        vmImage: ubuntu-20.04
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -2189,7 +2189,7 @@ stages:
   - job: test
     timeoutInMinutes: 60 #default value
     pool:
-      vmImage: ubuntu-18.04
+      vmImage: ubuntu-20.04
 
     steps:
       - checkout: none
@@ -2251,7 +2251,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: ubuntu-18.04
+      vmImage: ubuntu-20.04
 
     steps:
     - template: steps/clone-repo.yml
@@ -2421,7 +2421,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      vmImage: ubuntu-18.04
+      vmImage: ubuntu-20.04
 
     services:
       dd_agent: dd_agent
