@@ -234,9 +234,9 @@ namespace Datadog.Profiler.IntegrationTests
             {
                 Interlocked.Increment(ref _nbTime);
 
-                var buffer = new byte[1 << 32];
+                var stream = new MemoryStream();
+                await ss.CopyToAsync(stream, cancellationToken);
 
-                await ss.ReadAsync(buffer, cancellationToken);
                 await ss.WriteAsync(_responseBytes, cancellationToken);
                 NbCallsOnProfilingEndpoint++;
             }
