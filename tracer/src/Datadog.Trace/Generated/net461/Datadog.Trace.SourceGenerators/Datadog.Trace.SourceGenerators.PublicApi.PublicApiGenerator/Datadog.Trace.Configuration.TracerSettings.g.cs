@@ -5,6 +5,7 @@ namespace Datadog.Trace.Configuration;
 partial class TracerSettings
 {
 
+#pragma warning disable SA1624 // Documentation summary should begin with "Gets" - the documentation is primarily for public property
         /// <summary>
         /// Gets or sets the default environment name applied to all spans.
         /// </summary>
@@ -68,6 +69,7 @@ partial class TracerSettings
         }
     }
 
+#pragma warning disable SA1624 // Documentation summary should begin with "Gets" - the documentation is primarily for public property
         /// <summary>
         /// Gets or sets a value indicating whether tracing is enabled.
         /// Default is <c>true</c>.
@@ -275,6 +277,7 @@ partial class TracerSettings
         }
     }
 
+#pragma warning disable SA1624 // Documentation summary should begin with "Gets" - the documentation is primarily for public property
         /// <summary>
         /// Gets or sets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>
         /// of incoming and outgoing GRPC requests.
@@ -359,6 +362,7 @@ partial class TracerSettings
         }
     }
 
+#pragma warning disable SA1624 // Documentation summary should begin with "Gets" - the documentation is primarily for public property
         /// <summary>
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled
         /// </summary>

@@ -169,7 +169,7 @@ public class RandomIdGeneratorTests
     [Fact]
     public void Configure_128Bit_TraceId_Disabled()
     {
-        var settings = new TracerSettings { TraceId128BitGenerationEnabled = false };
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, false } });
 
         var tracer = new Tracer(
             settings,
@@ -189,7 +189,7 @@ public class RandomIdGeneratorTests
     [Fact]
     public void Configure_128Bit_TraceId_Enabled()
     {
-        var settings = new TracerSettings { TraceId128BitGenerationEnabled = true };
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, true } });
 
         var tracer = new Tracer(
             settings,
