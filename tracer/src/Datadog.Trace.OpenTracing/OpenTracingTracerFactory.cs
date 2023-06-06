@@ -31,12 +31,12 @@ namespace Datadog.Trace.OpenTracing
 
             if (agentEndpoint != null)
             {
-                configuration.Exporter.AgentUri = agentEndpoint;
+                configuration.ExporterInternal.AgentUri = agentEndpoint;
             }
 
             if (defaultServiceName != null)
             {
-                configuration.ServiceName = defaultServiceName;
+                configuration.ServiceNameInternal = defaultServiceName;
             }
 
             Tracer.Configure(configuration);

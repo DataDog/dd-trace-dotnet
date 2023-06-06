@@ -5,7 +5,9 @@
 
 using System.Linq;
 using System.Reflection;
+using AgileObjects.NetStandardPolyfills;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.SourceGenerators;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -48,6 +50,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var mutableProperties = typeof(TracerSettings)
                                    .GetProperties(Flags)
+                                   .Where(x => !x.HasAttribute<GeneratePublicApiAttribute>())
                                    .Select(x => x.Name)
                                    .Where(x => !ExcludedProperties.Contains(x));
 
