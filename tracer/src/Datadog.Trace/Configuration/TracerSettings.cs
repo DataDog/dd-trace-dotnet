@@ -32,6 +32,7 @@ namespace Datadog.Trace.Configuration
     public partial class TracerSettings
     {
         private readonly IConfigurationTelemetry _telemetry;
+        private readonly TracerSettingsSnapshot _initialSettings;
 
         /// <summary>
         /// Default obfuscation query string regex if none specified via env DD_OBFUSCATION_QUERY_STRING_REGEXP
@@ -376,6 +377,9 @@ namespace Datadog.Trace.Configuration
                 telemetry.Record(ConfigTelemetryData.CloudHosting, "Azure", recordValue: true, ConfigurationOrigins.Default);
                 telemetry.Record(ConfigTelemetryData.AasAppType, AzureAppServiceMetadata.SiteType, recordValue: true, ConfigurationOrigins.Default);
             }
+
+            // Take a snapshot of the "original" settings, so that we can record any subsequent changes in code
+            _initialSettings = new TracerSettingsSnapshot(this);
         }
 
 #pragma warning disable SA1624 // Documentation summary should begin with "Gets" - the documentation is primarily for public property
@@ -886,6 +890,10 @@ namespace Datadog.Trace.Configuration
         {
             // copy the current settings into telemetry
             _telemetry.CopyTo(destination);
+
+            // record changes made in code directly to destination
+            _initialSettings.RecordChanges(this, destination);
+
             // If ExporterSettings has been replaced, it will have its own telemetry collector
             // so we need to record those values too.
             if (ExporterInternal.Telemetry is { } exporterTelemetry
