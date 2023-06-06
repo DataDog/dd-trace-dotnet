@@ -4,8 +4,10 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 
@@ -37,7 +39,7 @@ internal class MiniAgentManager
         }
     }
 
-    // Tries to clean Mini Agent logs, otherwise just logs the data as-is
+    // Tries to clean Mini Agent logs and log to the correct level, otherwise just logs the data as-is to Info
     // Mini Agent logs will be prefixed with "[Datadog Serverless Mini Agent]"
     private static void MiniAgentDataReceivedHandler(object sender, DataReceivedEventArgs outLine)
     {
@@ -47,36 +49,42 @@ internal class MiniAgentManager
             return;
         }
 
-        Log.Information("[Datadog Serverless Mini Agent] {Data}", data);
-        Log.Information("The next line will read the processed output:");
+        var logTuple = ProcessMiniAgentLog(data);
+        string level = logTuple.Item1;
+        string processedLog = logTuple.Item2;
 
-        string[] split = data.Split(' ');
-        int logPrefixCutoff = data.IndexOf("]");
-        if (split.Length < 1 || logPrefixCutoff < 0)
-        {
-            Log.Error("[Datadog Serverless Mini Agent] {Data}", data);
-            return;
-        }
-
-        string level = split[1];
-        string processed = "[Datadog Serverless Mini Agent" + data.Substring(logPrefixCutoff);
         switch (level)
         {
             case "ERROR":
-                Log.Error("{Data}", processed);
+                Log.Error("[Datadog Serverless Mini Agent] {Data}", processedLog);
                 break;
             case "WARN":
-                Log.Warning("{Data}", processed);
+                Log.Warning("[Datadog Serverless Mini Agent] {Data}", processedLog);
                 break;
             case "INFO":
-                Log.Information("{Data}", processed);
+                Log.Information("[Datadog Serverless Mini Agent] {Data}", processedLog);
                 break;
             case "DEBUG":
-                Log.Debug("{Data}", processed);
-                break;
-            default:
-                Log.Error("[Datadog Serverless Mini Agent] {Data}", data);
+                Log.Debug("[Datadog Serverless Mini Agent] {Data}", processedLog);
                 break;
         }
+    }
+
+    // Processes a raw log from the mini agent, returning a Tuple of the log level and the cleaned log data
+    internal static Tuple<string, string> ProcessMiniAgentLog(string rawLog)
+    {
+        int logPrefixCutoff = rawLog.IndexOf("]");
+        if (logPrefixCutoff < 0 || logPrefixCutoff == rawLog.Length - 1)
+        {
+            return Tuple.Create("INFO", rawLog);
+        }
+
+        string level = rawLog.Substring(0, logPrefixCutoff).Split(' ')[1];
+        if (Array.IndexOf(new string[] { "ERROR", "WARN", "INFO", "DEBUG" }, level) < 0)
+        {
+            return Tuple.Create("INFO", rawLog);
+        }
+
+        return Tuple.Create(level, rawLog.Substring(logPrefixCutoff + 1).Trim());
     }
 }
