@@ -67,6 +67,9 @@ internal class MiniAgentManager
             case "DEBUG":
                 Log.Debug("[Datadog Serverless Mini Agent] {Data}", processedLog);
                 break;
+            default:
+                Log.Information("[Datadog Serverless Mini Agent] {Data}", data);
+                break;
         }
     }
 
