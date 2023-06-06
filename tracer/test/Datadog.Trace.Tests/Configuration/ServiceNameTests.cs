@@ -18,15 +18,17 @@ namespace Datadog.Trace.Tests.Configuration
 
         public ServiceNameTests()
         {
-            var mappings = new Dictionary<string, string>
+            var mappings = "sql-server:custom-db,http-client:some-service,mongodb:my-mongo";
+            _tracerV0 = new LockedTracer(TracerSettings.Create(new()
             {
-                { "sql-server", "custom-db" },
-                { "http-client", "some-service" },
-                { "mongodb", "my-mongo" },
-            };
-
-            _tracerV0 = new LockedTracer(new TracerSettings() { MetadataSchemaVersion = SchemaVersion.V0, ServiceNameMappings = mappings });
-            _tracerV1 = new LockedTracer(new TracerSettings() { MetadataSchemaVersion = SchemaVersion.V1, ServiceNameMappings = mappings });
+                { ConfigurationKeys.MetadataSchemaVersion, nameof(SchemaVersion.V0) },
+                { ConfigurationKeys.ServiceNameMappings, mappings },
+            }));
+            _tracerV1 = new LockedTracer(TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.MetadataSchemaVersion, nameof(SchemaVersion.V1) },
+                { ConfigurationKeys.ServiceNameMappings, mappings },
+            }));
         }
 
         [Theory]
@@ -55,8 +57,8 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("custom-service")]
         public void DoesNotRequireAnyMappings(string serviceName)
         {
-            var tracerV0 = new LockedTracer(new TracerSettings() { MetadataSchemaVersion = SchemaVersion.V0 });
-            var tracerV1 = new LockedTracer(new TracerSettings() { MetadataSchemaVersion = SchemaVersion.V1 });
+            var tracerV0 = new LockedTracer(TracerSettings.Create(new() { { ConfigurationKeys.MetadataSchemaVersion, nameof(SchemaVersion.V0) }, }));
+            var tracerV1 = new LockedTracer(TracerSettings.Create(new() { { ConfigurationKeys.MetadataSchemaVersion, nameof(SchemaVersion.V1) }, }));
 
             tracerV0.Settings.GetServiceName(tracerV0, serviceName).Should().Be($"{tracerV0.DefaultServiceName}-{serviceName}");
             tracerV1.Settings.GetServiceName(tracerV1, serviceName).Should().Be(tracerV1.DefaultServiceName);

@@ -5,6 +5,7 @@ namespace Datadog.Trace.Configuration;
 partial class ExporterSettings
 {
 
+#pragma warning disable SA1624 // Documentation summary should begin with "Gets" - the documentation is primarily for public property
         /// <summary>
         /// Gets or sets the windows pipe name where the Tracer can connect to the Agent.
         /// Default is <c>null</c>.

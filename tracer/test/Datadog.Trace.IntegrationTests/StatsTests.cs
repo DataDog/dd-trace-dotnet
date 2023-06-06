@@ -353,19 +353,18 @@ namespace Datadog.Trace.IntegrationTests
                 tracesWaitEvent.Set();
             };
 
-            var settings = new TracerSettings
-            {
-                GlobalSamplingRate = globalSamplingRate,
-                StatsComputationEnabled = statsComputationEnabled,
-                StatsComputationInterval = StatsComputationIntervalSeconds,
-                IsRareSamplerEnabled = statsComputationEnabled,
-                ServiceVersion = "V",
-                Environment = "Test",
-                Exporter = new ExporterSettings
-                {
-                    AgentUri = new Uri($"http://localhost:{agent.Port}"),
-                }
-            };
+            var settings = new TracerSettings(
+                new NameValueConfigurationSource(
+                    new()
+                    {
+                        { ConfigurationKeys.GlobalSamplingRate, globalSamplingRate.ToString() },
+                        { ConfigurationKeys.StatsComputationEnabled, statsComputationEnabled.ToString() },
+                        { ConfigurationKeys.StatsComputationInterval, StatsComputationIntervalSeconds.ToString() },
+                        { ConfigurationKeys.RareSamplerEnabled, statsComputationEnabled.ToString() },
+                        { ConfigurationKeys.ServiceVersion, "V" },
+                        { ConfigurationKeys.Environment, "Test" },
+                        { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
+                    }));
 
             var immutableSettings = settings.Build();
 

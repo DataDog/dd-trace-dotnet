@@ -169,6 +169,7 @@ namespace Datadog.Trace.Configuration
             }
         }
 
+#pragma warning disable SA1624 // Documentation summary should begin with "Gets" - the documentation is primarily for public property
         /// <summary>
         /// Gets or sets the windows pipe name where the Tracer can connect to the Agent.
         /// Default is <c>null</c>.
@@ -177,7 +178,7 @@ namespace Datadog.Trace.Configuration
         [GeneratePublicApi(
             PublicApiUsage.ExporterSettings_TracesPipeName_Get,
             PublicApiUsage.ExporterSettings_TracesPipeName_Set)]
-        internal string? TracesPipeNameInternal { get; set; }
+        internal string? TracesPipeNameInternal { get; private set; }
 
         /// <summary>
         /// Gets or sets the timeout in milliseconds for the windows named pipe requests.
@@ -197,7 +198,7 @@ namespace Datadog.Trace.Configuration
         [GeneratePublicApi(
             PublicApiUsage.ExporterSettings_MetricsPipeName_Get,
             PublicApiUsage.ExporterSettings_MetricsPipeName_Set)]
-        internal string? MetricsPipeNameInternal { get; set; }
+        internal string? MetricsPipeNameInternal { get; private set; }
 
         /// <summary>
         /// Gets or sets the unix domain socket path where the Tracer can connect to the Agent.
@@ -206,7 +207,7 @@ namespace Datadog.Trace.Configuration
         [GeneratePublicApi(
             PublicApiUsage.ExporterSettings_TracesUnixDomainSocketPath_Get,
             PublicApiUsage.ExporterSettings_TracesUnixDomainSocketPath_Set)]
-        internal string? TracesUnixDomainSocketPathInternal { get; set; }
+        internal string? TracesUnixDomainSocketPathInternal { get; private set; }
 
         /// <summary>
         /// Gets or sets the unix domain socket path where the Tracer can send stats.
@@ -215,7 +216,7 @@ namespace Datadog.Trace.Configuration
         [GeneratePublicApi(
             PublicApiUsage.ExporterSettings_MetricsUnixDomainSocketPath_Get,
             PublicApiUsage.ExporterSettings_MetricsUnixDomainSocketPath_Set)]
-        internal string? MetricsUnixDomainSocketPathInternal { get; set; }
+        internal string? MetricsUnixDomainSocketPathInternal { get; private set; }
 
         /// <summary>
         /// Gets or sets the port where the DogStatsd server is listening for connections.
@@ -225,7 +226,7 @@ namespace Datadog.Trace.Configuration
         [GeneratePublicApi(
             PublicApiUsage.ExporterSettings_DogStatsdPort_Get,
             PublicApiUsage.ExporterSettings_DogStatsdPort_Set)]
-        internal int DogStatsdPortInternal { get; set; }
+        internal int DogStatsdPortInternal { get; private set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether partial flush is enabled
@@ -233,7 +234,8 @@ namespace Datadog.Trace.Configuration
         [GeneratePublicApi(
             PublicApiUsage.ExporterSettings_PartialFlushEnabled_Get,
             PublicApiUsage.ExporterSettings_PartialFlushEnabled_Set)]
-        internal bool PartialFlushEnabledInternal { get; set; }
+        internal bool PartialFlushEnabledInternal { get; private set; }
+#pragma warning restore SA1624
 
         /// <summary>
         /// Gets or sets the minimum number of closed spans in a trace before it's partially flushed
@@ -250,7 +252,6 @@ namespace Datadog.Trace.Configuration
             set
             {
                 TelemetryFactory.Metrics.Record(PublicApiUsage.ExporterSettings_PartialFlushMinSpans_Set);
-                _telemetry.Record(ConfigurationKeys.PartialFlushMinSpans, value, ConfigurationOrigins.Code, value <= 0 ? TelemetryErrorCode.FailedValidation : null);
                 PartialFlushMinSpansInternal = value;
             }
         }
@@ -259,27 +260,32 @@ namespace Datadog.Trace.Configuration
         {
             get => _partialFlushMinSpans;
 
-            set
+            private set
             {
                 if (value <= 0)
                 {
                     throw new ArgumentException("The value must be strictly greater than 0", nameof(PartialFlushMinSpansInternal));
                 }
 
+                // Not recording the error condition above, because it can never actually be used
+                // If we instead rejected `value` and used a default, then we _would_ record it here
+                _telemetry.Record(ConfigurationKeys.PartialFlushMinSpans, value, ConfigurationOrigins.Code);
                 _partialFlushMinSpans = value;
             }
         }
 
+#pragma warning disable SA1624 // Documentation summary should begin with "Gets" - the documentation is primarily for public property
         /// <summary>
         /// Gets or sets the transport used to send traces to the Agent.
         /// </summary>
-        internal TracesTransportType TracesTransport { get; set; }
+        internal TracesTransportType TracesTransport { get; private set; }
 
         /// <summary>
         /// Gets or sets the transport used to connect to the DogStatsD.
         /// Default is <c>TransportStrategy.Tcp</c>.
         /// </summary>
-        internal MetricsTransportType MetricsTransport { get; set; }
+        internal MetricsTransportType MetricsTransport { get; private set; }
+#pragma warning restore SA1624
 
         internal List<string> ValidationWarnings { get; }
 
