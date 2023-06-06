@@ -45,14 +45,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     return null;
                 }
 
-                var tags = new SqlTags
-                           {
-                               DbType = dbType,
-                               InstrumentationName = IntegrationRegistry.GetName(integrationId),
-                               DbName = tagsFromConnectionString.DbName,
-                               DbUser = tagsFromConnectionString.DbUser,
-                               OutHost = tagsFromConnectionString.OutHost,
-                           };
+                SqlTags tags = tracer.Schema.Database.CreateSqlTags();
+                tags.DbType = dbType;
+                tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
+                tags.DbName = tagsFromConnectionString.DbName;
+                tags.DbUser = tagsFromConnectionString.DbUser;
+                tags.OutHost = tagsFromConnectionString.OutHost;
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
 
