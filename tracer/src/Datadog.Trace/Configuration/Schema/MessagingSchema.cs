@@ -43,7 +43,7 @@ namespace Datadog.Trace.Configuration.Schema
 
             return _version switch
             {
-                SchemaVersion.V0 when _removeClientServiceNamesEnabled == false => $"{_defaultServiceName}-{messagingSystem}",
+                SchemaVersion.V0 when !_removeClientServiceNamesEnabled => $"{_defaultServiceName}-{messagingSystem}",
                 _ => _defaultServiceName,
             };
         }
@@ -64,7 +64,7 @@ namespace Datadog.Trace.Configuration.Schema
 
             return _version switch
             {
-                SchemaVersion.V0 when _removeClientServiceNamesEnabled == false => $"{_defaultServiceName}-{messagingSystem}",
+                SchemaVersion.V0 when !_removeClientServiceNamesEnabled => $"{_defaultServiceName}-{messagingSystem}",
                 _ => _defaultServiceName,
             };
         }
@@ -72,7 +72,7 @@ namespace Datadog.Trace.Configuration.Schema
         public KafkaTags CreateKafkaTags(string spanKind)
             => _version switch
             {
-                SchemaVersion.V0 when _peerServiceTagsEnabled == false => new KafkaTags(SpanKinds.Consumer),
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new KafkaTags(SpanKinds.Consumer),
                 _ => new KafkaV1Tags(SpanKinds.Consumer),
             };
     }

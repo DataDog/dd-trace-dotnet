@@ -710,14 +710,14 @@ namespace Datadog.Trace.Configuration
         internal ImmutableAzureAppServiceSettings? AzureAppServiceMetadata { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to calculate the peer.service tag from predefined precursor attributes when using the v0 schema.
+        /// Gets a value indicating whether to calculate the peer.service tag from predefined precursor attributes when using the v0 schema.
         /// </summary>
-        internal bool PeerServiceTagsEnabled { get; set; }
+        internal bool PeerServiceTagsEnabled { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to remove the service names when using the v0 schema.
+        /// Gets a value indicating whether to remove the service names when using the v0 schema.
         /// </summary>
-        internal bool RemoveClientServiceNamesEnabled { get; set; }
+        internal bool RemoveClientServiceNamesEnabled { get; }
 
         /// <summary>
         /// Gets or sets the metadata schema version

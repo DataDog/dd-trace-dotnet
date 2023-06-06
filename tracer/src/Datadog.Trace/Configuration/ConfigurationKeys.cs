@@ -426,7 +426,7 @@ namespace Datadog.Trace.Configuration
         /// schema is v1 or later.
         /// Default value is false
         /// </summary>
-        public const string RemoveClientServiceNamesEnabled = "DD_TRACE_REMOVE_CLIENT_SERVICE_NAMES_ENABLED";
+        public const string RemoveClientServiceNamesEnabled = "DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED";
 
         /// <summary>
         /// String constants for CI Visibility configuration keys.

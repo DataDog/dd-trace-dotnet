@@ -14,13 +14,15 @@ namespace Datadog.Trace.Tests.Configuration
 {
     public class ServiceNameTests
     {
-        private readonly string[] _unmappedKeys = { "elasticsearch", "postgres", "custom-service" };
-        private readonly Dictionary<string, string> _mappings = new()
+        private static readonly string[] UnmappedKeys = { "elasticsearch", "postgres", "custom-service" };
+        private static readonly Dictionary<string, string> Mappings = new()
         {
             { "sql-server", "custom-db" },
             { "http-client", "some-service" },
             { "mongodb", "my-mongo" },
         };
+
+        private static readonly string MappingsString = string.Join(",", Mappings.ToList().Select(kvp => $"{kvp.Key}:{kvp.Value}"));
 
         public static IEnumerable<object[]> GetAllConfigs()
             => from schemaVersion in new object[] { SchemaVersion.V0, SchemaVersion.V1 }
@@ -33,16 +35,17 @@ namespace Datadog.Trace.Tests.Configuration
         public void RetrievesMappedServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var tracer = new LockedTracer(
-                new TracerSettings()
-                {
-                    MetadataSchemaVersion = schemaVersion,
-                    PeerServiceTagsEnabled = peerServiceTagsEnabled,
-                    RemoveClientServiceNamesEnabled = removeClientServiceNamesEnabled,
-                    ServiceNameMappings = _mappings
-                });
+            var collection = new NameValueCollection
+            {
+                { ConfigurationKeys.MetadataSchemaVersion, schemaVersionObject.ToString().ToLower() },
+                { ConfigurationKeys.PeerServiceDefaultsEnabled, peerServiceTagsEnabled.ToString() },
+                { ConfigurationKeys.RemoveClientServiceNamesEnabled, removeClientServiceNamesEnabled.ToString() },
+                { ConfigurationKeys.ServiceNameMappings, MappingsString },
+            };
 
-            foreach (var kvp in _mappings)
+            var tracer = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collection)));
+
+            foreach (var kvp in Mappings)
             {
                 tracer.Settings.GetServiceName(tracer, kvp.Key).Should().Be(kvp.Value);
             }
@@ -53,16 +56,17 @@ namespace Datadog.Trace.Tests.Configuration
         public void RetrievesUnmappedServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var tracer = new LockedTracer(
-                new TracerSettings()
-                {
-                    MetadataSchemaVersion = schemaVersion,
-                    PeerServiceTagsEnabled = peerServiceTagsEnabled,
-                    RemoveClientServiceNamesEnabled = removeClientServiceNamesEnabled,
-                    ServiceNameMappings = _mappings
-                });
+            var collection = new NameValueCollection
+            {
+                { ConfigurationKeys.MetadataSchemaVersion, schemaVersionObject.ToString().ToLower() },
+                { ConfigurationKeys.PeerServiceDefaultsEnabled, peerServiceTagsEnabled.ToString() },
+                { ConfigurationKeys.RemoveClientServiceNamesEnabled, removeClientServiceNamesEnabled.ToString() },
+                { ConfigurationKeys.ServiceNameMappings, MappingsString },
+            };
 
-            foreach (var key in _unmappedKeys)
+            var tracer = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collection)));
+
+            foreach (var key in UnmappedKeys)
             {
                 var expectedServiceName = schemaVersion switch
                 {
@@ -80,15 +84,16 @@ namespace Datadog.Trace.Tests.Configuration
         public void DoesNotRequireAnyMappings(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var tracer = new LockedTracer(
-                new TracerSettings()
-                {
-                    MetadataSchemaVersion = schemaVersion,
-                    PeerServiceTagsEnabled = peerServiceTagsEnabled,
-                    RemoveClientServiceNamesEnabled = removeClientServiceNamesEnabled,
-                });
+            var collection = new NameValueCollection
+            {
+                { ConfigurationKeys.MetadataSchemaVersion, schemaVersionObject.ToString().ToLower() },
+                { ConfigurationKeys.PeerServiceDefaultsEnabled, peerServiceTagsEnabled.ToString() },
+                { ConfigurationKeys.RemoveClientServiceNamesEnabled, removeClientServiceNamesEnabled.ToString() },
+            };
 
-            foreach (var key in _unmappedKeys)
+            var tracer = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collection)));
+
+            foreach (var key in UnmappedKeys)
             {
                 var expectedServiceName = schemaVersion switch
                 {
@@ -99,24 +104,6 @@ namespace Datadog.Trace.Tests.Configuration
 
                 tracer.Settings.GetServiceName(tracer, key).Should().Be(expectedServiceName);
             }
-        }
-
-        [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void CanAddMappingsViaConfigurationSource(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
-        {
-            var serviceName = "elasticsearch";
-            var expected = "custom-name";
-            var collection = new NameValueCollection
-            {
-                { ConfigurationKeys.MetadataSchemaVersion, schemaVersionObject.ToString().ToLower() },
-                { ConfigurationKeys.PeerServiceDefaultsEnabled, peerServiceTagsEnabled.ToString() },
-                { ConfigurationKeys.RemoveClientServiceNamesEnabled, removeClientServiceNamesEnabled.ToString() },
-                { ConfigurationKeys.ServiceNameMappings, $"{serviceName}:{expected}" }
-            };
-
-            var tracer = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collection)));
-            tracer.Settings.GetServiceName(tracer, serviceName).Should().Be(expected);
         }
 
         private class LockedTracer : Tracer

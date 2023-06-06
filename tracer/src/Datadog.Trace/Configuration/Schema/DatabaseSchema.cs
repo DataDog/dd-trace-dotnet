@@ -39,7 +39,7 @@ namespace Datadog.Trace.Configuration.Schema
 
             return _version switch
             {
-                SchemaVersion.V0 when _removeClientServiceNamesEnabled == false => $"{_defaultServiceName}-{databaseType}",
+                SchemaVersion.V0 when !_removeClientServiceNamesEnabled => $"{_defaultServiceName}-{databaseType}",
                 _ => _defaultServiceName,
             };
         }
@@ -47,14 +47,14 @@ namespace Datadog.Trace.Configuration.Schema
         public MongoDbTags CreateMongoDbTags()
             => _version switch
             {
-                SchemaVersion.V0 when _peerServiceTagsEnabled == false => new MongoDbTags(),
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new MongoDbTags(),
                 _ => new MongoDbV1Tags(),
             };
 
         public SqlTags CreateSqlTags()
             => _version switch
             {
-                SchemaVersion.V0 when _peerServiceTagsEnabled == false => new SqlTags(),
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new SqlTags(),
                 _ => new SqlV1Tags(),
             };
     }
