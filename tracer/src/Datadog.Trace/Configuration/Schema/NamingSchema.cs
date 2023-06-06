@@ -14,12 +14,15 @@ namespace Datadog.Trace.Configuration.Schema
         public NamingSchema(SchemaVersion version, string defaultServiceName, IDictionary<string, string>? serviceNameMappings)
         {
             Version = version;
+            Client = new ClientSchema(version, defaultServiceName, serviceNameMappings);
             Database = new DatabaseSchema(version, defaultServiceName, serviceNameMappings);
             Messaging = new MessagingSchema(version, defaultServiceName, serviceNameMappings);
         }
 
         // TODO: Temporary, we can probably delete this once we migrate all the code off MetadataSchemaVersion
         public SchemaVersion Version { get; }
+
+        public ClientSchema Client { get; }
 
         public DatabaseSchema Database { get; }
 

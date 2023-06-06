@@ -44,7 +44,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("SupportsInstrumentationVerification", "True")]
         public void TracingDisabled_DoesNotSubmitsTraces()
         {
-            const string expectedOperationName = "http.request";
             SetInstrumentationVerification();
 
             int httpPort = TcpPortProvider.GetOpenPort();
@@ -53,7 +52,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
             {
-                var spans = agent.WaitForSpans(1, 3000, operationName: expectedOperationName);
+                agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
+                var spans = agent.WaitForSpans(1, 3000);
                 Assert.Equal(0, spans.Count);
 
                 var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
@@ -73,8 +73,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetInstrumentationVerification();
             var expectedSpanCount = 76;
 
-            const string expectedOperationName = "http.request";
-
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
@@ -86,7 +84,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
-                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName).OrderBy(s => s.Start);
+                agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
+                var spans = agent.WaitForSpans(expectedSpanCount).OrderBy(s => s.Start);
                 spans.Should().HaveCount(expectedSpanCount);
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
