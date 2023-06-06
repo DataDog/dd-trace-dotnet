@@ -42,6 +42,8 @@ namespace Datadog.Trace.Tests
             {
                 Environment.SetEnvironmentVariable(originalEnvVar.Key, originalEnvVar.Value);
             }
+
+            Serverless.SetIsGCPAzureEnvVarsTestsOnly();
         }
 
         [Fact]
@@ -244,7 +246,6 @@ namespace Datadog.Trace.Tests
         {
             Environment.SetEnvironmentVariable("K_SERVICE", "dummy_function");
             Environment.SetEnvironmentVariable("FUNCTION_TARGET", "dummy_target");
-
             Serverless.SetIsGCPAzureEnvVarsTestsOnly();
 
             var miniAgentManagerMock = new Mock<MiniAgentManager>();
@@ -259,7 +260,6 @@ namespace Datadog.Trace.Tests
         {
             Environment.SetEnvironmentVariable("AzureWebJobsScriptRoot", "/home/site/wwwroot");
             Environment.SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "4");
-
             Serverless.SetIsGCPAzureEnvVarsTestsOnly();
 
             var miniAgentManagerMock = new Mock<MiniAgentManager>();
