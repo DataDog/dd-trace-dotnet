@@ -25,7 +25,7 @@ internal class ProbeExpressionEvaluator
 
     private Lazy<CompiledExpression<double>?> _compiledMetric;
 
-    private Lazy<KeyValuePair<CompiledExpression<bool>, CompiledExpression<string>[]>[]> _compiledDecorations;
+    private Lazy<KeyValuePair<CompiledExpression<bool>, KeyValuePair<string, CompiledExpression<string>[]>[]>[]> _compiledDecorations;
 
     private int _expressionsCompiled;
 
@@ -33,7 +33,7 @@ internal class ProbeExpressionEvaluator
         DebuggerExpression[] templates,
         DebuggerExpression? condition,
         DebuggerExpression? metric,
-        KeyValuePair<DebuggerExpression, DebuggerExpression[]>[] spanDecorations)
+        KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression[]>[]>[] spanDecorations)
     {
         Templates = templates;
         Condition = condition;
@@ -71,7 +71,7 @@ internal class ProbeExpressionEvaluator
         }
     }
 
-    internal KeyValuePair<CompiledExpression<bool>, CompiledExpression<string>[]>[] CompiledDecorations
+    internal KeyValuePair<CompiledExpression<bool>, KeyValuePair<string, CompiledExpression<string>[]>[]>[] CompiledDecorations
     {
         get
         {
@@ -85,7 +85,7 @@ internal class ProbeExpressionEvaluator
 
     internal DebuggerExpression? Metric { get; }
 
-    internal KeyValuePair<DebuggerExpression, DebuggerExpression[]>[] SpanDecorations { get; }
+    internal KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression[]>[]>[] SpanDecorations { get; }
 
     internal ExpressionEvaluationResult Evaluate(MethodScopeMembers scopeMembers)
     {
@@ -94,7 +94,7 @@ internal class ProbeExpressionEvaluator
             Interlocked.CompareExchange(ref _compiledTemplates, new Lazy<CompiledExpression<string>[]>(() => CompileTemplates(scopeMembers)), null);
             Interlocked.CompareExchange(ref _compiledCondition, new Lazy<CompiledExpression<bool>?>(() => CompileCondition(scopeMembers)), null);
             Interlocked.CompareExchange(ref _compiledMetric, new Lazy<CompiledExpression<double>?>(() => CompileMetric(scopeMembers)), null);
-            Interlocked.CompareExchange(ref _compiledDecorations, new Lazy<KeyValuePair<CompiledExpression<bool>, CompiledExpression<string>[]>[]>(() => CompileDecorations(scopeMembers)), null);
+            Interlocked.CompareExchange(ref _compiledDecorations, new Lazy<KeyValuePair<CompiledExpression<bool>, KeyValuePair<string, CompiledExpression<string>[]>[]>[]>(() => CompileDecorations(scopeMembers)), null);
         }
 
         ExpressionEvaluationResult result = default;
@@ -223,63 +223,72 @@ internal class ProbeExpressionEvaluator
 
             for (int i = 0; i < compiledDecorations.Length; i++)
             {
+                var current = compiledDecorations[i];
                 try
                 {
-                    var when = compiledDecorations[i].Key.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members);
-                    if (compiledDecorations[i].Key.Errors != null)
+                    if (current.Key != default) // span decoration has condition?
                     {
-                        Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", compiledDecorations[i].Key.Errors));
-                        (result.Errors ??= new List<EvaluationError>()).AddRange(compiledDecorations[i].Key.Errors);
-                        continue;
-                    }
+                        var when = current.Key.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members);
+                        if (compiledDecorations[i].Key.Errors != null)
+                        {
+                            Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", compiledDecorations[i].Key.Errors));
+                            (result.Errors ??= new List<EvaluationError>()).AddRange(current.Key.Errors);
+                            continue;
+                        }
 
-                    if (!when)
-                    {
-                        Log.Information($"{nameof(ProbeExpressionEvaluator)}.{nameof(EvaluateSpanDecorations)}: Skipping span decoration because the `when` expression was `false`");
-                        continue;
+                        if (!when)
+                        {
+                            Log.Information($"{nameof(ProbeExpressionEvaluator)}.{nameof(EvaluateSpanDecorations)}: Skipping span decoration because the `when` expression was `false`");
+                            continue;
+                        }
                     }
                 }
                 catch (Exception e)
                 {
-                    HandleException(ref result, compiledDecorations[i].Key, e);
+                    HandleException(ref result, current.Key, e);
                     continue;
                 }
 
-                var compiledExpressions = compiledDecorations[i].Value;
+                var tagsAndValues = current.Value;
 
-                for (int j = 0; j < compiledExpressions.Length; j++)
+                for (int j = 0; j < tagsAndValues.Length; j++)
                 {
-                    try
+                    var tagAndValues = tagsAndValues[j];
+                    for (int k = 0; k < tagAndValues.Value.Length; k++)
                     {
-                        var currentExpression = SpanDecorations[i].Value[j];
-                        var value = compiledExpressions[j].Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members);
-                        var key = currentExpression.Str;
-                        EvaluationError[] errors = null;
-                        if (compiledExpressions[j].Errors != null)
+                        var compiledExpression = tagAndValues.Value[k];
+
+                        try
                         {
-                            errors = compiledExpressions[j].Errors;
+                            // var currentExpression = SpanDecorations[i].Value[j];
+                            var value = compiledExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members);
+                            EvaluationError[] errors = null;
+                            if (compiledExpression.Errors != null)
+                            {
+                                errors = compiledExpression.Errors;
+                                if (Log.IsEnabled(LogEventLevel.Debug))
+                                {
+                                    Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", errors));
+                                }
+                            }
+
+                            resultBuilder.Add(new ExpressionEvaluationResult.DecorationResult { TagName = tagAndValues.Key, Value = value, Errors = errors });
+                        }
+                        catch (Exception e)
+                        {
+                            var errors = new List<EvaluationError> { new() { Message = e.Message, Expression = GetRelevantExpression(compiledExpression) } };
                             if (Log.IsEnabled(LogEventLevel.Debug))
                             {
                                 Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", errors));
                             }
-                        }
 
-                        resultBuilder.Add(new ExpressionEvaluationResult.DecorationResult { TagName = key, Value = value, Errors = errors });
-                    }
-                    catch (Exception e)
-                    {
-                        var errors = new List<EvaluationError> { new() { Message = e.Message, Expression = GetRelevantExpression(compiledExpressions[j]) } };
-                        if (Log.IsEnabled(LogEventLevel.Debug))
-                        {
-                            Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", errors));
-                        }
+                            if (compiledExpression.Errors != null)
+                            {
+                                errors.AddRange(compiledExpression.Errors);
+                            }
 
-                        if (compiledExpressions[j].Errors != null)
-                        {
-                            errors.AddRange(compiledExpressions[j].Errors);
+                            resultBuilder.Add(new ExpressionEvaluationResult.DecorationResult { TagName = null, Value = null, Errors = errors.ToArray() });
                         }
-
-                        resultBuilder.Add(new ExpressionEvaluationResult.DecorationResult { TagName = null, Value = null, Errors = errors.ToArray() });
                     }
                 }
             }
@@ -340,7 +349,7 @@ internal class ProbeExpressionEvaluator
         return ProbeExpressionParser<double>.ParseExpression(Metric?.Json, scopeMembers);
     }
 
-    private KeyValuePair<CompiledExpression<bool>, CompiledExpression<string>[]>[] CompileDecorations(MethodScopeMembers scopeMembers)
+    private KeyValuePair<CompiledExpression<bool>, KeyValuePair<string, CompiledExpression<string>[]>[]>[] CompileDecorations(MethodScopeMembers scopeMembers)
     {
         if (SpanDecorations == null)
         {
@@ -352,26 +361,35 @@ internal class ProbeExpressionEvaluator
             return null;
         }
 
-        var compiledExpressions = new KeyValuePair<CompiledExpression<bool>, CompiledExpression<string>[]>[SpanDecorations.Length];
+        var compiledExpressions = new KeyValuePair<CompiledExpression<bool>, KeyValuePair<string, CompiledExpression<string>[]>[]>[SpanDecorations.Length];
         for (int i = 0; i < SpanDecorations.Length; i++)
         {
             var current = SpanDecorations[i];
-            var when = ProbeExpressionParser<bool>.ParseExpression(current.Key.Json, scopeMembers);
-            var compiledTags = new CompiledExpression<string>[current.Value.Length];
+            var when = current.Key == null // span decoration doesn't must to have a condition
+                           ? default
+                           : ProbeExpressionParser<bool>.ParseExpression(current.Key.Value.Json, scopeMembers);
+            var compiledTagsJ = new KeyValuePair<string, CompiledExpression<string>[]>[current.Value.Length];
             for (int j = 0; j < current.Value.Length; j++)
             {
-                var tag = current.Value[j];
-                if (tag.Json != null)
+                var tagName = current.Value[j].Key;
+                var compiledTagsK = new CompiledExpression<string>[current.Value[j].Value.Length];
+                for (int k = 0; k < current.Value[j].Value.Length; k++)
                 {
-                    compiledTags[j] = ProbeExpressionParser<string>.ParseExpression(tag.Json, scopeMembers);
+                    var tag = current.Value[j].Value[k];
+                    if (tag.Json != null)
+                    {
+                        compiledTagsK[k] = ProbeExpressionParser<string>.ParseExpression(tag.Json, scopeMembers);
+                    }
+                    else
+                    {
+                        compiledTagsK[k] = new CompiledExpression<string>(null, null, tag.Str, null);
+                    }
                 }
-                else
-                {
-                    compiledTags[j] = new CompiledExpression<string>(null, null, tag.Str, null);
-                }
+
+                compiledTagsJ[j] = new KeyValuePair<string, CompiledExpression<string>[]>(tagName, compiledTagsK);
             }
 
-            compiledExpressions[i] = new KeyValuePair<CompiledExpression<bool>, CompiledExpression<string>[]>(when, compiledTags);
+            compiledExpressions[i] = new KeyValuePair<CompiledExpression<bool>, KeyValuePair<string, CompiledExpression<string>[]>[]>(when, compiledTagsJ);
         }
 
         if (Log.IsEnabled(LogEventLevel.Debug))

@@ -25,7 +25,7 @@ namespace Datadog.Trace.Debugger.Expressions
         private DebuggerExpression[] _templates;
         private DebuggerExpression? _condition;
         private DebuggerExpression? _metric;
-        private KeyValuePair<DebuggerExpression, DebuggerExpression[]>[] _spanDecorations;
+        private KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression[]>[]>[] _spanDecorations;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProbeProcessor"/> class, that correlated to probe id
@@ -97,7 +97,10 @@ namespace Datadog.Trace.Debugger.Expressions
             _metric = ToDebuggerExpression((probe as MetricProbe)?.Value);
             _spanDecorations = (probe as SpanDecorationProbe)?.Decorations?.Where(dec => dec != null).Select(dec =>
             {
-                return new KeyValuePair<DebuggerExpression, DebuggerExpression[]>(ToDebuggerExpression(dec.When).Value, dec.Segments.Select(seg => ToDebuggerExpression(seg).Value).ToArray());
+                return new KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression[]>[]>(
+                    ToDebuggerExpression(dec.When),
+                    dec.Tags.Select(tag => new KeyValuePair<string, DebuggerExpression[]>(
+                                        tag.Name, tag.Value.Segments?.Where(seg => seg != null).Select(seg => ToDebuggerExpression(seg).Value).ToArray())).ToArray());
             }).ToArray();
         }
 

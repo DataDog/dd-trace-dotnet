@@ -9,5 +9,19 @@ internal record Decoration
 {
     public SnapshotSegment When { get; set; }
 
+    public Tags[] Tags { get; set; }
+}
+
+internal record Tags
+{
+    public string Name { get; set; }
+
+    public TagValue Value { get; set; }
+}
+
+internal record TagValue
+{
+    public string Template { get; set; }
+
     public SnapshotSegment[] Segments { get; set; }
 }

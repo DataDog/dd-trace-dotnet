@@ -6,19 +6,45 @@ namespace Samples.Probes.TestRuns.SmokeTests
 {
     public class SpanDecorationAsync : IAsyncRun
     {
-        private const string When = @"{
-    ""gt"": [
-      {""ref"": ""intLocal""},
-      {""ref"": ""intArg""}
-    ]
-}";
-
-        private const string TagName = "SpanDecorationAsync";
-
-        private const string Decoration = @"{
-      ""ref"": ""arg""
-}";
-
+        private const string Json = @"
+{
+   ""Decorations"":[
+      {
+         ""When"":{
+            ""Str"":null,
+            ""Dsl"":null,
+            ""Json"":{
+                ""gt"":[
+                    {
+                        ""ref"": ""intLocal""
+                    },
+                    {
+                        ""ref"": ""intArg""
+                    }
+                ]
+            }
+         },
+         ""Tags"":[
+            {
+               ""Name"":""SpanDecorationAsync"",
+               ""Value"":{
+                  ""Template"":null,
+                  ""Segments"":[
+                    {
+                        ""Str"":null,
+                        ""Dsl"":null,
+                        ""Json"":{
+                            ""ref"": ""arg""
+                        }
+                    }
+                  ]
+               }
+            }
+         ]
+      }
+   ]
+}
+";
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [SpanOnMethodProbeTestData]
@@ -34,7 +60,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [SpanDecorationMethodProbeTestData(whenJson: When, decorationJson: new[] { Decoration }, decorationTagName: new[] { TagName })]
+        [SpanDecorationMethodProbeTestData(decorationsJson: Json)]
         async Task<string> Method(string arg, int intArg)
         {
             var intLocal = nameof(Method).Length * 2;

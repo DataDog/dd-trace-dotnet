@@ -1,28 +1,56 @@
 using System;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
     public class SpanDecorationSameTagsFirstError : IRun
     {
-        private const string When = @"{
-    ""gt"": [
-      {""ref"": ""intLocal""},
-      {""ref"": ""intArg""}
-    ]
-}";
-
-        private const string TagName = "SpanDecorationSameTagsFirstError";
-
-        private const string Decoration = @"{
-      ""ref"": ""arg""
-}";
-
-        private const string ErrorDecoration = @"{
-      ""ref"": ""error""
-}";
-
+        private const string Json = @"
+{
+   ""Decorations"":[
+      {
+         ""When"":{
+            ""Str"":null,
+            ""Dsl"":null,
+            ""Json"":{
+                ""gt"":[
+                    {
+                        ""ref"": ""intLocal""
+                    },
+                    {
+                        ""ref"": ""intArg""
+                    }
+                ]
+            }
+         },
+         ""Tags"":[
+            {
+               ""Name"":""SpanDecorationSameTagsFirstError"",
+               ""Value"":{
+                  ""Template"":null,
+                  ""Segments"":[
+                    {
+                        ""Str"":null,
+                        ""Dsl"":null,
+                        ""Json"":{
+                            ""ref"": ""error""
+                        }
+                    },
+                    {
+                        ""Str"":null,
+                        ""Dsl"":null,
+                        ""Json"":{
+                            ""ref"": ""arg""
+                        }
+                     }
+                  ]
+               }
+            }
+         ]
+      }
+   ]
+}
+";
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [SpanOnMethodProbeTestData]
@@ -38,7 +66,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [SpanDecorationMethodProbeTestData(whenJson: When, decorationJson: new[] { ErrorDecoration, Decoration }, decorationTagName: new[] { TagName, TagName })]
+        [SpanDecorationMethodProbeTestData(decorationsJson: Json)]
         string Method(string arg, int intArg)
         {
             var intLocal = nameof(Method).Length * 2;

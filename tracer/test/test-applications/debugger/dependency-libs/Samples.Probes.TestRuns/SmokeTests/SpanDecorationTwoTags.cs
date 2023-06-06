@@ -6,25 +6,60 @@ namespace Samples.Probes.TestRuns.SmokeTests
 {
     public class SpanDecorationTwoTags : IRun
     {
-        private const string When = @"{
-    ""gt"": [
-      {""ref"": ""intLocal""},
-      {""ref"": ""intArg""}
-    ]
-}";
-
-        private const string TagName1 = "SpanDecorationTwoTags";
-
-        private const string TagName2 = "SpanDecorationTwoTags2";
-
-        private const string Decoration1 = @"{
-      ""ref"": ""arg""
-}";
-
-        private const string Decoration2 = @"{
-      ""ref"": ""intArg""
-}";
-
+        private const string Json = @"
+{
+   ""Decorations"":[
+      {
+         ""When"":{
+            ""Str"":null,
+            ""Dsl"":null,
+            ""Json"":{
+                ""gt"":[
+                    {
+                        ""ref"": ""intLocal""
+                    },
+                    {
+                        ""ref"": ""intArg""
+                    }
+                ]
+            }
+         },
+         ""Tags"":[
+            {
+               ""Name"":""SpanDecorationTwoTags"",
+               ""Value"":{
+                  ""Template"":null,
+                  ""Segments"":[
+                     {
+                        ""Str"":null,
+                        ""Dsl"":null,
+                        ""Json"":{
+                            ""ref"": ""arg""
+                        }
+                     }
+                  ]
+               }
+            },
+            {
+               ""Name"":""SpanDecorationTwoTags2"",
+               ""Value"":{
+                  ""Template"":null,
+                  ""Segments"":[
+                     {
+                        ""Str"":null,
+                        ""Dsl"":null,
+                        ""Json"":{
+                            ""ref"": ""intArg""
+                        }
+                     }
+                  ]
+               }
+            }
+         ]
+      }
+   ]
+}
+";
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         [SpanOnMethodProbeTestData]
@@ -40,7 +75,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [SpanDecorationMethodProbeTestData(whenJson: When, decorationJson: new[] { Decoration1, Decoration2 }, decorationTagName: new[] { TagName1, TagName2 })]
+        [SpanDecorationMethodProbeTestData(decorationsJson: Json)]
         string Method(string arg, int intArg)
         {
             var intLocal = nameof(Method).Length * 2;

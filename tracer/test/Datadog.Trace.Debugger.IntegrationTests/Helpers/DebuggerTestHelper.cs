@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Samples.Probes.TestRuns;
 using Xunit;
@@ -289,15 +290,7 @@ internal static class DebuggerTestHelper
     private static SpanDecorationProbe WithSpanDecoration(this SpanDecorationProbe probe, SpanDecorationMethodProbeTestDataAttribute probeTestData)
     {
         probe.TargetSpan = TargetSpan.Active;
-        probe.Decorations = new Decoration[1];
-        probe.Decorations[0] = new Decoration();
-        probe.Decorations[0].When = new SnapshotSegment(null, probeTestData.WhenJson, string.Empty);
-        probe.Decorations[0].Segments = new SnapshotSegment[probeTestData.Decorations.Length];
-        for (int i = 0; i < probeTestData.Decorations.Length; i++)
-        {
-            probe.Decorations[0].Segments[i] = new SnapshotSegment(null, probeTestData.Decorations[i].Value, probeTestData.Decorations[i].Key);
-        }
-
+        probe.Decorations = JsonConvert.DeserializeObject<SpanDecorationProbe>(probeTestData.Decorations).Decorations;
         return probe;
     }
 
