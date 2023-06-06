@@ -192,6 +192,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public ImmutableExporterSettings Exporter { get; }
 
+#pragma warning disable CS1574 // AnalyticsEnabled is obsolete
         /// <summary>
         /// Gets a value indicating whether default Analytics are enabled.
         /// Settings this value is a shortcut for setting
@@ -199,6 +200,7 @@ namespace Datadog.Trace.Configuration
         /// See the documentation for more details.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GlobalAnalyticsEnabled"/>
+#pragma warning restore CS1574
         [Obsolete(DeprecationMessages.AppAnalytics)]
         public bool AnalyticsEnabled { get; }
 
@@ -489,7 +491,7 @@ namespace Datadog.Trace.Configuration
         {
             if (TraceEnabled && !_domainMetadata.ShouldAvoidAppDomain())
             {
-                return Integrations[integration].Enabled ?? defaultValue;
+                return Integrations[integration].EnabledInternal ?? defaultValue;
             }
 
             return false;
@@ -499,8 +501,8 @@ namespace Datadog.Trace.Configuration
         internal double? GetIntegrationAnalyticsSampleRate(IntegrationId integration, bool enabledWithGlobalSetting)
         {
             var integrationSettings = Integrations[integration];
-            var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && AnalyticsEnabled);
-            return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
+            var analyticsEnabled = integrationSettings.AnalyticsEnabledInternal ?? (enabledWithGlobalSetting && AnalyticsEnabled);
+            return analyticsEnabled ? integrationSettings.AnalyticsSampleRateInternal : (double?)null;
         }
 
         internal string GetServiceName(Tracer tracer, string serviceName)
