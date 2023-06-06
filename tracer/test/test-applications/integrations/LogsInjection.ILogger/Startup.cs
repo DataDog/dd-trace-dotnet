@@ -1,4 +1,5 @@
 using System.Linq;
+using ActivitySampleHelper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server.Features;
@@ -13,6 +14,7 @@ namespace LogsInjection.ILogger
     {
         public static volatile bool AppListening = false;
         public static volatile string ServerAddress = null;
+        private static readonly ActivitySourceHelper _sampleHelpers = new("LogsInjection.ILogger.Startup");
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddHostedService<Worker>();
@@ -25,7 +27,7 @@ namespace LogsInjection.ILogger
         {
             // Not injected as we won't have a traceId
             logger.UninjectedLog("Building pipeline");
-            using (var scope = SampleHelpers.CreateScope("pipeline build"))
+            using (var scope = _sampleHelpers.CreateScope("pipeline build"))
             {
                 logger.LogInformation("Still building pipeline...");
             }
@@ -47,7 +49,7 @@ namespace LogsInjection.ILogger
             {
                 logger.ConditionalLog("Received request, echoing");
 
-                using var scope = SampleHelpers.CreateScope("middleware execution");
+                using var scope = _sampleHelpers.CreateScope("middleware execution");
                 logger.LogInformation("Sending response");
                 return context.Response.WriteAsync("PONG");
             });

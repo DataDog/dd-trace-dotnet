@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using ActivitySampleHelper;
 
 namespace PluginApplication
 {
@@ -11,6 +12,8 @@ namespace PluginApplication
         /// In other words, they're not written within a Datadog scope 
         /// </summary>
         private static readonly string ExcludeMessagePrefix = "[ExcludeMessage]";
+        private static readonly ActivitySourceHelper _sampleHelpers = new("LogsInjectionHelper");
+
 
         public static void DeleteExistingLogs()
         {
@@ -46,7 +49,7 @@ namespace PluginApplication
             try
             {
                 logAction($"{ExcludeMessagePrefix}Entering Datadog scope.");
-                using (var scope = Samples.SampleHelpers.CreateScope("transaction"))
+                using (var scope = _sampleHelpers.CreateScope("transaction"))
                 {
                     // In the middle of the trace, make a call across AppDomains
                     // Unless handled properly, this can cause the following error due

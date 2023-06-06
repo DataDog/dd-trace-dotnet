@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using ActivitySampleHelper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -17,7 +18,7 @@ namespace LogsInjection.ILogger
         private readonly IServiceProvider _serviceProvider;
 #pragma warning disable 618 // ignore obsolete IApplicationLifetime
         private readonly IApplicationLifetime _lifetime;
-
+        private static readonly ActivitySourceHelper _sampleHelpers = new("LogsInjection.ILogger.Worker");
         public Worker(ILogger<Worker> logger, IApplicationLifetime lifetime, IServiceProvider serviceProvider)
 #pragma warning restore 618
         {
@@ -40,7 +41,7 @@ namespace LogsInjection.ILogger
                 return;
             }
 
-            using (var scope = SampleHelpers.CreateScope("worker request"))
+            using (var scope = _sampleHelpers.CreateScope("worker request"))
             {
                 try
                 {

@@ -55,6 +55,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base(output, "LogsInjection.Log4Net")
         {
             SetServiceVersion("1.0.0");
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
         }
 
         public static System.Collections.Generic.IEnumerable<object[]> GetTestData()

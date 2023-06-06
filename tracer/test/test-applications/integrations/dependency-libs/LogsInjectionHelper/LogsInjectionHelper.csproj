@@ -5,6 +5,8 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
-  <Import Project="..\..\..\Samples.Shared\Samples.Shared.projitems" Label="Shared" />
+  <ItemGroup>
+    <ProjectReference Include="..\ActivitySampleHelper\ActivitySampleHelper.csproj" />
+  </ItemGroup>
 
 </Project>
