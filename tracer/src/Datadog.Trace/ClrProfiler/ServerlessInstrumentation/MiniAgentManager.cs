@@ -24,17 +24,12 @@ internal class MiniAgentManager
             process.StartInfo.RedirectStandardOutput = true;
             process.StartInfo.RedirectStandardError = true;
 
-            var miniAgentLogsHandler = new DataReceivedEventHandler((sender, e) =>
-            {
-                ProcessMiniAgentLogData(e.Data);
-            });
-
-            process.OutputDataReceived += miniAgentLogsHandler;
-            process.ErrorDataReceived += miniAgentLogsHandler;
+            process.OutputDataReceived += new DataReceivedEventHandler(MiniAgentDataReceivedHandler);
+            process.ErrorDataReceived += new DataReceivedEventHandler(MiniAgentDataReceivedHandler);
 
             process.Start();
-            process.BeginErrorReadLine();
             process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
         }
         catch (Exception ex)
         {
@@ -42,17 +37,24 @@ internal class MiniAgentManager
         }
     }
 
-    private static void ProcessMiniAgentLogData(string data)
+    // Tries to clean Mini Agent logs, otherwise just logs the data as-is
+    // Mini Agent logs will be prefixed with "[Datadog Serverless Mini Agent]"
+    private static void MiniAgentDataReceivedHandler(object sender, DataReceivedEventArgs outLine)
     {
+        var data = outLine.Data;
         if (string.IsNullOrEmpty(data))
         {
             return;
         }
 
+        Log.Information("[Datadog Serverless Mini Agent] {Data}", data);
+        Log.Information("The next line will read the processed output:");
+
         string[] split = data.Split(' ');
         int logPrefixCutoff = data.IndexOf("]");
         if (split.Length < 1 || logPrefixCutoff < 0)
         {
+            Log.Error("[Datadog Serverless Mini Agent] {Data}", data);
             return;
         }
 
@@ -71,6 +73,9 @@ internal class MiniAgentManager
                 break;
             case "DEBUG":
                 Log.Debug("{Data}", processed);
+                break;
+            default:
+                Log.Error("[Datadog Serverless Mini Agent] {Data}", data);
                 break;
         }
     }
