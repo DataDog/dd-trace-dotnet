@@ -75,7 +75,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            var exceptionSamples = ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+            var exceptionSamples = SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
 
             long total = 0;
 
@@ -124,7 +124,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
 
-            var exceptionSamples = ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+            var exceptionSamples = SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
 
             var exceptionCounts = exceptionSamples.GroupBy(s => s.Type)
                 .ToDictionary(g => g.Key, g => g.Sum(s => s.Count));
@@ -238,7 +238,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            var exceptionSamples = ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+            var exceptionSamples = SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
             exceptionSamples.Should().NotBeEmpty();
 
             // this test always succeeds: it is used to display the differences between sampled and real exceptions
@@ -418,40 +418,6 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             return profiledExceptions;
         }
 
-        private static IEnumerable<(string Type, string Message, long Count, StackTrace Stacktrace)> ExtractExceptionSamples(string directory)
-        {
-            static IEnumerable<(string Type, string Message, long Count, StackTrace Stacktrace, long Time)> SamplesWithTimestamp(string directory)
-            {
-                foreach (var file in Directory.EnumerateFiles(directory, "*.pprof", SearchOption.AllDirectories))
-                {
-                    using var stream = File.OpenRead(file);
-
-                    var profile = Profile.Parser.ParseFrom(stream);
-
-                    foreach (var sample in profile.Sample)
-                    {
-                        var count = sample.Value[0];
-
-                        if (count == 0)
-                        {
-                            continue;
-                        }
-
-                        var labels = sample.Labels(profile).ToArray();
-
-                        var type = labels.Single(l => l.Name == "exception type").Value;
-                        var message = labels.Single(l => l.Name == "exception message").Value;
-
-                        yield return (type, message, count, sample.StackTrace(profile), profile.TimeNanos);
-                    }
-                }
-            }
-
-            return SamplesWithTimestamp(directory)
-                .OrderBy(s => s.Time)
-                .Select(s => (s.Type, s.Message, s.Count, s.Stacktrace));
-        }
-
         private void CheckExceptionProfiles(TestApplicationRunner runner, bool withTimestamps)
         {
             var stack1 = new StackTrace(
@@ -475,7 +441,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            var exceptionSamples = ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+            var exceptionSamples = SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
 
             if (withTimestamps)
             {
@@ -501,7 +467,6 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 exceptionSamples[4].Should().Be(("System.Exception", "E1", 1, stack1));
                 exceptionSamples[5].Should().Be(("System.Exception", "E2", 1, stack1));
             }
-
         }
     }
 }

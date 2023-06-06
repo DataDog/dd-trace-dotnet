@@ -101,13 +101,14 @@ private:  // global helpers
     std::string GetMethodSignature(
         ICorProfilerInfo4* pInfo,
         IMetaDataImport2* pMetadataImport,
+        mdTypeDef mdTokenType,
         FunctionID functionId,
         mdMethodDef mdTokenFunc
         );
     PCCOR_SIGNATURE ParseElementType(
         IMetaDataImport* pMDImport,
         PCCOR_SIGNATURE signature,
-        ClassID* classTypeArgs,
+        std::vector<std::string>& classTypeArgs,
         ClassID* methodTypeArgs,
         ULONG* elementType,
         std::stringstream& builder,

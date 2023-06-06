@@ -134,7 +134,7 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
     }
 
     // get the method signature
-     std::string signature = GetMethodSignature(_pCorProfilerInfo, pMetadataImport.Get(), functionId, mdTokenFunc);
+     std::string signature = GetMethodSignature(_pCorProfilerInfo, pMetadataImport.Get(), mdTokenType, functionId, mdTokenFunc);
 
     // get type related description (assembly, namespace and type name)
     // look into the cache first
@@ -663,11 +663,11 @@ std::pair<std::string, std::string> FrameStore::GetTypeWithNamespace(IMetaDataIm
     }
 }
 
-std::string FrameStore::FormatGenericTypeParameters(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType, bool isEncoded)
+std::vector<std::string> GetGenericTypeParameters(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType)
 {
-    std::stringstream builder;
+    std::vector<std::string> parameters;
 
-    // Get all generic parameters definition (ex: "{|ct:K, |ct:V}" for Dictionary<K,V>)
+        // Get all generic parameters definition (ex: "{|ct:K, |ct:V}" for Dictionary<K,V>)
     // --> need to iterate on the generic arguments definition with metadata API
     HCORENUM hEnum = nullptr;
 
@@ -685,36 +685,53 @@ std::string FrameStore::FormatGenericTypeParameters(IMetaDataImport2* pMetadata,
         WCHAR paramName[64];
         ULONG paramNameLen = 64;
 
-        builder << (isEncoded ? "{" : "<");
         for (size_t currentParam = 0; currentParam < genericParamsCount; currentParam++)
         {
-            if (isEncoded)
-            {
-                builder << "|ns: |ct:";
-            }
-
             ULONG index;
             DWORD flags;
             hr = pMetadata->GetGenericParamProps(genericParams[currentParam], &index, &flags, nullptr, nullptr, paramName, paramNameLen, &paramNameLen);
             if (SUCCEEDED(hr))
             {
                 // need to convert from UTF16 to UTF8
-                builder << shared::ToString(paramName);
+                parameters.push_back(shared::ToString(paramName));
             }
             else
             {
                 // this should never happen if the enum succeeded: no need to count the parameters
-                builder << "T";
+                parameters.push_back("T");
             }
 
-            if (currentParam < genericParamsCount - 1)
-            {
-                builder << ", ";
-            }
         }
-        builder << (isEncoded ? "}" : ">");
         pMetadata->CloseEnum(hEnum);
     }
+
+    return parameters;
+}
+
+std::string FrameStore::FormatGenericTypeParameters(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType, bool isEncoded)
+{
+    std::stringstream builder;
+    builder << (isEncoded ? "{" : "<");
+
+    // Get all generic parameters definition (ex: "{|ct:K, |ct:V}" for Dictionary<K,V>)
+    // --> need to iterate on the generic arguments definition with metadata API
+    std::vector<std::string> parameters = GetGenericTypeParameters(pMetadata, mdTokenType);
+    size_t genericParamsCount = parameters.size();
+    for (size_t currentParam = 0; currentParam < genericParamsCount; currentParam++)
+    {
+        if (isEncoded)
+        {
+            builder << "|ns: |ct:";
+        }
+
+        builder << parameters[currentParam];
+
+        if (currentParam < genericParamsCount - 1)
+        {
+            builder << ", ";
+        }
+    }
+    builder << (isEncoded ? "}" : ">");
 
     return builder.str();
 }
@@ -911,7 +928,7 @@ std::pair<std::string, mdTypeDef> FrameStore::GetMethodNameFromMetadata(IMetaDat
     return std::make_pair(shared::ToString(buffer.get()), mdTokenType);
 }
 
-std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataImport2* pMetaData, FunctionID functionId, mdMethodDef mdTokenFunc)
+std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataImport2* pMetaData, mdTypeDef mdTokenType, FunctionID functionId, mdMethodDef mdTokenFunc)
 {
     PCCOR_SIGNATURE pSigBlob;
     ULONG blobSize, attributes;
@@ -938,10 +955,10 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
     ClassID classId = 0;
     // for generic support
     std::unique_ptr<ClassID[]> methodTypeArgs = nullptr;
-    std::unique_ptr<ClassID[]> classTypeArgs = nullptr;
     ULONG genericArgCount = 0;
     UINT32 methodTypeArgCount = 0;
     ULONG32 classTypeArgCount = 0;
+    std::vector<std::string> classTypeArgs;
     if ((callConv & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0)
     {
         ModuleID moduleId;
@@ -959,18 +976,14 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
         {
             methodTypeArgs = nullptr;
         }
+    }
 
-        // get the generic details for the type implementing the function
-        hr = pInfo->GetClassIDInfo2(classId, NULL, NULL, NULL, 0, &classTypeArgCount, NULL);
-        if (SUCCEEDED(hr) && classTypeArgCount > 0)
-        {
-            classTypeArgs = std::make_unique<ClassID[]>(classTypeArgCount);
-            hr = pInfo->GetClassIDInfo2(classId, NULL, NULL, NULL, classTypeArgCount, &classTypeArgCount, classTypeArgs.get());
-            if (FAILED(hr))
-            {
-                classTypeArgs = nullptr;
-            }
-        }
+    // Get the generic details for the type implementing the function
+    // In case of generic with a reference type parameter, classId will be null:
+    // --> get type name from metadata to match the types name shown for the type
+    if (classId == NULL)
+    {
+        classTypeArgs = GetGenericTypeParameters(pMetaData, mdTokenType);
     }
 
     //
@@ -983,7 +996,7 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
     //
     mdToken returnTypeToken;
     std::stringstream returnTypeBuilder; // it is not used today
-    pSigBlob = ParseElementType(pMetaData, pSigBlob, classTypeArgs.get(), methodTypeArgs.get(), &elementType, returnTypeBuilder, &returnTypeToken);
+    pSigBlob = ParseElementType(pMetaData, pSigBlob, classTypeArgs, methodTypeArgs.get(), &elementType, returnTypeBuilder, &returnTypeToken);
     // if the return type returned back empty, should correspond to "void"
     // NOTE: elementType should be ELEMENT_TYPE_VOID in that case
 
@@ -1013,7 +1026,6 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
     ULONG length;
 
     DWORD bIsValueType;
-    ULONG currentGenericParam = 0;
     builder << "(";
     for (ULONG i = 0;
          (SUCCEEDED(hr) && (pSigBlob != NULL) && (i < (argCount)));
@@ -1029,7 +1041,7 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
         // We don't know in advance which parameter is a generic parameter and this is given by elementType == MVAR
         mdToken parameterTypeToken = mdTypeDefNil;
         std::stringstream parameterBuilder;
-        pSigBlob = ParseElementType(pMetaData, pSigBlob, classTypeArgs.get(), methodTypeArgs.get(), &elementType, parameterBuilder, &parameterTypeToken);
+        pSigBlob = ParseElementType(pMetaData, pSigBlob, classTypeArgs, methodTypeArgs.get(), &elementType, parameterBuilder, &parameterTypeToken);
         builder << parameterBuilder.str();
 
         builder << " ";
@@ -1087,7 +1099,7 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(ICorProfilerI
 // https://github.com/microsoftarchive/clrprofiler/blob/master/CLRProfiler/profilerOBJ/ProfilerInfo.cpp#L1838
 PCCOR_SIGNATURE FrameStore::ParseElementType(IMetaDataImport* pMDImport,
                                  PCCOR_SIGNATURE signature,
-                                 ClassID* classTypeArgs,
+                                 std::vector<std::string>& classTypeArgs,
                                  ClassID* methodTypeArgs,
                                  ULONG* elementType,
                                  std::stringstream& builder,
@@ -1335,9 +1347,16 @@ PCCOR_SIGNATURE FrameStore::ParseElementType(IMetaDataImport* pMDImport,
         case ELEMENT_TYPE_VAR: // for type
         {
             // read the number
-            StrAppend(builder, "T");
             ULONG n = CorSigUncompressData(signature);
-            builder << n;
+            if (n < classTypeArgs.size())
+            {
+                builder << classTypeArgs[n];
+            }
+            else
+            {
+                StrAppend(builder, "T");
+                builder << n;
+            }
         }
         break;
         case ELEMENT_TYPE_MVAR: // for method
@@ -1346,7 +1365,20 @@ PCCOR_SIGNATURE FrameStore::ParseElementType(IMetaDataImport* pMDImport,
             std::string sTypeName;
             if (GetTypeName(methodTypeArgs[n], sTypeName))
             {
-                builder << sTypeName;
+                // this happens when a reference type is passed as generic parameter
+                // --> we prefer to show in the signature the "Txx" name shown in the method name
+                // |fn:ThrowGenericFromGeneric{|ns: |ct:T0} |sg:(System.__Canon element)
+                // -->
+                // |fn:ThrowGenericFromGeneric{|ns: |ct:T0} |sg:(T0 element)
+                if (sTypeName == "System.__Canon")
+                {
+                    StrAppend(builder, "T");
+                    builder << n;
+                }
+                else
+                {
+                    builder << sTypeName;
+                }
             }
             else
             {
