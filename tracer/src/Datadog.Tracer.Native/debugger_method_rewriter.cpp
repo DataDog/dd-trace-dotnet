@@ -2133,40 +2133,6 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     // BEGIN METHOD PROBE PART
     // ***
 
-    bool appliedAtLeastOneMethodProbeInstrumentation = false;
-    if (!methodProbes.empty())
-    {
-        if (isAsyncMethod)
-        {
-            Logger::Info("Applying Async Method Probe instrumentation with ", methodProbes.size(), " probes.");
-            hr = ApplyAsyncMethodProbe(methodProbes, module_id, module_metadata, caller, debuggerTokens,
-                                       function_token,
-                                       isStatic, &methodReturnType, methodLocals, numLocals,
-                                       rewriterWrapper, callTargetReturnIndex, returnValueIndex,
-                                       callTargetReturnToken, firstInstruction, instrumentedMethodIndex,
-                                       beforeLineProbe, newClauses);
-        }
-        else
-        {
-            Logger::Info("Applying Non-Async  Method Probe instrumentation with ", methodProbes.size(), " probes.");
-
-            hr = ApplyMethodProbe(methodProbes, module_id, module_metadata, caller, debuggerTokens, function_token,
-                                  retFuncArg, isVoid, isStatic, methodArguments, numArgs, rewriter,
-                                  methodLocals, numLocals, rewriterWrapper, callTargetStateIndex, exceptionIndex,
-                                  callTargetReturnIndex, returnValueIndex, multiProbeStatesIndex, callTargetReturnToken,
-                                  firstInstruction, instrumentedMethodIndex, beforeLineProbe, newClauses);
-        }
-
-        if (hr != E_NOTIMPL && FAILED(hr))
-        {
-            MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_failed_to_instrument_method_probe);
-            // Appropriate error message is already logged in ApplyMethodProbe / ApplyAsyncMethodProbe.
-            return E_FAIL;
-        }
-
-        appliedAtLeastOneMethodProbeInstrumentation = hr == S_OK;
-    }
-
     bool appliedAtLeastOneSpanProbeInstrumentation = false;
     if (!spanOnMethodProbes.empty())
     {
@@ -2208,6 +2174,40 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         }
 
         appliedAtLeastOneSpanProbeInstrumentation = hr == S_OK;
+    }
+
+    bool appliedAtLeastOneMethodProbeInstrumentation = false;
+    if (!methodProbes.empty())
+    {
+        if (isAsyncMethod)
+        {
+            Logger::Info("Applying Async Method Probe instrumentation with ", methodProbes.size(), " probes.");
+            hr = ApplyAsyncMethodProbe(methodProbes, module_id, module_metadata, caller, debuggerTokens,
+                                       function_token,
+                                       isStatic, &methodReturnType, methodLocals, numLocals,
+                                       rewriterWrapper, callTargetReturnIndex, returnValueIndex,
+                                       callTargetReturnToken, firstInstruction, instrumentedMethodIndex,
+                                       beforeLineProbe, newClauses);
+        }
+        else
+        {
+            Logger::Info("Applying Non-Async  Method Probe instrumentation with ", methodProbes.size(), " probes.");
+
+            hr = ApplyMethodProbe(methodProbes, module_id, module_metadata, caller, debuggerTokens, function_token,
+                                  retFuncArg, isVoid, isStatic, methodArguments, numArgs, rewriter,
+                                  methodLocals, numLocals, rewriterWrapper, callTargetStateIndex, exceptionIndex,
+                                  callTargetReturnIndex, returnValueIndex, multiProbeStatesIndex, callTargetReturnToken,
+                                  firstInstruction, instrumentedMethodIndex, beforeLineProbe, newClauses);
+        }
+
+        if (hr != E_NOTIMPL && FAILED(hr))
+        {
+            MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_failed_to_instrument_method_probe);
+            // Appropriate error message is already logged in ApplyMethodProbe / ApplyAsyncMethodProbe.
+            return E_FAIL;
+        }
+
+        appliedAtLeastOneMethodProbeInstrumentation = hr == S_OK;
     }
 
     if (!appliedAtLeastOneMethodProbeInstrumentation && !appliedAtLeastOneLineProbeInstrumentation &&
