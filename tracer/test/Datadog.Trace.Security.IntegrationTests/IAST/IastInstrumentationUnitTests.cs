@@ -173,6 +173,22 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    public void TestReplaceMethodsAspectCover()
+    {
+        var overloadsToExclude = new List<string>()
+        {
+        // special case
+#if !NETCOREAPP3_1_OR_GREATER
+            "System.String::Replace(System.String,System.String,System.StringComparison)",
+            "System.String::Replace(System.String,System.String,System.Boolean,System.Globalization.CultureInfo)"
+#endif
+        };
+        TestMethodOverloads(typeof(string), "Replace", overloadsToExclude);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     public void TestFormatMethodsAspectCover()
     {
         TestMethodOverloads(typeof(string), "Format");
