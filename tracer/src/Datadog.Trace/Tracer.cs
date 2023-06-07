@@ -63,8 +63,9 @@ namespace Datadog.Trace
                 + nameof(Tracer) + "." + nameof(Configure) + "() to replace the global Tracer settings for the application")]
         public Tracer(TracerSettings settings)
         {
-            // TODO: Switch to immutable settings
-            Configure(settings);
+            // Don't call Configure because it will call Start on the TracerManager
+            // before this new instance of Tracer is assigned to Tracer.Instance
+            TracerManager.ReplaceGlobalManager(settings?.Build(), TracerManagerFactory.Instance);
 
             // update the count of Tracer instances
             Interlocked.Increment(ref _liveTracerCount);
@@ -77,7 +78,7 @@ namespace Datadog.Trace
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null)
-            : this(TracerManagerFactory.Instance.CreateTracerManager(settings?.Build(), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null))
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings?.Build(), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null))
         {
         }
 
@@ -244,6 +245,7 @@ namespace Datadog.Trace
         public static void Configure(TracerSettings settings)
         {
             TracerManager.ReplaceGlobalManager(settings?.Build(), TracerManagerFactory.Instance);
+            Tracer.Instance.TracerManager.Start();
         }
 
         /// <summary>

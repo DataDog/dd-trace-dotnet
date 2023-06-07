@@ -500,7 +500,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.NetActivitySdk", "t
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Owin.Iis.WebApi2", "tracer\test\test-applications\aspnet\Samples.Owin.Iis.WebApi2\Samples.Owin.Iis.WebApi2.csproj", "{B417E258-A21F-4546-B78F-8A7A4879472A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.BenchmarkDotNet.Tests", "tracer\test\Datadog.Trace.BenchmarkDotNet.Tests\Datadog.Trace.BenchmarkDotNet.Tests.csproj", "{CC549AFF-0EC0-4AD4-93E3-F05C8A74F4D9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.BenchmarkDotNet.Tests", "tracer\test\Datadog.Trace.BenchmarkDotNet.Tests\Datadog.Trace.BenchmarkDotNet.Tests.csproj", "{CC549AFF-0EC0-4AD4-93E3-F05C8A74F4D9}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.InstrumentedTests", "tracer\test\test-applications\integrations\Samples.InstrumentedTests\Samples.InstrumentedTests.csproj", "{64E32F7A-8989-480E-AFE7-3BD343424F6A}"
 EndProject
@@ -519,6 +519,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.Trimming", "tracer\src\Datadog.Trace.Trimming\Datadog.Trace.Trimming.csproj", "{CEAC4ECE-1BFA-4C88-BED5-E4DE054D70A4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Trimming", "tracer\test\test-applications\integrations\Samples.Trimming\Samples.Trimming.csproj", "{289713D4-5259-4CC4-8CAA-DBF3BDCDCBC0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ActivitySampleHelper", "tracer\test\test-applications\integrations\dependency-libs\ActivitySampleHelper\ActivitySampleHelper.csproj", "{51AF3B29-D107-4E22-8A85-DF02A8A898E5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1222,6 +1224,10 @@ Global
 		{289713D4-5259-4CC4-8CAA-DBF3BDCDCBC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{289713D4-5259-4CC4-8CAA-DBF3BDCDCBC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{289713D4-5259-4CC4-8CAA-DBF3BDCDCBC0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51AF3B29-D107-4E22-8A85-DF02A8A898E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51AF3B29-D107-4E22-8A85-DF02A8A898E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51AF3B29-D107-4E22-8A85-DF02A8A898E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51AF3B29-D107-4E22-8A85-DF02A8A898E5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1421,12 +1427,15 @@ Global
 		{C5E7978A-DE2A-4944-86DB-4721A110E720} = {0972AD57-B16B-494F-AE0A-091DD6F3B42B}
 		{CEAC4ECE-1BFA-4C88-BED5-E4DE054D70A4} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{289713D4-5259-4CC4-8CAA-DBF3BDCDCBC0} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{51AF3B29-D107-4E22-8A85-DF02A8A898E5} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{3c6dd42e-9214-4747-92ba-78de29aace59}*SharedItemsImports = 4
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{472dba92-4fea-4b9a-ba70-0e97b942e12d}*SharedItemsImports = 5
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{65492dd4-ccd9-437a-b383-e7eb7ab872d2}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{6d86109f-b7c9-477d-86d7-45735a3a0818}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{7b0822f6-80de-4b49-8125-93975678d0d5}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{99a62ccf-8e7f-4d57-8383-d38c371c8087}*SharedItemsImports = 4

@@ -22,13 +22,17 @@ using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Datadog.Trace
 {
@@ -56,7 +60,8 @@ namespace Datadog.Trace
                 logSubmissionManager: previous?.DirectLogSubmission,
                 telemetry: null,
                 discoveryService: null,
-                dataStreamsManager: null);
+                dataStreamsManager: null,
+                remoteConfigurationManager: null);
 
             try
             {
@@ -90,7 +95,8 @@ namespace Datadog.Trace
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
-            DataStreamsManager dataStreamsManager)
+            DataStreamsManager dataStreamsManager,
+            IRemoteConfigurationManager remoteConfigurationManager)
         {
             settings ??= ImmutableTracerSettings.FromDefaultSources();
 
@@ -143,7 +149,22 @@ namespace Datadog.Trace
 
             dataStreamsManager ??= DataStreamsManager.Create(settings, discoveryService, defaultServiceName);
 
-            var tracerManager = CreateTracerManagerFrom(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider);
+            if (remoteConfigurationManager == null)
+            {
+                var sw = Stopwatch.StartNew();
+
+                var rcmSettings = RemoteConfigurationSettings.FromDefaultSource();
+                var rcmApi = RemoteConfigurationApiFactory.Create(settings.Exporter, rcmSettings, discoveryService);
+
+                // Service Name must be lowercase, otherwise the agent will not be able to find the service
+                var serviceName = TraceUtil.NormalizeTag(settings.ServiceName ?? defaultServiceName);
+
+                remoteConfigurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, settings, gitMetadataTagsProvider, RcmSubscriptionManager.Instance);
+
+                TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_RCM, sw.ElapsedMilliseconds);
+            }
+
+            var tracerManager = CreateTracerManagerFrom(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, remoteConfigurationManager);
             return tracerManager;
         }
 
@@ -167,8 +188,9 @@ namespace Datadog.Trace
             IDiscoveryService discoveryService,
             DataStreamsManager dataStreamsManager,
             string defaultServiceName,
-            IGitMetadataTagsProvider gitMetadataTagsProvider)
-            => new TracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider);
+            IGitMetadataTagsProvider gitMetadataTagsProvider,
+            IRemoteConfigurationManager remoteConfigurationManager)
+            => new TracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, remoteConfigurationManager);
 
         protected virtual ITraceSampler GetSampler(ImmutableTracerSettings settings)
         {

@@ -19,9 +19,6 @@ namespace Datadog.Trace.ClrProfiler
     /// </summary>
     internal static class ScopeFactory
     {
-        public const string OperationName = "http.request";
-        public const string ServiceName = "http-client";
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ScopeFactory));
 
         public static Scope GetActiveHttpScope(Tracer tracer)
@@ -103,10 +100,11 @@ namespace Datadog.Trace.ClrProfiler
 
                 string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
 
-                tags = new HttpTags();
+                string operationName = tracer.Schema.Client.GetOperationNameForProtocol("http");
+                string serviceName = tracer.Schema.Client.GetServiceName(component: "http-client");
+                tags = tracer.Schema.Client.CreateHttpTags();
 
-                string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
-                span = tracer.StartSpan(OperationName, tags, serviceName: serviceName, traceId: traceId, spanId: spanId, startTime: startTime, addToTraceContext: addToTraceContext);
+                span = tracer.StartSpan(operationName, tags, serviceName: serviceName, traceId: traceId, spanId: spanId, startTime: startTime, addToTraceContext: addToTraceContext);
 
                 span.Type = SpanTypes.Http;
                 span.ResourceName = $"{httpMethod} {resourceUrl}";
@@ -115,6 +113,11 @@ namespace Datadog.Trace.ClrProfiler
                 if (requestUri is not null)
                 {
                     tags.HttpUrl = HttpRequestUtils.GetUrl(requestUri, tracer.TracerManager.QueryStringManager);
+
+                    if (tags is HttpV1Tags v1Tags)
+                    {
+                        v1Tags.SetHost(HttpRequestUtils.GetNormalizedHost(requestUri.Host));
+                    }
                 }
 
                 tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);

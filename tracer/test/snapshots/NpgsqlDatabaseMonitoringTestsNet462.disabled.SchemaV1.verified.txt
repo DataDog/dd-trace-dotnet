@@ -13,8 +13,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -31,8 +33,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -49,8 +53,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -67,8 +73,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -85,8 +93,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -103,8 +113,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -121,8 +133,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -139,8 +153,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -157,8 +173,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -175,8 +193,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -193,8 +213,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -211,8 +233,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -229,8 +253,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -247,8 +273,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -265,8 +293,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -283,8 +313,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -301,8 +333,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -319,8 +353,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -337,8 +373,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -355,8 +393,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -373,8 +413,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -391,8 +433,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -409,8 +453,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -427,8 +473,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -445,8 +493,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -463,8 +513,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -481,8 +533,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -499,8 +553,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -517,8 +573,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -535,8 +593,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -553,8 +613,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -571,8 +633,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -589,8 +653,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -607,8 +673,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -625,8 +693,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -643,8 +713,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -661,8 +733,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -679,8 +753,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -697,8 +773,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -715,8 +793,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -733,8 +813,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -751,8 +833,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -769,8 +853,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -787,8 +873,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -805,8 +893,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -823,8 +913,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -841,8 +933,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -859,8 +953,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -877,8 +973,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -895,8 +993,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -913,8 +1013,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -931,8 +1033,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -949,8 +1053,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -967,8 +1073,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -985,8 +1093,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1003,8 +1113,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1021,8 +1133,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1039,8 +1153,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1057,8 +1173,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1075,8 +1193,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1093,8 +1213,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1111,8 +1233,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1129,8 +1253,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1147,8 +1273,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1165,8 +1293,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1183,8 +1313,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1201,8 +1333,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1219,8 +1353,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1237,8 +1373,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1255,8 +1393,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1273,8 +1413,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1291,8 +1433,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1309,8 +1453,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1327,8 +1473,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1345,8 +1493,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1363,8 +1513,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1381,8 +1533,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1399,8 +1553,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1417,8 +1573,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1435,8 +1593,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1453,8 +1613,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1471,8 +1633,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1489,8 +1653,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1507,8 +1673,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1525,8 +1693,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1543,8 +1713,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1561,8 +1733,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1579,8 +1753,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1597,8 +1773,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1615,8 +1793,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1633,8 +1813,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1651,8 +1833,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1669,8 +1853,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1687,8 +1873,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1705,8 +1893,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1723,8 +1913,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1741,8 +1933,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1759,8 +1953,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1777,8 +1973,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1795,8 +1993,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1813,8 +2013,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1831,8 +2033,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1849,8 +2053,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1867,8 +2073,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1885,8 +2093,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1903,8 +2113,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1921,8 +2133,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1939,8 +2153,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1957,8 +2173,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1975,8 +2193,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -1993,8 +2213,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2011,8 +2233,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2029,8 +2253,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2047,8 +2273,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2065,8 +2293,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2083,8 +2313,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2101,8 +2333,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2119,8 +2353,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2137,8 +2373,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2155,8 +2393,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2173,8 +2413,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2191,8 +2433,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2209,8 +2453,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2227,8 +2473,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2245,8 +2493,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2263,8 +2513,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2281,8 +2533,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2299,8 +2553,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2317,8 +2573,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2335,8 +2593,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2353,8 +2613,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2371,8 +2633,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2389,8 +2653,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2407,8 +2673,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2425,8 +2693,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2443,8 +2713,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2461,8 +2733,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2479,8 +2753,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2497,8 +2773,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2515,8 +2793,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2533,8 +2813,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2551,8 +2833,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2569,8 +2853,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2587,8 +2873,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2605,8 +2893,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2623,8 +2913,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   },
   {
@@ -2641,8 +2933,10 @@
       db.type: postgres,
       env: testing,
       out.host: postgres,
+      peer.service: postgres,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
     }
   }
 ]
