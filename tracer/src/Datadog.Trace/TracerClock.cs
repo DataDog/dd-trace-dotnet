@@ -6,6 +6,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Util;
 
@@ -24,6 +25,7 @@ internal sealed class TracerClock
         _ = UpdateClockAsync();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private TracerClock()
     {
         _utcStart = DateTimeOffset.UtcNow;
@@ -37,16 +39,26 @@ internal sealed class TracerClock
         }
     }
 
-    public static TracerClock Instance => _instance;
-
-    public DateTimeOffset UtcNow => _utcStart.Add(Elapsed);
-
-    private TimeSpan Elapsed => StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp);
-
-    public TimeSpan ElapsedSince(DateTimeOffset date)
+    public static TracerClock Instance
     {
-        return Elapsed + (_utcStart - date);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _instance;
     }
+
+    public DateTimeOffset UtcNow
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _utcStart.Add(Elapsed);
+    }
+
+    private TimeSpan Elapsed
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public TimeSpan ElapsedSince(DateTimeOffset date) => Elapsed + (_utcStart - date);
 
     private static async Task UpdateClockAsync()
     {
