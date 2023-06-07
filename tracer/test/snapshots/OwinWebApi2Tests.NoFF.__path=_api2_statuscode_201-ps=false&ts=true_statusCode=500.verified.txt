@@ -2,18 +2,23 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: CustomTracingExceptionHandler.handle-async,
+    Name: CustomTracingExceptionHandler.internal,
     Resource: CustomTracingExceptionHandler.handle-async,
     Service: Samples.Owin.WebApi2,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
+      otel.library.name: CustomTracingExceptionHandler,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      runtime-id: Guid_2,
+      span.kind: internal,
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
