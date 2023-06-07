@@ -225,7 +225,5 @@ namespace Datadog.Trace
                 DistributedTracer.Instance.SetSamplingPriority(priority);
             }
         }
-
-        public TimeSpan ElapsedSince(DateTimeOffset date) => _clock.ElapsedSince(date);
     }
 }

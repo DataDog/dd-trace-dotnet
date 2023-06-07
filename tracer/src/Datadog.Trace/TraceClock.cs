@@ -22,7 +22,7 @@ internal sealed class TraceClock
     static TraceClock()
     {
         _instance = new TraceClock();
-        // _ = UpdateClockAsync();
+        _ = UpdateClockAsync();
     }
 
     private TraceClock()
@@ -59,14 +59,12 @@ internal sealed class TraceClock
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public TimeSpan ElapsedSince(DateTimeOffset date) => Elapsed + (_utcStart - date);
+    public TimeSpan ElapsedSince(DateTimeOffset date) => UtcNow - date;
 
     private static async Task UpdateClockAsync()
     {
-        while (true)
-        {
-            await Task.Delay(TimeSpan.FromMinutes(2)).ConfigureAwait(false);
-            _instance = new TraceClock();
-        }
+        await Task.Delay(TimeSpan.FromMinutes(2)).ConfigureAwait(false);
+        _instance = new TraceClock();
+        _ = UpdateClockAsync();
     }
 }
