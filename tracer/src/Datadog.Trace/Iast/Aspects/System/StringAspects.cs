@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Propagation;
@@ -815,7 +816,7 @@ public class StringAspects
     [AspectMethodReplace("System.String::Format(System.IFormatProvider,System.String,System.Object,System.Object,System.Object)")]
     public static string Format(IFormatProvider provider, string format, object arg0, object arg1, object arg2)
     {
-        string result = string.Format(provider, format, arg0, arg1, arg2);
+        var result = string.Format(provider, format, arg0, arg1, arg2);
         PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0, arg1, arg2);
         return result;
     }
@@ -830,12 +831,77 @@ public class StringAspects
     [AspectMethodReplace("System.String::Format(System.IFormatProvider,System.String,System.Object[])")]
     public static string Format(IFormatProvider provider, string format, object[] args)
     {
-        string result = string.Format(provider, format, args);
+        var result = string.Format(provider, format, args);
         // create a new array with format and the elements of args
-        object[] newArgs = new object[args.Length + 1];
+        var newArgs = new object[args.Length + 1];
         newArgs[0] = format;
         Array.Copy(args, 0, newArgs, 1, args.Length);
         PropagationModuleImpl.PropagateResultWhenInputTainted(result, newArgs);
+        return result;
+    }
+
+#if NETCOREAPP3_1_OR_GREATER
+    /// <summary>
+    /// String.Replace aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="oldValue"> old value  argument</param>
+    /// <param name="newValue"> new value argument </param>
+    /// <param name="ignore"> true to ignore casing when comparing; false otherwise. </param>
+    /// <param name="culture"> cluture argument </param>
+    /// <returns> String.Replace() </returns>
+    [AspectMethodReplace("System.String::Replace(System.String,System.String,System.Boolean,System.Globalization.CultureInfo)")]
+    public static string Replace(string target, string oldValue, string newValue, bool ignore, CultureInfo culture)
+    {
+        var result = target.Replace(oldValue, newValue, ignore, culture);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target, oldValue, newValue);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Replace aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="oldValue"> old value  argument</param>
+    /// <param name="newValue"> new value argument </param>
+    /// <param name="comparison"> comparison argument </param>
+    /// <returns> String.Replace() </returns>
+    [AspectMethodReplace("System.String::Replace(System.String,System.String,System.StringComparison)")]
+    public static string Replace(string target, string oldValue, string newValue, StringComparison comparison)
+    {
+        var result = target.Replace(oldValue, newValue, comparison);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target, oldValue, newValue);
+        return result;
+    }
+#endif
+
+    /// <summary>
+    /// String.Replace aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="oldChar"> old value  argument</param>
+    /// <param name="newChar"> new value argument </param>
+    /// <returns> String.Replace() </returns>
+    [AspectMethodReplace("System.String::Replace(System.Char,System.Char)")]
+    public static string Replace(string target, char oldChar, char newChar)
+    {
+        var result = target.Replace(oldChar, newChar);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Replace aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="oldValue"> old value  argument</param>
+    /// <param name="newValue"> new value argument </param>
+    /// <returns> String.Replace() </returns>
+    [AspectMethodReplace("System.String::Replace(System.String,System.String)")]
+    public static string Replace(string target, string oldValue, string newValue)
+    {
+        var result = target.Replace(oldValue, newValue);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target, oldValue, newValue);
         return result;
     }
 }

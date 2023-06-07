@@ -224,6 +224,14 @@ public class InstrumentationTestsBase
         instrumented.ToString().Should().Be(notInstrumentedResult.ToString());
     }
 
+    protected void AssertUntaintedWithOriginalCallCheck(Func<Object> instrumented, Expression<Func<Object>> notInstrumented)
+    {
+        var instrumentedResult = ExecuteFunc(instrumented);
+        var notInstrumentedCompiled = notInstrumented.Compile();
+        var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
+        instrumentedResult.ToString().Should().Be(notInstrumentedResult.ToString());
+    }
+
     protected void AssertUntaintedWithOriginalCallCheck(object expected, object instrumented, Expression<Func<Object>> notInstrumented)
     {
         instrumented.ToString().Should().Be(expected.ToString());
@@ -241,7 +249,7 @@ public class InstrumentationTestsBase
         }
         catch (Exception ex)
         {
-            return ex.GetType();
+            return ex.GetType().FullName;
         }
     }
 

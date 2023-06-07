@@ -85,9 +85,10 @@ public class StringFormatTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedFormatObject_WhenCallingFormatWithNullParams_FormatException()
     {
-        Assert.Throws<ArgumentNullException>(() => String.Format(null, null, "r"));
+        AssertUntaintedWithOriginalCallCheck(
+            () => String.Format(null, null, "r"),
+            () => String.Format(null, null, "r"));
     }
-
 
     // Testing public static string Format(IFormatProvider provider, string format, object arg0, object arg1, object arg2)
 
@@ -130,7 +131,9 @@ public class StringFormatTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedFormatObject_WhenCallingFormatWithOneObjectLess_FormatException()
     {
-        Assert.Throws<FormatException>(() => String.Format(formatTaintedValue, taintedValue));
+        AssertUntaintedWithOriginalCallCheck(
+            () => String.Format(formatTaintedValue, taintedValue),
+            () => String.Format(formatTaintedValue, taintedValue));
     }
 
     // Testing public static string Format(string format, object arg0, object arg1)

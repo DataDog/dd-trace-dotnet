@@ -227,6 +227,10 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.String::Format(System.IFormatProvider,System.String,System.Object,System.Object)\",\"\",[0],[False],[None],Propagation,[])] Format(System.IFormatProvider,System.String,System.Object,System.Object)",
 "  [AspectMethodReplace(\"System.String::Format(System.IFormatProvider,System.String,System.Object,System.Object,System.Object)\",\"\",[0],[False],[None],Propagation,[])] Format(System.IFormatProvider,System.String,System.Object,System.Object,System.Object)",
 "  [AspectMethodReplace(\"System.String::Format(System.IFormatProvider,System.String,System.Object[])\",\"\",[0],[False],[None],Propagation,[])] Format(System.IFormatProvider,System.String,System.Object[])",
+"  [AspectMethodReplace(\"System.String::Replace(System.String,System.String,System.Boolean,System.Globalization.CultureInfo)\",\"\",[0],[False],[None],Propagation,[])] Replace(System.String,System.String,System.String,System.Boolean,System.Globalization.CultureInfo)",
+"  [AspectMethodReplace(\"System.String::Replace(System.String,System.String,System.StringComparison)\",\"\",[0],[False],[None],Propagation,[])] Replace(System.String,System.String,System.String,System.StringComparison)",
+"  [AspectMethodReplace(\"System.String::Replace(System.Char,System.Char)\",\"\",[0],[False],[None],Propagation,[])] Replace(System.String,System.Char,System.Char)",
+"  [AspectMethodReplace(\"System.String::Replace(System.String,System.String)\",\"\",[0],[False],[None],Propagation,[])] Replace(System.String,System.String,System.String)",
         };
     }
 }
