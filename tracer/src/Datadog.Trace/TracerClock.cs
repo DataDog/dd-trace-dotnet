@@ -52,7 +52,7 @@ internal sealed class TracerClock
     {
         while (true)
         {
-            await Task.Delay(TimeSpan.FromMinutes(5)).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromMinutes(2)).ConfigureAwait(false);
             _instance = new TracerClock();
         }
     }
