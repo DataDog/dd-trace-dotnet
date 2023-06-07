@@ -88,6 +88,8 @@ namespace Datadog.Trace.Configuration
             HttpClientExcludedUrlSubstrings = settings.HttpClientExcludedUrlSubstrings;
             HttpServerErrorStatusCodes = settings.HttpServerErrorStatusCodes;
             HttpClientErrorStatusCodes = settings.HttpClientErrorStatusCodes;
+            PeerServiceTagsEnabled = settings.PeerServiceTagsEnabled;
+            RemoveClientServiceNamesEnabled = settings.RemoveClientServiceNamesEnabled;
             MetadataSchemaVersion = settings.MetadataSchemaVersion;
             ServiceNameMappings = settings.ServiceNameMappings;
             TraceBufferSize = settings.TraceBufferSize;
@@ -454,6 +456,16 @@ namespace Datadog.Trace.Configuration
         internal ImmutableAzureAppServiceSettings? AzureAppServiceMetadata { get; }
 
         /// <summary>
+        /// Gets a value indicating whether to calculate the peer.service tag from predefined precursor attributes when using the v0 schema.
+        /// </summary>
+        internal bool PeerServiceTagsEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether to remove the service names when using the v0 schema.
+        /// </summary>
+        internal bool RemoveClientServiceNamesEnabled { get; }
+
+        /// <summary>
         /// Gets the metadata schema version
         /// </summary>
         internal SchemaVersion MetadataSchemaVersion { get; }
@@ -510,7 +522,7 @@ namespace Datadog.Trace.Configuration
                 return name;
             }
 
-            if (MetadataSchemaVersion != SchemaVersion.V0)
+            if (MetadataSchemaVersion != SchemaVersion.V0 || RemoveClientServiceNamesEnabled)
             {
                 return tracer.DefaultServiceName;
             }
