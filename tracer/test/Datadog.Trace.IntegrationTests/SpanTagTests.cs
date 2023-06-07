@@ -26,7 +26,7 @@ namespace Datadog.Trace.IntegrationTests
             var matchAllRule = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":1.0, \"max_per_second\":1000.0}]";
             var settings = new TracerSettings();
             var spanSampler = new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(matchAllRule));
-            _writer = new AgentWriter(_testApi, statsAggregator: null, statsd: null, spanSampler: spanSampler);
+            _writer = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
             _tracer = new Tracer(settings, _writer, sampler: null, scopeManager: null, statsd: null);
         }
 
