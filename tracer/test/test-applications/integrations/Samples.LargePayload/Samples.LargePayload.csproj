@@ -2,5 +2,14 @@
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.8.0" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\dependency-libs\ActivitySampleHelper\ActivitySampleHelper.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- System.Runtime.CompilerServices.Unsafe doesn't support netcoreapp2.1-->
+    <!-- https://andrewlock.net/stop-lying-about-netstandard-2-support/-->
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+  </PropertyGroup>
 
 </Project>

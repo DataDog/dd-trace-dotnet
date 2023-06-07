@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ActivitySampleHelper;
 using CommandLine;
 
 namespace Samples.LargePayload
 {
     public static class Program
     {
+        private static readonly ActivitySourceHelper _sampleHelpers = new(nameof(Program));
+
         public static int Main(string[] args)
         {
             ExitCode exitCode = 0;
@@ -39,10 +42,10 @@ namespace Samples.LargePayload
                            var traceTask = Task.Run(
                                           () =>
                                           {
-                                              using (var traceScope = SampleHelpers.CreateScope("very-big-trace"))
+                                              using (var traceScope = _sampleHelpers.CreateScope("very-big-trace"))
                                               {
-                                                  SampleHelpers.TrySetTag(traceScope, "fill", Guid.NewGuid().ToString());
-                                                  SampleHelpers.TrySetTag(traceScope, "stuff", traceFiller);
+                                                  _sampleHelpers.TrySetTag(traceScope, "fill", Guid.NewGuid().ToString());
+                                                  _sampleHelpers.TrySetTag(traceScope, "stuff", traceFiller);
 
                                                   var spansRemaining = spansPerTrace;
 
@@ -50,8 +53,8 @@ namespace Samples.LargePayload
                                                   {
                                                       using (var spanScope = SampleHelpers.CreateScope("nest"))
                                                       {
-                                                          SampleHelpers.TrySetTag(spanScope, "fill", Guid.NewGuid().ToString());
-                                                          SampleHelpers.TrySetTag(spanScope, "stuff", traceFiller);
+                                                          _sampleHelpers.TrySetTag(spanScope, "fill", Guid.NewGuid().ToString());
+                                                          _sampleHelpers.TrySetTag(spanScope, "stuff", traceFiller);
                                                       }
                                                   }
                                               }
