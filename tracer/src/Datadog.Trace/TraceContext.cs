@@ -45,11 +45,7 @@ namespace Datadog.Trace
 
             Tracer = tracer;
             Tags = tags ?? new TraceTagCollection();
-#if !NETFRAMEWORK
             _clock = TraceClock.Instance;
-#else
-            _clock = new TraceClock();
-#endif
         }
 
         public Span RootSpan

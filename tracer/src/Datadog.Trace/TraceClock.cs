@@ -14,32 +14,30 @@ namespace Datadog.Trace;
 
 internal sealed class TraceClock
 {
-#if !NETFRAMEWORK
     private static TraceClock _instance;
-#endif
 
     private readonly DateTimeOffset _utcStart;
     private readonly long _timestamp;
 
-#if !NETFRAMEWORK
     static TraceClock()
     {
         _instance = new TraceClock();
-        _ = UpdateClockAsync();
+        // _ = UpdateClockAsync();
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private TraceClock()
     {
         _utcStart = DateTimeOffset.UtcNow;
         _timestamp = Stopwatch.GetTimestamp();
 
+        /*
         // The following is to prevent the case of GC hitting between _utcStart and _timestamp set
         while (Elapsed.TotalMilliseconds > 16)
         {
             _utcStart = DateTimeOffset.UtcNow;
             _timestamp = Stopwatch.GetTimestamp();
         }
+        */
     }
 
     public static TraceClock Instance
@@ -47,14 +45,6 @@ internal sealed class TraceClock
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _instance;
     }
-#else
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public TraceClock()
-    {
-        _utcStart = DateTimeOffset.UtcNow;
-        _timestamp = Stopwatch.GetTimestamp();
-    }
-#endif
 
     public DateTimeOffset UtcNow
     {
@@ -71,7 +61,6 @@ internal sealed class TraceClock
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public TimeSpan ElapsedSince(DateTimeOffset date) => Elapsed + (_utcStart - date);
 
-#if !NETFRAMEWORK
     private static async Task UpdateClockAsync()
     {
         while (true)
@@ -80,5 +69,4 @@ internal sealed class TraceClock
             _instance = new TraceClock();
         }
     }
-#endif
 }
