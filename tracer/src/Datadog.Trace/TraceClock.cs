@@ -1,4 +1,4 @@
-// <copyright file="TracerClock.cs" company="Datadog">
+// <copyright file="TraceClock.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,21 +12,21 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace;
 
-internal sealed class TracerClock
+internal sealed class TraceClock
 {
-    private static TracerClock _instance;
+    private static TraceClock _instance;
 
     private readonly DateTimeOffset _utcStart;
     private readonly long _timestamp;
 
-    static TracerClock()
+    static TraceClock()
     {
-        _instance = new TracerClock();
+        _instance = new TraceClock();
         _ = UpdateClockAsync();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private TracerClock()
+    private TraceClock()
     {
         _utcStart = DateTimeOffset.UtcNow;
         _timestamp = Stopwatch.GetTimestamp();
@@ -39,7 +39,7 @@ internal sealed class TracerClock
         }
     }
 
-    public static TracerClock Instance
+    public static TraceClock Instance
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _instance;
@@ -65,7 +65,7 @@ internal sealed class TracerClock
         while (true)
         {
             await Task.Delay(TimeSpan.FromMinutes(2)).ConfigureAwait(false);
-            _instance = new TracerClock();
+            _instance = new TraceClock();
         }
     }
 }

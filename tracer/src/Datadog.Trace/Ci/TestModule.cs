@@ -343,7 +343,7 @@ public sealed class TestModule
         var span = _span;
 
         // Calculate duration beforehand
-        duration ??= span.Context.TraceContext.ElapsedSince(span.StartTime);
+        duration ??= span.Context.TraceContext.Clock.ElapsedSince(span.StartTime);
 
         var remainingSuites = Array.Empty<TestSuite>();
         lock (_suites)

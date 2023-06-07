@@ -38,7 +38,7 @@ namespace Datadog.Trace
         {
             Tags = tags ?? new CommonTags();
             Context = context;
-            StartTime = start ?? Context.TraceContext.UtcNow;
+            StartTime = start ?? Context.TraceContext.Clock.UtcNow;
 
             if (IsLogLevelDebugEnabled)
             {
@@ -348,7 +348,7 @@ namespace Datadog.Trace
         /// </summary>
         internal void Finish()
         {
-            Finish(Context.TraceContext.ElapsedSince(StartTime));
+            Finish(Context.TraceContext.Clock.ElapsedSince(StartTime));
         }
 
         /// <summary>
@@ -445,7 +445,7 @@ namespace Datadog.Trace
 
         internal void ResetStartTime()
         {
-            StartTime = Context.TraceContext.UtcNow;
+            StartTime = Context.TraceContext.Clock.UtcNow;
         }
 
         internal void SetStartTime(DateTimeOffset startTime)
