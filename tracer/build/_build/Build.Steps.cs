@@ -666,7 +666,7 @@ partial class Build
             // extract debug info from everything in monitoring home and copy it to the linux symbols directory
             var files = MonitoringHomeDirectory.GlobFiles("linux-*/*.so");
 
-            foreach (var file in files)
+            /*foreach (var file in files)
             {
                 var outputDir = SymbolsDirectory / new FileInfo(file).Directory!.Name;
                 EnsureExistingDirectory(outputDir);
@@ -681,7 +681,7 @@ partial class Build
 
                 Logger.Information($"Add .gnu_debuglink for {file} targeting {debugOutputFile}");
                 ExtractDebugInfo.Value(arguments: $"--add-gnu-debuglink={debugOutputFile} {file}");
-            }
+            }*/
         });
 
     Target ZipSymbols => _ => _
