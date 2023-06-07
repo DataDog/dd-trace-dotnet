@@ -126,7 +126,6 @@ public class StringFormatTests : InstrumentationTestsBase
             () => String.Format(null, null, "r"));
     }
 
-
     // Testing public static string Format(IFormatProvider provider, string format, object arg0, object arg1, object arg2)
 
     [Fact]

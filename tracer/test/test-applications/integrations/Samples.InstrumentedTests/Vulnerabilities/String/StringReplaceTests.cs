@@ -134,6 +134,7 @@ public class StringReplaceTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingReplaceWithEmptyStringParameters_ResultIsTainted()
     {
+        string.Concat(_taintedString, "b");
         AssertTaintedFormatWithOriginalCallCheck(":+-tinted-+:", _taintedValue.Replace("a", ""), () => _taintedValue.Replace("a", ""));
     }
 
@@ -370,6 +371,7 @@ public class StringReplaceTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingReplace_ResultIsTainted()
     {
+        _taintedValue.Replace("a", "", true, CultureInfo.InvariantCulture);
         AssertTaintedFormatWithOriginalCallCheck(":+-tinted-+:",
             _taintedValue.Replace("a", "", true, CultureInfo.InvariantCulture),
             () => _taintedValue.Replace("a", "", true, CultureInfo.InvariantCulture));
@@ -392,5 +394,7 @@ public class StringReplaceTests : InstrumentationTestsBase
             _taintedValue.Replace("A", "", StringComparison.OrdinalIgnoreCase),
             () => _taintedValue.Replace("A", "", StringComparison.OrdinalIgnoreCase));
     }
+
 #endif
+
 }
