@@ -11,7 +11,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace;
 
-internal class TracerClock
+internal sealed class TracerClock
 {
     private static TracerClock _instance;
 
