@@ -231,7 +231,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], httpClientType, metadataSchemaVersion };
 
-        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsGrpc(metadataSchemaVersion, ExcludeTags);
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            span.Tags["span.kind"] switch
+            {
+                SpanKinds.Client => span.IsGrpcClient(metadataSchemaVersion, ExcludeTags),
+                SpanKinds.Server => span.IsGrpcServer(metadataSchemaVersion, ExcludeTags),
+                _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the gRPC integration: {span.Tags["span.kind"]}", nameof(span)),
+            };
 
         protected async Task RunSubmitTraces(
             string packageVersion,

@@ -210,7 +210,8 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "GraphQL")
                 .Matches("span.kind", "server"));
 
-        public static Result IsGrpcV0(this MockSpan span, ISet<string> excludeTags) => Result.FromSpan(span, excludeTags)
+        public static Result IsGrpcClientV0(this MockSpan span, ISet<string> excludeTags) => Result.FromSpan(span, excludeTags)
+            .WithMarkdownSection("gRPC Client")
             .Properties(s => s
                 .Matches(Name, "grpc.request")
                 .Matches(Type, "grpc"))
@@ -222,7 +223,22 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("grpc.method.service")
                 .IsPresent("grpc.status.code")
                 .Matches("component", "Grpc")
-                .MatchesOneOf("span.kind", "client", "server"));
+                .Matches("span.kind", "client"));
+
+        public static Result IsGrpcServerV0(this MockSpan span, ISet<string> excludeTags) => Result.FromSpan(span, excludeTags)
+            .WithMarkdownSection("gRPC Server")
+            .Properties(s => s
+                .Matches(Name, "grpc.request")
+                .Matches(Type, "grpc"))
+            .Tags(s => s
+                .IsPresent("grpc.method.kind")
+                .IsPresent("grpc.method.name")
+                .IsPresent("grpc.method.package")
+                .IsPresent("grpc.method.path")
+                .IsPresent("grpc.method.service")
+                .IsPresent("grpc.status.code")
+                .Matches("component", "Grpc")
+                .Matches("span.kind", "server"));
 
         public static Result IsHotChocolateV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
