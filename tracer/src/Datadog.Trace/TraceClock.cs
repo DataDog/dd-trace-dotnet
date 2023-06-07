@@ -14,11 +14,14 @@ namespace Datadog.Trace;
 
 internal sealed class TraceClock
 {
+#if !NETFRAMEWORK
     private static TraceClock _instance;
+#endif
 
     private readonly DateTimeOffset _utcStart;
     private readonly long _timestamp;
 
+#if !NETFRAMEWORK
     static TraceClock()
     {
         _instance = new TraceClock();
@@ -44,6 +47,14 @@ internal sealed class TraceClock
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _instance;
     }
+#else
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public TraceClock()
+    {
+        _utcStart = DateTimeOffset.UtcNow;
+        _timestamp = Stopwatch.GetTimestamp();
+    }
+#endif
 
     public DateTimeOffset UtcNow
     {
@@ -60,6 +71,7 @@ internal sealed class TraceClock
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public TimeSpan ElapsedSince(DateTimeOffset date) => Elapsed + (_utcStart - date);
 
+#if !NETFRAMEWORK
     private static async Task UpdateClockAsync()
     {
         while (true)
@@ -68,4 +80,5 @@ internal sealed class TraceClock
             _instance = new TraceClock();
         }
     }
+#endif
 }
