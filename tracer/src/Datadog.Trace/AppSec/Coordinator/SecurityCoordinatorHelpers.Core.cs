@@ -7,6 +7,7 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -32,36 +33,6 @@ internal static class SecurityCoordinatorHelpers
         }
     }
 
-    private static Dictionary<string, string[]> GetResponseHeadersForWaf(IHeaderDictionary headers)
-    {
-        var headersDictionary = new Dictionary<string, string[]>(headers.Count);
-        foreach (var originalKey in headers.Keys)
-        {
-            if (!string.IsNullOrEmpty(originalKey))
-            {
-                var keyForDictionary = originalKey.ToLowerInvariant();
-                if (keyForDictionary != "cookie")
-                {
-#if NETCOREAPP
-                    if (!headersDictionary.TryAdd(keyForDictionary, headers[originalKey].ToArray()))
-                    {
-#else
-                    if (!headersDictionary.ContainsKey(keyForDictionary))
-                    {
-                        headersDictionary.Add(keyForDictionary, headers[originalKey].ToArray());
-                    }
-                    else
-                    {
-#endif
-                        Log.Warning("Header {Key} couldn't be added as argument to the waf", keyForDictionary);
-                    }
-                }
-            }
-        }
-
-        return headersDictionary;
-    }
-
     internal static void CheckReturnedHeaders(this Security security, Span span, IHeaderDictionary headers)
     {
         try
@@ -74,7 +45,7 @@ internal static class SecurityCoordinatorHelpers
                     var securityCoordinator = new SecurityCoordinator(security, httpContext, span, transport);
                     var args = new Dictionary<string, object>
                     {
-                        { AddressesConstants.ResponseHeaderNoCookies, GetResponseHeadersForWaf(headers) }
+                        { AddressesConstants.ResponseHeaderNoCookies, SecurityCoordinator.ExtractHeadersFromRequest(headers) }
                     };
                     var result = securityCoordinator.RunWaf(args);
                     securityCoordinator.CheckAndBlock(result);
