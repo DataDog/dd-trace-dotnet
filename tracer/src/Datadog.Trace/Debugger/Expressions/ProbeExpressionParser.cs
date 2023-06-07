@@ -210,14 +210,14 @@ internal partial class ProbeExpressionParser<T>
                                         return Substring(reader, parameters, itParameter);
                                     }
 
-                                case "startWith":
+                                case "startsWith":
                                     {
-                                        return StartWith(reader, parameters, itParameter);
+                                        return StartsWith(reader, parameters, itParameter);
                                     }
 
-                                case "endWith":
+                                case "endsWith":
                                     {
-                                        return EndWith(reader, parameters, itParameter);
+                                        return EndsWith(reader, parameters, itParameter);
                                     }
 
                                 case "contains":
