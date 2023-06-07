@@ -226,8 +226,9 @@ internal class ProbeExpressionEvaluator
                 var current = compiledDecorations[i];
                 try
                 {
-                    if (current.Key != default) // span decoration has condition?
+                    if (current.Key != default)
                     {
+                        // span decoration has condition?
                         var when = current.Key.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members);
                         if (compiledDecorations[i].Key.Errors != null)
                         {
