@@ -21,6 +21,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// Contains exporter settings.
     /// </summary>
+    [GenerateSnapshot]
     public partial class ExporterSettings
     {
         /// <summary>
@@ -160,6 +161,7 @@ namespace Datadog.Trace.Configuration
             }
         }
 
+        [IgnoreForSnapshot] // We record the config when it's changed
         internal Uri AgentUriInternal
         {
             get => _agentUri;
@@ -183,6 +185,7 @@ namespace Datadog.Trace.Configuration
         [GeneratePublicApi(
             PublicApiUsage.ExporterSettings_TracesPipeName_Get,
             PublicApiUsage.ExporterSettings_TracesPipeName_Set)]
+        [ConfigKey(ConfigurationKeys.TracesPipeName)]
         internal string? TracesPipeNameInternal { get; private set; }
 
         /// <summary>
@@ -193,6 +196,7 @@ namespace Datadog.Trace.Configuration
         [GeneratePublicApi(
             PublicApiUsage.ExporterSettings_TracesPipeTimeoutMs_Get,
             PublicApiUsage.ExporterSettings_TracesPipeTimeoutMs_Set)]
+        [ConfigKey(ConfigurationKeys.TracesPipeTimeoutMs)]
         internal int TracesPipeTimeoutMsInternal { get; set; }
 
         /// <summary>
@@ -203,6 +207,7 @@ namespace Datadog.Trace.Configuration
         [GeneratePublicApi(
             PublicApiUsage.ExporterSettings_MetricsPipeName_Get,
             PublicApiUsage.ExporterSettings_MetricsPipeName_Set)]
+        [ConfigKey(ConfigurationKeys.MetricsPipeName)]
         internal string? MetricsPipeNameInternal { get; private set; }
 
         /// <summary>
@@ -212,6 +217,7 @@ namespace Datadog.Trace.Configuration
         [GeneratePublicApi(
             PublicApiUsage.ExporterSettings_TracesUnixDomainSocketPath_Get,
             PublicApiUsage.ExporterSettings_TracesUnixDomainSocketPath_Set)]
+        [ConfigKey(ConfigurationKeys.TracesUnixDomainSocketPath)]
         internal string? TracesUnixDomainSocketPathInternal { get; private set; }
 
         /// <summary>
@@ -221,6 +227,7 @@ namespace Datadog.Trace.Configuration
         [GeneratePublicApi(
             PublicApiUsage.ExporterSettings_MetricsUnixDomainSocketPath_Get,
             PublicApiUsage.ExporterSettings_MetricsUnixDomainSocketPath_Set)]
+        [ConfigKey(ConfigurationKeys.MetricsUnixDomainSocketPath)]
         internal string? MetricsUnixDomainSocketPathInternal { get; private set; }
 
         /// <summary>
@@ -231,6 +238,7 @@ namespace Datadog.Trace.Configuration
         [GeneratePublicApi(
             PublicApiUsage.ExporterSettings_DogStatsdPort_Get,
             PublicApiUsage.ExporterSettings_DogStatsdPort_Set)]
+        [ConfigKey(ConfigurationKeys.DogStatsdPort)]
         internal int DogStatsdPortInternal { get; private set; }
 
         /// <summary>
@@ -239,6 +247,7 @@ namespace Datadog.Trace.Configuration
         [GeneratePublicApi(
             PublicApiUsage.ExporterSettings_PartialFlushEnabled_Get,
             PublicApiUsage.ExporterSettings_PartialFlushEnabled_Set)]
+        [ConfigKey(ConfigurationKeys.PartialFlushEnabled)]
         internal bool PartialFlushEnabledInternal { get; private set; }
 #pragma warning restore SA1624
 
@@ -261,6 +270,7 @@ namespace Datadog.Trace.Configuration
             }
         }
 
+        [IgnoreForSnapshot] // we record the config when it's changed
         internal int PartialFlushMinSpansInternal
         {
             get => _partialFlushMinSpans;
@@ -283,12 +293,14 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets the transport used to send traces to the Agent.
         /// </summary>
+        [IgnoreForSnapshot] // We record this in telemetry when we set it
         internal TracesTransportType TracesTransport { get; private set; }
 
         /// <summary>
         /// Gets or sets the transport used to connect to the DogStatsD.
         /// Default is <c>TransportStrategy.Tcp</c>.
         /// </summary>
+        [IgnoreForSnapshot] // We don't record this in telemetry currently, but if we do, we'll record it when we set its
         internal MetricsTransportType MetricsTransport { get; private set; }
 #pragma warning restore SA1624
 

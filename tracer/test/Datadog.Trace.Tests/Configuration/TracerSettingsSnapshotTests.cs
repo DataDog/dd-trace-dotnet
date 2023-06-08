@@ -20,88 +20,6 @@ namespace Datadog.Trace.Tests.Configuration;
 
 public class TracerSettingsSnapshotTests
 {
-    private const BindingFlags PublicFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.FlattenHierarchy;
-    private const BindingFlags AllVisibilityFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
-
-    // These properties are present on TracerSettings, but don't need to be recorded in the snapshot
-    private static readonly string[] ExcludedTracerSettingsProperties =
-    {
-        nameof(TracerSettings.DiagnosticSourceEnabled),
-    };
-
-    private static readonly string[] ExcludedExporterSettingsProperties =
-    {
-        nameof(TracerSettings.DiagnosticSourceEnabled),
-    };
-
-    [Fact]
-    public void OnlyHasReadOnlyProperties()
-    {
-        var type = typeof(TracerSettingsSnapshot);
-
-        using var scope = new AssertionScope();
-
-        var properties = type.GetProperties(AllVisibilityFlags);
-        foreach (var propertyInfo in properties)
-        {
-            propertyInfo.CanWrite.Should().BeFalse($"{propertyInfo.Name} should be read only");
-        }
-
-        var fields = type.GetFields(AllVisibilityFlags);
-        foreach (var field in fields)
-        {
-            field.IsInitOnly.Should().BeTrue($"{field.Name} should be read only");
-        }
-    }
-
-    [Fact]
-    public void RecordsMutablePropertiesOnTracerSettings()
-    {
-        var settingsProperties = typeof(TracerSettings)
-                                      .GetProperties(PublicFlags)
-                                      .Where(
-                                           x => !ExcludedTracerSettingsProperties.Contains(x.Name)
-                                             && !x.HasAttribute<GeneratePublicApiAttribute>());
-
-        // We only record settings that are public, which can be mutated by classes
-        // external to TracerSettings, or which are collections
-        var externallyMutable = settingsProperties
-                               .Where(
-                                    x => (x.SetMethod is { } method && (method.IsPublic || method.IsAssembly))
-                                      || x.PropertyType.IsAssignableTo(typeof(ICollection)))
-                               .Select(x => x.Name);
-
-        var snapshotProperties = typeof(TracerSettingsSnapshot)
-                                 .GetProperties(AllVisibilityFlags)
-                                 .Select(x => x.Name);
-
-        snapshotProperties.Should().Contain(externallyMutable);
-    }
-
-    [Fact]
-    public void RecordsMutablePropertiesOnExporterSettings()
-    {
-        var settingsProperties = typeof(ExporterSettings)
-                                      .GetProperties(PublicFlags)
-                                      .Where(
-                                           x => !ExcludedExporterSettingsProperties.Contains(x.Name)
-                                             && !x.HasAttribute<GeneratePublicApiAttribute>());
-
-        // We only record settings that are public, which can be mutated by classes
-        // external to ExporterSettings, or which are collections
-        var externallyMutable = settingsProperties
-                               .Where(
-                                    x => (x.SetMethod is { } method && (method.IsPublic || method.IsAssembly))
-                                      || x.PropertyType.IsAssignableTo(typeof(ICollection)))
-                               .Select(x => x.Name);
-
-        var snapshotProperties = typeof(TracerSettingsSnapshot.ExporterSettingsSnapshot)
-                                 .GetProperties(AllVisibilityFlags)
-                                 .Select(x => x.Name);
-
-        snapshotProperties.Should().Contain(externallyMutable);
-    }
-
     [Fact]
     public void Snapshot_HasNoChangesWhenNoChanges()
     {
@@ -155,10 +73,10 @@ public class TracerSettingsSnapshotTests
         var collector = new ConfigurationTelemetry();
         var settings = new TracerSettings(NullConfigurationSource.Instance);
         var snapshot = new TracerSettingsSnapshot(settings);
-        settings.Exporter.AgentUri = new Uri("http://localhost:1234");
+        settings.Exporter.DogStatsdPort = 1234;
 
         snapshot.RecordChanges(settings, collector);
-        collector.GetData().Should().ContainSingle(x => x.Name == ConfigurationKeys.AgentUri);
+        collector.GetData().Should().ContainSingle(x => x.Name == ConfigurationKeys.DogStatsdPort);
     }
 
     [Fact]
