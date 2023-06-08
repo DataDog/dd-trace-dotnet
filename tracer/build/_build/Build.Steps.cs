@@ -71,6 +71,9 @@ partial class Build
     AbsolutePath BuildDirectory => TracerDirectory / "build";
     AbsolutePath TestsDirectory => TracerDirectory / "test";
     AbsolutePath BundleHomeDirectory => Solution.GetProject(Projects.DatadogTraceBundle).Directory / "home";
+    AbsolutePath DatadogTraceDirectory => Solution.GetProject(Projects.DatadogTrace).Directory;
+
+    readonly TargetFramework[] AppTrimmingTFMs = { TargetFramework.NETCOREAPP3_1, TargetFramework.NET6_0 };
 
     AbsolutePath SharedTestsDirectory => SharedDirectory / "test";
 
@@ -1872,14 +1875,15 @@ partial class Build
        .DependsOn(CompileManagedSrc)
        .Executes(() =>
         {
-            var datadogTraceDirectory = Solution.GetProject(Projects.DatadogTrace).Directory;
             var loaderTypes = GetTypeReferences(SourceDirectory / "bin" / "ProfilerResources" / "netcoreapp2.0" / "Datadog.Trace.ClrProfiler.Managed.Loader.dll");
-            var tracer3_1Types = GetTypeReferences(datadogTraceDirectory / "bin" / BuildConfiguration / TargetFramework.NETCOREAPP3_1 / Projects.DatadogTrace + ".dll");
-            var tracer6_0Types = GetTypeReferences(datadogTraceDirectory / "bin" / BuildConfiguration / TargetFramework.NET6_0 / Projects.DatadogTrace + ".dll");
+            List<(string Assembly, string Type)> datadogTraceTypes = new();
+            foreach (var tfm in AppTrimmingTFMs)
+            {
+                datadogTraceTypes.AddRange(GetTypeReferences(DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll"));
+            }
 
             var types = loaderTypes
-                       .Concat(tracer3_1Types)
-                       .Concat(tracer6_0Types)
+                       .Concat(datadogTraceTypes)
                        .Distinct()
                        .OrderBy(t => t.Assembly)
                        .ThenBy(t => t.Type);
@@ -1916,6 +1920,12 @@ partial class Build
 
             static List<(string Assembly, string Type)> GetTypeReferences(string dllPath)
             {
+                // We check if the assembly file exists.
+                if (!File.Exists(dllPath))
+                {
+                    throw new FileNotFoundException($"Error extracting types for trimming support. Assembly file was not found. Path: {dllPath}", dllPath);
+                }
+                
                 // Open dll to extract all referenced types from the assembly (TypeRef table)
                 using var asmDefinition = Mono.Cecil.AssemblyDefinition.ReadAssembly(dllPath);
                 var lst = new List<(string Assembly, string Type)>(asmDefinition.MainModule.GetTypeReferences().Select(t => (t.Scope.Name, t.FullName)));
