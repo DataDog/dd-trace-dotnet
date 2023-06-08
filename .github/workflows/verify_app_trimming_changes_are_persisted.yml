@@ -23,7 +23,7 @@ jobs:
         run: Get-ChildItem –Path ".\tracer\src\Datadog.Trace.Trimming\build\Datadog.Trace.Trimming.xml" -Recurse -File | Remove-Item
 
       - name: "Regenerating Datadog.Trace.Trimming.xml"
-        run: .\tracer\build.ps1 CreateRootDescriptorsFile
+        run: .\tracer\build.ps1 BuildTracerHome CreateRootDescriptorsFile
 
       - name: "Verify no changes in Datadog.Trace.Trimming.xml"
         run: |
