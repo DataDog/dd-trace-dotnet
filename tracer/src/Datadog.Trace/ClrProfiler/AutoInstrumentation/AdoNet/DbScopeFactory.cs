@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     return null;
                 }
 
-                SqlTags tags = tracer.Schema.Database.CreateSqlTags();
+                SqlTags tags = tracer.CurrentTraceSettings.Schema.Database.CreateSqlTags();
                 tags.DbType = dbType;
                 tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
                 tags.DbName = tagsFromConnectionString.DbName;
@@ -221,12 +221,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             private static string GetServiceName(Tracer tracer, string dbTypeName)
             {
-                if (!tracer.Settings.TryGetServiceName(dbTypeName, out string serviceName))
+                if (!tracer.CurrentTraceSettings.ServiceNames.TryGetValue(dbTypeName, out string serviceName))
                 {
                     if (DbTypeName != dbTypeName)
                     {
                         // We cannot cache in the base class
-                        return tracer.Settings.GetServiceName(tracer, dbTypeName);
+                        return tracer.CurrentTraceSettings.GetServiceName(tracer, dbTypeName);
                     }
 
                     var serviceNameCache = _serviceNameCache;
@@ -242,7 +242,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     // We create or replace the cache with the new service name
                     // Slowpath
                     var defaultServiceName = tracer.DefaultServiceName;
-                    serviceName = tracer.Settings.GetServiceName(tracer, dbTypeName);
+                    serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, dbTypeName);
                     _serviceNameCache = new KeyValuePair<string, string>(defaultServiceName, serviceName);
                 }
 

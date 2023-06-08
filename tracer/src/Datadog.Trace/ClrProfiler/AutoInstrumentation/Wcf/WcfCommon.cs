@@ -87,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     }
                 }
 
-                string operationName = tracer.Schema.Server.GetOperationNameForComponent("wcf");
+                string operationName = tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForComponent("wcf");
                 var tags = new WcfTags();
                 scope = tracer.StartActiveInternal(operationName, propagatedContext, tags: tags);
                 var span = scope.Span;
