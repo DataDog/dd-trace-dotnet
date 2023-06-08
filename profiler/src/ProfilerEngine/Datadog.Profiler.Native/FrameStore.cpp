@@ -970,7 +970,7 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
 
         // get the generic details for the function
         methodTypeArgs = std::make_unique<ClassID[]>(genericArgCount);
-        hr = pInfo->GetFunctionInfo2(functionId, NULL, &classId, &moduleId, NULL, genericArgCount, &methodTypeArgCount, methodTypeArgs.get());
+        hr = pInfo->GetFunctionInfo2(functionId, (COR_PRF_FRAME_INFO)NULL, &classId, &moduleId, NULL, genericArgCount, &methodTypeArgCount, methodTypeArgs.get());
         assert(FAILED(hr) || (genericArgCount == methodTypeArgCount));
         if (FAILED(hr))
         {
@@ -981,7 +981,7 @@ std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataIm
     // Get the generic details for the type implementing the function
     // In case of generic with a reference type parameter, classId will be null:
     // --> get type name from metadata to match the types name shown for the type
-    if (classId == NULL)
+    if (classId == 0)
     {
         classTypeArgs = GetGenericTypeParameters(pMetaData, mdTokenType);
     }

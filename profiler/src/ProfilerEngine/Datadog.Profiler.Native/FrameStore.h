@@ -6,6 +6,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <string>
+#include <vector>
 #include "IFrameStore.h"
 #include "IDebugInfoStore.h"
 
