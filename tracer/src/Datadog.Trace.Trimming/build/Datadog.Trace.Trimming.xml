@@ -1,6 +1,7 @@
 <linker>
    <assembly fullname="AerospikeClient" />
    <assembly fullname="AWSSDK.Core" />
+   <assembly fullname="AWSSDK.SimpleNotificationService" />
    <assembly fullname="AWSSDK.SQS" />
    <assembly fullname="Confluent.Kafka" />
    <assembly fullname="Couchbase.NetClient" />
@@ -158,6 +159,7 @@
    </assembly>
    <assembly fullname="System.Data" />
    <assembly fullname="System.Data.Common">
+      <type fullname="System.Data.Common.DbCommand" />
       <type fullname="System.Data.Common.DbConnectionStringBuilder" />
       <type fullname="System.Data.DataColumn" />
       <type fullname="System.Data.DataColumnCollection" />
