@@ -5,6 +5,7 @@
 
 using System.Linq;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -32,9 +33,9 @@ public class AppTrimmingTests : TestHelper
         var spans = agent.WaitForSpans(30);
 
         // Target app does 10 request, so it generates 30 spans (Http Request + AspNetCore + AspNetCore.Mvc)
-        Assert.Equal(10, spans.Count(s => s.Name == "http.request"));
-        Assert.Equal(10, spans.Count(s => s.Name == "aspnet_core.request"));
-        Assert.Equal(10, spans.Count(s => s.Name == "aspnet_core_mvc.request"));
+        spans.Where(s => s.Name == "http.request").Should().HaveCount(10);
+        spans.Where(s => s.Name == "aspnet_core.request").Should().HaveCount(10);
+        spans.Where(s => s.Name == "aspnet_core_mvc.request").Should().HaveCount(10);
     }
 }
 
