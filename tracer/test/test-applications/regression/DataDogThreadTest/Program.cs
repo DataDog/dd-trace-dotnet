@@ -1,11 +1,12 @@
 using log4net;
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using log4net.Core;
 using Samples;
-using System.Reflection;
+using ActivitySampleHelper;
 
 namespace DataDogThreadTest
 {
@@ -14,6 +15,7 @@ namespace DataDogThreadTest
         internal static readonly string TraceIdKey = "dd.trace_id";
         internal static readonly string SpanIdKey = "dd.span_id";
         internal static readonly string NonTraceMessage = "TraceId: 0, SpanId: 0";
+        private static readonly ActivitySourceHelper _sampleHelpers = new(nameof(Program));
 
         static int Main(string[] args)
         {
@@ -49,17 +51,17 @@ namespace DataDogThreadTest
                                         var i = 0;
                                         while (i++ < totalIterations)
                                         {
-                                            using (var outerScope = SampleHelpers.CreateScope("thread-test"))
+                                            using (var outerScope = _sampleHelpers.CreateScope("thread-test"))
                                             {
-                                                var outerTraceId = SampleHelpers.GetTraceId(outerScope);
-                                                var outerSpanId = SampleHelpers.GetSpanId(outerScope);
+                                                var outerTraceId = _sampleHelpers.GetTraceId(outerScope);
+                                                var outerSpanId = _sampleHelpers.GetSpanId(outerScope);
 
                                                 logger.Info($"TraceId: {outerTraceId}, SpanId: {outerSpanId}");
 
-                                                using (var innerScope = SampleHelpers.CreateScope("nest-thread-test"))
+                                                using (var innerScope = _sampleHelpers.CreateScope("nest-thread-test"))
                                                 {
-                                                    var innerTraceId = SampleHelpers.GetTraceId(innerScope);
-                                                    var innerSpanId = SampleHelpers.GetSpanId(innerScope);
+                                                    var innerTraceId = _sampleHelpers.GetTraceId(innerScope);
+                                                    var innerSpanId = _sampleHelpers.GetSpanId(innerScope);
 
                                                     if (outerTraceId != innerTraceId)
                                                     {

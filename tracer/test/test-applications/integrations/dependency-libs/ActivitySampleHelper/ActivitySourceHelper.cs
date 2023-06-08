@@ -37,5 +37,25 @@ namespace ActivitySampleHelper
                 activity.SetTag(key, value);
             }
         }
+
+        public ActivityTraceId GetTraceId(IDisposable scope)
+        {
+            if (scope is Activity activity)
+            {
+                return activity.TraceId;
+            }
+
+            throw new Exception("scope wasn't an Activity, can't get TraceId");
+        }
+
+        public ActivitySpanId GetSpanId(IDisposable scope)
+        {
+            if (scope is Activity activity)
+            {
+                return activity.SpanId;
+            }
+
+            throw new Exception("scope wasn't an Activity, can't get SpanId");
+        }
     }
 }

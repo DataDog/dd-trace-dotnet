@@ -13,7 +13,8 @@
 
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home",
 
-        "DD_LOGS_INJECTION": "true"
+        "DD_LOGS_INJECTION": "true",
+        "DD_TRACE_OTEL_ENABLED": "true"
       },
       "nativeDebugging": true
     }
