@@ -127,7 +127,7 @@ namespace Datadog.Trace.Tests.Debugger
             DebuggerExpression? condition = null;
             DebuggerExpression[] templates;
             DebuggerExpression? metrics = null;
-            KeyValuePair<DebuggerExpression, DebuggerExpression[]>[] spanDecorations = null;
+            KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression[]>[]>[] spanDecorations = null;
             var dirName = new DirectoryInfo(Path.GetDirectoryName(expressionTestFilePath)).Name;
             if (dirName == ConditionsFolder)
             {

@@ -209,7 +209,7 @@ internal class ProbeExpressionEvaluator
 
     private void EvaluateSpanDecorations(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers)
     {
-        var resultBuilder = new List<ExpressionEvaluationResult.DecorationResult>();
+        var decorations = new List<ExpressionEvaluationResult.DecorationResult>();
         try
         {
             EnsureNotNull(_compiledDecorations);
@@ -252,49 +252,65 @@ internal class ProbeExpressionEvaluator
 
                 var tagsAndValues = current.Value;
 
+                List<EvaluationError> errors = null;
+                var resultBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+
                 for (int j = 0; j < tagsAndValues.Length; j++)
                 {
                     var tagAndValues = tagsAndValues[j];
-                    for (int k = 0; k < tagAndValues.Value.Length; k++)
+                    try
                     {
-                        var compiledExpression = tagAndValues.Value[k];
-
-                        try
+                        for (int k = 0; k < tagAndValues.Value.Length; k++)
                         {
-                            // var currentExpression = SpanDecorations[i].Value[j];
-                            var value = compiledExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members);
-                            EvaluationError[] errors = null;
-                            if (compiledExpression.Errors != null)
+                            var compiledExpression = tagAndValues.Value[k];
+
+                            try
                             {
-                                errors = compiledExpression.Errors;
+                                if (IsLiteral(compiledExpression))
+                                {
+                                    resultBuilder.Append(compiledExpression.RawExpression);
+                                }
+                                else if (IsExpression(compiledExpression))
+                                {
+                                    var value = compiledExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members);
+                                    resultBuilder.Append(value);
+                                    if (compiledExpression.Errors != null)
+                                    {
+                                        (errors ??= new List<EvaluationError>()).AddRange(compiledExpression.Errors);
+                                        if (Log.IsEnabled(LogEventLevel.Debug))
+                                        {
+                                            Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", errors));
+                                        }
+                                    }
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                (errors ??= new List<EvaluationError>()).Add(new() { Message = e.Message, Expression = GetRelevantExpression(compiledExpression) });
+                                if (compiledExpression.Errors != null)
+                                {
+                                    errors.AddRange(compiledExpression.Errors);
+                                }
+
                                 if (Log.IsEnabled(LogEventLevel.Debug))
                                 {
                                     Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", errors));
                                 }
                             }
-
-                            resultBuilder.Add(new ExpressionEvaluationResult.DecorationResult { TagName = tagAndValues.Key, Value = value, Errors = errors });
                         }
-                        catch (Exception e)
-                        {
-                            var errors = new List<EvaluationError> { new() { Message = e.Message, Expression = GetRelevantExpression(compiledExpression) } };
-                            if (Log.IsEnabled(LogEventLevel.Debug))
-                            {
-                                Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", errors));
-                            }
 
-                            if (compiledExpression.Errors != null)
-                            {
-                                errors.AddRange(compiledExpression.Errors);
-                            }
-
-                            resultBuilder.Add(new ExpressionEvaluationResult.DecorationResult { TagName = null, Value = null, Errors = errors.ToArray() });
-                        }
+                        decorations.Add(new ExpressionEvaluationResult.DecorationResult { TagName = tagAndValues.Key, Value = resultBuilder.ToString(), Errors = errors.ToArray() });
+                        resultBuilder.Clear();
+                        errors = null;
+                    }
+                    finally
+                    {
+                        StringBuilderCache.Release(resultBuilder);
                     }
                 }
             }
 
-            result.Decorations = resultBuilder.ToArray();
+            result.Decorations = decorations.ToArray();
         }
         catch (Exception e)
         {
@@ -421,9 +437,19 @@ internal class ProbeExpressionEvaluator
         return string.IsNullOrEmpty(expression.Json);
     }
 
+    private bool IsLiteral<T>(CompiledExpression<T> expression)
+    {
+        return expression.Delegate == null && expression.ParsedExpression == null && expression.Errors == null && expression.RawExpression != null;
+    }
+
     private bool IsExpression(DebuggerExpression expression)
     {
         return !string.IsNullOrEmpty(expression.Json) && string.IsNullOrEmpty(expression.Str);
+    }
+
+    private bool IsExpression<T>(CompiledExpression<T> expression)
+    {
+        return expression.Delegate != null && expression.ParsedExpression != null && expression.RawExpression != null;
     }
 
     private void HandleException<T>(ref ExpressionEvaluationResult result, CompiledExpression<T> compiledExpression, Exception e)
