@@ -299,7 +299,7 @@ internal class ProbeExpressionEvaluator
                             }
                         }
 
-                        decorations.Add(new ExpressionEvaluationResult.DecorationResult { TagName = tagAndValues.Key, Value = resultBuilder.ToString(), Errors = errors.ToArray() });
+                        decorations.Add(new ExpressionEvaluationResult.DecorationResult { TagName = tagAndValues.Key, Value = resultBuilder.ToString(), Errors = errors?.ToArray() });
                         resultBuilder.Clear();
                         errors = null;
                     }
@@ -310,7 +310,7 @@ internal class ProbeExpressionEvaluator
                 }
             }
 
-            result.Decorations = decorations.ToArray();
+            result.Decorations = decorations?.ToArray();
         }
         catch (Exception e)
         {
