@@ -19,6 +19,13 @@ namespace Datadog.Trace.Configuration.Schema
             _version = version;
         }
 
+        public string GetOperationNameForProtocol(string protocol) =>
+            _version switch
+            {
+                SchemaVersion.V0 => $"{protocol}.request",
+                _ => $"{protocol}.server.request",
+            };
+
         public string GetOperationNameForComponent(string component) =>
             _version switch
             {
