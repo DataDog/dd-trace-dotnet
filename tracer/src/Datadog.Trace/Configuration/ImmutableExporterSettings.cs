@@ -36,21 +36,21 @@ namespace Datadog.Trace.Configuration
         /// <param name="settings">The tracer settings to use to populate the immutable tracer settings</param>
         public ImmutableExporterSettings(ExporterSettings settings)
         {
-            AgentUri = settings.AgentUri;
+            AgentUri = settings.AgentUriInternal;
 
             TracesTransport = settings.TracesTransport;
-            TracesPipeName = settings.TracesPipeName;
-            TracesPipeTimeoutMs = settings.TracesPipeTimeoutMs;
+            TracesPipeName = settings.TracesPipeNameInternal;
+            TracesPipeTimeoutMs = settings.TracesPipeTimeoutMsInternal;
 
             MetricsTransport = settings.MetricsTransport;
-            MetricsPipeName = settings.MetricsPipeName;
-            DogStatsdPort = settings.DogStatsdPort;
+            MetricsPipeName = settings.MetricsPipeNameInternal;
+            DogStatsdPort = settings.DogStatsdPortInternal;
 
-            TracesUnixDomainSocketPath = settings.TracesUnixDomainSocketPath;
-            MetricsUnixDomainSocketPath = settings.MetricsUnixDomainSocketPath;
+            TracesUnixDomainSocketPath = settings.TracesUnixDomainSocketPathInternal;
+            MetricsUnixDomainSocketPath = settings.MetricsUnixDomainSocketPathInternal;
 
-            PartialFlushEnabled = settings.PartialFlushEnabled;
-            PartialFlushMinSpans = settings.PartialFlushMinSpans;
+            PartialFlushEnabled = settings.PartialFlushEnabledInternal;
+            PartialFlushMinSpans = settings.PartialFlushMinSpansInternal;
             ValidationWarnings = settings.ValidationWarnings.ToList();
         }
 

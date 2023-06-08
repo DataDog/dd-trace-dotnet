@@ -81,7 +81,7 @@ namespace Datadog.Trace
             Telemetry = telemetry;
             DiscoveryService = discoveryService;
             TraceProcessors = traceProcessors ?? Array.Empty<ITraceProcessor>();
-            Schema = new NamingSchema(settings.MetadataSchemaVersion, defaultServiceName, settings.ServiceNameMappings);
+            Schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, defaultServiceName, settings.ServiceNameMappings);
             QueryStringManager = new(settings.QueryStringReportingEnabled, settings.ObfuscationQueryStringRegexTimeout, settings.QueryStringReportingSize, settings.ObfuscationQueryStringRegex);
             var lstTagProcessors = new List<ITagProcessor>(TraceProcessors.Length);
             foreach (var traceProcessor in TraceProcessors)
@@ -402,9 +402,9 @@ namespace Datadog.Trace
                     // or manually in code.
                     foreach (var integration in instanceSettings.Integrations.Settings)
                     {
-                        if (integration.Enabled == false)
+                        if (integration.EnabledInternal == false)
                         {
-                            writer.WriteValue(integration.IntegrationName);
+                            writer.WriteValue(integration.IntegrationNameInternal);
                         }
                     }
 

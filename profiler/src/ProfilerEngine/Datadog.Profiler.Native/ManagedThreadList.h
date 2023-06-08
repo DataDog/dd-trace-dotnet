@@ -38,13 +38,6 @@ public:
     uint32_t Count() override;
     uint32_t CreateIterator() override;
     std::shared_ptr<ManagedThreadInfo> LoopNext(uint32_t iterator) override;
-    bool TryGetThreadInfo(std::uint32_t profilerThreadInfoId,
-                          ThreadID* pClrThreadId,
-                          DWORD* pOsThreadId,
-                          HANDLE* pOsThreadHandle,
-                          WCHAR* pThreadNameBuff,
-                          std::uint32_t threadNameBuffLen,
-                          std::uint32_t* pActualThreadNameLen) override;
     HRESULT TryGetCurrentThreadInfo(std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) override;
 
 private:
@@ -88,5 +81,4 @@ private:
 private:
     void UpdateIterators(uint32_t pos);
     std::shared_ptr<ManagedThreadInfo> FindByClrId(ThreadID clrThreadId);
-    std::shared_ptr<ManagedThreadInfo> FindByProfilerId(uint32_t profilerThreadInfoId);
 };
