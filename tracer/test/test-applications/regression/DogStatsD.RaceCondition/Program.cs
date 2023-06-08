@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
+using ActivitySampleHelper;
 
 namespace DogStatsD.RaceCondition
 {
@@ -13,6 +14,7 @@ namespace DogStatsD.RaceCondition
         private static readonly string TraceMetrics = "DD_TRACE_METRICS_ENABLED";
         private static readonly string LogsInjection = "DD_LOGS_INJECTION";
         private static readonly string DebugEnabled = "DD_TRACE_DEBUG";
+        private static readonly ActivitySourceHelper _sampleHelpers = new(nameof(Program));
 
         static int Main(string[] args)
         {
@@ -29,7 +31,6 @@ namespace DogStatsD.RaceCondition
                     throw new Exception($"Make sure the following environment variables are set to \"true\": {TraceMetrics}, {LogsInjection}, {DebugEnabled}");
                 }
 
-                SampleHelpers.ConfigureTracer("DogStatsD.RaceCondition");
                 var totalIterations = 100;
                 var threadRepresentation = Enumerable.Range(0, 25).ToArray();
                 var threadCount = threadRepresentation.Length;
@@ -52,7 +53,7 @@ namespace DogStatsD.RaceCondition
 
                                         while (i++ < totalIterations)
                                         {
-                                            using (var outerScope = SampleHelpers.CreateScope("outer-span"))
+                                            using (var outerScope = _sampleHelpers.CreateScope("outer-span"))
                                             {
                                             }
                                         }
@@ -95,9 +96,6 @@ namespace DogStatsD.RaceCondition
                 {
                     throw new Exception("Got exception with 'System.IndexOutOfRangeException'");
                 }
-
-                Console.WriteLine("Press any key to exit");
-                Console.ReadKey();
             }
             catch (Exception ex)
             {

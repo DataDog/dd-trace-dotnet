@@ -15,7 +15,8 @@
 
         "DD_TRACE_METRICS_ENABLED": "true",
         "DD_LOGS_INJECTION": "true",
-        "DD_TRACE_DEBUG": "true"
+        "DD_TRACE_DEBUG": "true",
+        "DD_TRACE_OTEL_ENABLED": "true"
       },
       "nativeDebugging": false
     }
