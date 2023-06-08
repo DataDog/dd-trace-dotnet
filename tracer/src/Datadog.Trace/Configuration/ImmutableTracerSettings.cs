@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Util;
@@ -141,6 +142,11 @@ namespace Datadog.Trace.Configuration
             }
 
             DbmPropagationMode = settings.DbmPropagationMode;
+
+            // We need to take a snapshot of the config telemetry for the tracer settings,
+            // but we can't send it to the static collector, as this settings object may never be "activated"
+            Telemetry = new ConfigurationTelemetry();
+            settings.CollectTelemetry(Telemetry);
         }
 
         /// <summary>
@@ -469,6 +475,11 @@ namespace Datadog.Trace.Configuration
         /// Gets the metadata schema version
         /// </summary>
         internal SchemaVersion MetadataSchemaVersion { get; }
+
+        /// <summary>
+        /// Gets the telemetry that was collected from <see cref="TracerSettings"/> when this instance was built
+        /// </summary>
+        internal IConfigurationTelemetry Telemetry { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

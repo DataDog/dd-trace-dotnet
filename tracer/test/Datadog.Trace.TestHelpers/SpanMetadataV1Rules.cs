@@ -443,7 +443,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsWcfV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .Matches(Name, "wcf.request")
+                .Matches(Name, "http.server.request")
                 .Matches(Type, "web"))
             .Tags(s => s
                 .IsOptional("http.method")

@@ -83,6 +83,11 @@ internal class TelemetryControllerV2 : ITelemetryController
 
     public void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName)
     {
+        // Note that this _doesn't_ clear the configuration held by ImmutableTracerSettings
+        // that's necessary because users could reconfigure the tracer to re-use an old
+        // ImmutableTracerSettings, at which point that config would become "current", so we
+        // need to keep it around
+        settings.Telemetry.CopyTo(_configuration);
         _application.RecordTracerSettings(settings, defaultServiceName);
         _namingVersion = (int)settings.MetadataSchemaVersion;
     }
