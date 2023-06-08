@@ -39,7 +39,7 @@ namespace Datadog.Trace.Configuration
                 return name;
             }
 
-            if (Schema.Version != SchemaVersion.V0)
+            if (Schema.Version != SchemaVersion.V0 || Schema.RemoveClientServiceNamesEnabled)
             {
                 return tracer.DefaultServiceName;
             }

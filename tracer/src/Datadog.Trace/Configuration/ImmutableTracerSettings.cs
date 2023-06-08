@@ -512,37 +512,5 @@ namespace Datadog.Trace.Configuration
             var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && AnalyticsEnabled);
             return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
         }
-
-        internal string GetServiceName(Tracer tracer, string serviceName)
-        {
-            if (ServiceNameMappings is not null && ServiceNameMappings.TryGetValue(serviceName, out var name))
-            {
-                return name;
-            }
-
-            if (MetadataSchemaVersion != SchemaVersion.V0 || RemoveClientServiceNamesEnabled)
-            {
-                return tracer.DefaultServiceName;
-            }
-
-            if (!_serviceNameCache.TryGetValue(serviceName, out var finalServiceName))
-            {
-                finalServiceName = $"{tracer.DefaultServiceName}-{serviceName}";
-                _serviceNameCache.TryAdd(serviceName, finalServiceName);
-            }
-
-            return finalServiceName;
-        }
-
-        internal bool TryGetServiceName(string key, out string? serviceName)
-        {
-            if (ServiceNameMappings is not null && ServiceNameMappings.TryGetValue(key, out serviceName))
-            {
-                return true;
-            }
-
-            serviceName = null;
-            return false;
-        }
     }
 }

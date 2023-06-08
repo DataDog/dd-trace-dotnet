@@ -48,7 +48,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             foreach (var kvp in Mappings)
             {
-                tracer.Settings.GetServiceName(tracer, kvp.Key).Should().Be(kvp.Value);
+                tracer.CurrentTraceSettings.GetServiceName(tracer, kvp.Key).Should().Be(kvp.Value);
             }
         }
 
@@ -76,7 +76,7 @@ namespace Datadog.Trace.Tests.Configuration
                     _ => tracer.DefaultServiceName,
                 };
 
-                tracer.Settings.GetServiceName(tracer, key).Should().Be(expectedServiceName);
+                tracer.CurrentTraceSettings.GetServiceName(tracer, key).Should().Be(expectedServiceName);
             }
         }
 
@@ -103,7 +103,7 @@ namespace Datadog.Trace.Tests.Configuration
                     _ => tracer.DefaultServiceName,
                 };
 
-                tracer.Settings.GetServiceName(tracer, key).Should().Be(expectedServiceName);
+                tracer.CurrentTraceSettings.GetServiceName(tracer, key).Should().Be(expectedServiceName);
             }
         }
 

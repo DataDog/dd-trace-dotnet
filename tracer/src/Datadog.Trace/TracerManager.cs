@@ -79,7 +79,6 @@ namespace Datadog.Trace
             Telemetry = telemetry;
             DiscoveryService = discoveryService;
             TraceProcessors = traceProcessors ?? Array.Empty<ITraceProcessor>();
-            Schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, defaultServiceName, settings.ServiceNameMappings);
             QueryStringManager = new(settings.QueryStringReportingEnabled, settings.ObfuscationQueryStringRegexTimeout, settings.QueryStringReportingSize, settings.ObfuscationQueryStringRegex);
             var lstTagProcessors = new List<ITagProcessor>(TraceProcessors.Length);
             foreach (var traceProcessor in TraceProcessors)
@@ -94,7 +93,7 @@ namespace Datadog.Trace
 
             RemoteConfigurationManager = remoteConfigurationManager;
 
-            var schema = new NamingSchema(settings.MetadataSchemaVersion, defaultServiceName, settings.ServiceNameMappings);
+            var schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, defaultServiceName, settings.ServiceNameMappings);
             PerTraceSettings = new(traceSampler, spanSampler, settings.ServiceNameMappings, schema);
         }
 
