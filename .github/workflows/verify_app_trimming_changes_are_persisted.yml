@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  verify_source_generators:
+  verify_app_trimming_descriptor_generator:
     runs-on: windows-latest
 
     steps:
