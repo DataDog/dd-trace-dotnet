@@ -17,5 +17,9 @@
     <NuspecProperties>version=$(Version)</NuspecProperties>
     <NoWarn>NU5128</NoWarn>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <Content Include="..\..\..\datadog-logo-256x256.png" Link="datadog-logo-256x256.png" />
+  </ItemGroup>
 
 </Project>

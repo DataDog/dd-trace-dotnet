@@ -8,11 +8,11 @@
     <owners></owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">Apache-2.0</license>
-    <icon>packageIcon.png</icon>
+    <icon>datadog-logo-256x256.png</icon>
     <readme>README.md</readme>
     <projectUrl>https://docs.datadoghq.com/tracing/trace_collection/dd_libraries</projectUrl>
     <iconUrl>https://github.com/DataDog/dd-trace-dotnet/raw/master/datadog-logo-64x64.png</iconUrl>
-    <description>Datadog APM Trimmed Apps Support.</description>
+    <description>This package is required to enable Datadog automatic instrumentation on a trimmed app.</description>
     <releaseNotes>See release notes at https://github.com/DataDog/dd-trace-dotnet/releases.
       Please note that Datadog does not support tracing (manual or automatic) in partial-trust environments.</releaseNotes>
     <copyright>Copyright 2017 Datadog, Inc.</copyright>
@@ -29,7 +29,7 @@
     <file src="build\Datadog.Trace.Trimming.props" target="build\Datadog.Trace.Trimming.props" />
     <file src="build\Datadog.Trace.Trimming.xml" target="build\Datadog.Trace.Trimming.xml" />
     <file src="Sdk\Sdk.props" target="Sdk\Sdk.props" />
-    <file src="packageIcon.png" target="packageIcon.png" />
+    <file src="..\..\..\datadog-logo-256x256.png" target="datadog-logo-256x256.png" />
     <file src="README.md" target="README.md" />
   </files>
 </package>
