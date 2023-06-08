@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -13,12 +14,14 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 {
     internal static class GrpcLegacyClientCommon
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GrpcLegacyClientCommon));
+        private static readonly ConditionalWeakTable<object, string> ChannelToHostMap = new();
 
         public static Scope? CreateClientSpan(
             Tracer tracer,
@@ -56,9 +59,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
                 string operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("grpc");
                 string serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "grpc-client");
-                var tags = new GrpcClientTags();
+                GrpcClientTags tags = tracer.CurrentTraceSettings.Schema.Client.CreateGrpcClientTags();
                 var methodFullName = callInvocationDetails.Method;
 
+                tags.Host = GetNormalizedHost(callInvocationDetails.Channel.Instance!, callInvocationDetails.Channel.Target);
                 GrpcCommon.AddGrpcTags(tags, tracer, methodKind, name: methodName, path: methodFullName, serviceName: grpcService);
 
                 var span = tracer.StartSpan(
@@ -204,7 +208,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         {
             string operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("grpc");
             string serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "grpc-client");
-            var tags = new GrpcClientTags();
+            GrpcClientTags tags = tracer.CurrentTraceSettings.Schema.Client.CreateGrpcClientTags();
             var span = tracer.StartSpan(operationName, tags, serviceName: serviceName, addToTraceContext: false);
             tags.SetAnalyticsSampleRate(IntegrationId.Grpc, tracer.Settings, enabledWithGlobalSetting: false);
 
@@ -219,6 +223,30 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             }
 
             return span;
+        }
+
+        private static string GetNormalizedHost(object channelInstance, string target)
+        {
+            if (ChannelToHostMap.TryGetValue(channelInstance, out var normalizedHost))
+            {
+                return normalizedHost;
+            }
+
+            var host = target.IndexOf(':') switch
+            {
+                -1 => target,
+                var index => target.Substring(startIndex: 0, length: index),
+            };
+
+            normalizedHost = HttpRequestUtils.GetNormalizedHost(host);
+
+#if NETCOREAPP3_1_OR_GREATER
+            ChannelToHostMap.AddOrUpdate(channelInstance, normalizedHost);
+#else
+            ChannelToHostMap.GetValue(channelInstance, x => normalizedHost);
+#endif
+
+            return normalizedHost;
         }
     }
 }

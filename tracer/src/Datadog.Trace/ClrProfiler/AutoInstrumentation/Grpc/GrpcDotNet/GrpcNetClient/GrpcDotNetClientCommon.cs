@@ -14,6 +14,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient
 {
@@ -36,8 +37,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
 
             try
             {
-                var tags = new GrpcClientTags();
+                GrpcClientTags tags = tracer.CurrentTraceSettings.Schema.Client.CreateGrpcClientTags();
                 var method = grpcCall.Method;
+                tags.Host = HttpRequestUtils.GetNormalizedHost(grpcCall.Channel.Address.Host);
                 GrpcCommon.AddGrpcTags(tags, tracer, method.GrpcType, name: method.Name, path: method.FullName, serviceName: method.ServiceName);
 
                 string operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("grpc");

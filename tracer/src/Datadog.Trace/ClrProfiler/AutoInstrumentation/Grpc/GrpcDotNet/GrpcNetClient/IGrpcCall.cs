@@ -15,6 +15,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
     /// </summary>
     internal interface IGrpcCall
     {
+        public IChannel Channel { get; }
+
         public MethodStruct Method { get; }
 
         public CallOptionsStruct Options { get; }
