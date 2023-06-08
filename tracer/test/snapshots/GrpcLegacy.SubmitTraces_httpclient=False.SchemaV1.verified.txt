@@ -1285,10 +1285,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: {"created":"@00000000000.000000000","description":"Deadline Exceeded","file":"..\..\..\src\core\ext\filters\deadline\deadline_filter.cc","file_line":1234,"grpc_status":4},
-      error.stack:
-Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000","description":"Deadline Exceeded","file":"..\..\..\src\core\ext\filters\deadline\deadline_filter.cc","file_line":1234,"grpc_status":4}
-,
+      error.msg: Deadline Exceeded,
       error.type: Grpc.Core.Internal.CoreErrorDetailException,
       grpc.method.kind: unary,
       grpc.method.name: VerySlow,
@@ -1382,10 +1379,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       clientmeta: other-client-value,
       component: Grpc,
       env: integration_tests,
-      error.msg: {"created":"@00000000000.000000000","description":"Deadline Exceeded","file":"..\..\..\src\core\ext\filters\deadline\deadline_filter.cc","file_line":1234,"grpc_status":4},
-      error.stack:
-Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000","description":"Deadline Exceeded","file":"..\..\..\src\core\ext\filters\deadline\deadline_filter.cc","file_line":1234,"grpc_status":4}
-,
+      error.msg: Deadline Exceeded,
       error.type: Grpc.Core.Internal.CoreErrorDetailException,
       grpc.method.kind: unary,
       grpc.method.name: VerySlow,
