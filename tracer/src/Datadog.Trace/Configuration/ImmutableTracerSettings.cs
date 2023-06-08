@@ -41,48 +41,48 @@ namespace Datadog.Trace.Configuration
         public ImmutableTracerSettings(TracerSettings settings)
         {
             // DD_ENV has precedence over DD_TAGS
-            Environment = GetExplicitSettingOrTag(settings.Environment, settings.GlobalTags, Tags.Env);
+            Environment = GetExplicitSettingOrTag(settings.EnvironmentInternal, settings.GlobalTagsInternal, Tags.Env);
 
             // DD_VERSION has precedence over DD_TAGS
-            ServiceVersion = GetExplicitSettingOrTag(settings.ServiceVersion, settings.GlobalTags, Tags.Version);
+            ServiceVersion = GetExplicitSettingOrTag(settings.ServiceVersionInternal, settings.GlobalTagsInternal, Tags.Version);
 
             // DD_GIT_COMMIT_SHA has precedence over DD_TAGS
-            GitCommitSha = GetExplicitSettingOrTag(settings.GitCommitSha, settings.GlobalTags, CommonTags.GitCommit);
+            GitCommitSha = GetExplicitSettingOrTag(settings.GitCommitSha, settings.GlobalTagsInternal, CommonTags.GitCommit);
 
             // DD_GIT_REPOSITORY_URL has precedence over DD_TAGS
-            GitRepositoryUrl = GetExplicitSettingOrTag(settings.GitRepositoryUrl, settings.GlobalTags, CommonTags.GitRepository);
+            GitRepositoryUrl = GetExplicitSettingOrTag(settings.GitRepositoryUrl, settings.GlobalTagsInternal, CommonTags.GitRepository);
 
             // create dictionary copy without "env", "version", "git.commit.sha" or "git.repository.url" tags
             // these value are used for "Environment" and "ServiceVersion", "GitCommitSha" and "GitRepositoryUrl" properties
             // or overriden with DD_ENV, DD_VERSION, DD_GIT_COMMIT_SHA and DD_GIT_REPOSITORY_URL respectively
-            var globalTags = settings.GlobalTags
+            var globalTags = settings.GlobalTagsInternal
                                      .Where(kvp => kvp.Key is not (Tags.Env or Tags.Version or CommonTags.GitCommit or CommonTags.GitRepository))
                                      .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
             GlobalTags = new ReadOnlyDictionary<string, string>(globalTags);
 
             GitMetadataEnabled = settings.GitMetadataEnabled;
-            ServiceName = settings.ServiceName;
-            TraceEnabled = settings.TraceEnabled;
-            Exporter = new ImmutableExporterSettings(settings.Exporter);
+            ServiceName = settings.ServiceNameInternal;
+            TraceEnabled = settings.TraceEnabledInternal;
+            Exporter = new ImmutableExporterSettings(settings.ExporterInternal);
 #pragma warning disable 618 // App analytics is deprecated, but still used
-            AnalyticsEnabled = settings.AnalyticsEnabled;
+            AnalyticsEnabled = settings.AnalyticsEnabledInternal;
 #pragma warning restore 618
-            MaxTracesSubmittedPerSecond = settings.MaxTracesSubmittedPerSecond;
-            CustomSamplingRules = settings.CustomSamplingRules;
+            MaxTracesSubmittedPerSecond = settings.MaxTracesSubmittedPerSecondInternal;
+            CustomSamplingRules = settings.CustomSamplingRulesInternal;
             SpanSamplingRules = settings.SpanSamplingRules;
-            GlobalSamplingRate = settings.GlobalSamplingRate;
-            Integrations = new ImmutableIntegrationSettingsCollection(settings.Integrations, settings.DisabledIntegrationNames);
-            HeaderTags = new ReadOnlyDictionary<string, string>(settings.HeaderTags);
-            GrpcTags = new ReadOnlyDictionary<string, string>(settings.GrpcTags);
+            GlobalSamplingRate = settings.GlobalSamplingRateInternal;
+            Integrations = new ImmutableIntegrationSettingsCollection(settings.IntegrationsInternal, settings.DisabledIntegrationNamesInternal);
+            HeaderTags = new ReadOnlyDictionary<string, string>(settings.HeaderTagsInternal);
+            GrpcTags = new ReadOnlyDictionary<string, string>(settings.GrpcTagsInternal);
             IpHeader = settings.IpHeader;
             IpHeaderEnabled = settings.IpHeaderEnabled;
-            TracerMetricsEnabled = settings.TracerMetricsEnabled;
-            StatsComputationEnabled = settings.StatsComputationEnabled;
+            TracerMetricsEnabled = settings.TracerMetricsEnabledInternal;
+            StatsComputationEnabled = settings.StatsComputationEnabledInternal;
             StatsComputationInterval = settings.StatsComputationInterval;
             RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled;
-            KafkaCreateConsumerScopeEnabled = settings.KafkaCreateConsumerScopeEnabled;
-            StartupDiagnosticLogEnabled = settings.StartupDiagnosticLogEnabled;
+            KafkaCreateConsumerScopeEnabled = settings.KafkaCreateConsumerScopeEnabledInternal;
+            StartupDiagnosticLogEnabled = settings.StartupDiagnosticLogEnabledInternal;
             HttpClientExcludedUrlSubstrings = settings.HttpClientExcludedUrlSubstrings;
             HttpServerErrorStatusCodes = settings.HttpServerErrorStatusCodes;
             HttpClientErrorStatusCodes = settings.HttpClientErrorStatusCodes;
@@ -192,6 +192,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public ImmutableExporterSettings Exporter { get; }
 
+#pragma warning disable CS1574 // AnalyticsEnabled is obsolete
         /// <summary>
         /// Gets a value indicating whether default Analytics are enabled.
         /// Settings this value is a shortcut for setting
@@ -199,6 +200,7 @@ namespace Datadog.Trace.Configuration
         /// See the documentation for more details.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GlobalAnalyticsEnabled"/>
+#pragma warning restore CS1574
         [Obsolete(DeprecationMessages.AppAnalytics)]
         public bool AnalyticsEnabled { get; }
 
@@ -499,7 +501,7 @@ namespace Datadog.Trace.Configuration
         {
             if (TraceEnabled && !_domainMetadata.ShouldAvoidAppDomain())
             {
-                return Integrations[integration].Enabled ?? defaultValue;
+                return Integrations[integration].EnabledInternal ?? defaultValue;
             }
 
             return false;
@@ -509,8 +511,8 @@ namespace Datadog.Trace.Configuration
         internal double? GetIntegrationAnalyticsSampleRate(IntegrationId integration, bool enabledWithGlobalSetting)
         {
             var integrationSettings = Integrations[integration];
-            var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && AnalyticsEnabled);
-            return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
+            var analyticsEnabled = integrationSettings.AnalyticsEnabledInternal ?? (enabledWithGlobalSetting && AnalyticsEnabled);
+            return analyticsEnabled ? integrationSettings.AnalyticsSampleRateInternal : (double?)null;
         }
     }
 }

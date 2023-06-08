@@ -7,8 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using AgileObjects.NetStandardPolyfills;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.SourceGenerators;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -50,6 +52,10 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var mutableProperties = typeof(ExporterSettings)
                                    .GetProperties(Flags)
+                                   .Where(// Exclude "internal" properties
+                                        x => !(x.HasAttribute<GeneratePublicApiAttribute>()
+                                            || x.Name == "AgentUriInternal"
+                                            || x.Name == "PartialFlushMinSpansInternal"))
                                    .Select(x => x.Name)
                                    .Where(x => !ExcludedProperties.Contains(x));
 
@@ -80,7 +86,11 @@ namespace Datadog.Trace.Tests.Configuration
             };
 
             var mutableProperties = typeof(ExporterSettings)
-                                   .GetProperties(Flags);
+                                   .GetProperties(Flags)
+                                   .Where(// Exclude "internal" properties
+                                        x => !(x.HasAttribute<GeneratePublicApiAttribute>()
+                                            || x.Name == "AgentUriInternal"
+                                            || x.Name == "PartialFlushMinSpansInternal"));
 
             // Ensure that all properties are represented
             Assert.Equal(mutableProperties.Count(), equalityCheckers.Count);
@@ -93,8 +103,6 @@ namespace Datadog.Trace.Tests.Configuration
             exporterSettings.MetricsPipeName = "metricspipe";
             exporterSettings.TracesPipeName = "tracespipe";
             exporterSettings.DogStatsdPort = 1234;
-            exporterSettings.MetricsTransport = Vendors.StatsdClient.Transport.TransportType.NamedPipe;
-            exporterSettings.TracesTransport = TracesTransportType.WindowsNamedPipe;
             exporterSettings.TracesPipeTimeoutMs = 5556;
 
             var immutableSettings = new ImmutableExporterSettings(exporterSettings);

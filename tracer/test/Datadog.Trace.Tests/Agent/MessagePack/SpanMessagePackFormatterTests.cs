@@ -23,7 +23,7 @@ public class SpanMessagePackFormatterTests
     public async Task TraceId128_PropagatedTag(bool generate128BitTraceId)
     {
         var mockApi = new MockApi();
-        var settings = new TracerSettings { TraceId128BitGenerationEnabled = generate128BitTraceId };
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, generate128BitTraceId } });
         var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null);
         var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
 

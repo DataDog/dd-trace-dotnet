@@ -397,9 +397,9 @@ namespace Datadog.Trace
                     // or manually in code.
                     foreach (var integration in instanceSettings.Integrations.Settings)
                     {
-                        if (integration.Enabled == false)
+                        if (integration.EnabledInternal == false)
                         {
-                            writer.WriteValue(integration.IntegrationName);
+                            writer.WriteValue(integration.IntegrationNameInternal);
                         }
                     }
 
