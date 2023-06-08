@@ -316,6 +316,10 @@ public class CompositeConfigurationSourceTests
 
         public ICollection<ConfigurationKeyValue> GetData() => null;
 
+        public void CopyTo(IConfigurationTelemetry destination)
+        {
+        }
+
         public void SetErrorOnCurrentEntry(string key, TelemetryErrorCode error)
         {
         }
