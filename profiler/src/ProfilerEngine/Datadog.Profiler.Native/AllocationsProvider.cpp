@@ -122,3 +122,9 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     _sampledAllocationsCountMetric->Incr();
     _sampledAllocationsSizeMetric->Add((double_t)objectSize);
 }
+
+UpscalingPoissonInfo AllocationsProvider::GetInfo()
+{
+    auto offsets = GetValueOffsets(); //                                sum(size)       count
+    return {offsets, Sample::AllocationClassLabel, AllocTickThreshold, offsets[1], offsets[0]};
+}

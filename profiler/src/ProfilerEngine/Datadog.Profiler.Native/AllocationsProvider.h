@@ -7,6 +7,7 @@
 #include "CounterMetric.h"
 #include "GenericSampler.h"
 #include "IAllocationsListener.h"
+#include "IUpscaleProvider.h"
 #include "MeanMaxMetric.h"
 #include "MetricsRegistry.h"
 #include "RawAllocationSample.h"
@@ -24,7 +25,8 @@ class ISampledAllocationsListener;
 class AllocationsProvider
     :
     public CollectorBase<RawAllocationSample>,
-    public IAllocationsListener
+      public IAllocationsListener,
+      public IUpscalePoissonProvider
 {
 public:
     static std::vector<SampleValueType> SampleTypeDefinitions;
@@ -49,6 +51,11 @@ public:
                       uint64_t objectSize,
                       uint64_t allocationAmount) override;
 
+    UpscalingPoissonInfo GetInfo() override;
+
+private:
+    uint64_t AllocTickThreshold = 100 * 1024;
+
 private:
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
@@ -58,6 +65,7 @@ private:
     int32_t _sampleLimit;
     IConfiguration const* const _pConfiguration;
     bool _shouldSubSample;
+    UpscaleStringGroup _upscaleGroup;
     std::shared_ptr<CounterMetric> _allocationsCountMetric;
     std::shared_ptr<MeanMaxMetric> _allocationsSizeMetric;
     std::shared_ptr<CounterMetric> _sampledAllocationsCountMetric;
