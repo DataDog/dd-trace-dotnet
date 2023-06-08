@@ -560,7 +560,7 @@ namespace Datadog.Trace.Tests.Agent
                 }
             };
 
-            return new TracerSettings { SpanSamplingRules = JsonConvert.SerializeObject(rules) };
+            return TracerSettings.Create(new() { { ConfigurationKeys.SpanSamplingRules, JsonConvert.SerializeObject(rules) } });
         }
     }
 }
