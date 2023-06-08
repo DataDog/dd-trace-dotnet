@@ -4,8 +4,10 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
+using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
 
@@ -14,64 +16,99 @@ namespace Datadog.Trace.Tests.Configuration.Schema
     public class MessagingSchemaTests
     {
         private const string DefaultServiceName = "MyApplication";
-        private readonly NamingSchema _namingSchemaV0;
-        private readonly NamingSchema _namingSchemaV1;
-
-        public MessagingSchemaTests()
+        private readonly string[] _unmappedKeys = { "elasticsearch", "postgres", "custom-service" };
+        private readonly Dictionary<string, string> _mappings = new()
         {
-            var mappings = new Dictionary<string, string>
+            { "sql-server", "custom-db" },
+            { "http-client", "some-service" },
+            { "mongodb", "my-mongo" },
+        };
+
+        public static IEnumerable<object[]> GetAllConfigs()
+            => from schemaVersion in new object[] { SchemaVersion.V0, SchemaVersion.V1 }
+               from peerServiceTagsEnabled in new[] { true, false }
+               from removeClientServiceNamesEnabled in new[] { true, false }
+               select new[] { schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled };
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void GetInboundOperationNameIsCorrect(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject;
+            var messagingSystem = "messaging";
+            var expectedValue = schemaVersion switch
             {
-                { "sql-server", "custom-db" },
-                { "http-client", "some-service" },
-                { "mongodb", "my-mongo" },
+                SchemaVersion.V0 => $"{messagingSystem}.consume",
+                _ => $"{messagingSystem}.process",
             };
 
-            _namingSchemaV0 = new NamingSchema(SchemaVersion.V0, DefaultServiceName, mappings);
-            _namingSchemaV1 = new NamingSchema(SchemaVersion.V1, DefaultServiceName, mappings);
-        }
-
-        [Fact]
-        public void GetInboundOperationNameIsCorrect()
-        {
-            var messagingSystem = "messaging";
-
-            _namingSchemaV0.Messaging.GetInboundOperationName(messagingSystem).Should().Be($"{messagingSystem}.consume");
-            _namingSchemaV1.Messaging.GetInboundOperationName(messagingSystem).Should().Be($"{messagingSystem}.process");
-        }
-
-        [Fact]
-        public void GetOutboundOperationNameIsCorrect()
-        {
-            var messagingSystem = "messaging";
-
-            _namingSchemaV0.Messaging.GetOutboundOperationName(messagingSystem).Should().Be($"{messagingSystem}.produce");
-            _namingSchemaV1.Messaging.GetOutboundOperationName(messagingSystem).Should().Be($"{messagingSystem}.send");
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            namingSchema.Messaging.GetInboundOperationName(messagingSystem).Should().Be(expectedValue);
         }
 
         [Theory]
-        [InlineData("sql-server", "custom-db")]
-        [InlineData("http-client", "some-service")]
-        [InlineData("mongodb", "my-mongo")]
-        public void RetrievesMappedServiceNames(string serviceName, string expected)
+        [MemberData(nameof(GetAllConfigs))]
+        public void GetOutboundOperationNameIsCorrect(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
-            _namingSchemaV0.Messaging.GetInboundServiceName(serviceName).Should().Be(expected);
-            _namingSchemaV1.Messaging.GetInboundServiceName(serviceName).Should().Be(expected);
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var messagingSystem = "messaging";
+            var expectedValue = schemaVersion switch
+            {
+                SchemaVersion.V0 => $"{messagingSystem}.produce",
+                _ => $"{messagingSystem}.send",
+            };
 
-            _namingSchemaV0.Messaging.GetOutboundServiceName(serviceName).Should().Be(expected);
-            _namingSchemaV1.Messaging.GetOutboundServiceName(serviceName).Should().Be(expected);
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            namingSchema.Messaging.GetOutboundOperationName(messagingSystem).Should().Be(expectedValue);
         }
 
         [Theory]
-        [InlineData("elasticsearch")]
-        [InlineData("postgres")]
-        [InlineData("custom-service")]
-        public void RetrievesUnmappedServiceNames(string serviceName)
+        [MemberData(nameof(GetAllConfigs))]
+        public void RetrievesMappedServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
-            _namingSchemaV0.Messaging.GetInboundServiceName(serviceName).Should().Be($"{DefaultServiceName}-{serviceName}");
-            _namingSchemaV1.Messaging.GetInboundServiceName(serviceName).Should().Be(DefaultServiceName);
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
 
-            _namingSchemaV0.Messaging.GetOutboundServiceName(serviceName).Should().Be($"{DefaultServiceName}-{serviceName}");
-            _namingSchemaV1.Messaging.GetOutboundServiceName(serviceName).Should().Be(DefaultServiceName);
+            foreach (var kvp in _mappings)
+            {
+                namingSchema.Messaging.GetInboundServiceName(kvp.Key).Should().Be(kvp.Value);
+                namingSchema.Messaging.GetOutboundServiceName(kvp.Key).Should().Be(kvp.Value);
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void RetrievesUnmappedServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+
+            foreach (var key in _unmappedKeys)
+            {
+                var expectedServiceName = schemaVersion switch
+                {
+                    SchemaVersion.V0 when removeClientServiceNamesEnabled == false => $"{DefaultServiceName}-{key}",
+                    _ => DefaultServiceName,
+                };
+
+                namingSchema.Messaging.GetInboundServiceName(key).Should().Be(expectedServiceName);
+                namingSchema.Messaging.GetOutboundServiceName(key).Should().Be(expectedServiceName);
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void CreateKafkaTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var expectedType = schemaVersion switch
+            {
+                SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(KafkaTags),
+                _ => typeof(KafkaV1Tags),
+            };
+
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            namingSchema.Messaging.CreateKafkaTags("spanKind").Should().BeOfType(expectedType);
         }
     }
 }

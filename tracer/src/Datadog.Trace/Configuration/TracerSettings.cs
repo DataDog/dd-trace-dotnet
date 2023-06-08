@@ -144,6 +144,13 @@ namespace Datadog.Trace.Configuration
 
             // Filter out tags with empty keys or empty values, and trim whitespaces
             HeaderTags = InitializeHeaderTags(inputHeaderTags, headerTagsNormalizationFixEnabled);
+            PeerServiceTagsEnabled = config
+                                    .WithKeys(ConfigurationKeys.PeerServiceDefaultsEnabled)
+                                    .AsBool(defaultValue: false);
+            RemoveClientServiceNamesEnabled = config
+                                             .WithKeys(ConfigurationKeys.RemoveClientServiceNamesEnabled)
+                                             .AsBool(defaultValue: false);
+
             MetadataSchemaVersion = config
                                    .WithKeys(ConfigurationKeys.MetadataSchemaVersion)
                                    .GetAs(
@@ -701,6 +708,16 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets the AAS settings
         /// </summary>
         internal ImmutableAzureAppServiceSettings? AzureAppServiceMetadata { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether to calculate the peer.service tag from predefined precursor attributes when using the v0 schema.
+        /// </summary>
+        internal bool PeerServiceTagsEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether to remove the service names when using the v0 schema.
+        /// </summary>
+        internal bool RemoveClientServiceNamesEnabled { get; }
 
         /// <summary>
         /// Gets or sets the metadata schema version
