@@ -17,6 +17,12 @@
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <!-- System.Runtime.CompilerServices.Unsafe doesn't support netcoreapp2.1-->
+    <!-- https://andrewlock.net/stop-lying-about-netstandard-2-support/-->
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+  </PropertyGroup>
+
   <ItemGroup Condition="'$(ApiVersion)' &gt;= '2.0.8'">
     <PackageReference Include="log4net.Ext.Json" Version="2.0.8.1" />
   </ItemGroup>

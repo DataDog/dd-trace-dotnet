@@ -12,6 +12,12 @@
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!-- System.Runtime.CompilerServices.Unsafe doesn't support netcoreapp2.1-->
+    <!-- https://andrewlock.net/stop-lying-about-netstandard-2-support/-->
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="NLog" Version="$(ApiVersion)" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" />

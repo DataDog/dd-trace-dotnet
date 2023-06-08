@@ -16,7 +16,13 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.1.3" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="2.1.1" />
   </ItemGroup>
-  
+
+  <PropertyGroup>
+    <!-- System.Runtime.CompilerServices.Unsafe doesn't support netcoreapp2.1-->
+    <!-- https://andrewlock.net/stop-lying-about-netstandard-2-support/-->
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+  </PropertyGroup>
+
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.0' OR '$(TargetFramework)' == 'netcoreapp3.1'">
     <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.0" />
   </ItemGroup>
