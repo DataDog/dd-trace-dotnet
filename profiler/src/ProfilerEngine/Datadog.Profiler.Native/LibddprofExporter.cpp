@@ -516,16 +516,14 @@ void LibddprofExporter::AddUpscalingPoissonRules(ddog_prof_Profile* profile, std
     {
         ddog_prof_Slice_Usize offsets_slice = {upscalingInfo.Offsets.data(), upscalingInfo.Offsets.size()};
 
-        ddog_CharSlice labelName = FfiHelper::StringToCharSlice(upscalingInfo.LabelName);
+        ddog_CharSlice labelEmptyName = FfiHelper::StringToCharSlice(std::string());
         ddog_CharSlice labelEmptyValue = FfiHelper::StringToCharSlice(std::string());
 
-        //auto upscalingRuleAdd = ddog_prof_Profile_add_upscaling_rule_proportional(profile, offsets_slice, labelName, groupName, group.SampledCount, group.RealCount);
-        //ddog_prof_Profile_add_upscaling_rule_poisson(profile, offsets_slice, labelName, )
         auto upscalingRuleAdd =
             ddog_prof_Profile_add_upscaling_rule_poisson(
                 profile,
                 offsets_slice,
-                labelName,
+                labelEmptyName,
                 labelEmptyValue,
                 upscalingInfo.SumOffset,
                 upscalingInfo.CountOffset,

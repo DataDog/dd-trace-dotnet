@@ -34,7 +34,6 @@ struct UpscalingPoissonInfo
 {
 public:
     std::vector<std::uintptr_t> const& Offsets;
-    std::string LabelName;
     uint64_t SamplingDistance;
     std::uintptr_t SumOffset;
     std::uintptr_t CountOffset;

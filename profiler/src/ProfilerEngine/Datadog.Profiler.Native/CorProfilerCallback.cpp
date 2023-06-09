@@ -349,6 +349,10 @@ bool CorProfilerCallback::InitializeServices()
     {
         _pExporter->RegisterUpscaleProvider(_pExceptionsProvider);
     }
+    if (_pAllocationsProvider != nullptr)
+    {
+        _pExporter->RegisterUpscalePoissonProvider(_pAllocationsProvider);
+    }
 
     _pSamplesCollector = RegisterService<SamplesCollector>(
         _pConfiguration.get(),
