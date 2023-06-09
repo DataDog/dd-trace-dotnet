@@ -87,6 +87,9 @@
    <assembly fullname="StackExchange.Redis" />
    <assembly fullname="StackExchange.Redis.StrongName" />
    <assembly fullname="System" />
+   <assembly fullname="System.Buffers">
+      <type fullname="System.Buffers.ArrayPool`1" />
+   </assembly>
    <assembly fullname="System.Collections">
       <type fullname="System.Collections.BitArray" />
       <type fullname="System.Collections.Generic.Comparer`1" />
