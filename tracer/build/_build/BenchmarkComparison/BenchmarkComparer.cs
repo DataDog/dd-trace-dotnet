@@ -57,9 +57,14 @@ namespace BenchmarkComparison
                                                {
                                                    var baseBenchmark = GetValueOrDefault(baseBenchmarksByName, id);
                                                    var diffBenchmark = GetValueOrDefault(diffBenchmarksByName, id);
+                                                   if (baseBenchmark is null || diffBenchmark is null)
+                                                   {
+                                                       return default;
+                                                   }
 
                                                    return (Id: id, Base: baseBenchmark, Diff: diffBenchmark);
                                                })
+                                              .Where(i => i.Id is not null)
                                               .ToList();
                        var benchmarkComparisons = matchedBenchmarks
                                                  .Select(x => new BenchmarkComparison(x.Id, x.Base, x.Diff, EquivalenceTestConclusion.Unknown))
