@@ -2,14 +2,20 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: SendBothStreamingRequest,
+    Name: Samples.Grpc.internal,
     Resource: SendBothStreamingRequest,
     Service: Samples.GrpcLegacy,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.Grpc,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -53,7 +59,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_4,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/StreamingBothWays,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -71,10 +77,11 @@
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -86,14 +93,20 @@
   {
     TraceId: Id_5,
     SpanId: Id_6,
-    Name: SendClientStreamingRequest,
+    Name: Samples.Grpc.internal,
     Resource: SendClientStreamingRequest,
     Service: Samples.GrpcLegacy,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.Grpc,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -137,7 +150,7 @@
   {
     TraceId: Id_5,
     SpanId: Id_8,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/StreamingFromClient,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -155,10 +168,11 @@
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -170,14 +184,20 @@
   {
     TraceId: Id_9,
     SpanId: Id_10,
-    Name: SendErrors_Cancelled,
+    Name: Samples.Grpc.internal,
     Resource: SendErrors_Cancelled,
     Service: Samples.GrpcLegacy,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.Grpc,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_4,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -227,7 +247,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_9,
     SpanId: Id_12,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -247,10 +267,11 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 1,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -262,14 +283,20 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_13,
     SpanId: Id_14,
-    Name: SendErrors_DataLoss,
+    Name: Samples.Grpc.internal,
     Resource: SendErrors_DataLoss,
     Service: Samples.GrpcLegacy,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.Grpc,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_5,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -319,7 +346,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_13,
     SpanId: Id_16,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -339,10 +366,11 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 15,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -354,14 +382,20 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_17,
     SpanId: Id_18,
-    Name: SendErrors_NotFound,
+    Name: Samples.Grpc.internal,
     Resource: SendErrors_NotFound,
     Service: Samples.GrpcLegacy,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.Grpc,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_6,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -411,7 +445,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_17,
     SpanId: Id_20,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -431,10 +465,11 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 5,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -446,14 +481,20 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_21,
     SpanId: Id_22,
-    Name: SendErrors_Throw,
+    Name: Samples.Grpc.internal,
     Resource: SendErrors_Throw,
     Service: Samples.GrpcLegacy,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.Grpc,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_7,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -503,7 +544,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_21,
     SpanId: Id_24,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -523,10 +564,11 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 2,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -538,14 +580,20 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_25,
     SpanId: Id_26,
-    Name: SendErrorsAsync_Cancelled,
+    Name: Samples.Grpc.internal,
     Resource: SendErrorsAsync_Cancelled,
     Service: Samples.GrpcLegacy,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.Grpc,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_8,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -595,7 +643,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_25,
     SpanId: Id_28,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -615,10 +663,11 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 1,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -630,14 +679,20 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_29,
     SpanId: Id_30,
-    Name: SendErrorsAsync_DataLoss,
+    Name: Samples.Grpc.internal,
     Resource: SendErrorsAsync_DataLoss,
     Service: Samples.GrpcLegacy,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.Grpc,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_9,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -687,7 +742,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_29,
     SpanId: Id_32,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -707,10 +762,11 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 15,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -722,14 +778,20 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_33,
     SpanId: Id_34,
-    Name: SendErrorsAsync_NotFound,
+    Name: Samples.Grpc.internal,
     Resource: SendErrorsAsync_NotFound,
     Service: Samples.GrpcLegacy,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.Grpc,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_10,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -779,7 +841,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_33,
     SpanId: Id_36,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -799,10 +861,11 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 5,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -814,14 +877,20 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_37,
     SpanId: Id_38,
-    Name: SendErrorsAsync_Throw,
+    Name: Samples.Grpc.internal,
     Resource: SendErrorsAsync_Throw,
     Service: Samples.GrpcLegacy,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.Grpc,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_11,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -871,7 +940,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_37,
     SpanId: Id_40,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -891,10 +960,11 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 2,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -906,14 +976,20 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_41,
     SpanId: Id_42,
-    Name: SendServerStreamingRequest,
+    Name: Samples.Grpc.internal,
     Resource: SendServerStreamingRequest,
     Service: Samples.GrpcLegacy,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.Grpc,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_12,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -957,7 +1033,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_41,
     SpanId: Id_44,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/StreamingFromServer,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -975,10 +1051,11 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -990,14 +1067,20 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_45,
     SpanId: Id_46,
-    Name: SendUnaryRequest,
+    Name: Samples.Grpc.internal,
     Resource: SendUnaryRequest,
     Service: Samples.GrpcLegacy,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.Grpc,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_13,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1041,7 +1124,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_45,
     SpanId: Id_48,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/Unary,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -1059,10 +1142,11 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1074,14 +1158,20 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_49,
     SpanId: Id_50,
-    Name: SendUnaryRequestAsync,
+    Name: Samples.Grpc.internal,
     Resource: SendUnaryRequestAsync,
     Service: Samples.GrpcLegacy,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.Grpc,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_14,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1125,7 +1215,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_49,
     SpanId: Id_52,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/Unary,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -1143,10 +1233,11 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1158,14 +1249,20 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_53,
     SpanId: Id_54,
-    Name: SendVerySlowRequest,
+    Name: Samples.Grpc.internal,
     Resource: SendVerySlowRequest,
     Service: Samples.GrpcLegacy,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.Grpc,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_15,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1210,7 +1307,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_53,
     SpanId: Id_56,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/VerySlow,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -1230,10 +1327,11 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 4,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1245,14 +1343,20 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_57,
     SpanId: Id_58,
-    Name: SendVerySlowRequestAsync,
+    Name: Samples.Grpc.internal,
     Resource: SendVerySlowRequestAsync,
     Service: Samples.GrpcLegacy,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
-      _dd.p.dm: -0
+      otel.library.name: Samples.Grpc,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_16,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1297,7 +1401,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_57,
     SpanId: Id_60,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/VerySlow,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -1317,10 +1421,11 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 4,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,

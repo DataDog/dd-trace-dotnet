@@ -6,34 +6,18 @@
 #if !NETFRAMEWORK
 #nullable enable
 using System;
-using System.Reflection;
-using System.Reflection.Emit;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
     internal static class NullableStringHelper<TMarkerType>
     {
-        private static readonly Func<object> Activator;
+        private static readonly ActivatorHelper NullableActivator;
 
         static NullableStringHelper()
         {
-            var nullableStringType = typeof(TMarkerType).Assembly.GetType("NullableString")!;
-
-            ConstructorInfo ctor = nullableStringType.GetConstructor(System.Type.EmptyTypes)!;
-
-            DynamicMethod createHeadersMethod = new DynamicMethod(
-                $"NullableStringHelper",
-                nullableStringType,
-                null,
-                typeof(DuckType).Module,
-                true);
-
-            ILGenerator il = createHeadersMethod.GetILGenerator();
-            il.Emit(OpCodes.Newobj, ctor);
-            il.Emit(OpCodes.Ret);
-
-            Activator = (Func<object>)createHeadersMethod.CreateDelegate(typeof(Func<object>));
+            NullableActivator = new ActivatorHelper(typeof(TMarkerType).Assembly.GetType("NullableString")!);
         }
 
         /// <summary>
@@ -41,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         /// </summary>
         public static object CreateNullableString(string value)
         {
-            var nullableString = Activator();
+            var nullableString = NullableActivator.CreateInstance();
             nullableString.DuckCast<INullableString>().Value = value;
             return nullableString;
         }

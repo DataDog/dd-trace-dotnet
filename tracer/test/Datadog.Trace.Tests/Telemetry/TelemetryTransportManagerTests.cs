@@ -251,6 +251,12 @@ namespace Datadog.Trace.Tests.Telemetry
                 return Task.FromResult(_results[_current]);
             }
 
+            public async Task<TelemetryPushResult> PushTelemetry(TelemetryDataV2 data)
+            {
+                await Task.Yield();
+                throw new InvalidOperationException("Shouldn't be using v2 API");
+            }
+
             public string GetTransportInfo() => nameof(TestTransport);
         }
     }

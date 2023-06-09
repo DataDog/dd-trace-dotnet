@@ -61,6 +61,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.UseFileName($"{nameof(AwsSnsTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}");
+                settings.AddSimpleScrubber("peer.service: localhost", "peer.service: aws_sns");
+                settings.AddSimpleScrubber("peer.service: aws_sns_arm64", "peer.service: aws_sns");
                 if (!string.IsNullOrWhiteSpace(host))
                 {
                     settings.AddSimpleScrubber(host, "localhost:00000");

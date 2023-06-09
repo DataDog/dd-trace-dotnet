@@ -78,7 +78,7 @@ namespace Datadog.Trace.Ci
                 if (!settings.ForceAgentsEvpProxy)
                 {
                     discoveryService = DiscoveryService.Create(
-                        new ImmutableExporterSettings(settings.TracerSettings.Exporter),
+                        new ImmutableExporterSettings(settings.TracerSettings.ExporterInternal),
                         tcpTimeout: TimeSpan.FromSeconds(5),
                         initialRetryDelayMs: 10,
                         maxRetryDelayMs: 1000,
@@ -98,14 +98,14 @@ namespace Datadog.Trace.Ci
 
             // Set the service name if empty
             Log.Debug("Setting up the service name");
-            if (string.IsNullOrEmpty(tracerSettings.ServiceName))
+            if (string.IsNullOrEmpty(tracerSettings.ServiceNameInternal))
             {
                 // Extract repository name from the git url and use it as a default service name.
-                tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+                tracerSettings.ServiceNameInternal = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
             }
 
             // Normalize the service name
-            tracerSettings.ServiceName = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceName);
+            tracerSettings.ServiceNameInternal = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceNameInternal);
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
@@ -163,14 +163,14 @@ namespace Datadog.Trace.Ci
 
             // Set the service name if empty
             Log.Debug("Setting up the service name");
-            if (string.IsNullOrEmpty(tracerSettings.ServiceName))
+            if (string.IsNullOrEmpty(tracerSettings.ServiceNameInternal))
             {
                 // Extract repository name from the git url and use it as a default service name.
-                tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+                tracerSettings.ServiceNameInternal = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
             }
 
             // Normalize the service name
-            tracerSettings.ServiceName = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceName);
+            tracerSettings.ServiceNameInternal = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceNameInternal);
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");

@@ -30,7 +30,8 @@ namespace Datadog.Trace.TestHelpers
             string processToProfile = null,
             bool? enableSecurity = null,
             string externalRulesFile = null,
-            string workingDirectory = null)
+            string workingDirectory = null,
+            bool ignoreProfilerProcessesVar = false)
         {
             if (environmentHelper == null)
             {
@@ -59,7 +60,8 @@ namespace Datadog.Trace.TestHelpers
                 startInfo.Environment,
                 processToProfile,
                 enableSecurity,
-                externalRulesFile);
+                externalRulesFile,
+                ignoreProfilerProcessesVar);
 
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;

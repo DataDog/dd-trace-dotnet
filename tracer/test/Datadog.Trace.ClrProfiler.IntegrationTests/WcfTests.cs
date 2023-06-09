@@ -44,14 +44,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // so only test New WCF
                 if (binding == "Custom")
                 {
-                    yield return new object[] { binding, true, true };
+                    yield return new object[] { "v0", binding, true, true };
+                    yield return new object[] { "v1", binding, true, true };
                     continue;
                 }
 
-                yield return new object[] { binding, false, true };
-                yield return new object[] { binding, false, false };
-                yield return new object[] { binding, true,  true };
-                yield return new object[] { binding, true,  false };
+                yield return new object[] { "v0", binding, false, true };
+                yield return new object[] { "v0", binding, false, false };
+                yield return new object[] { "v0", binding, true,  true };
+                yield return new object[] { "v0", binding, true,  false };
+
+                yield return new object[] { "v1", binding, false, true };
+                yield return new object[] { "v1", binding, false, false };
+                yield return new object[] { "v1", binding, true,  true };
+                yield return new object[] { "v1", binding, true,  false };
             }
         }
 
@@ -61,8 +67,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(GetData))]
-        public async Task SubmitsTraces(string binding, bool enableNewWcfInstrumentation, bool enableWcfObfuscation)
+        public async Task SubmitsTraces(string metadataSchemaVersion, string binding, bool enableNewWcfInstrumentation, bool enableWcfObfuscation)
         {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+
             if (enableNewWcfInstrumentation)
             {
                 SetEnvironmentVariable("DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED", "true");
@@ -80,7 +88,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine("Starting WcfTests.SubmitsTraces. Starting the Samples.Wcf requires ADMIN privileges");
 
             var expectedSpanCount = 6;
-            const string expectedOperationName = "wcf.request";
 
             using var telemetry = this.ConfigureTelemetry();
             int wcfPort = 8585;
@@ -91,10 +98,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // Filter out WCF spans unrelated to the actual request handling, and filter them before returning spans
                 // so we can wait on the exact number of spans we expect.
                 agent.SpanFilters.Add(s => !s.Resource.Contains("schemas.xmlsoap.org") && !s.Resource.Contains("www.w3.org"));
-                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.Wcf", isExternalSpan: false);
+                agent.SpanFilters.Add(s => s.Type == SpanTypes.Web);
+                var spans = agent.WaitForSpans(expectedSpanCount);
+                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
 
-                var settings = VerifyHelper.GetSpanVerifierSettings(binding, enableNewWcfInstrumentation, enableWcfObfuscation);
+                var settings = VerifyHelper.GetSpanVerifierSettings(metadataSchemaVersion, binding, enableNewWcfInstrumentation, enableWcfObfuscation);
 
                 await VerifyHelper.VerifySpans(spans, settings)
                               .UseMethodName("_");
