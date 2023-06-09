@@ -69,6 +69,7 @@ public:
     MOCK_METHOD(bool, Export, (), (override));
     MOCK_METHOD(void, SetEndpoint, (const std::string& runtimeId, uint64_t traceId, const std::string& endpoint), (override));
     MOCK_METHOD(void, RegisterUpscaleProvider, (IUpscaleProvider * provider), (override));
+    MOCK_METHOD(void, RegisterUpscalePoissonProvider, (IUpscalePoissonProvider * provider), (override));
 };
 
 class MockSamplesCollector : public ISamplesCollector
