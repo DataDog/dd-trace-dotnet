@@ -39,6 +39,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 #else
         private static readonly byte[] UrlBytes = new byte[] { 177, 101, 108, 97, 115, 116, 105, 99, 115, 101, 97, 114, 99, 104, 46, 117, 114, 108 };
 #endif
+        // HostBytes = MessagePack.Serialize("out.host");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> HostBytes => new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#else
+        private static readonly byte[] HostBytes = new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -49,6 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
                 "elasticsearch.action" => Action,
                 "elasticsearch.method" => Method,
                 "elasticsearch.url" => Url,
+                "out.host" => Host,
                 _ => base.GetTag(key),
             };
         }
@@ -65,6 +72,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
                     break;
                 case "elasticsearch.url": 
                     Url = value;
+                    break;
+                case "out.host": 
+                    Host = value;
                     break;
                 case "span.kind": 
                 case "component": 
@@ -101,6 +111,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
             if (Url is not null)
             {
                 processor.Process(new TagItem<string>("elasticsearch.url", Url, UrlBytes));
+            }
+
+            if (Host is not null)
+            {
+                processor.Process(new TagItem<string>("out.host", Host, HostBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -140,6 +155,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
             {
                 sb.Append("elasticsearch.url (tag):")
                   .Append(Url)
+                  .Append(',');
+            }
+
+            if (Host is not null)
+            {
+                sb.Append("out.host (tag):")
+                  .Append(Host)
                   .Append(',');
             }
 
