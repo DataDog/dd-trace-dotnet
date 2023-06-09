@@ -443,6 +443,8 @@ namespace Datadog.Trace.ClrProfiler
 
                     // AspNetCore
                     new ("Microsoft.AspNetCore.Mvc.Core", "Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext", "set_Result",  new[] { "System.Void", "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" }, 2, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.DefaultModelBindingContext_SetResult_Integration"),
+                    new ("Microsoft.AspNetCore.Server.IIS", "Microsoft.AspNetCore.Server.IIS.Core.IISHttpContext", "FireOnStarting",  new[] { "System.Threading.Tasks.Task" }, 2, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.FireOnStartCommon"),
+                    new ("Microsoft.AspNetCore.Server.Kestrel.Core", "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol", "FireOnStarting",  new[] { "System.Threading.Tasks.Task" }, 2, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.FireOnStartCommon"),
                 }
             };
 
@@ -613,6 +615,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.DefaultModelBindingContext_SetResult_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.DefaultModelBindingContext_SetResult_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.DefaultModelBindingContext_SetResult_Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.FireOnStartCommon"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.FireOnStartCommon"
                     => Datadog.Trace.Configuration.IntegrationId.AspNetCore,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeSyncIntegration"
