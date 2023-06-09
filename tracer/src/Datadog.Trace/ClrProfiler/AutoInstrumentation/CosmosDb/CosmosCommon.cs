@@ -24,8 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         public const string IntegrationName = nameof(Configuration.IntegrationId.CosmosDb);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.CosmosDb;
 
-        private const string OperationName = "cosmosdb.query";
-        private const string ServiceName = "cosmosdb";
+        private const string DatabaseType = "cosmosdb";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CosmosCommon));
 
@@ -33,59 +32,67 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         {
             string containerId = null;
             string databaseId = null;
-            string endpoint = null;
+            string host = null;
+            string port = null;
             if (instance.TryDuckCast<ContainerNewStruct>(out var containerNew))
             {
                 containerId = containerNew.Id;
                 var database = containerNew.Database;
                 databaseId = database.Id;
-                endpoint = database.Client.Endpoint?.ToString();
+                host = database.Client.Endpoint?.Host;
+                port = database.Client.Endpoint?.Port.ToString();
             }
             else if (instance.TryDuckCast<ContainerOldStruct>(out var containerOld))
             {
                 containerId = containerOld.Id;
                 var database = containerOld.Database;
                 databaseId = database.Id;
-                endpoint = database.ClientContext.Client.Endpoint?.ToString();
+                host = database.ClientContext.Client.Endpoint?.Host;
+                port = database.ClientContext.Client.Endpoint?.Port.ToString();
             }
 
-            return CreateCosmosDbCallState(instance, queryDefinition, containerId, databaseId, endpoint);
+            return CreateCosmosDbCallState(instance, queryDefinition, containerId, databaseId, host, port);
         }
 
         public static CallTargetState CreateDatabaseCallStateExt<TTarget, TQueryDefinition>(TTarget instance, TQueryDefinition queryDefinition)
         {
             string databaseId = null;
-            string endpoint = null;
+            string host = null;
+            string port = null;
 
             if (instance.TryDuckCast<DatabaseNewStruct>(out var databaseNew))
             {
                 databaseId = databaseNew.Id;
                 var client = databaseNew.Client;
-                endpoint = client.Endpoint?.ToString();
+                host = client.Endpoint?.Host;
+                port = client.Endpoint?.Port.ToString();
             }
             else if (instance.TryDuckCast<DatabaseOldStruct>(out var databaseOld))
             {
                 databaseId = databaseOld.Id;
                 var client = databaseOld.ClientContext.Client;
-                endpoint = client.Endpoint?.ToString();
+                host = client.Endpoint?.Host;
+                port = client.Endpoint?.Port.ToString();
             }
 
-            return CreateCosmosDbCallState(instance, queryDefinition, null, databaseId, endpoint);
+            return CreateCosmosDbCallState(instance, queryDefinition, null, databaseId, host, port);
         }
 
         public static CallTargetState CreateClientCallStateExt<TTarget, TQueryDefinition>(TTarget instance, TQueryDefinition queryDefinition)
         {
-            string endpoint = null;
+            string host = null;
+            string port = null;
 
             if (instance.TryDuckCast<CosmosClientStruct>(out var c))
             {
-                endpoint = c.Endpoint?.ToString();
+                host = c.Endpoint?.Host;
+                port = c.Endpoint?.Port.ToString();
             }
 
-            return CreateCosmosDbCallState(instance, queryDefinition, null, null, endpoint);
+            return CreateCosmosDbCallState(instance, queryDefinition, null, null, host, port);
         }
 
-        private static CallTargetState CreateCosmosDbCallState<TTarget, TQueryDefinition>(TTarget instance, TQueryDefinition queryDefinition, string containerId, string databaseId, string endpoint)
+        private static CallTargetState CreateCosmosDbCallState<TTarget, TQueryDefinition>(TTarget instance, TQueryDefinition queryDefinition, string containerId, string databaseId, string host, string port)
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -120,17 +127,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
                     return new CallTargetState(null);
                 }
 
-                var tags = new CosmosDbTags
-                {
-                    ContainerId = containerId,
-                    DatabaseId = databaseId,
-                    Host = endpoint,
-                };
+                string operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
+                string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
+                CosmosDbTags tags = tracer.CurrentTraceSettings.Schema.Database.CreateCosmosDbTags();
+                tags.ContainerId = containerId;
+                tags.DatabaseId = databaseId;
+                tags.Host = host;
+                tags.Port = port;
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
 
-                var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, ServiceName);
-                var scope = tracer.StartActiveInternal(OperationName, tags: tags, serviceName: serviceName);
+                var scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
 
                 var span = scope.Span;
 

@@ -73,5 +73,12 @@ namespace Datadog.Trace.Configuration.Schema
                 SchemaVersion.V0 when !_peerServiceTagsEnabled => new RedisTags(),
                 _ => new RedisV1Tags(),
             };
+
+        public CosmosDbTags CreateCosmosDbTags()
+            => _version switch
+            {
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new CosmosDbTags(),
+                _ => new CosmosDbV1Tags(),
+            };
     }
 }
