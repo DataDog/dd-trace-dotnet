@@ -9,9 +9,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43;
-using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
