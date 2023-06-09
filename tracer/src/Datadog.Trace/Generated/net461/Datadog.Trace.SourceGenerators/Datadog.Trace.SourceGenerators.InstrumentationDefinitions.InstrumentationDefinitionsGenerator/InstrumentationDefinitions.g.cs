@@ -63,6 +63,9 @@ namespace Datadog.Trace.ClrProfiler
                     new ("AWSSDK.Core", "Amazon.Runtime.Internal.RuntimePipeline", "InvokeAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "Amazon.Runtime.IExecutionContext" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeAsyncIntegration"),
                     new ("AWSSDK.Core", "Amazon.Runtime.Internal.RuntimePipeline", "InvokeSync",  new[] { "Amazon.Runtime.IResponseContext", "Amazon.Runtime.IExecutionContext" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeSyncIntegration"),
 
+                    // AwsSns
+                    new ("AWSSDK.SimpleNotificationService", "Amazon.SimpleNotificationService.AmazonSimpleNotificationServiceClient", "PublishAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SimpleNotificationService.Model.PublishResponse>", "Amazon.SimpleNotificationService.Model.PublishRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS.PublishAsyncIntegration"),
+
                     // AwsSqs
                     new ("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "CreateQueue",  new[] { "Amazon.SQS.Model.CreateQueueResponse", "Amazon.SQS.Model.CreateQueueRequest" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.CreateQueueIntegration"),
                     new ("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "CreateQueueAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SQS.Model.CreateQueueResponse>", "Amazon.SQS.Model.CreateQueueRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.CreateQueueAsyncIntegration"),
@@ -607,6 +610,8 @@ namespace Datadog.Trace.ClrProfiler
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeSyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsSdk,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS.PublishAsyncIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.AwsSns,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.CreateQueueIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.CreateQueueAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.DeleteMessageIntegration"

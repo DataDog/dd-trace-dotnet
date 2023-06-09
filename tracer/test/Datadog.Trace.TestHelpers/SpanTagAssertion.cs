@@ -99,8 +99,7 @@ namespace Datadog.Trace.TestHelpers
 
         public SpanTagAssertion<T> MatchesOneOf(string tagName, params T[] expectedValues)
         {
-            bool keyExists = _tags.TryGetValue(tagName, out T value);
-            if (keyExists)
+            if (_tags.TryGetValue(tagName, out T value))
             {
                 _tags.Remove(tagName);
             }
@@ -108,10 +107,10 @@ namespace Datadog.Trace.TestHelpers
             if (expectedValues.Where(s => s.Equals(value)).SingleOrDefault() is null)
             {
                 string expectedValueString = "["
-                             + string.Join(",", expectedValues.Select(s => $"\"{s}\"").ToArray())
-                             + "]";
+                                + string.Join(",", expectedValues.Select(s => $"\"{s}\"").ToArray())
+                                + "]";
 
-                _result.WithFailure(GenerateMatchesOneOfFailureString("tag", tagName, expectedValueString, value.ToString()));
+                _result.WithFailure(GenerateMatchesOneOfFailureString("tag", tagName, expectedValueString, value?.ToString()));
             }
 
             return this;

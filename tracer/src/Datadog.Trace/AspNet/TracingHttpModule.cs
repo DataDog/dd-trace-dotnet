@@ -76,9 +76,12 @@ namespace Datadog.Trace.AspNet
         {
         }
 
-        internal static void AddHeaderTagsFromHttpResponse(System.Web.HttpContext httpContext, Scope scope)
+        internal static void AddHeaderTagsFromHttpResponse(HttpContext httpContext, Scope scope)
         {
-            if (httpContext != null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders && !Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty())
+            if (!Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty() &&
+                httpContext != null &&
+                HttpRuntime.UsingIntegratedPipeline &&
+                _canReadHttpResponseHeaders)
             {
                 try
                 {
@@ -231,6 +234,47 @@ namespace Datadog.Trace.AspNet
                 {
                     try
                     {
+                        var rootScope = scope.Root;
+                        var rootSpan = rootScope.Span;
+
+                        // the security needs to come before collecting the response code,
+                        // since blocking will change the response code
+                        var security = Security.Instance;
+                        if (security.Enabled)
+                        {
+                            var securityCoordinator = new SecurityCoordinator(security, app.Context, rootSpan);
+                            if (!securityCoordinator.IsBlocked)
+                            {
+                                var args = securityCoordinator.GetBasicRequestArgsForWaf();
+                                args.Add(AddressesConstants.RequestPathParams, securityCoordinator.GetPathParams());
+
+                                if (HttpRuntime.UsingIntegratedPipeline &&
+                                    _canReadHttpResponseHeaders)
+                                {
+                                    // path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
+                                    try
+                                    {
+                                        args.Add(AddressesConstants.ResponseHeaderNoCookies, securityCoordinator.GetResponseHeadersForWaf());
+                                    }
+                                    catch (PlatformNotSupportedException ex)
+                                    {
+                                        // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
+                                        Log.Error(ex, "Unable to access response headers when creating header tags. Disabling for the rest of the application lifetime.");
+                                        _canReadHttpResponseHeaders = false;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Log.Error(ex, "Error extracting HTTP headers to create header tags.");
+                                    }
+                                }
+
+                                securityCoordinator.CheckAndBlock(args);
+                            }
+
+                            securityCoordinator.AddResponseHeadersToSpanAndCleanup();
+                            securityContextCleaned = true;
+                        }
+
                         // HttpServerUtility.TransferRequest presents an issue: The IIS request pipeline is run a second time
                         // from the same incoming HTTP request, but the HttpContext and HttpRequest objects from the two pipeline
                         // requests are completely isolated. Fortunately, the second request (somehow) maintains the original
@@ -243,9 +287,6 @@ namespace Datadog.Trace.AspNet
                         //
                         // Note: HttpServerUtility.TransferRequest cannot be invoked more than once, so we'll have at most two nested (in-process)
                         // aspnet.request spans at any given time: https://referencesource.microsoft.com/#System.Web/Hosting/IIS7WorkerRequest.cs,2400
-                        var rootScope = scope.Root;
-                        var rootSpan = rootScope.Span;
-
                         if (!rootSpan.HasHttpStatusCode())
                         {
                             var response = app.Context.Response;
@@ -275,22 +316,6 @@ namespace Datadog.Trace.AspNet
                         {
                             string path = UriHelpers.GetCleanUriPath(app.Request.Url, app.Request.ApplicationPath);
                             scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
-                        }
-
-                        var security = Security.Instance;
-                        if (security.Enabled)
-                        {
-                            var securityCoordinator = new SecurityCoordinator(security, app.Context, rootSpan);
-                            if (!securityCoordinator.IsBlocked)
-                            {
-                                // path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
-                                var args = securityCoordinator.GetBasicRequestArgsForWaf();
-                                args.Add(AddressesConstants.RequestPathParams, securityCoordinator.GetPathParams());
-                                securityCoordinator.CheckAndBlock(args);
-                            }
-
-                            securityCoordinator.AddResponseHeadersToSpanAndCleanup();
-                            securityContextCleaned = true;
                         }
                     }
                     finally

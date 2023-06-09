@@ -55,7 +55,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "2.31.0";
+    readonly string Version = "2.32.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -290,7 +290,7 @@ partial class Build : NukeBuild
     Target PackNuGet => _ => _
         .Description("Creates the NuGet packages from the compiled src directory")
         .After(Clean, CompileManagedSrc)
-        .DependsOn(CreateRequiredDirectories)
+        .DependsOn(CreateRequiredDirectories, CreateRootDescriptorsFile)
         .Executes(() =>
         {
             DotNetPack(s => s
@@ -412,13 +412,19 @@ partial class Build : NukeBuild
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                 );
 
+                var (framework, runtimes) = IsOsx switch
+                {
+                    true => (TargetFramework.NETCOREAPP3_1, "net6.0"),
+                    false => (TargetFramework.NET6_0, "net472 netcoreapp3.1 net6.0"),
+                };
+                
                 DotNetRun(s => s
                     .SetProjectFile(benchmarksProject)
                     .SetConfiguration(BuildConfiguration)
-                    .SetFramework(TargetFramework.NET6_0)
+                    .SetFramework(framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetApplicationArguments($"-r net472 netcoreapp3.1 net6.0 -m -f {Filter ?? "*"} --iterationTime 2000")
+                    .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --iterationTime 2000")
                     .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
                     .SetProcessEnvironmentVariable("DD_ENV", "CI")
                     .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)

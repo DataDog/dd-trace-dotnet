@@ -17,6 +17,8 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .IsOptional("db.name")
                 .IsPresent("db.type")
+                .IsPresent("peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "db.instance", "network.destination.name", "peer.service")
                 .Matches("component", "AdoNet")
                 .Matches("span.kind", "client"));
 
@@ -144,6 +146,24 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "client"));
 
+        public static Result IsAwsSnsV1(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "sns.request")
+                .Matches(Type, "http"))
+            .Tags(s => s
+                .Matches("aws.agent", "dotnet-aws-sdk")
+                .IsPresent("aws.operation")
+                .IsOptional("aws.region")
+                .IsPresent("aws.requestId")
+                .Matches("aws.service", "SNS")
+                .IsOptional("aws.topic.name")
+                .IsOptional("aws.topic.arn")
+                .IsPresent("http.method")
+                .IsPresent("http.status_code")
+                .IsPresent("http.url")
+                .Matches("component", "aws-sdk")
+                .Matches("span.kind", "client"));
+
         public static Result IsCosmosDbV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "cosmosdb.query")
@@ -153,6 +173,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("db.name")
                 .Matches("db.type", "cosmosdb")
                 .IsPresent("out.host")
+                .IsPresent("peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "db.instance", "network.destination.name", "peer.service")
                 .Matches("component", "CosmosDb")
                 .Matches("span.kind", "client"));
 
@@ -193,7 +215,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsGrpcV1(this MockSpan span, ISet<string> excludeTags) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
-                .Matches(Name, "grpc.request")
+                .MatchesOneOf(Name, "grpc.request", "grpc.server.request")
                 .Matches(Type, "grpc"))
             .Tags(s => s
                 .IsPresent("grpc.method.kind")
@@ -218,13 +240,15 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsHttpMessageHandlerV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .Matches(Name, "http.request")
+                .Matches(Name, "http.client.request")
                 .Matches(Type, "http"))
             .Tags(s => s
                 .IsPresent("http-client-handler-type")
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
+                .IsPresent("peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "network.destination.name", "peer.service")
                 .IsPresent("component")
                 .Matches("span.kind", "client"));
 
@@ -282,6 +306,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("db.user")
                 .IsPresent("out.host")
                 .Matches("db.type", "mysql")
+                .IsPresent("peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "db.instance", "network.destination.name", "peer.service")
                 .Matches("component", "MySql")
                 .Matches("span.kind", "client"));
 
@@ -293,6 +319,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("db.name")
                 .IsPresent("out.host")
                 .Matches("db.type", "postgres")
+                .IsPresent("peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "db.instance", "network.destination.name", "peer.service")
                 .Matches("component", "Npgsql")
                 .Matches("span.kind", "client"));
 
@@ -316,6 +344,8 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .IsPresent("db.name")
                 .Matches("db.type", "oracle")
+                .IsPresent("peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "db.instance", "network.destination.name", "peer.service")
                 .Matches("component", "Oracle")
                 .Matches("span.kind", "client"));
 
@@ -392,6 +422,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("db.name")
                 .IsPresent("out.host")
                 .Matches("db.type", "sqlite")
+                .IsPresent("peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "db.instance", "network.destination.name", "peer.service")
                 .Matches("component", "Sqlite")
                 .Matches("span.kind", "client"));
 
@@ -403,13 +435,15 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("db.name")
                 .IsPresent("out.host")
                 .Matches("db.type", "sql-server")
+                .IsPresent("peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "db.instance", "network.destination.name", "peer.service")
                 .Matches("component", "SqlClient")
                 .Matches("span.kind", "client")
                 .IsOptional("_dd.dbm_trace_injected"));
 
         public static Result IsWcfV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .Matches(Name, "wcf.request")
+                .Matches(Name, "http.server.request")
                 .Matches(Type, "web"))
             .Tags(s => s
                 .IsOptional("http.method")
@@ -420,13 +454,15 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsWebRequestV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .Matches(Name, "http.request")
+                .Matches(Name, "http.client.request")
                 .Matches(Type, "http"))
             .Tags(s => s
                 .IsOptional("http-client-handler-type")
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
+                .IsPresent("peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "network.destination.name", "peer.service")
                 .MatchesOneOf("component", "HttpMessageHandler", "WebRequest")
                 .Matches("span.kind", "client"));
     }

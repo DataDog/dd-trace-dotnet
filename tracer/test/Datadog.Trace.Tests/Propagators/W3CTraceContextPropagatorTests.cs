@@ -83,7 +83,7 @@ namespace Datadog.Trace.Tests.Propagators
         {
             var propagatedTags = TagPropagation.ParseHeader(tags);
 
-            var traceContext = new TraceContext(tracer: null, propagatedTags)
+            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>(), propagatedTags)
             {
                 Origin = origin,
                 AdditionalW3CTraceState = additionalState
@@ -100,7 +100,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void CreateTraceStateHeader_WithPublicPropagatedTags()
         {
-            var traceContext = new TraceContext(tracer: null);
+            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
             var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2);
             var span = new Span(spanContext, DateTimeOffset.Now);
 
@@ -123,7 +123,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void CreateTraceStateHeader_With128Bit_TraceId()
         {
-            var traceContext = new TraceContext(tracer: null);
+            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
             traceContext.SetSamplingPriority(2);
 
             var traceId = new TraceId(0x1234567890abcdef, 0x1122334455667788);
@@ -139,7 +139,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_IHeadersCollection()
         {
-            var traceContext = new TraceContext(tracer: null, tags: null)
+            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>(), tags: null)
             {
                 Origin = "origin",
                 AdditionalW3CTraceState = "key1=value1"
@@ -159,7 +159,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_CarrierAndDelegate()
         {
-            var traceContext = new TraceContext(tracer: null, tags: null)
+            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>(), tags: null)
             {
                 Origin = "origin",
                 AdditionalW3CTraceState = "key1=value1"

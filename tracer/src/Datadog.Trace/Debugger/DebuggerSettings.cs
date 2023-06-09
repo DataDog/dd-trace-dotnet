@@ -76,7 +76,7 @@ namespace Datadog.Trace.Debugger
 
         public static DebuggerSettings FromDefaultSource()
         {
-            return FromSource(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
+            return FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
         }
     }
 }

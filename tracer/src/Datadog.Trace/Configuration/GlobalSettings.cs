@@ -80,7 +80,7 @@ namespace Datadog.Trace.Configuration
                 DatadogLogging.UseDefaultLevel();
             }
 
-            TelemetryFactoryV2.GetConfigTelemetry().Record(ConfigurationKeys.DebugEnabled, enabled, ConfigurationOrigins.Code);
+            TelemetryFactory.Config.Record(ConfigurationKeys.DebugEnabled, enabled, ConfigurationOrigins.Code);
         }
 
         /// <summary>
@@ -101,7 +101,7 @@ namespace Datadog.Trace.Configuration
         /// <returns>A <see cref="TracerSettings"/> populated from the default sources.</returns>
         public static GlobalSettings FromDefaultSources()
         {
-            return new GlobalSettings(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
+            return new GlobalSettings(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
         }
     }
 }

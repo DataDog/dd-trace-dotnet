@@ -310,7 +310,7 @@ namespace Datadog.Trace.Tests
         public void GetTag_TraceId(ulong upper, ulong lower, string expected)
         {
             var traceId = new TraceId(upper, lower);
-            var trace = new TraceContext(tracer: null);
+            var trace = new TraceContext(Mock.Of<IDatadogTracer>());
             var propagatedContext = new SpanContext(traceId, spanId: 1, samplingPriority: null, serviceName: null, origin: null);
             var childContext = new SpanContext(propagatedContext, trace, serviceName: null);
             var span = new Span(childContext, start: null);

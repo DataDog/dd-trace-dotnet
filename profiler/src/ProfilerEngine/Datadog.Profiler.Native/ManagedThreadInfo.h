@@ -8,6 +8,7 @@
 #include "cor.h"
 #include "corprof.h"
 
+#include "IThreadInfo.h"
 #include "Semaphore.h"
 #include "shared/src/native-src/string.h"
 
@@ -27,7 +28,7 @@ public:
     std::uint64_t _currentSpanId;
 };
 
-struct ManagedThreadInfo
+struct ManagedThreadInfo : public IThreadInfo
 {
 private:
     ManagedThreadInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle, shared::WSTRING pThreadName);
@@ -41,11 +42,11 @@ public:
 
     inline ThreadID GetClrThreadId() const;
 
-    inline DWORD GetOsThreadId() const;
-    inline HANDLE GetOsThreadHandle() const;
+    inline DWORD GetOsThreadId() const override;
+    inline HANDLE GetOsThreadHandle() const override;
     inline void SetOsInfo(DWORD osThreadId, HANDLE osThreadHandle);
 
-    inline const shared::WSTRING& GetThreadName() const;
+    inline const shared::WSTRING& GetThreadName() const override;
     inline void SetThreadName(shared::WSTRING pThreadName);
 
     inline std::uint64_t GetLastSampleHighPrecisionTimestampNanoseconds() const;

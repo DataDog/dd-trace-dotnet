@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.VerifyNoOtherCalls();
 
             // Extract sampling from trace context
-            var newContext = new SpanContext(parent: null, new TraceContext(null), serviceName: null, traceId, spanId);
+            var newContext = new SpanContext(parent: null, new TraceContext(Mock.Of<IDatadogTracer>()), serviceName: null, traceId, spanId);
             var newHeaders = new Mock<IHeadersCollection>();
             B3Propagator.Inject(newContext, newHeaders.Object);
             newHeaders.Verify(h => h.Set("x-b3-traceid", "0123456789abcdef1122334455667788"), Times.Once());
@@ -77,7 +77,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.VerifyNoOtherCalls();
 
             // Extract sampling from trace context
-            var newContext = new SpanContext(parent: null, new TraceContext(null), serviceName: null, traceId, spanId);
+            var newContext = new SpanContext(parent: null, new TraceContext(Mock.Of<IDatadogTracer>()), serviceName: null, traceId, spanId);
             var newHeaders = new Mock<IHeadersCollection>();
 
             B3Propagator.Inject(newContext, newHeaders.Object, (carrier, name, value) => carrier.Set(name, value));

@@ -11,18 +11,27 @@ namespace Datadog.Trace.Configuration.Schema
 {
     internal class NamingSchema
     {
-        public NamingSchema(SchemaVersion version, string defaultServiceName, IDictionary<string, string>? serviceNameMappings)
+        public NamingSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IDictionary<string, string>? serviceNameMappings)
         {
             Version = version;
-            Database = new DatabaseSchema(version, defaultServiceName, serviceNameMappings);
-            Messaging = new MessagingSchema(version, defaultServiceName, serviceNameMappings);
+            RemoveClientServiceNamesEnabled = removeClientServiceNamesEnabled;
+            Client = new ClientSchema(version, peerServiceTagsEnabled, removeClientServiceNamesEnabled, defaultServiceName, serviceNameMappings);
+            Database = new DatabaseSchema(version, peerServiceTagsEnabled, removeClientServiceNamesEnabled, defaultServiceName, serviceNameMappings);
+            Messaging = new MessagingSchema(version, peerServiceTagsEnabled, removeClientServiceNamesEnabled, defaultServiceName, serviceNameMappings);
+            Server = new ServerSchema(version);
         }
 
         // TODO: Temporary, we can probably delete this once we migrate all the code off MetadataSchemaVersion
         public SchemaVersion Version { get; }
 
+        public ClientSchema Client { get; }
+
         public DatabaseSchema Database { get; }
 
         public MessagingSchema Messaging { get; }
+
+        public ServerSchema Server { get; }
+
+        public bool RemoveClientServiceNamesEnabled { get; }
     }
 }

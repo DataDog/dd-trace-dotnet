@@ -51,7 +51,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static void MonitorCrashes(int pid)
         {
-            if (!EnvironmentTools.IsWindows())
+            if (!EnvironmentTools.IsWindows() || !IsAvailable)
             {
                 return;
             }

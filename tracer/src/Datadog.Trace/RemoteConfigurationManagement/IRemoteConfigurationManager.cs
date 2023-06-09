@@ -3,18 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Numerics;
-using System.Threading.Tasks;
+using System;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
-    internal interface IRemoteConfigurationManager
+    internal interface IRemoteConfigurationManager : IDisposable
     {
-        /// <summary>
-        /// Start polling configurations asynchronously in an endless loop.
-        /// </summary>
-        Task StartPollingAsync();
-
-        void SetCapability(BigInteger index, bool available);
+        void Start();
     }
 }

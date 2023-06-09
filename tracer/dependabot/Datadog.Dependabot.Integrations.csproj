@@ -31,6 +31,11 @@
     <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.106.34 -->
     <PackageReference Include="AWSSDK.Core" Version="3.7.106.34" />
 
+    <!-- Integration: AWSSDK.SimpleNotificationService -->
+    <!-- Assembly: AWSSDK.SimpleNotificationService -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.101.62 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.101.62" />
+
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
     <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.102.2 -->

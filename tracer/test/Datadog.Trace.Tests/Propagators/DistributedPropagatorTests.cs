@@ -135,7 +135,7 @@ public class DistributedPropagatorTests
         propagatedTags.SetTag("_dd.p.key1", "value1");
         propagatedTags.SetTag("_dd.p.key2", "value2");
 
-        var traceContext = new TraceContext(tracer: null, propagatedTags);
+        var traceContext = new TraceContext(Mock.Of<IDatadogTracer>(), propagatedTags);
         traceContext.SetSamplingPriority(SamplingPriority);
         traceContext.Origin = Origin;
         traceContext.AdditionalW3CTraceState = AdditionalW3CTraceState;

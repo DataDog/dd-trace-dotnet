@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -30,7 +30,7 @@
       "evidence": {
         "valueParts": [
           {
-            "redacted": true,
+            "value": "nonexisting.exe",
             "source": 0
           }
         ]
@@ -41,7 +41,7 @@
     {
       "origin": "http.request.body",
       "name": "Property2",
-      "redacted": true
+      "value": "nonexisting.exe"
     }
   ]
 },
