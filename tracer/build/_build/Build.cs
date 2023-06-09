@@ -290,7 +290,7 @@ partial class Build : NukeBuild
     Target PackNuGet => _ => _
         .Description("Creates the NuGet packages from the compiled src directory")
         .After(Clean, CompileManagedSrc)
-        .DependsOn(CreateRequiredDirectories)
+        .DependsOn(CreateRequiredDirectories, CreateRootDescriptorsFile)
         .Executes(() =>
         {
             DotNetPack(s => s
@@ -412,11 +412,11 @@ partial class Build : NukeBuild
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                 );
 
-            var (framework, runtimes) = IsOsx switch
-            {
-                true => (TargetFramework.NETCOREAPP3_1, "net6.0"),
-                false => (TargetFramework.NET6_0, "net472 netcoreapp3.1.0"),
-            };
+                var (framework, runtimes) = IsOsx switch
+                {
+                    true => (TargetFramework.NETCOREAPP3_1, "net6.0"),
+                    false => (TargetFramework.NET6_0, "net472 netcoreapp3.1"),
+                };
                 
                 DotNetRun(s => s
                     .SetProjectFile(benchmarksProject)

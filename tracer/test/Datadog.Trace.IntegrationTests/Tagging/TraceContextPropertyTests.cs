@@ -1,4 +1,4 @@
-﻿// <copyright file="TraceContextPropertyTests.cs" company="Datadog">
+// <copyright file="TraceContextPropertyTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -24,7 +24,7 @@ public class TraceContextPropertyTests
         _testApi = new MockApi();
 
         var settings = new TracerSettings();
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, spanSampler: null, automaticFlush: false);
+        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
         _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
     }
 

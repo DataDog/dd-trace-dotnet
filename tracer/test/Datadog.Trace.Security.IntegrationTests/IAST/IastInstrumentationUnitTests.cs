@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using Datadog.Trace.Configuration;
@@ -357,7 +358,14 @@ public class IastInstrumentationUnitTests : TestHelper
 #else
             if (EnvironmentTools.IsLinux())
             {
-                arguments += " --TestCaseFilter:\"Category!=LinuxUnsupported\"";
+                if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+                {
+                    arguments += " --TestCaseFilter:\"(Category!=ArmUnsupported)&(Category!=LinuxUnsupported)\"";
+                }
+                else
+                {
+                    arguments += " --TestCaseFilter:\"Category!=LinuxUnsupported\"";
+                }
             }
 #endif
             SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests"));

@@ -87,7 +87,7 @@ public class ConfigurationTelemetryTests
                       .Concat(doubleValues)
                       .ToList();
 
-        var actual = telemetry.GetLatest()
+        var actual = telemetry.GetQueueForTesting()
                               .OrderBy(x => x.SeqId)
                               .Select(x => new ConfigDto(x))
                               .ToList();

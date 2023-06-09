@@ -134,20 +134,15 @@ public class LiveDebuggerTests
         {
             throw new NotImplementedException();
         }
-    }
-
-    private class RemoteConfigurationManagerMock : IRemoteConfigurationManager
-    {
-        internal bool Called { get; private set; }
-
-        public Task StartPollingAsync()
-        {
-            Called = true;
-            return Task.CompletedTask;
-        }
 
         public void SetCapability(BigInteger index, bool available)
         {
+            throw new NotImplementedException();
+        }
+
+        public byte[] GetCapabilities()
+        {
+            throw new NotImplementedException();
         }
     }
 

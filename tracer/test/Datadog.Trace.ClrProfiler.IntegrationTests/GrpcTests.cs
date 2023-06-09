@@ -28,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public GrpcLegacyTests(ITestOutputHelper output)
             : base("GrpcLegacy", output, usesAspNetCore: false)
         {
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -348,7 +349,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         // These _may_ not get the expected values (though the _client_ spans always will)
                         // Depending on how the server handles them
                         var verySlowGrpcServerSpans = spans
-                                                    .Where(x => x.Name == "grpc.request" && x.Resource.EndsWith("VerySlow") && x.Tags["span.kind"] == "server")
+                                                    .Where(x => x.Type == SpanTypes.Grpc && x.Resource.EndsWith("VerySlow") && x.Tags["span.kind"] == "server")
                                                     .ToList();
                         foreach (var span in verySlowGrpcServerSpans)
                         {
@@ -374,7 +375,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         if (httpClientIntegrationType != HttpClientIntegrationType.Disabled)
                         {
                             var httpClientSpans = spans
-                                                .Where(x => x.Name == "http.request" && x.Resource.EndsWith("VerySlow"))
+                                                .Where(x => x.Type == SpanTypes.Http && x.Resource.EndsWith("VerySlow"))
                                                 .ToList();
                             httpClientSpans.Should().HaveCount(2);
 

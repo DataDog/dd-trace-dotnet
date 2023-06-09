@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Reflection.Emit;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -386,21 +385,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         // internal for testing
         internal static Func<object> CreateLoggingRuleActivator(Assembly nlogAssembly)
         {
-            var loggingRuleType = nlogAssembly.GetType("NLog.Config.LoggingRule");
-            var ctor = loggingRuleType!.GetConstructor(Type.EmptyTypes)!; // Nullable YOLO
-
-            DynamicMethod createLoggingRuleMethod = new DynamicMethod(
-                $"NLogCommon_CreateLoggingRuleActivator",
-                loggingRuleType,
-                new[] { typeof(object) },
-                typeof(DuckType).Module,
-                true);
-
-            ILGenerator il = createLoggingRuleMethod.GetILGenerator();
-            il.Emit(OpCodes.Newobj, ctor);
-            il.Emit(OpCodes.Ret);
-
-            return (Func<object>)createLoggingRuleMethod.CreateInstanceDelegate(typeof(Func<object>));
+            var activator = new ActivatorHelper(nlogAssembly.GetType("NLog.Config.LoggingRule")!);
+            return () => activator.CreateInstance()!;
         }
     }
 }

@@ -12,19 +12,27 @@ namespace Datadog.Trace.Iast;
 
 internal static class StackWalker
 {
-    public static readonly string[] ExcludeSpanGenerationTypes = { "Datadog.Trace.Debugger.Helpers.StringExtensions", "Microsoft.AspNetCore.Razor.Language.StreamSourceDocument" };
+    public static readonly string[] ExcludeSpanGenerationTypes = { "Datadog.Trace.Debugger.Helpers.StringExtensions", "Microsoft.AspNetCore.Razor.Language.StreamSourceDocument", "System.Security.IdentityHelper" };
     public static readonly string[] AssemblyNamesToSkip =
     {
         "Datadog.Trace",
+        "Dapper",
+        "Dapper.StrongName",
+        "EntityFramework",
+        "EntityFramework.SqlServer",
+        "linq2db",
         "Microsoft.Data.SqlClient",
         "Microsoft.Data.Sqlite",
         "MySql.Data",
         "MySqlConnector",
+        "mscorlib",
         "Npgsql",
         "Oracle.DataAccess",
         "Oracle.ManagedDataAccess",
         "System.Data",
         "System",
+        "System.Core",
+        "System.Linq",
         "System.Data.Common",
         "System.Security.Cryptography",
         "System.Security.Cryptography.Algorithms",
@@ -32,7 +40,11 @@ internal static class StackWalker
         "System.Security.Cryptography.Primitives",
         "System.Data.SqlClient",
         "System.Data.SQLite",
-        "System.Diagnostics.Process"
+        "System.Diagnostics.Process",
+        "System.Configuration.ConfigurationManager",
+        "System.Private.CoreLib",
+        "xunit.runner.visualstudio.dotnetcore.testadapter",
+        "xunit.runner.visualstudio.testadapter"
     };
 
     private const int DefaultSkipFrames = 2;

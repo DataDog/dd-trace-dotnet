@@ -58,4 +58,7 @@ internal enum TelemetryErrorCode
 
     [Description("Error configuring Dynamic Instrumentation")]
     DynamicInstrumentationConfigurationError = 14,
+
+    [Description("Potentially invalid UDS path")]
+    PotentiallyInvalidUdsPath = 15,
 }

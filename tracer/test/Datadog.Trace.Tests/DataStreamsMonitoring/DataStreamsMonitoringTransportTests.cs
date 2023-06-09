@@ -110,9 +110,9 @@ public class DataStreamsMonitoringTransportTests
         => agent switch
         {
             MockTracerAgent.TcpUdpAgent x => new ExporterSettings { AgentUri = new Uri($"http://localhost:{x.Port}") },
-            MockTracerAgent.NamedPipeAgent x => new ExporterSettings { TracesPipeName = x.TracesWindowsPipeName, TracesTransport = TracesTransportType.WindowsNamedPipe },
+            MockTracerAgent.NamedPipeAgent x => new ExporterSettings(new NameValueConfigurationSource(new() { { ConfigurationKeys.TracesPipeName, x.TracesWindowsPipeName } })),
 #if NETCOREAPP3_1_OR_GREATER
-            MockTracerAgent.UdsAgent x =>  new ExporterSettings { TracesTransport = TracesTransportType.UnixDomainSocket, TracesUnixDomainSocketPath = x.TracesUdsPath },
+            MockTracerAgent.UdsAgent x =>  new ExporterSettings { AgentUri = new Uri(ExporterSettings.UnixDomainSocketPrefix + x.TracesUdsPath) },
 #endif
             _ => throw new InvalidOperationException("Unknown agent type " + agent.GetType()),
         };

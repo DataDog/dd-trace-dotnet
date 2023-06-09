@@ -13,7 +13,7 @@ internal static partial class TelemetryErrorCodeExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 15;
+    public const int Length = 16;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.TelemetryErrorCode"/> value.
@@ -41,6 +41,7 @@ internal static partial class TelemetryErrorCodeExtensions
             Datadog.Trace.Telemetry.TelemetryErrorCode.AppsecConfigurationError => "Error configuring AppSec",
             Datadog.Trace.Telemetry.TelemetryErrorCode.ContinuousProfilerConfigurationError => "Error configuring Continuous Profiler",
             Datadog.Trace.Telemetry.TelemetryErrorCode.DynamicInstrumentationConfigurationError => "Error configuring Dynamic Instrumentation",
+            Datadog.Trace.Telemetry.TelemetryErrorCode.PotentiallyInvalidUdsPath => "Potentially invalid UDS path",
             _ => value.ToString(),
         };
 
@@ -69,6 +70,7 @@ internal static partial class TelemetryErrorCodeExtensions
             Datadog.Trace.Telemetry.TelemetryErrorCode.AppsecConfigurationError,
             Datadog.Trace.Telemetry.TelemetryErrorCode.ContinuousProfilerConfigurationError,
             Datadog.Trace.Telemetry.TelemetryErrorCode.DynamicInstrumentationConfigurationError,
+            Datadog.Trace.Telemetry.TelemetryErrorCode.PotentiallyInvalidUdsPath,
         };
 
     /// <summary>
@@ -97,6 +99,7 @@ internal static partial class TelemetryErrorCodeExtensions
             nameof(Datadog.Trace.Telemetry.TelemetryErrorCode.AppsecConfigurationError),
             nameof(Datadog.Trace.Telemetry.TelemetryErrorCode.ContinuousProfilerConfigurationError),
             nameof(Datadog.Trace.Telemetry.TelemetryErrorCode.DynamicInstrumentationConfigurationError),
+            nameof(Datadog.Trace.Telemetry.TelemetryErrorCode.PotentiallyInvalidUdsPath),
         };
 
     /// <summary>
@@ -125,5 +128,6 @@ internal static partial class TelemetryErrorCodeExtensions
             "Error configuring AppSec",
             "Error configuring Continuous Profiler",
             "Error configuring Dynamic Instrumentation",
+            "Potentially invalid UDS path",
         };
 }

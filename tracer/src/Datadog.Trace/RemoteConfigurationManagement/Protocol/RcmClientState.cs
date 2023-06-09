@@ -24,7 +24,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
         public int RootVersion { get; }
 
         [JsonProperty("targets_version")]
-        public int TargetsVersion { get; }
+        public long TargetsVersion { get; }
 
         [JsonProperty("config_states")]
         public List<RcmConfigState> ConfigStates { get; }

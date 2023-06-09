@@ -35,7 +35,7 @@ namespace Datadog.Trace.Telemetry
             for (var i = 0; i < settings.Integrations.Settings.Length; i++)
             {
                 var integration = settings.Integrations.Settings[i];
-                if (integration.Enabled == false)
+                if (integration.EnabledInternal == false)
                 {
                     _integrationsById[i].WasExplicitlyDisabled = 1;
                 }

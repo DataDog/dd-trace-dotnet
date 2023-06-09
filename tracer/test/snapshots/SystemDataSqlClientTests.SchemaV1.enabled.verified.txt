@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -12,9 +12,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -30,9 +32,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -48,9 +52,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -66,9 +72,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -84,9 +92,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -102,9 +112,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -120,9 +132,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -138,9 +152,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -156,9 +172,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -174,9 +192,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -192,9 +212,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -210,9 +232,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -228,9 +252,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -246,9 +272,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -264,9 +292,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -282,9 +312,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -300,9 +332,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -318,9 +352,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -336,9 +372,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -354,9 +392,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -372,9 +412,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -390,9 +432,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -408,9 +452,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -426,9 +472,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -444,9 +492,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -462,9 +512,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -480,9 +532,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -498,9 +552,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -516,9 +572,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -534,9 +592,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -552,9 +612,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -570,9 +632,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -588,9 +652,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -606,9 +672,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -624,9 +692,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -642,9 +712,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -660,9 +732,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -678,9 +752,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -696,9 +772,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -714,9 +792,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -732,9 +812,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -750,9 +832,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -768,9 +852,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -786,9 +872,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -804,9 +892,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -822,9 +912,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -840,9 +932,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -858,9 +952,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -876,9 +972,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -894,9 +992,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -912,9 +1012,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -930,9 +1032,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -948,9 +1052,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -966,9 +1072,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -984,9 +1092,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1002,9 +1112,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1020,9 +1132,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1038,9 +1152,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1056,9 +1172,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1074,9 +1192,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1092,9 +1212,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1110,9 +1232,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1128,9 +1252,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1146,9 +1272,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1164,9 +1292,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1182,9 +1312,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1200,9 +1332,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1218,9 +1352,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1236,9 +1372,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1254,9 +1392,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1272,9 +1412,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1290,9 +1432,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1308,9 +1452,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1326,9 +1472,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1344,9 +1492,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1362,9 +1512,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1380,9 +1532,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1398,9 +1552,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1416,9 +1572,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1434,9 +1592,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1452,9 +1612,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1470,9 +1632,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1488,9 +1652,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1506,9 +1672,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1524,9 +1692,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1542,9 +1712,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1560,9 +1732,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1578,9 +1752,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1596,9 +1772,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1614,9 +1792,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1632,9 +1812,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1650,9 +1832,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1668,9 +1852,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1686,9 +1872,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1704,9 +1892,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1722,9 +1912,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1740,9 +1932,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1758,9 +1952,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1776,9 +1972,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1794,9 +1992,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1812,9 +2012,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1830,9 +2032,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1848,9 +2052,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1866,9 +2072,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1884,9 +2092,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1902,9 +2112,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1920,9 +2132,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1938,9 +2152,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1956,9 +2172,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1974,9 +2192,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -1992,9 +2212,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2010,9 +2232,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2028,9 +2252,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2046,9 +2272,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2064,9 +2292,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2082,9 +2312,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2100,9 +2332,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2118,9 +2352,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2136,9 +2372,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2154,9 +2392,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2172,9 +2412,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2190,9 +2432,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2208,9 +2452,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2226,9 +2472,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2244,9 +2492,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2262,9 +2512,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2280,9 +2532,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2298,9 +2552,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2316,9 +2572,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2334,9 +2592,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2352,9 +2612,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2370,9 +2632,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2388,9 +2652,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2406,9 +2672,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2424,9 +2692,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2442,9 +2712,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2460,9 +2732,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2478,9 +2752,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2496,9 +2772,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2514,9 +2792,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2532,9 +2812,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2550,9 +2832,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2568,9 +2852,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2586,9 +2872,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2604,9 +2892,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2622,9 +2912,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2640,9 +2932,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2658,9 +2952,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2676,9 +2972,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2694,9 +2992,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2712,9 +3012,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2730,9 +3032,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2748,9 +3052,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2766,9 +3072,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2784,9 +3092,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2802,9 +3112,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2820,9 +3132,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2838,9 +3152,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2856,9 +3172,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2874,9 +3192,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2892,9 +3212,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2910,9 +3232,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2928,9 +3252,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2946,9 +3272,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2964,9 +3292,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -2982,9 +3312,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -3000,9 +3332,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   },
   {
@@ -3018,9 +3352,11 @@
       db.type: sql-server,
       env: integration_tests,
       out.host: sqlserver,
+      peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.peer.service.source: network.destination.name
     }
   }
 ]

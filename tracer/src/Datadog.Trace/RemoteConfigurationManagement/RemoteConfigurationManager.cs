@@ -6,10 +6,8 @@
 #nullable enable
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -27,8 +25,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
     internal class RemoteConfigurationManager : IRemoteConfigurationManager
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationManager));
-        private static readonly object LockObject = new object();
-        private static readonly ConcurrentQueue<Action<RemoteConfigurationManager>> _initializationQueue = new();
 
         private readonly string _id;
         private readonly RcmClientTracer _rcmTracer;
@@ -46,10 +42,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private readonly Dictionary<string, RemoteConfigurationCache> _appliedConfigurations = new();
 
         private readonly int _rootVersion;
-        private BigInteger _capabilities;
         private int _targetsVersion;
         private string? _lastPollError;
-        private bool _isPollingStarted;
+        private int _isPollingStarted;
         private bool _isRcmEnabled;
         private string? _backendClientState;
         private bool _gitMetadataAddedToRequestTags;
@@ -78,14 +73,11 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             discoveryService.SubscribeToChanges(SetRcmEnabled);
         }
 
-        public static RemoteConfigurationManager? Instance { get; private set; }
-
         public static RemoteConfigurationManager Create(IDiscoveryService discoveryService, IRemoteConfigurationApi remoteConfigurationApi, RemoteConfigurationSettings settings, string serviceName, ImmutableTracerSettings tracerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IRcmSubscriptionManager subscriptionManager)
         {
             var tags = GetTags(settings, tracerSettings);
-            lock (LockObject)
-            {
-                Instance ??= new RemoteConfigurationManager(
+
+            return new RemoteConfigurationManager(
                     discoveryService,
                     remoteConfigurationApi,
                     id: settings.Id,
@@ -93,14 +85,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     pollInterval: settings.PollInterval,
                     gitMetadataTagsProvider,
                     subscriptionManager);
-            }
-
-            while (_initializationQueue.TryDequeue(out var action))
-            {
-                action(Instance);
-            }
-
-            return Instance;
         }
 
         private static List<string> GetTags(RemoteConfigurationSettings rcmSettings, ImmutableTracerSettings tracerSettings)
@@ -134,34 +118,24 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             return tags;
         }
 
-        public static void CallbackWithInitializedInstance(Action<RemoteConfigurationManager> action)
+        public void Start()
         {
-            RemoteConfigurationManager? inst = null;
-            lock (LockObject)
-            {
-                inst = Instance;
-                if (inst == null)
-                {
-                    _initializationQueue.Enqueue(action);
-                    return;
-                }
-            }
-
-            action(inst);
+            _ = Task.Run(StartPollingAsync)
+               .ContinueWith(t => { Log.Error(t.Exception, "Remote Configuration management polling failed"); }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
-        public async Task StartPollingAsync()
+        public void Dispose()
         {
-            lock (LockObject)
-            {
-                if (_isPollingStarted)
-                {
-                    Log.Warning("Remote Configuration management polling is already started.");
-                    return;
-                }
+            _discoveryService.RemoveSubscription(SetRcmEnabled);
+            _cancellationSource.Cancel();
+        }
 
-                _isPollingStarted = true;
-                LifetimeManager.Instance.AddShutdownTask(OnShutdown);
+        private async Task StartPollingAsync()
+        {
+            if (Interlocked.Exchange(ref _isPollingStarted, 1) != 0)
+            {
+                Log.Warning("Remote Configuration management polling is already started.");
+                return;
             }
 
             while (!_cancellationSource.IsCancellationRequested)
@@ -182,24 +156,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 {
                     // We are shutting down, so don't do anything about it
                 }
-            }
-        }
-
-        public void OnShutdown()
-        {
-            _discoveryService.RemoveSubscription(SetRcmEnabled);
-            _cancellationSource.Cancel();
-        }
-
-        public void SetCapability(BigInteger index, bool available)
-        {
-            if (available)
-            {
-                _capabilities |= index;
-            }
-            else
-            {
-                _capabilities &= ~index;
             }
         }
 
@@ -234,16 +190,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 configStates.Add(new RcmConfigState(cache.Path.Id, cache.Version, cache.Path.Product, cache.ApplyState, cache.Error));
             }
 
-            // capabilitiesArray needs to be big endian
-            // a first for me, until now I had never worked on a code base with an endian issue ...
-#if NETCOREAPP
-            var capabilitiesArray = _capabilities.ToByteArray(true, true);
-#else
-            var capabilitiesArray = _capabilities.ToByteArray();
-            Array.Reverse(capabilitiesArray);
-#endif
             var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, _lastPollError != null, _lastPollError, _backendClientState);
-            var rcmClient = new RcmClient(_id, _subscriptionManager.ProductKeys, _rcmTracer, rcmState, capabilitiesArray);
+            var rcmClient = new RcmClient(_id, _subscriptionManager.ProductKeys, _rcmTracer, rcmState, _subscriptionManager.GetCapabilities());
             EnrichTagsWithGitMetadata(rcmClient.ClientTracer.Tags);
             var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
             return rcmRequest;

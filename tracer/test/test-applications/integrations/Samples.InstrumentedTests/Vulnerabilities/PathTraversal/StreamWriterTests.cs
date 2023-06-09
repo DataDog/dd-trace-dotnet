@@ -21,13 +21,6 @@ public class StreamWriterTests : InstrumentationTestsBase
         AddTainted(taintedValue);
     }
 
-    [Fact]
-    public void GivenAStreamWriter_WhenCreatingFromTaintedString_LocationIsCorrect()
-    {
-        ExecuteAction(() => { new StreamWriter(taintedValue); });
-        AssertLocation(nameof(StreamWriterTests));
-    }
-
     // Cover System.IO.StreamWriter::.ctor(System.String)
 
     [Fact]

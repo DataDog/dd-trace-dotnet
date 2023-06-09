@@ -5647,6 +5647,35 @@
         }
       ],
       "transformers": []
+    },
+    {
+      "id": "tst-037-009",
+      "name": "Test block on response header",
+      "tags": {
+        "type": "lfi",
+        "crs_id": "000008",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.response.headers.no_cookies",
+                "key_path": [
+                  "content-language"
+                ]
+              }
+            ],
+            "regex": "en-us|krypton"
+          },
+          "operator": "match_regex"
+        }
+      ],
+      "transformers": [],
+      "on_match": [
+        "block"
+      ]
     }
   ]
 }

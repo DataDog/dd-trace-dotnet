@@ -11,7 +11,6 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
@@ -63,8 +62,9 @@ namespace Datadog.Trace
                 + nameof(Tracer) + "." + nameof(Configure) + "() to replace the global Tracer settings for the application")]
         public Tracer(TracerSettings settings)
         {
-            // TODO: Switch to immutable settings
-            Configure(settings);
+            // Don't call Configure because it will call Start on the TracerManager
+            // before this new instance of Tracer is assigned to Tracer.Instance
+            TracerManager.ReplaceGlobalManager(settings?.Build(), TracerManagerFactory.Instance);
 
             // update the count of Tracer instances
             Interlocked.Increment(ref _liveTracerCount);
@@ -77,7 +77,7 @@ namespace Datadog.Trace
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null)
-            : this(TracerManagerFactory.Instance.CreateTracerManager(settings?.Build(), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null))
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings?.Build(), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null))
         {
         }
 
@@ -210,9 +210,9 @@ namespace Datadog.Trace
         public ImmutableTracerSettings Settings => TracerManager.Settings;
 
         /// <summary>
-        /// Gets this tracer's settings.
+        /// Gets the tracer's settings for the current trace.
         /// </summary>
-        internal NamingSchema Schema => TracerManager.Schema;
+        PerTraceSettings IDatadogTracer.PerTraceSettings => TracerManager.PerTraceSettings;
 
         /// <summary>
         /// Gets the active scope
@@ -224,16 +224,24 @@ namespace Datadog.Trace
         /// </summary>
         ImmutableTracerSettings ITracer.Settings => Settings;
 
-        /// <summary>
-        /// Gets the <see cref="ITraceSampler"/> instance used by this <see cref="IDatadogTracer"/> instance.
-        /// </summary>
-        ITraceSampler IDatadogTracer.Sampler => TracerManager.Sampler;
-
         internal static string RuntimeId => DistributedTracer.Instance.GetRuntimeId();
 
         internal static int LiveTracerCount => _liveTracerCount;
 
         internal TracerManager TracerManager => _tracerManager ?? TracerManager.Instance;
+
+        internal PerTraceSettings CurrentTraceSettings
+        {
+            get
+            {
+                if (InternalActiveScope?.Span?.Context?.TraceContext is { } context)
+                {
+                    return context.CurrentTraceSettings;
+                }
+
+                return TracerManager.PerTraceSettings;
+            }
+        }
 
         /// <summary>
         /// Replaces the global Tracer settings used by all <see cref="Tracer"/> instances,
@@ -244,6 +252,7 @@ namespace Datadog.Trace
         public static void Configure(TracerSettings settings)
         {
             TracerManager.ReplaceGlobalManager(settings?.Build(), TracerManagerFactory.Instance);
+            Tracer.Instance.TracerManager.Start();
         }
 
         /// <summary>

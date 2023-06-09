@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
 
                 var parent = tracer.ActiveScope?.Span;
-                string operationName = tracer.Schema.Messaging.GetOutboundOperationName(MessagingType);
+                string operationName = tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingType);
                 if (parent is not null &&
                     parent.OperationName == operationName &&
                     parent.GetTag(Tags.InstrumentationName) != null)
@@ -50,8 +50,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                string serviceName = tracer.Schema.Messaging.GetOutboundServiceName(MessagingType);
-                KafkaTags tags = tracer.Schema.Messaging.CreateKafkaTags(SpanKinds.Producer);
+                string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundServiceName(MessagingType);
+                KafkaTags tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateKafkaTags(SpanKinds.Producer);
 
                 scope = tracer.StartActiveInternal(
                     operationName,
@@ -113,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
 
                 var parent = tracer.ActiveScope?.Span;
-                string operationName = tracer.Schema.Messaging.GetInboundOperationName(MessagingType);
+                string operationName = tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingType);
                 if (parent is not null &&
                     parent.OperationName == operationName &&
                     parent.GetTag(Tags.InstrumentationName) != null)
@@ -151,8 +151,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     }
                 }
 
-                string serviceName = tracer.Schema.Messaging.GetInboundServiceName(MessagingType);
-                KafkaTags tags = tracer.Schema.Messaging.CreateKafkaTags(SpanKinds.Consumer);
+                string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetInboundServiceName(MessagingType);
+                KafkaTags tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateKafkaTags(SpanKinds.Consumer);
 
                 scope = tracer.StartActiveInternal(operationName, parent: propagatedContext, tags: tags, serviceName: serviceName);
 
@@ -257,7 +257,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 var activeScope = tracer.InternalActiveScope;
                 var currentSpan = activeScope?.Span;
-                if (currentSpan?.OperationName != tracer.Schema.Messaging.GetInboundOperationName(MessagingType))
+                if (currentSpan?.OperationName != tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingType))
                 {
                     // Not currently in a consumer operation
                     return;

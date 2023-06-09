@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ActivitySampleHelper;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Clusters;
@@ -12,6 +13,7 @@ namespace Samples.MongoDB
 {
     public static class Program
     {
+        private static readonly ActivitySourceHelper _sampleHelpers = new("Samples.MongoDB");
         private static string Host()
         {
             return Environment.GetEnvironmentVariable("MONGO_HOST") ?? "localhost";
@@ -37,7 +39,7 @@ namespace Samples.MongoDB
             };
 
 
-            using (var mainScope = SampleHelpers.CreateScope("Main()"))
+            using (var mainScope = _sampleHelpers.CreateScope("Main()"))
             {
                 var connectionString = $"mongodb://{Host()}:27017";
                 var client = new MongoClient(connectionString);
@@ -58,7 +60,7 @@ namespace Samples.MongoDB
         {
             var allFilter = new BsonDocument();
 
-            using (var syncScope = SampleHelpers.CreateScope("sync-calls"))
+            using (var syncScope = _sampleHelpers.CreateScope("sync-calls"))
             {
 #if MONGODB_2_2
                 collection.DeleteMany(allFilter);
@@ -101,7 +103,7 @@ namespace Samples.MongoDB
         {
             var allFilter = new BsonDocument();
 
-            using (var asyncScope = SampleHelpers.CreateScope("async-calls"))
+            using (var asyncScope = _sampleHelpers.CreateScope("async-calls"))
             {
                 await collection.DeleteManyAsync(allFilter);
                 await collection.InsertOneAsync(newDocument);
@@ -123,14 +125,14 @@ namespace Samples.MongoDB
 
         public static void WireProtocolExecuteIntegrationTest(MongoClient client)
         {
-            using (var syncScope = SampleHelpers.CreateScope("sync-calls-execute"))
+            using (var syncScope = _sampleHelpers.CreateScope("sync-calls-execute"))
             {
                 var server = client.Cluster.SelectServer(new ServerSelector(), CancellationToken.None);
                 var channel = server.GetChannel(CancellationToken.None);
                 channel.KillCursors(new long[] { 0, 1, 2 }, new global::MongoDB.Driver.Core.WireProtocol.Messages.Encoders.MessageEncoderSettings(), CancellationToken.None);
             }
 
-            using (var asyncScope = SampleHelpers.CreateScope("async-calls-execute"))
+            using (var asyncScope = _sampleHelpers.CreateScope("async-calls-execute"))
             {
                 var server = client.Cluster.SelectServer(new ServerSelector(), CancellationToken.None);
                 var channel = server.GetChannel(CancellationToken.None);
