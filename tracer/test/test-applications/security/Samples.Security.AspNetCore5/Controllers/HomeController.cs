@@ -33,5 +33,11 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
+        public IActionResult LangHeader()
+        {
+            Response.Headers.Add("content-language", "krypton");
+            return Content("Setting content-language");
+        }
     }
 }
