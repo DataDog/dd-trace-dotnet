@@ -7,9 +7,10 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -145,21 +146,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             json["data_streams_enabled"]?.Value<bool>().Should().Be(expectedConfig.DataStreamsEnabled);
         }
 
-        // Missing: TraceHeaderTags, ServiceMapping
+        // TODO: Missing: tracing_header_tags, tracing_service_mapping
         public record Config
         {
+            [JsonProperty("runtime_metrics_enabled")]
             public bool RuntimeMetricsEnabled { get; init; }
 
+            [JsonProperty("tracing_debug")]
             public bool DebugLogsEnabled { get; init; }
 
+            [JsonProperty("logs_injection_enabled")]
             public bool LogsInjectionEnabled { get; init; }
 
+            [JsonProperty("tracing_sample_rate")]
             public double? TraceSampleRate { get; init; }
 
+            [JsonProperty("tracing_sampling_rules")]
             public string CustomSamplingRules { get; init; }
 
+            [JsonProperty("span_sampling_rules")]
             public string SpanSamplingRules { get; init; }
 
+            [JsonProperty("data_streams_enabled")]
             public bool DataStreamsEnabled { get; init; }
         }
     }

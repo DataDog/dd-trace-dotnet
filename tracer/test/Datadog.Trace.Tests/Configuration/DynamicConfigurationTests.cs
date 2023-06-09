@@ -38,7 +38,7 @@ namespace Datadog.Trace.Tests.Configuration
 
         private static ConfigurationBuilder CreateConfig(string serviceNamesMapping)
         {
-            var values = new NameValueCollection { ["TraceServiceMapping"] = serviceNamesMapping };
+            var values = new NameValueCollection { [ConfigurationKeys.ServiceNameMappings] = serviceNamesMapping };
 
             var configurationSource = new NameValueConfigurationSource(values);
 

@@ -5,13 +5,16 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry;
 
@@ -20,6 +23,21 @@ namespace Datadog.Trace.Configuration
     internal class DynamicConfigurationManager : IDynamicConfigurationManager
     {
         internal const string ProductName = "APM_LIBRARY";
+
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DynamicConfigurationManager>();
+
+        private static readonly IReadOnlyDictionary<string, string> Mapping = new Dictionary<string, string>
+        {
+            { ConfigurationKeys.DebugEnabled, "tracing_debug" },
+            { ConfigurationKeys.RuntimeMetricsEnabled, "runtime_metrics_enabled" },
+            { ConfigurationKeys.HeaderTags, "tracing_header_tags" },
+            { ConfigurationKeys.ServiceNameMappings, "tracing_service_mapping" },
+            { ConfigurationKeys.LogsInjectionEnabled, "logs_injection_enabled" },
+            { ConfigurationKeys.GlobalSamplingRate, "tracing_sample_rate" },
+            { ConfigurationKeys.CustomSamplingRules, "tracing_sampling_rules" },
+            { ConfigurationKeys.SpanSamplingRules, "span_sampling_rules" },
+            { ConfigurationKeys.DataStreamsMonitoring.Enabled, "data_streams_enabled" }
+        };
 
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private ISubscription? _subscription;
@@ -68,7 +86,7 @@ namespace Datadog.Trace.Configuration
 
             if (apmLibrary.Count == 1)
             {
-                configurationSource = new JsonConfigurationSource(Encoding.UTF8.GetString(apmLibrary[0].Contents), ConfigurationOrigins.RemoteConfig);
+                configurationSource = new JsonConfigurationSourceWithCustomMapping(Encoding.UTF8.GetString(apmLibrary[0].Contents), Mapping, ConfigurationOrigins.RemoteConfig);
             }
             else
             {
@@ -76,7 +94,7 @@ namespace Datadog.Trace.Configuration
 
                 foreach (var item in apmLibrary)
                 {
-                    compositeConfigurationSource.Add(new JsonConfigurationSource(Encoding.UTF8.GetString(item.Contents), ConfigurationOrigins.RemoteConfig));
+                    compositeConfigurationSource.Add(new JsonConfigurationSourceWithCustomMapping(Encoding.UTF8.GetString(item.Contents), Mapping, ConfigurationOrigins.RemoteConfig));
                 }
 
                 configurationSource = compositeConfigurationSource;
@@ -94,36 +112,37 @@ namespace Datadog.Trace.Configuration
         {
             var oldSettings = Tracer.Instance.Settings;
 
-            var headerTags = TracerSettings.InitializeHeaderTags(settings, "TraceHeaderTags", oldSettings.HeaderTagsNormalizationFixEnabled);
-            var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(settings, "TraceServiceMapping");
+            var headerTags = TracerSettings.InitializeHeaderTags(settings, ConfigurationKeys.HeaderTags, oldSettings.HeaderTagsNormalizationFixEnabled);
+            var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(settings, ConfigurationKeys.ServiceNameMappings);
 
             var dynamicSettings = new ImmutableDynamicSettings
             {
-                RuntimeMetricsEnabled = settings.WithKeys("RuntimeMetricsEnabled").AsBool(),
-                DataStreamsMonitoringEnabled = settings.WithKeys("DataStreamsEnabled").AsBool(),
-                CustomSamplingRules = settings.WithKeys("CustomSamplingRules").AsString(),
-                GlobalSamplingRate = settings.WithKeys("TraceSampleRate").AsDouble(),
-                SpanSamplingRules = settings.WithKeys("SpanSamplingRules").AsString(),
-                LogsInjectionEnabled = settings.WithKeys("LogsInjectionEnabled").AsBool(),
+                RuntimeMetricsEnabled = settings.WithKeys(ConfigurationKeys.RuntimeMetricsEnabled).AsBool(),
+                DataStreamsMonitoringEnabled = settings.WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled).AsBool(),
+                CustomSamplingRules = settings.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString(),
+                GlobalSamplingRate = settings.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble(),
+                SpanSamplingRules = settings.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString(),
+                LogsInjectionEnabled = settings.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool(),
                 HeaderTags = headerTags as IReadOnlyDictionary<string, string>,
                 ServiceNameMappings = serviceNameMappings
             };
 
             if (dynamicSettings.Equals(oldSettings.DynamicSettings))
             {
+                Log.Debug("No changes detected in the new configuration");
                 return;
             }
 
             var newSettings = oldSettings with { DynamicSettings = dynamicSettings };
 
-            var debugLogsEnabled = settings.WithKeys("DebugLogsEnabled").AsBool();
+            var debugLogsEnabled = settings.WithKeys(ConfigurationKeys.DebugEnabled).AsBool();
 
             if (debugLogsEnabled != null && debugLogsEnabled.Value != GlobalSettings.Instance.DebugEnabled)
             {
                 GlobalSettings.SetDebugEnabledInternal(debugLogsEnabled.Value);
                 Security.Instance.SetDebugEnabled(debugLogsEnabled.Value);
 
-                NativeMethods.UpdateSettings(new[] { "DD_TRACE_DEBUG" }, new[] { debugLogsEnabled.Value ? "1" : "0" });
+                NativeMethods.UpdateSettings(new[] { ConfigurationKeys.DebugEnabled }, new[] { debugLogsEnabled.Value ? "1" : "0" });
             }
 
             Tracer.Configure(newSettings);
