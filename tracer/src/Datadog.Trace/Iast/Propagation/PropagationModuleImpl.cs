@@ -84,6 +84,43 @@ internal static class PropagationModuleImpl
         return result;
     }
 
+    public static object? PropagateResultWhenInputTainted(string[] results, object input)
+    {
+        if (results is null || results.Count() == 0 || input is null)
+        {
+            return results;
+        }
+
+        var iastContext = IastModule.GetIastContext();
+        if (iastContext == null)
+        {
+            return results;
+        }
+
+        var taintedObjects = iastContext.GetTaintedObjects();
+
+        if (taintedObjects == null)
+        {
+            return results;
+        }
+
+        if (input is not null)
+        {
+            var tainted = taintedObjects.Get(input);
+            if (tainted is not null && tainted.Ranges.Count() > 0 && tainted.Ranges[0].Source is not null)
+            {
+                foreach (var result in results)
+                {
+                    taintedObjects.Taint(result, new Range[] { new Range(0, result.Length, tainted.Ranges[0].Source) });
+                }
+
+                return results;
+            }
+        }
+
+        return results;
+    }
+
     public static object? PropagateTaint(object? input, object result, int offset = 0)
     {
         try

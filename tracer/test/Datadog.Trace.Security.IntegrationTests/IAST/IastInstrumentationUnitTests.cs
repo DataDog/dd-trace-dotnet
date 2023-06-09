@@ -197,6 +197,14 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    public void TestSplitMethodsAspectCover()
+    {
+        TestMethodOverloads(typeof(string), "Split");
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     public void TestAllStringAspectsHaveACorrespondingMethod()
     {
         CheckAllAspectHaveACorrespondingMethod(typeof(string));

@@ -242,6 +242,16 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.String::Replace(System.String,System.String,System.StringComparison)\",\"\",[0],[False],[None],Propagation,[])] Replace(System.String,System.String,System.String,System.StringComparison)",
 "  [AspectMethodReplace(\"System.String::Replace(System.Char,System.Char)\",\"\",[0],[False],[None],Propagation,[])] Replace(System.String,System.Char,System.Char)",
 "  [AspectMethodReplace(\"System.String::Replace(System.String,System.String)\",\"\",[0],[False],[None],Propagation,[])] Replace(System.String,System.String,System.String)",
+"  [AspectMethodReplace(\"System.String::Split(System.Char[])\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Split(System.String,System.Char[])",
+"  [AspectMethodReplace(\"System.String::Split(System.Char[],System.Int32)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Split(System.String,System.Char[],System.Int32)",
+"  [AspectMethodReplace(\"System.String::Split(System.Char[],System.StringSplitOptions)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Split(System.String,System.Char[],System.StringSplitOptions)",
+"  [AspectMethodReplace(\"System.String::Split(System.Char[],System.Int32,System.StringSplitOptions)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Split(System.String,System.Char[],System.Int32,System.StringSplitOptions)",
+"  [AspectMethodReplace(\"System.String::Split(System.String[],System.StringSplitOptions)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Split(System.String,System.String[],System.StringSplitOptions)",
+"  [AspectMethodReplace(\"System.String::Split(System.String[],System.Int32,System.StringSplitOptions)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Split(System.String,System.String[],System.Int32,System.StringSplitOptions)",
+"  [AspectMethodReplace(\"System.String::Split(System.String,System.Int32,System.StringSplitOptions)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Split(System.String,System.String,System.Int32,System.StringSplitOptions)",
+"  [AspectMethodReplace(\"System.String::Split(System.String,System.StringSplitOptions)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Split(System.String,System.String,System.StringSplitOptions)",
+"  [AspectMethodReplace(\"System.String::Split(System.Char,System.StringSplitOptions)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Split(System.String,System.Char,System.StringSplitOptions)",
+"  [AspectMethodReplace(\"System.String::Split(System.Char,System.Int32,System.StringSplitOptions)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Split(System.String,System.Char,System.Int32,System.StringSplitOptions)",
         };
     }
 }

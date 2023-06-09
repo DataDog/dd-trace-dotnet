@@ -904,4 +904,167 @@ public class StringAspects
         PropagationModuleImpl.PropagateResultWhenInputTainted(result, target, oldValue, newValue);
         return result;
     }
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.Char[])", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, char[] separator)
+    {
+        var result = target.Split(separator);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <param name="count"> count argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.Char[],System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, char[] separator, int count)
+    {
+        var result = target.Split(separator, count);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <param name="options"> options argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.Char[],System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, char[] separator, StringSplitOptions options)
+    {
+        var result = target.Split(separator, options);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <param name="count"> count argument </param>
+    /// <param name="options"> options argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.Char[],System.Int32,System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, char[] separator, int count, StringSplitOptions options)
+    {
+        var result = target.Split(separator, count, options);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <param name="options"> options argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.String[],System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, string[] separator, StringSplitOptions options)
+    {
+        var result = target.Split(separator, options);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <param name="count"> count argument </param>
+    /// <param name="options"> options argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.String[],System.Int32,System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, string[] separator, int count, StringSplitOptions options)
+    {
+        var result = target.Split(separator, count, options);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+
+#if !NETFRAMEWORK
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <param name="count"> count argument </param>
+    /// <param name="options"> options argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.String,System.Int32,System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, string separator, int count, StringSplitOptions options)
+    {
+#if NETSTANDARD
+        return Split(target, new string[] { separator }, count, options);
+#else
+        var result = target.Split(separator, count, options);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+#endif
+    }
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <param name="options"> options argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.String,System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, string separator, StringSplitOptions options)
+    {
+#if NETSTANDARD
+        return Split(target, new string[] { separator }, options);
+#else
+        var result = target.Split(separator, options);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+#endif
+    }
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <param name="options"> options argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.Char,System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, char separator, StringSplitOptions options)
+    {
+        var result = target.Split(new char[] { separator }, options);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <param name="count"> count argument </param>
+    /// <param name="options"> options argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.Char,System.Int32,System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, char separator, int count, StringSplitOptions options)
+    {
+        var result = target.Split(new char[] { separator }, count, options);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+#endif
 }
