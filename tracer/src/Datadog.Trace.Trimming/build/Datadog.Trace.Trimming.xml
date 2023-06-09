@@ -55,6 +55,8 @@
       <type fullname="Microsoft.AspNetCore.Routing.RouteData" />
       <type fullname="Microsoft.AspNetCore.Routing.RouteValueDictionary" />
    </assembly>
+   <assembly fullname="Microsoft.AspNetCore.Server.IIS" />
+   <assembly fullname="Microsoft.AspNetCore.Server.Kestrel.Core" />
    <assembly fullname="Microsoft.Azure.Cosmos.Client" />
    <assembly fullname="Microsoft.Azure.Functions.Worker.Core" />
    <assembly fullname="Microsoft.Azure.WebJobs.Host" />
