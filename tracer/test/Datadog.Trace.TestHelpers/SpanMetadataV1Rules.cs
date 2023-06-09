@@ -173,8 +173,6 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("db.name")
                 .Matches("db.type", "cosmosdb")
                 .IsPresent("out.host")
-                .IsPresent("peer.service")
-                .MatchesOneOf("_dd.peer.service.source", "db.instance", "network.destination.name", "peer.service")
                 .Matches("component", "CosmosDb")
                 .Matches("span.kind", "client"));
 

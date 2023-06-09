@@ -10,11 +10,13 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [UsesVerify]
     public class CosmosTests : TracingIntegrationTest
     {
         private const string ExpectedOperationName = "cosmosdb.query";
@@ -39,13 +41,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsCosmosDb(metadataSchemaVersion);
 
-        [SkippableTheory(Skip = "Cosmos emulator is too flaky at the moment")]
+        // [SkippableTheory(Skip = "Cosmos emulator is too flaky at the moment")]
+        [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "LinuxUnsupported")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitTraces(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitTraces(string packageVersion, string metadataSchemaVersion)
         {
             var expectedSpanCount = 14;
 
@@ -60,36 +63,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
                 spans.Count.Should().BeGreaterOrEqualTo(expectedSpanCount, $"Expecting at least {expectedSpanCount} spans, only received {spans.Count}");
 
-                Output.WriteLine($"spans.Count: {spans.Count}");
-
-                foreach (var span in spans)
-                {
-                    Output.WriteLine(span.ToString());
-                }
-
-                var dbTags = 0;
-                var containerTags = 0;
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
-                foreach (var span in spans)
-                {
-                    span.Resource.Should().StartWith("SELECT * FROM");
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseTextForParameters($"Schema{metadataSchemaVersion.ToUpper()}")
+                                  .DisableRequireUniquePrefix();
 
-                    if (span.Tags.ContainsKey(Tags.CosmosDbContainer))
-                    {
-                        span.Tags.Should().Contain(new KeyValuePair<string, string>(Tags.CosmosDbContainer, "items"));
-                        containerTags++;
-                    }
-
-                    if (span.Tags.ContainsKey(Tags.DbName))
-                    {
-                        span.Tags.Should().Contain(new KeyValuePair<string, string>(Tags.DbName, "db"));
-                        dbTags++;
-                    }
-                }
-
-                dbTags.Should().Be(10);
-                containerTags.Should().Be(4);
                 telemetry.AssertIntegrationEnabled(IntegrationId.CosmosDb);
             }
         }
