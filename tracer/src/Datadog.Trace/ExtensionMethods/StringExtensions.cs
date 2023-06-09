@@ -109,7 +109,12 @@ namespace Datadog.Trace.ExtensionMethods
                 return false;
             }
 
+#if NETCOREAPP3_1_OR_GREATER
+            Span<char> chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+            var sb = new Util.ValueStringBuilder(chars);
+#else
             var sb = StringBuilderCache.Acquire(trimmedValue.Length);
+#endif
             sb.Append(trimmedValue.ToLowerInvariant());
 
             for (var x = 0; x < sb.Length; x++)
@@ -126,7 +131,11 @@ namespace Datadog.Trace.ExtensionMethods
                 }
             }
 
+#if NETCOREAPP3_1_OR_GREATER
+            normalizedTagName = sb.ToString();
+#else
             normalizedTagName = StringBuilderCache.GetStringAndRelease(sb);
+#endif
             return true;
         }
     }

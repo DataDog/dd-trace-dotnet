@@ -33,17 +33,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         {
             if (envVariables != null)
             {
-                var variableLine = StringBuilderCache.Acquire(0);
+#if NETCOREAPP3_1_OR_GREATER
+                Span<char> chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+                var variableLine = new Util.ValueStringBuilder(chars);
+#else
+                var variableLine = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+#endif
 
                 foreach (var variable in envVariables)
                 {
                     if (IsAllowedVariable(variable.Key))
                     {
-                        variableLine.Append(variable.Key).Append("=").AppendLine(variable.Value);
+                        variableLine.Append(variable.Key);
+                        variableLine.Append("=");
+                        variableLine.AppendLine(variable.Value);
                     }
                 }
 
+#if NETCOREAPP3_1_OR_GREATER
+                return variableLine.ToString();
+#else
                 return StringBuilderCache.GetStringAndRelease(variableLine);
+#endif
             }
 
             return null;

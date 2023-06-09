@@ -141,7 +141,12 @@ namespace Datadog.Trace
         /// </returns>
         public override string ToString()
         {
+#if NETCOREAPP3_1_OR_GREATER
+            Span<char> chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+            var sb = new Util.ValueStringBuilder(chars);
+#else
             var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+#endif
             sb.AppendLine($"TraceId64: {Context.TraceId128.Lower}");
             sb.AppendLine($"TraceId128: {Context.TraceId128}");
             sb.AppendLine($"RawTraceId: {Context.RawTraceId}");
@@ -158,7 +163,11 @@ namespace Datadog.Trace
             sb.AppendLine($"Error: {Error}");
             sb.AppendLine($"Meta: {Tags}");
 
+#if NETCOREAPP3_1_OR_GREATER
+            return sb.ToString();
+#else
             return StringBuilderCache.GetStringAndRelease(sb);
+#endif
         }
 
         /// <summary>

@@ -23,6 +23,10 @@ internal class AspNetCoreResourceNameHelper
         string actionName,
         bool expandRouteParameters)
     {
+#if NETCOREAPP3_1_OR_GREATER
+        Span<char> chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+        var sb = new Util.ValueStringBuilder(chars);
+#else
         var maxSize = routePattern.RawText.Length
                     + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
                     + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName.Length - 10, 0)) // "controller".Length
@@ -30,6 +34,7 @@ internal class AspNetCoreResourceNameHelper
                     + 1; // '/' prefix
 
         var sb = StringBuilderCache.Acquire(maxSize);
+#endif
 
         foreach (var pathSegment in routePattern.PathSegments)
         {
@@ -121,7 +126,11 @@ internal class AspNetCoreResourceNameHelper
             }
         }
 
+#if NETCOREAPP3_1_OR_GREATER
+        var simplifiedRoute = sb.ToString();
+#else
         var simplifiedRoute = StringBuilderCache.GetStringAndRelease(sb);
+#endif
 
         return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
     }
@@ -134,6 +143,10 @@ internal class AspNetCoreResourceNameHelper
         string actionName,
         bool expandRouteParameters)
     {
+#if NETCOREAPP3_1_OR_GREATER
+        Span<char> chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+        var sb = new Util.ValueStringBuilder(chars);
+#else
         var maxSize = routePattern.TemplateText.Length
                     + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
                     + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName.Length - 10, 0)) // "controller".Length
@@ -141,6 +154,7 @@ internal class AspNetCoreResourceNameHelper
                     + 1; // '/' prefix
 
         var sb = StringBuilderCache.Acquire(maxSize);
+#endif
 
         foreach (var pathSegment in routePattern.Segments)
         {
@@ -223,7 +237,11 @@ internal class AspNetCoreResourceNameHelper
             }
         }
 
+#if NETCOREAPP3_1_OR_GREATER
+        var simplifiedRoute = sb.ToString();
+#else
         var simplifiedRoute = StringBuilderCache.GetStringAndRelease(sb);
+#endif
 
         return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
     }

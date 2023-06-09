@@ -525,9 +525,21 @@ namespace Datadog.Trace.Propagators
                 var otherValuesLeft = header.Substring(0, ddStartIndex - 1);
                 var otherValuesRight = header.Substring(ddEndIndex + 1, header.Length - ddEndIndex - 1);
 
+#if NETCOREAPP3_1_OR_GREATER
+                Span<char> chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+                var sb = new Util.ValueStringBuilder(chars);
+#else
                 var sb = StringBuilderCache.Acquire(otherValuesLeft.Length + otherValuesRight.Length + 1);
-                sb.Append(otherValuesLeft).Append(TraceStateHeaderValuesSeparator).Append(otherValuesRight);
+#endif
+                sb.Append(otherValuesLeft);
+                sb.Append(TraceStateHeaderValuesSeparator);
+                sb.Append(otherValuesRight);
+
+#if NETCOREAPP3_1_OR_GREATER
+                additionalValues = sb.ToString();
+#else
                 additionalValues = StringBuilderCache.GetStringAndRelease(sb);
+#endif
             }
         }
 
@@ -688,6 +700,19 @@ namespace Datadog.Trace.Propagators
 
         private static string TrimAndJoinStringsRare(IEnumerable<string?> values)
         {
+#if NETCOREAPP3_1_OR_GREATER
+            static void AppendIfNotNullOrWhiteSpace(Util.ValueStringBuilder sb, string? value)
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    sb.Append(value!.Trim());
+                    sb.Append(TraceStateHeaderValuesSeparator);
+                }
+            }
+
+            Span<char> chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+            var sb = new Util.ValueStringBuilder(chars);
+#else
             static void AppendIfNotNullOrWhiteSpace(StringBuilder sb, string? value)
             {
                 if (!string.IsNullOrWhiteSpace(value))
@@ -697,6 +722,7 @@ namespace Datadog.Trace.Propagators
             }
 
             var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+#endif
 
             switch (values)
             {
@@ -729,7 +755,9 @@ namespace Datadog.Trace.Propagators
 
             if (sb.Length == 0)
             {
+#if !NETCOREAPP3_1_OR_GREATER
                 StringBuilderCache.GetStringAndRelease(sb);
+#endif
                 return string.Empty;
             }
 
@@ -739,7 +767,11 @@ namespace Datadog.Trace.Propagators
                 sb.Length--;
             }
 
+#if NETCOREAPP3_1_OR_GREATER
+            return sb.ToString();
+#else
             return StringBuilderCache.GetStringAndRelease(sb);
+#endif
         }
 
 #if NETCOREAPP

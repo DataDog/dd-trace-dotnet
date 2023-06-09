@@ -49,7 +49,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
                 }
                 else if (target.TryDuckCast<HasKeys>(out var hasKeys))
                 {
-                    var sb = StringBuilderCache.Acquire(0);
+#if NETCOREAPP3_1_OR_GREATER
+                    Span<char> chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+                    var sb = new ValueStringBuilder(chars);
+#else
+                    var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+#endif
 
                     foreach (var obj in hasKeys.Keys)
                     {
@@ -63,7 +68,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
                         sb.Append(FormatKey(key));
                     }
 
+#if NETCOREAPP3_1_OR_GREATER
+                    tags.Key = sb.ToString();
+#else
                     tags.Key = StringBuilderCache.GetStringAndRelease(sb);
+#endif
                 }
                 else if (target.TryDuckCast<HasStatement>(out var hasStatement))
                 {
