@@ -171,6 +171,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("db.name")
                 .Matches("db.type", "cosmosdb")
                 .IsPresent("out.host")
+                .IsPresent("out.port")
                 .Matches("component", "CosmosDb")
                 .Matches("span.kind", "client"));
 

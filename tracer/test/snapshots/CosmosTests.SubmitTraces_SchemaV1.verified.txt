@@ -11,11 +11,14 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      out.host: https://localhost:00000/,
+      out.host: localhost,
+      out.port: 8081,
+      peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.instance
     },
     Metrics: {
       process_id: 0,
@@ -37,11 +40,14 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      out.host: https://localhost:00000/,
+      out.host: localhost,
+      out.port: 8081,
+      peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.instance
     },
     Metrics: {
       process_id: 0,
@@ -63,11 +69,14 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      out.host: https://localhost:00000/,
+      out.host: localhost,
+      out.port: 8081,
+      peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.instance
     },
     Metrics: {
       process_id: 0,
@@ -89,11 +98,14 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      out.host: https://localhost:00000/,
+      out.host: localhost,
+      out.port: 8081,
+      peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.instance
     },
     Metrics: {
       process_id: 0,
@@ -116,11 +128,14 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      out.host: https://localhost:00000/,
+      out.host: localhost,
+      out.port: 8081,
+      peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.instance
     },
     Metrics: {
       process_id: 0,
@@ -143,11 +158,14 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      out.host: https://localhost:00000/,
+      out.host: localhost,
+      out.port: 8081,
+      peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.instance
     },
     Metrics: {
       process_id: 0,
@@ -170,11 +188,14 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      out.host: https://localhost:00000/,
+      out.host: localhost,
+      out.port: 8081,
+      peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.instance
     },
     Metrics: {
       process_id: 0,
@@ -197,11 +218,14 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      out.host: https://localhost:00000/,
+      out.host: localhost,
+      out.port: 8081,
+      peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.instance
     },
     Metrics: {
       process_id: 0,
@@ -222,11 +246,14 @@
       component: CosmosDb,
       db.type: cosmosdb,
       env: integration_tests,
-      out.host: https://localhost:00000/,
+      out.host: localhost,
+      out.port: 8081,
+      peer.service: localhost,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: network.destination.name
     },
     Metrics: {
       process_id: 0,
@@ -247,11 +274,14 @@
       component: CosmosDb,
       db.type: cosmosdb,
       env: integration_tests,
-      out.host: https://localhost:00000/,
+      out.host: localhost,
+      out.port: 8081,
+      peer.service: localhost,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: network.destination.name
     },
     Metrics: {
       process_id: 0,
@@ -272,11 +302,14 @@
       component: CosmosDb,
       db.type: cosmosdb,
       env: integration_tests,
-      out.host: https://localhost:00000/,
+      out.host: localhost,
+      out.port: 8081,
+      peer.service: localhost,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: network.destination.name
     },
     Metrics: {
       process_id: 0,
@@ -297,11 +330,14 @@
       component: CosmosDb,
       db.type: cosmosdb,
       env: integration_tests,
-      out.host: https://localhost:00000/,
+      out.host: localhost,
+      out.port: 8081,
+      peer.service: localhost,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: network.destination.name
     },
     Metrics: {
       process_id: 0,
@@ -323,11 +359,14 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      out.host: https://localhost:00000/,
+      out.host: localhost,
+      out.port: 8081,
+      peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.instance
     },
     Metrics: {
       process_id: 0,
@@ -349,11 +388,14 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      out.host: https://localhost:00000/,
+      out.host: localhost,
+      out.port: 8081,
+      peer.service: db,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.instance
     },
     Metrics: {
       process_id: 0,
