@@ -7,7 +7,7 @@
 using System;
 using System.Linq;
 using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Configurations
 {
@@ -16,6 +16,9 @@ namespace Datadog.Trace.Debugger.Configurations
         private const int MaxAllowedLogProbes = 100;
         private const int MaxAllowedMetricProbes = 100;
         private const int MaxAllowedSpanProbes = 100;
+
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationUpdater>();
+
         private readonly string? _env;
         private readonly string? _version;
 

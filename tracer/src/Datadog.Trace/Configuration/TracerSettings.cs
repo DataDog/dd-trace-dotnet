@@ -10,18 +10,17 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Configuration
 {
@@ -31,6 +30,8 @@ namespace Datadog.Trace.Configuration
     [GenerateSnapshot]
     public partial class TracerSettings
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerSettings>();
+
         private readonly IConfigurationTelemetry _telemetry;
         private readonly TracerSettingsSnapshot _initialSettings;
 

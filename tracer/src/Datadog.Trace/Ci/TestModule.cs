@@ -16,10 +16,10 @@ using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Ci;
 
@@ -28,6 +28,8 @@ namespace Datadog.Trace.Ci;
 /// </summary>
 public sealed class TestModule
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TestModule>();
+
     private static readonly AsyncLocal<TestModule?> CurrentModule = new();
     private readonly Span _span;
     private readonly Dictionary<string, TestSuite> _suites;

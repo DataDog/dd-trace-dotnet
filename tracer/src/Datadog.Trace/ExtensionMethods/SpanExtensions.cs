@@ -8,11 +8,11 @@ using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.ExtensionMethods
 {
@@ -21,6 +21,8 @@ namespace Datadog.Trace.ExtensionMethods
     /// </summary>
     public static class SpanExtensions
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanExtensions));
+
         /// <summary>
         /// Sets the sampling priority for the trace that contains the specified <see cref="ISpan"/>.
         /// </summary>

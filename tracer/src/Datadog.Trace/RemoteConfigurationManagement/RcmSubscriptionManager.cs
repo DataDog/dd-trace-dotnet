@@ -7,13 +7,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.RemoteConfigurationManagement;
 
 internal class RcmSubscriptionManager : IRcmSubscriptionManager
 {
     public static readonly IRcmSubscriptionManager Instance = new RcmSubscriptionManager();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RcmSubscriptionManager>();
+
     private readonly List<ISubscription> _subscriptions = new();
     private readonly object _syncRoot = new();
     private BigInteger _capabilities;
