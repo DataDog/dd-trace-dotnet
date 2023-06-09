@@ -110,6 +110,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 span.Type = SpanTypes.Http;
                 span.ResourceName = $"{httpMethod} {resourceUrl}";
+
                 tags.HttpMethod = httpMethod?.ToUpperInvariant();
                 if (requestUri is not null)
                 {
