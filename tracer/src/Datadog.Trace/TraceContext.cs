@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
@@ -31,7 +32,9 @@ namespace Datadog.Trace
 
         public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
         {
-            var settings = tracer?.Settings;
+            CurrentTraceSettings = tracer.PerTraceSettings;
+
+            var settings = tracer.Settings;
 
             // TODO: Environment, ServiceVersion, GitCommitSha, and GitRepositoryUrl are stored on the TraceContext
             // even though they likely won't change for the lifetime of the process. We should consider moving them
@@ -57,6 +60,8 @@ namespace Datadog.Trace
         public TraceClock Clock => _clock;
 
         public IDatadogTracer Tracer { get; }
+
+        public PerTraceSettings CurrentTraceSettings { get; }
 
         /// <summary>
         /// Gets the collection of trace-level tags.
@@ -106,7 +111,7 @@ namespace Datadog.Trace
                 // if we don't have a sampling priority yet, make a sampling decision now
                 if (_samplingPriority == null)
                 {
-                    SetSamplingPriority(Tracer.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default);
+                    SetSamplingPriority(CurrentTraceSettings?.TraceSampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default);
                 }
             }
 
@@ -173,6 +178,7 @@ namespace Datadog.Trace
 
             if (spansToWrite.Count > 0)
             {
+                RunSpanSampler(spansToWrite);
                 Tracer.Write(spansToWrite);
             }
         }
@@ -190,6 +196,7 @@ namespace Datadog.Trace
 
             if (spansToWrite.Count > 0)
             {
+                RunSpanSampler(spansToWrite);
                 Tracer.Write(spansToWrite);
             }
         }
@@ -223,6 +230,22 @@ namespace Datadog.Trace
             if (notifyDistributedTracer)
             {
                 DistributedTracer.Instance.SetSamplingPriority(priority);
+            }
+        }
+
+        private void RunSpanSampler(ArraySegment<Span> spans)
+        {
+            if (CurrentTraceSettings?.SpanSampler is null)
+            {
+                return;
+            }
+
+            if (spans.Array![spans.Offset].Context.TraceContext?.SamplingPriority <= 0)
+            {
+                for (int i = 0; i < spans.Count; i++)
+                {
+                    CurrentTraceSettings.SpanSampler.MakeSamplingDecision(spans.Array[i + spans.Offset]);
+                }
             }
         }
     }

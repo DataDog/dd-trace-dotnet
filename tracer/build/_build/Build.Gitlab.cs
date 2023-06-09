@@ -24,7 +24,7 @@ partial class Build
        .Description("Sign the dlls produced by building the Tracer, Profiler, and Monitoring home directory")
        .Unlisted()
        .Requires(() => IsWin)
-       .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
+       .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader, CreateRootDescriptorsFile)
        .Before(PackNuGet, BuildMsi, ZipMonitoringHome)
        .Executes(async () =>
         {

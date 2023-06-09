@@ -20,5 +20,15 @@ internal interface IConfigurationTelemetry
 
     void Record(string key, int value, ConfigurationOrigins origin, TelemetryErrorCode? error = null);
 
+    void Record(string key, double? value, ConfigurationOrigins origin, TelemetryErrorCode? error = null);
+
+    void Record(string key, int? value, ConfigurationOrigins origin, TelemetryErrorCode? error = null);
+
     public ICollection<ConfigurationKeyValue>? GetData();
+
+    /// <summary>
+    /// Copies the stored configuration to the provided destination
+    /// Note that this should not remove the configuration elements from the source
+    /// </summary>
+    public void CopyTo(IConfigurationTelemetry destination);
 }

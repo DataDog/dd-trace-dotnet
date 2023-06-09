@@ -30,5 +30,17 @@ internal class NullConfigurationTelemetry : IConfigurationTelemetry
     {
     }
 
+    public void Record(string key, double? value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
+    {
+    }
+
+    public void Record(string key, int? value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
+    {
+    }
+
     public ICollection<ConfigurationKeyValue>? GetData() => null;
+
+    public void CopyTo(IConfigurationTelemetry destination)
+    {
+    }
 }

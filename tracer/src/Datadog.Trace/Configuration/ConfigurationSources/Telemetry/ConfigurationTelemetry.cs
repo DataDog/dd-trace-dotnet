@@ -40,6 +40,30 @@ internal partial class ConfigurationTelemetry : IConfigurationTelemetry
     public void Record(string key, int value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
         => _entries.Enqueue(ConfigurationTelemetryEntry.Number(key, value, origin, error));
 
+    public void Record(string key, double? value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
+    {
+        if (value is { } v)
+        {
+            _entries.Enqueue(ConfigurationTelemetryEntry.Number(key, v, origin, error));
+        }
+        else
+        {
+            _entries.Enqueue(ConfigurationTelemetryEntry.String(key, null, origin, error));
+        }
+    }
+
+    public void Record(string key, int? value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
+    {
+        if (value is { } v)
+        {
+            _entries.Enqueue(ConfigurationTelemetryEntry.Number(key, v, origin, error));
+        }
+        else
+        {
+            _entries.Enqueue(ConfigurationTelemetryEntry.String(key, null, origin, error));
+        }
+    }
+
     /// <summary>
     /// Gets the currently enqueued values. Should only be used for testing
     /// </summary>
@@ -67,7 +91,7 @@ internal partial class ConfigurationTelemetry : IConfigurationTelemetry
 
         public TelemetryErrorCode? Error { get; }
 
-        public long SeqId { get; }
+        public long SeqId { get; set; }
 
         public ConfigurationTelemetryEntryType Type { get; }
 

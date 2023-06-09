@@ -4,8 +4,10 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
+using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
 
@@ -14,49 +16,81 @@ namespace Datadog.Trace.Tests.Configuration.Schema
     public class ClientSchemaTests
     {
         private const string DefaultServiceName = "MyApplication";
-        private readonly NamingSchema _namingSchemaV0;
-        private readonly NamingSchema _namingSchemaV1;
-
-        public ClientSchemaTests()
+        private readonly string[] _unmappedKeys = { "elasticsearch", "postgres", "custom-service" };
+        private readonly Dictionary<string, string> _mappings = new()
         {
-            var mappings = new Dictionary<string, string>
+            { "sql-server", "custom-db" },
+            { "http-client", "some-service" },
+            { "mongodb", "my-mongo" },
+        };
+
+        public static IEnumerable<object[]> GetAllConfigs()
+            => from schemaVersion in new object[] { SchemaVersion.V0, SchemaVersion.V1 }
+               from peerServiceTagsEnabled in new[] { true, false }
+               from removeClientServiceNamesEnabled in new[] { true, false }
+               select new[] { schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled };
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void GetOperationNameForProtocolIsCorrect(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var protocol = "http";
+            var expectedValue = schemaVersion switch
             {
-                { "sql-server", "custom-db" },
-                { "http-client", "some-service" },
-                { "mongodb", "my-mongo" },
+                SchemaVersion.V0 => $"{protocol}.request",
+                _ => $"{protocol}.client.request",
             };
 
-            _namingSchemaV0 = new NamingSchema(SchemaVersion.V0, DefaultServiceName, mappings);
-            _namingSchemaV1 = new NamingSchema(SchemaVersion.V1, DefaultServiceName, mappings);
-        }
-
-        [Fact]
-        public void GetOperationNameForProtocolIsCorrect()
-        {
-            var protocol = "http";
-
-            _namingSchemaV0.Client.GetOperationNameForProtocol(protocol).Should().Be($"{protocol}.request");
-            _namingSchemaV1.Client.GetOperationNameForProtocol(protocol).Should().Be($"{protocol}.client.request");
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            namingSchema.Client.GetOperationNameForProtocol(protocol).Should().Be(expectedValue);
         }
 
         [Theory]
-        [InlineData("sql-server", "custom-db")]
-        [InlineData("http-client", "some-service")]
-        [InlineData("mongodb", "my-mongo")]
-        public void RetrievesMappedServiceNames(string serviceName, string expected)
+        [MemberData(nameof(GetAllConfigs))]
+        public void RetrievesMappedServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
-            _namingSchemaV0.Client.GetServiceName(serviceName).Should().Be(expected);
-            _namingSchemaV1.Client.GetServiceName(serviceName).Should().Be(expected);
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+
+            foreach (var kvp in _mappings)
+            {
+                namingSchema.Client.GetServiceName(kvp.Key).Should().Be(kvp.Value);
+            }
         }
 
         [Theory]
-        [InlineData("elasticsearch")]
-        [InlineData("postgres")]
-        [InlineData("custom-service")]
-        public void RetrievesUnmappedServiceNames(string serviceName)
+        [MemberData(nameof(GetAllConfigs))]
+        public void RetrievesUnmappedServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
-            _namingSchemaV0.Client.GetServiceName(serviceName).Should().Be($"{DefaultServiceName}-{serviceName}");
-            _namingSchemaV1.Client.GetServiceName(serviceName).Should().Be(DefaultServiceName);
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+
+            foreach (var key in _unmappedKeys)
+            {
+                var expectedServiceName = schemaVersion switch
+                {
+                    SchemaVersion.V0 when removeClientServiceNamesEnabled == false => $"{DefaultServiceName}-{key}",
+                    _ => DefaultServiceName,
+                };
+
+                namingSchema.Client.GetServiceName(key).Should().Be(expectedServiceName);
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void CreateHttpTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var expectedType = schemaVersion switch
+            {
+                SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(HttpTags),
+                _ => typeof(HttpV1Tags),
+            };
+
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            namingSchema.Client.CreateHttpTags().Should().BeOfType(expectedType);
         }
     }
 }
