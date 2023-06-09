@@ -109,12 +109,7 @@ namespace Datadog.Trace.ClrProfiler
                 span = tracer.StartSpan(OperationName, tags, serviceName: serviceName, traceId: traceId, spanId: spanId, startTime: startTime, addToTraceContext: addToTraceContext);
 
                 span.Type = SpanTypes.Http;
-#if NET6_0_OR_GREATER
-                span.ResourceName = string.Create(null, stackalloc char[16 + resourceUrl?.Length ?? 0], $"{httpMethod} {resourceUrl}");
-#else
                 span.ResourceName = $"{httpMethod} {resourceUrl}";
-#endif
-
                 tags.HttpMethod = httpMethod?.ToUpperInvariant();
                 if (requestUri is not null)
                 {

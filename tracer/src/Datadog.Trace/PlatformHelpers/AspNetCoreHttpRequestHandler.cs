@@ -51,11 +51,7 @@ namespace Datadog.Trace.PlatformHelpers
             string resourceUrl = UriHelpers.GetCleanUriPath(absolutePath)
                                            .ToLowerInvariant();
 
-#if NET6_0_OR_GREATER
-            return string.Create(null, stackalloc char[resourceUrl.Length + 10], $"{httpMethod} {resourceUrl}");
-#else
             return $"{httpMethod} {resourceUrl}";
-#endif
         }
 
         private SpanContext ExtractPropagatedContext(HttpRequest request)

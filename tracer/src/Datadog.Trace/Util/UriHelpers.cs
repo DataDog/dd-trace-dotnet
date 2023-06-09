@@ -24,20 +24,12 @@ namespace Datadog.Trace.Util
             {
                 // keep only host and path.
                 // remove scheme, userinfo, query, and fragment.
-#if NET6_0_OR_GREATER
-                return string.Create(null, stackalloc char[512 + path.Length], $"{uri.Authority}{path}");
-#else
                 return $"{uri.Authority}{path}";
-#endif
             }
 
             // keep only scheme, authority, and path.
             // remove userinfo, query, and fragment.
-#if NET6_0_OR_GREATER
-            return string.Create(null, stackalloc char[512 + path.Length], $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{path}");
-#else
             return $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{path}";
-#endif
         }
 
         public static string GetCleanUriPath(Uri uri)
