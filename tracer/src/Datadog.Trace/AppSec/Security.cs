@@ -96,7 +96,7 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
-                _settings ??= new(source: null, TelemetryFactoryV2.GetConfigTelemetry());
+                _settings ??= new(source: null, TelemetryFactory.Config);
                 _configurationStatus ??= new ConfigurationStatus(string.Empty);
                 Log.Error(ex, "DDAS-0001-01: AppSec could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
             }
@@ -390,18 +390,16 @@ namespace Datadog.Trace.AppSec
 
         private void SetRemoteConfigCapabilites()
         {
-            RemoteConfigurationManager.CallbackWithInitializedInstance(
-                rcm =>
-                {
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeToggled);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, _noLocalRules);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, _noLocalRules);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusion, _noLocalRules);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmRequestBlocking, _noLocalRules);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmResponseBlocking, _noLocalRules);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomRules, _noLocalRules);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _noLocalRules);
-                });
+            var rcm = RcmSubscriptionManager.Instance;
+
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeToggled);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusion, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRequestBlocking, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmResponseBlocking, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomRules, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _noLocalRules);
         }
 
         private void InitWafAndInstrumentations(bool fromRemoteConfig = false)

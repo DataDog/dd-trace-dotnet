@@ -413,6 +413,22 @@ namespace Datadog.Trace.Configuration
         public const string MetadataSchemaVersion = "DD_TRACE_SPAN_ATTRIBUTE_SCHEMA";
 
         /// <summary>
+        /// Configuration key for automatically populating the peer.service tag
+        /// from predefined precursor attributes when the span attribute schema is v0.
+        /// This is ignored when the span attribute schema is v1 or later.
+        /// Default value is false
+        /// </summary>
+        public const string PeerServiceDefaultsEnabled = "DD_TRACE_PEER_SERVICE_DEFAULTS_ENABLED";
+
+        /// <summary>
+        /// Configuration key for unifying client service names when the span
+        /// attribute schema is v0. This is ignored when the span attribute
+        /// schema is v1 or later.
+        /// Default value is false
+        /// </summary>
+        public const string RemoveClientServiceNamesEnabled = "DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility
@@ -633,6 +649,25 @@ namespace Datadog.Trace.Configuration
             /// <see cref="TelemetrySettings.HeartbeatInterval"/>
             /// </summary>
             public const string HeartbeatIntervalSeconds = "DD_TELEMETRY_HEARTBEAT_INTERVAL";
+
+            /// <summary>
+            /// Configuration key for whether dependency data is sent via telemetry.
+            /// Required for some ASM features. Default value is <c>true</c> (enabled).
+            /// <see cref="TelemetrySettings.DependencyCollectionEnabled"/>
+            /// </summary>
+            public const string DependencyCollectionEnabled = "DD_TELEMETRY_DEPENDENCY_COLLECTION_ENABLED";
+
+            /// <summary>
+            /// Configuration key for whether telemetry metrics should be sent.
+            /// <see cref="TelemetrySettings.MetricsEnabled"/>
+            /// </summary>
+            public const string MetricsEnabled = "DD_TELEMETRY_METRICS_ENABLED";
+
+            /// <summary>
+            /// Configuration key for whether to enable v2 of telemetry.
+            /// <see cref="TelemetrySettings.V2Enabled"/>
+            /// </summary>
+            public const string V2Enabled = "DD_INTERNAL_TELEMETRY_V2_ENABLED";
         }
 
         internal static class TagPropagation

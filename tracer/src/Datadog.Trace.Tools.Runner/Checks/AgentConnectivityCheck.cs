@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
         {
             var settings = new ExporterSettings(process.Configuration, NullConfigurationTelemetry.Instance);
 
-            var url = settings.AgentUri.ToString();
+            var url = settings.AgentUriInternal.ToString();
 
             AnsiConsole.WriteLine(DetectedAgentUrlFormat(url));
 

@@ -10,9 +10,9 @@ namespace Datadog.Trace.TestHelpers
 {
     public class SpanAssertion
     {
-        private const string MatchesFailureStringFormat = "{0} \"{1}\" was expected to have value {2}, but the value is \"{3}\"";
+        private const string MatchesFailureStringFormat = "{0} \"{1}\" was expected to have value \"{2}\", but the value is \"{3}\"";
         private const string PresentFailureStringFormat = "{0} \"{1}\" was expected to be present";
-        private const string MatchesOneOfFailure = "{0} \"{1}\" was expected to have one of the following values {2}, but the value is \"{3}\"";
+        private const string MatchesOneOfFailure = "{0} \"{1}\" was expected to have one of the following values \"{2}\", but the value is \"{3}\"";
         private const string NoRemainingTagsFailureFormat = "Expected to have no remaining tags, but the following tags were found: [{0}]";
 
         protected static string GenerateMatchesFailureString(string propertyKind, string propertyName, string expectedValue, string actualValue) =>

@@ -1,0 +1,9 @@
+<!--
+***********************************************************************************************
+Sdk.props
+Copyright 2017 Datadog, Inc.
+***********************************************************************************************
+-->
+<Project>
+  <Import Project="$(MSBuildThisFileDirectory)..\build\Datadog.Trace.Trimming.props" />
+</Project>

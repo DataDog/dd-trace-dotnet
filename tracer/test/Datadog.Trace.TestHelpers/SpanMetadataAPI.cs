@@ -67,6 +67,13 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsAwsSqsV0(),
             };
 
+        public static Result IsAwsSns(this MockSpan span, string metadataSchemaVersion) =>
+        metadataSchemaVersion switch
+        {
+            "v1" => span.IsAwsSnsV1(),
+            _ => span.IsAwsSnsV0(),
+        };
+
         public static Result IsCosmosDb(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {

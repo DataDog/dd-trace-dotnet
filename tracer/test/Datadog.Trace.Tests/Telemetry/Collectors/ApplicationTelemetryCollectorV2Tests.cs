@@ -1,0 +1,93 @@
+﻿// <copyright file="ApplicationTelemetryCollectorV2Tests.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System.Collections.Specialized;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Collectors;
+using FluentAssertions;
+using Xunit;
+
+namespace Datadog.Trace.Tests.Telemetry.Collectors;
+
+public class ApplicationTelemetryCollectorV2Tests
+{
+    private const string ServiceName = "serializer-test-app";
+
+    [Fact]
+    public void ApplicationDataShouldIncludeExpectedValues()
+    {
+        const string env = "serializer-tests";
+        const string serviceVersion = "1.2.3";
+        var configurationTelemetry = new ConfigurationTelemetry();
+        var settings = new TracerSettings(
+            new NameValueConfigurationSource(
+                new NameValueCollection
+                {
+                    { ConfigurationKeys.ServiceName, ServiceName },
+                    { ConfigurationKeys.Environment, env },
+                    { ConfigurationKeys.ServiceVersion, serviceVersion },
+                }),
+            configurationTelemetry);
+
+        var collector = new ApplicationTelemetryCollectorV2();
+
+        collector.GetApplicationData().Should().BeNull();
+
+        collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName);
+
+        // calling twice should give same results
+        AssertData(collector.GetApplicationData());
+        AssertData(collector.GetApplicationData());
+
+        void AssertData(ApplicationTelemetryDataV2 data)
+        {
+            data.Should().NotBeNull();
+            data.ServiceName.Should().Be(ServiceName);
+            data.Env.Should().Be(env);
+            data.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
+            data.LanguageName.Should().Be("dotnet");
+            data.ServiceVersion.Should().Be(serviceVersion);
+            data.LanguageVersion.Should().Be(FrameworkDescription.Instance.ProductVersion);
+            data.RuntimeName.Should().NotBeNullOrEmpty().And.Be(FrameworkDescription.Instance.Name);
+            data.RuntimeVersion.Should().Be(FrameworkDescription.Instance.ProductVersion);
+        }
+    }
+
+    [Fact]
+    public void HostDataShouldIncludeExpectedValues()
+    {
+        const string env = "serializer-tests";
+        const string serviceVersion = "1.2.3";
+        var configurationTelemetry = new ConfigurationTelemetry();
+        var settings = new TracerSettings(
+            new NameValueConfigurationSource(
+                new NameValueCollection
+                {
+                    { ConfigurationKeys.ServiceName, ServiceName },
+                    { ConfigurationKeys.Environment, env },
+                    { ConfigurationKeys.ServiceVersion, serviceVersion },
+                }),
+            configurationTelemetry);
+
+        var collector = new ApplicationTelemetryCollectorV2();
+
+        collector.GetHostData().Should().BeNull();
+
+        collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName);
+
+        // calling twice should give same results
+        AssertData(collector.GetHostData());
+        AssertData(collector.GetHostData());
+
+        static void AssertData(HostTelemetryDataV2 data)
+        {
+            data.Should().NotBeNull();
+            data.Hostname.Should().Be(HostMetadata.Instance.Hostname ?? string.Empty);
+        }
+    }
+}

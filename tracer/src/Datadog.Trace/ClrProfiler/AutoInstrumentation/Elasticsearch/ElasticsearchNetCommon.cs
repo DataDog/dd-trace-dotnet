@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 
             string requestName = requestParameters?.GetType().Name.Replace("RequestParameters", string.Empty);
 
-            string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
+            string serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, ServiceName);
 
             Scope scope = null;
 

@@ -1,9 +1,8 @@
-﻿// <copyright file="SpanMessagePackFormatterTests.cs" company="Datadog">
+// <copyright file="SpanMessagePackFormatterTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -24,8 +23,8 @@ public class SpanMessagePackFormatterTests
     public async Task TraceId128_PropagatedTag(bool generate128BitTraceId)
     {
         var mockApi = new MockApi();
-        var settings = new TracerSettings { TraceId128BitGenerationEnabled = generate128BitTraceId };
-        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null, spanSampler: null);
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, generate128BitTraceId } });
+        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null);
         var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
 
         using (var rootScope = tracer.StartActive("root"))
