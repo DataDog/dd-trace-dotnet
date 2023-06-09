@@ -3,44 +3,15 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    public class SpanDecorationSameTagsFirstError : IRun
+    public class SpanDecorationWithoutWhen : IRun
     {
         private const string Json = @"
 {
    ""Decorations"":[
       {
-         ""When"":{
-            ""Str"":null,
-            ""Dsl"":null,
-            ""Json"":{
-                ""gt"":[
-                    {
-                        ""ref"": ""intLocal""
-                    },
-                    {
-                        ""ref"": ""intArg""
-                    }
-                ]
-            }
-         },
          ""Tags"":[
             {
-               ""Name"":""SpanDecorationSameTagsFirstError"",
-               ""Value"":{
-                  ""Template"":null,
-                  ""Segments"":[
-                    {
-                        ""Str"":null,
-                        ""Dsl"":null,
-                        ""Json"":{
-                            ""ref"": ""error""
-                        }
-                    }
-                  ]
-               }
-            },
-            {
-               ""Name"":""SpanDecorationSameTagsFirstError"",
+               ""Name"":""SpanDecorationWithoutWhen"",
                ""Value"":{
                   ""Template"":null,
                   ""Segments"":[
@@ -50,11 +21,10 @@ namespace Samples.Probes.TestRuns.SmokeTests
                         ""Json"":{
                             ""ref"": ""arg""
                         }
-                     }
+                    }
                   ]
                }
             }
-
          ]
       }
    ]

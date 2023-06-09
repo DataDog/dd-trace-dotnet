@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    public class SpanDecorationSameTagsFirstError : IRun
+    public class SpanDecorationTwoSegmentsWithError : IRun
     {
         private const string Json = @"
 {
@@ -25,7 +25,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
          },
          ""Tags"":[
             {
-               ""Name"":""SpanDecorationSameTagsFirstError"",
+               ""Name"":""SpanDecorationTwoSegments"",
                ""Value"":{
                   ""Template"":null,
                   ""Segments"":[
@@ -33,28 +33,19 @@ namespace Samples.Probes.TestRuns.SmokeTests
                         ""Str"":null,
                         ""Dsl"":null,
                         ""Json"":{
-                            ""ref"": ""error""
+                            ""ref"": ""Arg = ""
                         }
-                    }
-                  ]
-               }
-            },
-            {
-               ""Name"":""SpanDecorationSameTagsFirstError"",
-               ""Value"":{
-                  ""Template"":null,
-                  ""Segments"":[
+                    },
                     {
                         ""Str"":null,
                         ""Dsl"":null,
                         ""Json"":{
                             ""ref"": ""arg""
                         }
-                     }
+                    }
                   ]
                }
             }
-
          ]
       }
    ]

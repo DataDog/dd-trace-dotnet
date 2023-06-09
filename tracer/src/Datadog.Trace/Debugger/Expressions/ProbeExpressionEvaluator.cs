@@ -226,22 +226,31 @@ internal class ProbeExpressionEvaluator
                 var current = compiledDecorations[i];
                 try
                 {
-                    if (current.Key != default)
+                    if (current.Key != default || IsExpression(current.Key))
                     {
-                        // span decoration has condition?
+                        // span decoration has an expression condition
                         var when = current.Key.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members);
                         if (compiledDecorations[i].Key.Errors != null)
                         {
-                            Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", compiledDecorations[i].Key.Errors));
+                            if (Log.IsEnabled(LogEventLevel.Debug))
+                            {
+                                Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", compiledDecorations[i].Key.Errors));
+                            }
+
                             (result.Errors ??= new List<EvaluationError>()).AddRange(current.Key.Errors);
                             continue;
                         }
 
                         if (!when)
                         {
-                            Log.Information($"{nameof(ProbeExpressionEvaluator)}.{nameof(EvaluateSpanDecorations)}: Skipping span decoration because the `when` expression was `false`");
+                            Log.Information("{Class}.{Method}: Skipping span decoration because the `when` expression was `false`. {Expression}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), current.Key.RawExpression);
                             continue;
                         }
+                    }
+                    else if (IsLiteral(current.Key))
+                    {
+                        Log.Information("{Class}.{Method}: Skipping span decoration because the `when` expression is a string literal instead of expression. {Expression}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), current.Key.RawExpression);
+                        continue;
                     }
                 }
                 catch (Exception e)
@@ -257,13 +266,13 @@ internal class ProbeExpressionEvaluator
 
                 for (int j = 0; j < tagsAndValues.Length; j++)
                 {
+                    // tags[key] = expression[] /* e.g. Name is {name} */
                     var tagAndValues = tagsAndValues[j];
                     try
                     {
                         for (int k = 0; k < tagAndValues.Value.Length; k++)
                         {
                             var compiledExpression = tagAndValues.Value[k];
-
                             try
                             {
                                 if (IsLiteral(compiledExpression))

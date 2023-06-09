@@ -36,7 +36,15 @@ namespace Samples.Probes.TestRuns.SmokeTests
                         ""Json"":{
                             ""ref"": ""error""
                         }
-                    },
+                    }
+                  ]
+               }
+            },
+            {
+               ""Name"":""SpanDecorationSameTagsFirstErrorAsync"",
+               ""Value"":{
+                  ""Template"":null,
+                  ""Segments"":[
                     {
                         ""Str"":null,
                         ""Dsl"":null,
