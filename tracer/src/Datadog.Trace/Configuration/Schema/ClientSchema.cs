@@ -13,12 +13,16 @@ namespace Datadog.Trace.Configuration.Schema
     internal class ClientSchema
     {
         private readonly SchemaVersion _version;
+        private readonly bool _peerServiceTagsEnabled;
+        private readonly bool _removeClientServiceNamesEnabled;
         private readonly string _defaultServiceName;
         private readonly IDictionary<string, string>? _serviceNameMappings;
 
-        public ClientSchema(SchemaVersion version, string defaultServiceName, IDictionary<string, string>? serviceNameMappings)
+        public ClientSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IDictionary<string, string>? serviceNameMappings)
         {
             _version = version;
+            _peerServiceTagsEnabled = peerServiceTagsEnabled;
+            _removeClientServiceNamesEnabled = removeClientServiceNamesEnabled;
             _defaultServiceName = defaultServiceName;
             _serviceNameMappings = serviceNameMappings;
         }
@@ -39,7 +43,7 @@ namespace Datadog.Trace.Configuration.Schema
 
             return _version switch
             {
-                SchemaVersion.V0 => $"{_defaultServiceName}-{component}",
+                SchemaVersion.V0 when !_removeClientServiceNamesEnabled => $"{_defaultServiceName}-{component}",
                 _ => _defaultServiceName,
             };
         }
@@ -47,7 +51,7 @@ namespace Datadog.Trace.Configuration.Schema
         public HttpTags CreateHttpTags()
             => _version switch
             {
-                SchemaVersion.V0 => new HttpTags(),
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new HttpTags(),
                 _ => new HttpV1Tags(),
             };
     }

@@ -9,12 +9,13 @@ using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests.Utils;
 
-public class WafLibraryRequiredTest : IClassFixture<WafLibraryInvokerFixture>
+public class WafLibraryRequiredTest
 {
-    public WafLibraryRequiredTest(WafLibraryInvokerFixture wafLibraryInvokerFixture, string? version = null)
+    static WafLibraryRequiredTest()
     {
-        WafLibraryInvoker = wafLibraryInvokerFixture.Initialize(version);
+        var result = WafLibraryInvoker.Initialize();
+        WafLibraryInvoker = result.WafLibraryInvoker;
     }
 
-    internal WafLibraryInvoker WafLibraryInvoker { get; }
+    internal static WafLibraryInvoker? WafLibraryInvoker { get; }
 }

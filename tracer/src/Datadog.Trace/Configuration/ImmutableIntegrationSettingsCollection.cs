@@ -66,7 +66,7 @@ namespace Datadog.Trace.Configuration
             for (int i = 0; i < integrations.Length; i++)
             {
                 var existingSettings = allExistingSettings[i];
-                var explicitlyDisabled = disabledIntegrationNames.Contains(existingSettings.IntegrationName);
+                var explicitlyDisabled = disabledIntegrationNames.Contains(existingSettings.IntegrationNameInternal);
 
                 integrations[i] = new ImmutableIntegrationSettings(existingSettings, explicitlyDisabled);
             }

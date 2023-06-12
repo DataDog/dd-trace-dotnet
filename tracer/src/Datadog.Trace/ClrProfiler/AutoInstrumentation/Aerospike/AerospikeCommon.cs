@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
             try
             {
                 var tags = new AerospikeTags();
-                var serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
+                var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, ServiceName);
                 scope = tracer.StartActiveInternal(OperationName, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 

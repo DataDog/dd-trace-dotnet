@@ -7,6 +7,7 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
@@ -44,6 +45,16 @@ namespace Datadog.Trace.Security.IntegrationTests
     {
         public AspNetCore2TestsSecurityEnabledWithDefaultExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
             : base("AspNetCore2", fixture, outputHelper, "/shutdown", ruleFile: DefaultRuleFile, testName: "AspNetCore2.SecurityEnabled")
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    [Trait("Category", "LinuxUnsupported")]
+    public class AspNetCore2TestsSecurityEnabledWithDefaultExternalRulesFileIIS : AspNetCoreSecurityEnabledWithExternalRulesFileIIS
+    {
+        public AspNetCore2TestsSecurityEnabledWithDefaultExternalRulesFileIIS(IisFixture fixture, ITestOutputHelper outputHelper)
+            : base("AspNetCore2", fixture, outputHelper, "/shutdown", IisAppType.AspNetCoreOutOfProcess, ruleFile: AppDomain.CurrentDomain.BaseDirectory + DefaultRuleFile, testName: "AspNetCore2.SecurityEnabled")
         {
         }
     }

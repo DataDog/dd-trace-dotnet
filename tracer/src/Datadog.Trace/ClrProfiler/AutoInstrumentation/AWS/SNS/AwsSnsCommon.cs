@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             try
             {
                 tags = new AwsSnsTags();
-                string serviceName = tracer.Settings.GetServiceName(tracer, DatadogAwsSnsServiceName);
+                string serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, DatadogAwsSnsServiceName);
                 scope = tracer.StartActiveInternal(SnsOperationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 

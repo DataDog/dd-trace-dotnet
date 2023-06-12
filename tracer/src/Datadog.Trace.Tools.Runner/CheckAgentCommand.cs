@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tools.Runner
             }
             else
             {
-                configuration = new ExporterSettings(source: null, NullConfigurationTelemetry.Instance) { AgentUri = new Uri(settings.Url) };
+                configuration = new ExporterSettings(source: null, NullConfigurationTelemetry.Instance) { AgentUriInternal = new Uri(settings.Url) };
             }
 
             var result = await AgentConnectivityCheck.RunAsync(new ImmutableExporterSettings(configuration)).ConfigureAwait(false);

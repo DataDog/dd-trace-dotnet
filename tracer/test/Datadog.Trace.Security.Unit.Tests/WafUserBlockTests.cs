@@ -19,16 +19,11 @@ namespace Datadog.Trace.Security.Unit.Tests
 {
     public class WafUserBlockTests : WafLibraryRequiredTest
     {
-        public WafUserBlockTests(WafLibraryInvokerFixture wafLibraryInvokerFixture)
-            : base(wafLibraryInvokerFixture)
-        {
-        }
-
         [Fact]
         public void TestOk()
         {
             var js = JsonSerializer.Create();
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
+            var initResult = Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty);
             using var waf = initResult.Waf!;
             using var sr = new StreamReader("rule-data1.json");
             using var jsonTextReader = new JsonTextReader(sr);

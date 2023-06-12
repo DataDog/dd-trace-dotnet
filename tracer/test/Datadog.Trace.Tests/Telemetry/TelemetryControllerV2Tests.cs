@@ -48,6 +48,39 @@ public class TelemetryControllerV2Tests
     }
 
     [Fact]
+    public void TelemetryControllerRecordsConfigurationFromTracerSettings()
+    {
+        var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
+        var transportManager = new TelemetryTransportManagerV2(new ITelemetryTransport[] { transport });
+
+        var collector = new ConfigurationTelemetry();
+        var controller = new TelemetryControllerV2(
+            collector,
+            new DependencyTelemetryCollector(),
+            new IntegrationTelemetryCollector(),
+            new NullMetricsTelemetryCollector(),
+            new ProductsTelemetryCollector(),
+            new ApplicationTelemetryCollectorV2(),
+            transportManager,
+            _flushInterval);
+
+        var settings = new ImmutableTracerSettings(new TracerSettings());
+        controller.RecordTracerSettings(settings, "DefaultServiceName");
+
+        // Just basic check that we have the same number of config values
+        var configCount = settings.Telemetry.Should()
+                                  .BeOfType<ConfigurationTelemetry>()
+                                  .Which
+                                  .GetQueueForTesting()
+                                  .Count
+                                  .Should()
+                                  .NotBe(0)
+                                  .And.Subject;
+
+        collector.GetQueueForTesting().Count.Should().Be(configCount);
+    }
+
+    [Fact]
     public async Task TelemetryControllerCanBeDisposedTwice()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
