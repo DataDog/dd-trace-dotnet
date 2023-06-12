@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>2.32.0-prerelease</Version>
+    <Version>2.32.0</Version>
+    <Version>$(Version)-prerelease</Version>
   </PropertyGroup>
 
   <PropertyGroup>
