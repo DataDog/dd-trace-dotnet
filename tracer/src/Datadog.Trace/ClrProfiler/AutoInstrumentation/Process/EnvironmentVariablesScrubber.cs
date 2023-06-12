@@ -29,13 +29,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             return false;
         }
 
-        internal static string ScrubEnvironmentVariables(IDictionary<string, string> envVariables)
+        internal static unsafe string ScrubEnvironmentVariables(IDictionary<string, string> envVariables)
         {
             if (envVariables != null)
             {
 #if NETCOREAPP3_1_OR_GREATER
-                Span<char> chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
-                var variableLine = new Util.ValueStringBuilder(chars);
+                char* chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+                var variableLine = new Util.ValueStringBuilder((IntPtr)chars, StringBuilderCache.MaxBuilderSize);
 #else
                 var variableLine = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 #endif

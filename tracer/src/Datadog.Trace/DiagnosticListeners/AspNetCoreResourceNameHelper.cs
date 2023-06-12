@@ -1,4 +1,4 @@
-﻿// <copyright file="AspNetCoreResourceNameHelper.cs" company="Datadog">
+// <copyright file="AspNetCoreResourceNameHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,7 +15,7 @@ namespace Datadog.Trace.DiagnosticListeners;
 
 internal class AspNetCoreResourceNameHelper
 {
-    internal static string SimplifyRoutePattern(
+    internal static unsafe string SimplifyRoutePattern(
         RoutePattern routePattern,
         RouteValueDictionary routeValueDictionary,
         string areaName,
@@ -24,8 +24,8 @@ internal class AspNetCoreResourceNameHelper
         bool expandRouteParameters)
     {
 #if NETCOREAPP3_1_OR_GREATER
-        Span<char> chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
-        var sb = new Util.ValueStringBuilder(chars);
+        char* chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+        var sb = new Util.ValueStringBuilder((IntPtr)chars, StringBuilderCache.MaxBuilderSize);
 #else
         var maxSize = routePattern.RawText.Length
                     + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
@@ -135,7 +135,7 @@ internal class AspNetCoreResourceNameHelper
         return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
     }
 
-    internal static string SimplifyRouteTemplate(
+    internal static unsafe string SimplifyRouteTemplate(
         RouteTemplate routePattern,
         RouteValueDictionary routeValueDictionary,
         string areaName,
@@ -144,8 +144,8 @@ internal class AspNetCoreResourceNameHelper
         bool expandRouteParameters)
     {
 #if NETCOREAPP3_1_OR_GREATER
-        Span<char> chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
-        var sb = new Util.ValueStringBuilder(chars);
+        char* chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+        var sb = new Util.ValueStringBuilder((IntPtr)chars, StringBuilderCache.MaxBuilderSize);
 #else
         var maxSize = routePattern.TemplateText.Length
                     + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length

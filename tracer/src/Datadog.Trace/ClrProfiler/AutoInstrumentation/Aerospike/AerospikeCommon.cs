@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AerospikeCommon));
 
-        public static Scope CreateScope<TTarget>(Tracer tracer, TTarget target)
+        public static unsafe Scope CreateScope<TTarget>(Tracer tracer, TTarget target)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -50,8 +50,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
                 else if (target.TryDuckCast<HasKeys>(out var hasKeys))
                 {
 #if NETCOREAPP3_1_OR_GREATER
-                    Span<char> chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
-                    var sb = new ValueStringBuilder(chars);
+                    char* chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+                    var sb = new Util.ValueStringBuilder((IntPtr)chars, StringBuilderCache.MaxBuilderSize);
 #else
                     var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 #endif

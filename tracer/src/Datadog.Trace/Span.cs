@@ -139,11 +139,11 @@ namespace Datadog.Trace
         /// <returns>
         /// A <see cref="string" /> that represents this instance.
         /// </returns>
-        public override string ToString()
+        public override unsafe string ToString()
         {
 #if NETCOREAPP3_1_OR_GREATER
-            Span<char> chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
-            var sb = new Util.ValueStringBuilder(chars);
+            char* chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+            var sb = new Util.ValueStringBuilder((IntPtr)chars, StringBuilderCache.MaxBuilderSize);
 #else
             var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 #endif

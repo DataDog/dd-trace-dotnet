@@ -94,7 +94,7 @@ namespace Datadog.Trace.ExtensionMethods
         /// <param name="normalizePeriods">True if we replace dots by underscores</param>
         /// <param name="normalizedTagName">If the method returns true, the normalized tag name</param>
         /// <returns>Returns whether the conversion was successful</returns>
-        public static bool TryConvertToNormalizedTagName(this string value, bool normalizePeriods, out string normalizedTagName)
+        public static unsafe bool TryConvertToNormalizedTagName(this string value, bool normalizePeriods, out string normalizedTagName)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
@@ -110,8 +110,8 @@ namespace Datadog.Trace.ExtensionMethods
             }
 
 #if NETCOREAPP3_1_OR_GREATER
-            Span<char> chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
-            var sb = new Util.ValueStringBuilder(chars);
+            char* chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+            var sb = new Util.ValueStringBuilder((IntPtr)chars, StringBuilderCache.MaxBuilderSize);
 #else
             var sb = StringBuilderCache.Acquire(trimmedValue.Length);
 #endif

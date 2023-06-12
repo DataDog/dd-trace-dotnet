@@ -443,7 +443,7 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        internal static void SplitTraceStateValues(string header, out string? ddValues, out string? additionalValues)
+        internal static unsafe void SplitTraceStateValues(string header, out string? ddValues, out string? additionalValues)
         {
             // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
 
@@ -526,8 +526,8 @@ namespace Datadog.Trace.Propagators
                 var otherValuesRight = header.Substring(ddEndIndex + 1, header.Length - ddEndIndex - 1);
 
 #if NETCOREAPP3_1_OR_GREATER
-                Span<char> chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
-                var sb = new Util.ValueStringBuilder(chars);
+                char* chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+                var sb = new Util.ValueStringBuilder((IntPtr)chars, StringBuilderCache.MaxBuilderSize);
 #else
                 var sb = StringBuilderCache.Acquire(otherValuesLeft.Length + otherValuesRight.Length + 1);
 #endif
