@@ -143,10 +143,7 @@ namespace Datadog.Trace
                     }
                     else
                     {
-                        if (_iastRequestContext is null)
-                        {
-                            IastRequestContext.AddIastDisabledFlagToSpan(span);
-                        }
+                        IastRequestContext.AddIastDisabledFlagToSpan(span);
                     }
                 }
             }
