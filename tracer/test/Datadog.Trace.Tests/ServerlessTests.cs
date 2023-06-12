@@ -43,7 +43,7 @@ namespace Datadog.Trace.Tests
                 Environment.SetEnvironmentVariable(originalEnvVar.Key, originalEnvVar.Value);
             }
 
-            Serverless.SetIsGCPAzureEnvVarsTestsOnly();
+            Serverless.UpdateIsGCPAzureEnvVarsTestsOnly();
         }
 
         [Fact]
@@ -217,9 +217,9 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void DoesntSpawnMiniAgentInNonFunctionEnvironments()
         {
-            Environment.SetEnvironmentVariable("FUNCTION_NAME", null);
-            Environment.SetEnvironmentVariable("K_SERVICE", null);
-            Environment.SetEnvironmentVariable("AzureWebJobsScriptRoot", null);
+            Environment.SetEnvironmentVariable(Serverless.GCPFunctionDeprecatedEnvVarIdentifier, null);
+            Environment.SetEnvironmentVariable(Serverless.GCPFunctionNewerEnvVarIdentifier, null);
+            Environment.SetEnvironmentVariable(Serverless.AzureFunctionIdentifierEnvVar, null);
 
             var miniAgentManagerMock = new Mock<MiniAgentManager>();
             Serverless.MaybeStartMiniAgent(miniAgentManagerMock.Object);
@@ -229,10 +229,10 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SpawnMiniAgentInDeprecatedGCPFunction()
         {
-            Environment.SetEnvironmentVariable("FUNCTION_NAME", "dummy_function");
-            Environment.SetEnvironmentVariable("GCP_PROJECT", "dummy_project");
+            Environment.SetEnvironmentVariable(Serverless.GCPFunctionDeprecatedNameEnvVar, "dummy_function");
+            Environment.SetEnvironmentVariable(Serverless.GCPFunctionDeprecatedEnvVarIdentifier, "dummy_project");
 
-            Serverless.SetIsGCPAzureEnvVarsTestsOnly();
+            Serverless.UpdateIsGCPAzureEnvVarsTestsOnly();
 
             var miniAgentManagerMock = new Mock<MiniAgentManager>();
 
@@ -244,9 +244,9 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SpawnMiniAgentInNewerGCPFunction()
         {
-            Environment.SetEnvironmentVariable("K_SERVICE", "dummy_function");
-            Environment.SetEnvironmentVariable("FUNCTION_TARGET", "dummy_target");
-            Serverless.SetIsGCPAzureEnvVarsTestsOnly();
+            Environment.SetEnvironmentVariable(Serverless.GCPFunctionNewerNameEnvVar, "dummy_function");
+            Environment.SetEnvironmentVariable(Serverless.GCPFunctionNewerEnvVarIdentifier, "dummy_target");
+            Serverless.UpdateIsGCPAzureEnvVarsTestsOnly();
 
             var miniAgentManagerMock = new Mock<MiniAgentManager>();
 
@@ -258,9 +258,9 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SpawnMiniAgentInAzureFunction()
         {
-            Environment.SetEnvironmentVariable("AzureWebJobsScriptRoot", "/home/site/wwwroot");
-            Environment.SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "4");
-            Serverless.SetIsGCPAzureEnvVarsTestsOnly();
+            Environment.SetEnvironmentVariable(Serverless.AzureFunctionIdentifierEnvVar, "asdf");
+            Environment.SetEnvironmentVariable(Serverless.AzureFunctionExtensionVersionEnvVar, "4");
+            Serverless.UpdateIsGCPAzureEnvVarsTestsOnly();
 
             var miniAgentManagerMock = new Mock<MiniAgentManager>();
 

@@ -4,10 +4,8 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 
@@ -74,6 +72,11 @@ internal class MiniAgentManager
     }
 
     // Processes a raw log from the mini agent, returning a Tuple of the log level and the cleaned log data
+
+    // For example, given this raw log:
+    // [2023-06-06T01:31:30Z DEBUG datadog_trace_mini_agent::mini_agent] Random log
+    // This function will return:
+    // ("DEBUG", "Random log")
     internal static Tuple<string, string> ProcessMiniAgentLog(string rawLog)
     {
         int logPrefixCutoff = rawLog.IndexOf("]");

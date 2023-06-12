@@ -101,7 +101,7 @@ namespace Datadog.Trace
             settings ??= ImmutableTracerSettings.FromDefaultSources();
 
             var defaultServiceName = settings.ServiceName ??
-                                     Serverless.GetFunctionName() ??
+                                     Serverless.GetGCPAzureFunctionName() ??
                                      GetApplicationName(settings) ??
                                      UnknownServiceName;
 
@@ -341,27 +341,12 @@ namespace Datadog.Trace
                     return serviceName;
                 }
 
-                if (Serverless.IsGCPFunction)
+                if (Serverless.IsGCPFunction || Serverless.IsAzureFunction)
                 {
-                    if (Environment.GetEnvironmentVariable(Serverless.GCPFunctionNameDeprecatedEnvVar) != null)
+                    var functionName = Serverless.GetGCPAzureFunctionName();
+                    if (functionName != null)
                     {
-                        // Google Cloud Function Name set by deprecated runtimes
-                        return Environment.GetEnvironmentVariable(Serverless.GCPFunctionNameDeprecatedEnvVar);
-                    }
-
-                    if (Environment.GetEnvironmentVariable(Serverless.GCPFunctionNameNewerEnvVar) != null)
-                    {
-                        // Google Cloud Function Name set by newer runtimes
-                        return Environment.GetEnvironmentVariable(Serverless.GCPFunctionNameNewerEnvVar);
-                    }
-                }
-
-                if (Serverless.IsAzureFunction)
-                {
-                    if (Environment.GetEnvironmentVariable(Serverless.AzureFunctionNameEnvVar) != null)
-                    {
-                        // set by Azure Functions
-                        return Environment.GetEnvironmentVariable(Serverless.AzureFunctionNameEnvVar);
+                        return functionName;
                     }
                 }
 

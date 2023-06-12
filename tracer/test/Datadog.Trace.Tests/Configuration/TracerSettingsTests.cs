@@ -413,49 +413,49 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void StatsComputationEnabledWhenDeprecatedGCPFunction()
         {
-            System.Environment.SetEnvironmentVariable("FUNCTION_NAME", "function_name");
-            System.Environment.SetEnvironmentVariable("GCP_PROJECT", "project_name");
-            Serverless.SetIsGCPAzureEnvVarsTestsOnly();
+            System.Environment.SetEnvironmentVariable(Serverless.GCPFunctionDeprecatedNameEnvVar, "dummy_function");
+            System.Environment.SetEnvironmentVariable(Serverless.GCPFunctionDeprecatedEnvVarIdentifier, "dummy_project");
+            Serverless.UpdateIsGCPAzureEnvVarsTestsOnly();
 
             var settings = new TracerSettings();
 
             settings.StatsComputationEnabled.Should().Be(true);
 
-            System.Environment.SetEnvironmentVariable("FUNCTION_NAME", null);
-            System.Environment.SetEnvironmentVariable("GCP_PROJECT", null);
-            Serverless.SetIsGCPAzureEnvVarsTestsOnly();
+            System.Environment.SetEnvironmentVariable(Serverless.GCPFunctionDeprecatedNameEnvVar, null);
+            System.Environment.SetEnvironmentVariable(Serverless.GCPFunctionDeprecatedEnvVarIdentifier, null);
+            Serverless.UpdateIsGCPAzureEnvVarsTestsOnly();
         }
 
         [Fact]
         public void StatsComputationEnabledWhenNewerGCPFunction()
         {
-            System.Environment.SetEnvironmentVariable("K_SERVICE", "function_name");
-            System.Environment.SetEnvironmentVariable("FUNCTION_TARGET", "target_name");
-            Serverless.SetIsGCPAzureEnvVarsTestsOnly();
+            System.Environment.SetEnvironmentVariable(Serverless.GCPFunctionNewerNameEnvVar, "dummy_function");
+            System.Environment.SetEnvironmentVariable(Serverless.GCPFunctionNewerEnvVarIdentifier, "dummy_target");
+            Serverless.UpdateIsGCPAzureEnvVarsTestsOnly();
 
             var settings = new TracerSettings();
 
             settings.StatsComputationEnabled.Should().Be(true);
 
-            System.Environment.SetEnvironmentVariable("K_SERVICE", null);
-            System.Environment.SetEnvironmentVariable("FUNCTION_TARGET", null);
-            Serverless.SetIsGCPAzureEnvVarsTestsOnly();
+            System.Environment.SetEnvironmentVariable(Serverless.GCPFunctionNewerNameEnvVar, null);
+            System.Environment.SetEnvironmentVariable(Serverless.GCPFunctionNewerEnvVarIdentifier, null);
+            Serverless.UpdateIsGCPAzureEnvVarsTestsOnly();
         }
 
         [Fact]
         public void StatsComputationEnabledWhenAzureFunction()
         {
-            System.Environment.SetEnvironmentVariable("AzureWebJobsScriptRoot", "/home/site/wwwroot");
-            System.Environment.SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "4");
-            Serverless.SetIsGCPAzureEnvVarsTestsOnly();
+            System.Environment.SetEnvironmentVariable(Serverless.AzureFunctionIdentifierEnvVar, "asdf");
+            System.Environment.SetEnvironmentVariable(Serverless.AzureFunctionExtensionVersionEnvVar, "4");
+            Serverless.UpdateIsGCPAzureEnvVarsTestsOnly();
 
             var settings = new TracerSettings();
 
             settings.StatsComputationEnabled.Should().Be(true);
 
-            System.Environment.SetEnvironmentVariable("AzureWebJobsScriptRoot", null);
-            System.Environment.SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", null);
-            Serverless.SetIsGCPAzureEnvVarsTestsOnly();
+            System.Environment.SetEnvironmentVariable(Serverless.AzureFunctionIdentifierEnvVar, null);
+            System.Environment.SetEnvironmentVariable(Serverless.AzureFunctionExtensionVersionEnvVar, null);
+            Serverless.UpdateIsGCPAzureEnvVarsTestsOnly();
         }
 
         [Theory]
