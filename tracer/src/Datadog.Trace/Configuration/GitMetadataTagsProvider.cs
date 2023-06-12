@@ -1,4 +1,4 @@
-﻿// <copyright file="GitMetadataTagsProvider.cs" company="Datadog">
+﻿ // <copyright file="GitMetadataTagsProvider.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,12 +16,14 @@ namespace Datadog.Trace.Configuration;
 internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
 {
     private readonly ImmutableTracerSettings _immutableTracerSettings;
+    private readonly IScopeManager _scopeManager;
     private GitMetadata? _cachedGitTags = null;
     private int _tryCount = 0;
 
-    public GitMetadataTagsProvider(ImmutableTracerSettings immutableTracerSettings)
+    public GitMetadataTagsProvider(ImmutableTracerSettings immutableTracerSettings, IScopeManager scopeManager)
     {
         _immutableTracerSettings = immutableTracerSettings;
+        _scopeManager = scopeManager;
     }
 
     private IDatadogLogger Log { get; } = DatadogLogging.GetLoggerFor(typeof(GitMetadataTagsProvider));
@@ -93,11 +95,12 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
         {
             // Cannot determine the entry assembly. This may mean this method was called too early.
             // Return false to indicate that we should try again later.
-
+            // We'll try up to 100 times, but if a span is active, we'll give up immediately, as that means
+            // the application is already fully up and running and we're not going to be able to retrieve the entry assembly.
             var nbTries = Interlocked.Increment(ref _tryCount);
-            if (nbTries > 100)
+            if (nbTries > 100 || _scopeManager.Active?.Span != null)
             {
-                Log.Debug("Tried 100 times to get the SourceLink information. Giving up.");
+                Log.Debug("Giving up on trying to locate entry assembly. SourceLink information will not be retrieved.");
                 result = GitMetadata.Empty;
                 return true;
             }
