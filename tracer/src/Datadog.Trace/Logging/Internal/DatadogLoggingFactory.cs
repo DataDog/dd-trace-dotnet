@@ -7,6 +7,7 @@
 
 using System;
 using System.IO;
+using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
@@ -163,13 +164,19 @@ internal static class DatadogLoggingFactory
 #if NETFRAMEWORK
             logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
 #else
-            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+
+            if (Serverless.GetIsAzureFunction())
+            {
+                return isWindows ? "C:\\home\\LogFiles" : "/home/site/wwwroot";
+            }
+            else if (isWindows)
             {
                 logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
             }
             else
             {
-                // Linux
+                // Linux or GCP Functions
                 logDirectory = "/var/log/datadog/dotnet";
             }
 #endif

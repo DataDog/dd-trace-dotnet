@@ -164,16 +164,35 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
                 }
 
                 var dirPathSep = Path.DirectorySeparatorChar;
+                var isWindows = Environment.OSVersion.Platform == PlatformID.Win32NT;
 
-                string rustBinaryPathRoot = IsGCPFunction ? "/layers/google.dotnet.publish/publish/bin" : "C:\\home\\site\\wwwroot";
-                string rustBinaryPathOsFolder = Environment.OSVersion.Platform == PlatformID.Win32NT ? "datadog-serverless-agent-windows-amd64" : "datadog-serverless-agent-linux-amd64";
+                string rustBinaryPathRoot;
+                if (IsGCPFunction)
+                {
+                    rustBinaryPathRoot = "/layers/google.dotnet.publish/publish/bin";
+                }
+                else
+                {
+                    // IsAzureFunction
+                    if (isWindows)
+                    {
+                        rustBinaryPathRoot = "C:\\home\\site\\wwwroot";
+                    }
+                    else
+                    {
+                        // linux
+                        rustBinaryPathRoot = "/home/site/wwwroot";
+                    }
+                }
+
+                string rustBinaryPathOsFolder = isWindows ? "datadog-serverless-agent-windows-amd64" : "datadog-serverless-agent-linux-amd64";
                 rustBinaryPath = string.Format("{0}{1}{2}{3}datadog-serverless-trace-mini-agent", rustBinaryPathRoot, dirPathSep, rustBinaryPathOsFolder, dirPathSep);
             }
 
             manager.Start(rustBinaryPath);
         }
 
-        private static bool GetIsGCPFunction()
+        internal static bool GetIsGCPFunction()
         {
             bool isDeprecatedGCPFunction = Environment.GetEnvironmentVariable(GCPFunctionDeprecatedNameEnvVar) != null && Environment.GetEnvironmentVariable(GCPFunctionDeprecatedEnvVarIdentifier) != null;
             bool isNewerGCPFunction = Environment.GetEnvironmentVariable(GCPFunctionNewerNameEnvVar) != null && Environment.GetEnvironmentVariable(GCPFunctionNewerEnvVarIdentifier) != null;
@@ -181,7 +200,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             return isDeprecatedGCPFunction || isNewerGCPFunction;
         }
 
-        private static bool GetIsAzureFunction()
+        internal static bool GetIsAzureFunction()
         {
             return Environment.GetEnvironmentVariable(AzureFunctionIdentifierEnvVar) != null && Environment.GetEnvironmentVariable(AzureFunctionNameEnvVar) != null;
         }
