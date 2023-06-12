@@ -115,6 +115,10 @@ internal static class PropagationModuleImpl
         {
             Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(PropagateResultWhenInputTainted)} exception");
         }
+        catch (Exception error)
+        {
+            Log.Error(error, "PropagationModuleImpl.PropagateResultWhenInputTainted exception");
+        }
 
         return result;
     }

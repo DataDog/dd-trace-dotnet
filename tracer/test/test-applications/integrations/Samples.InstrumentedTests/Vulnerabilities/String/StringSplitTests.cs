@@ -1,6 +1,4 @@
 using System;
-using FluentAssertions;
-using Org.BouncyCastle.Asn1.X509;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
