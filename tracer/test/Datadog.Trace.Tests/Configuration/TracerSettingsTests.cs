@@ -447,16 +447,16 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void StatsComputationEnabledWhenAzureFunction()
         {
-            System.Environment.SetEnvironmentVariable(Serverless.AzureFunctionIdentifierEnvVar, "asdf");
-            System.Environment.SetEnvironmentVariable(Serverless.AzureFunctionExtensionVersionEnvVar, "4");
+            System.Environment.SetEnvironmentVariable(Serverless.AzureFunctionNameEnvVar, "function_name");
+            System.Environment.SetEnvironmentVariable(Serverless.AzureFunctionIdentifierEnvVar, "4");
             Serverless.UpdateIsGCPAzureEnvVarsTestsOnly();
 
             var settings = new TracerSettings();
 
             settings.StatsComputationEnabled.Should().Be(true);
 
+            System.Environment.SetEnvironmentVariable(Serverless.AzureFunctionNameEnvVar, null);
             System.Environment.SetEnvironmentVariable(Serverless.AzureFunctionIdentifierEnvVar, null);
-            System.Environment.SetEnvironmentVariable(Serverless.AzureFunctionExtensionVersionEnvVar, null);
             Serverless.UpdateIsGCPAzureEnvVarsTestsOnly();
         }
 

@@ -258,8 +258,8 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SpawnMiniAgentInAzureFunction()
         {
-            Environment.SetEnvironmentVariable(Serverless.AzureFunctionIdentifierEnvVar, "asdf");
-            Environment.SetEnvironmentVariable(Serverless.AzureFunctionExtensionVersionEnvVar, "4");
+            Environment.SetEnvironmentVariable(Serverless.AzureFunctionNameEnvVar, "function_name");
+            Environment.SetEnvironmentVariable(Serverless.AzureFunctionIdentifierEnvVar, "4");
             Serverless.UpdateIsGCPAzureEnvVarsTestsOnly();
 
             var miniAgentManagerMock = new Mock<MiniAgentManager>();

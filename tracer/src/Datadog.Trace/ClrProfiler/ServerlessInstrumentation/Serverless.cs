@@ -17,8 +17,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
         private const string LogLevelEnvName = "DD_LOG_LEVEL";
         // Azure and GCP Functions are identified by pairs of environment variables.
         internal const string AzureFunctionNameEnvVar = "WEBSITE_SITE_NAME";
-        internal const string AzureFunctionExtensionVersionEnvVar = "FUNCTIONS_EXTENSION_VERSION";
-        internal const string AzureFunctionIdentifierEnvVar = "AzureWebJobsStorage";
+        internal const string AzureFunctionIdentifierEnvVar = "FUNCTIONS_EXTENSION_VERSION";
         internal const string GCPFunctionDeprecatedNameEnvVar = "FUNCTION_NAME";
         internal const string GCPFunctionDeprecatedEnvVarIdentifier = "GCP_PROJECT";
         internal const string GCPFunctionNewerNameEnvVar = "K_SERVICE";
@@ -184,7 +183,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
         private static bool GetIsAzureFunction()
         {
-            return Environment.GetEnvironmentVariable(AzureFunctionIdentifierEnvVar) != null && Environment.GetEnvironmentVariable(AzureFunctionExtensionVersionEnvVar) != null;
+            return Environment.GetEnvironmentVariable(AzureFunctionIdentifierEnvVar) != null && Environment.GetEnvironmentVariable(AzureFunctionNameEnvVar) != null;
         }
 
         // Used for unit tests
