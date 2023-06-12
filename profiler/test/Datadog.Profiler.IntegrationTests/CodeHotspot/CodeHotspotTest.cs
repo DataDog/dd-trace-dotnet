@@ -22,7 +22,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 {
     public class CodeHotspotTest
     {
-        private const string ScenarioCodeHotspot = "--scenario 2";
+        private const string ScenarioCodeHotspot = "--scenario 256";
         //private const string ScenarioExceptions = "--scenario 16";
         private static readonly Regex RuntimeIdPattern = new("runtime-id:(?<runtimeId>[A-Z0-9-]+)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
         private readonly ITestOutputHelper _output;
