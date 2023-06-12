@@ -99,9 +99,9 @@ namespace Datadog.Trace
             settings ??= ImmutableTracerSettings.FromDefaultSources();
 
             var defaultServiceName = settings.ServiceName ??
-                                     Serverless.GetGCPAzureFunctionName() ??
-                                     GetApplicationName(settings) ??
-                                     UnknownServiceName;
+                Serverless.GetGCPAzureFunctionName() ??
+                GetApplicationName(settings) ??
+                UnknownServiceName;
 
             discoveryService ??= GetDiscoveryService(settings);
 

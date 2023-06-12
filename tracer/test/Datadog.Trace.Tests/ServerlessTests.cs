@@ -231,7 +231,6 @@ namespace Datadog.Trace.Tests
         {
             Environment.SetEnvironmentVariable(Serverless.GCPFunctionDeprecatedNameEnvVar, "dummy_function");
             Environment.SetEnvironmentVariable(Serverless.GCPFunctionDeprecatedEnvVarIdentifier, "dummy_project");
-
             Serverless.UpdateIsGCPAzureEnvVarsTestsOnly();
 
             var miniAgentManagerMock = new Mock<MiniAgentManager>();

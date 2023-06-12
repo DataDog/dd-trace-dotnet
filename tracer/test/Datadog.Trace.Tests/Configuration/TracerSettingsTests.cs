@@ -19,7 +19,6 @@ using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.Configuration
 {
@@ -27,13 +26,11 @@ namespace Datadog.Trace.Tests.Configuration
     {
         private readonly Mock<IAgentWriter> _writerMock;
         private readonly Mock<ITraceSampler> _samplerMock;
-        private readonly ITestOutputHelper _output;
 
-        public TracerSettingsTests(ITestOutputHelper output)
+        public TracerSettingsTests()
         {
             _writerMock = new Mock<IAgentWriter>();
             _samplerMock = new Mock<ITraceSampler>();
-            _output = output;
         }
 
         [Theory]
