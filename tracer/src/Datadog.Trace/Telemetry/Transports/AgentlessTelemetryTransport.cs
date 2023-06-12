@@ -5,6 +5,7 @@
 
 #nullable enable
 using Datadog.Trace.Agent;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Telemetry.Transports;
 
@@ -16,4 +17,6 @@ internal class AgentlessTelemetryTransport : JsonTelemetryTransport
     }
 
     public override string GetTransportInfo() => nameof(AgentlessTelemetryTransport) + " to " + GetEndpointInfo();
+
+    protected override MetricTags.TelemetryEndpoint GetEndpointMetricTag() => MetricTags.TelemetryEndpoint.Agentless;
 }
