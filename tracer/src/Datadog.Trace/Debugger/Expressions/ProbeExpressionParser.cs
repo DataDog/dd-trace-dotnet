@@ -456,7 +456,15 @@ internal partial class ProbeExpressionParser<T>
         var thisType = @this.Type ?? @this.Value?.GetType();
         if (string.IsNullOrEmpty(expressionJson) || argsOrLocals == null || thisType == null)
         {
-            throw new ArgumentException($"{nameof(ParseProbeExpression)} has been called with an invalid argument");
+            var ex = new ArgumentException("Method has been called with an invalid argument");
+            Log.Error(
+                ex,
+                "{Method} has been called with an invalid argument. Expression: {Expression}, Type: {Type}",
+                nameof(ProbeExpressionParser<T>) + "." + nameof(ParseProbeExpression),
+                expressionJson ?? "expression is null",
+                thisType?.FullName ?? "type is null");
+
+            throw ex;
         }
 
         var scopeMembers = new List<ParameterExpression>();

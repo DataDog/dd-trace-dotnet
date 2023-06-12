@@ -122,17 +122,21 @@ internal class ProbeExpressionEvaluator
             {
                 try
                 {
-                    if (IsLiteral(Templates[i]))
+                    if (IsLiteral(Templates[i]) == true)
                     {
                         resultBuilder.Append(Templates[i].Str);
                     }
-                    else if (IsExpression(Templates[i]))
+                    else if (IsExpression(Templates[i]) == true)
                     {
                         resultBuilder.Append(compiledExpressions[i].Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members));
                         if (compiledExpressions[i].Errors != null)
                         {
                             (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpressions[i].Errors);
                         }
+                    }
+                    else
+                    {
+                        HandleException(ref result, compiledExpressions[i], new ArgumentException("invalid template"));
                     }
                 }
                 catch (Exception e)
@@ -391,9 +395,22 @@ internal class ProbeExpressionEvaluator
         for (int i = 0; i < SpanDecorations.Length; i++)
         {
             var current = SpanDecorations[i];
-            var when = current.Key == null // span decoration doesn't must to have a condition
-                           ? default
+            CompiledExpression<bool> when;
+            if (IsLiteral(current.Key) == true)
+            {
+                when = new CompiledExpression<bool>(
+                    (_, _, _, _, _) => false,
+                    null,
+                    null,
+                    new EvaluationError[] { new() { Expression = null, Message = "'when' should be a boolean expression, not a literal" } });
+            }
+            else
+            {
+                when = current.Key == null // span decoration doesn't must to have a condition
+                           ? new CompiledExpression<bool>((_, _, _, _, _) => true, null, null, null)
                            : ProbeExpressionParser<bool>.ParseExpression(current.Key.Value.Json, scopeMembers);
+            }
+
             var compiledTagsJ = new KeyValuePair<string, CompiledExpression<string>[]>[current.Value.Length];
             for (int j = 0; j < current.Value.Length; j++)
             {
@@ -441,9 +458,14 @@ internal class ProbeExpressionEvaluator
         }
     }
 
-    private bool IsLiteral(DebuggerExpression expression)
+    private bool? IsLiteral(DebuggerExpression? expression)
     {
-        return string.IsNullOrEmpty(expression.Json);
+        if (expression is null)
+        {
+            return null;
+        }
+
+        return string.IsNullOrEmpty(expression.Value.Json);
     }
 
     private bool IsLiteral<T>(CompiledExpression<T> expression)
@@ -451,9 +473,14 @@ internal class ProbeExpressionEvaluator
         return expression.Delegate == null && expression.ParsedExpression == null && expression.Errors == null && expression.RawExpression != null;
     }
 
-    private bool IsExpression(DebuggerExpression expression)
+    private bool? IsExpression(DebuggerExpression? expression)
     {
-        return !string.IsNullOrEmpty(expression.Json) && string.IsNullOrEmpty(expression.Str);
+        if (expression is null)
+        {
+            return null;
+        }
+
+        return !string.IsNullOrEmpty(expression.Value.Json) && string.IsNullOrEmpty(expression.Value.Str);
     }
 
     private bool IsExpression<T>(CompiledExpression<T> expression)
