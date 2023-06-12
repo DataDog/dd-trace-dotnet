@@ -84,6 +84,8 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.AspNetCore.Mvc.Core", new [] { "Microsoft.AspNetCore.Mvc.Core" });
             NugetPackages.Add("OpenTelemetry.Api", new [] { "OpenTelemetry.Api" });
             NugetPackages.Add("OpenTelemetry", new [] { "OpenTelemetry" });
+            NugetPackages.Add("Microsoft.AspNetCore.Server.IIS", new[] { "Microsoft.AspNetCore.Server.IIS" });
+            NugetPackages.Add("Microsoft.AspNetCore.Server.Kestrel.Core", new string[] { "Microsoft.AspNetCore.Server.Kestrel.Core" });
         }
 
         private IntegrationMap()
