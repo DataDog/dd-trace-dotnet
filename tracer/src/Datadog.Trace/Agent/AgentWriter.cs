@@ -432,7 +432,7 @@ namespace Datadog.Trace.Agent
                         var spansDropped = spans.Count - singleSpanSamplingSpans.Count;
                         Interlocked.Add(ref _droppedP0Spans, spansDropped);
                         spans = new ArraySegment<Span>(singleSpanSamplingSpans.ToArray());
-                    // TODO: Add telemetry metrics to record single span sampling
+                        TelemetryFactory.Metrics.RecordCountTracePartialFlush(MetricTags.PartialFlushReason.SingleSpanIngestion);
                     }
                 }
             }
