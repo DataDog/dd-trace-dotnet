@@ -206,7 +206,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             var endpoints = GetEndpointsFromPprofFiles(runner.Environment.PprofDir);
 
-            endpoints.Distinct().Should().BeEquivalentTo("GET /products/builder");
+            endpoints.Distinct().Should().BeEquivalentTo("GET /products/indexslow");
         }
 
         [TestAppFact("Samples.BuggyBits")]
