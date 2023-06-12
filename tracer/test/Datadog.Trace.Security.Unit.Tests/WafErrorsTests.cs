@@ -15,17 +15,12 @@ namespace Datadog.Trace.Security.Unit.Tests
 {
     public class WafErrorsTests : WafLibraryRequiredTest
     {
-        public WafErrorsTests(WafLibraryInvokerFixture wafLibraryInvokerFixture)
-            : base(wafLibraryInvokerFixture)
-        {
-        }
-
         [SkippableTheory]
         [InlineData(@"{""missing key 'name'"":[""crs-913-110"",""crs-913-120"",""crs-920-260""],""missing key 'tags'"":[""crs-921-110"",""crs-921-140""]}", "wrong-tags-name-rule-set.json", 5)]
         [InlineData("{\"missing key 'tags'\":[\"crs-913-110\",\"crs-913-120\",\"crs-920-260\",\"crs-921-110\",\"crs-921-140\",\"crs-941-300\"]}", "wrong-tags-rule-set.json", 6)]
         public void HasErrors(string errorMessage, string filename, ushort failedtoLoadRules)
         {
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, filename);
+            var initResult = Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty, filename);
             using var waf = initResult.Waf;
             waf.Should().NotBeNull();
             initResult.Success.Should().BeTrue();
@@ -39,7 +34,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [SkippableFact]
         public void HasNoError()
         {
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
+            var initResult = Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty);
             using var waf = initResult.Waf;
             waf.Should().NotBeNull();
             initResult.Success.Should().BeTrue();
@@ -53,7 +48,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [SkippableFact]
         public void FileNotFound()
         {
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, "unexisting-rule-set.json");
+            var initResult = Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty, "unexisting-rule-set.json");
             using var waf = initResult.Waf;
             waf.Should().BeNull();
             initResult.Success.Should().BeFalse();
