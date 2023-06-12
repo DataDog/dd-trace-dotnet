@@ -141,16 +141,22 @@ namespace AllocSimulator
                             // Poisson
                             upscaler.Upscale(sampled, ref upscaled);
                         }
-                        else
+                        else if (upscalingMode == UpscalingMode.Fixed)
                         {
                             // Fixed
                             upscaled.Size = (long)((sampled.Size * totalAllocatedBytes) / totalSampledBytes);
                             upscaled.Count = (int)((sampled.Count * totalAllocatedBytes) / totalSampledBytes);
                         }
+                        else // none
+                        {
+                            // nothing to upscale
+                            upscaled.Size = sampled.Size;
+                            upscaled.Count = sampled.Count;
+                        }
 
                         countRatio = -(float)(realAllocation.Count - upscaled.Count) / (float)realAllocation.Count;
                         sizeRatio = -(float)(realAllocation.Size - upscaled.Size) / (float)realAllocation.Size;
-                        Console.WriteLine($"{upscaled.Count,9} | {upscaled.Size,13}  {((upscalingMode == UpscalingMode.Fixed) ? "Fixed" : "Poisson")}");
+                        Console.WriteLine($"{upscaled.Count,9} | {upscaled.Size,13}  {upscalingMode.ToString()}");
                         Console.WriteLine($"{countRatio,9:P1} | {sizeRatio,13:P1}");
                     }
                     else
@@ -386,6 +392,7 @@ namespace AllocSimulator
                     throw new InvalidOperationException($"Missing sampling mode on the command line...");
                 }
             }
+
             UpscalingMode GetUpscalingMode(string[] args, int i)
             {
                 if (i < args.Length)
