@@ -1042,7 +1042,11 @@ public class StringAspects
     [AspectMethodReplace("System.String::Split(System.Char,System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
     public static string[] Split(string target, char separator, StringSplitOptions options)
     {
+#if NETSTANDARD
         var result = target.Split(new char[] { separator }, options);
+#else
+        var result = target.Split(separator, options);
+#endif
         PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
         return result;
     }
@@ -1058,9 +1062,13 @@ public class StringAspects
     [AspectMethodReplace("System.String::Split(System.Char,System.Int32,System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
     public static string[] Split(string target, char separator, int count, StringSplitOptions options)
     {
+#if NETSTANDARD
         var result = target.Split(new char[] { separator }, count, options);
+#else
+        var result = target.Split(separator, count, options);
+#endif
         PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
         return result;
     }
 #endif
-}
+    }
