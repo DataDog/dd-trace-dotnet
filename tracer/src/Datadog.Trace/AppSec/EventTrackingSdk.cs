@@ -5,6 +5,9 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.AppSec;
@@ -18,9 +21,11 @@ public static class EventTrackingSdk
         /// Sets the details of a successful logon on the local root span
         /// </summary>
         /// <param name="userId">The userId associated with the login success</param>
+        [PublicApi]
         public static void TrackUserLoginSuccessEvent(string userId)
         {
-            TrackUserLoginSuccessEvent(userId, null);
+            TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent);
+            TrackUserLoginSuccessEvent(userId, null, Tracer.Instance);
         }
 
         /// <summary>
@@ -28,8 +33,10 @@ public static class EventTrackingSdk
         /// </summary>
         /// <param name="userId">The userId associated with the login success</param>
         /// <param name="metadata">Metadata associated with the login success</param>
+        [PublicApi]
         public static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent_Metadata);
             TrackUserLoginSuccessEvent(userId, metadata, Tracer.Instance);
         }
 
@@ -66,9 +73,11 @@ public static class EventTrackingSdk
         /// </summary>
         /// <param name="userId">The userId associated with the login failure</param>
         /// <param name="exists">If the userId associated with the login failure exists</param>
+        [PublicApi]
         public static void TrackUserLoginFailureEvent(string userId, bool exists)
         {
-            TrackUserLoginFailureEvent(userId, exists, null);
+            TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginFailureEvent);
+            TrackUserLoginFailureEvent(userId, exists, null, Tracer.Instance);
         }
 
         /// <summary>
@@ -77,8 +86,10 @@ public static class EventTrackingSdk
         /// <param name="userId">The userId associated with the login failure</param>
         /// <param name="exists">If the userId associated with the login failure exists</param>
         /// <param name="metadata">Metadata associated with the login failure</param>
+        [PublicApi]
         public static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginFailureEvent_Metadata);
             TrackUserLoginFailureEvent(userId, exists, metadata, Tracer.Instance);
         }
 
@@ -115,9 +126,11 @@ public static class EventTrackingSdk
         /// Sets the details of a custom event the local root span
         /// </summary>
         /// <param name="eventName">the name of the event to be tracked</param>
+        [PublicApi]
         public static void TrackCustomEvent(string eventName)
         {
-            TrackCustomEvent(eventName, null);
+            TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackCustomEvent);
+            TrackCustomEvent(eventName, null, Tracer.Instance);
         }
 
         /// <summary>
@@ -125,8 +138,10 @@ public static class EventTrackingSdk
         /// </summary>
         /// <param name="eventName">the name of the event to be tracked</param>
         /// <param name="metadata">Metadata associated with the custom event</param>
+        [PublicApi]
         public static void TrackCustomEvent(string eventName, IDictionary<string, string> metadata)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackCustomEvent_Metadata);
             TrackCustomEvent(eventName, metadata, Tracer.Instance);
         }
 

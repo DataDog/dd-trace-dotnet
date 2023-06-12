@@ -15,6 +15,13 @@ namespace Datadog.Trace.Telemetry.Metrics;
 [EnumExtensions]
 internal enum PublicApiUsage
 {
+    [Description("eventtrackingsdk_trackcustomevent")]EventTrackingSdk_TrackCustomEvent,
+    [Description("eventtrackingsdk_trackcustomevent_metadata")]EventTrackingSdk_TrackCustomEvent_Metadata,
+    [Description("eventtrackingsdk_trackuserloginfailureevent")]EventTrackingSdk_TrackUserLoginFailureEvent,
+    [Description("eventtrackingsdk_trackuserloginfailureevent_metadata")]EventTrackingSdk_TrackUserLoginFailureEvent_Metadata,
+    [Description("eventtrackingsdk_trackuserloginsuccessevent")]EventTrackingSdk_TrackUserLoginSuccessEvent,
+    [Description("eventtrackingsdk_trackuserloginsuccessevent_metadata")]EventTrackingSdk_TrackUserLoginSuccessEvent_Metadata,
+
     [Description("spancontextextractor_extract")] SpanContextExtractor_Extract,
     [Description("spanextensions_setuser")] SpanExtensions_SetUser,
     [Description("spanextensions_settracesamplingpriority")] SpanExtensions_SetTraceSamplingPriority,
