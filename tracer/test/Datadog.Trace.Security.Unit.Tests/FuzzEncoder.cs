@@ -24,8 +24,7 @@ public class FuzzEncoder : WafLibraryRequiredTest
 {
     private readonly ITestOutputHelper _outputHelper;
 
-    public FuzzEncoder(ITestOutputHelper outputHelper, WafLibraryInvokerFixture wafLibraryInvokerFixture)
-        : base(wafLibraryInvokerFixture)
+    public FuzzEncoder(ITestOutputHelper outputHelper)
     {
         _outputHelper = outputHelper;
     }

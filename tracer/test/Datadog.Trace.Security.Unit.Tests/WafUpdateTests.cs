@@ -26,15 +26,10 @@ namespace Datadog.Trace.Security.Unit.Tests
     {
         public const int TimeoutMicroSeconds = 1_000_000;
 
-        public WafUpdateTests(WafLibraryInvokerFixture wafLibraryInvokerFixture)
-            : base(wafLibraryInvokerFixture)
-        {
-        }
-
         [Fact]
         public void RulesUpdate()
         {
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
+            var initResult = Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty);
             using var waf = initResult.Waf;
             waf.Should().NotBeNull();
             Execute(waf, new[] { "testrule", "testrule", "none" }, false);

@@ -24,7 +24,8 @@ namespace BuggyBits
         FormatExceptions = 16, // generating FormatExceptions for prices
         ParallelLock = 32,     // using parallel code with lock
         MemoryLeak = 64, // keep a controller in memory due to instance callback passed to a cache
-        EndpointsCount = 128 // Specific test with '.' in endpoint name
+        EndpointsCount = 128, // Specific test with '.' in endpoint name
+        Spin = 256 // Requests that take a long time
     }
 
     public class Program
