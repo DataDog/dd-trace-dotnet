@@ -17,23 +17,31 @@ namespace Datadog.Trace.Util;
 
 // Extracted from:
 // https://source.dot.net/#System.Diagnostics.Process/src/libraries/Common/src/System/Text/ValueStringBuilder.cs,157e1a7ce4de87da
-internal ref partial struct ValueStringBuilder
+internal ref struct ValueStringBuilder
 {
     private char[]? _arrayToReturnToPool;
-    private Span<char> _chars;
+    private Span<char> _backChars;
+    private IntPtr _charsPtr;
+    private int _length;
     private int _pos;
+
+    public ValueStringBuilder(IntPtr ptr, int length)
+    {
+        _charsPtr = ptr;
+        _length = length;
+    }
 
     public ValueStringBuilder(Span<char> initialBuffer)
     {
         _arrayToReturnToPool = null;
-        _chars = initialBuffer;
+        _backChars = initialBuffer;
         _pos = 0;
     }
 
     public ValueStringBuilder(int initialCapacity)
     {
         _arrayToReturnToPool = ArrayPool<char>.Shared.Rent(initialCapacity);
-        _chars = _arrayToReturnToPool;
+        _backChars = _arrayToReturnToPool;
         _pos = 0;
     }
 
@@ -43,12 +51,15 @@ internal ref partial struct ValueStringBuilder
         set => _pos = value;
     }
 
-    public int Capacity => _chars.Length;
+    private unsafe Span<char> Chars => !_backChars.IsEmpty ? _backChars :
+                                            (_charsPtr != IntPtr.Zero ? new Span<char>((void*)_charsPtr, _length) : _backChars);
+
+    public int Capacity => Chars.Length;
 
     public void EnsureCapacity(int capacity)
     {
         // If the caller has a bug and calls this with negative capacity, make sure to call Grow to throw an exception.
-        if ((uint)capacity > (uint)_chars.Length)
+        if ((uint)capacity > (uint)Chars.Length)
         {
             Grow(capacity - _pos);
         }
@@ -62,7 +73,7 @@ internal ref partial struct ValueStringBuilder
     /// </summary>
     public ref char GetPinnableReference()
     {
-        return ref MemoryMarshal.GetReference(_chars);
+        return ref MemoryMarshal.GetReference(Chars);
     }
 
     /// <summary>
@@ -74,29 +85,29 @@ internal ref partial struct ValueStringBuilder
         if (terminate)
         {
             EnsureCapacity(Length + 1);
-            _chars[Length] = '\0';
+            Chars[Length] = '\0';
         }
 
-        return ref MemoryMarshal.GetReference(_chars);
+        return ref MemoryMarshal.GetReference(Chars);
     }
 
     public ref char this[int index]
     {
         get
         {
-            return ref _chars[index];
+            return ref Chars[index];
         }
     }
 
     public override string ToString()
     {
-        string s = _chars.Slice(0, _pos).ToString();
+        string s = Chars.Slice(0, _pos).ToString();
         Dispose();
         return s;
     }
 
     /// <summary>Returns the underlying storage of the builder.</summary>
-    public Span<char> RawChars => _chars;
+    public Span<char> RawChars => Chars;
 
     /// <summary>
     /// Returns a span around the contents of the builder.
@@ -107,21 +118,21 @@ internal ref partial struct ValueStringBuilder
         if (terminate)
         {
             EnsureCapacity(Length + 1);
-            _chars[Length] = '\0';
+            Chars[Length] = '\0';
         }
 
-        return _chars.Slice(0, _pos);
+        return Chars.Slice(0, _pos);
     }
 
-    public ReadOnlySpan<char> AsSpan() => _chars.Slice(0, _pos);
+    public ReadOnlySpan<char> AsSpan() => Chars.Slice(0, _pos);
 
-    public ReadOnlySpan<char> AsSpan(int start) => _chars.Slice(start, _pos - start);
+    public ReadOnlySpan<char> AsSpan(int start) => Chars.Slice(start, _pos - start);
 
-    public ReadOnlySpan<char> AsSpan(int start, int length) => _chars.Slice(start, length);
+    public ReadOnlySpan<char> AsSpan(int start, int length) => Chars.Slice(start, length);
 
     public bool TryCopyTo(Span<char> destination, out int charsWritten)
     {
-        if (_chars.Slice(0, _pos).TryCopyTo(destination))
+        if (Chars.Slice(0, _pos).TryCopyTo(destination))
         {
             charsWritten = _pos;
             Dispose();
@@ -137,14 +148,14 @@ internal ref partial struct ValueStringBuilder
 
     public void Insert(int index, char value, int count)
     {
-        if (_pos > _chars.Length - count)
+        if (_pos > Chars.Length - count)
         {
             Grow(count);
         }
 
         int remaining = _pos - index;
-        _chars.Slice(index, remaining).CopyTo(_chars.Slice(index + count));
-        _chars.Slice(index, count).Fill(value);
+        Chars.Slice(index, remaining).CopyTo(Chars.Slice(index + count));
+        Chars.Slice(index, count).Fill(value);
         _pos += count;
     }
 
@@ -157,14 +168,14 @@ internal ref partial struct ValueStringBuilder
 
         int count = s.Length;
 
-        if (_pos > (_chars.Length - count))
+        if (_pos > (Chars.Length - count))
         {
             Grow(count);
         }
 
         int remaining = _pos - index;
-        _chars.Slice(index, remaining).CopyTo(_chars.Slice(index + count));
-        s.AsSpan().CopyTo(_chars.Slice(index));
+        Chars.Slice(index, remaining).CopyTo(Chars.Slice(index + count));
+        s.AsSpan().CopyTo(Chars.Slice(index));
         _pos += count;
     }
 
@@ -172,7 +183,7 @@ internal ref partial struct ValueStringBuilder
     public void Append(char c)
     {
         int pos = _pos;
-        Span<char> chars = _chars;
+        Span<char> chars = Chars;
         if ((uint)pos < (uint)chars.Length)
         {
             chars[pos] = c;
@@ -194,9 +205,9 @@ internal ref partial struct ValueStringBuilder
 
         int pos = _pos;
         // very common case, e.g. appending strings from NumberFormatInfo like separators, percent symbols, etc.
-        if (s.Length == 1 && (uint)pos < (uint)_chars.Length)
+        if (s.Length == 1 && (uint)pos < (uint)Chars.Length)
         {
-            _chars[pos] = s[0];
+            Chars[pos] = s[0];
             _pos = pos + 1;
         }
         else
@@ -215,23 +226,23 @@ internal ref partial struct ValueStringBuilder
     private void AppendSlow(string s)
     {
         int pos = _pos;
-        if (pos > _chars.Length - s.Length)
+        if (pos > Chars.Length - s.Length)
         {
             Grow(s.Length);
         }
 
-        s.AsSpan().CopyTo(_chars.Slice(pos));
+        s.AsSpan().CopyTo(Chars.Slice(pos));
         _pos += s.Length;
     }
 
     public void Append(char c, int count)
     {
-        if (_pos > _chars.Length - count)
+        if (_pos > Chars.Length - count)
         {
             Grow(count);
         }
 
-        Span<char> dst = _chars.Slice(_pos, count);
+        Span<char> dst = Chars.Slice(_pos, count);
         for (int i = 0; i < dst.Length; i++)
         {
             dst[i] = c;
@@ -243,12 +254,12 @@ internal ref partial struct ValueStringBuilder
     public unsafe void Append(char* value, int length)
     {
         int pos = _pos;
-        if (pos > _chars.Length - length)
+        if (pos > Chars.Length - length)
         {
             Grow(length);
         }
 
-        Span<char> dst = _chars.Slice(_pos, length);
+        Span<char> dst = Chars.Slice(_pos, length);
         for (int i = 0; i < dst.Length; i++)
         {
             dst[i] = *value++;
@@ -260,12 +271,12 @@ internal ref partial struct ValueStringBuilder
     public void Append(ReadOnlySpan<char> value)
     {
         int pos = _pos;
-        if (pos > _chars.Length - value.Length)
+        if (pos > Chars.Length - value.Length)
         {
             Grow(value.Length);
         }
 
-        value.CopyTo(_chars.Slice(_pos));
+        value.CopyTo(Chars.Slice(_pos));
         _pos += value.Length;
     }
 
@@ -273,13 +284,13 @@ internal ref partial struct ValueStringBuilder
     public Span<char> AppendSpan(int length)
     {
         int origPos = _pos;
-        if (origPos > _chars.Length - length)
+        if (origPos > Chars.Length - length)
         {
             Grow(length);
         }
 
         _pos = origPos + length;
-        return _chars.Slice(origPos, length);
+        return Chars.Slice(origPos, length);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -306,16 +317,16 @@ internal ref partial struct ValueStringBuilder
         // to double the size if possible, bounding the doubling to not go beyond the max array length.
         int newCapacity = (int)Math.Max(
             (uint)(_pos + additionalCapacityBeyondPos),
-            Math.Min((uint)_chars.Length * 2, ArrayMaxLength));
+            Math.Min((uint)Chars.Length * 2, ArrayMaxLength));
 
         // Make sure to let Rent throw an exception if the caller has a bug and the desired capacity is negative.
         // This could also go negative if the actual required length wraps around.
         char[] poolArray = ArrayPool<char>.Shared.Rent(newCapacity);
 
-        _chars.Slice(0, _pos).CopyTo(poolArray);
+        Chars.Slice(0, _pos).CopyTo(poolArray);
 
         char[]? toReturn = _arrayToReturnToPool;
-        _chars = _arrayToReturnToPool = poolArray;
+        _backChars = _arrayToReturnToPool = poolArray;
         if (toReturn != null)
         {
             ArrayPool<char>.Shared.Return(toReturn);

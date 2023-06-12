@@ -698,10 +698,10 @@ namespace Datadog.Trace.Propagators
                    _ => TrimAndJoinStringsRare(values),
                };
 
-        private static string TrimAndJoinStringsRare(IEnumerable<string?> values)
+        private static unsafe string TrimAndJoinStringsRare(IEnumerable<string?> values)
         {
 #if NETCOREAPP3_1_OR_GREATER
-            static void AppendIfNotNullOrWhiteSpace(Util.ValueStringBuilder sb, string? value)
+            static void AppendIfNotNullOrWhiteSpace(ref Util.ValueStringBuilder sb, string? value)
             {
                 if (!string.IsNullOrWhiteSpace(value))
                 {
@@ -710,10 +710,10 @@ namespace Datadog.Trace.Propagators
                 }
             }
 
-            Span<char> chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
-            var sb = new Util.ValueStringBuilder(chars);
+            char* chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+            var sb = new Util.ValueStringBuilder((IntPtr)chars, StringBuilderCache.MaxBuilderSize);
 #else
-            static void AppendIfNotNullOrWhiteSpace(StringBuilder sb, string? value)
+            static void AppendIfNotNullOrWhiteSpace(ref StringBuilder sb, string? value)
             {
                 if (!string.IsNullOrWhiteSpace(value))
                 {
@@ -730,7 +730,7 @@ namespace Datadog.Trace.Propagators
                     // converts into a `for` loop
                     foreach (var value in array)
                     {
-                        AppendIfNotNullOrWhiteSpace(sb, value);
+                        AppendIfNotNullOrWhiteSpace(ref sb, value);
                     }
 
                     break;
@@ -739,7 +739,7 @@ namespace Datadog.Trace.Propagators
                     // uses List<T>'s struct enumerator
                     foreach (var value in list)
                     {
-                        AppendIfNotNullOrWhiteSpace(sb, value);
+                        AppendIfNotNullOrWhiteSpace(ref sb, value);
                     }
 
                     break;
@@ -747,7 +747,7 @@ namespace Datadog.Trace.Propagators
                 default:
                     foreach (var value in values)
                     {
-                        AppendIfNotNullOrWhiteSpace(sb, value);
+                        AppendIfNotNullOrWhiteSpace(ref sb, value);
                     }
 
                     break;
