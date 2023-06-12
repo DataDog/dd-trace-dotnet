@@ -395,7 +395,7 @@ public class ProbesTests : TestHelper
         Assert.Equal(expectedSpanCount, spans.Count);
 
         VerifierSettings.DerivePathInfo(
-            (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..\\..", "Approvals", "snapshots")));
+            (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "..", "Approvals", "snapshots")));
 
         SanitizeSpanTags(spans);
 
@@ -448,7 +448,7 @@ public class ProbesTests : TestHelper
             }
 
             VerifierSettings.DerivePathInfo(
-                (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..\\..", "Approvals", "snapshots")));
+                (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "..", "Approvals", "snapshots")));
 
             await VerifyHelper.VerifySpans(spans, settings).DisableRequireUniquePrefix();
         }
