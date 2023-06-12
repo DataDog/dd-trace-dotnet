@@ -91,7 +91,7 @@ internal partial class ConfigurationTelemetry : IConfigurationTelemetry
 
         public TelemetryErrorCode? Error { get; }
 
-        public long SeqId { get; }
+        public long SeqId { get; set; }
 
         public ConfigurationTelemetryEntryType Type { get; }
 

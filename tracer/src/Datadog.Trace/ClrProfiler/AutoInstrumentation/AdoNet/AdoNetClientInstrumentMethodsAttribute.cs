@@ -11,6 +11,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     /// Attribute that indicates that the decorated class is meant to intercept a method
     /// by modifying the method body with callbacks. Used to generate the integration definitions file.
     /// </summary>
+    /// <remarks>
+    /// Beware that the fullname of this class is being used for App Trimming support in the _build/Build.Steps.cs file
+    /// as string. Avoid changing the name and/or namespace of this class.
+    /// </remarks>
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
     internal sealed class AdoNetClientInstrumentMethodsAttribute : Attribute
     {

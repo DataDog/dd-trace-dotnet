@@ -100,9 +100,9 @@ namespace Datadog.Trace.ClrProfiler
 
                 string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
 
-                string operationName = tracer.Schema.Client.GetOperationNameForProtocol("http");
-                string serviceName = tracer.Schema.Client.GetServiceName(component: "http-client");
-                tags = tracer.Schema.Client.CreateHttpTags();
+                string operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("http");
+                string serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "http-client");
+                tags = tracer.CurrentTraceSettings.Schema.Client.CreateHttpTags();
 
                 span = tracer.StartSpan(operationName, tags, serviceName: serviceName, traceId: traceId, spanId: spanId, startTime: startTime, addToTraceContext: addToTraceContext);
 
@@ -127,7 +127,7 @@ namespace Datadog.Trace.ClrProfiler
                 if (!addToTraceContext && span.Context.TraceContext.SamplingPriority == null)
                 {
                     // If we don't add the span to the trace context, then we need to manually call the sampler
-                    var samplingDecision = tracer.TracerManager.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
+                    var samplingDecision = tracer.CurrentTraceSettings.TraceSampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
                     span.Context.TraceContext.SetSamplingPriority(samplingDecision);
                 }
             }

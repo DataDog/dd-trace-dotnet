@@ -20,6 +20,23 @@ namespace Datadog.Trace.Configuration.Telemetry
 
         public bool HasChanges() => !_entries.IsEmpty || !_backBuffer.IsEmpty;
 
+        /// <inheritdoc />
+        public void CopyTo(IConfigurationTelemetry destination)
+        {
+            if (destination is ConfigurationTelemetry telemetry)
+            {
+                // don't dequeue from the original
+                foreach (var entry in _entries)
+                {
+                    // We're assuming that these entries "overwrite" any existing entries
+                    // However, as we don't know in which order they were created, we need
+                    // to update the SeqId to make sure they're given precedence
+                    entry.SeqId = Interlocked.Increment(ref _seqId);
+                    telemetry._entries.Enqueue(entry);
+                }
+            }
+        }
+
         /// <summary>
         /// Get the latest data to send to the intake.
         /// </summary>

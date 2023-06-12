@@ -121,16 +121,17 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             const string env = "serializer-tests";
             const string serviceVersion = "1.2.3";
-            var settings = new TracerSettings() { ServiceName = ServiceName, Environment = env, ServiceVersion = serviceVersion, IsRunningInAzureAppService = true };
-            settings.AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(
-                new NameValueConfigurationSource(new NameValueCollection
+            var settings = TracerSettings.Create(
+                new()
                 {
+                    { ConfigurationKeys.ServiceName, ServiceName },
+                    { ConfigurationKeys.Environment, env },
+                    { ConfigurationKeys.ServiceVersion, serviceVersion },
                     { ConfigurationKeys.ApiKey, "SomeValue" },
                     { ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1" },
                     { ConfigurationKeys.AzureAppService.SiteExtensionVersionKey, "1.5.0" },
                     { ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "~3" },
-                }),
-                NullConfigurationTelemetry.Instance);
+                });
 
             var collector = new ConfigurationTelemetryCollector();
 
@@ -152,17 +153,18 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             const string env = "serializer-tests";
             const string serviceVersion = "1.2.3";
-            var settings = new TracerSettings() { ServiceName = ServiceName, Environment = env, ServiceVersion = serviceVersion, IsRunningInAzureAppService = true };
-            settings.AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(
-                new NameValueConfigurationSource(new NameValueCollection
+            var settings = TracerSettings.Create(
+                new()
                 {
+                    { ConfigurationKeys.ServiceName, ServiceName },
+                    { ConfigurationKeys.Environment, env },
+                    { ConfigurationKeys.ServiceVersion, serviceVersion },
                     // Without a DD_API_KEY, AAS does not consider it safe to trace
                     // { ConfigurationKeys.ApiKey, "SomeValue" },
                     { ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1" },
                     { ConfigurationKeys.AzureAppService.SiteExtensionVersionKey, "1.5.0" },
                     { ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "~3" },
-                }),
-                NullConfigurationTelemetry.Instance);
+                });
 
             var collector = new ConfigurationTelemetryCollector();
 
