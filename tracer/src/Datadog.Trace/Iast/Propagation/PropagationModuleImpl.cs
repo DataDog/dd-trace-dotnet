@@ -45,43 +45,65 @@ internal static class PropagationModuleImpl
         }
     }
 
-    public static object? PropagateResultWhenInputTainted(string result, params object[]? inputs)
+    public static object? PropagateResultWhenInputTainted(string result, object? firstInput, params object[]? otherInputs)
     {
-        if (result is null || inputs is null)
+        try
         {
-            return result;
-        }
-
-        var iastContext = IastModule.GetIastContext();
-        if (iastContext == null)
-        {
-            return result;
-        }
-
-        var taintedObjects = iastContext.GetTaintedObjects();
-
-        if (taintedObjects == null)
-        {
-            return result;
-        }
-
-        if (inputs is not null)
-        {
-            foreach (var inputElement in inputs)
+            if (string.IsNullOrEmpty(result))
             {
-                if (inputElement is not null)
+                return result;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return result;
+            }
+
+            var taintedObjects = iastContext.GetTaintedObjects();
+
+            if (taintedObjects == null)
+            {
+                return result;
+            }
+
+            if (PropagateResultWhenInputTainted(result, firstInput, taintedObjects))
+            {
+                return result;
+            }
+
+            if (otherInputs?.Length > 0)
+            {
+                for (int i = 0; i < otherInputs.Length; i++)
                 {
-                    var tainted = taintedObjects.Get(inputElement);
-                    if (tainted is not null && tainted.Ranges.Count() > 0 && tainted.Ranges[0].Source is not null)
+                    if (PropagateResultWhenInputTainted(result, otherInputs[i], taintedObjects))
                     {
-                        taintedObjects.Taint(result, new Range[] { new Range(0, result.Length, tainted.Ranges[0].Source) });
                         return result;
                     }
                 }
             }
         }
+        catch (Exception error)
+        {
+            Log.Error(error, "PropagationModuleImpl.PropagateResultWhenInputTainted exception");
+        }
 
         return result;
+    }
+
+    private static bool PropagateResultWhenInputTainted(string result, object? input, TaintedObjects taintedObjects)
+    {
+        if (input is not null)
+        {
+            var tainted = taintedObjects.Get(input);
+            if (tainted?.Ranges?.Count() > 0 && tainted.Ranges[0].Source is not null)
+            {
+                taintedObjects.Taint(result, new Range[] { new Range(0, result.Length, tainted?.Ranges[0].Source) });
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static object? PropagateResultWhenInputTainted(string[] results, object input)
