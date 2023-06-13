@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
