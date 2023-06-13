@@ -5,8 +5,8 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -22,7 +22,7 @@ namespace Datadog.Trace.Configuration
 {
     internal class DynamicConfigurationManager : IDynamicConfigurationManager
     {
-        internal const string ProductName = "APM_LIBRARY";
+        internal const string ProductName = "APM_TRACING";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DynamicConfigurationManager>();
 
@@ -68,46 +68,6 @@ namespace Datadog.Trace.Configuration
             OnConfigurationChanged(settings);
         }
 
-        private static IEnumerable<ApplyDetails> ConfigurationUpdated(Dictionary<string, List<RemoteConfiguration>> configByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)
-        {
-            if (!configByProduct.TryGetValue(ProductName, out var apmLibrary))
-            {
-                return Enumerable.Empty<ApplyDetails>();
-            }
-
-            if (apmLibrary.Count == 0)
-            {
-                return Enumerable.Empty<ApplyDetails>();
-            }
-
-            // TODO: To adjust when the actual path of the items will be known
-
-            IConfigurationSource configurationSource;
-
-            if (apmLibrary.Count == 1)
-            {
-                configurationSource = new JsonConfigurationSourceWithCustomMapping(Encoding.UTF8.GetString(apmLibrary[0].Contents), Mapping, ConfigurationOrigins.RemoteConfig);
-            }
-            else
-            {
-                var compositeConfigurationSource = new CompositeConfigurationSource();
-
-                foreach (var item in apmLibrary)
-                {
-                    compositeConfigurationSource.Add(new JsonConfigurationSourceWithCustomMapping(Encoding.UTF8.GetString(item.Contents), Mapping, ConfigurationOrigins.RemoteConfig));
-                }
-
-                configurationSource = compositeConfigurationSource;
-            }
-
-            var configurationBuilder = new ConfigurationBuilder(configurationSource, TelemetryFactory.Config);
-
-            OnConfigurationChanged(configurationBuilder);
-
-            // TODO: Are we supposed to acknowledge something?
-            return Enumerable.Empty<ApplyDetails>();
-        }
-
         private static void OnConfigurationChanged(ConfigurationBuilder settings)
         {
             var oldSettings = Tracer.Instance.Settings;
@@ -123,8 +83,8 @@ namespace Datadog.Trace.Configuration
                 GlobalSamplingRate = settings.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble(),
                 SpanSamplingRules = settings.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString(),
                 LogsInjectionEnabled = settings.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool(),
-                HeaderTags = headerTags as IReadOnlyDictionary<string, string>,
-                ServiceNameMappings = serviceNameMappings
+                HeaderTags = headerTags == null ? null : new ReadOnlyDictionary<string, string>(headerTags),
+                ServiceNameMappings = serviceNameMappings == null ? null : new ReadOnlyDictionary<string, string>(serviceNameMappings)
             };
 
             if (dynamicSettings.Equals(oldSettings.DynamicSettings))
@@ -146,6 +106,46 @@ namespace Datadog.Trace.Configuration
             }
 
             Tracer.Configure(newSettings);
+        }
+
+        private IEnumerable<ApplyDetails> ConfigurationUpdated(Dictionary<string, List<RemoteConfiguration>> configByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)
+        {
+            if (!configByProduct.TryGetValue(ProductName, out var apmLibrary))
+            {
+                return Enumerable.Empty<ApplyDetails>();
+            }
+
+            if (apmLibrary.Count == 0)
+            {
+                return Enumerable.Empty<ApplyDetails>();
+            }
+
+            // TODO: To adjust when the actual path of the items will be known
+
+            IConfigurationSource configurationSource;
+
+            if (apmLibrary.Count == 1)
+            {
+                configurationSource = new DynamicConfigConfigurationSource(Encoding.UTF8.GetString(apmLibrary[0].Contents), Mapping, ConfigurationOrigins.RemoteConfig);
+            }
+            else
+            {
+                var compositeConfigurationSource = new CompositeConfigurationSource();
+
+                foreach (var item in apmLibrary)
+                {
+                    compositeConfigurationSource.Add(new DynamicConfigConfigurationSource(Encoding.UTF8.GetString(item.Contents), Mapping, ConfigurationOrigins.RemoteConfig));
+                }
+
+                configurationSource = compositeConfigurationSource;
+            }
+
+            var configurationBuilder = new ConfigurationBuilder(configurationSource, TelemetryFactory.Config);
+
+            OnConfigurationChanged(configurationBuilder);
+
+            // TODO: Are we supposed to acknowledge something?
+            return Enumerable.Empty<ApplyDetails>();
         }
     }
 }

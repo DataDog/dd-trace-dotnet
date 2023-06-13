@@ -60,7 +60,7 @@ namespace Datadog.Trace
                 discoveryService: null,
                 dataStreamsManager: null,
                 remoteConfigurationManager: null,
-                dynamicConfigurationManager: previous?.DynamicConfigurationManager);
+                dynamicConfigurationManager: null);
 
             try
             {

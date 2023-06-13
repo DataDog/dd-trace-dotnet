@@ -28,7 +28,7 @@ namespace Datadog.Trace.Configuration
     public class JsonConfigurationSource : IConfigurationSource, ITelemeteredConfigurationSource
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(JsonConfigurationSource));
-        private readonly JObject? _configuration;
+        private readonly JToken? _configuration;
         private readonly ConfigurationOrigins _origin;
 
         /// <summary>
@@ -44,10 +44,17 @@ namespace Datadog.Trace.Configuration
         }
 
         internal JsonConfigurationSource(string json, ConfigurationOrigins origin)
+            : this(json, origin, j => (JToken?)JsonConvert.DeserializeObject(j))
+        {
+        }
+
+        private protected JsonConfigurationSource(string json, ConfigurationOrigins origin, Func<string, JToken?> deserialize)
         {
             if (json is null) { ThrowHelper.ThrowArgumentNullException(nameof(json)); }
 
-            _configuration = (JObject?)JsonConvert.DeserializeObject(json);
+            if (deserialize is null) { ThrowHelper.ThrowArgumentNullException(nameof(deserialize)); }
+
+            _configuration = deserialize(json);
             _origin = origin;
         }
 

@@ -125,7 +125,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             expectedConfig ??= config;
 
-            await agent.SetupRcmAndWait(Output, new[] { ((object)config, DynamicConfigurationManager.ProductName, "1") });
+            await agent.SetupRcmAndWait(Output, new[] { ((object)new { lib_config = config }, DynamicConfigurationManager.ProductName, "1") });
             var log = await logEntryWatcher.WaitForLogEntry(DiagnosticLog);
 
             using var context = new AssertionScope();

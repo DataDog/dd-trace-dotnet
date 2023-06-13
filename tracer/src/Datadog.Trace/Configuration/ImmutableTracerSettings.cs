@@ -29,7 +29,7 @@ namespace Datadog.Trace.Configuration
         private readonly bool _isDataStreamsMonitoringEnabled;
         private readonly bool _logsInjectionEnabled;
         private readonly ReadOnlyDictionary<string, string> _headerTags;
-        private readonly IDictionary<string, string> _serviceNameMappings;
+        private readonly IReadOnlyDictionary<string, string> _serviceNameMappings;
         private readonly double? _globalSamplingRate;
         private readonly bool _runtimeMetricsEnabled;
         private readonly string? _spanSamplingRules;
@@ -113,7 +113,7 @@ namespace Datadog.Trace.Configuration
             PeerServiceTagsEnabled = settings.PeerServiceTagsEnabled;
             RemoveClientServiceNamesEnabled = settings.RemoveClientServiceNamesEnabled;
             MetadataSchemaVersion = settings.MetadataSchemaVersion;
-            _serviceNameMappings = settings.ServiceNameMappings ?? new Dictionary<string, string>();
+            _serviceNameMappings = settings.ServiceNameMappings == null ? new Dictionary<string, string>() : new ReadOnlyDictionary<string, string>(settings.ServiceNameMappings);
             TraceBufferSize = settings.TraceBufferSize;
             TraceBatchInterval = settings.TraceBatchInterval;
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
@@ -376,7 +376,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets configuration values for changing service names based on configuration
         /// </summary>
-        internal IDictionary<string, string> ServiceNameMappings => DynamicSettings.ServiceNameMappings ?? _serviceNameMappings;
+        internal IReadOnlyDictionary<string, string> ServiceNameMappings => DynamicSettings.ServiceNameMappings ?? _serviceNameMappings;
 
         /// <summary>
         /// Gets a value indicating the size in bytes of the trace buffer
