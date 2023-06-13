@@ -17,13 +17,14 @@ namespace Datadog.Trace.DatabaseMonitoring
         private const string SqlCommentVersion = "ddpv";
         private const string SqlCommentEnv = "dde";
 
-        internal static string PropagateSpanData(DbmPropagationLevel propagationStyle, string configuredServiceName, SpanContext context, IntegrationId integrationId)
+        internal static unsafe string PropagateSpanData(DbmPropagationLevel propagationStyle, string configuredServiceName, SpanContext context, IntegrationId integrationId)
         {
             if ((integrationId is IntegrationId.MySql or IntegrationId.Npgsql or IntegrationId.SqlClient) &&
                 (propagationStyle is DbmPropagationLevel.Service or DbmPropagationLevel.Full))
             {
 #if NETCOREAPP3_1_OR_GREATER
-                var propagatorStringBuilder = new ValueStringBuilder(StringBuilderCache.MaxBuilderSize);
+                var chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+                var propagatorStringBuilder = new ValueStringBuilder(chars, StringBuilderCache.MaxBuilderSize);
 #else
                 var propagatorStringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 #endif

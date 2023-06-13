@@ -526,8 +526,8 @@ namespace Datadog.Trace.Propagators
                 var otherValuesRight = header.Substring(ddEndIndex + 1, header.Length - ddEndIndex - 1);
 
 #if NETCOREAPP3_1_OR_GREATER
-                char* chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
-                var sb = new Util.ValueStringBuilder((IntPtr)chars, StringBuilderCache.MaxBuilderSize);
+                var chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+                var sb = new Util.ValueStringBuilder(chars, StringBuilderCache.MaxBuilderSize);
 #else
                 var sb = StringBuilderCache.Acquire(otherValuesLeft.Length + otherValuesRight.Length + 1);
 #endif
@@ -710,8 +710,8 @@ namespace Datadog.Trace.Propagators
                 }
             }
 
-            char* chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
-            var sb = new Util.ValueStringBuilder((IntPtr)chars, StringBuilderCache.MaxBuilderSize);
+            var chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+            var sb = new Util.ValueStringBuilder(chars, StringBuilderCache.MaxBuilderSize);
 #else
             static void AppendIfNotNullOrWhiteSpace(ref StringBuilder sb, string? value)
             {

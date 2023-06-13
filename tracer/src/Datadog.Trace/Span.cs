@@ -142,8 +142,8 @@ namespace Datadog.Trace
         public override unsafe string ToString()
         {
 #if NETCOREAPP3_1_OR_GREATER
-            char* chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
-            var sb = new Util.ValueStringBuilder((IntPtr)chars, StringBuilderCache.MaxBuilderSize);
+            var chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+            var sb = new Util.ValueStringBuilder(chars, StringBuilderCache.MaxBuilderSize);
 #else
             var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 #endif

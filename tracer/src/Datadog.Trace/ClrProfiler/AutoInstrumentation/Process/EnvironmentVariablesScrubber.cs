@@ -34,8 +34,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             if (envVariables != null)
             {
 #if NETCOREAPP3_1_OR_GREATER
-                char* chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
-                var variableLine = new Util.ValueStringBuilder((IntPtr)chars, StringBuilderCache.MaxBuilderSize);
+                var chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+                var variableLine = new Util.ValueStringBuilder(chars, StringBuilderCache.MaxBuilderSize);
 #else
                 var variableLine = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 #endif

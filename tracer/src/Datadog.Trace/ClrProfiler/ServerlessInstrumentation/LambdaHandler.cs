@@ -158,8 +158,8 @@ internal class LambdaHandler
         // Get the SB twice and concatenate but it avoids annoying
         // recursive complexity, and is an edge case, so I think it's fine
 #if NETCOREAPP3_1_OR_GREATER
-        char* chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
-        var sb = new Util.ValueStringBuilder((IntPtr)chars, StringBuilderCache.MaxBuilderSize);
+        var chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+        var sb = new Util.ValueStringBuilder(chars, StringBuilderCache.MaxBuilderSize);
 #else
         var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 #endif
