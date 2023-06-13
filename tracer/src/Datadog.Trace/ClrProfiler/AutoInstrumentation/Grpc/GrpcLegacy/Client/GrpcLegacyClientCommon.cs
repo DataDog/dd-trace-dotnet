@@ -154,6 +154,30 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             }
         }
 
+        internal static string GetNormalizedHost(object channelInstance, string target)
+        {
+            if (ChannelToHostMap.TryGetValue(channelInstance, out var normalizedHost))
+            {
+                return normalizedHost;
+            }
+
+            var host = target.IndexOf(':') switch
+            {
+                -1 => target,
+                var index => target.Substring(startIndex: 0, length: index),
+            };
+
+            normalizedHost = HttpRequestUtils.GetNormalizedHost(host);
+
+#if NETCOREAPP3_1_OR_GREATER
+            ChannelToHostMap.AddOrUpdate(channelInstance, normalizedHost);
+#else
+            ChannelToHostMap.GetValue(channelInstance, x => normalizedHost);
+#endif
+
+            return normalizedHost;
+        }
+
         private static void AddTemporaryHeaders(IMetadata metadata, int grpcType, string? methodName, string? serviceName, DateTimeOffset startTime, ISpanContext? parentContext)
         {
             metadata.Add(TemporaryHeaders.MethodKind, GrpcCommon.GetGrpcMethodKind(grpcType));
@@ -224,30 +248,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             }
 
             return span;
-        }
-
-        private static string GetNormalizedHost(object channelInstance, string target)
-        {
-            if (ChannelToHostMap.TryGetValue(channelInstance, out var normalizedHost))
-            {
-                return normalizedHost;
-            }
-
-            var host = target.IndexOf(':') switch
-            {
-                -1 => target,
-                var index => target.Substring(startIndex: 0, length: index),
-            };
-
-            normalizedHost = HttpRequestUtils.GetNormalizedHost(host);
-
-#if NETCOREAPP3_1_OR_GREATER
-            ChannelToHostMap.AddOrUpdate(channelInstance, normalizedHost);
-#else
-            ChannelToHostMap.GetValue(channelInstance, x => normalizedHost);
-#endif
-
-            return normalizedHost;
         }
     }
 }
