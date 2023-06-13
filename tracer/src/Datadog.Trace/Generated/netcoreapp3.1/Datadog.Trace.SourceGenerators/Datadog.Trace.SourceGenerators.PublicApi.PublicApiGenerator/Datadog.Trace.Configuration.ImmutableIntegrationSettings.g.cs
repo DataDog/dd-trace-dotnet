@@ -14,7 +14,7 @@ partial class ImmutableIntegrationSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)59);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)70);
             return IntegrationNameInternal;
         }
     }
@@ -29,7 +29,7 @@ partial class ImmutableIntegrationSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)58);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)69);
             return EnabledInternal;
         }
     }
@@ -44,7 +44,7 @@ partial class ImmutableIntegrationSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)56);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)67);
             return AnalyticsEnabledInternal;
         }
     }
@@ -59,7 +59,7 @@ partial class ImmutableIntegrationSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)57);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)68);
             return AnalyticsSampleRateInternal;
         }
     }
