@@ -6,6 +6,7 @@ using BenchmarkDotNet.Running;
 using Datadog.Trace.BenchmarkDotNet;
 using BenchmarkDotNet.Exporters.Json;
 using BenchmarkDotNet.Filters;
+using BenchmarkDotNet.Jobs;
 using Benchmarks.Trace.Jetbrains;
 
 namespace Benchmarks.Trace
@@ -58,6 +59,7 @@ namespace Benchmarks.Trace
             }
 
             Console.WriteLine("Running tests...");
+            
             BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
         }
     }

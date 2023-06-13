@@ -5,18 +5,17 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.Configuration;
 
 namespace Benchmarks.Trace;
 
 [MemoryDiagnoser]
 [BenchmarkAgent2]
+[MaxIterationCount(30)]
+[MaxWarmupCount(10)]
 public class AppSecWafBenchmark
 {
     public const int TimeoutMicroSeconds = 1_000_000;
@@ -26,7 +25,7 @@ public class AppSecWafBenchmark
 
     public AppSecWafBenchmark()
     {
-        Environment.SetEnvironmentVariable("DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH", "C:\\Repositories\\dd-trace-dotnet2\\shared\\bin\\monitoring-home\\win-x64\\");
+        Environment.SetEnvironmentVariable("DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH", "..\\..\\..\\shared\\bin\\monitoring-home\\win-x64\\");
         var libInitResult = WafLibraryInvoker.Initialize();
         if (!libInitResult.Success)
         {
@@ -37,10 +36,10 @@ public class AppSecWafBenchmark
         var initResult = Waf.Create(wafLibraryInvoker, string.Empty, string.Empty);
         _waf = initResult.Waf;
     }
-    
-    public IEnumerable<Dictionary<string, object>> Source() // for multiple arguments it's an IEnumerable of array of objects (object[])
+
+    public IEnumerable<Dictionary<string, object>> Source()
     {
-        yield return new Dictionary<string, object>
+       yield return new Dictionary<string, object>
         {
             { AddressesConstants.RequestCookies, new Dictionary<string, string> { { "something", ".htaccess" }, { "something2", ";shutdown--" } } },
             { AddressesConstants.RequestQuery, new Dictionary<string, string> { { "[$ne]", "appscan_fingerprint" }, } },
@@ -91,6 +90,7 @@ public class AppSecWafBenchmark
         };
     }
     
+
     [GlobalSetup]
     public void Setup()
     {
@@ -110,10 +110,51 @@ public class AppSecWafBenchmark
         _context.Run(args, TimeoutMicroSeconds);
     }
 
-    [Benchmark]    
+    [Benchmark]
     [ArgumentsSource(nameof(Source))]
     public void RunWafWithMarshallEncoding(Dictionary<string, object> args)
     {
         _context.Run2(args, TimeoutMicroSeconds);
+    }
+    
+    private static Dictionary<string, object> MakeNestedMap(int nestingDepth)
+    {
+        var root = new Dictionary<string, object>();
+        var map = root;
+
+        for (var i = 0; i < nestingDepth; i++)
+        {
+            if (i % 2 == 0)
+            {
+                var nextList = new List<object>
+                {
+                    true,
+                    false,
+                    false,
+                    false,
+                    true,
+                    123,
+                    "lorem",
+                    "ipsum",
+                    "dolor",
+                    AddressesConstants.RequestCookies, new Dictionary<string, string> { { "something", ".htaccess" }, { "something2", ";shutdown--" } }
+                };
+                map.Add("list", nextList);
+            }
+
+            var nextMap = new Dictionary<string, object>
+            {
+                { "lorem", "ipsum" },
+                { "dolor", "sit" },
+                { "amet", "amet" },
+                { "lorem2", "dolor2" },
+                { "sit2", true },
+                { "amet3", 4356 }
+            };
+            map.Add("item", nextMap);
+            map = nextMap;
+        }
+
+        return root;
     }
 }

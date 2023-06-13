@@ -28,6 +28,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         private readonly List<Obj> _argCache = new();
         private readonly List<GCHandle> _argCache2 = new();
+        private readonly List<IntPtr> _argCache3 = new();
         private readonly Stopwatch _stopwatch;
         private readonly WafLibraryInvoker _wafLibraryInvoker;
 
@@ -57,6 +58,53 @@ namespace Datadog.Trace.AppSec.Waf
             return new Context(contextHandle, waf, wafLibraryInvoker);
         }
 
+        public IResult? Run3(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
+        {
+            if (_disposed)
+            {
+                ThrowHelper.ThrowException("Can't run WAF when context is disposed");
+            }
+
+            DdwafResultStruct retNative = default;
+
+            if (_waf.Disposed)
+            {
+                Log.Warning("Context can't run when waf handle has been disposed. This shouldn't have happened with the locks, check concurrency.");
+                return null;
+            }
+
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                var parameters = Encoder.FormatArgs(addresses);
+                Log.Debug("DDAS-0010-00: Executing AppSec In-App WAF with parameters: {Parameters}", parameters);
+            }
+
+            // not restart cause it's the total runtime over runs, and we run several * during request
+            _stopwatch.Start();
+            var pwArgs = Encoder.Encode3(addresses, _wafLibraryInvoker, gcHandles: _argCache2, applySafetyLimits: true);
+
+            DDWAF_RET_CODE code;
+            lock (_sync)
+            {
+                code = _waf.Run(_contextHandle, ref pwArgs, ref retNative, timeoutMicroSeconds);
+            }
+
+            _stopwatch.Stop();
+            _totalRuntimeOverRuns += retNative.TotalRuntime / 1000;
+            var result = new Result(retNative, code, _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000));
+            _wafLibraryInvoker.ResultFree(ref retNative);
+
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug(
+                    "DDAS-0011-00: AppSec In-App WAF returned: {ReturnCode} {Data}",
+                    result.ReturnCode,
+                    result.Data);
+            }
+
+            return result;
+        }
+
         public IResult? Run2(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
         {
             if (_disposed)
@@ -80,7 +128,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             // not restart cause it's the total runtime over runs, and we run several * during request
             _stopwatch.Start();
-            var pwArgs = Encoder.Encode2(addresses, _wafLibraryInvoker, applySafetyLimits: true, argCache: _argCache2);
+            var pwArgs = Encoder.Encode2(addresses, applySafetyLimits: true, argToFree: _argCache2);
 
             DDWAF_RET_CODE code;
             lock (_sync)
@@ -174,6 +222,11 @@ namespace Datadog.Trace.AppSec.Waf
             foreach (var arg in _argCache2)
             {
                 arg.Free();
+            }
+
+            foreach (var arg in _argCache3)
+            {
+                Marshal.FreeHGlobal(arg);
             }
         }
 

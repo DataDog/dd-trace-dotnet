@@ -122,24 +122,14 @@ namespace Datadog.Trace.Security.Unit.Tests
                 { AddressesConstants.RequestCookies, new Dictionary<string, string> { { "something", ".htaccess" }, { "something2", ";shutdown--" } } },
                 { AddressesConstants.RequestQuery, new Dictionary<string, string> { { "[$ne]", "appscan_fingerprint" }, } },
                 { AddressesConstants.RequestUriRaw, "http://localhost:54587/" },
-                { AddressesConstants.RequestMethod, "GET" },
             };
 
             var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
             using var waf = initResult.Waf;
             waf.Should().NotBeNull();
-            using var context = waf.CreateContext() as Context;
-            var stopwatch = new System.Diagnostics.Stopwatch();
-            using var context2 = waf.CreateContext() as Context;
-            stopwatch.Restart();
-            var resultOriginal = context2.Run(args, TimeoutMicroSeconds);
-            stopwatch.Stop();
-            Console.WriteLine(stopwatch.ElapsedMilliseconds);
-            stopwatch.Restart();
-            var resultwaf = context.Run2(args, TimeoutMicroSeconds);
-            stopwatch.Stop();
-            Console.WriteLine(stopwatch.ElapsedMilliseconds);
-            resultwaf.ReturnCode.Should().Be(ReturnCode.Match);
+            using var context3 = waf.CreateContext() as Context;
+            var resultwaf2 = context3.Run2(args, TimeoutMicroSeconds);
+            resultwaf2.ReturnCode.Should().Be(ReturnCode.Match);
         }
 
         private void Execute(string address, object value, string flow, string rule)
