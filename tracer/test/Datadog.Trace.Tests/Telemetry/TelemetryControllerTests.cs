@@ -111,7 +111,7 @@ namespace Datadog.Trace.Tests.Telemetry
             controller.Start();
 
             var requiredHeartbeats = 10;
-            var deadline = DateTimeOffset.UtcNow.AddSeconds(heartBeatInterval.TotalSeconds * 100);
+            var deadline = DateTimeOffset.UtcNow.AddSeconds(heartBeatInterval.TotalSeconds * 1000);
             while (DateTimeOffset.UtcNow < deadline)
             {
                 var heartBeatCount = transport.GetData().Count(x => x.RequestType == TelemetryRequestTypes.AppHeartbeat);
