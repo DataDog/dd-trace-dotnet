@@ -6,7 +6,6 @@
 using System;
 using System.IO;
 
-using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
@@ -16,14 +15,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
         private const string DefinitionsId = "68224F20D001430F9400668DD25245BA";
         private const string LogLevelEnvName = "DD_LOG_LEVEL";
         // Azure and GCP Functions are identified by pairs of environment variables.
-        internal const string AzureFunctionNameEnvVar = "WEBSITE_SITE_NAME";
-        internal const string AzureFunctionIdentifierEnvVar = "FUNCTIONS_EXTENSION_VERSION";
-        internal const string GCPFunctionDeprecatedNameEnvVar = "FUNCTION_NAME";
-        internal const string GCPFunctionDeprecatedEnvVarIdentifier = "GCP_PROJECT";
-        internal const string GCPFunctionNewerNameEnvVar = "K_SERVICE";
-        internal const string GCPFunctionNewerEnvVarIdentifier = "FUNCTION_TARGET";
-
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Serverless));
 
         private static NativeCallTargetDefinition[] callTargetDefinitions = null;
 

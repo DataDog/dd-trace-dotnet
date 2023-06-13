@@ -22,14 +22,10 @@ internal class ServerlessMiniAgentManager
             process.StartInfo.FileName = path;
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.RedirectStandardOutput = true;
-            process.StartInfo.RedirectStandardError = true;
-
             process.OutputDataReceived += new DataReceivedEventHandler(MiniAgentDataReceivedHandler);
-            process.ErrorDataReceived += new DataReceivedEventHandler(MiniAgentDataReceivedHandler);
 
             process.Start();
             process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
         }
         catch (Exception ex)
         {
@@ -72,7 +68,6 @@ internal class ServerlessMiniAgentManager
     }
 
     // Processes a raw log from the mini agent, returning a Tuple of the log level and the cleaned log data
-
     // For example, given this raw log:
     // [2023-06-06T01:31:30Z DEBUG datadog_trace_mini_agent::mini_agent] Random log
     // This function will return:

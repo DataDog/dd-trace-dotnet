@@ -10,7 +10,6 @@ using System.IO;
 
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using FluentAssertions;
-using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests
@@ -27,12 +26,6 @@ namespace Datadog.Trace.Tests
             {
                 { FunctionNameEnvVar, Environment.GetEnvironmentVariable(FunctionNameEnvVar) },
                 { HandlerEnvVar, Environment.GetEnvironmentVariable(HandlerEnvVar) },
-                { Serverless.AzureFunctionNameEnvVar, Environment.GetEnvironmentVariable(Serverless.AzureFunctionNameEnvVar) },
-                { Serverless.AzureFunctionIdentifierEnvVar, Environment.GetEnvironmentVariable(Serverless.AzureFunctionIdentifierEnvVar) },
-                { Serverless.GCPFunctionDeprecatedNameEnvVar, Environment.GetEnvironmentVariable(Serverless.GCPFunctionDeprecatedNameEnvVar) },
-                { Serverless.GCPFunctionDeprecatedEnvVarIdentifier, Environment.GetEnvironmentVariable(Serverless.GCPFunctionDeprecatedEnvVarIdentifier) },
-                { Serverless.GCPFunctionNewerNameEnvVar, Environment.GetEnvironmentVariable(Serverless.GCPFunctionNewerNameEnvVar) },
-                { Serverless.GCPFunctionNewerEnvVarIdentifier, Environment.GetEnvironmentVariable(Serverless.GCPFunctionNewerEnvVarIdentifier) },
             };
         }
 
