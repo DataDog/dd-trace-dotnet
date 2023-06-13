@@ -8,6 +8,7 @@
 #include "IApplicationStore.h"
 #include "IEnabledProfilers.h"
 #include "IMetricsSender.h"
+#include "IProcessSamplesProvider.h"
 #include "IRuntimeInfo.h"
 #include "IUpscaleProvider.h"
 #include "Log.h"
@@ -68,12 +69,14 @@ LibddprofExporter::LibddprofExporter(
     IRuntimeInfo* runtimeInfo,
     IEnabledProfilers* enabledProfilers,
     MetricsRegistry& metricsRegistry,
-    IAllocationsRecorder* allocationsRecorder) :
+    IAllocationsRecorder* allocationsRecorder,
+    IProcessSamplesProvider* processSamplesProvider) :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _locationsAndLinesSize{512},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
-    _allocationsRecorder{allocationsRecorder}
+    _allocationsRecorder{allocationsRecorder},
+    _processSamplesProvider{processSamplesProvider}
 {
     _exporterBaseTags = CreateTags(configuration, runtimeInfo, enabledProfilers);
     _endpoint = CreateEndpoint(configuration);
@@ -334,17 +337,8 @@ LibddprofExporter::ProfileInfoScope LibddprofExporter::GetOrCreateInfo(std::stri
     return profileInfo;
 }
 
-void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
+void LibddprofExporter::Add(ddog_prof_Profile* profile, std::shared_ptr<Sample> const& sample)
 {
-    auto profileInfoScope = GetOrCreateInfo(sample->GetRuntimeId());
-
-    if (profileInfoScope.profileInfo.profile == nullptr)
-    {
-        profileInfoScope.profileInfo.profile = CreateProfile();
-    }
-
-    auto* profile = profileInfoScope.profileInfo.profile;
-
     auto const& callstack = sample->GetCallstack();
     auto nbFrames = callstack.size();
 
@@ -411,6 +405,18 @@ void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
         Log::Warn("Failed to add a sample: ", std::string_view(errorMessage.ptr, errorMessage.len));
         return;
     }
+}
+
+void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
+{
+    auto profileInfoScope = GetOrCreateInfo(sample->GetRuntimeId());
+
+    if (profileInfoScope.profileInfo.profile == nullptr)
+    {
+        profileInfoScope.profileInfo.profile = CreateProfile();
+    }
+    auto* profile = profileInfoScope.profileInfo.profile;
+    Add(profile, sample);
     profileInfoScope.profileInfo.samplesCount++;
 }
 
@@ -504,6 +510,14 @@ void LibddprofExporter::AddUpscalingRules(ddog_prof_Profile* profile, std::vecto
     }
 }
 
+void LibddprofExporter::AddAdditionalSamples(ddog_prof_Profile* profile, std::list<std::shared_ptr<Sample>> const& samples)
+{
+    for (auto const& sample : samples)
+    {
+        Add(profile, sample);
+    }
+}
+
 bool LibddprofExporter::Export()
 {
     bool exported = false;
@@ -543,6 +557,9 @@ bool LibddprofExporter::Export()
     // for all applications.
     auto upscalingInfos = GetUpscalingInfos();
 
+    // Additonal samples
+    auto processSamples = _processSamplesProvider->GetSamples();
+
     for (auto& runtimeId : keys)
     {
         ddog_prof_Profile* profile;
@@ -579,6 +596,8 @@ bool LibddprofExporter::Export()
             Log::Debug("The profiler for application ", applicationInfo.ServiceName, " (runtime id:", runtimeId, ") have empty profile. Nothing will be sent.");
             continue;
         }
+
+        AddAdditionalSamples(profile, processSamples);
 
         AddUpscalingRules(profile, upscalingInfos);
 

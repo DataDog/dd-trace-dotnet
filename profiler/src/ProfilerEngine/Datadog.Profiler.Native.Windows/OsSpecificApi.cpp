@@ -5,18 +5,25 @@
 
 #include "resource.h"
 
-#include <memory>
 #include "OsSpecificApi.h"
 
 #include "IConfiguration.h"
 #include "IThreadInfo.h"
+#include "Log.h"
+#include "OpSysTools.h"
+#include "ScopeFinalizer.h"
+#include "ScopedHandle.h"
 #include "StackFramesCollectorBase.h"
 #include "SystemTime.h"
 #include "Windows32BitStackFramesCollector.h"
 #include "Windows64BitStackFramesCollector.h"
-#include "Log.h"
-#include "ScopeFinalizer.h"
+#include "WindowsThreadInfo.h"
 #include "shared/src/native-src/loader.h"
+
+#include <memory>
+
+#include <tlhelp32.h>
+#include <windows.h>
 
 namespace OsSpecificApi {
 
@@ -71,7 +78,6 @@ uint64_t GetThreadCpuTime(IThreadInfo* pThreadInfo)
     return 0;
 }
 
-
 typedef LONG KPRIORITY;
 
 struct CLIENT_ID
@@ -124,7 +130,6 @@ NtQueryInformationThread_ NtQueryInformationThread = nullptr;
 typedef BOOL(WINAPI* GetLogicalProcessorInformation_)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, PDWORD);
 GetLogicalProcessorInformation_ GetLogicalProcessorInformation = nullptr;
 
-
 bool InitializeNtQueryInformationThreadCallback()
 {
     auto hModule = GetModuleHandleA("NtDll.dll");
@@ -146,11 +151,9 @@ bool InitializeNtQueryInformationThreadCallback()
 
 bool IsRunning(ULONG threadState)
 {
-    return
-        (THREAD_STATE::Running == threadState) ||
-        (THREAD_STATE::DeferredReady == threadState) ||
-        (THREAD_STATE::Standby == threadState)
-        ;
+    return (THREAD_STATE::Running == threadState) ||
+           (THREAD_STATE::DeferredReady == threadState) ||
+           (THREAD_STATE::Standby == threadState);
 
     // Note that THREAD_STATE::Standby, THREAD_STATE::Ready and THREAD_STATE::DeferredReady
     // indicate that threads are simply waiting for an available core to run.
@@ -224,7 +227,10 @@ int32_t GetProcessorCount()
 
         LPSTR messageBuffer = nullptr;
         // Free the Win32's string's buffer.
-        on_leave { LocalFree(messageBuffer); };
+        on_leave
+        {
+            LocalFree(messageBuffer);
+        };
 
         // Ask Win32 to give us the string version of that message ID.
         // The parameters we pass in, tell Win32 to create the buffer that holds the message for us (because we don't yet know how long the message string will be).
@@ -237,6 +243,59 @@ int32_t GetProcessorCount()
         return 1;
     }
     return nbProcs;
+}
+
+ScopedHandle GetThreadHandle(DWORD threadId)
+{
+    auto handle = ScopedHandle(::OpenThread(THREAD_QUERY_INFORMATION, FALSE, threadId));
+    if (handle == NULL)
+    {
+        LPVOID msgBuffer;
+        DWORD errorCode = GetLastError();
+
+        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                      NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgBuffer, 0, NULL);
+
+        if (msgBuffer != NULL)
+        {
+            Log::Debug("GetThreadHandle: Error getting thread handle for thread id '", threadId, "': ", (LPTSTR)msgBuffer);
+            LocalFree(msgBuffer);
+        }
+    }
+    return handle;
+}
+
+std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
+{
+    std::vector<std::shared_ptr<IThreadInfo>> result;
+    result.reserve(1024);
+
+    auto h = ScopedHandle(CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, OpSysTools::GetProcId()));
+
+    if (h.IsValid())
+    {
+        THREADENTRY32 te{};
+        te.dwSize = sizeof(te);
+        if (Thread32First(h, &te))
+        {
+            do
+            {
+                if (te.dwSize >= FIELD_OFFSET(THREADENTRY32, th32OwnerProcessID) +
+                                     sizeof(te.th32OwnerProcessID) &&
+                    te.th32ThreadID != 0 && te.th32OwnerProcessID == OpSysTools::GetProcId())
+                {
+                    auto threadHnd = GetThreadHandle(te.th32ThreadID);
+
+                    if (threadHnd.IsValid())
+                    {
+                        result.push_back(std::make_shared<WindowsThreadInfo>(te.th32ThreadID, std::move(threadHnd), OpSysTools::GetNativeThreadName(threadHnd)));
+                    }
+                }
+                te.dwSize = sizeof(te);
+            } while (Thread32Next(h, &te));
+        }
+    }
+    return result;
 }
 
 } // namespace OsSpecificApi

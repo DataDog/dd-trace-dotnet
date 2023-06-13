@@ -30,6 +30,7 @@ class IApplicationStore;
 class IRuntimeInfo;
 class IEnabledProfilers;
 class IAllocationsRecorder;
+class IProcessSamplesProvider;
 
 class LibddprofExporter : public IExporter
 {
@@ -41,7 +42,8 @@ public:
         IRuntimeInfo* runtimeInfo,
         IEnabledProfilers* enabledProfilers,
         MetricsRegistry& metricsRegistry,
-        IAllocationsRecorder* allocationsRecorder
+        IAllocationsRecorder* allocationsRecorder,
+        IProcessSamplesProvider* processSamplesProvider
         );
     ~LibddprofExporter() override;
     bool Export() override;
@@ -127,6 +129,9 @@ private:
     static ddog_prof_Exporter* CreateExporter(const ddog_Vec_Tag* tags, ddog_Endpoint endpoint);
     ddog_prof_Profile* CreateProfile();
 
+    void AddAdditionalSamples(ddog_prof_Profile* profile, std::list<std::shared_ptr<Sample>> const& samples);
+    void Add(ddog_prof_Profile* profile, std::shared_ptr<Sample> const& sample);
+
     ddog_prof_Exporter_Request* CreateRequest(SerializedProfile const& encodedProfile, ddog_prof_Exporter* exporter, const Tags& additionalTags) const;
     ddog_Endpoint CreateEndpoint(IConfiguration* configuration);
     ProfileInfoScope GetOrCreateInfo(std::string_view runtimeId);
@@ -180,6 +185,7 @@ private:
     fs::path _metricsFileFolder;
     IAllocationsRecorder* _allocationsRecorder;
     std::vector<IUpscaleProvider*> _upscaledProviders;
+    IProcessSamplesProvider* _processSamplesProvider;
 
 public:  // for tests
     static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);

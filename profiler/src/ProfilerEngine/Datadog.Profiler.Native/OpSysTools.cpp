@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "OpSysTools.h"
+
 #ifdef _WINDOWS
 #include "shared/src/native-src/string.h"
 #include <malloc.h>
@@ -24,6 +25,8 @@
 #include "cgroup.h"
 #include <sys/auxv.h>
 #endif
+
+#include "ScopeFinalizer.h"
 
 #include <chrono>
 #include <thread>
@@ -187,9 +190,10 @@ bool OpSysTools::SetNativeThreadName(std::thread* pNativeThread, const WCHAR* de
 #endif
 }
 
-bool OpSysTools::GetNativeThreadName(HANDLE windowsThreadHandle, WCHAR* pThreadDescrBuff, const std::uint32_t threadDescrBuffSize)
-{
+
 #ifdef _WINDOWS
+shared::WSTRING OpSysTools::GetNativeThreadName(HANDLE handle)
+{
     // The SetThreadDescription(..) API is only available on recent Windows versions and must be called dynamically.
     // We attempt to link to it at runtime, and if we do not succeed, this operation is a No-Op.
     // https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getthreaddescription#remarks
@@ -197,26 +201,89 @@ bool OpSysTools::GetNativeThreadName(HANDLE windowsThreadHandle, WCHAR* pThreadD
     GetThreadDescriptionDelegate_t getThreadDescriptionDelegate = GetDelegate_GetThreadDescription();
     if (nullptr == getThreadDescriptionDelegate)
     {
-        return false;
+        return {};
     }
 
     PWSTR pThreadDescr = nullptr;
-    HRESULT hr = getThreadDescriptionDelegate(windowsThreadHandle, &pThreadDescr);
-    if (FAILED(hr) || nullptr == pThreadDescr)
+    HRESULT hr = getThreadDescriptionDelegate(handle, &pThreadDescr);
+    if (FAILED(hr))
     {
-        return false;
+        return {};
+    }
+    on_leave { LocalFree(pThreadDescr); };
+
+    return shared::WSTRING(pThreadDescr);
+}
+
+ScopedHandle OpSysTools::GetThreadHandle(DWORD threadId)
+{
+    auto handle = ScopedHandle(::OpenThread(THREAD_QUERY_INFORMATION, FALSE, threadId));
+    if (handle == NULL)
+    {
+        LPVOID msgBuffer;
+        DWORD errorCode = GetLastError();
+
+        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                      NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgBuffer, 0, NULL);
+
+        if (msgBuffer != NULL)
+        {
+            Log::Debug("GetThreadHandle: Error getting thread handle for thread id '", threadId, "': ", (LPTSTR)msgBuffer);
+            LocalFree(msgBuffer);
+        }
+    }
+    return handle;
+}
+#else
+shared::WSTRING OpSysTools::GetNativeThreadName(pid_t tid)
+{
+    char commPath[64] = {0};
+
+    // TODO refactor this in OsSpecificApi
+
+    // Adjust the base
+    int base = 1000000000;
+    int capacity = 64;
+    while (base > tid)
+    {
+        base /= 10;
     }
 
-    wcsncpy_s(pThreadDescrBuff, threadDescrBuffSize, pThreadDescr, threadDescrBuffSize);
-    *(pThreadDescrBuff + threadDescrBuffSize) = 0;
+    int offset = 16;
+    // Write each number to the string
+    while (base > 0 && offset < 64)
+    {
+        commPath[offset++] = (tid / base) + '0';
+        tid %= base;
+        base /= 10;
+    }
 
-    LocalFree(pThreadDescr);
+    // check in case of misusage
+    if (offset >= capacity || offset + 5 >= capacity)
+    {
+        return WStr("");
+    }
 
-    return true;
-#else
-    return false;
-#endif
+    strncpy(commPath + offset, "/comm", 5);
+
+    auto fd = open(commPath, O_RDONLY);
+    if (fd == -1)
+    {
+        return WStr("");
+    }
+    on_leave { close(fd); };
+
+    char line[16] = {0};
+
+    auto length = read(fd, line, sizeof(line) - 1);
+    if (length <= 0)
+    {
+        return {};
+    }
+
+    return shared::ToWSTRING(std::string(line));
 }
+#endif
 
 bool OpSysTools::GetModuleHandleFromInstructionPointer(void* nativeIP, std::uint64_t* pModuleHandle)
 {

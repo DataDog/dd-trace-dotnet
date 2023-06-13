@@ -18,7 +18,9 @@
 #include "IDebugInfoStore.h"
 #include "IExporter.h"
 #include "IFrameStore.h"
+#include "IGarbageCollectorInfo.h"
 #include "IMetricsSender.h"
+#include "IProcessSamplesProvider.h"
 #include "WallTimeProvider.h"
 #include "CpuTimeProvider.h"
 #include "SamplesCollector.h"
@@ -239,6 +241,9 @@ private :
     MetricsRegistry _metricsRegistry;
     std::shared_ptr<ProxyMetric> _managedThreadsMetric;
     std::shared_ptr<ProxyMetric> _managedThreadsWithContextMetric;
+
+    std::unique_ptr<IGarbageCollectorInfo> _garbageCollectorInfo;
+    std::unique_ptr<IProcessSamplesProvider> _processSamplesProvider;
 
 private:
     static void ConfigureDebugLog();

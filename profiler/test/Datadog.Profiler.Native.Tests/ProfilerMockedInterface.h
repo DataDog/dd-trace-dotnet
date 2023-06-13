@@ -9,6 +9,7 @@
 #include "IApplicationStore.h"
 #include "IExporter.h"
 #include "IMetricsSender.h"
+#include "IProcessSamplesProvider.h"
 #include "IRuntimeIdStore.h"
 #include "ISamplesCollector.h"
 #include "ISamplesProvider.h"
@@ -130,6 +131,13 @@ class MockRuntimeIdStore : public IRuntimeIdStore
 {
 public:
     MOCK_METHOD(const char*, GetId, (AppDomainID appDomainId), (override));
+};
+
+class MockProcessSamplesProvider : public IProcessSamplesProvider
+{
+public:
+    MOCK_METHOD(std::list<std::shared_ptr<Sample>>, GetSamples, (), (override));
+    MOCK_METHOD(const char*, GetName, (), (override));
 };
 
 template <typename T, typename U, typename... Args>

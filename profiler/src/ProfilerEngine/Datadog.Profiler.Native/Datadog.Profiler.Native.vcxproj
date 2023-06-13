@@ -238,6 +238,7 @@
     <ClInclude Include="COMHelpers.h" />
     <ClInclude Include="ContentionProvider.h" />
     <ClInclude Include="GarbageCollection.h" />
+    <ClInclude Include="GarbageCollectorInfo.h" />
     <ClInclude Include="GCBaseRawSample.h" />
     <ClInclude Include="GarbageCollectionProvider.h" />
     <ClInclude Include="IAllocationsRecorder.h" />
@@ -245,6 +246,8 @@
     <ClInclude Include="IDebugInfoStore.h" />
     <ClInclude Include="IExceptionsRecorder.h" />
     <ClInclude Include="IGarbageCollectionsListener.h" />
+    <ClInclude Include="IGarbageCollectorInfo.h" />
+    <ClInclude Include="IProcessSamplesProvider.h" />
     <ClInclude Include="ISampledAllocationsListener.h" />
     <ClInclude Include="IThreadInfo.h" />
     <ClInclude Include="IUpscaleProvider.h" />
@@ -253,8 +256,10 @@
     <ClInclude Include="MeanMaxMetric.h" />
     <ClInclude Include="MetricBase.h" />
     <ClInclude Include="MetricsRegistry.h" />
+    <ClInclude Include="ProcessSamplesProvider.h" />
     <ClInclude Include="ProxyMetric.h" />
     <ClInclude Include="RawGarbageCollectionSample.h" />
+    <ClInclude Include="ScopedHandle.h" />
     <ClInclude Include="StopTheWorldGCProvider.h" />
     <ClInclude Include="GenericSampler.h" />
     <ClInclude Include="GroupSampler.h" />
@@ -355,10 +360,12 @@
     <ClCompile Include="FfiHelper.cpp" />
     <ClCompile Include="FrameStore.cpp" />
     <ClCompile Include="GarbageCollectionProvider.cpp" />
+    <ClCompile Include="GarbageCollectorInfo.cpp" />
     <ClCompile Include="LiveObjectInfo.cpp" />
     <ClCompile Include="LiveObjectsProvider.cpp" />
     <ClCompile Include="MeanMaxMetric.cpp" />
     <ClCompile Include="MetricsRegistry.cpp" />
+    <ClCompile Include="ProcessSamplesProvider.cpp" />
     <ClCompile Include="ProxyMetric.cpp" />
     <ClCompile Include="RawGarbageCollectionSample.cpp" />
     <ClCompile Include="StopTheWorldGCProvider.cpp" />
