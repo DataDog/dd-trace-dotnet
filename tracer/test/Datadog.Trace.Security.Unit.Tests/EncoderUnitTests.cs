@@ -14,11 +14,6 @@ namespace Datadog.Trace.Security.Unit.Tests;
 
 public class EncoderUnitTests : WafLibraryRequiredTest
 {
-    public EncoderUnitTests(WafLibraryInvokerFixture wafLibraryInvokerFixture)
-        : base(wafLibraryInvokerFixture)
-    {
-    }
-
     [SkippableTheory]
     [InlineData(WafConstants.MaxStringLength - 1, WafConstants.MaxStringLength - 1)]
     [InlineData(WafConstants.MaxStringLength, WafConstants.MaxStringLength)]

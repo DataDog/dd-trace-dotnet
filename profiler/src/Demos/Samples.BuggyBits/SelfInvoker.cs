@@ -138,6 +138,11 @@ namespace BuggyBits
                 {
                     urls.Add($"{rootUrl}/End.Point.With.Dots");
                 }
+
+                if ((_scenario & Scenario.Spin) == Scenario.Spin)
+                {
+                    urls.Add($"{rootUrl}/Products/IndexSlow");
+                }
             }
 
             return urls;
