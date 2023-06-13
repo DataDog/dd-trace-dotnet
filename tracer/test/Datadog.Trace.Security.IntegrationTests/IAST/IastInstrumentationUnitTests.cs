@@ -76,6 +76,14 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    public void TestStringCopyMethodsAspectCover()
+    {
+        TestMethodOverloads(typeof(string), "Copy");
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     public void TestToUpperMethodsAspectCover()
     {
         TestMethodOverloads(typeof(string), "ToUpper");
