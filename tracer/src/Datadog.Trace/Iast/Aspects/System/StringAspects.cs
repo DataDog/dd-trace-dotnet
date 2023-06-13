@@ -723,7 +723,7 @@ public class StringAspects
     [AspectMethodReplace("System.String::Format(System.String,System.Object)")]
     public static string Format(string format, object arg0)
     {
-        string result = string.Format(format, arg0);
+        var result = string.Format(format, arg0);
         PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0);
         return result;
     }
@@ -738,7 +738,7 @@ public class StringAspects
     [AspectMethodReplace("System.String::Format(System.String,System.Object,System.Object)")]
     public static string Format(string format, object arg0, object arg1)
     {
-        string result = string.Format(format, arg0, arg1);
+        var result = string.Format(format, arg0, arg1);
         PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0, arg1);
         return result;
     }
@@ -754,7 +754,7 @@ public class StringAspects
     [AspectMethodReplace("System.String::Format(System.String,System.Object,System.Object,System.Object)")]
     public static string Format(string format, object arg0, object arg1, object arg2)
     {
-        string result = string.Format(format, arg0, arg1, arg2);
+        var result = string.Format(format, arg0, arg1, arg2);
         PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0, arg1, arg2);
         return result;
     }
@@ -768,7 +768,7 @@ public class StringAspects
     [AspectMethodReplace("System.String::Format(System.String,System.Object[])")]
     public static string Format(string format, object[] args)
     {
-        string result = string.Format(format, args);
+        var result = string.Format(format, args);
         PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, args);
         return result;
     }
@@ -783,7 +783,7 @@ public class StringAspects
     [AspectMethodReplace("System.String::Format(System.IFormatProvider,System.String,System.Object)")]
     public static string Format(IFormatProvider provider, string format, object arg0)
     {
-        string result = string.Format(provider, format, arg0);
+        var result = string.Format(provider, format, arg0);
         PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0);
         return result;
     }
@@ -799,7 +799,7 @@ public class StringAspects
     [AspectMethodReplace("System.String::Format(System.IFormatProvider,System.String,System.Object,System.Object)")]
     public static string Format(IFormatProvider provider, string format, object arg0, object arg1)
     {
-        string result = string.Format(provider, format, arg0, arg1);
+        var result = string.Format(provider, format, arg0, arg1);
         PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0, arg1);
         return result;
     }
@@ -1081,7 +1081,7 @@ public class StringAspects
     [AspectMethodReplace("System.String::Copy(System.String)", AspectFilter.StringLiteral_0)]
     public static string Copy(string target)
     {
-        string result = string.Copy(target);
+        var result = string.Copy(target);
         PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
         return result;
     }
