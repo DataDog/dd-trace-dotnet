@@ -27,12 +27,12 @@ namespace Datadog.Trace.Tests
             {
                 { FunctionNameEnvVar, Environment.GetEnvironmentVariable(FunctionNameEnvVar) },
                 { HandlerEnvVar, Environment.GetEnvironmentVariable(HandlerEnvVar) },
-                { "FUNCTION_NAME", Environment.GetEnvironmentVariable("FUNCTION_NAME") },
-                { "GCP_PROJECT", Environment.GetEnvironmentVariable("GCP_PROJECT") },
-                { "K_SERVICE", Environment.GetEnvironmentVariable("K_SERVICE") },
-                { "FUNCTION_TARGET", Environment.GetEnvironmentVariable("FUNCTION_TARGET") },
-                { "AzureWebJobsScriptRoot", Environment.GetEnvironmentVariable("AzureWebJobsScriptRoot") },
-                { "FUNCTIONS_EXTENSION_VERSION", Environment.GetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION") },
+                { Serverless.AzureFunctionNameEnvVar, Environment.GetEnvironmentVariable(Serverless.AzureFunctionNameEnvVar) },
+                { Serverless.AzureFunctionIdentifierEnvVar, Environment.GetEnvironmentVariable(Serverless.AzureFunctionIdentifierEnvVar) },
+                { Serverless.GCPFunctionDeprecatedNameEnvVar, Environment.GetEnvironmentVariable(Serverless.GCPFunctionDeprecatedNameEnvVar) },
+                { Serverless.GCPFunctionDeprecatedEnvVarIdentifier, Environment.GetEnvironmentVariable(Serverless.GCPFunctionDeprecatedEnvVarIdentifier) },
+                { Serverless.GCPFunctionNewerNameEnvVar, Environment.GetEnvironmentVariable(Serverless.GCPFunctionNewerNameEnvVar) },
+                { Serverless.GCPFunctionNewerEnvVarIdentifier, Environment.GetEnvironmentVariable(Serverless.GCPFunctionNewerEnvVarIdentifier) },
             };
         }
 
