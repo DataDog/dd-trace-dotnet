@@ -557,7 +557,7 @@ bool LibddprofExporter::Export()
     // for all applications.
     auto upscalingInfos = GetUpscalingInfos();
 
-    // Additonal samples
+    // Process-level samples
     auto processSamples = _processSamplesProvider->GetSamples();
 
     for (auto& runtimeId : keys)

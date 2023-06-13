@@ -331,7 +331,12 @@ bool CorProfilerCallback::InitializeServices()
 
     _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
 
-    _garbageCollectorInfo = std::make_unique<GarbageCollectorInfo>();
+
+    if (_pConfiguration->IsGcThreadsCpuTimeEnabled())
+    {
+        _garbageCollectorInfo = std::make_unique<GarbageCollectorInfo>();
+    }
+
     _processSamplesProvider = std::make_unique<ProcessSamplesProvider>(_garbageCollectorInfo.get(), _pCpuTimeProvider);
 
     // The different elements of the libddprof pipeline are created and linked together

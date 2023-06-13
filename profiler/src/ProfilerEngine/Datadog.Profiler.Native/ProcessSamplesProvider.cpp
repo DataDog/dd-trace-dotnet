@@ -18,7 +18,10 @@ std::list<std::shared_ptr<Sample>> ProcessSamplesProvider::GetSamples()
 {
     std::list<std::shared_ptr<Sample>> samples;
 
-    CollectGcThreadsSamples(samples);
+    if (_gcInfo != nullptr && _cpuTimeProvider != nullptr)
+    {
+        CollectGcThreadsSamples(samples);
+    }
 
     // TODO CollectProfilerThreadsSamples
 
@@ -47,7 +50,7 @@ void ProcessSamplesProvider::CollectGcThreadsSamples(std::list<std::shared_ptr<S
     // The resulting callstack of the transformation is empty
     // Add a fake "GC" frame to the sample
     // TODO add strings as static field ? (from framestore ?)
-    sample->AddFrame({"", "GC", "", 0});
+    sample->AddFrame({"CLR", "|lm: |ns: |ct: |fn:Garbage Collector", "", 0});
 
     samples.push_back(sample);
 }

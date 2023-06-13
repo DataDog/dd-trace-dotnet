@@ -61,6 +61,7 @@ public:
     MOCK_METHOD(bool, UseBacktrace2, (), (const override));
     MOCK_METHOD(bool, IsAllocationRecorderEnabled, (), (const override));
     MOCK_METHOD(bool, IsDebugInfoEnabled, (), (const override));
+    MOCK_METHOD(bool, IsGcThreadsCpuTimeEnabled, (), (const override));
 };
 
 class MockExporter : public IExporter

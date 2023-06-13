@@ -67,6 +67,7 @@ Configuration::Configuration()
     _useBacktrace2 = GetEnvironmentValue(EnvironmentVariables::UseBacktrace2, true);
     _isAllocationRecorderEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationRecorderEnabled, false);
     _isDebugInfoEnabled = GetEnvironmentValue(EnvironmentVariables::DebugInfoEnabled, false);
+    _isGcThreadsCpuTimeEnabled = GetEnvironmentValue(EnvironmentVariables::GcThreadsCpuTimeEnabled, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -145,6 +146,11 @@ bool Configuration::IsContentionProfilingEnabled() const
 bool Configuration::IsGarbageCollectionProfilingEnabled() const
 {
     return _isGarbageCollectionProfilingEnabled;
+}
+
+bool Configuration::IsGcThreadsCpuTimeEnabled() const
+{
+    return _isGcThreadsCpuTimeEnabled;
 }
 
 bool Configuration::IsHeapProfilingEnabled() const

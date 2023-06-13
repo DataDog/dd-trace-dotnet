@@ -7,6 +7,7 @@
 #include "IThreadInfo.h"
 
 class CpuTimeProvider;
+class IConfiguration;
 class IGarbageCollectorInfo;
 
 class ProcessSamplesProvider : public IProcessSamplesProvider
