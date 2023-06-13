@@ -108,7 +108,7 @@ internal static class PropagationModuleImpl
 
     public static string[]? PropagateResultWhenInputTainted(string[] results, object input)
     {
-        if (!(results?.Count() > 0) || input is null)
+        if (!(results?.Length > 0) || input is null)
         {
             return results;
         }
@@ -127,14 +127,17 @@ internal static class PropagationModuleImpl
         }
 
         var tainted = taintedObjects.Get(input);
-        if (tainted?.Ranges?.Count() > 0 && tainted.Ranges[0].Source is not null)
+        if (tainted?.Ranges?.Length > 0)
         {
-            foreach (var result in results)
-            {
-                taintedObjects.Taint(result, new Range[] { new Range(0, result.Length, tainted.Ranges[0].Source) });
-            }
+            var source = tainted.Ranges[0].Source;
 
-            return results;
+            if (source is not null)
+            {
+                for (int i = 0; i < results.Length; i++)
+                {
+                    taintedObjects.Taint(results[i], new Range[] { new Range(0, results[i].Length, source) });
+                }
+            }
         }
 
         return results;
