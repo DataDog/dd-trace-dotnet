@@ -19,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         : base("SqlServer.NetFramework20", output)
         {
             SetServiceVersion("1.0.0");
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlClient(metadataSchemaVersion);
