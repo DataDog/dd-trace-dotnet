@@ -190,6 +190,8 @@
       <type fullname="System.Diagnostics.DiagnosticListener" />
    </assembly>
    <assembly fullname="System.Diagnostics.Process">
+      <type fullname="System.Diagnostics.DataReceivedEventArgs" />
+      <type fullname="System.Diagnostics.DataReceivedEventHandler" />
       <type fullname="System.Diagnostics.Process" />
       <type fullname="System.Diagnostics.ProcessStartInfo" />
       <type fullname="System.Diagnostics.ProcessThreadCollection" />
