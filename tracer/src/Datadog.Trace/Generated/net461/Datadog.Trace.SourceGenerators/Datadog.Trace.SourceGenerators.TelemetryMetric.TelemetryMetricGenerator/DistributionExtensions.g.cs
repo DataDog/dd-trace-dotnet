@@ -5,7 +5,7 @@ namespace Datadog.Trace.Telemetry.Metrics;
 internal static partial class DistributionExtensions
 {
     /// <summary>
-    /// The number of members in the enum.
+    /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Distribution" /> metric.
     /// </summary>
     public const int Length = 1;
 
@@ -29,20 +29,7 @@ internal static partial class DistributionExtensions
     public static bool IsCommon(this Datadog.Trace.Telemetry.Metrics.Distribution metric)
         => metric switch
         {
-            Datadog.Trace.Telemetry.Metrics.Distribution.InitTime => true,
-            _ => false,
-        };
-
-    /// <summary>
-    /// Gets the number of tags the metric should have
-    /// </summary>
-    /// <param name="metric">The metric to check</param>
-    /// <returns>The number of tags the metric should have</returns>
-    public static int ExpectedTags(this Datadog.Trace.Telemetry.Metrics.Distribution metric)
-        => metric switch
-        {
-            Datadog.Trace.Telemetry.Metrics.Distribution.InitTime => 1,
-            _ => 0,
+            _ => true,
         };
 
     /// <summary>
