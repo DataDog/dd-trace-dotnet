@@ -75,7 +75,7 @@ namespace Datadog.Trace
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Ctor_Settings);
             // Don't call Configure because it will call Start on the TracerManager
             // before this new instance of Tracer is assigned to Tracer.Instance
-            TracerManager.ReplaceGlobalManager(settings?.Build(), TracerManagerFactory.Instance);
+            TracerManager.ReplaceGlobalManager(settings is null ? null : new ImmutableTracerSettings(settings), TracerManagerFactory.Instance);
 
             // update the count of Tracer instances
             Interlocked.Increment(ref _liveTracerCount);
@@ -88,7 +88,7 @@ namespace Datadog.Trace
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null)
-            : this(TracerManagerFactory.Instance.CreateTracerManager(settings?.Build(), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null))
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings is null ? null : new ImmutableTracerSettings(settings), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null))
         {
         }
 
@@ -271,7 +271,7 @@ namespace Datadog.Trace
 
         internal static void ConfigureInternal(TracerSettings settings)
         {
-            TracerManager.ReplaceGlobalManager(settings?.Build(), TracerManagerFactory.Instance);
+            TracerManager.ReplaceGlobalManager(settings is null ? null : new ImmutableTracerSettings(settings), TracerManagerFactory.Instance);
             Tracer.Instance.TracerManager.Start();
         }
 

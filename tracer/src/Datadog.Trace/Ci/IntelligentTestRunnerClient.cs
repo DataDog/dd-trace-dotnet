@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
@@ -79,7 +80,7 @@ internal class IntelligentTestRunnerClient
         _getRepositoryUrlTask = GetRepositoryUrlAsync();
         _getBranchNameTask = GetBranchNameAsync();
         _getShaTask = ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "rev-parse HEAD", _workingDirectory));
-        _apiRequestFactory = CIVisibility.GetRequestFactory(_settings.TracerSettings.Build(), TimeSpan.FromSeconds(45));
+        _apiRequestFactory = CIVisibility.GetRequestFactory(new ImmutableTracerSettings(_settings.TracerSettings), TimeSpan.FromSeconds(45));
 
         const string settingsUrlPath = "api/v2/libraries/tests/services/setting";
         const string searchCommitsUrlPath = "api/v2/git/repository/search_commits";

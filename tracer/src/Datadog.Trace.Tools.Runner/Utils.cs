@@ -296,8 +296,8 @@ namespace Datadog.Trace.Tools.Runner
             configurationSource.AddInternal(GlobalConfigurationSource.Instance);
             configurationSource.AddInternal(new NameValueConfigurationSource(env, ConfigurationOrigins.EnvVars));
 
-            var tracerSettings = new TracerSettings(configurationSource);
-            var settings = tracerSettings.Build();
+            var tracerSettings = new TracerSettings(configurationSource, new ConfigurationTelemetry());
+            var settings = new ImmutableTracerSettings(tracerSettings);
 
             var discoveryService = DiscoveryService.Create(
                 settings.Exporter,

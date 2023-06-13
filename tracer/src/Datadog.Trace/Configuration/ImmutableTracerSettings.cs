@@ -13,6 +13,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
@@ -30,7 +31,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         public ImmutableTracerSettings(IConfigurationSource source)
-            : this(new TracerSettings(source))
+            : this(new TracerSettings(source, new ConfigurationTelemetry()))
         {
         }
 
