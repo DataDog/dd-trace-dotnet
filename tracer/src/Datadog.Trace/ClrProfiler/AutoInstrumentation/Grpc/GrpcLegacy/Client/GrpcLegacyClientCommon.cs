@@ -137,7 +137,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                     methodName: method.Name,
                     serviceName: method.ServiceName,
                     startTime: span.StartTime,
-                    parentContext: span.Context.Parent);
+                    parentContext: span.Context.ParentInternal);
 
                 // Add the propagation headers
                 SpanContextPropagator.Instance.Inject(span.Context, collection);
@@ -157,7 +157,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             if (parentContext is not null)
             {
                 metadata.Add(TemporaryHeaders.ParentId, parentContext.SpanId.ToString());
-                metadata.Add(TemporaryHeaders.ParentService, parentContext.ServiceName);
+                metadata.Add(TemporaryHeaders.ParentService, parentContext is SpanContext s ? s.ServiceNameInternal : parentContext.ServiceName);
             }
         }
 

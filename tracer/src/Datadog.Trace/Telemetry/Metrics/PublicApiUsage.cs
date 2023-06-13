@@ -70,11 +70,11 @@ internal enum PublicApiUsage
     [Description("correlationidentifier_version_get")]Correlation_Identifier_Version_Get,
 
     [Description("spancontext_ctor")] SpanContext_Ctor,
+    [Description("spancontext_parent_get")] SpanContext_Parent_Get,
+    [Description("spancontext_parentid_get")] SpanContext_ParentId_Get,
+    [Description("spancontext_servicename_get")] SpanContext_ServiceName_Get,
+    [Description("spancontext_servicename_set")] SpanContext_ServiceName_Set,
     // These are problematic as they're used in a _lot_ of places
-    // [Description("spancontext_parent_get")] SpanContext_Parent_Get,
-    // [Description("spancontext_parentid_get")] SpanContext_ParentId_Get,
-    // [Description("spancontext_servicename_get")] SpanContext_ServiceName_Get,
-    // [Description("spancontext_servicename_set")] SpanContext_ServiceName_Set,
     // [Description("spancontext_spanid_get")] SpanContext_SpanId_Get,
     // [Description("spancontext_traceid_get")] SpanContext_TraceId_Get,
 
