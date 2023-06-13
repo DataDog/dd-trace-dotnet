@@ -19,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             : base("Npgsql", output)
         {
             SetServiceVersion("1.0.0");
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
