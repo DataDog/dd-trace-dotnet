@@ -1024,12 +1024,12 @@ public class StringAspects
     public static string[] Split(string target, string separator, StringSplitOptions options)
     {
 #if NETSTANDARD
-        return Split(target, new string[] { separator }, options);
+        var result = target.Split(new string[] { separator }, options);
 #else
         var result = target.Split(separator, options);
+#endif
         PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
         return result;
-#endif
     }
 
     /// <summary>

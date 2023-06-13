@@ -357,10 +357,7 @@ public class InstrumentationTestsBase
     {
         foreach (var item in collection1)
         {
-            if (!item.IsNullOrEmpty())
-            {
-                AssertTainted(item);
-            }
+            AssertTainted(item);
         }
     }
 
@@ -368,10 +365,7 @@ public class InstrumentationTestsBase
     {
         foreach (var item in collection1)
         {
-            if (!item.IsNullOrEmpty())
-            {
-                AssertNotTainted(item);
-            }
+            AssertNotTainted(item);
         }
     }
 }
