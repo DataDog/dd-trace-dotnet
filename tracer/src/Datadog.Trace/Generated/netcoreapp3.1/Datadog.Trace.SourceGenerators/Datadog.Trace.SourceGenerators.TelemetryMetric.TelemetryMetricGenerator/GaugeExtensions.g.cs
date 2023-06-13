@@ -5,9 +5,9 @@ namespace Datadog.Trace.Telemetry.Metrics;
 internal static partial class GaugeExtensions
 {
     /// <summary>
-    /// The number of members in the enum.
+    /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Gauge" /> metric.
     /// </summary>
-    public const int Length = 4;
+    public const int Length = 3;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -20,7 +20,6 @@ internal static partial class GaugeExtensions
             Datadog.Trace.Telemetry.Metrics.Gauge.StatsBuckets => "stats_buckets",
             Datadog.Trace.Telemetry.Metrics.Gauge.Instrumentations => "instrumentations",
             Datadog.Trace.Telemetry.Metrics.Gauge.DirectLogQueue => "direct_log_queue",
-            Datadog.Trace.Telemetry.Metrics.Gauge.NativeInitTime => "native_init_time",
             _ => null!,
         };
 
@@ -32,26 +31,9 @@ internal static partial class GaugeExtensions
     public static bool IsCommon(this Datadog.Trace.Telemetry.Metrics.Gauge metric)
         => metric switch
         {
-            Datadog.Trace.Telemetry.Metrics.Gauge.StatsBuckets => true,
             Datadog.Trace.Telemetry.Metrics.Gauge.Instrumentations => false,
             Datadog.Trace.Telemetry.Metrics.Gauge.DirectLogQueue => false,
-            Datadog.Trace.Telemetry.Metrics.Gauge.NativeInitTime => false,
-            _ => false,
-        };
-
-    /// <summary>
-    /// Gets the number of tags the metric should have
-    /// </summary>
-    /// <param name="metric">The metric to check</param>
-    /// <returns>The number of tags the metric should have</returns>
-    public static int ExpectedTags(this Datadog.Trace.Telemetry.Metrics.Gauge metric)
-        => metric switch
-        {
-            Datadog.Trace.Telemetry.Metrics.Gauge.StatsBuckets => 0,
-            Datadog.Trace.Telemetry.Metrics.Gauge.Instrumentations => 1,
-            Datadog.Trace.Telemetry.Metrics.Gauge.DirectLogQueue => 0,
-            Datadog.Trace.Telemetry.Metrics.Gauge.NativeInitTime => 0,
-            _ => 0,
+            _ => true,
         };
 
     /// <summary>

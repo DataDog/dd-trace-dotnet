@@ -69,7 +69,7 @@ internal sealed class TraceClock
         var token = _tokenSource.Token;
         while (true)
         {
-            await Task.Delay(TimeSpan.FromMinutes(1), token).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromMinutes(5), token).ConfigureAwait(false);
             if (token.IsCancellationRequested)
             {
                 break;

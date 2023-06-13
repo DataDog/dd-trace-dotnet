@@ -112,7 +112,7 @@ internal readonly partial struct SecurityCoordinator
         {
             { AddressesConstants.RequestMethod, request.Method },
             { AddressesConstants.ResponseStatus, request.HttpContext.Response.StatusCode.ToString() },
-            { AddressesConstants.RequestUriRaw, request.GetUrl() },
+            { AddressesConstants.RequestUriRaw, request.GetUrl(Tracer.Instance.TracerManager.QueryStringManager) },
             { AddressesConstants.RequestQuery, queryStringDic },
             { AddressesConstants.RequestHeaderNoCookies, headersDic },
             { AddressesConstants.RequestCookies, cookiesDic },

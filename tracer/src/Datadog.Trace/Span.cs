@@ -150,8 +150,9 @@ namespace Datadog.Trace
             sb.AppendLine($"OperationName: {OperationName}");
             sb.AppendLine($"Resource: {ResourceName}");
             sb.AppendLine($"Type: {Type}");
-            sb.AppendLine($"Start: {StartTime}");
+            sb.AppendLine($"Start: {StartTime.ToString("O")}");
             sb.AppendLine($"Duration: {Duration}");
+            sb.AppendLine($"End: {StartTime.Add(Duration).ToString("O")}");
             sb.AppendLine($"Error: {Error}");
             sb.AppendLine($"Meta: {Tags}");
 
@@ -472,8 +473,8 @@ namespace Datadog.Trace
         private void WriteCloseDebugMessage()
         {
             Log.Debug(
-                "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])",
-                new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, ServiceName, ResourceName, OperationName, Tags });
+                "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])\nDetails:{ToString}",
+                new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, ServiceName, ResourceName, OperationName, Tags, ToString() });
         }
     }
 }

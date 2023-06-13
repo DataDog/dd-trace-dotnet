@@ -19,7 +19,7 @@ internal enum Distribution
     /// <summary>
     /// The time it takes to import/initialize the tracer on startup. If this consists of multiple steps/components, tagged by the component/total
     /// </summary>
-    [TelemetryMetric("init_time", 1)] InitTime,
+    [TelemetryMetric<MetricTags.InitializationComponent>("init_time")] InitTime,
 #endregion
 
 // These metrics are all desirable, but are not feasible until the API accepts dd-sketches for distributions
@@ -30,6 +30,16 @@ internal enum Distribution
 //     /// The number of spans in the trace when finished
 //     /// </summary>
 //     [TelemetryMetric("trace_size", 0)] TraceSize,
+//
+//    /// <summary>
+//    /// The number of spans included when partial flush is triggered
+//    /// </summary>
+//    [TelemetryMetric("trace_partial_flush.spans_closed", 1)] TracePartialFlushSpansClosed,
+//
+//    /// <summary>
+//    /// The number of open spans remaining in the trace when partial flush is triggered
+//    /// </summary>
+//    [TelemetryMetric("trace_partial_flush.spans_remaining", 1)] TracePartialFlushSpansRemaining,
 //
 //     /// <summary>
 //     /// The size in bytes of the serialized trace
