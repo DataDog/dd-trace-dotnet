@@ -12,8 +12,10 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -43,9 +45,16 @@ namespace Datadog.Trace
         /// settings for all tracers in the application with the default settings.
         /// </summary>
         [Obsolete("This API is deprecated. Use Tracer.Instance to obtain a Tracer instance to create spans.")]
+        [PublicApi]
         public Tracer()
-            : this(settings: null)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Ctor);
+            // Don't call Configure because it will call Start on the TracerManager
+            // before this new instance of Tracer is assigned to Tracer.Instance
+            TracerManager.ReplaceGlobalManager(null, TracerManagerFactory.Instance);
+
+            // update the count of Tracer instances
+            Interlocked.Increment(ref _liveTracerCount);
         }
 
         /// <summary>
@@ -60,8 +69,10 @@ namespace Datadog.Trace
         [Obsolete("This API is deprecated, as it replaces the global settings for all Tracer instances in the application. " +
                   "If you were using this API to configure the global Tracer.Instance in code, use the static "
                 + nameof(Tracer) + "." + nameof(Configure) + "() to replace the global Tracer settings for the application")]
+        [PublicApi]
         public Tracer(TracerSettings settings)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Ctor_Settings);
             // Don't call Configure because it will call Start on the TracerManager
             // before this new instance of Tracer is assigned to Tracer.Instance
             TracerManager.ReplaceGlobalManager(settings?.Build(), TracerManagerFactory.Instance);
@@ -144,8 +155,10 @@ namespace Datadog.Trace
             // TODO: Make this API internal
             [Obsolete("Use " + nameof(Tracer) + "." + nameof(Configure) + " to configure the global Tracer" +
                       " instance in code.")]
+            [PublicApi]
             set
             {
+                TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Instance_Set);
                 if (value is null)
                 {
                     ThrowHelper.ThrowArgumentNullException("The tracer instance shouldn't be set to null as this will cause issues with automatic instrumentation.");
@@ -249,7 +262,14 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="settings"> A <see cref="TracerSettings"/> instance with the desired settings,
         /// or null to use the default configuration sources. This is used to configure global settings</param>
+        [PublicApi]
         public static void Configure(TracerSettings settings)
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Configure);
+            ConfigureInternal(settings);
+        }
+
+        internal static void ConfigureInternal(TracerSettings settings)
         {
             TracerManager.ReplaceGlobalManager(settings?.Build(), TracerManagerFactory.Instance);
             Tracer.Instance.TracerManager.Start();
@@ -272,18 +292,31 @@ namespace Datadog.Trace
         }
 
         /// <inheritdoc cref="ITracer" />
-        IScope ITracer.StartActive(string operationName) => StartActive(operationName);
+        [PublicApi]
+        IScope ITracer.StartActive(string operationName)
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.ITracer_StartActive);
+            return StartActiveInternal(operationName);
+        }
 
         /// <inheritdoc cref="ITracer" />
-        IScope ITracer.StartActive(string operationName, SpanCreationSettings settings) => StartActive(operationName, settings);
+        [PublicApi]
+        IScope ITracer.StartActive(string operationName, SpanCreationSettings settings)
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.ITracer_StartActive_Settings);
+            var finishOnClose = settings.FinishOnClose ?? true;
+            return StartActiveInternal(operationName, settings.Parent, serviceName: null, settings.StartTime, finishOnClose);
+        }
 
         /// <summary>
         /// This creates a new span with the given parameters and makes it active.
         /// </summary>
         /// <param name="operationName">The span's operation name</param>
         /// <returns>A scope wrapping the newly created span</returns>
+        [PublicApi]
         public IScope StartActive(string operationName)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_StartActive);
             return StartActiveInternal(operationName);
         }
 
@@ -293,8 +326,10 @@ namespace Datadog.Trace
         /// <param name="operationName">The span's operation name</param>
         /// <param name="settings">Settings for the new <see cref="IScope"/></param>
         /// <returns>A scope wrapping the newly created span</returns>
+        [PublicApi]
         public IScope StartActive(string operationName, SpanCreationSettings settings)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_StartActive_Settings);
             var finishOnClose = settings.FinishOnClose ?? true;
             return StartActiveInternal(operationName, settings.Parent, serviceName: null, settings.StartTime, finishOnClose);
         }
@@ -333,7 +368,12 @@ namespace Datadog.Trace
         /// To be called when the appdomain or the process is about to be killed in a non-graceful way.
         /// </summary>
         /// <returns>Task used to track the async flush operation</returns>
-        public Task ForceFlushAsync() => FlushAsync();
+        [PublicApi]
+        public Task ForceFlushAsync()
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_ForceFlushAsync);
+            return FlushAsync();
+        }
 
         /// <summary>
         /// Writes the specified <see cref="Span"/> collection to the agent writer.

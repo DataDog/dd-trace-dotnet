@@ -34,6 +34,8 @@ internal enum PublicApiUsage
     [Description("tracer_forceflushasync")] Tracer_ForceFlushAsync,
     [Description("tracer_startactive")] Tracer_StartActive,
     [Description("tracer_startactive_settings")] Tracer_StartActive_Settings,
+    [Description("itracer_startactive")] ITracer_StartActive,
+    [Description("itracer_startactive_settings")] ITracer_StartActive_Settings,
 
     // These are problematic, as we use them _everywhere_ so means a lot of code changes
     // [Description("tracer_instance_get")] Tracer_Instance_Get,
