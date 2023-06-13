@@ -1,4 +1,4 @@
-// <copyright file="TracerManagerFactory.cs" company="Datadog">
+ // <copyright file="TracerManagerFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -118,7 +118,7 @@ namespace Datadog.Trace
                 runtimeMetrics ??= new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService);
             }
 
-            var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings);
+            var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, scopeManager);
             logSubmissionManager = DirectLogSubmissionManager.Create(
                 logSubmissionManager,
                 settings.LogSubmissionSettings,
@@ -179,9 +179,9 @@ namespace Datadog.Trace
                 remoteConfigurationManager);
         }
 
-        protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings)
+        protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager)
         {
-            return new GitMetadataTagsProvider(settings);
+            return new GitMetadataTagsProvider(settings, scopeManager);
         }
 
         /// <summary>
