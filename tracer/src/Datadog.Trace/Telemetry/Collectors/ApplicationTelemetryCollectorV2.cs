@@ -23,8 +23,8 @@ internal class ApplicationTelemetryCollectorV2
         var frameworkDescription = FrameworkDescription.Instance;
         var application = new ApplicationTelemetryDataV2(
             serviceName: defaultServiceName,
-            env: tracerSettings.Environment ?? string.Empty, // required, but we don't have it
-            serviceVersion: tracerSettings.ServiceVersion ?? string.Empty, // required, but we don't have it
+            env: tracerSettings.EnvironmentInternal ?? string.Empty, // required, but we don't have it
+            serviceVersion: tracerSettings.ServiceVersionInternal ?? string.Empty, // required, but we don't have it
             tracerVersion: TracerConstants.AssemblyVersion,
             languageName: TracerConstants.Language,
             languageVersion: frameworkDescription.ProductVersion,

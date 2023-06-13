@@ -928,7 +928,7 @@ namespace Datadog.Trace.Configuration
         public ImmutableTracerSettings Build()
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Build);
-            return new ImmutableTracerSettings(this);
+            return new ImmutableTracerSettings(this, true);
         }
 
         internal void CollectTelemetry(IConfigurationTelemetry destination)

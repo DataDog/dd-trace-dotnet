@@ -75,7 +75,7 @@ namespace Datadog.Trace
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Ctor_Settings);
             // Don't call Configure because it will call Start on the TracerManager
             // before this new instance of Tracer is assigned to Tracer.Instance
-            TracerManager.ReplaceGlobalManager(settings is null ? null : new ImmutableTracerSettings(settings), TracerManagerFactory.Instance);
+            TracerManager.ReplaceGlobalManager(settings is null ? null : new ImmutableTracerSettings(settings, true), TracerManagerFactory.Instance);
 
             // update the count of Tracer instances
             Interlocked.Increment(ref _liveTracerCount);
@@ -88,7 +88,7 @@ namespace Datadog.Trace
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null)
-            : this(TracerManagerFactory.Instance.CreateTracerManager(settings is null ? null : new ImmutableTracerSettings(settings), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null))
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings is null ? null : new ImmutableTracerSettings(settings, true), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null))
         {
         }
 
@@ -271,7 +271,7 @@ namespace Datadog.Trace
 
         internal static void ConfigureInternal(TracerSettings settings)
         {
-            TracerManager.ReplaceGlobalManager(settings is null ? null : new ImmutableTracerSettings(settings), TracerManagerFactory.Instance);
+            TracerManager.ReplaceGlobalManager(settings is null ? null : new ImmutableTracerSettings(settings, true), TracerManagerFactory.Instance);
             Tracer.Instance.TracerManager.Start();
         }
 
@@ -381,7 +381,7 @@ namespace Datadog.Trace
         /// <param name="trace">The <see cref="Span"/> collection to write.</param>
         void IDatadogTracer.Write(ArraySegment<Span> trace)
         {
-            if (Settings.TraceEnabled || Settings.AzureAppServiceMetadata?.CustomTracingEnabled is true)
+            if (Settings.TraceEnabledInternal || Settings.AzureAppServiceMetadata?.CustomTracingEnabled is true)
             {
                 TracerManager.WriteTrace(trace);
             }
@@ -474,12 +474,12 @@ namespace Datadog.Trace
             };
 
             // Apply any global tags
-            if (Settings.GlobalTags.Count > 0)
+            if (Settings.GlobalTagsInternal.Count > 0)
             {
                 // if DD_TAGS contained "env", "version", "git.commit.sha", or "git.repository.url",  they were used to set
                 // ImmutableTracerSettings.Environment, ImmutableTracerSettings.ServiceVersion, ImmutableTracerSettings.GitCommitSha, and ImmutableTracerSettings.GitRepositoryUrl
                 // and removed from Settings.GlobalTags
-                foreach (var entry in Settings.GlobalTags)
+                foreach (var entry in Settings.GlobalTagsInternal)
                 {
                     span.SetTag(entry.Key, entry.Value);
                 }

@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                 span.Type = SpanTypes.Grpc;
                 span.ResourceName = methodFullName;
 
-                span.SetHeaderTags(requestMetadataWrapper, tracer.Settings.GrpcTags, GrpcCommon.RequestMetadataTagPrefix);
+                span.SetHeaderTags(requestMetadataWrapper, tracer.Settings.GrpcTagsInternal, GrpcCommon.RequestMetadataTagPrefix);
                 scope = tracer.ActivateSpan(span);
 
                 if (setSamplingPriority && existingSpanContext?.SamplingPriority is not null)

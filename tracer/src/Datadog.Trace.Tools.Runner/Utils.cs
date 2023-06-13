@@ -297,10 +297,10 @@ namespace Datadog.Trace.Tools.Runner
             configurationSource.AddInternal(new NameValueConfigurationSource(env, ConfigurationOrigins.EnvVars));
 
             var tracerSettings = new TracerSettings(configurationSource, new ConfigurationTelemetry());
-            var settings = new ImmutableTracerSettings(tracerSettings);
+            var settings = new ImmutableTracerSettings(tracerSettings, unusedParamNotToUsePublicApi: true);
 
             var discoveryService = DiscoveryService.Create(
-                settings.Exporter,
+                settings.ExporterInternal,
                 tcpTimeout: TimeSpan.FromSeconds(5),
                 initialRetryDelayMs: 10,
                 maxRetryDelayMs: 1000,
