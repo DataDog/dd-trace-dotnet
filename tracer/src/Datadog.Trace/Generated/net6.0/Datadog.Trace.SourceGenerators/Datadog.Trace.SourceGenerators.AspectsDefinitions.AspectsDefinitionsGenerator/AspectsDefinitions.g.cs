@@ -11,10 +11,6 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] Aspects = new string[] {
-"[AspectClass(\"EntityFramework\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.EntityCommandAspect",
-"  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReader(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Propagation,[])] ReviewSqlCommand(System.Object)",
-"  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Propagation,[])] ReviewSqlCommand(System.Object)",
-"  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Propagation,[])] ReviewSqlCommand(System.Object)",
 "[AspectClass(\"Microsoft.EntityFrameworkCore.Relational\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.EntityFrameworkCoreAspect",
 "  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRaw(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Object[])\",\"\",[1],[False],[None],Propagation,[])] ReviewSqlString(System.String)",
 "  [AspectMethodInsertBefore(\"Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions::ExecuteSqlRaw(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Collections.Generic.IEnumerable`1<System.Object>)\",\"\",[1],[False],[None],Propagation,[])] ReviewSqlString(System.String)",
