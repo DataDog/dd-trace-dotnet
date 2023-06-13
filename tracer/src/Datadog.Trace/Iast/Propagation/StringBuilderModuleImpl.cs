@@ -94,4 +94,40 @@ internal static class StringBuilderModuleImpl
 
         return result;
     }
+
+    public static StringBuilder TaintFullStringBuilderIfTainted(StringBuilder target)
+    {
+        try
+        {
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return target;
+            }
+
+            var taintedObjects = iastContext.GetTaintedObjects();
+            var tainted = taintedObjects?.Get(target);
+
+            if (tainted == null)
+            {
+                return target;
+            }
+
+            if (tainted?.Ranges?.Length > 0)
+            {
+                var source = tainted.Ranges[0].Source;
+
+                if (source is not null)
+                {
+                    tainted.Ranges = new Range[] { new Range(0, target.Length, source) };
+                }
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "PropagationModuleImpl.TaintFullStringBuilderIfTainted exception");
+        }
+
+        return target;
+    }
 }

@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Text;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Propagation;
@@ -200,5 +201,448 @@ public class StringBuilderAspects
         var length = value?.Length ?? 0;
         // We do not take into account the endline char because it is not tainted
         return StringBuilderModuleImpl.OnStringBuilderAppend(target.AppendLine(value), initialLength, value, length, 0, length);
+    }
+
+    /// <summary>  StringBuilder.AppendFormat aspect </summary>
+    /// <param name="target">StringBuilder instance to append to.</param>
+    /// <param name="format">A composite format string.</param>
+    /// <param name="arg0">An object to format and append.</param>
+    /// <returns>A reference to the StringBuilder after the append operation has occurred.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.String,System.Object)")]
+    public static StringBuilder AppendFormat(StringBuilder target, string format, object arg0)
+    {
+        var result = target.AppendFormat(format, arg0);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.AppendFormat aspect </summary>
+    /// <param name="target">StringBuilder instance to append to.</param>
+    /// <param name="format">A composite format string.</param>
+    /// <param name="arg0">The first object to format and append.</param>
+    /// <param name="arg1">The second object to format and append.</param>
+    /// <returns>A reference to the StringBuilder after the append operation has occurred.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.String,System.Object,System.Object)")]
+    public static StringBuilder AppendFormat(StringBuilder target, string format, object arg0, object arg1)
+    {
+        var result = target.AppendFormat(format, arg0, arg1);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.AppendFormat aspect </summary>
+    /// <param name="target">StringBuilder instance to append to.</param>
+    /// <param name="format">A composite format string.</param>
+    /// <param name="arg0">The first object to format and append.</param>
+    /// <param name="arg1">The second object to format and append.</param>
+    /// <param name="arg2">The third object to format and append.</param>
+    /// <returns>A reference to the StringBuilder after the append operation has occurred.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.String,System.Object,System.Object,System.Object)")]
+    public static StringBuilder AppendFormat(StringBuilder target, string format, object arg0, object arg1, object arg2)
+    {
+        var result = target.AppendFormat(format, arg0, arg1, arg2);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.AppendFormat aspect </summary>
+    /// <param name="target">StringBuilder instance to append to.</param>
+    /// <param name="format">A composite format string.</param>
+    /// <param name="args">An array of objects to format and append.</param>
+    /// <returns>A reference to the StringBuilder after the append operation has occurred.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.String,System.Object[])")]
+    public static StringBuilder AppendFormat(StringBuilder target, string format, object[] args)
+    {
+        var result = target.AppendFormat(format, args);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.AppendFormat aspect </summary>
+    /// <param name="target">StringBuilder instance to append to.</param>
+    /// <param name="provider">An object that supplies culture-specific formatting information.</param>
+    /// <param name="format">A composite format string.</param>
+    /// <param name="arg0">An object to format and append.</param>
+    /// <returns>A reference to the StringBuilder after the append operation has occurred.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.IFormatProvider,System.String,System.Object)")]
+    public static StringBuilder AppendFormat(StringBuilder target, IFormatProvider provider, string format, object arg0)
+    {
+        var result = target.AppendFormat(format, arg0);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.AppendFormat aspect </summary>
+    /// <param name="target">StringBuilder instance to append to.</param>
+    /// <param name="provider">An object that supplies culture-specific formatting information.</param>
+    /// <param name="format">A composite format string.</param>
+    /// <param name="arg0">The first object to format and append.</param>
+    /// <param name="arg1">The second object to format and append.</param>
+    /// <returns>A reference to the StringBuilder after the append operation has occurred.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.IFormatProvider,System.String,System.Object,System.Object)")]
+    public static StringBuilder AppendFormat(StringBuilder target, IFormatProvider provider, string format, object arg0, object arg1)
+    {
+        var result = target.AppendFormat(format, arg0, arg1);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.AppendFormat aspect </summary>
+    /// <param name="target">StringBuilder instance to append to.</param>
+    /// <param name="provider">An object that supplies culture-specific formatting information.</param>
+    /// <param name="format">A composite format string.</param>
+    /// <param name="arg0">The first object to format and append.</param>
+    /// <param name="arg1">The second object to format and append.</param>
+    /// <param name="arg2">The third object to format and append.</param>
+    /// <returns>A reference to the StringBuilder after the append operation has occurred.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.IFormatProvider,System.String,System.Object,System.Object,System.Object)")]
+    public static StringBuilder AppendFormat(StringBuilder target, IFormatProvider provider, string format, object arg0, object arg1, object arg2)
+    {
+        var result = target.AppendFormat(format, arg0, arg1, arg2);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.AppendFormat aspect </summary>
+    /// <param name="target">StringBuilder instance to append to.</param>
+    /// <param name="provider">An object that supplies culture-specific formatting information.</param>
+    /// <param name="format">A composite format string.</param>
+    /// <param name="args">An array of objects to format and append.</param>
+    /// <returns>A reference to the StringBuilder after the append operation has occurred.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.IFormatProvider,System.String,System.Object[])")]
+    public static StringBuilder AppendFormat(StringBuilder target, IFormatProvider provider, string format, object[] args)
+    {
+        var result = target.AppendFormat(provider, format, args);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.CopyTo aspect </summary>
+    /// <param name="target">The StringBuilder instance from which characters are copied.</param>
+    /// <param name="sourceIndex">The index in this instance at which copying begins.</param>
+    /// <param name="destination">The destination character array.</param>
+    /// <param name="destinationIndex">The index in destination at which storing begins.</param>
+    /// <param name="count">The number of characters to copy.</param>
+    [AspectMethodReplace("System.Text.StringBuilder::CopyTo(System.Int32,System.Char[],System.Int32,System.Int32)")]
+    public static void CopyTo(StringBuilder target, int sourceIndex, char[] destination, int destinationIndex, int count)
+    {
+        target.CopyTo(sourceIndex, destination, destinationIndex, count);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+    }
+
+    /// <summary>  StringBuilder.Insert aspect </summary>
+    /// <param name="target">The StringBuilder instance into which the string is inserted.</param>
+    /// <param name="index">The index at which the string is inserted.</param>
+    /// <param name="value">The string to insert.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.String)")]
+    public static StringBuilder Insert(StringBuilder target, int index, string value)
+    {
+        var result = target.Insert(index, value);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.Insert aspect </summary>
+    /// <param name="target">The StringBuilder instance into which the string is inserted.</param>
+    /// <param name="index">The index at which the string is inserted.</param>
+    /// <param name="value">The string to insert.</param>
+    /// <param name="count">The number of copies of the string to insert.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.String,System.Int32)")]
+    public static StringBuilder Insert(StringBuilder target, int index, string value, int count)
+    {
+        var result = target.Insert(index, value, count);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.Insert aspect </summary>
+    /// <param name="target">The StringBuilder instance into which the character is inserted.</param>
+    /// <param name="index">The index at which the character is inserted.</param>
+    /// <param name="value">The character to insert.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Char)")]
+    public static StringBuilder Insert(StringBuilder target, int index, char value)
+    {
+        var result = target.Insert(index, value);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.Insert aspect </summary>
+    /// <param name="target">The StringBuilder instance into which the characters are inserted.</param>
+    /// <param name="index">The index at which the characters are inserted.</param>
+    /// <param name="value">The character array to insert.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Char[])")]
+    public static StringBuilder Insert(StringBuilder target, int index, char[] value)
+    {
+        var result = target.Insert(index, value);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.Insert aspect </summary>
+    /// <param name="target">The StringBuilder instance into which the characters are inserted.</param>
+    /// <param name="index">The index at which the characters are inserted.</param>
+    /// <param name="value">The character array containing the characters to insert.</param>
+    /// <param name="startIndex">The starting index in the character array.</param>
+    /// <param name="charCount">The number of characters to insert.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Char[],System.Int32,System.Int32)")]
+    public static StringBuilder Insert(StringBuilder target, int index, char[] value, int startIndex, int charCount)
+    {
+        var result = target.Insert(index, value, startIndex, charCount);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.Insert aspect </summary>
+    /// <param name="target">The StringBuilder instance into which the integer is inserted.</param>
+    /// <param name="index">The index at which the integer is inserted.</param>
+    /// <param name="value">The integer to insert.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Int32)")]
+    public static StringBuilder Insert(StringBuilder target, int index, int value)
+    {
+        var result = target.Insert(index, value);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.Insert aspect </summary>
+    /// <param name="target">The StringBuilder instance into which the long integer is inserted.</param>
+    /// <param name="index">The index at which the long integer is inserted.</param>
+    /// <param name="value">The long integer to insert.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Int64)")]
+    public static StringBuilder Insert(StringBuilder target, int index, long value)
+    {
+        var result = target.Insert(index, value);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.Insert aspect </summary>
+    /// <param name="target">The StringBuilder instance into which the single-precision floating-point number is inserted.</param>
+    /// <param name="index">The index at which the single-precision floating-point number is inserted.</param>
+    /// <param name="value">The single-precision floating-point number to insert.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Single)")]
+    public static StringBuilder Insert(StringBuilder target, int index, float value)
+    {
+        var result = target.Insert(index, value);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.Insert aspect </summary>
+    /// <param name="target">The StringBuilder instance into which the double-precision floating-point number is inserted.</param>
+    /// <param name="index">The index at which the double-precision floating-point number is inserted.</param>
+    /// <param name="value">The double-precision floating-point number to insert.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Double)")]
+    public static StringBuilder Insert(StringBuilder target, int index, double value)
+    {
+        var result = target.Insert(index, value);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.Insert aspect </summary>
+    /// <param name="target">The StringBuilder instance into which the decimal number is inserted.</param>
+    /// <param name="index">The index at which the decimal number is inserted.</param>
+    /// <param name="value">The decimal number to insert.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Decimal)")]
+    public static StringBuilder Insert(StringBuilder target, int index, decimal value)
+    {
+        var result = target.Insert(index, value);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.Insert aspect </summary>
+    /// <param name="target">The StringBuilder instance into which the unsigned short integer is inserted.</param>
+    /// <param name="index">The index at which the unsigned short integer is inserted.</param>
+    /// <param name="value">The unsigned short integer to insert.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.UInt16)")]
+    public static StringBuilder Insert(StringBuilder target, int index, ushort value)
+    {
+        var result = target.Insert(index, value);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.Insert aspect </summary>
+    /// <param name="target">The StringBuilder instance into which the unsigned integer is inserted.</param>
+    /// <param name="index">The index at which the unsigned integer is inserted.</param>
+    /// <param name="value">The unsigned integer to insert.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.UInt32)")]
+    public static StringBuilder Insert(StringBuilder target, int index, uint value)
+    {
+        var result = target.Insert(index, value);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.Insert aspect </summary>
+    /// <param name="target">The StringBuilder instance into which the unsigned long integer is inserted.</param>
+    /// <param name="index">The index at which the unsigned long integer is inserted.</param>
+    /// <param name="value">The unsigned long integer to insert.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.UInt64)")]
+    public static StringBuilder Insert(StringBuilder target, int index, ulong value)
+    {
+        var result = target.Insert(index, value);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.Insert aspect </summary>
+    /// <param name="target">The StringBuilder instance into which the Boolean value is inserted.</param>
+    /// <param name="index">The index at which the Boolean value is inserted.</param>
+    /// <param name="value">The Boolean value to insert.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Boolean)")]
+    public static StringBuilder Insert(StringBuilder target, int index, bool value)
+    {
+        var result = target.Insert(index, value);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.Insert aspect </summary>
+    /// <param name="target">The StringBuilder instance into which the signed byte is inserted.</param>
+    /// <param name="index">The index at which the signed byte is inserted.</param>
+    /// <param name="value">The signed byte to insert.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.SByte)")]
+    public static StringBuilder Insert(StringBuilder target, int index, sbyte value)
+    {
+        var result = target.Insert(index, value);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.Insert aspect </summary>
+    /// <param name="target">The StringBuilder instance into which the byte is inserted.</param>
+    /// <param name="index">The index at which the byte is inserted.</param>
+    /// <param name="value">The byte to insert.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Byte)")]
+    public static StringBuilder Insert(StringBuilder target, int index, byte value)
+    {
+        var result = target.Insert(index, value);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.Insert aspect </summary>
+    /// <param name="target">The StringBuilder instance into which the short integer is inserted.</param>
+    /// <param name="index">The index at which the short integer is inserted.</param>
+    /// <param name="value">The short integer to insert.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Int16)")]
+    public static StringBuilder Insert(StringBuilder target, int index, short value)
+    {
+        var result = target.Insert(index, value);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>  StringBuilder.Insert aspect </summary>
+    /// <param name="target">The StringBuilder instance into which the object is inserted.</param>
+    /// <param name="index">The index at which the object is inserted.</param>
+    /// <param name="value">The object to insert.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Object)")]
+    public static StringBuilder Insert(StringBuilder target, int index, object value)
+    {
+        var result = target.Insert(index, value);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>StringBuilder.Remove aspect</summary>
+    /// <param name="target">The StringBuilder instance from which characters are removed.</param>
+    /// <param name="startIndex">The starting index of the removal.</param>
+    /// <param name="length">The number of characters to remove.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Remove(System.Int32,System.Int32)")]
+    public static StringBuilder Remove(StringBuilder target, int startIndex, int length)
+    {
+        var result = target.Remove(startIndex, length);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>StringBuilder.Replace aspect</summary>
+    /// <param name="target">The StringBuilder instance in which the replacement occurs.</param>
+    /// <param name="oldValue">The value to be replaced.</param>
+    /// <param name="newValue">The replacement value.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Replace(System.String,System.String)")]
+    public static StringBuilder Replace(StringBuilder target, string oldValue, string newValue)
+    {
+        var result = target.Replace(oldValue, newValue);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>StringBuilder.Replace aspect</summary>
+    /// <param name="target">The StringBuilder instance in which the replacement occurs.</param>
+    /// <param name="oldValue">The value to be replaced.</param>
+    /// <param name="newValue">The replacement value.</param>
+    /// <param name="startIndex">The starting index of the replacement.</param>
+    /// <param name="count">The number of characters to be replaced.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Replace(System.String,System.String,System.Int32,System.Int32)")]
+    public static StringBuilder Replace(StringBuilder target, string oldValue, string newValue, int startIndex, int count)
+    {
+        var result = target.Replace(oldValue, newValue, startIndex, count);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>StringBuilder.Replace aspect</summary>
+    /// <param name="target">The StringBuilder instance in which the replacement occurs.</param>
+    /// <param name="oldChar">The character to be replaced.</param>
+    /// <param name="newChar">The replacement character.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Replace(System.Char,System.Char)")]
+    public static StringBuilder Replace(StringBuilder target, char oldChar, char newChar)
+    {
+        var result = target.Replace(oldChar, newChar);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>StringBuilder.Replace aspect</summary>
+    /// <param name="target">The StringBuilder instance in which the replacement occurs.</param>
+    /// <param name="oldChar">The character to be replaced.</param>
+    /// <param name="newChar">The replacement character.</param>
+    /// <param name="startIndex">The starting index of the replacement.</param>
+    /// <param name="count">The number of characters to be replaced.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::Replace(System.Char,System.Char,System.Int32,System.Int32)")]
+    public static StringBuilder Replace(StringBuilder target, char oldChar, char newChar, int startIndex, int count)
+    {
+        var result = target.Replace(oldChar, newChar, startIndex, count);
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        return result;
+    }
+
+    /// <summary>StringBuilder.set_Length aspect</summary>
+    /// <param name="target">The StringBuilder instance for which the length is set.</param>
+    /// <param name="length">The new length of the StringBuilder instance.</param>
+    [AspectMethodReplace("System.Text.StringBuilder::set_Length(System.Int32)")]
+    public static void SetLength(StringBuilder target, int length)
+    {
+        target.Length = length;
+        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
     }
 }
