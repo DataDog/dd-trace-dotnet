@@ -183,7 +183,7 @@ namespace Datadog.Trace.Configuration
 
             StatsComputationEnabledInternal = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
-                                     .AsBool(defaultValue: (Serverless.IsAzureFunction || Serverless.IsGCPFunction) ? true : false);
+                                     .AsBool(defaultValue: (ServerlessMiniAgent.IsAzureFunction || ServerlessMiniAgent.IsGCPFunction) ? true : false);
 
             StatsComputationInterval = config.WithKeys(ConfigurationKeys.StatsComputationInterval).AsInt32(defaultValue: 10);
 

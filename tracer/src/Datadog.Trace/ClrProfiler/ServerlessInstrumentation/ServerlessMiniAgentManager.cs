@@ -1,4 +1,4 @@
-// <copyright file="MiniAgentManager.cs" company="Datadog">
+// <copyright file="ServerlessMiniAgentManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,9 +9,9 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 
-internal class MiniAgentManager
+internal class ServerlessMiniAgentManager
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MiniAgentManager));
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServerlessMiniAgentManager));
 
     internal virtual void Start(string path)
     {

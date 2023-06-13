@@ -22,7 +22,7 @@ namespace Datadog.Trace.Tests
         [InlineData("Random Log", "INFO", "Random Log")]
         internal void CleanAndProperlyLogMiniAgentLogs(string rawLog, string expectedLevel, string expectedLog)
         {
-            var logTuple = MiniAgentManager.ProcessMiniAgentLog(rawLog);
+            var logTuple = ServerlessMiniAgentManager.ProcessMiniAgentLog(rawLog);
             string level = logTuple.Item1;
             string processedLog = logTuple.Item2;
             Assert.Equal(expectedLevel, level);

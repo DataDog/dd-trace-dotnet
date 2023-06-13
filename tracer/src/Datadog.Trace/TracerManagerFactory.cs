@@ -99,7 +99,7 @@ namespace Datadog.Trace
             settings ??= ImmutableTracerSettings.FromDefaultSources();
 
             var defaultServiceName = settings.ServiceName ??
-                Serverless.GetGCPAzureFunctionName() ??
+                ServerlessMiniAgent.GetGCPAzureFunctionName() ??
                 GetApplicationName(settings) ??
                 UnknownServiceName;
 
@@ -351,9 +351,9 @@ namespace Datadog.Trace
                     return serviceName;
                 }
 
-                if (Serverless.IsGCPFunction || Serverless.IsAzureFunction)
+                if (ServerlessMiniAgent.IsGCPFunction || ServerlessMiniAgent.IsAzureFunction)
                 {
-                    var functionName = Serverless.GetGCPAzureFunctionName();
+                    var functionName = ServerlessMiniAgent.GetGCPAzureFunctionName();
                     if (functionName != null)
                     {
                         return functionName;

@@ -42,8 +42,6 @@ namespace Datadog.Trace.Tests
             {
                 Environment.SetEnvironmentVariable(originalEnvVar.Key, originalEnvVar.Value);
             }
-
-            Serverless.UpdateIsGCPAzureEnvVarsTestsOnly();
         }
 
         [Fact]
@@ -212,60 +210,6 @@ namespace Datadog.Trace.Tests
         public void GetIntegrationTypeVoid()
         {
             Serverless.GetIntegrationType("System.Void", 1).Should().Be("Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS.LambdaNoParamVoid");
-        }
-
-        [Fact]
-        public void DoesntSpawnMiniAgentInNonFunctionEnvironments()
-        {
-            Environment.SetEnvironmentVariable(Serverless.GCPFunctionDeprecatedEnvVarIdentifier, null);
-            Environment.SetEnvironmentVariable(Serverless.GCPFunctionNewerEnvVarIdentifier, null);
-            Environment.SetEnvironmentVariable(Serverless.AzureFunctionIdentifierEnvVar, null);
-
-            var miniAgentManagerMock = new Mock<MiniAgentManager>();
-            Serverless.MaybeStartMiniAgent(miniAgentManagerMock.Object);
-            miniAgentManagerMock.VerifyNoOtherCalls();
-        }
-
-        [Fact]
-        public void SpawnMiniAgentInDeprecatedGCPFunction()
-        {
-            Environment.SetEnvironmentVariable(Serverless.GCPFunctionDeprecatedNameEnvVar, "dummy_function");
-            Environment.SetEnvironmentVariable(Serverless.GCPFunctionDeprecatedEnvVarIdentifier, "dummy_project");
-            Serverless.UpdateIsGCPAzureEnvVarsTestsOnly();
-
-            var miniAgentManagerMock = new Mock<MiniAgentManager>();
-
-            Serverless.MaybeStartMiniAgent(miniAgentManagerMock.Object);
-
-            miniAgentManagerMock.Verify(m => m.Start(It.IsAny<string>()), Times.Once());
-        }
-
-        [Fact]
-        public void SpawnMiniAgentInNewerGCPFunction()
-        {
-            Environment.SetEnvironmentVariable(Serverless.GCPFunctionNewerNameEnvVar, "dummy_function");
-            Environment.SetEnvironmentVariable(Serverless.GCPFunctionNewerEnvVarIdentifier, "dummy_target");
-            Serverless.UpdateIsGCPAzureEnvVarsTestsOnly();
-
-            var miniAgentManagerMock = new Mock<MiniAgentManager>();
-
-            Serverless.MaybeStartMiniAgent(miniAgentManagerMock.Object);
-
-            miniAgentManagerMock.Verify(m => m.Start(It.IsAny<string>()), Times.Once());
-        }
-
-        [Fact]
-        public void SpawnMiniAgentInAzureFunction()
-        {
-            Environment.SetEnvironmentVariable(Serverless.AzureFunctionNameEnvVar, "function_name");
-            Environment.SetEnvironmentVariable(Serverless.AzureFunctionIdentifierEnvVar, "4");
-            Serverless.UpdateIsGCPAzureEnvVarsTestsOnly();
-
-            var miniAgentManagerMock = new Mock<MiniAgentManager>();
-
-            Serverless.MaybeStartMiniAgent(miniAgentManagerMock.Object);
-
-            miniAgentManagerMock.Verify(m => m.Start(It.IsAny<string>()), Times.Once());
         }
     }
 }
