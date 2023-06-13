@@ -18,6 +18,7 @@ internal partial class MetricsTelemetryCollector
     private static DistributionKey[] GetDistributionBuffer()
         => new DistributionKey[]
         {
+            // init_time, index = 0
             new(new[] { "component:total" }),
             new(new[] { "component:byref_pinvoke" }),
             new(new[] { "component:calltarget_state_byref_pinvoke" }),
