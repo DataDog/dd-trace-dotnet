@@ -51,7 +51,7 @@ namespace Samples.LargePayload
 
                                                   while (spansRemaining-- > 0)
                                                   {
-                                                      using (var spanScope = SampleHelpers.CreateScope("nest"))
+                                                      using (var spanScope = _sampleHelpers.CreateScope("nest"))
                                                       {
                                                           _sampleHelpers.TrySetTag(spanScope, "fill", Guid.NewGuid().ToString());
                                                           _sampleHelpers.TrySetTag(spanScope, "stuff", traceFiller);

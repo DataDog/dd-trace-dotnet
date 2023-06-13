@@ -19,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public LargePayloadTestBase(ITestOutputHelper output)
             : base("LargePayload", output)
         {
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
         }
 
         public int FillerTagLength => 100;
