@@ -98,7 +98,7 @@ internal static class PropagationModuleImpl
             var tainted = taintedObjects.Get(input);
             if (tainted?.Ranges?.Count() > 0 && tainted.Ranges[0].Source is not null)
             {
-                taintedObjects.Taint(result, new Range[] { new Range(0, result.Length, tainted?.Ranges[0].Source) });
+                taintedObjects.Taint(result, new Range[] { new Range(0, result.Length, tainted.Ranges[0].Source) });
                 return true;
             }
         }
@@ -106,9 +106,9 @@ internal static class PropagationModuleImpl
         return false;
     }
 
-    public static object? PropagateResultWhenInputTainted(string[] results, object input)
+    public static string[]? PropagateResultWhenInputTainted(string[] results, object input)
     {
-        if (results is null || results.Count() == 0 || input is null)
+        if (!(results?.Count() > 0) || input is null)
         {
             return results;
         }
@@ -126,18 +126,15 @@ internal static class PropagationModuleImpl
             return results;
         }
 
-        if (input is not null)
+        var tainted = taintedObjects.Get(input);
+        if (tainted?.Ranges?.Count() > 0 && tainted.Ranges[0].Source is not null)
         {
-            var tainted = taintedObjects.Get(input);
-            if (tainted is not null && tainted.Ranges.Count() > 0 && tainted.Ranges[0].Source is not null)
+            foreach (var result in results)
             {
-                foreach (var result in results)
-                {
-                    taintedObjects.Taint(result, new Range[] { new Range(0, result.Length, tainted.Ranges[0].Source) });
-                }
-
-                return results;
+                taintedObjects.Taint(result, new Range[] { new Range(0, result.Length, tainted.Ranges[0].Source) });
             }
+
+            return results;
         }
 
         return results;
