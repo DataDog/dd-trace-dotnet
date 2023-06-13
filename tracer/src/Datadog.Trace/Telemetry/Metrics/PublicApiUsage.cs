@@ -61,6 +61,12 @@ internal enum PublicApiUsage
     // [Description("ispan_setexception")] ISpan_SetException,
     // [Description("ispan_gettag")] ISpan_GetTag,
 
+    [Description("correlationidentifier_env_get")]Correlation_Identifier_Env_Get,
+    [Description("correlationidentifier_service_get")]Correlation_Identifier_Service_Get,
+    [Description("correlationidentifier_spanid_get")]Correlation_Identifier_SpanId_Get,
+    [Description("correlationidentifier_traceid_get")]Correlation_Identifier_TraceId_Get,
+    [Description("correlationidentifier_version_get")]Correlation_Identifier_Version_Get,
+
     [Description("spancontext_ctor")] SpanContext_Ctor,
     // These are problematic as they're used in a _lot_ of places
     // [Description("spancontext_parent_get")] SpanContext_Parent_Get,
