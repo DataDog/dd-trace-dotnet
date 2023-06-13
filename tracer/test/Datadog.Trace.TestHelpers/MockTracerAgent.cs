@@ -136,9 +136,21 @@ namespace Datadog.Trace.TestHelpers
 
             while (DateTime.UtcNow < deadline)
             {
+                var filteredSpans = Spans.Where(s => SpanFilters.All(shouldReturn => shouldReturn(s)));
+
+                var invalidSpans = filteredSpans.Where(s => s.Start <= minimumOffset).ToImmutableList();
+                if (invalidSpans.Count > 0 && Output is not null)
+                {
+                    Output.WriteLine("The following spans were invalid:");
+                    foreach (var span in invalidSpans)
+                    {
+                        Output.WriteLine($"Name: {span.Name} | Resource: {span.Resource} | Service: {span.Service} | Start: {span.Start} | StartDiff: {span.Start - minimumOffset}");
+                    }
+                }
+
                 relevantSpans =
-                    Spans
-                       .Where(s => SpanFilters.All(shouldReturn => shouldReturn(s)) && s.Start > minimumOffset)
+                    filteredSpans
+                       .Where(s => s.Start > minimumOffset)
                        .ToImmutableList();
 
                 if (relevantSpans.Count(s => operationName == null || s.Name == operationName) >= count)
