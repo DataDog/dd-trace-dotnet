@@ -16,15 +16,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DiagnosticContextHelper));
 
-        public static ScopeContextSetterProxy GetScopeContextProxy(Assembly nlogAssembly)
+        public static IScopeContextSetterProxy GetScopeContextProxy(Assembly nlogAssembly)
         {
             var scType = nlogAssembly.GetType("NLog.ScopeContext");
             if (scType is not null)
             {
-                var createTypeResult = DuckType.GetOrCreateProxyType(typeof(ScopeContextSetterProxy), scType);
+                var createTypeResult = DuckType.GetOrCreateProxyType(typeof(IScopeContextSetterProxy), scType);
                 if (createTypeResult.Success)
                 {
-                    return createTypeResult.CreateInstance<ScopeContextSetterProxy>(instance: null);
+                    return createTypeResult.CreateInstance<IScopeContextSetterProxy>(instance: null);
                 }
             }
 
@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             return null;
         }
 
-        public static IDisposable SetScopeContextState(ScopeContextSetterProxy scopeContext, Tracer tracer)
+        public static IDisposable SetScopeContextState(IScopeContextSetterProxy scopeContext, Tracer tracer)
         {
             var entries = CreateEntriesList(tracer, out _);
             var state = scopeContext.PushProperties(entries);
@@ -177,7 +177,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                 Log.Warning("Failed to create proxies for MDLC, MDC and ScopeContext using TMarker={TMarker}, TMarker.Assembly={Assembly}. No automatic logs injection will occur for this assembly.", typeof(TMarker), nlogAssembly);
             }
 
-            public static ScopeContextSetterProxy ScopeContext { get; }
+            public static IScopeContextSetterProxy ScopeContext { get; }
 
             public static MappedDiagnosticsLogicalContextSetterProxy Mdlc { get; }
 
