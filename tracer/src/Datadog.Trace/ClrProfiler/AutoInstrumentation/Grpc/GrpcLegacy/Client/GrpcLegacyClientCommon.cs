@@ -57,9 +57,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                     out var startTime,
                     out var parentContext);
 
-                string operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("grpc");
-                string serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "grpc-client");
-                GrpcClientTags tags = tracer.CurrentTraceSettings.Schema.Client.CreateGrpcClientTags();
+                var clientSchema = tracer.CurrentTraceSettings.Schema.Client;
+                var operationName = clientSchema.GetOperationNameForProtocol("grpc");
+                var serviceName = clientSchema.GetServiceName(component: "grpc-client");
+                var tags = clientSchema.CreateGrpcClientTags();
                 var methodFullName = callInvocationDetails.Method;
 
                 tags.Host = GetNormalizedHost(callInvocationDetails.Channel.Instance!, callInvocationDetails.Channel.Target);

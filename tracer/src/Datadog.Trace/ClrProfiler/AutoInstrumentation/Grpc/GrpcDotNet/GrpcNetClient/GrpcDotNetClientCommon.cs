@@ -37,13 +37,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
 
             try
             {
-                GrpcClientTags tags = tracer.CurrentTraceSettings.Schema.Client.CreateGrpcClientTags();
+                var clientSchema = tracer.CurrentTraceSettings.Schema.Client;
+                var tags = clientSchema.CreateGrpcClientTags();
                 var method = grpcCall.Method;
                 tags.Host = HttpRequestUtils.GetNormalizedHost(grpcCall.Channel.Address.Host);
                 GrpcCommon.AddGrpcTags(tags, tracer, method.GrpcType, name: method.Name, path: method.FullName, serviceName: method.ServiceName);
 
-                string operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("grpc");
-                string serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "grpc-client");
+                var operationName = clientSchema.GetOperationNameForProtocol("grpc");
+                var serviceName = clientSchema.GetServiceName(component: "grpc-client");
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, startTime: null);
 
                 var span = scope.Span;
