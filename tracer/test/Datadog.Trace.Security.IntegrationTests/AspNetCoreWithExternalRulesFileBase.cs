@@ -75,8 +75,10 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         [SkippableTheory]
         [InlineData(AddressesConstants.ResponseHeaderNoCookies, HttpStatusCode.Forbidden, "/Home/LangHeader")]
+        [InlineData(AddressesConstants.ResponseStatus, HttpStatusCode.Forbidden, "/status/418")]
+        [InlineData(AddressesConstants.RequestUriRaw, HttpStatusCode.Forbidden, "/health?q=fun")]
         [Trait("RunOnWindows", "True")]
-        public async Task TestBlockedHeader(string test, HttpStatusCode expectedStatusCode, string url)
+        public async Task TestGet(string test, HttpStatusCode expectedStatusCode, string url)
         {
             VerifierSettings.DisableRequireUniquePrefix();
             await TryStartApp();

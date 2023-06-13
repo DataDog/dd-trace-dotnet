@@ -5676,6 +5676,58 @@
       "on_match": [
         "block"
       ]
+    },
+    {
+      "id": "tst-037-010",
+      "name": "No teapot",
+      "tags": {
+        "type": "lfi",
+        "crs_id": "000008",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.response.status"
+              }
+            ],
+            "regex": "418"
+          },
+          "operator": "match_regex"
+        }
+      ],
+      "transformers": [],
+      "on_match": [
+        "block"
+      ]
+    },
+    {
+      "id": "tst-037-011",
+      "name": "No fun",
+      "tags": {
+        "type": "lfi",
+        "crs_id": "000008",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.uri.raw"
+              }
+            ],
+            "regex": "fun"
+          },
+          "operator": "match_regex"
+        }
+      ],
+      "transformers": [],
+      "on_match": [
+        "block"
+      ]
     }
   ]
 }

@@ -128,7 +128,7 @@ namespace Datadog.Trace.Agent
                 }
             }
 
-            TelemetryFactory.Metrics.Record(Count.TraceEnqueued);
+            TelemetryFactory.Metrics.RecordCountTraceEnqueued();
             if (_statsd != null)
             {
                 _statsd.Increment(TracerMetricNames.Queue.EnqueuedTraces);
@@ -332,15 +332,15 @@ namespace Datadog.Trace.Agent
 
                         var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans).ConfigureAwait(false);
 
-                        TelemetryFactory.Metrics.Record(Count.TraceSent, buffer.TraceCount);
+                        TelemetryFactory.Metrics.RecordCountTraceSent(buffer.TraceCount);
                         if (success)
                         {
                             _traceKeepRateCalculator.IncrementKeeps(buffer.TraceCount);
                         }
                         else
                         {
-                            TelemetryFactory.Metrics.Record(Count.TraceDropped, MetricTags.DropReason_ApiError, buffer.TraceCount);
-                            TelemetryFactory.Metrics.Record(Count.SpanDropped, MetricTags.DropReason_ApiError, buffer.SpanCount);
+                            TelemetryFactory.Metrics.RecordCountTraceDropped(MetricTags.DropReason.ApiError, buffer.TraceCount);
+                            TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.ApiError, buffer.SpanCount);
                             _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
                         }
                     }
@@ -349,8 +349,8 @@ namespace Datadog.Trace.Agent
                 {
                     Log.Error(ex, "An unhandled error occurred while flushing a buffer");
                     _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
-                    TelemetryFactory.Metrics.Record(Count.TraceDropped, MetricTags.DropReason_ApiError, buffer.TraceCount);
-                    TelemetryFactory.Metrics.Record(Count.SpanDropped, MetricTags.DropReason_ApiError, buffer.SpanCount);
+                    TelemetryFactory.Metrics.RecordCountTraceDropped(MetricTags.DropReason.ApiError, buffer.TraceCount);
+                    TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.ApiError, buffer.SpanCount);
                 }
                 finally
                 {
@@ -416,8 +416,8 @@ namespace Datadog.Trace.Agent
                     {
                         Interlocked.Increment(ref _droppedP0Traces);
                         Interlocked.Add(ref _droppedP0Spans, spans.Count);
-                        TelemetryFactory.Metrics.Record(Count.TraceDropped, MetricTags.DropReason_SamplingDecision);
-                        TelemetryFactory.Metrics.Record(Count.SpanDropped, MetricTags.DropReason_SamplingDecision, spans.Count);
+                        TelemetryFactory.Metrics.RecordCountTraceDropped(MetricTags.DropReason.SamplingDecision);
+                        TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.SamplingDecision, spans.Count);
                         return;
                     }
                     else
@@ -493,8 +493,8 @@ namespace Datadog.Trace.Agent
         {
             Interlocked.Increment(ref _droppedTraces);
             _traceKeepRateCalculator.IncrementDrops(1);
-            TelemetryFactory.Metrics.Record(Count.SpanDropped, MetricTags.DropReason_OverfullBuffer, spans.Count);
-            TelemetryFactory.Metrics.Record(Count.TraceDropped, MetricTags.DropReason_OverfullBuffer);
+            TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.OverfullBuffer, spans.Count);
+            TelemetryFactory.Metrics.RecordCountTraceDropped(MetricTags.DropReason.OverfullBuffer);
 
             if (_statsd != null)
             {
