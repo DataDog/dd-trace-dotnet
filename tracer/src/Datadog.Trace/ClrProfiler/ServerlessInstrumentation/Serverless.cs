@@ -14,7 +14,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
     {
         private const string DefinitionsId = "68224F20D001430F9400668DD25245BA";
         private const string LogLevelEnvName = "DD_LOG_LEVEL";
-        // Azure and GCP Functions are identified by pairs of environment variables.
 
         private static NativeCallTargetDefinition[] callTargetDefinitions = null;
 

@@ -1,4 +1,4 @@
-// <copyright file="MiniAgentManagerTests.cs" company="Datadog">
+// <copyright file="ServerlessMiniAgentManagerTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests
 {
-    public class MiniAgentManagerTests
+    public class ServerlessMiniAgentManagerTests
     {
         [Theory]
         [InlineData("[2023-06-06T01:31:30Z DEBUG datadog_trace_mini_agent::mini_agent] Random Log", "DEBUG", "Random Log")]
