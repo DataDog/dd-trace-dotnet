@@ -218,6 +218,7 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.String::Split(System.Char[],System.Int32,System.StringSplitOptions)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Split(System.String,System.Char[],System.Int32,System.StringSplitOptions)",
 "  [AspectMethodReplace(\"System.String::Split(System.String[],System.StringSplitOptions)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Split(System.String,System.String[],System.StringSplitOptions)",
 "  [AspectMethodReplace(\"System.String::Split(System.String[],System.Int32,System.StringSplitOptions)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Split(System.String,System.String[],System.Int32,System.StringSplitOptions)",
+"  [AspectMethodReplace(\"System.String::Copy(System.String)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Copy(System.String)",
         };
     }
 }

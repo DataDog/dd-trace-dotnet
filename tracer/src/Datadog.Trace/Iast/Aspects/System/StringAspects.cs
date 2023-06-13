@@ -1071,4 +1071,19 @@ public class StringAspects
         return result;
     }
 #endif
+
+#pragma warning disable CS0618 // Obsolete
+    /// <summary>
+    /// String.Copy aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Copy(System.String)", AspectFilter.StringLiteral_0)]
+    public static string Copy(string target)
+    {
+        string result = string.Copy(target);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
     }
+#pragma warning restore CS0618 // Obsolete
+}
