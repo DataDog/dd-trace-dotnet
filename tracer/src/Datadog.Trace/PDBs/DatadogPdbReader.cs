@@ -79,12 +79,16 @@ namespace Datadog.Trace.Pdb
                 // This is because the DLL is loaded from the shadow copy folder (e.g. C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Temporary ASP.NET Files\root\1234567890abcdef\MyApp.dll)
                 // and the PDB may not be copied to this folder until later or never, as it is only copied on demand (usually when an exception is thrown).
                 // In these cases, we'll try to find it in the application directory (e.g. C:\inetpub\wwwroot\MyApp\bin\MyApp.pdb).
+                //
+                // Note that the PDB file might be located in a subfolder of the application directory (e.g. C:\inetpub\wwwroot\MyApp\bin\roslyn\MyApp.pdb),
+                // however, we do not support this scenario and avoid scanning the entire directory tree, in order to mitigate the risk of a performance hit
+                // when the application directory contains a large number of files or is located on a slow network share (see https://github.com/DataDog/dd-trace-dotnet/issues/4226)
                 string fileName = Path.GetFileName(pdbInSameFolder);
                 string applicationDirectory = System.Web.Hosting.HostingEnvironment.ApplicationPhysicalPath;
                 if (applicationDirectory != null)
                 {
-                    var pdbInAppDirectory = Directory.EnumerateFiles(applicationDirectory, fileName, SearchOption.AllDirectories).FirstOrDefault();
-                    if (pdbInAppDirectory != null)
+                    var pdbInAppDirectory = Path.Combine(applicationDirectory, "bin", fileName);
+                    if (File.Exists(pdbInAppDirectory))
                     {
                         pdbFullPath = pdbInAppDirectory;
                         return true;

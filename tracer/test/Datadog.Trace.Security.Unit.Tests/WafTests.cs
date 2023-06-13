@@ -21,11 +21,6 @@ namespace Datadog.Trace.Security.Unit.Tests
     {
         public const int TimeoutMicroSeconds = 1_000_000;
 
-        public WafTests(WafLibraryInvokerFixture wafLibraryInvokerFixture)
-            : base(wafLibraryInvokerFixture)
-        {
-        }
-
         [Theory]
         [InlineData("[$ne]", "arg", "nosql_injection", "crs-942-290")]
         [InlineData("attack", "appscan_fingerprint", "security_scanner", "crs-913-120")]
