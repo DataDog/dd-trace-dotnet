@@ -45,7 +45,8 @@ internal static class SecurityCoordinatorHelpers
                     var securityCoordinator = new SecurityCoordinator(security, httpContext, span, transport);
                     var args = new Dictionary<string, object>
                     {
-                        { AddressesConstants.ResponseHeaderNoCookies, SecurityCoordinator.ExtractHeadersFromRequest(headers) }
+                        { AddressesConstants.ResponseHeaderNoCookies, SecurityCoordinator.ExtractHeadersFromRequest(headers) },
+                        { AddressesConstants.ResponseStatus, httpContext.Response.StatusCode.ToString() },
                     };
                     var result = securityCoordinator.RunWaf(args);
                     securityCoordinator.CheckAndBlock(result);

@@ -20,15 +20,14 @@ public class MetricsTelemetryCollectorTests
         collector.Record(PublicApiUsage.Tracer_Configure);
         collector.Record(PublicApiUsage.Tracer_Configure);
         collector.Record(PublicApiUsage.Tracer_Ctor);
-        collector.Record(Count.SpanFinished, 15);
-        // Note that I'm reusing the same metric tags for all the tags here, just because I haven't created the "real" values we need yet
-        collector.Record(Count.IntegrationsError, MetricTags.IntegrationName_Aerospike, MetricTags.IntegrationName_Aerospike, MetricTags.IntegrationName_Aerospike);
-        collector.Record(Count.SpanCreated, MetricTags.IntegrationName_Aerospike, MetricTags.IntegrationName_Aerospike);
-        collector.Record(Count.SpanDropped, MetricTags.DropReason_SingleSpanSampling, 23);
-        collector.Record(Gauge.StatsBuckets, 234);
-        collector.Record(Distribution.InitTime, MetricTags.Total, 23);
-        collector.Record(Distribution.InitTime, MetricTags.Total, 46);
-        collector.Record(Distribution.InitTime, MetricTags.Component_Managed, 52);
+        collector.RecordCountSpanFinished(15);
+        collector.RecordCountIntegrationsError(MetricTags.IntegrationName.Aerospike, MetricTags.InstrumentationError.Invoker);
+        collector.RecordCountSpanCreated(MetricTags.IntegrationName.Aerospike);
+        collector.RecordCountSpanDropped(MetricTags.DropReason.SingleSpanSampling, 23);
+        collector.RecordGaugeStatsBuckets(234);
+        collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Total, 23);
+        collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Total, 46);
+        collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Managed, 52);
 
         using var scope = new AssertionScope();
 
@@ -59,14 +58,14 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.IntegrationsError.GetName(),
                 Points = new[] { new { Value = 1 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { MetricTags.IntegrationName_Aerospike.ToStringFast(), MetricTags.IntegrationName_Aerospike.ToStringFast(), MetricTags.IntegrationName_Aerospike.ToStringFast() },
+                Tags = new[] { "integrations_name:aerospike", "error_type:invoker" },
             },
             new
             {
                 Metric = Count.SpanCreated.GetName(),
                 Points = new[] { new { Value = 1 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { MetricTags.IntegrationName_Aerospike.ToStringFast(), MetricTags.IntegrationName_Aerospike.ToStringFast() },
+                Tags = new[] { "integrations_name:aerospike" },
             },
             new
             {
@@ -80,7 +79,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.SpanDropped.GetName(),
                 Points = new[] { new { Value = 23 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { MetricTags.DropReason_SingleSpanSampling.ToStringFast() },
+                Tags = new[] { "reason:single_span_sampling" },
             },
             new
             {
@@ -96,13 +95,13 @@ public class MetricsTelemetryCollectorTests
             new
             {
                 Metric = Distribution.InitTime.GetName(),
-                Tags = new[] { MetricTags.Total.ToStringFast() },
+                Tags = new[] { "component:total" },
                 Points = new[] { 23, 46 },
             },
             new
             {
                 Metric = Distribution.InitTime.GetName(),
-                Tags = new[] { MetricTags.Component_Managed.ToStringFast() },
+                Tags = new[] { "component:managed" },
                 Points = new[] {  52 },
             },
         });
