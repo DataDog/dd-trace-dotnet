@@ -14,6 +14,7 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -39,6 +40,7 @@ namespace Datadog.Trace.Configuration
         public JsonConfigurationSource(string json)
             : this(json, ConfigurationOrigins.Code)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.JsonConfigurationSource_Ctor_Json);
         }
 
         internal JsonConfigurationSource(string json, ConfigurationOrigins origin)
@@ -57,7 +59,10 @@ namespace Datadog.Trace.Configuration
         /// <returns>The newly created configuration source.</returns>
         [PublicApi]
         public static JsonConfigurationSource FromFile(string filename)
-            => FromFile(filename, ConfigurationOrigins.Code);
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.JsonConfigurationSource_FromFile);
+            return FromFile(filename, ConfigurationOrigins.Code);
+        }
 
         internal static JsonConfigurationSource FromFile(string filename, ConfigurationOrigins origin)
         {

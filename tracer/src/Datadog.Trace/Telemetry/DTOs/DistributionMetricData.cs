@@ -31,7 +31,7 @@ internal class DistributionMetricData
     /// <summary>
     /// Gets or sets a list of tags that will be associated with the points
     /// </summary>
-    public List<string>? Tags { get; set; }
+    public string[]? Tags { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether indicates whether the metric is common or language specific

@@ -14,6 +14,7 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Configuration
 {
@@ -36,6 +37,7 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public static IDictionary<string, string>? ParseCustomKeyValues(string? data)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.StringConfigurationSource_ParseCustomKeyValues);
             return ParseCustomKeyValuesInternal(data, allowOptionalMappings: false);
         }
 
@@ -49,7 +51,10 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         [return: NotNullIfNotNull(nameof(data))]
         public static IDictionary<string, string>? ParseCustomKeyValues(string? data, bool allowOptionalMappings)
-            => ParseCustomKeyValuesInternal(data, allowOptionalMappings);
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.StringConfigurationSource_ParseCustomKeyValues_AllowOptionalMappings);
+            return ParseCustomKeyValuesInternal(data, allowOptionalMappings);
+        }
 
         [return: NotNullIfNotNull(nameof(data))]
         internal static IDictionary<string, string>? ParseCustomKeyValuesInternal(string? data, bool allowOptionalMappings)
