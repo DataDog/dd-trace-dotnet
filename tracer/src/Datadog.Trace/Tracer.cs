@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -134,9 +135,10 @@ namespace Datadog.Trace
                     }
 
                     var serverlessMiniAgentPath = ServerlessMiniAgent.GetMiniAgentPath(Environment.OSVersion.Platform);
+                    Process miniAgentProcess;
                     if (!string.IsNullOrEmpty(serverlessMiniAgentPath))
                     {
-                        ServerlessMiniAgent.StartServerlessMiniAgent(serverlessMiniAgentPath);
+                        miniAgentProcess = ServerlessMiniAgent.StartServerlessMiniAgent(serverlessMiniAgentPath);
                     }
 
                     instance = new Tracer(tracerManager: null); // don't replace settings, use existing

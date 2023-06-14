@@ -5,7 +5,6 @@
 
 using System;
 using System.Diagnostics;
-using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
@@ -100,11 +99,12 @@ internal static class ServerlessMiniAgent
         return null;
     }
 
-    internal static void StartServerlessMiniAgent(string path)
+    internal static Process StartServerlessMiniAgent(string path)
     {
         if (string.IsNullOrEmpty(path))
         {
             Log.Error("Can't spawn Serverless Mini Agent with null or empty path.");
+            return null;
         }
 
         try
@@ -118,10 +118,12 @@ internal static class ServerlessMiniAgent
 
             process.Start();
             process.BeginOutputReadLine();
+            return process;
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error spawning the Serverless Mini Agent.");
+            return null;
         }
     }
 
