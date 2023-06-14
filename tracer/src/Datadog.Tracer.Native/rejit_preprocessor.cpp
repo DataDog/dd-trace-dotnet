@@ -85,18 +85,21 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
     auto enable_by_ref_instrumentation = m_rejit_handler->GetEnableByRefInstrumentation();
     auto enable_calltarget_state_by_ref = m_rejit_handler->GetEnableCallTargetStateByRef();
 
-    auto enumIterator = enumMethods.begin();
-    auto combinedEnd = iterate_explicit_interface_methods ? enumExplicitInterfaceMethods.end() : enumMethods.end();
-    for (; enumIterator != combinedEnd; enumIterator = ++enumIterator)
+    auto enumIterator =
+        iterate_explicit_interface_methods && enumExplicitInterfaceMethods.begin() != enumExplicitInterfaceMethods.end() ?
+            enumExplicitInterfaceMethods.begin() : enumMethods.begin();
+    auto iteratorEnd = enumMethods.end();
+
+    for (; enumIterator != iteratorEnd; enumIterator = ++enumIterator)
     {
         // When interface methods are being iterated and we reach the end of the regular method search,
         // switch over to the explicit interface method search
-        if (iterate_explicit_interface_methods && !(enumIterator != enumMethods.end()))
+        if (iterate_explicit_interface_methods && !(enumIterator != enumExplicitInterfaceMethods.end()))
         {
-            enumIterator = enumExplicitInterfaceMethods.begin();
+            enumIterator = enumMethods.begin();
 
             // Immediately exit if the second enumerator has 0 entries
-            if (!(enumIterator != combinedEnd))
+            if (!(enumIterator != iteratorEnd))
             {
                 break;
             }
