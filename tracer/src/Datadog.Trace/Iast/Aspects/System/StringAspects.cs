@@ -720,7 +720,7 @@ public class StringAspects
     /// <param name="format"> format of the string </param>
     /// <param name="arg0"> format argument </param>
     /// <returns> String.Format() </returns>
-    [AspectMethodReplace("System.String::Format(System.String,System.Object)")]
+    [AspectMethodReplace("System.String::Format(System.String,System.Object)", AspectFilter.StringLiterals)]
     public static string Format(string format, object arg0)
     {
         var result = string.Format(format, arg0);
@@ -735,7 +735,7 @@ public class StringAspects
     /// <param name="arg0"> first format argument </param>
     /// <param name="arg1"> second format argument </param>
     /// <returns> String.Format() </returns>
-    [AspectMethodReplace("System.String::Format(System.String,System.Object,System.Object)")]
+    [AspectMethodReplace("System.String::Format(System.String,System.Object,System.Object)", AspectFilter.StringLiterals)]
     public static string Format(string format, object arg0, object arg1)
     {
         var result = string.Format(format, arg0, arg1);
@@ -751,7 +751,7 @@ public class StringAspects
     /// <param name="arg1"> second format argument </param>
     /// <param name="arg2"> third format argument </param>
     /// <returns> String.Format() </returns>
-    [AspectMethodReplace("System.String::Format(System.String,System.Object,System.Object,System.Object)")]
+    [AspectMethodReplace("System.String::Format(System.String,System.Object,System.Object,System.Object)", AspectFilter.StringLiterals)]
     public static string Format(string format, object arg0, object arg1, object arg2)
     {
         var result = string.Format(format, arg0, arg1, arg2);
@@ -878,7 +878,7 @@ public class StringAspects
     /// <param name="oldChar"> old value  argument</param>
     /// <param name="newChar"> new value argument </param>
     /// <returns> String.Replace() </returns>
-    [AspectMethodReplace("System.String::Replace(System.Char,System.Char)")]
+    [AspectMethodReplace("System.String::Replace(System.Char,System.Char)", AspectFilter.StringLiteral_0)]
     public static string Replace(string target, char oldChar, char newChar)
     {
         var result = target.Replace(oldChar, newChar);
@@ -893,7 +893,7 @@ public class StringAspects
     /// <param name="oldValue"> old value  argument</param>
     /// <param name="newValue"> new value argument </param>
     /// <returns> String.Replace() </returns>
-    [AspectMethodReplace("System.String::Replace(System.String,System.String)")]
+    [AspectMethodReplace("System.String::Replace(System.String,System.String)", AspectFilter.StringLiterals)]
     public static string Replace(string target, string oldValue, string newValue)
     {
         var result = target.Replace(oldValue, newValue);
