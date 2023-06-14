@@ -11,6 +11,8 @@ using System.Linq;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
@@ -23,15 +25,30 @@ namespace Datadog.Trace.Configuration
         private readonly List<ITelemeteredConfigurationSource> _sources = new();
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="CompositeConfigurationSource"/> class.
+        /// </summary>
+        [PublicApi]
+        public CompositeConfigurationSource()
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.CompositeConfigurationSource_Ctor);
+        }
+
+        private protected CompositeConfigurationSource(bool unusedParamNotToUsePublicApi)
+        {
+            // unused parameter is to give us a non-public API we can use
+        }
+
+        /// <summary>
         /// Adds a new configuration source to this instance.
         /// </summary>
         /// <param name="source">The configuration source to add.</param>
+        [PublicApi]
         public void Add(IConfigurationSource source)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.CompositeConfigurationSource_Add);
             if (source == null) { ThrowHelper.ThrowArgumentNullException(nameof(source)); }
 
-            var telemeteredSource = source as ITelemeteredConfigurationSource ?? new CustomTelemeteredConfigurationSource(source);
-            _sources.Add(telemeteredSource);
+            AddInternal(source);
         }
 
         /// <summary>
@@ -39,8 +56,10 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="index">The zero-based index at which <paramref name="item"/> should be inserted.</param>
         /// <param name="item">The configuration source to insert.</param>
+        [PublicApi]
         public void Insert(int index, IConfigurationSource item)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.CompositeConfigurationSource_Insert);
             if (item == null) { ThrowHelper.ThrowArgumentNullException(nameof(item)); }
 
             var telemeteredSource = item as ITelemeteredConfigurationSource ?? new CustomTelemeteredConfigurationSource(item);
@@ -101,6 +120,12 @@ namespace Datadog.Trace.Configuration
         {
             return _sources.Select(source => source.GetBool(key, NullConfigurationTelemetry.Instance, validator: null))
                            .FirstOrDefault(value => value != null)?.Result;
+        }
+
+        internal void AddInternal(IConfigurationSource source)
+        {
+            var telemeteredSource = source as ITelemeteredConfigurationSource ?? new CustomTelemeteredConfigurationSource(source);
+            _sources.Add(telemeteredSource);
         }
 
         /// <inheritdoc />

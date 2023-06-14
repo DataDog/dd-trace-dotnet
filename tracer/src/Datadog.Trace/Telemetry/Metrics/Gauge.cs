@@ -16,20 +16,20 @@ internal enum Gauge
     /// <summary>
     /// The number of unique buckets created for stats aggregation
     /// </summary>
-    [TelemetryMetric("stats_buckets", 0)] StatsBuckets,
+    [TelemetryMetric("stats_buckets")] StatsBuckets,
 
     /// <summary>
     /// The number of profiler instrumentations created, tagged by the component (TraceAnnotations, DD_TRACE_METHODS, Calltarget, CallTargetDerived etc)
     /// </summary>
-    [TelemetryMetric("instrumentations", 1, isCommon: false)] Instrumentations,
+    [TelemetryMetric<MetricTags.InstrumentationComponent>("instrumentations", isCommon: false)] Instrumentations,
 
     /// <summary>
     /// The number of logs currently enqueued to the direct log submission sink
     /// </summary>
-    [TelemetryMetric("direct_log_queue", 0, isCommon: false)] DirectLogQueue,
+    [TelemetryMetric("direct_log_queue", isCommon: false)] DirectLogQueue,
 
-    /// <summary>
-    /// Essentially all the stats values available from the native profiler. We may potentially want to include these in the "common" init_time metric - I'm not sure?
-    /// </summary>
-    [TelemetryMetric("native_init_time", 0, isCommon: false)] NativeInitTime,
+    // /// <summary>
+    // /// Essentially all the stats values available from the native profiler. We may potentially want to include these in the "common" init_time metric - I'm not sure?
+    // /// </summary>
+    // [TelemetryMetric("native_init_time", isCommon: false)] NativeInitTime,
 }

@@ -166,7 +166,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                             common: true,
                             type: MetricTypeConstants.Count)
                         {
-                            Tags = new()
+                            Tags = new[]
                             {
                                 "org_id: 2",
                                 "environment:test"
@@ -231,7 +231,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                             new() { 224.1 },
                             common: true)
                         {
-                            Tags = new()
+                            Tags = new[]
                             {
                                 "org_id: 2",
                                 "component:total"
@@ -243,7 +243,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                             common: false)
                         {
                             Namespace = MetricNamespaceConstants.ASM,
-                            Tags = new()
+                            Tags = new[]
                             {
                                 "org_id: 2",
                                 "component:native_lib"

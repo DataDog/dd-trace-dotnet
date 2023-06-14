@@ -291,7 +291,7 @@ public class InstrumentationTestsBase
         return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux);
     }
 
-    public static object TestDDBBCall(Func<object> expression)
+    public static object TestRealDDBBLocalCall(Func<object> expression)
     {
         if (IsLinux())
         {
@@ -307,6 +307,28 @@ public class InstrumentationTestsBase
         else
         {
             return expression.Invoke();
+        }
+    }
+
+    protected void TestDummyDDBBCall(Action expression)
+    {
+        try
+        {
+            expression.Invoke();
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    protected void TestDummyDDBBCall(Func<object> expression)
+    {
+        try
+        {
+            expression.Invoke();
+        }
+        catch (Exception)
+        {
         }
     }
 }

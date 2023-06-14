@@ -9,30 +9,30 @@ namespace Datadog.Trace.Agent;
 
 internal static class IApiResponseTelemetryExtensions
 {
-    public static MetricTags GetTelemetryStatusCodeMetricTag(this IApiResponse response)
+    public static MetricTags.StatusCode GetTelemetryStatusCodeMetricTag(this IApiResponse response)
         => response.StatusCode switch
         {
-            200 => MetricTags.StatusCode_200,
-            201 => MetricTags.StatusCode_201,
-            202 => MetricTags.StatusCode_202,
-            204 => MetricTags.StatusCode_204,
-            < 300 => MetricTags.StatusCode_2xx,
-            301 => MetricTags.StatusCode_301,
-            302 => MetricTags.StatusCode_302,
-            307 => MetricTags.StatusCode_307,
-            308 => MetricTags.StatusCode_308,
-            < 400 => MetricTags.StatusCode_3xx,
-            400 => MetricTags.StatusCode_400,
-            401 => MetricTags.StatusCode_401,
-            403 => MetricTags.StatusCode_403,
-            404 => MetricTags.StatusCode_404,
-            405 => MetricTags.StatusCode_405,
-            < 500 => MetricTags.StatusCode_4xx,
-            500 => MetricTags.StatusCode_500,
-            501 => MetricTags.StatusCode_501,
-            502 => MetricTags.StatusCode_502,
-            503 => MetricTags.StatusCode_503,
-            504 => MetricTags.StatusCode_504,
-            _ => MetricTags.StatusCode_5xx,
+            200 => MetricTags.StatusCode.Code200,
+            201 => MetricTags.StatusCode.Code201,
+            202 => MetricTags.StatusCode.Code202,
+            204 => MetricTags.StatusCode.Code204,
+            < 300 => MetricTags.StatusCode.Code2xx,
+            301 => MetricTags.StatusCode.Code301,
+            302 => MetricTags.StatusCode.Code302,
+            307 => MetricTags.StatusCode.Code307,
+            308 => MetricTags.StatusCode.Code308,
+            < 400 => MetricTags.StatusCode.Code3xx,
+            400 => MetricTags.StatusCode.Code400,
+            401 => MetricTags.StatusCode.Code401,
+            403 => MetricTags.StatusCode.Code403,
+            404 => MetricTags.StatusCode.Code404,
+            405 => MetricTags.StatusCode.Code405,
+            < 500 => MetricTags.StatusCode.Code4xx,
+            500 => MetricTags.StatusCode.Code500,
+            501 => MetricTags.StatusCode.Code501,
+            502 => MetricTags.StatusCode.Code502,
+            503 => MetricTags.StatusCode.Code503,
+            504 => MetricTags.StatusCode.Code504,
+            _ => MetricTags.StatusCode.Code5xx,
         };
 }

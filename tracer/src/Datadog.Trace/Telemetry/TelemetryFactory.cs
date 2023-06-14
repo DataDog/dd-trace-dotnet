@@ -62,7 +62,7 @@ namespace Datadog.Trace.Telemetry
 
         public ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings, TelemetrySettings settings)
         {
-            // Deliberately not s static field, because otherwise creates a circular dependency during startup
+            // Deliberately not a static field, because otherwise creates a circular dependency during startup
             var log = DatadogLogging.GetLoggerFor<TelemetryFactory>();
             if (settings.TelemetryEnabled)
             {
@@ -76,10 +76,13 @@ namespace Datadog.Trace.Telemetry
                         return NullTelemetryController.Instance;
                     }
 
-                    _dependencies = settings.DependencyCollectionEnabled
-                                        ? new DependencyTelemetryCollector()
-                                        : NullDependencyTelemetryCollector.Instance;
+                    LazyInitializer.EnsureInitialized(
+                        ref _dependencies,
+                        () => settings.DependencyCollectionEnabled
+                                  ? new DependencyTelemetryCollector()
+                                  : NullDependencyTelemetryCollector.Instance);
 
+                    // we assume we never flip between v1 and v2
                     if (!settings.V2Enabled)
                     {
                         // if we're not using V2, we don't need the config collector
@@ -90,6 +93,7 @@ namespace Datadog.Trace.Telemetry
                         }
                     }
 
+                    // if this changes, we will "lose" startup metrics, but unlikely to happen
                     if (!settings.MetricsEnabled)
                     {
                         // if we're not using metrics, we don't need the metrics collector
@@ -102,7 +106,7 @@ namespace Datadog.Trace.Telemetry
                         }
                     }
 
-                    // Making assumptions that we never switch from one to two,
+                    // Making assumptions that we never switch from v1 to v2
                     // so we don't need to "clean up" the collectors.
                     if (settings.V2Enabled)
                     {
@@ -131,6 +135,8 @@ namespace Datadog.Trace.Telemetry
             TelemetrySettings settings)
         {
             var transportManager = new TelemetryTransportManager(telemetryTransports);
+
+            // Initialized once so if we create a new controller from this factory we get the same collector instances
             var configuration = LazyInitializer.EnsureInitialized(ref _configuration)!;
             var integrations = LazyInitializer.EnsureInitialized(ref _integrations)!;
 
@@ -148,6 +154,7 @@ namespace Datadog.Trace.Telemetry
             TelemetrySettings settings)
         {
             var transportManager = new TelemetryTransportManagerV2(telemetryTransports);
+            // Initialized once so if we create a new controller from this factory we get the same collector instances
             var integrations = LazyInitializer.EnsureInitialized(ref _integrations)!;
             var products = LazyInitializer.EnsureInitialized(ref _products)!;
             var application = LazyInitializer.EnsureInitialized(ref _application)!;

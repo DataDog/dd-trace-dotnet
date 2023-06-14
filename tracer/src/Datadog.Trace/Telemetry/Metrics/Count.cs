@@ -15,156 +15,154 @@ namespace Datadog.Trace.Telemetry.Metrics;
 [TelemetryMetricType(TelemetryMetricType.Count)]
 internal enum Count
 {
+#region General Namespace
+
+    /// <summary>
+    /// The number of logs created with a given log level. Useful for calculating impact for other features (automatic sending of logs)
+    /// </summary>
+    [TelemetryMetric<MetricTags.LogLevel>("log_created")] LogCreated,
+#endregion
 #region Tracers Namespace
 
     /// <summary>
-    /// The number of errors/failures in the library integration, tagged by the integration Name (e.g. Kafka, RabbitMQ), integration component (e.g. KafkaConsumerConsumeIntegration), and Errortype (e.g. Ducktype, Instrumentation)
+    /// TODO: This is SUPPOSED to be tagged by IntegrationComponent too, but that's very onerous to implement right now so only adding 2 tags
+    /// The number of errors/failures in the library integration, tagged by the integration Name (e.g. Kafka, RabbitMQ) and Errortype (e.g. Ducktype, Instrumentation)
     /// </summary>
-    [TelemetryMetric("integrations_error", 3)] IntegrationsError,
+    [TelemetryMetric<MetricTags.IntegrationName, MetricTags.InstrumentationError>("integrations_error")] IntegrationsError,
 
     /// <summary>
-    /// The number of spans created by the tracer, tagged by integration name and component (or Manual) for custom spans
+    /// The number of spans created by the tracer, tagged by integration name (or Manual) for custom spans
     /// </summary>
-    [TelemetryMetric("span_created", 2)] SpanCreated,
+    [TelemetryMetric<MetricTags.IntegrationName>("span_created")] SpanCreated,
 
     /// <summary>
-    /// The number of spans finished, tagged by integration name and component (or Manual) for custom spans. When coupled with spans_created, can be used to identify leaks.
+    /// The number of spans finished. When coupled with spans_created, can be used to identify leaks.
     /// </summary>
-    [TelemetryMetric("span_finished", 0)] SpanFinished,
+    [TelemetryMetric("span_finished")] SpanFinished,
 
     /// <summary>
     /// The number of spans sampled (kept) for serialization/flushing
     /// </summary>
-    [TelemetryMetric("span_sampled", 0)] SpanSampled,
+    [TelemetryMetric("span_sampled")] SpanSampled,
 
     /// <summary>
     /// The number of spans dropped and the reason for being dropped (SamplingDecision, SingleSpanSampling, Failure)
     /// </summary>
-    [TelemetryMetric("span_dropped", 1)] SpanDropped,
+    [TelemetryMetric<MetricTags.DropReason>("span_dropped")] SpanDropped,
 
     /// <summary>
     /// The number of traces created, tagged with new/continued depending on whether this is a new trace (no distributed context information) or continued (has distributed context).
     /// </summary>
-    [TelemetryMetric("trace_created", 1)] TraceCreated,
+    [TelemetryMetric<MetricTags.TraceContinuation>("trace_created")] TraceCreated,
 
     /// <summary>
     /// The number of traces enqueued. When coupled with trace_created, can be used to identify leaks
     /// </summary>
-    [TelemetryMetric("trace_enqueued", 0)] TraceEnqueued,
+    [TelemetryMetric("trace_enqueued")] TraceEnqueued,
 
     /// <summary>
     /// The number of traces kept for serialization. Excludes single-span sampling spans.
     /// </summary>
-    [TelemetryMetric("trace_sampled", 0)] TraceSampled,
+    [TelemetryMetric("trace_sampled")] TraceSampled,
 
     /// <summary>
     /// The number of traces prior to sending, tagged by the reason it was dropped (OverfullBuffer, SerializationError, UnSampled)
     /// </summary>
-    [TelemetryMetric("trace_dropped", 1)] TraceDropped,
+    [TelemetryMetric<MetricTags.DropReason>("trace_dropped")] TraceDropped,
 
     /// <summary>
     /// The number of traces sent to the backend, regardless of response
     /// </summary>
-    [TelemetryMetric("trace_sent", 0)] TraceSent,
+    [TelemetryMetric("trace_sent")] TraceSent,
 
     /// <summary>
     /// The number of requests sent to the trace endpoint in the agent, regardless of success
     /// </summary>
-    [TelemetryMetric("trace_api.requests", 0)] TraceApiRequests,
+    [TelemetryMetric("trace_api.requests")] TraceApiRequests,
 
     /// <summary>
     /// The number of responses received from the trace endpoint, tagged with status code.
     /// </summary>
-    [TelemetryMetric("trace_api.responses", 1)] TraceApiResponses,
+    [TelemetryMetric<MetricTags.StatusCode>("trace_api.responses")] TraceApiResponses,
 
     /// <summary>
     /// The number of requests sent to the trace endpoint in the agent that errored, tagged by the error type (e.g. Timeout, NetworkError, status_code)
     /// </summary>
-    [TelemetryMetric("trace_api.errors", 1)] TraceApiErrors,
+    [TelemetryMetric<MetricTags.ApiError>("trace_api.errors")] TraceApiErrors,
 
     /// <summary>
     /// The number of times a partial flush (where a span is separately from its local root span) is triggered, tagged by the reason the flush was triggered (LargeTrace, SingleSpanIngestion)
     /// </summary>
-    [TelemetryMetric("trace_partial_flush", 1)] TracePartialFlush,
-
-    /// <summary>
-    /// The number of spans included when partial flush is triggered
-    /// </summary>
-    [TelemetryMetric("trace_partial_flush.spans_closed", 1)] TracePartialFlushSpansClosed,
-
-    /// <summary>
-    /// The number of open spans remaining in the trace when partial flush is triggered
-    /// </summary>
-    [TelemetryMetric("trace_partial_flush.spans_remaining", 1)] TracePartialFlushSpansRemaining,
+    [TelemetryMetric<MetricTags.PartialFlushReason>("trace_partial_flush")] TracePartialFlush,
 
     /// <summary>
     /// The number of times distributed context is injected into an outgoing span, tagged by header style (tracecontext, Datadog, b3multi, b3 single header)
     /// </summary>
-    [TelemetryMetric("context_header_style.injected", 1)] ContextHeaderStyleInjected,
+    [TelemetryMetric<MetricTags.ContextHeaderStyle>("context_header_style.injected")] ContextHeaderStyleInjected,
 
     /// <summary>
     /// The number of times distributed context is extracted from an incoming context, tagged by header style (tracecontext, Datadog, b3multi, b3 single header)
     /// </summary>
-    [TelemetryMetric("context_header_style.extracted", 1)] ContextHeaderStyleExtracted,
+    [TelemetryMetric<MetricTags.ContextHeaderStyle>("context_header_style.extracted")] ContextHeaderStyleExtracted,
 
     /// <summary>
     /// The number of requests sent to the stats endpoint in the agent, regardless of success
     /// </summary>
-    [TelemetryMetric("stats_api.requests", 1)] StatsApiRequests,
+    [TelemetryMetric("stats_api.requests")] StatsApiRequests,
 
     /// <summary>
     /// The number of responses received from the endpoint, tagged with status code.
     /// </summary>
-    [TelemetryMetric("stats_api.responses", 1)] StatsApiResponses,
+    [TelemetryMetric<MetricTags.StatusCode>("stats_api.responses")] StatsApiResponses,
 
     /// <summary>
     /// The number of requests sent to the api endpoint in the agent that errored, tagged by the error type (e.g. Timeout, NetworkError, status_code)
     /// </summary>
-    [TelemetryMetric("stats_api.errors", 1)] StatsApiErrors,
+    [TelemetryMetric<MetricTags.ApiError>("stats_api.errors")] StatsApiErrors,
 #endregion
 #region Telemetry Namespace
 
     /// <summary>
     /// The number of requests sent to a telemetry endopint, regardless of success, tagged by the endpoint (Agent, Agentless)
     /// </summary>
-    [TelemetryMetric("telemetry_api.requests", 1)] TelemetryApiRequests,
+    [TelemetryMetric<MetricTags.TelemetryEndpoint>("telemetry_api.requests")] TelemetryApiRequests,
 
     /// <summary>
     /// The number of responses received from the endpoint, tagged with status code and endpoint (Agent, Agentless)
     /// </summary>
-    [TelemetryMetric("telemetry_api.responses", 2)] TelemetryApiResponses,
+    [TelemetryMetric<MetricTags.TelemetryEndpoint, MetricTags.StatusCode>("telemetry_api.responses")] TelemetryApiResponses,
 
     /// <summary>
     /// The number of requests sent to the api endpoint in the agent that errored, tagged by the error type (e.g. Timeout, NetworkError, status_code) and endpoint (Agent, Agentless)
     /// </summary>
-    [TelemetryMetric("telemetry_api.errors", 1)] TelemetryApiErrors,
+    [TelemetryMetric<MetricTags.TelemetryEndpoint, MetricTags.ApiError>("telemetry_api.errors")] TelemetryApiErrors,
 #endregion
 #region .NET Namespace
 
     /// <summary>
-    /// The number of version-conflict traces created
+    /// The number of version-conflict tracers created
     /// </summary>
-    [TelemetryMetric("version_conflict_traces_created", 1, isCommon: false)] VersionConflictTracesCreated,
+    [TelemetryMetric("version_conflict_tracer_created", isCommon: false)] VersionConflictTracerCreated,
 
     /// <summary>
     /// The number of logs sent to the direct log submission sink, tagged by IntegrationName. Includes only logs that were sent, not filtered logs
     /// </summary>
-    [TelemetryMetric("direct_log_logs", 1, isCommon: false)] DirectLogLogs,
+    [TelemetryMetric<MetricTags.IntegrationName>("direct_log_logs", isCommon: false)] DirectLogLogs,
 
     /// <summary>
     /// The number of requests sent to the direct log submission endpoint, regardless of success
     /// </summary>
-    [TelemetryMetric("direct_log_api.requests", 0, isCommon: false)] DirectLogApiRequests,
+    [TelemetryMetric("direct_log_api.requests", isCommon: false)] DirectLogApiRequests,
 
     /// <summary>
     /// The number of responses received from the endpoint, tagged with status code
     /// </summary>
-    [TelemetryMetric("direct_log_api.responses", 1, isCommon: false)] DirectLogApiResponses,
+    [TelemetryMetric<MetricTags.StatusCode>("direct_log_api.responses", isCommon: false)] DirectLogApiResponses,
 
     /// <summary>
     /// The number of requests sent to the api endpoint that errored, tagged by the error type (e.g. Timeout, NetworkError, status_code)
     /// </summary>
-    [TelemetryMetric("direct_log_api.errors.responses", 1, isCommon: false)] DirectLogApiErrors,
+    [TelemetryMetric<MetricTags.ApiError>("direct_log_api.errors.responses", isCommon: false)] DirectLogApiErrors,
 
 #endregion
 }
