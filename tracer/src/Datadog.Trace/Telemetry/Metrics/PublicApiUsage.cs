@@ -15,9 +15,18 @@ namespace Datadog.Trace.Telemetry.Metrics;
 [EnumExtensions]
 internal enum PublicApiUsage
 {
+    [Description("eventtrackingsdk_trackcustomevent")]EventTrackingSdk_TrackCustomEvent,
+    [Description("eventtrackingsdk_trackcustomevent_metadata")]EventTrackingSdk_TrackCustomEvent_Metadata,
+    [Description("eventtrackingsdk_trackuserloginfailureevent")]EventTrackingSdk_TrackUserLoginFailureEvent,
+    [Description("eventtrackingsdk_trackuserloginfailureevent_metadata")]EventTrackingSdk_TrackUserLoginFailureEvent_Metadata,
+    [Description("eventtrackingsdk_trackuserloginsuccessevent")]EventTrackingSdk_TrackUserLoginSuccessEvent,
+    [Description("eventtrackingsdk_trackuserloginsuccessevent_metadata")]EventTrackingSdk_TrackUserLoginSuccessEvent_Metadata,
+
     [Description("spancontextextractor_extract")] SpanContextExtractor_Extract,
+
     [Description("spanextensions_setuser")] SpanExtensions_SetUser,
     [Description("spanextensions_settracesamplingpriority")] SpanExtensions_SetTraceSamplingPriority,
+
     [Description("tracer_ctor")] Tracer_Ctor,
     [Description("tracer_ctor_settings")] Tracer_Ctor_Settings,
     [Description("tracer_instance_set")] Tracer_Instance_Set,
@@ -54,6 +63,12 @@ internal enum PublicApiUsage
     // [Description("ispan_setexception")] ISpan_SetException,
     // [Description("ispan_gettag")] ISpan_GetTag,
 
+    [Description("correlationidentifier_env_get")]Correlation_Identifier_Env_Get,
+    [Description("correlationidentifier_service_get")]Correlation_Identifier_Service_Get,
+    [Description("correlationidentifier_spanid_get")]Correlation_Identifier_SpanId_Get,
+    [Description("correlationidentifier_traceid_get")]Correlation_Identifier_TraceId_Get,
+    [Description("correlationidentifier_version_get")]Correlation_Identifier_Version_Get,
+
     [Description("spancontext_ctor")] SpanContext_Ctor,
     // These are problematic as they're used in a _lot_ of places
     // [Description("spancontext_parent_get")] SpanContext_Parent_Get,
@@ -62,6 +77,7 @@ internal enum PublicApiUsage
     // [Description("spancontext_servicename_set")] SpanContext_ServiceName_Set,
     // [Description("spancontext_spanid_get")] SpanContext_SpanId_Get,
     // [Description("spancontext_traceid_get")] SpanContext_TraceId_Get,
+
     [Description("exportersettings_ctor")] ExporterSettings_Ctor,
     [Description("exportersettings_ctor_source")] ExporterSettings_Ctor_Source,
     [Description("exportersettings_agenturi_get")] ExporterSettings_AgentUri_Get,
@@ -82,10 +98,12 @@ internal enum PublicApiUsage
     [Description("exportersettings_tracespipetimeoutms_set")] ExporterSettings_TracesPipeTimeoutMs_Set,
     [Description("exportersettings_tracesunixdomainsocketpath_get")] ExporterSettings_TracesUnixDomainSocketPath_Get,
     [Description("exportersettings_tracesunixdomainsocketpath_set")] ExporterSettings_TracesUnixDomainSocketPath_Set,
+
     [Description("globalsettings_debugenabled_get")] GlobalSettings_DebugEnabled_Get,
     [Description("globalsettings_fromdefaultsources")] GlobalSettings_FromDefaultSources,
     [Description("globalsettings_reload")] GlobalSettings_Reload,
     [Description("globalsettings_setdebugenabled")] GlobalSettings_SetDebugEnabled,
+
     [Description("immutableexportersettings_ctor_settings")] ImmutableExporterSettings_Ctor_Settings,
     [Description("immutableexportersettings_ctor_source")] ImmutableExporterSettings_Ctor_Source,
     [Description("immutableexportersettings_agenturi_get")] ImmutableExporterSettings_AgentUri_Get,
@@ -97,6 +115,7 @@ internal enum PublicApiUsage
     [Description("immutableexportersettings_tracespipename_get")] ImmutableExporterSettings_TracesPipeName_Get,
     [Description("immutableexportersettings_tracespipetimeoutms_get")] ImmutableExporterSettings_TracesPipeTimeoutMs_Get,
     [Description("immutableexportersettings_tracesunixdomainsocketpath_get")] ImmutableExporterSettings_TracesUnixDomainSocketPath_Get,
+
     [Description("integrationsettings_ctor")] IntegrationSettings_Ctor,
     [Description("integrationsettings_analyticsenabled_get")] IntegrationSettings_AnalyticsEnabled_Get,
     [Description("integrationsettings_analyticsenabled_set")] IntegrationSettings_AnalyticsEnabled_Set,
@@ -105,19 +124,27 @@ internal enum PublicApiUsage
     [Description("integrationsettings_enabled_get")] IntegrationSettings_Enabled_Get,
     [Description("integrationsettings_enabled_set")] IntegrationSettings_Enabled_Set,
     [Description("integrationsettings_integrationname_get")] IntegrationSettings_IntegrationName_Get,
+
     [Description("integrationsettingscollection_ctor_source")] IntegrationSettingsCollection_Ctor_Source,
     [Description("integrationsettingscollection_indexer_name")] IntegrationSettingsCollection_Indexer_Name,
+
     [Description("immutableintegrationsettings_analyticsenabled_get")] ImmutableIntegrationSettings_AnalyticsEnabled_Get,
     [Description("immutableintegrationsettings_analyticssamplerate_get")] ImmutableIntegrationSettings_AnalyticsSampleRate_Get,
     [Description("immutableintegrationsettings_enabled_get")] ImmutableIntegrationSettings_Enabled_Get,
     [Description("immutableintegrationsettings_integrationname_get")] ImmutableIntegrationSettings_IntegrationName_Get,
     [Description("immutableintegrationsettingscollection_indexer_name")] ImmutableIntegrationSettingsCollection_Indexer_Name,
+
     [Description("compositeconfigurationsource_ctor")] CompositeConfigurationSource_Ctor,
+    [Description("compositeconfigurationsource_add")] CompositeConfigurationSource_Add,
+    [Description("compositeconfigurationsource_insert")] CompositeConfigurationSource_Insert,
     [Description("jsonconfigurationsource_ctor_json")] JsonConfigurationSource_Ctor_Json,
     [Description("jsonconfigurationsource_fromfile")] JsonConfigurationSource_FromFile,
-    [Description("stringconfigurationsource_ctor")] StringConfigurationSource_Ctor,
+    [Description("stringconfigurationsource_parsecustomkeyvalues_data")] StringConfigurationSource_ParseCustomKeyValues,
+    [Description("stringconfigurationsource_parsecustomkeyvalues_allowoptionalmappings")] StringConfigurationSource_ParseCustomKeyValues_AllowOptionalMappings,
+    [Description("customtelemeteredconfigurationsource_ctor")] CustomTelemeteredConfigurationSource_Ctor,
     [Description("environmentconfigurationsource_ctor")] EnvironmentConfigurationSource_Ctor,
     [Description("namevalueconfigurationsource_ctor")] NameValueConfigurationSource_Ctor,
+
     [Description("tracersettings_ctor")] TracerSettings_Ctor,
     [Description("tracersettings_ctor_source")] TracerSettings_Ctor_Source,
     [Description("tracersettings_ctor_usedefaultsources")] TracerSettings_Ctor_UseDefaultSources,
@@ -166,6 +193,7 @@ internal enum PublicApiUsage
     [Description("tracersettings_setservicenamemappings")] TracerSettings_SetServiceNameMappings,
     [Description("tracersettings_createdefaultconfigurationsource")] TracerSettings_CreateDefaultConfigurationSource,
     [Description("tracersettings_fromdefaultsources")] TracerSettings_FromDefaultSources,
+
     [Description("immutabletracersettings_ctor_source")] ImmutableTracerSettings_Ctor_Source,
     [Description("immutabletracersettings_ctor_settings")] ImmutableTracerSettings_Ctor_Settings,
     [Description("immutabletracersettings_analyticsenabled_get")] ImmutableTracerSettings_AnalyticsEnabled_Get,
