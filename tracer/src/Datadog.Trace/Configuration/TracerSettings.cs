@@ -339,7 +339,7 @@ namespace Datadog.Trace.Configuration
                 }
             }
 
-            IsRunningInAzureFunctions = ImmutableAzureAppServiceSettings.GetIsAzureFunction();
+            IsRunningInAzureFunctions = ImmutableAzureAppServiceSettings.GetIsAzureConsumptionPlanFunction();
             IsRunningInGCPFunctions = ImmutableGCPFunctionSettings.GetIsGCPFunction();
 
             StatsComputationEnabledInternal = config

@@ -196,21 +196,21 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
-        public void GetIsAzureFunctionTrueWhenFunctionsEnvVarsExist()
+        public void GetIsAzureConsumptionPlanFunctionTrueWhenFunctionsEnvVarsExist()
         {
             Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "dotnet");
             Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "4");
 
-            Assert.True(ImmutableAzureAppServiceSettings.GetIsAzureFunction());
+            Assert.True(ImmutableAzureAppServiceSettings.GetIsAzureConsumptionPlanFunction());
 
             Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, null);
         }
 
         [Fact]
-        public void GetIsAzureFunctionFalseWhenNoFunctionsEnvVars()
+        public void GetIsAzureConsumptionPlanFunctionFalseWhenNoFunctionsEnvVars()
         {
-            Assert.False(ImmutableAzureAppServiceSettings.GetIsAzureFunction());
+            Assert.False(ImmutableAzureAppServiceSettings.GetIsAzureConsumptionPlanFunction());
         }
     }
 }

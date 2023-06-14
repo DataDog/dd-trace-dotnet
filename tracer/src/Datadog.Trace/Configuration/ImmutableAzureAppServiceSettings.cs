@@ -185,9 +185,13 @@ namespace Datadog.Trace.Configuration
         }
 
         // Checks for azure functions specific env vars. Used when configuration hasn't been initialized yet.
-        internal static bool GetIsAzureFunction()
+        internal static bool GetIsAzureConsumptionPlanFunction()
         {
-            return Environment.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey) != null || Environment.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey) != null;
+            var isFunction = Environment.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey) != null && Environment.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey) != null;
+
+            var websiteSKU = Environment.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.WebsiteSKU);
+            var isConsumptionPlan = websiteSKU == null || websiteSKU == "Dynamic";
+            return isFunction && isConsumptionPlan;
         }
     }
 }

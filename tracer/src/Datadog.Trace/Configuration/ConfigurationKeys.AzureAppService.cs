@@ -75,6 +75,11 @@ namespace Datadog.Trace.Configuration
             /// Used to force the loader to start dogstatsd (in case automatic instrumentation is disabled)
             /// </summary>
             public const string AasEnableCustomMetrics = "DD_AAS_ENABLE_CUSTOM_METRICS";
+
+            /// <summary>
+            /// Used to identify consumption plan functions. A value of "dynamic" indicates consumption plan.
+            /// </summary>
+            public const string WebsiteSKU = "WEBSITE_SKU";
         }
     }
 }
