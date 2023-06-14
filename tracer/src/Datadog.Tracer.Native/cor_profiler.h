@@ -42,7 +42,7 @@ class CorProfiler : public CorProfilerBase
 private:
     std::atomic_bool is_attached_ = {false};
     RuntimeInformation runtime_information_;
-    std::vector<IntegrationDefinition> integration_definitions_;
+    std::vector<IntegrationDefinition> integration_definitions_; // All APM Calltargets
     std::deque<std::pair<ModuleID, std::vector<MethodReference>>> rejit_module_method_pairs;
 
     Synchronized<std::unordered_set<shared::WSTRING>> definitions_ids;
@@ -173,7 +173,7 @@ public:
                                                     ICorProfilerAssemblyReferenceProvider* pAsmRefProvider) override;
 
     //
-    // Add Integrations methods
+    // Legacy Add Integrations methods
     //
     void InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int size);
     void RemoveCallTargetDefinitions(WCHAR* id, CallTargetDefinition* items, int size);
@@ -183,6 +183,23 @@ public:
     void AddInterfaceInstrumentations(WCHAR* id, CallTargetDefinition* items, int size);
     void AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* integration_assembly_name_ptr,
                                           WCHAR* integration_type_name_ptr);
+
+    //
+    // Tracer Integration methods #2
+    //
+    void RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size, UINT32 enabledCategories = -1);
+    void EnableCallTargetDefinitions(UINT32 enaabledCategories);
+    void DisableCallTargetDefinitions(UINT32 disabledCategories);
+
+    //
+    // Register Aspects into Dataflow
+    //
+    void RegisterIastAspects(WCHAR** aspects, int aspectsLength);
+
+
+    //
+    // Live Debugger Integration methods
+    //
     void InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_name_ptr, WCHAR* integration_type_name_ptr,
                                 WCHAR* configuration_string_ptr);
     void InstrumentProbes(debugger::DebuggerMethodProbeDefinition* methodProbes, int methodProbesLength,
@@ -195,11 +212,6 @@ public:
     // Disable profiler
     //
     void DisableTracerCLRProfiler();
-
-    //
-    // Register Aspects into Dataflow
-    //
-    void RegisterIastAspects(WCHAR** aspects, int aspectsLength);
 
     friend class debugger::DebuggerProbesInstrumentationRequester;
     friend class debugger::DebuggerMethodRewriter;

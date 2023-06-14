@@ -1175,7 +1175,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             if (status != std::future_status::timeout)
             {
                 const auto& numReJITs = future.get();
-            Logger::Debug("[Tracer] Total number of ReJIT Requested: ", numReJITs);
+                Logger::Debug("[Tracer] Total number of ReJIT Requested: ", numReJITs);
             }
             else
             {
@@ -1284,19 +1284,6 @@ void CorProfiler::DisableTracerCLRProfiler()
     // https://docs.microsoft.com/en-us/dotnet/framework/unmanaged-api/profiling/icorprofilerinfo3-requestprofilerdetach-method
     Logger::Info("Disabling Tracer CLR Profiler...");
     Shutdown();
-}
-
-void CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
-{
-    if (_dataflow != nullptr)
-    {
-        Logger::Info("Registerubg IAST Aspects.");
-        _dataflow->LoadAspects(aspects, aspectsLength);
-    }
-    else
-    {
-        Logger::Info("IAST is disabled.");
-    }
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
@@ -1771,13 +1758,14 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             // remove the call target definitions
             std::vector<IntegrationDefinition> integration_definitions = integration_definitions_;
             integration_definitions_.clear();
-            for (const auto& integration : integration_definitions)
+            for (auto& integration : integration_definitions)
             {
                 if (std::find(integrationDefinitions.begin(), integrationDefinitions.end(), integration) ==
                     integrationDefinitions.end())
                 {
                     integration_definitions_.push_back(integration);
                 }
+                integration.SetEnabled(false);
             }
 
             Logger::Info("Total number of modules to analyze: ", modules->size());
@@ -1797,6 +1785,165 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
         Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_definitions_.size());
     }
 }
+
+void CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size, UINT32 enabledCategories)
+{
+    shared::WSTRING definitionsId = shared::WSTRING(id);
+    auto definitions = definitions_ids.Get();
+
+    auto defsIdFound = definitions->find(definitionsId) != definitions->end();
+    if (defsIdFound)
+    {
+        Logger::Info("RegisterCallTargetDefinitions: Id already processed.");
+        return;
+    }
+    definitions->emplace(definitionsId);
+
+    if (items != nullptr && rejit_handler != nullptr)
+    {
+        std::vector<IntegrationDefinition> integrationDefinitions;
+
+        for (int i = 0; i < size; i++)
+        {
+            const auto& current = items[i];
+
+            const shared::WSTRING& targetAssembly = shared::WSTRING(current.targetAssembly);
+            const shared::WSTRING& targetType = shared::WSTRING(current.targetType);
+            const shared::WSTRING& targetMethod = shared::WSTRING(current.targetMethod);
+
+            const shared::WSTRING& integrationAssembly = shared::WSTRING(current.integrationAssembly);
+            const shared::WSTRING& integrationType = shared::WSTRING(current.integrationType);
+
+            std::vector<shared::WSTRING> signatureTypes;
+            for (int sIdx = 0; sIdx < current.signatureTypesLength; sIdx++)
+            {
+                const auto& currentSignature = current.signatureTypes[sIdx];
+                if (currentSignature != nullptr)
+                {
+                    signatureTypes.push_back(shared::WSTRING(currentSignature));
+                }
+            }
+
+            const Version& minVersion = Version(current.targetMinimumMajor, current.targetMinimumMinor, current.targetMinimumPatch, 0);
+            const Version& maxVersion = Version(current.targetMaximumMajor, current.targetMaximumMinor, current.targetMaximumPatch, 0);
+
+            const auto& integration = IntegrationDefinition(
+                MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
+                TypeReference(integrationAssembly, integrationType, {}, {}), current.GetIsDerived(),
+                current.GetIsInterface(), true, current.categories, enabledCategories);
+
+            if (Logger::IsDebugEnabled())
+            {
+                Logger::Debug("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "(",
+                              signatureTypes.size(), ") { ", minVersion.str(), " - ", maxVersion.str(), " } [",
+                              integrationAssembly, " | ", integrationType, "]");
+            }
+
+            integrationDefinitions.push_back(integration);
+        }
+
+        auto modules = module_ids.Get();
+
+        integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
+        for (const auto& integration : integrationDefinitions)
+        {
+            integration_definitions_.push_back(integration);
+        }
+
+        Logger::Info("Total number of modules to analyze: ", modules->size());
+        if (rejit_handler != nullptr)
+        {
+            auto promise = std::make_shared<std::promise<ULONG>>();
+            std::future<ULONG> future = promise->get_future();
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), integrationDefinitions, promise);
+
+            // wait and get the value from the future<int>
+            const auto& numReJITs = future.get();
+            Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+        }
+
+        Logger::Info("RegisterCallTargetDefinitions: Total integrations in profiler: ", integration_definitions_.size());
+    }
+}
+void CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
+{
+    if (rejit_handler != nullptr)
+    {
+        auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+        Logger::Info("EnableCallTargetDefinitions: enabledCategories: ", enabledCategories, " from managed side.");
+
+        std::vector<IntegrationDefinition> affectedDefinitions;
+        for (auto& integration : integration_definitions_)
+        {
+            if (!integration.GetEnabled() && integration.SetEnabled(true, enabledCategories))
+            {
+                affectedDefinitions.push_back(integration);
+            }
+        }
+
+        ULONG numReJITs = 0;
+        if (affectedDefinitions.size() > 0)
+        {
+            auto modules = module_ids.Get();
+            auto promise = std::make_shared<std::promise<ULONG>>();
+            std::future<ULONG> future = promise->get_future();
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions,
+                                                                                 promise);
+
+            // wait and get the value from the future<int>
+            numReJITs = future.get();
+        }
+        Logger::Debug("  Total number of ReJIT Requested: ", numReJITs);
+    }
+}
+void CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
+{
+    if (rejit_handler != nullptr)
+    {
+        auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+        Logger::Info("DisableCallTargetDefinitions: enabledCategories: ", disabledCategories, " from managed side.");
+
+        std::vector<IntegrationDefinition> affectedDefinitions;
+        for (auto& integration : integration_definitions_)
+        {
+            if (integration.GetEnabled() && !integration.SetEnabled(false, disabledCategories))
+            {
+                affectedDefinitions.push_back(integration);
+            }
+        }
+
+        ULONG numReverts = 0;
+        if (affectedDefinitions.size() > 0)
+        {
+            auto modules = module_ids.Get();
+            auto promise = std::make_shared<std::promise<ULONG>>();
+            std::future<ULONG> future = promise->get_future();
+            tracer_integration_preprocessor->EnqueueRequestRevertForLoadedModules(modules.Ref(), affectedDefinitions,
+                                                                                  promise);
+
+            // wait and get the value from the future<int>
+            numReverts = future.get();
+        }
+        Logger::Debug("  Total number of Reverts Requested: ", numReverts);
+    }
+}
+
+void CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
+{
+    auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+
+    if (_dataflow != nullptr)
+    {
+        Logger::Info("Registerubg IAST Aspects.");
+        _dataflow->LoadAspects(aspects, aspectsLength);
+    }
+    else
+    {
+        Logger::Info("IAST is disabled.");
+    }
+}
+
+
 
 void CorProfiler::AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* integration_assembly_name_ptr,
                                                    WCHAR* integration_type_name_ptr)
