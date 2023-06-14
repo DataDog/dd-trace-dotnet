@@ -92,8 +92,8 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
 
     for (; enumIterator != iteratorEnd; enumIterator = ++enumIterator)
     {
-        // When interface methods are being iterated and we reach the end of the regular method search,
-        // switch over to the explicit interface method search
+        // When interface methods are being iterated first we go over the explicit interface method search and then
+        // switch to the regular method search, just like the runtime behaves.
         if (iterate_explicit_interface_methods && !(enumIterator != enumExplicitInterfaceMethods.end()))
         {
             enumIterator = enumMethods.begin();
