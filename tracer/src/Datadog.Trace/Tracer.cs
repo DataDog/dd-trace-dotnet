@@ -134,19 +134,20 @@ namespace Datadog.Trace
                         return _instance;
                     }
 
-                    var serverlessMiniAgentPath = ServerlessMiniAgent.GetMiniAgentPath(Environment.OSVersion.Platform);
-                    Process miniAgentProcess;
-                    if (!string.IsNullOrEmpty(serverlessMiniAgentPath))
-                    {
-                        miniAgentProcess = ServerlessMiniAgent.StartServerlessMiniAgent(serverlessMiniAgentPath);
-                    }
-
                     instance = new Tracer(tracerManager: null); // don't replace settings, use existing
                     _instance = instance;
                     _globalInstanceInitialized = true;
                 }
 
                 instance.TracerManager.Start();
+
+                var serverlessMiniAgentPath = ServerlessMiniAgent.GetMiniAgentPath(Environment.OSVersion.Platform, instance.Settings);
+                Process miniAgentProcess;
+                if (!string.IsNullOrEmpty(serverlessMiniAgentPath))
+                {
+                    miniAgentProcess = ServerlessMiniAgent.StartServerlessMiniAgent(serverlessMiniAgentPath);
+                }
+
                 return instance;
             }
 

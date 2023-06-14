@@ -14,13 +14,9 @@ internal static class ServerlessMiniAgent
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServerlessMiniAgent));
 
-    private static readonly string[] MiniAgentLogLevels = { "ERROR", "WARN", "INFO", "DEBUG" };
-
-    internal static string GetMiniAgentPath(PlatformID os)
+    internal static string GetMiniAgentPath(PlatformID os, ImmutableTracerSettings settings)
     {
-        var isGCPFunction = GetIsGCPFunction();
-        var isAzureFunction = GetIsAzureFunction();
-        if (!isGCPFunction && !isAzureFunction)
+        if (!settings.IsRunningInGCPFunctions && !settings.IsRunningInAzureFunctions)
         {
             return null;
         }
@@ -45,7 +41,7 @@ internal static class ServerlessMiniAgent
             var dirPathSep = isWindows ? "\\" : "/";
 
             string rustBinaryPathRoot;
-            if (isGCPFunction)
+            if (settings.IsRunningInGCPFunctions)
             {
                 rustBinaryPathRoot = "/layers/google.dotnet.publish/publish/bin";
             }
@@ -69,34 +65,6 @@ internal static class ServerlessMiniAgent
         }
 
         return rustBinaryPath;
-    }
-
-    internal static bool GetIsGCPFunction()
-    {
-        bool isDeprecatedGCPFunction = Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey) != null && Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey) != null;
-        bool isNewerGCPFunction = Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey) != null && Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey) != null;
-
-        return isDeprecatedGCPFunction || isNewerGCPFunction;
-    }
-
-    internal static bool GetIsAzureFunction()
-    {
-        return Environment.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey) != null && Environment.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.SiteNameKey) != null;
-    }
-
-    internal static string GetGCPAzureFunctionName()
-    {
-        if (GetIsAzureFunction())
-        {
-            return Environment.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.SiteNameKey);
-        }
-
-        if (GetIsGCPFunction())
-        {
-            return Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey) ?? Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey);
-        }
-
-        return null;
     }
 
     internal static Process StartServerlessMiniAgent(string path)
@@ -175,7 +143,7 @@ internal static class ServerlessMiniAgent
         }
 
         string level = rawLog.Substring(0, logPrefixCutoff).Split(' ')[1];
-        if (Array.IndexOf(MiniAgentLogLevels, level) < 0)
+        if (!(level is "ERROR" or "WARN" or "INFO" or "DEBUG"))
         {
             return Tuple.Create("INFO", rawLog);
         }

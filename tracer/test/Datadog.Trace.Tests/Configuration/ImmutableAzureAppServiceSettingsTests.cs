@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.PlatformHelpers;
@@ -192,6 +193,24 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.NeedsDogStatsD.Should().Be(expected);
+        }
+
+        [Fact]
+        public void GetIsAzureFunctionTrueWhenFunctionsEnvVarsExist()
+        {
+            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "dotnet");
+            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "4");
+
+            Assert.True(ImmutableAzureAppServiceSettings.GetIsAzureFunction());
+
+            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, null);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, null);
+        }
+
+        [Fact]
+        public void GetIsAzureFunctionFalseWhenNoFunctionsEnvVars()
+        {
+            Assert.False(ImmutableAzureAppServiceSettings.GetIsAzureFunction());
         }
     }
 }

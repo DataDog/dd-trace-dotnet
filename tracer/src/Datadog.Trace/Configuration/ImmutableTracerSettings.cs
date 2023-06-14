@@ -125,6 +125,10 @@ namespace Datadog.Trace.Configuration
             IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
             AzureAppServiceMetadata = settings.AzureAppServiceMetadata;
 
+            IsRunningInAzureFunctions = settings.IsRunningInAzureFunctions;
+
+            IsRunningInGCPFunctions = settings.IsRunningInGCPFunctions;
+
             TraceId128BitGenerationEnabled = settings.TraceId128BitGenerationEnabled;
             TraceId128BitLoggingEnabled = settings.TraceId128BitLoggingEnabled;
 
@@ -437,6 +441,16 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the tracer is running in AAS
         /// </summary>
         internal bool IsRunningInAzureAppService { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer is running in AAS
+        /// </summary>
+        internal bool IsRunningInAzureFunctions { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer is running in Google Cloud Functions
+        /// </summary>
+        internal bool IsRunningInGCPFunctions { get; }
 
         /// <summary>
         /// Gets a value indicating whether the tracer should propagate service data in db queries

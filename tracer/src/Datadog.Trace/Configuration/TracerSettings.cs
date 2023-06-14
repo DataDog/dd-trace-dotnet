@@ -181,10 +181,6 @@ namespace Datadog.Trace.Configuration
                                   .WithKeys(ConfigurationKeys.TracerMetricsEnabled)
                                   .AsBool(defaultValue: false);
 
-            StatsComputationEnabledInternal = config
-                                     .WithKeys(ConfigurationKeys.StatsComputationEnabled)
-                                     .AsBool(defaultValue: (ServerlessMiniAgent.GetIsAzureFunction() || ServerlessMiniAgent.GetIsGCPFunction()));
-
             StatsComputationInterval = config.WithKeys(ConfigurationKeys.StatsComputationInterval).AsInt32(defaultValue: 10);
 
             RuntimeMetricsEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsEnabled).AsBool(defaultValue: false);
@@ -342,6 +338,13 @@ namespace Datadog.Trace.Configuration
                     TraceEnabledInternal = false;
                 }
             }
+
+            IsRunningInAzureFunctions = ImmutableAzureAppServiceSettings.GetIsAzureFunction();
+            IsRunningInGCPFunctions = ImmutableGCPFunctionSettings.GetIsGCPFunction();
+
+            StatsComputationEnabledInternal = config
+                                     .WithKeys(ConfigurationKeys.StatsComputationEnabled)
+                                     .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningInAzureFunctions));
 
             var urlSubstringSkips = config
                                    .WithKeys(ConfigurationKeys.HttpClientExcludedUrlSubstrings)
@@ -800,6 +803,16 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the tracer is running in AAS
         /// </summary>
         internal bool IsRunningInAzureAppService { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer is running in AAS
+        /// </summary>
+        internal bool IsRunningInAzureFunctions { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer is running in Google Cloud Functions
+        /// </summary>
+        internal bool IsRunningInGCPFunctions { get; }
 
         /// <summary>
         /// Gets a value indicating whether the tracer should propagate service data in db queries

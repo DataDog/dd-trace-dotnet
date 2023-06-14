@@ -183,5 +183,11 @@ namespace Datadog.Trace.Configuration
 
             return null;
         }
+
+        // Checks for azure functions specific env vars. Used when configuration hasn't been initialized yet.
+        internal static bool GetIsAzureFunction()
+        {
+            return Environment.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey) != null || Environment.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey) != null;
+        }
     }
 }

@@ -166,7 +166,7 @@ internal static class DatadogLoggingFactory
 #else
             var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
 
-            if (ServerlessMiniAgent.GetIsAzureFunction())
+            if (ImmutableAzureAppServiceSettings.GetIsAzureFunction())
             {
                 return isWindows ? "C:\\home\\LogFiles" : "/home/site/wwwroot";
             }

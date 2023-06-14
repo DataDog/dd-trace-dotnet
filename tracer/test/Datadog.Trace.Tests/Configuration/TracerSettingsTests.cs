@@ -412,10 +412,10 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void StatsComputationEnabledWhenDeprecatedGCPFunction()
         {
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, "dummy_function");
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey, "dummy_project");
+            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, "function_name");
+            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey, "project_1");
 
-            var settings = new TracerSettings();
+            var settings = new TracerSettings(CreateConfigurationSource());
 
             settings.StatsComputationEnabled.Should().Be(true);
 
@@ -426,10 +426,10 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void StatsComputationEnabledWhenNewerGCPFunction()
         {
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey, "dummy_function");
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey, "dummy_target");
+            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey, "function_name");
+            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey, "function_target");
 
-            var settings = new TracerSettings();
+            var settings = new TracerSettings(CreateConfigurationSource());
 
             settings.StatsComputationEnabled.Should().Be(true);
 
@@ -440,15 +440,15 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void StatsComputationEnabledWhenAzureFunction()
         {
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.SiteNameKey, "function_name");
             System.Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "4");
+            System.Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "dotnet");
 
-            var settings = new TracerSettings();
+            var settings = new TracerSettings(CreateConfigurationSource());
 
             settings.StatsComputationEnabled.Should().Be(true);
 
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.SiteNameKey, null);
             System.Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, null);
+            System.Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, null);
         }
 
         [Theory]
