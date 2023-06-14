@@ -173,10 +173,12 @@ internal partial class MetricsTelemetryCollector
     private static MetricKey[] GetCountBuffer()
         => new MetricKey[]
         {
+            // log_created, index = 0
             new(new[] { "level:debug" }),
             new(new[] { "level:info" }),
             new(new[] { "level:warn" }),
             new(new[] { "level:error" }),
+            // integrations_error, index = 4
             new(new[] { "integrations_name:httpmessagehandler", "error_type:duck_typing" }),
             new(new[] { "integrations_name:httpmessagehandler", "error_type:invoker" }),
             new(new[] { "integrations_name:httpmessagehandler", "error_type:execution" }),
@@ -318,6 +320,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integrations_name:aws_lambda", "error_type:duck_typing" }),
             new(new[] { "integrations_name:aws_lambda", "error_type:invoker" }),
             new(new[] { "integrations_name:aws_lambda", "error_type:execution" }),
+            // span_created, index = 145
             new(new[] { "integrations_name:httpmessagehandler" }),
             new(new[] { "integrations_name:httpsocketshandler" }),
             new(new[] { "integrations_name:winhttphandler" }),
@@ -365,24 +368,34 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integrations_name:opentelemetry" }),
             new(new[] { "integrations_name:pathtraversal" }),
             new(new[] { "integrations_name:aws_lambda" }),
+            // span_finished, index = 192
             new(null),
+            // span_sampled, index = 193
             new(null),
+            // span_dropped, index = 194
             new(new[] { "reason:sampling_decision" }),
             new(new[] { "reason:single_span_sampling" }),
             new(new[] { "reason:overfull_buffer" }),
             new(new[] { "reason:serialization_error" }),
             new(new[] { "reason:api_error" }),
+            // trace_created, index = 199
             new(new[] { "new_continued:new" }),
             new(new[] { "new_continued:continued" }),
+            // trace_enqueued, index = 201
             new(null),
+            // trace_sampled, index = 202
             new(null),
+            // trace_dropped, index = 203
             new(new[] { "reason:sampling_decision" }),
             new(new[] { "reason:single_span_sampling" }),
             new(new[] { "reason:overfull_buffer" }),
             new(new[] { "reason:serialization_error" }),
             new(new[] { "reason:api_error" }),
+            // trace_sent, index = 208
             new(null),
+            // trace_api.requests, index = 209
             new(null),
+            // trace_api.responses, index = 210
             new(new[] { "status_code:200" }),
             new(new[] { "status_code:201" }),
             new(new[] { "status_code:202" }),
@@ -405,20 +418,26 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "status_code:503" }),
             new(new[] { "status_code:504" }),
             new(new[] { "status_code:5xx" }),
+            // trace_api.errors, index = 232
             new(new[] { "type:timeout" }),
             new(new[] { "type:network_error" }),
             new(new[] { "type:status_code" }),
+            // trace_partial_flush, index = 235
             new(new[] { "reason:large_trace" }),
             new(new[] { "reason:single_span_ingestion" }),
+            // context_header_style.injected, index = 237
             new(new[] { "header_style:tracecontext" }),
             new(new[] { "header_style:datadog" }),
             new(new[] { "header_style:b3multi" }),
             new(new[] { "header_style:b3single" }),
+            // context_header_style.extracted, index = 241
             new(new[] { "header_style:tracecontext" }),
             new(new[] { "header_style:datadog" }),
             new(new[] { "header_style:b3multi" }),
             new(new[] { "header_style:b3single" }),
+            // stats_api.requests, index = 245
             new(null),
+            // stats_api.responses, index = 246
             new(new[] { "status_code:200" }),
             new(new[] { "status_code:201" }),
             new(new[] { "status_code:202" }),
@@ -441,11 +460,14 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "status_code:503" }),
             new(new[] { "status_code:504" }),
             new(new[] { "status_code:5xx" }),
+            // stats_api.errors, index = 268
             new(new[] { "type:timeout" }),
             new(new[] { "type:network_error" }),
             new(new[] { "type:status_code" }),
+            // telemetry_api.requests, index = 271
             new(new[] { "endpoint:agent" }),
             new(new[] { "endpoint:agentless" }),
+            // telemetry_api.responses, index = 273
             new(new[] { "endpoint:agent", "status_code:200" }),
             new(new[] { "endpoint:agent", "status_code:201" }),
             new(new[] { "endpoint:agent", "status_code:202" }),
@@ -490,13 +512,16 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "endpoint:agentless", "status_code:503" }),
             new(new[] { "endpoint:agentless", "status_code:504" }),
             new(new[] { "endpoint:agentless", "status_code:5xx" }),
+            // telemetry_api.errors, index = 317
             new(new[] { "endpoint:agent", "type:timeout" }),
             new(new[] { "endpoint:agent", "type:network_error" }),
             new(new[] { "endpoint:agent", "type:status_code" }),
             new(new[] { "endpoint:agentless", "type:timeout" }),
             new(new[] { "endpoint:agentless", "type:network_error" }),
             new(new[] { "endpoint:agentless", "type:status_code" }),
+            // version_conflict_tracer_created, index = 323
             new(null),
+            // direct_log_logs, index = 324
             new(new[] { "integrations_name:httpmessagehandler" }),
             new(new[] { "integrations_name:httpsocketshandler" }),
             new(new[] { "integrations_name:winhttphandler" }),
@@ -544,7 +569,9 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integrations_name:opentelemetry" }),
             new(new[] { "integrations_name:pathtraversal" }),
             new(new[] { "integrations_name:aws_lambda" }),
+            // direct_log_api.requests, index = 371
             new(null),
+            // direct_log_api.responses, index = 372
             new(new[] { "status_code:200" }),
             new(new[] { "status_code:201" }),
             new(new[] { "status_code:202" }),
@@ -567,6 +594,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "status_code:503" }),
             new(new[] { "status_code:504" }),
             new(new[] { "status_code:5xx" }),
+            // direct_log_api.errors.responses, index = 394
             new(new[] { "type:timeout" }),
             new(new[] { "type:network_error" }),
             new(new[] { "type:status_code" }),
