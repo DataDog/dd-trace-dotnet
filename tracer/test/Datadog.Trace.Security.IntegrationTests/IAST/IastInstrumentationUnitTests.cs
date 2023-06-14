@@ -68,6 +68,14 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    public void TestStringBuilderInsertMethodsAspectCover()
+    {
+        TestMethodOverloads(typeof(StringBuilder), "Insert", null, true);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     public void TestJoinMethodsAspectCover()
     {
         TestMethodOverloads(typeof(string), "Join");
