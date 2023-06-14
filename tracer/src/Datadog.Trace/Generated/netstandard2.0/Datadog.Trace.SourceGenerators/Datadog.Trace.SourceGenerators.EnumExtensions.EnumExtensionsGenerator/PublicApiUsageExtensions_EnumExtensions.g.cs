@@ -13,7 +13,7 @@ internal static partial class PublicApiUsageExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 136;
+    public const int Length = 151;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.PublicApiUsage"/> value.
@@ -26,6 +26,12 @@ internal static partial class PublicApiUsageExtensions
     public static string ToStringFast(this Datadog.Trace.Telemetry.Metrics.PublicApiUsage value)
         => value switch
         {
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackCustomEvent => "eventtrackingsdk_trackcustomevent",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackCustomEvent_Metadata => "eventtrackingsdk_trackcustomevent_metadata",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackUserLoginFailureEvent => "eventtrackingsdk_trackuserloginfailureevent",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackUserLoginFailureEvent_Metadata => "eventtrackingsdk_trackuserloginfailureevent_metadata",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent => "eventtrackingsdk_trackuserloginsuccessevent",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent_Metadata => "eventtrackingsdk_trackuserloginsuccessevent_metadata",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextExtractor_Extract => "spancontextextractor_extract",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetUser => "spanextensions_setuser",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTraceSamplingPriority => "spanextensions_settracesamplingpriority",
@@ -36,6 +42,11 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_ForceFlushAsync => "tracer_forceflushasync",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive => "tracer_startactive",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive_Settings => "tracer_startactive_settings",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_Env_Get => "correlationidentifier_env_get",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_Service_Get => "correlationidentifier_service_get",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_SpanId_Get => "correlationidentifier_spanid_get",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_TraceId_Get => "correlationidentifier_traceid_get",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_Version_Get => "correlationidentifier_version_get",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContext_Ctor => "spancontext_ctor",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ExporterSettings_Ctor => "exportersettings_ctor",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ExporterSettings_Ctor_Source => "exportersettings_ctor_source",
@@ -88,9 +99,13 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableIntegrationSettings_IntegrationName_Get => "immutableintegrationsettings_integrationname_get",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableIntegrationSettingsCollection_Indexer_Name => "immutableintegrationsettingscollection_indexer_name",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.CompositeConfigurationSource_Ctor => "compositeconfigurationsource_ctor",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.CompositeConfigurationSource_Add => "compositeconfigurationsource_add",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.CompositeConfigurationSource_Insert => "compositeconfigurationsource_insert",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.JsonConfigurationSource_Ctor_Json => "jsonconfigurationsource_ctor_json",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.JsonConfigurationSource_FromFile => "jsonconfigurationsource_fromfile",
-            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.StringConfigurationSource_Ctor => "stringconfigurationsource_ctor",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.StringConfigurationSource_ParseCustomKeyValues => "stringconfigurationsource_parsecustomkeyvalues_data",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.StringConfigurationSource_ParseCustomKeyValues_AllowOptionalMappings => "stringconfigurationsource_parsecustomkeyvalues_allowoptionalmappings",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.CustomTelemeteredConfigurationSource_Ctor => "customtelemeteredconfigurationsource_ctor",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EnvironmentConfigurationSource_Ctor => "environmentconfigurationsource_ctor",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.NameValueConfigurationSource_Ctor => "namevalueconfigurationsource_ctor",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_Ctor => "tracersettings_ctor",
@@ -175,6 +190,12 @@ internal static partial class PublicApiUsageExtensions
     public static Datadog.Trace.Telemetry.Metrics.PublicApiUsage[] GetValues()
         => new []
         {
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackCustomEvent,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackCustomEvent_Metadata,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackUserLoginFailureEvent,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackUserLoginFailureEvent_Metadata,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent_Metadata,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextExtractor_Extract,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetUser,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTraceSamplingPriority,
@@ -185,6 +206,11 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_ForceFlushAsync,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive_Settings,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_Env_Get,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_Service_Get,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_SpanId_Get,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_TraceId_Get,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_Version_Get,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContext_Ctor,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ExporterSettings_Ctor,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ExporterSettings_Ctor_Source,
@@ -237,9 +263,13 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableIntegrationSettings_IntegrationName_Get,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableIntegrationSettingsCollection_Indexer_Name,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.CompositeConfigurationSource_Ctor,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.CompositeConfigurationSource_Add,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.CompositeConfigurationSource_Insert,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.JsonConfigurationSource_Ctor_Json,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.JsonConfigurationSource_FromFile,
-            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.StringConfigurationSource_Ctor,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.StringConfigurationSource_ParseCustomKeyValues,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.StringConfigurationSource_ParseCustomKeyValues_AllowOptionalMappings,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.CustomTelemeteredConfigurationSource_Ctor,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EnvironmentConfigurationSource_Ctor,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.NameValueConfigurationSource_Ctor,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_Ctor,
@@ -324,6 +354,12 @@ internal static partial class PublicApiUsageExtensions
     public static string[] GetNames()
         => new []
         {
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackCustomEvent),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackCustomEvent_Metadata),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackUserLoginFailureEvent),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackUserLoginFailureEvent_Metadata),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent_Metadata),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextExtractor_Extract),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetUser),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTraceSamplingPriority),
@@ -334,6 +370,11 @@ internal static partial class PublicApiUsageExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_ForceFlushAsync),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive_Settings),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_Env_Get),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_Service_Get),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_SpanId_Get),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_TraceId_Get),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_Version_Get),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContext_Ctor),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ExporterSettings_Ctor),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ExporterSettings_Ctor_Source),
@@ -386,9 +427,13 @@ internal static partial class PublicApiUsageExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableIntegrationSettings_IntegrationName_Get),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableIntegrationSettingsCollection_Indexer_Name),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.CompositeConfigurationSource_Ctor),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.CompositeConfigurationSource_Add),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.CompositeConfigurationSource_Insert),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.JsonConfigurationSource_Ctor_Json),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.JsonConfigurationSource_FromFile),
-            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.StringConfigurationSource_Ctor),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.StringConfigurationSource_ParseCustomKeyValues),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.StringConfigurationSource_ParseCustomKeyValues_AllowOptionalMappings),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.CustomTelemeteredConfigurationSource_Ctor),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EnvironmentConfigurationSource_Ctor),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.NameValueConfigurationSource_Ctor),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_Ctor),
@@ -473,6 +518,12 @@ internal static partial class PublicApiUsageExtensions
     public static string[] GetDescriptions()
         => new []
         {
+            "eventtrackingsdk_trackcustomevent",
+            "eventtrackingsdk_trackcustomevent_metadata",
+            "eventtrackingsdk_trackuserloginfailureevent",
+            "eventtrackingsdk_trackuserloginfailureevent_metadata",
+            "eventtrackingsdk_trackuserloginsuccessevent",
+            "eventtrackingsdk_trackuserloginsuccessevent_metadata",
             "spancontextextractor_extract",
             "spanextensions_setuser",
             "spanextensions_settracesamplingpriority",
@@ -483,6 +534,11 @@ internal static partial class PublicApiUsageExtensions
             "tracer_forceflushasync",
             "tracer_startactive",
             "tracer_startactive_settings",
+            "correlationidentifier_env_get",
+            "correlationidentifier_service_get",
+            "correlationidentifier_spanid_get",
+            "correlationidentifier_traceid_get",
+            "correlationidentifier_version_get",
             "spancontext_ctor",
             "exportersettings_ctor",
             "exportersettings_ctor_source",
@@ -535,9 +591,13 @@ internal static partial class PublicApiUsageExtensions
             "immutableintegrationsettings_integrationname_get",
             "immutableintegrationsettingscollection_indexer_name",
             "compositeconfigurationsource_ctor",
+            "compositeconfigurationsource_add",
+            "compositeconfigurationsource_insert",
             "jsonconfigurationsource_ctor_json",
             "jsonconfigurationsource_fromfile",
-            "stringconfigurationsource_ctor",
+            "stringconfigurationsource_parsecustomkeyvalues_data",
+            "stringconfigurationsource_parsecustomkeyvalues_allowoptionalmappings",
+            "customtelemeteredconfigurationsource_ctor",
             "environmentconfigurationsource_ctor",
             "namevalueconfigurationsource_ctor",
             "tracersettings_ctor",

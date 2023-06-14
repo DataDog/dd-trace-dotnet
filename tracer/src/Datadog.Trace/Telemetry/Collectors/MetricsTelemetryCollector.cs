@@ -98,7 +98,7 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         if (countsLength > 0)
         {
             var index = counts.Length - 1;
-            for (var i = CountExtensions.Length - 1; i >= 0; i--)
+            for (var i = CountEntryCounts.Length - 1; i >= 0; i--)
             {
                 var metric = (Count)i;
                 var entries = CountEntryCounts[i];
@@ -130,7 +130,7 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         if (gaugesLength > 0)
         {
             var index = gauges.Length - 1;
-            for (var i = GaugeExtensions.Length - 1; i >= 0; i--)
+            for (var i = GaugeEntryCounts.Length - 1; i >= 0; i--)
             {
                 var metric = (Gauge)i;
                 var entries = GaugeEntryCounts[i];
@@ -168,7 +168,7 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         var data = new List<DistributionMetricData>(distributionsLength);
 
         var index = distributions.Length - 1;
-        for (var i = DistributionExtensions.Length - 1; i >= 0; i--)
+        for (var i = DistributionEntryCounts.Length - 1; i >= 0; i--)
         {
             var metric = (Distribution)i;
             var entries = DistributionEntryCounts[i];

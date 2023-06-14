@@ -8,6 +8,8 @@
 using System.Collections.Specialized;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Configuration
 {
@@ -24,9 +26,11 @@ namespace Datadog.Trace.Configuration
         /// that wraps the specified <see cref="NameValueCollection"/>.
         /// </summary>
         /// <param name="nameValueCollection">The collection that will be wrapped by this configuration source.</param>
+        [PublicApi]
         public NameValueConfigurationSource(NameValueCollection nameValueCollection)
             : this(nameValueCollection, ConfigurationOrigins.Code)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.NameValueConfigurationSource_Ctor);
         }
 
         internal NameValueConfigurationSource(NameValueCollection nameValueCollection, ConfigurationOrigins origin)

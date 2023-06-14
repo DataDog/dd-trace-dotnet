@@ -9,7 +9,10 @@ using System.Text;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace
@@ -24,8 +27,11 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="span">The span to be tagged</param>
         /// <param name="userDetails">The details of the current logged on user</param>
+        [PublicApi]
         public static void SetUser(this ISpan span, UserDetails userDetails)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanExtensions_SetUser);
+
             if (span is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(span));
