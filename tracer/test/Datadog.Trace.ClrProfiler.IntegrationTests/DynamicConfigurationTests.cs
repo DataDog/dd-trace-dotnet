@@ -3,9 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -125,7 +127,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             expectedConfig ??= config;
 
-            await agent.SetupRcmAndWait(Output, new[] { ((object)new { lib_config = config }, DynamicConfigurationManager.ProductName, "1") });
+            var fileId = Guid.NewGuid().ToString();
+
+            var request = await agent.SetupRcmAndWait(Output, new[] { ((object)new { lib_config = config }, DynamicConfigurationManager.ProductName, fileId) });
+
+            request.Client.State.ConfigStates.Should().ContainSingle(f => f.Id == fileId)
+               .Subject.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);
+
             var log = await logEntryWatcher.WaitForLogEntry(DiagnosticLog);
 
             using var context = new AssertionScope();

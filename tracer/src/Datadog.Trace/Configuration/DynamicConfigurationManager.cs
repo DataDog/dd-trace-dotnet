@@ -144,8 +144,14 @@ namespace Datadog.Trace.Configuration
 
             OnConfigurationChanged(configurationBuilder);
 
-            // TODO: Are we supposed to acknowledge something?
-            return Enumerable.Empty<ApplyDetails>();
+            var result = new ApplyDetails[apmLibrary.Count];
+
+            for (int i = 0; i < apmLibrary.Count; i++)
+            {
+                result[i] = ApplyDetails.FromOk(apmLibrary[i].Path.Path);
+            }
+
+            return result;
         }
     }
 }
