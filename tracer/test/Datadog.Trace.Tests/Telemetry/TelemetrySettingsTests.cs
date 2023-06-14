@@ -283,10 +283,10 @@ namespace Datadog.Trace.Tests.Telemetry
         [InlineData(null, 60)]
         [InlineData("", 60)]
         [InlineData("invalid", 60)]
-        [InlineData("523", 523)]
+        [InlineData("523.5", 523.5)]
         [InlineData("3600", 3600)]
         [InlineData("3601", 60)]
-        public void HeartbeatInterval(string value, int expected)
+        public void HeartbeatInterval(string value, double expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds, value));
             var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, () => true);
