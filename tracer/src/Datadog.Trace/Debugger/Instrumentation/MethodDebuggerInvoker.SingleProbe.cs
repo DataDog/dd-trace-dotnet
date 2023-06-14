@@ -305,11 +305,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
             return defaultState;
         }
 
-        private static MethodDebuggerState[] CreateInvalidatedDebuggerStates()
-        {
-            return MethodDebuggerState.DisabledStates;
-        }
-
         internal static bool TryGetLocalName(int index, string[] localNamesFromPdb, out string localName)
         {
             localName = null;

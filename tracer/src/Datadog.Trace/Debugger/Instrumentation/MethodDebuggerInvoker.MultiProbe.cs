@@ -56,6 +56,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
             return states;
         }
 
+        private static MethodDebuggerState[] CreateInvalidatedDebuggerStates()
+        {
+            return MethodDebuggerState.DisabledStates;
+        }
+
         /// <summary>
         /// Ends the markering of BeginMethod.
         /// </summary>

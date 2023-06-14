@@ -63,7 +63,8 @@ static const WSTRING managed_profiler_debugger_async_line_type = WStr("Datadog.T
 static const WSTRING managed_profiler_debugger_async_linestatetype = WStr("Datadog.Trace.Debugger.Instrumentation.AsyncLineDebuggerState");
 
 // Async method probes
-static const WSTRING managed_profiler_debugger_is_first_entry_field_name =WStr("<>dd_liveDebugger_isReEntryToMoveNext");
+static const WSTRING managed_profiler_debugger_is_first_entry_field_name = WStr("<>dd_liveDebugger_isReEntryToMoveNext");
+static const WSTRING managed_profiler_debugger_async_method_debugger_state_field_name = WStr("LogState"); // See `Datadog.Trace.Debugger.Instrumentation.AsyncDebuggerState.LogState`
 static const WSTRING managed_profiler_debugger_begin_async_method_name = WStr("BeginMethod");
 static const WSTRING managed_profiler_debugger_async_method_invoker_type = WStr("Datadog.Trace.Debugger.Instrumentation.AsyncMethodDebuggerInvoker");
 static const WSTRING managed_profiler_debugger_async_method_state_type = WStr("Datadog.Trace.Debugger.Instrumentation.AsyncDebuggerState");
@@ -87,8 +88,9 @@ class DebuggerTokens : public CallTargetTokens
 private:
 
     // Method probe members:
-    mdMemberRef shouldUpdateProbeInfoRef = mdMemberRefNil;
-    mdMemberRef updateProbeInfoRef = mdMemberRefNil;
+    mdMemberRef nonAsyncShouldUpdateProbeInfoRef = mdMemberRefNil;
+    mdMemberRef nonAsyncUpdateProbeInfoRef = mdMemberRefNil;
+
     // InstrumentationAllocator
     mdTypeRef rentArrayTypeRef = mdTypeRefNil;
     mdMemberRef rentArrayRef = mdMemberRefNil;
@@ -116,8 +118,10 @@ private:
     mdMemberRef methodDisposeMultiProbeRef = mdMemberRefNil;
 
     // Async method probe members:
-    mdTypeRef asyncMethodDebuggerStateTypeRef = mdTypeRefNil;
     mdTypeRef asyncMethodDebuggerInvokerTypeRef = mdTypeRefNil;
+    mdMemberRef asyncShouldUpdateProbeInfoRef = mdMemberRefNil;
+    mdMemberRef asyncUpdateProbeInfoRef = mdMemberRefNil;
+    mdTypeRef asyncMethodDebuggerStateTypeRef = mdTypeRefNil;
     mdMemberRef beginAsyncMethodStartMarkerRef = mdMemberRefNil;
     mdMemberRef endVoidAsyncMethodStartMarkerRef = mdMemberRefNil;
     mdMemberRef endNonVoidAsyncMethodEndMarkerRef = mdMemberRefNil;
@@ -125,6 +129,7 @@ private:
     mdMemberRef asyncMethodLogExceptionRef = mdMemberRefNil;
     mdMemberRef asyncMethodLogArgRef = mdMemberRefNil;
     mdMemberRef asyncMethodLogLocalRef = mdMemberRefNil;
+    mdMemberRef asyncMethodDisposeRef = mdMemberRefNil;
 
     // Line probe members:
     mdMemberRef beginLineRef = mdMemberRefNil;
@@ -289,9 +294,9 @@ private:
                 (isBegin ? beginMethodEndMarkerMultiProbeRef : endMethodEndMarkerMultiProbeRef) = endMethod;
                 break;
             case AsyncMethodProbe:
-                // async invoker has only EndMethodEndMarker
+               // async invoker has only EndMethodEndMarker
                endAsyncMethodEndMarkerRef = endMethod;
-            break;
+               break;
             case NonAsyncMethodSpanProbe:
             case AsyncMethodSpanProbe:
             case NonAsyncLineProbe:
@@ -334,8 +339,9 @@ private:
                     endMethodMemberRef;
                 break;
             case AsyncMethodProbe:
-                (isVoid ? endVoidAsyncMethodStartMarkerRef : endNonVoidAsyncMethodEndMarkerRef) = endMethodMemberRef;
-            break;
+                (isVoid ? endVoidAsyncMethodStartMarkerRef : endNonVoidAsyncMethodEndMarkerRef) =
+                    endMethodMemberRef;
+                break;
             case NonAsyncMethodSpanProbe:
                 endMethodSpanProbeRef = endMethodMemberRef;
                 break;
@@ -385,7 +391,7 @@ private:
                 break;
             case AsyncMethodProbe:
                 asyncMethodLogExceptionRef = logExceptionMemberRef;
-            break;
+                break;
             case NonAsyncMethodSpanProbe:
                 methodSpanProbeLogExceptionRef = logExceptionMemberRef;
                 break;
@@ -409,6 +415,8 @@ private:
             return methodDisposeSingleProbeRef;
             case NonAsyncMethodMultiProbe:
             return methodDisposeMultiProbeRef;
+            case AsyncMethodProbe:
+            return asyncMethodDisposeRef;
             default:
             break;
         }
@@ -425,6 +433,9 @@ private:
             case NonAsyncMethodMultiProbe:
             methodDisposeMultiProbeRef = disposeMemberRef;
             break;
+            case AsyncMethodProbe:
+            asyncMethodDisposeRef = disposeMemberRef;
+            break;
             default:
             break;
         }
@@ -439,7 +450,7 @@ private:
             case NonAsyncMethodMultiProbe:
             return methodLogArgMultiProbeRef;
             case AsyncMethodProbe:
-                return asyncMethodLogArgRef;
+            return asyncMethodLogArgRef;
             case NonAsyncMethodSpanProbe:
             case AsyncMethodSpanProbe:
                 return mdTypeRefNil;
@@ -463,7 +474,7 @@ private:
                 break;
             case AsyncMethodProbe:
                 asyncMethodLogArgRef = logArgMemberRef;
-            break;
+                break;
             case NonAsyncMethodSpanProbe:
             case AsyncMethodSpanProbe:
                 break;
@@ -485,7 +496,7 @@ private:
             case NonAsyncMethodMultiProbe:
             return methodLogLocalMultiProbeRef;
             case AsyncMethodProbe:
-                return asyncMethodLogLocalRef;
+            return asyncMethodLogLocalRef;
             case NonAsyncMethodSpanProbe:
             case AsyncMethodSpanProbe:
                 return mdTypeRefNil;
@@ -509,7 +520,7 @@ private:
                 break;
             case AsyncMethodProbe:
                 asyncMethodLogLocalRef = logLocalMemberRef;
-            break;
+                break;
             case NonAsyncMethodSpanProbe:
             case AsyncMethodSpanProbe:
                 break;
@@ -567,7 +578,8 @@ public:
 
     HRESULT WriteShouldUpdateProbeInfo(void* rewriterWrapperPtr, ILInstr** instruction, ProbeType probeType);
 
-    HRESULT WriteUpdateProbeInfo(void* rewriterWrapperPtr, ILInstr** instruction, ProbeType probeType);
+    HRESULT WriteUpdateProbeInfo(void* rewriterWrapperPtr, const TypeInfo* currentType, ILInstr** instruction,
+                                 ProbeType probeType);
 
     HRESULT WriteRentArray(void* rewriterWrapperPtr, const TypeSignature& currentType, ILInstr** instruction);
 

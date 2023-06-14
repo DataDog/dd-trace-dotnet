@@ -87,7 +87,7 @@ private:
                                        FunctionInfo* caller, bool isStatic, TypeSignature* methodReturnType,
                                        const std::vector<TypeSignature>& methodLocals, int numLocals, 
                                        ULONG callTargetReturnIndex, mdFieldDef isReEntryFieldTok,
-                                       std::vector<EHClause>& newClauses) const;
+                                       std::vector<EHClause>& newClauses, const ProbeType& probeType) const;
     HRESULT EndAsyncMethodSpanProbe(ILRewriterWrapper& rewriterWrapper, ModuleMetadata& module_metadata,
                                 DebuggerTokens* debuggerTokens, FunctionInfo* caller, bool isStatic,
                                 TypeSignature* methodReturnType, const std::vector<TypeSignature>& methodLocals,
@@ -95,11 +95,12 @@ private:
                                 mdFieldDef isReEntryFieldTok,
                                 std::vector<EHClause>& newClauses) const;
     static HRESULT LoadProbeIdIntoStack(ModuleID moduleId, const ModuleMetadata& moduleMetadata, mdToken functionToken,
-                                        const shared::WSTRING& methodProbeId, const ILRewriterWrapper& rewriterWrapper);
+                                        const shared::WSTRING& methodProbeId, const ILRewriterWrapper& rewriterWrapper,
+                                        ILInstr** outLoadStrInstr);
     static void LogDebugCallerInfo(const FunctionInfo* caller, int instrumentedMethodIndex) ;
-    HRESULT ApplyAsyncMethodProbe(const MethodProbeDefinitions& methodProbes, ModuleID moduleId,
-                                  ModuleMetadata& moduleMetadata,
-                                  FunctionInfo* caller, DebuggerTokens* debuggerTokens, mdToken functionToken,
+    HRESULT ApplyAsyncMethodProbe(const MethodProbeDefinitions& methodProbes, ModuleID module_id,
+                                  ModuleMetadata& module_metadata,
+                                  FunctionInfo* caller, DebuggerTokens* debugger_tokens, mdToken function_token,
                                   bool isStatic, TypeSignature* methodReturnType,
                                   const std::vector<TypeSignature>& methodLocals, int numLocals,
                                   ILRewriterWrapper& rewriterWrapper,
