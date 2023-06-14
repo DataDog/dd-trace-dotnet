@@ -20,6 +20,7 @@ std::list<std::shared_ptr<Sample>> ProcessSamplesProvider::GetSamples()
 
     if (_gcInfo != nullptr && _cpuTimeProvider != nullptr)
     {
+        Log::Debug("Collect GC Threads CPU Sample.");
         CollectGcThreadsSamples(samples);
     }
 
@@ -38,7 +39,10 @@ void ProcessSamplesProvider::CollectGcThreadsSamples(std::list<std::shared_ptr<S
     std::int64_t value = GetGcThreadsCpuTime();
 
     if (value == 0)
+    {
+        Log::Debug("Sum of GC Threads CPU time is 0. No sample will be created.");
         return;
+    }
 
     RawCpuSample rawSample;
     rawSample.Duration = value;
