@@ -227,10 +227,7 @@ int32_t GetProcessorCount()
 
         LPSTR messageBuffer = nullptr;
         // Free the Win32's string's buffer.
-        on_leave
-        {
-            LocalFree(messageBuffer);
-        };
+        on_leave { LocalFree(messageBuffer); };
 
         // Ask Win32 to give us the string version of that message ID.
         // The parameters we pass in, tell Win32 to create the buffer that holds the message for us (because we don't yet know how long the message string will be).
