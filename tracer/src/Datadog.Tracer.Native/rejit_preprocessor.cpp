@@ -117,8 +117,6 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             continue;
         }
 
-        Logger::Debug("    * Enumerating => method: ", caller.type.name, ".", caller.name);
-
         // We create a new function info into the heap from the caller functionInfo in the stack, to
         // be used later in the ReJIT process
         auto functionInfo = FunctionInfo(caller);
