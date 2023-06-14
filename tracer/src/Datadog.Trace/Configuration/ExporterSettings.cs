@@ -70,6 +70,7 @@ namespace Datadog.Trace.Configuration
         public ExporterSettings()
             : this(null, new ConfigurationTelemetry())
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.ExporterSettings_Ctor);
         }
 
         /// <summary>
@@ -86,6 +87,7 @@ namespace Datadog.Trace.Configuration
         public ExporterSettings(IConfigurationSource? source)
             : this(source, File.Exists, new ConfigurationTelemetry())
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.ExporterSettings_Ctor_Source);
         }
 
         internal ExporterSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)

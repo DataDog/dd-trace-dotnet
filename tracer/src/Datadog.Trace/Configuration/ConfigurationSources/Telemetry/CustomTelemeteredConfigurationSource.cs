@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration;
@@ -18,6 +19,8 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
 {
     public CustomTelemeteredConfigurationSource(IConfigurationSource source)
     {
+        // Not strictly a public API, but tells us how often people are creating custom IConfigurationSource implementations
+        TelemetryFactory.Metrics.Record(PublicApiUsage.CustomTelemeteredConfigurationSource_Ctor);
         Source = source;
     }
 

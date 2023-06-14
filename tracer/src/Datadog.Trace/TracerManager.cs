@@ -355,7 +355,7 @@ namespace Datadog.Trace
                     writer.WriteValue(instanceSettings.Exporter.TracesTransport.ToString());
 
                     writer.WritePropertyName("debug");
-                    writer.WriteValue(GlobalSettings.Instance.DebugEnabled);
+                    writer.WriteValue(GlobalSettings.Instance.DebugEnabledInternal);
 
                     writer.WritePropertyName("health_checks_enabled");
                     writer.WriteValue(instanceSettings.TracerMetricsEnabled);
