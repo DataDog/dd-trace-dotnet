@@ -191,8 +191,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     ".VoidMethod",
                 };
 
-                Assert.Equal(2, begin1MethodCount);
-                Assert.Equal(2, endMethodCount);
+                Assert.Equal(3, begin1MethodCount);
+                Assert.Equal(3, endMethodCount);
 
                 foreach (var typeName in typeNames)
                 {
