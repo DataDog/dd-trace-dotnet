@@ -49,7 +49,7 @@ namespace Samples.Security.AspNetCore5
             // sql lite provider doesnt seem to work on linux (even with EF libs) so use in memory store 
             if (Configuration.ShouldUseSqlLite())
             {
-#if NET7_0_OR_GREATER
+#if NET7_0
                 services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(Configuration.GetDefaultConnectionString()));
                 identityBuilder.AddEntityFrameworkStores<ApplicationDbContext>();
 #else

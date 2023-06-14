@@ -6,8 +6,8 @@
 #if !NETFRAMEWORK
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -54,6 +54,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
         internal static object OnAsyncMethodEnd<TTarget>(object returnValue, Exception exception, in CallTargetState state)
         {
             var claimsPrincipal = state.State as ClaimsPrincipal;
+            // https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
+            var claimsToTest = new[] { ClaimTypes.NameIdentifier, ClaimTypes.Name, "sub" };
             if (claimsPrincipal?.Claims != null && Security.Instance is { TrackUserEvents: true } security)
             {
                 var span = state.Scope.Span;
@@ -63,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, Security.Instance.Settings.UserEventsAutomatedTracking);
                 foreach (var claim in claimsPrincipal.Claims)
                 {
-                    if (claim.Type == ClaimTypes.NameIdentifier)
+                    if (claimsToTest.Contains(claim.Type))
                     {
                         if (Guid.TryParse(claim.Value, out _))
                         {
