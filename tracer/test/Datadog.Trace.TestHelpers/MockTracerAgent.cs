@@ -136,21 +136,28 @@ namespace Datadog.Trace.TestHelpers
 
             while (DateTime.UtcNow < deadline)
             {
-                var filteredSpans = Spans.Where(s => SpanFilters.All(shouldReturn => shouldReturn(s)));
-
-                var invalidSpans = filteredSpans.Where(s => s.Start <= minimumOffset).ToImmutableList();
-                if (invalidSpans.Count > 0 && Output is not null)
-                {
-                    Output.WriteLine("The following spans were invalid:");
-                    foreach (var span in invalidSpans)
-                    {
-                        Output.WriteLine($"Name: {span.Name} | Resource: {span.Resource} | Service: {span.Service} | Start: {span.Start} | StartDiff: {span.Start - minimumOffset}");
-                    }
-                }
-
                 relevantSpans =
-                    filteredSpans
-                       .Where(s => s.Start > minimumOffset)
+                    Spans
+                       .Where(s =>
+                        {
+                            if (!SpanFilters.All(shouldReturn => shouldReturn(s)))
+                            {
+                                return false;
+                            }
+
+                            if (s.Start < minimumOffset)
+                            {
+                                // if the Start of the span is before the expected
+                                // we check if is caused by the precision of the TraceClock optimization.
+                                // So, if the difference is greater than 16 milliseconds (max accuracy error) we discard the span
+                                if (minimumOffset - s.Start > 16000000)
+                                {
+                                    return false;
+                                }
+                            }
+
+                            return true;
+                        })
                        .ToImmutableList();
 
                 if (relevantSpans.Count(s => operationName == null || s.Name == operationName) >= count)

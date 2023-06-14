@@ -15,16 +15,16 @@ namespace Datadog.Trace;
 
 internal sealed class TraceClock
 {
+    private static readonly CancellationTokenSource TokenSource;
     private static TraceClock _instance;
-    private static CancellationTokenSource _tokenSource;
 
     private readonly DateTimeOffset _utcStart;
     private readonly long _timestamp;
 
     static TraceClock()
     {
-        _tokenSource = new CancellationTokenSource();
-        LifetimeManager.Instance.AddShutdownTask(() => _tokenSource.Cancel());
+        TokenSource = new CancellationTokenSource();
+        LifetimeManager.Instance.AddShutdownTask(() => TokenSource.Cancel());
         _instance = new TraceClock();
         _ = UpdateClockAsync();
     }
@@ -36,7 +36,7 @@ internal sealed class TraceClock
 
         // The following is to prevent the case of GC hitting between _utcStart and _timestamp set
         var retries = 3;
-        while (Elapsed.TotalMilliseconds > 16 || retries-- < 0)
+        while ((DateTimeOffset.UtcNow - UtcNow).TotalMilliseconds > 16 || retries-- < 0)
         {
             _utcStart = DateTimeOffset.UtcNow;
             _timestamp = Stopwatch.GetTimestamp();
@@ -66,7 +66,7 @@ internal sealed class TraceClock
 
     private static async Task UpdateClockAsync()
     {
-        var token = _tokenSource.Token;
+        var token = TokenSource.Token;
         while (true)
         {
             await Task.Delay(TimeSpan.FromMinutes(5), token).ConfigureAwait(false);
