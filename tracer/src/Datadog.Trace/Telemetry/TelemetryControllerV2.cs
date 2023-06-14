@@ -112,7 +112,8 @@ internal class TelemetryControllerV2 : ITelemetryController
 
     public void RecordProfilerSettings(Profiler profiler)
     {
-        // Nothing to record, remove this method when telemetry V1 is removed
+        _configuration.Record(ConfigTelemetryData.ProfilerLoaded, profiler.Status.IsProfilerReady, ConfigurationOrigins.Default);
+        _configuration.Record(ConfigTelemetryData.CodeHotspotsEnabled, profiler.ContextTracker.IsEnabled, ConfigurationOrigins.Default);
     }
 
     public void IntegrationRunning(IntegrationId integrationId)
