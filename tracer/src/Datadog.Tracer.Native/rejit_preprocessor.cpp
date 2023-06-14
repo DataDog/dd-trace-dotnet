@@ -86,9 +86,10 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
     auto enable_calltarget_state_by_ref = m_rejit_handler->GetEnableCallTargetStateByRef();
 
     auto enumIterator =
-        iterate_explicit_interface_methods && enumExplicitInterfaceMethods.begin() != enumExplicitInterfaceMethods.end() ?
+        iterate_explicit_interface_methods ?
             enumExplicitInterfaceMethods.begin() : enumMethods.begin();
     auto iteratorEnd = enumMethods.end();
+    auto explicitMode = true;
 
     for (; enumIterator != iteratorEnd; enumIterator = ++enumIterator)
     {
@@ -97,6 +98,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
         if (iterate_explicit_interface_methods && !(enumIterator != enumExplicitInterfaceMethods.end()))
         {
             enumIterator = enumMethods.begin();
+            explicitMode = false;
 
             // Immediately exit if the second enumerator has 0 entries
             if (!(enumIterator != iteratorEnd))
@@ -114,6 +116,8 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             Logger::Warn("    * The caller for the methoddef: ", shared::TokenStr(&methodDef), " is not valid!");
             continue;
         }
+
+        Logger::Debug("    * Enumerating => method: ", caller.type.name, ".", caller.name);
 
         // We create a new function info into the heap from the caller functionInfo in the stack, to
         // be used later in the ReJIT process
@@ -200,6 +204,13 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
 
         EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, methodDef,
                          functionInfo, moduleHandler);
+
+        // If we are in the explicit enumerator and we found the method, we don't look into the normal methods enumerators.
+        if (explicitMode)
+        {
+            Logger::Debug("      Explicit interface implementation found, skipping normal methods search. [", caller.type.name, ".", caller.name, "]");
+            break;
+        }
     }
 }
 
