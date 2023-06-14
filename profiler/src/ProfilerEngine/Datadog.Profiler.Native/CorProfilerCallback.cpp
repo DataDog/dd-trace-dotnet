@@ -351,7 +351,11 @@ bool CorProfilerCallback::InitializeServices()
     }
     if (_pAllocationsProvider != nullptr)
     {
-        _pExporter->RegisterUpscalePoissonProvider(_pAllocationsProvider);
+        auto allocationUpscaleMode = _pConfiguration->AllocationUpscaleMode();
+        if (allocationUpscaleMode == ALLOCATION_UPSCALE_POISSON)
+        {
+            _pExporter->RegisterUpscalePoissonProvider(_pAllocationsProvider);
+        }
     }
 
     _pSamplesCollector = RegisterService<SamplesCollector>(

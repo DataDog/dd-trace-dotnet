@@ -13,6 +13,10 @@
 #include "shared/src/native-src/dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 
+#define ALLOCATION_UPSCALE_NONE 0
+#define ALLOCATION_UPSCALE_POISSON 1
+#define ALLOCATION_UPSCALE_POISSON_PER_TYPE 2
+
 class Configuration final : public IConfiguration
 {
 public:
@@ -58,6 +62,7 @@ public:
     bool UseBacktrace2() const override;
     bool IsAllocationRecorderEnabled() const override;
     bool IsDebugInfoEnabled() const override;
+    int32_t AllocationUpscaleMode() const override;
 
 private:
     static tags ExtractUserTags();
@@ -118,6 +123,7 @@ private:
     bool _isAgentLess;
     int32_t _exceptionSampleLimit;
     int32_t _allocationSampleLimit;
+    int32_t _allocationUpscaleMode;
     int32_t _contentionSampleLimit;
     int32_t _contentionDurationThreshold;
     std::chrono::nanoseconds _cpuWallTimeSamplingRate;

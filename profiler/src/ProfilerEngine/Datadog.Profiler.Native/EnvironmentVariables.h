@@ -40,6 +40,7 @@ public:
 
     inline static const shared::WSTRING ExceptionSampleLimit        = WStr("DD_INTERNAL_PROFILING_EXCEPTION_SAMPLE_LIMIT");
     inline static const shared::WSTRING AllocationSampleLimit       = WStr("DD_INTERNAL_PROFILING_ALLOCATION_SAMPLE_LIMIT");
+    inline static const shared::WSTRING AllocationUpscaleMode       = WStr("DD_INTERNAL_PROFILING_ALLOCATION_UPSCALE_MODE");
     inline static const shared::WSTRING ContentionSampleLimit       = WStr("DD_INTERNAL_PROFILING_CONTENTION_SAMPLE_LIMIT");
     inline static const shared::WSTRING ContentionDurationThreshold = WStr("DD_INTERNAL_PROFILING_CONTENTION_DURATION_THRESHOLD");
     inline static const shared::WSTRING CpuWallTimeSamplingRate     = WStr("DD_INTERNAL_PROFILING_SAMPLING_RATE");
