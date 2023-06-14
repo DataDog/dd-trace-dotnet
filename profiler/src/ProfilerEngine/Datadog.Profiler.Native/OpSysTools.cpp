@@ -21,8 +21,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 #define _GNU_SOURCE
-#include <errno.h>
 #include "cgroup.h"
+#include <errno.h>
 #include <sys/auxv.h>
 #endif
 
@@ -190,7 +190,6 @@ bool OpSysTools::SetNativeThreadName(std::thread* pNativeThread, const WCHAR* de
 #endif
 }
 
-
 #ifdef _WINDOWS
 shared::WSTRING OpSysTools::GetNativeThreadName(HANDLE handle)
 {
@@ -237,9 +236,8 @@ ScopedHandle OpSysTools::GetThreadHandle(DWORD threadId)
 #else
 shared::WSTRING OpSysTools::GetNativeThreadName(pid_t tid)
 {
-    char commPath[64] = {0};
-
     // TODO refactor this in OsSpecificApi
+    char commPath[64] = "/proc/self/task/";
 
     // Adjust the base
     int base = 1000000000;
@@ -281,7 +279,13 @@ shared::WSTRING OpSysTools::GetNativeThreadName(pid_t tid)
         return {};
     }
 
-    return shared::ToWSTRING(std::string(line));
+    std::string threadName;
+    if (line[length - 1] == '\n')
+        threadName = std::string(line, length - 1);
+    else
+        threadName = std::string(line);
+
+    return shared::ToWSTRING(std::move(threadName));
 }
 #endif
 

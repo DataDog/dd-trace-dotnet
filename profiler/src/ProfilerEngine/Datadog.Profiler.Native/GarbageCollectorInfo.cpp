@@ -19,6 +19,7 @@ bool GarbageCollectorInfo::IsGcThread(std::shared_ptr<IThreadInfo> const& thread
 std::vector<std::shared_ptr<IThreadInfo>> const& GarbageCollectorInfo::GetThreads()
 {
     Log::Debug("Get all native thread of the current process");
+
     // maybe check that the number is k * nb of cores ?
     if (!_gcThreads.empty())
     {
@@ -48,6 +49,6 @@ std::vector<std::shared_ptr<IThreadInfo>> const& GarbageCollectorInfo::GetThread
         }
     }
 
-    Log::Info("Collected ", _gcThreads.size(), " GC threads.");
+    Log::Debug("Collected ", _gcThreads.size(), " GC threads.");
     return _gcThreads;
 }

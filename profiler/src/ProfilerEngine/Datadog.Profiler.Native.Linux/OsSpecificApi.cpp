@@ -9,7 +9,9 @@
 #include <string>
 
 #ifdef LINUX
+#include <errno.h>
 #include <fcntl.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -30,7 +32,6 @@
 #include "ProfilerSignalManager.h"
 #include "StackFramesCollectorBase.h"
 #include "shared/src/native-src/loader.h"
-#include "LinuxThreadInfo.h"
 
 namespace OsSpecificApi {
 std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration)
@@ -184,13 +185,14 @@ int32_t GetProcessorCount()
 std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
 {
     DIR* proc_dir;
-    char dirname[100] = "/proc/sef/task";
+    char dirname[100] = "/proc/self/task";
     proc_dir = opendir(dirname);
 
     std::vector<std::shared_ptr<IThreadInfo>> threads;
 
-    if (proc_dir)
+    if (proc_dir != nullptr)
     {
+        on_leave { closedir(proc_dir); };
         threads.reserve(512);
 
         /* /proc available, iterate through tasks... */
@@ -202,8 +204,11 @@ std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
             auto threadId = atoi(entry->d_name);
             threads.push_back(std::make_shared<LinuxThreadInfo>(threadId, OpSysTools::GetNativeThreadName(threadId)));
         }
-
-        closedir(proc_dir);
+    }
+    else
+    {
+        auto errorNumber = errno;
+        Log::Debug("Failed at opendir ", dirname, " error: ", strerror(errorNumber));
     }
 
     return threads;
