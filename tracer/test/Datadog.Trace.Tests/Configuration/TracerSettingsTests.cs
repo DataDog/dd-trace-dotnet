@@ -412,49 +412,43 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void StatsComputationEnabledWhenDeprecatedGCPFunction()
         {
-            System.Environment.SetEnvironmentVariable(ServerlessMiniAgent.GCPFunctionDeprecatedNameEnvVar, "dummy_function");
-            System.Environment.SetEnvironmentVariable(ServerlessMiniAgent.GCPFunctionDeprecatedEnvVarIdentifier, "dummy_project");
-            ServerlessMiniAgent.UpdateIsGCPAzureEnvVarsTestsOnly();
+            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, "dummy_function");
+            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey, "dummy_project");
 
             var settings = new TracerSettings();
 
             settings.StatsComputationEnabled.Should().Be(true);
 
-            System.Environment.SetEnvironmentVariable(ServerlessMiniAgent.GCPFunctionDeprecatedNameEnvVar, null);
-            System.Environment.SetEnvironmentVariable(ServerlessMiniAgent.GCPFunctionDeprecatedEnvVarIdentifier, null);
-            ServerlessMiniAgent.UpdateIsGCPAzureEnvVarsTestsOnly();
+            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, null);
+            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey, null);
         }
 
         [Fact]
         public void StatsComputationEnabledWhenNewerGCPFunction()
         {
-            System.Environment.SetEnvironmentVariable(ServerlessMiniAgent.GCPFunctionNewerNameEnvVar, "dummy_function");
-            System.Environment.SetEnvironmentVariable(ServerlessMiniAgent.GCPFunctionNewerEnvVarIdentifier, "dummy_target");
-            ServerlessMiniAgent.UpdateIsGCPAzureEnvVarsTestsOnly();
+            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey, "dummy_function");
+            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey, "dummy_target");
 
             var settings = new TracerSettings();
 
             settings.StatsComputationEnabled.Should().Be(true);
 
-            System.Environment.SetEnvironmentVariable(ServerlessMiniAgent.GCPFunctionNewerNameEnvVar, null);
-            System.Environment.SetEnvironmentVariable(ServerlessMiniAgent.GCPFunctionNewerEnvVarIdentifier, null);
-            ServerlessMiniAgent.UpdateIsGCPAzureEnvVarsTestsOnly();
+            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey, null);
+            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey, null);
         }
 
         [Fact]
         public void StatsComputationEnabledWhenAzureFunction()
         {
-            System.Environment.SetEnvironmentVariable(ServerlessMiniAgent.AzureFunctionNameEnvVar, "function_name");
-            System.Environment.SetEnvironmentVariable(ServerlessMiniAgent.AzureFunctionIdentifierEnvVar, "4");
-            ServerlessMiniAgent.UpdateIsGCPAzureEnvVarsTestsOnly();
+            System.Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.SiteNameKey, "function_name");
+            System.Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "4");
 
             var settings = new TracerSettings();
 
             settings.StatsComputationEnabled.Should().Be(true);
 
-            System.Environment.SetEnvironmentVariable(ServerlessMiniAgent.AzureFunctionNameEnvVar, null);
-            System.Environment.SetEnvironmentVariable(ServerlessMiniAgent.AzureFunctionIdentifierEnvVar, null);
-            ServerlessMiniAgent.UpdateIsGCPAzureEnvVarsTestsOnly();
+            System.Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.SiteNameKey, null);
+            System.Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, null);
         }
 
         [Theory]

@@ -4,31 +4,26 @@
 // </copyright>
 
 using System;
+using System.Diagnostics;
 using System.IO;
-
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 
-internal class ServerlessMiniAgent
+internal static class ServerlessMiniAgent
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServerlessMiniAgent));
-    internal const string AzureFunctionNameEnvVar = "WEBSITE_SITE_NAME";
-    internal const string AzureFunctionIdentifierEnvVar = "FUNCTIONS_EXTENSION_VERSION";
-    internal const string GCPFunctionDeprecatedNameEnvVar = "FUNCTION_NAME";
-    internal const string GCPFunctionDeprecatedEnvVarIdentifier = "GCP_PROJECT";
-    internal const string GCPFunctionNewerNameEnvVar = "K_SERVICE";
-    internal const string GCPFunctionNewerEnvVarIdentifier = "FUNCTION_TARGET";
 
-    internal static bool IsGCPFunction { get; private set; } = GetIsGCPFunction();
+    private static readonly string[] MiniAgentLogLevels = { "ERROR", "WARN", "INFO", "DEBUG" };
 
-    internal static bool IsAzureFunction { get; private set; } = GetIsAzureFunction();
-
-    internal static void MaybeStartMiniAgent(ServerlessMiniAgentManager manager)
+    internal static string GetMiniAgentPath(PlatformID os)
     {
-        if (!IsGCPFunction && !IsAzureFunction)
+        var isGCPFunction = GetIsGCPFunction();
+        var isAzureFunction = GetIsAzureFunction();
+        if (!isGCPFunction && !isAzureFunction)
         {
-            return;
+            return null;
         }
 
         Log.Information("Trying to start the mini agent");
@@ -44,14 +39,14 @@ internal class ServerlessMiniAgent
             if (Environment.OSVersion.Platform != PlatformID.Unix && Environment.OSVersion.Platform != PlatformID.Win32NT)
             {
                 Log.Error("Serverless Mini Agent is only supported on Windows and Linux.");
-                return;
+                return null;
             }
 
-            var dirPathSep = Path.DirectorySeparatorChar;
-            var isWindows = Environment.OSVersion.Platform == PlatformID.Win32NT;
+            var isWindows = os == PlatformID.Win32NT;
+            var dirPathSep = isWindows ? "\\" : "/";
 
             string rustBinaryPathRoot;
-            if (IsGCPFunction)
+            if (isGCPFunction)
             {
                 rustBinaryPathRoot = "/layers/google.dotnet.publish/publish/bin";
             }
@@ -70,44 +65,119 @@ internal class ServerlessMiniAgent
             }
 
             string rustBinaryPathOsFolder = isWindows ? "datadog-serverless-agent-windows-amd64" : "datadog-serverless-agent-linux-amd64";
-            rustBinaryPath = string.Format("{0}{1}{2}{3}datadog-serverless-trace-mini-agent", rustBinaryPathRoot, dirPathSep, rustBinaryPathOsFolder, dirPathSep);
+            string rustBinaryFileExtension = isWindows ? ".exe" : string.Empty;
+            rustBinaryPath = string.Format("{0}{1}{2}{3}datadog-serverless-trace-mini-agent{4}", rustBinaryPathRoot, dirPathSep, rustBinaryPathOsFolder, dirPathSep, rustBinaryFileExtension);
         }
 
-        manager.Start(rustBinaryPath);
+        return rustBinaryPath;
     }
 
     internal static bool GetIsGCPFunction()
     {
-        bool isDeprecatedGCPFunction = Environment.GetEnvironmentVariable(GCPFunctionDeprecatedNameEnvVar) != null && Environment.GetEnvironmentVariable(GCPFunctionDeprecatedEnvVarIdentifier) != null;
-        bool isNewerGCPFunction = Environment.GetEnvironmentVariable(GCPFunctionNewerNameEnvVar) != null && Environment.GetEnvironmentVariable(GCPFunctionNewerEnvVarIdentifier) != null;
+        bool isDeprecatedGCPFunction = Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey) != null && Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey) != null;
+        bool isNewerGCPFunction = Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey) != null && Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey) != null;
 
         return isDeprecatedGCPFunction || isNewerGCPFunction;
     }
 
     internal static bool GetIsAzureFunction()
     {
-        return Environment.GetEnvironmentVariable(AzureFunctionIdentifierEnvVar) != null && Environment.GetEnvironmentVariable(AzureFunctionNameEnvVar) != null;
-    }
-
-    // Used for unit tests
-    internal static void UpdateIsGCPAzureEnvVarsTestsOnly()
-    {
-        IsAzureFunction = GetIsAzureFunction();
-        IsGCPFunction = GetIsGCPFunction();
+        return Environment.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey) != null && Environment.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.SiteNameKey) != null;
     }
 
     internal static string GetGCPAzureFunctionName()
     {
-        if (IsAzureFunction)
+        if (GetIsAzureFunction())
         {
-            return Environment.GetEnvironmentVariable(AzureFunctionNameEnvVar);
+            return Environment.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.SiteNameKey);
         }
 
-        if (IsGCPFunction)
+        if (GetIsGCPFunction())
         {
-            return Environment.GetEnvironmentVariable(GCPFunctionDeprecatedNameEnvVar) ?? Environment.GetEnvironmentVariable(GCPFunctionNewerNameEnvVar);
+            return Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey) ?? Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey);
         }
 
         return null;
+    }
+
+    internal static void StartServerlessMiniAgent(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            Log.Error("Can't spawn Serverless Mini Agent with null or empty path.");
+        }
+
+        try
+        {
+            Log.Debug("Trying to spawn the Serverless Mini Agent at path: {Path}", path);
+            Process process = new Process();
+            process.StartInfo.FileName = path;
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.OutputDataReceived += new DataReceivedEventHandler(MiniAgentDataReceivedHandler);
+
+            process.Start();
+            process.BeginOutputReadLine();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error spawning the Serverless Mini Agent.");
+        }
+    }
+
+    // Tries to clean Mini Agent logs and log to the correct level, otherwise just logs the data as-is to Info
+    // Mini Agent logs will be prefixed with "[Datadog Serverless Mini Agent]"
+    private static void MiniAgentDataReceivedHandler(object sender, DataReceivedEventArgs outLine)
+    {
+        var data = outLine.Data;
+        if (string.IsNullOrEmpty(data))
+        {
+            return;
+        }
+
+        var logTuple = ProcessMiniAgentLog(data);
+        string level = logTuple.Item1;
+        string processedLog = logTuple.Item2;
+
+        switch (level)
+        {
+            case "ERROR":
+                Log.Error("[Datadog Serverless Mini Agent] {Data}", processedLog);
+                break;
+            case "WARN":
+                Log.Warning("[Datadog Serverless Mini Agent] {Data}", processedLog);
+                break;
+            case "INFO":
+                Log.Information("[Datadog Serverless Mini Agent] {Data}", processedLog);
+                break;
+            case "DEBUG":
+                Log.Debug("[Datadog Serverless Mini Agent] {Data}", processedLog);
+                break;
+            default:
+                Log.Information("[Datadog Serverless Mini Agent] {Data}", data);
+                break;
+        }
+    }
+
+    // Processes a raw log from the mini agent, returning a Tuple of the log level and the cleaned log data
+    // For example, given this raw log:
+    // [2023-06-06T01:31:30Z DEBUG datadog_trace_mini_agent::mini_agent] Random log
+    // This function will return:
+    // ("DEBUG", "Random log")
+    internal static Tuple<string, string> ProcessMiniAgentLog(string rawLog)
+    {
+        int logPrefixCutoff = rawLog.IndexOf("]");
+        if (logPrefixCutoff < 0 || logPrefixCutoff == rawLog.Length - 1)
+        {
+            return Tuple.Create("INFO", rawLog);
+        }
+
+        string level = rawLog.Substring(0, logPrefixCutoff).Split(' ')[1];
+        if (Array.IndexOf(MiniAgentLogLevels, level) < 0)
+        {
+            return Tuple.Create("INFO", rawLog);
+        }
+
+        return Tuple.Create(level, rawLog.Substring(logPrefixCutoff + 1).Trim());
     }
 }

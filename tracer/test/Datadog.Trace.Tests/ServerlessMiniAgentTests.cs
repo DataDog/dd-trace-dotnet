@@ -9,8 +9,8 @@ using System.Diagnostics;
 using System.IO;
 
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
+using Datadog.Trace.Configuration;
 using FluentAssertions;
-using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests
@@ -23,12 +23,12 @@ namespace Datadog.Trace.Tests
         {
             _originalEnvVars = new()
             {
-                { ServerlessMiniAgent.AzureFunctionNameEnvVar, Environment.GetEnvironmentVariable(ServerlessMiniAgent.AzureFunctionNameEnvVar) },
-                { ServerlessMiniAgent.AzureFunctionIdentifierEnvVar, Environment.GetEnvironmentVariable(ServerlessMiniAgent.AzureFunctionIdentifierEnvVar) },
-                { ServerlessMiniAgent.GCPFunctionDeprecatedNameEnvVar, Environment.GetEnvironmentVariable(ServerlessMiniAgent.GCPFunctionDeprecatedNameEnvVar) },
-                { ServerlessMiniAgent.GCPFunctionDeprecatedEnvVarIdentifier, Environment.GetEnvironmentVariable(ServerlessMiniAgent.GCPFunctionDeprecatedEnvVarIdentifier) },
-                { ServerlessMiniAgent.GCPFunctionNewerNameEnvVar, Environment.GetEnvironmentVariable(ServerlessMiniAgent.GCPFunctionNewerNameEnvVar) },
-                { ServerlessMiniAgent.GCPFunctionNewerEnvVarIdentifier, Environment.GetEnvironmentVariable(ServerlessMiniAgent.GCPFunctionNewerEnvVarIdentifier) },
+                { ConfigurationKeys.AzureAppService.SiteNameKey, Environment.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.SiteNameKey) },
+                { ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, Environment.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey) },
+                { ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey) },
+                { ConfigurationKeys.GCPFunction.DeprecatedProjectKey, Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey) },
+                { ConfigurationKeys.GCPFunction.FunctionNameKey, Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey) },
+                { ConfigurationKeys.GCPFunction.FunctionTargetKey, Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey) },
             };
         }
 
@@ -38,62 +38,73 @@ namespace Datadog.Trace.Tests
             {
                 Environment.SetEnvironmentVariable(originalEnvVar.Key, originalEnvVar.Value);
             }
-
-            ServerlessMiniAgent.UpdateIsGCPAzureEnvVarsTestsOnly();
         }
 
         [Fact]
-        public void DoesntSpawnMiniAgentInNonFunctionEnvironments()
+        public void GetMiniAgentPathNullInNonFunctionEnvironments()
         {
-            Environment.SetEnvironmentVariable(ServerlessMiniAgent.GCPFunctionDeprecatedEnvVarIdentifier, null);
-            Environment.SetEnvironmentVariable(ServerlessMiniAgent.GCPFunctionNewerEnvVarIdentifier, null);
-            Environment.SetEnvironmentVariable(ServerlessMiniAgent.AzureFunctionIdentifierEnvVar, null);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey, null);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey, null);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, null);
 
-            var miniAgentManagerMock = new Mock<ServerlessMiniAgentManager>();
-            ServerlessMiniAgent.MaybeStartMiniAgent(miniAgentManagerMock.Object);
-            miniAgentManagerMock.VerifyNoOtherCalls();
+            var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Unix);
+            Assert.Null(path);
         }
 
         [Fact]
-        public void SpawnMiniAgentInDeprecatedGCPFunction()
+        public void GetMiniAgentPathValidInDeprecatedGCPFunction()
         {
-            Environment.SetEnvironmentVariable(ServerlessMiniAgent.GCPFunctionDeprecatedNameEnvVar, "dummy_function");
-            Environment.SetEnvironmentVariable(ServerlessMiniAgent.GCPFunctionDeprecatedEnvVarIdentifier, "dummy_project");
-            ServerlessMiniAgent.UpdateIsGCPAzureEnvVarsTestsOnly();
+            Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, "dummy_function");
+            Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey, "dummy_project");
 
-            var miniAgentManagerMock = new Mock<ServerlessMiniAgentManager>();
-
-            ServerlessMiniAgent.MaybeStartMiniAgent(miniAgentManagerMock.Object);
-
-            miniAgentManagerMock.Verify(m => m.Start(It.IsAny<string>()), Times.Once());
+            var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Unix);
+            Assert.Equal("/layers/google.dotnet.publish/publish/bin/datadog-serverless-agent-linux-amd64/datadog-serverless-trace-mini-agent", path);
         }
 
         [Fact]
-        public void SpawnMiniAgentInNewerGCPFunction()
+        public void GetMiniAgentPathValidInNewerGCPFunction()
         {
-            Environment.SetEnvironmentVariable(ServerlessMiniAgent.GCPFunctionNewerNameEnvVar, "dummy_function");
-            Environment.SetEnvironmentVariable(ServerlessMiniAgent.GCPFunctionNewerEnvVarIdentifier, "dummy_target");
-            ServerlessMiniAgent.UpdateIsGCPAzureEnvVarsTestsOnly();
+            Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey, "dummy_function");
+            Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey, "dummy_target");
 
-            var miniAgentManagerMock = new Mock<ServerlessMiniAgentManager>();
-
-            ServerlessMiniAgent.MaybeStartMiniAgent(miniAgentManagerMock.Object);
-
-            miniAgentManagerMock.Verify(m => m.Start(It.IsAny<string>()), Times.Once());
+            var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Unix);
+            Assert.Equal("/layers/google.dotnet.publish/publish/bin/datadog-serverless-agent-linux-amd64/datadog-serverless-trace-mini-agent", path);
         }
 
         [Fact]
-        public void SpawnMiniAgentInAzureFunction()
+        public void GetMiniAgentPathValidInLinuxAzureFunction()
         {
-            Environment.SetEnvironmentVariable(ServerlessMiniAgent.AzureFunctionNameEnvVar, "function_name");
-            Environment.SetEnvironmentVariable(ServerlessMiniAgent.AzureFunctionIdentifierEnvVar, "4");
-            ServerlessMiniAgent.UpdateIsGCPAzureEnvVarsTestsOnly();
+            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.SiteNameKey, "function_name");
+            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "4");
 
-            var miniAgentManagerMock = new Mock<ServerlessMiniAgentManager>();
+            var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Unix);
+            Assert.Equal("/home/site/wwwroot/datadog-serverless-agent-linux-amd64/datadog-serverless-trace-mini-agent", path);
+        }
 
-            ServerlessMiniAgent.MaybeStartMiniAgent(miniAgentManagerMock.Object);
+        [Fact]
+        public void GetMiniAgentPathValidInWindowsAzureFunction()
+        {
+            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.SiteNameKey, "function_name");
+            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "4");
 
-            miniAgentManagerMock.Verify(m => m.Start(It.IsAny<string>()), Times.Once());
+            var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Win32NT);
+            Assert.Equal("C:\\home\\site\\wwwroot\\datadog-serverless-agent-windows-amd64\\datadog-serverless-trace-mini-agent.exe", path);
+        }
+
+        [Theory]
+        [InlineData("[2023-06-06T01:31:30Z DEBUG datadog_trace_mini_agent::mini_agent] Random Log", "DEBUG", "Random Log")]
+        [InlineData("[2023-06-06T01:31:30Z ERROR datadog_trace_mini_agent::mini_agent] Random Log", "ERROR", "Random Log")]
+        [InlineData("[2023-06-06T01:31:30Z WARN datadog_trace_mini_agent::mini_agent] Random Log", "WARN", "Random Log")]
+        [InlineData("[2023-06-06T01:31:30Z INFO datadog_trace_mini_agent::mini_agent] Random Log", "INFO", "Random Log")]
+        [InlineData("[2023-06-06T01:31:30Z YELL datadog_trace_mini_agent::mini_agent] Random Log", "INFO", "[2023-06-06T01:31:30Z YELL datadog_trace_mini_agent::mini_agent] Random Log")]
+        [InlineData("Random Log", "INFO", "Random Log")]
+        internal void CleanAndProperlyLogMiniAgentLogs(string rawLog, string expectedLevel, string expectedLog)
+        {
+            var logTuple = ServerlessMiniAgent.ProcessMiniAgentLog(rawLog);
+            string level = logTuple.Item1;
+            string processedLog = logTuple.Item2;
+            Assert.Equal(expectedLevel, level);
+            Assert.Equal(expectedLog, processedLog);
         }
     }
 }

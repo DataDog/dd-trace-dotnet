@@ -351,7 +351,7 @@ namespace Datadog.Trace
                     return serviceName;
                 }
 
-                if (ServerlessMiniAgent.IsGCPFunction || ServerlessMiniAgent.IsAzureFunction)
+                if (ServerlessMiniAgent.GetIsGCPFunction() || ServerlessMiniAgent.GetIsAzureFunction())
                 {
                     var functionName = ServerlessMiniAgent.GetGCPAzureFunctionName();
                     if (functionName != null)
