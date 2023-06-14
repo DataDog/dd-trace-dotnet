@@ -18,10 +18,12 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.host: servicestackredis,
       out.port: 6379,
       redis.raw_command: DDCUSTOM COMMAND,
+      peer.service: servicestackredis,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: network.destination.name
     },
     Metrics: {
       db.redis.database_index: 2.0,
@@ -45,10 +47,12 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.host: servicestackredis,
       out.port: 6379,
       redis.raw_command: ECHO Hello World,
+      peer.service: servicestackredis,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: network.destination.name
     },
     Metrics: {
       db.redis.database_index: 2.0,
@@ -72,10 +76,12 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.host: servicestackredis,
       out.port: 6379,
       redis.raw_command: INCR ServiceStack.Redis.INCR,
+      peer.service: servicestackredis,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: network.destination.name
     },
     Metrics: {
       db.redis.database_index: 2.0,
@@ -99,10 +105,12 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.host: servicestackredis,
       out.port: 6379,
       redis.raw_command: INCRBYFLOAT ServiceStack.Redis.INCR 1.25,
+      peer.service: servicestackredis,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: network.destination.name
     },
     Metrics: {
       db.redis.database_index: 2.0,
@@ -126,10 +134,12 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.host: servicestackredis,
       out.port: 6379,
       redis.raw_command: INFO,
+      peer.service: servicestackredis,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: network.destination.name
     },
     Metrics: {
       db.redis.database_index: 0.0,
@@ -153,10 +163,12 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.host: servicestackredis,
       out.port: 6379,
       redis.raw_command: PING,
+      peer.service: servicestackredis,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: network.destination.name
     },
     Metrics: {
       db.redis.database_index: 2.0,
@@ -180,10 +192,12 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.host: servicestackredis,
       out.port: 6379,
       redis.raw_command: QUIT,
+      peer.service: servicestackredis,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: network.destination.name
     },
     Metrics: {
       db.redis.database_index: 0.0,
@@ -207,10 +221,12 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.host: servicestackredis,
       out.port: 6379,
       redis.raw_command: ROLE,
+      peer.service: servicestackredis,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: network.destination.name
     },
     Metrics: {
       db.redis.database_index: 0.0,
@@ -234,10 +250,12 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.host: servicestackredis,
       out.port: 6379,
       redis.raw_command: SELECT 0,
+      peer.service: servicestackredis,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: network.destination.name
     },
     Metrics: {
       db.redis.database_index: 0.0,
@@ -261,10 +279,12 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.host: servicestackredis,
       out.port: 6379,
       redis.raw_command: SELECT 2,
+      peer.service: servicestackredis,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: network.destination.name
     },
     Metrics: {
       db.redis.database_index: 2.0,
@@ -288,10 +308,12 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.host: servicestackredis,
       out.port: 6379,
       redis.raw_command: SET ServiceStack.Redis.INCR 0,
+      peer.service: servicestackredis,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: network.destination.name
     },
     Metrics: {
       db.redis.database_index: 2.0,
@@ -315,10 +337,12 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.host: servicestackredis,
       out.port: 6379,
       redis.raw_command: SLOWLOG GET 5,
+      peer.service: servicestackredis,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: network.destination.name
     },
     Metrics: {
       db.redis.database_index: 2.0,
@@ -342,10 +366,12 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
       out.host: servicestackredis,
       out.port: 6379,
       redis.raw_command: TIME,
+      peer.service: servicestackredis,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: network.destination.name
     },
     Metrics: {
       db.redis.database_index: 2.0,

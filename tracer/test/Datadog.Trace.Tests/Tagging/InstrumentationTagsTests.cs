@@ -5,6 +5,7 @@
 
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis;
 using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
@@ -292,6 +293,44 @@ namespace Datadog.Trace.Tests.Tagging
             tags.SetTag("peer.service", customService);
             tags.MethodService = service;
             tags.Host = hostName;
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void RedisV1Tags_PeerService_PopulatesFromOutHost()
+        {
+            var host = "localhost";
+            var tags = new RedisV1Tags();
+
+            tags.Host = host;
+
+            tags.PeerService.Should().Be(host);
+            tags.PeerServiceSource.Should().Be("network.destination.name");
+        }
+
+        [Fact]
+        public void RedisV1Tags_PeerService_PopulatesFromCustom()
+        {
+            var customService = "client-service";
+            var tags = new RedisV1Tags();
+
+            tags.SetTag("peer.service", customService);
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void RedisV1Tags_PeerService_CustomTakesPrecedenceOverRest()
+        {
+            var customService = "client-service";
+            var host = "localhost";
+            var tags = new RedisV1Tags();
+
+            tags.SetTag("peer.service", customService);
+            tags.Host = host;
 
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");

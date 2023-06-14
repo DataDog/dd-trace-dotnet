@@ -7,6 +7,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 
+#pragma warning disable SA1402 // File must contain single type
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 {
     internal partial class RedisTags : InstrumentationTags
@@ -32,5 +33,33 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
         // should give 1, 2, 3... not 1, 10, 2... as it would otherwise.
         [Metric(Trace.Metrics.RedisDatabaseIndex)]
         public double? DatabaseIndex { get; set; }
+    }
+
+    internal partial class RedisV1Tags : RedisTags
+    {
+        private string _peerServiceOverride = null;
+
+        // Use a private setter for setting the "peer.service" tag so we avoid
+        // accidentally setting the value ourselves and instead calculate the
+        // value from predefined precursor attributes.
+        // However, this can still be set from ITags.SetTag so the user can
+        // customize the value if they wish.
+        [Tag(Trace.Tags.PeerService)]
+        public string PeerService
+        {
+            get => _peerServiceOverride ?? Host;
+            private set => _peerServiceOverride = value;
+        }
+
+        [Tag(Trace.Tags.PeerServiceSource)]
+        public string PeerServiceSource
+        {
+            get
+            {
+                return _peerServiceOverride is not null
+                           ? "peer.service"
+                           : "network.destination.name";
+            }
+        }
     }
 }

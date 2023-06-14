@@ -420,6 +420,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("redis.raw_command")
                 .IsPresent("out.host")
                 .IsPresent("out.port")
+                .IsPresent("peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "network.destination.name", "peer.service")
                 .Matches("component", "ServiceStackRedis")
                 .Matches("span.kind", "client"));
 
