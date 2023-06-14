@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DiagnosticContextHelper));
 
-        public static IScopeContextSetterProxy GetScopeContextProxy(Assembly nlogAssembly)
+        private static IScopeContextSetterProxy GetScopeContextProxy(Assembly nlogAssembly)
         {
             var scType = nlogAssembly.GetType("NLog.ScopeContext");
             if (scType is not null)
@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             return null;
         }
 
-        public static MappedDiagnosticsLogicalContextSetterProxy GetMdlcProxy(Assembly nlogAssembly)
+        private static MappedDiagnosticsLogicalContextSetterProxy GetMdlcProxy(Assembly nlogAssembly)
         {
             var mdlcType = nlogAssembly.GetType("NLog.MappedDiagnosticsLogicalContext");
             if (mdlcType is not null)
@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             return null;
         }
 
-        public static MappedDiagnosticsContextSetterProxy GetMdcProxy(Assembly nlogAssembly)
+        private static MappedDiagnosticsContextSetterProxy GetMdcProxy(Assembly nlogAssembly)
         {
             var mdcType = nlogAssembly.GetType("NLog.MappedDiagnosticsContext");
             if (mdcType is not null)
