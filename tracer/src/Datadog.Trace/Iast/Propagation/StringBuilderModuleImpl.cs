@@ -8,6 +8,7 @@
 using System;
 using System.Text;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Iast.Propagation;
 
@@ -95,7 +96,7 @@ internal static class StringBuilderModuleImpl
         return result;
     }
 
-    public static StringBuilder TaintFullStringBuilderIfTainted(StringBuilder target)
+    public static StringBuilder TaintFullStringBuilderIfTainted(StringBuilder target, object? argument1 = null)
     {
         try
         {
@@ -129,5 +130,119 @@ internal static class StringBuilderModuleImpl
         }
 
         return target;
+    }
+
+    /// <summary> Taints a string.Insert operation </summary>
+    /// <param name="target"> original string </param>
+    /// <param name="previousLength"> previous length of the string builder </param>
+    /// <param name="index"> start index </param>
+    /// <param name="valueToInsert"> value to insert </param>
+    /// <param name="valueToInsertRepetitions"> times to insert </param>
+    /// <param name="valueToInsertIndex"> index of the first char to insert </param>
+    /// <param name="valueToInsertCharCount"> chars to insert </param>
+    /// <returns> result </returns>
+    public static StringBuilder OnStringBuilderInsert(StringBuilder target, int previousLength, int index, object? valueToInsert, int valueToInsertRepetitions = 1, int valueToInsertIndex = 0, int valueToInsertCharCount = -1)
+    {
+        try
+        {
+            if (valueToInsert is null)
+            {
+                return target;
+            }
+
+            var valueLenght = target.Length - previousLength;
+
+            if (valueLenght == 0)
+            {
+                return target;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return target;
+            }
+
+            var taintedObjects = iastContext.GetTaintedObjects();
+            var taintedTarget = PropagationModuleImpl.GetTainted(taintedObjects, target);
+            var taintedValue = PropagationModuleImpl.GetTainted(taintedObjects, valueToInsert);
+
+            if (taintedValue == null && taintedTarget == null)
+            {
+                return target;
+            }
+
+            Range[]? valueToInsertRanges;
+
+            if (valueToInsertCharCount > 0 && valueToInsert is char[] valueToInsertArray)
+            {
+                valueToInsertRanges = GetSubRange(valueToInsertIndex, valueToInsertCharCount, taintedValue);
+            }
+            else
+            {
+                valueToInsertRanges = GetRepeatedRange(valueToInsertRepetitions, valueLenght, taintedValue);
+            }
+
+            var newRangesLeft = taintedTarget != null ? Ranges.ForRemove(index, target.Length, taintedTarget.Ranges) : null;
+            var newRangesRight = taintedTarget != null ? Ranges.ForRemove(0, index, taintedTarget.Ranges) : null;
+            var rangesTotal = (newRangesLeft?.Length ?? 0) + (valueToInsertRanges?.Length ?? 0) + (newRangesRight?.Length ?? 0);
+            var rangesResult = new Range[rangesTotal];
+
+            if (newRangesLeft != null)
+            {
+                Ranges.CopyShift(newRangesLeft, rangesResult, 0, 0);
+            }
+
+            if (valueToInsertRanges != null)
+            {
+                Ranges.CopyShift(valueToInsertRanges, rangesResult, (newRangesLeft?.Length ?? 0), index);
+            }
+
+            if (newRangesRight != null)
+            {
+                Ranges.CopyShift(newRangesRight, rangesResult, (newRangesLeft?.Length ?? 0) + (valueToInsertRanges?.Length ?? 0), index + valueLenght);
+            }
+
+            if (taintedTarget is null)
+            {
+                taintedObjects.Taint(target, rangesResult);
+            }
+            else
+            {
+                taintedTarget.Ranges = rangesResult;
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.OnStringBuilderInsert exception {Exception}", err.Message);
+        }
+
+        return target;
+    }
+
+    private static Range[]? GetRepeatedRange(int count, int valueLenght, TaintedObject? taintedValue)
+    {
+        var valueToInsertRanges = taintedValue?.Ranges;
+        if (valueToInsertRanges != null && count > 1)
+        {
+            var originalValueLength = valueLenght / count;
+            for (int i = 1; i < count; i++)
+            {
+                valueToInsertRanges = Ranges.MergeRanges((i * originalValueLength), valueToInsertRanges, taintedValue!.Ranges);
+            }
+        }
+
+        return valueToInsertRanges;
+    }
+
+    private static Range[]? GetSubRange(int index, int charCount, TaintedObject? taintedValue)
+    {
+        var valueToInsertRanges = taintedValue?.Ranges;
+        if (valueToInsertRanges != null)
+        {
+            valueToInsertRanges = Ranges.ForSubstring(index, charCount, valueToInsertRanges);
+        }
+
+        return valueToInsertRanges;
     }
 }
