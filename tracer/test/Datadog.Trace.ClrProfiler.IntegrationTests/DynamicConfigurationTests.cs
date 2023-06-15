@@ -4,10 +4,14 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -28,13 +32,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public DynamicConfigurationTests(ITestOutputHelper output)
             : base("Console", output)
         {
+            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.Telemetry.V2Enabled, "1");
+            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds, "1");
         }
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         public async Task UpdateConfiguration()
         {
-            using var agent = EnvironmentHelper.GetMockAgent();
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Console";
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*");
             using var sample = StartSample(agent, string.Empty, string.Empty, aspNetCorePort: 5000);
@@ -84,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task RestoreInitialConfiguration()
         {
-            using var agent = EnvironmentHelper.GetMockAgent();
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Console";
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*");
 
@@ -121,6 +127,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
+        private static bool IsConfigurationChangedEvent(object obj)
+        {
+            return ((TelemetryWrapper)obj).IsRequestType(TelemetryRequestTypes.AppClientConfigurationChanged);
+        }
+
         private async Task UpdateAndValidateConfig(MockTracerAgent agent, LogEntryWatcher logEntryWatcher, Config config, Config expectedConfig = null)
         {
             const string diagnosticLogRegex = @".+ (?<diagnosticLog>\{.+\})\s+(?<context>\{.+\})";
@@ -136,6 +147,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var log = await logEntryWatcher.WaitForLogEntry(DiagnosticLog);
 
+            agent.WaitForLatestTelemetry(IsConfigurationChangedEvent);
+
+            AssertConfigurationChanged(agent.Telemetry, config);
+
             using var context = new AssertionScope();
             context.AddReportable("log", log);
 
@@ -145,6 +160,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var json = JObject.Parse(match.Groups["diagnosticLog"].Value);
 
+            // Can't validate tracing_header_tags and tracing_service_mapping because they're not in the diagnostic log
             json["runtime_metrics_enabled"]?.Value<bool>().Should().Be(expectedConfig.RuntimeMetricsEnabled);
             json["debug"]?.Value<bool>().Should().Be(expectedConfig.DebugLogsEnabled);
             json["log_injection_enabled"]?.Value<bool>().Should().Be(expectedConfig.LogsInjectionEnabled);
@@ -152,6 +168,59 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             json["sampling_rules"]?.Value<string>().Should().Be(expectedConfig.CustomSamplingRules);
             json["span_sampling_rules"]?.Value<string>().Should().Be(expectedConfig.SpanSamplingRules);
             json["data_streams_enabled"]?.Value<bool>().Should().Be(expectedConfig.DataStreamsEnabled);
+        }
+
+        private void AssertConfigurationChanged(ConcurrentStack<object> events, Config config)
+        {
+            var latestConfig = new Dictionary<string, object>();
+
+            while (events.TryPop(out var obj))
+            {
+                if (!IsConfigurationChangedEvent(obj))
+                {
+                    continue;
+                }
+
+                var configurationChanged = ((TelemetryWrapper.V2)obj).TryGetPayload<AppClientConfigurationChangedPayloadV2>(TelemetryRequestTypes.AppClientConfigurationChanged);
+
+                foreach (var key in configurationChanged.Configuration)
+                {
+                    if (key.Origin == "remote_config")
+                    {
+                        latestConfig[key.Name] = key.Value;
+                    }
+                }
+            }
+
+            using var context = new AssertionScope();
+            context.AddReportable("configuration", string.Join("; ", latestConfig));
+
+            var expectedKeys = new (string Key, object Value)[]
+            {
+                (ConfigurationKeys.RuntimeMetricsEnabled, config.RuntimeMetricsEnabled),
+                (ConfigurationKeys.DebugEnabled, config.DebugLogsEnabled),
+                (ConfigurationKeys.LogsInjectionEnabled, config.LogsInjectionEnabled),
+                (ConfigurationKeys.GlobalSamplingRate, config.TraceSampleRate),
+                (ConfigurationKeys.CustomSamplingRules, config.CustomSamplingRules),
+                (ConfigurationKeys.SpanSamplingRules, config.SpanSamplingRules),
+                (ConfigurationKeys.DataStreamsMonitoring.Enabled, config.DataStreamsEnabled),
+                (ConfigurationKeys.HeaderTags, config.TraceHeaderTags ?? string.Empty),
+                (ConfigurationKeys.ServiceNameMappings, config.ServiceNameMapping ?? string.Empty)
+            };
+
+            foreach (var (key, value) in expectedKeys)
+            {
+                if (value == null)
+                {
+                    latestConfig.Should().NotContainKey(key);
+                }
+                else
+                {
+                    latestConfig.Should().Contain(key, value);
+                }
+            }
+
+            latestConfig.Should().HaveCount(expectedKeys.Count(k => k.Value is not null));
         }
 
         // TODO: Missing: tracing_header_tags, tracing_service_mapping
@@ -177,6 +246,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             [JsonProperty("data_streams_enabled")]
             public bool DataStreamsEnabled { get; init; }
+
+            [JsonProperty("tracing_header_tags")]
+            public string TraceHeaderTags { get; init; }
+
+            [JsonProperty("tracing_service_mapping")]
+            public string ServiceNameMapping { get; init; }
         }
     }
 }

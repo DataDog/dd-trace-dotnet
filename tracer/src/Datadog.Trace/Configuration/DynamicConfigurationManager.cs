@@ -87,6 +87,9 @@ namespace Datadog.Trace.Configuration
                 ServiceNameMappings = serviceNameMappings == null ? null : new ReadOnlyDictionary<string, string>(serviceNameMappings)
             };
 
+            // Needs to be done before returning, to feed the value to the telemetry
+            var debugLogsEnabled = settings.WithKeys(ConfigurationKeys.DebugEnabled).AsBool();
+
             if (dynamicSettings.Equals(oldSettings.DynamicSettings))
             {
                 Log.Debug("No changes detected in the new configuration");
@@ -94,8 +97,6 @@ namespace Datadog.Trace.Configuration
             }
 
             var newSettings = oldSettings with { DynamicSettings = dynamicSettings };
-
-            var debugLogsEnabled = settings.WithKeys(ConfigurationKeys.DebugEnabled).AsBool();
 
             if (debugLogsEnabled != null && debugLogsEnabled.Value != GlobalSettings.Instance.DebugEnabled)
             {
