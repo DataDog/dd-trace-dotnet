@@ -121,8 +121,6 @@ namespace Datadog.Trace.Configuration
                 return Enumerable.Empty<ApplyDetails>();
             }
 
-            // TODO: To adjust when the actual path of the items will be known
-
             IConfigurationSource configurationSource;
 
             if (apmLibrary.Count == 1)
