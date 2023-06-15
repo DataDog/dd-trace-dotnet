@@ -16,12 +16,23 @@ internal ref struct ExpressionEvaluationResult
 
     internal double? Metric { get; set; }
 
+    internal DecorationResult[] Decorations { get; set; }
+
     internal List<EvaluationError> Errors { get; set; }
 
     internal bool HasError => Errors is { Count: > 0 };
 
     internal bool IsNull()
     {
-        return Template == null && Condition == null && Metric == null && Errors == null;
+        return Template == null && Condition == null && Metric == null && Decorations?.Length == 0 && Errors == null;
+    }
+
+    internal struct DecorationResult
+    {
+        public string TagName { get; set; }
+
+        public string Value { get; set; }
+
+        public EvaluationError[] Errors { get; set; }
     }
 }

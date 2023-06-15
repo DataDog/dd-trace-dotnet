@@ -6,6 +6,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
 {
@@ -59,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
         internal static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
             where TResponse : IElasticsearchResponse
         {
-            var uri = response?.ApiCall?.Uri?.ToString();
+            var uri = response?.ApiCall?.Uri;
 
             if (uri != null)
             {
@@ -67,7 +68,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
 
                 if (tags != null)
                 {
-                    tags.Url = uri;
+                    tags.Url = uri.ToString();
+                    tags.Host = HttpRequestUtils.GetNormalizedHost(uri.Host);
                 }
             }
 
