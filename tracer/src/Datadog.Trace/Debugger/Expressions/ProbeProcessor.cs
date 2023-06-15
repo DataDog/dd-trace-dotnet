@@ -18,17 +18,19 @@ namespace Datadog.Trace.Debugger.Expressions
 {
     internal class ProbeProcessor
     {
+        private const string DynamicPrefix = "_dd.di.";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeProcessor));
 
         private ProbeExpressionEvaluator _evaluator;
         private DebuggerExpression[] _templates;
         private DebuggerExpression? _condition;
         private DebuggerExpression? _metric;
+        private KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression[]>[]>[] _spanDecorations;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProbeProcessor"/> class, that correlated to probe id
         /// </summary>
-        /// <param name="probe">A probe that can pe log probe or metric probe</param>
+        /// <param name="probe">A probe that can pe log probe, metric probe or span decoration probe</param>
         /// <exception cref="ArgumentOutOfRangeException">If probe type or probe location is from unsupported type</exception>
         /// <remarks>Exceptions should be caught and logged by the caller</remarks>
         internal ProbeProcessor(ProbeDefinition probe)
@@ -43,6 +45,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 LogProbe { CaptureSnapshot: true } => ProbeType.Snapshot,
                 LogProbe { CaptureSnapshot: false } => ProbeType.Log,
                 MetricProbe => ProbeType.Metric,
+                SpanDecorationProbe => ProbeType.SpanDecoration,
                 _ => throw new ArgumentOutOfRangeException(nameof(probe), probe, "Unsupported probe type")
             };
 
@@ -63,7 +66,8 @@ namespace Datadog.Trace.Debugger.Expressions
                 (probe as MetricProbe)?.Kind,
                 (probe as MetricProbe)?.MetricName,
                 HasCondition(),
-                probe.Tags);
+                probe.Tags,
+                (probe as SpanDecorationProbe)?.TargetSpan);
         }
 
         internal ProbeInfo ProbeInfo { get; }
@@ -81,7 +85,7 @@ namespace Datadog.Trace.Debugger.Expressions
         internal ProbeProcessor UpdateProbeProcessor(ProbeDefinition probe)
         {
             SetExpressions(probe);
-            _evaluator = new ProbeExpressionEvaluator(_templates, _condition, _metric);
+            _evaluator = new ProbeExpressionEvaluator(_templates, _condition, _metric, _spanDecorations);
             return this;
         }
 
@@ -91,11 +95,18 @@ namespace Datadog.Trace.Debugger.Expressions
             _templates = (probe as LogProbe)?.Segments?.Where(seg => seg != null).Select(seg => ToDebuggerExpression(seg).Value).ToArray();
             _condition = ToDebuggerExpression((probe as LogProbe)?.When);
             _metric = ToDebuggerExpression((probe as MetricProbe)?.Value);
+            _spanDecorations = (probe as SpanDecorationProbe)?.Decorations?.Where(dec => dec != null).Select(dec =>
+            {
+                return new KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression[]>[]>(
+                    ToDebuggerExpression(dec.When),
+                    dec.Tags.Select(tag => new KeyValuePair<string, DebuggerExpression[]>(
+                                        tag.Name, tag.Value.Segments?.Where(seg => seg != null).Select(seg => ToDebuggerExpression(seg).Value).ToArray())).ToArray());
+            }).ToArray();
         }
 
         private ProbeExpressionEvaluator GetOrCreateEvaluator()
         {
-            Interlocked.CompareExchange(ref _evaluator, new ProbeExpressionEvaluator(_templates, _condition, _metric), null);
+            Interlocked.CompareExchange(ref _evaluator, new ProbeExpressionEvaluator(_templates, _condition, _metric, _spanDecorations), null);
             return _evaluator;
         }
 
@@ -266,23 +277,10 @@ namespace Datadog.Trace.Debugger.Expressions
                 return evaluationResult;
             }
 
+            CheckSpanDecoration(snapshotCreator, ref shouldStopCapture, evaluationResult);
+
             if (evaluationResult.HasError)
             {
-                return evaluationResult;
-            }
-
-            if (evaluationResult.Condition is false)
-            {
-                // if the expression evaluated to false, stop capture
-                shouldStopCapture = true;
-                return evaluationResult;
-            }
-
-            if (evaluationResult.Condition is true &&
-                !ProbeRateLimiter.Instance.Sample(ProbeInfo.ProbeId))
-            {
-                // if condition is true, stop capture if there is a rate limit
-                shouldStopCapture = true;
                 return evaluationResult;
             }
 
@@ -295,7 +293,70 @@ namespace Datadog.Trace.Debugger.Expressions
                 shouldStopCapture = true;
             }
 
+            if (evaluationResult.Condition != null && // meaning not metric, span probe or span decoration
+                (evaluationResult.Condition is false ||
+                !ProbeRateLimiter.Instance.Sample(ProbeInfo.ProbeId)))
+            {
+                // if the expression evaluated to false, or there is a rate limit, stop capture
+                shouldStopCapture = true;
+                return evaluationResult;
+            }
+
             return evaluationResult;
+        }
+
+        private void CheckSpanDecoration(DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
+        {
+            if (evaluationResult.Decorations == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < evaluationResult.Decorations.Length; i++)
+            {
+                var decoration = evaluationResult.Decorations[i];
+                var evaluationErrorTag = $"{DynamicPrefix}{decoration.TagName}.evaluation_error";
+                var probeIdTag = $"{DynamicPrefix}{decoration.TagName}.probe_id";
+                switch (ProbeInfo.TargetSpan)
+                {
+                    case TargetSpan.Root:
+                        Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(decoration.TagName, decoration.Value);
+                        Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(probeIdTag, ProbeInfo.ProbeId);
+                        if (decoration.Errors?.Length > 0)
+                        {
+                            Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
+                        }
+                        else if (Tracer.Instance.ScopeManager.Active.Span.GetTag(evaluationErrorTag) != null)
+                        {
+                            Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(evaluationErrorTag, null);
+                        }
+
+                        break;
+                    case TargetSpan.Active:
+                        Tracer.Instance.ScopeManager.Active.Span.SetTag(decoration.TagName, decoration.Value);
+                        Tracer.Instance.ScopeManager.Active.Span.SetTag(probeIdTag, ProbeInfo.ProbeId);
+                        if (decoration.Errors?.Length > 0)
+                        {
+                            Tracer.Instance.ScopeManager.Active.Span.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
+                        }
+                        else if (Tracer.Instance.ScopeManager.Active.Span.GetTag(evaluationErrorTag) != null)
+                        {
+                            Tracer.Instance.ScopeManager.Active.Span.SetTag(evaluationErrorTag, null);
+                        }
+
+                        break;
+                    default:
+                        Log.Error("Invalid target span. Probe: {ProbeId}", ProbeInfo.ProbeId);
+                        break;
+                }
+            }
+
+            // once we added the tags, we can stop the invokers and dispose the snapshot creator
+            if (!evaluationResult.HasError)
+            {
+                snapshotCreator.Dispose();
+                shouldStopCapture = true;
+            }
         }
 
         private void AddAsyncMethodArguments<T>(DebuggerSnapshotCreator snapshotCreator, ref CaptureInfo<T> captureInfo)
