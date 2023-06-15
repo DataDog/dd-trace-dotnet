@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     MinimumVersion = "2.0.0.0",
     MaximumVersion = "7.*.*.*.*",
     IntegrationName = IntegrationName,
-    CallTargetIntegrationType = IntegrationType.Derived,
+    CallTargetIntegrationKind = CallTargetKind.Derived,
     InstrumentationCategory = InstrumentationCategory.AppSec)]
     [InstrumentMethod(
     AssemblyName = "Microsoft.AspNetCore.Mvc.Core",
@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     MinimumVersion = "2.0.0.0",
     MaximumVersion = "7.*.*.*.*",
     IntegrationName = IntegrationName,
-    CallTargetIntegrationType = IntegrationType.Derived,
+    CallTargetIntegrationKind = CallTargetKind.Derived,
     InstrumentationCategory = InstrumentationCategory.Iast)]
 
     [Browsable(false)]

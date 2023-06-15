@@ -96,55 +96,221 @@ namespace Datadog.Trace.ClrProfiler
             var sw = Stopwatch.StartNew();
             if (GetNativeTracerVersion() != TracerConstants.ThreePartVersion)
             {
-                try
-                {
-                    Log.Debug("Enabling by ref instrumentation.");
-                    NativeMethods.EnableByRefInstrumentation();
-                    Log.Information("ByRef instrumentation enabled.");
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "ByRef instrumentation cannot be enabled: ");
-                }
-
-                TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.ByRefPinvoke, sw.ElapsedMilliseconds);
-                sw.Restart();
-
-                try
-                {
-                    Log.Debug("Enabling calltarget state by ref.");
-                    NativeMethods.EnableCallTargetStateByRef();
-                    Log.Information("CallTarget State ByRef enabled.");
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "CallTarget state ByRef cannot be enabled: ");
-                }
-
-                TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.CallTargetStateByRefPinvoke, sw.ElapsedMilliseconds);
-                sw.Restart();
-
-                try
-                {
-                    Log.Debug("Initializing TraceAttribute instrumentation.");
-                    var payload = InstrumentationDefinitions.GetTraceAttributeDefinitions();
-                    NativeMethods.AddTraceAttributeInstrumentation(payload.DefinitionsId, payload.AssemblyName, payload.TypeName);
-                    Log.Information("TraceAttribute instrumentation enabled with Assembly={AssemblyName} and Type={TypeName}.", payload.AssemblyName, payload.TypeName);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error initializing TraceAttribute instrumentation");
-                }
-
-                TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.TraceAttributesPinvoke, sw.ElapsedMilliseconds);
-                sw.Restart();
+                InitializeLegacy();
             }
+            else
+            {
+                InitializeNoNativeParts();
+
+                var tracer = Tracer.Instance;
+
+                TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_Managed, sw.ElapsedMilliseconds);
+                sw.Restart();
+
+                try
+                {
+                    Log.Debug("Sending CallTarget integration definitions to native library.");
+                    var payload = InstrumentationDefinitions.GetAllDefinitions();
+                    NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                    Log.Information<int>("The profiler has been initialized with {Count} definitions.", payload.Definitions.Length);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error sending CallTarget integration definitions to native library");
+                }
+
+                TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_CallTargetDefsPinvoke, sw.ElapsedMilliseconds);
+                sw.Restart();
+
+                try
+                {
+                    Serverless.InitIfNeeded();
+                }
+                catch (Exception ex)
+                {
+                    Serverless.Error("Error while loading Serverless definitions", ex);
+                }
+
+                TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_Serverless, sw.ElapsedMilliseconds);
+                sw.Restart();
+
+                try
+                {
+                    Log.Debug("Sending CallTarget derived integration definitions to native library.");
+                    var payload = InstrumentationDefinitions.GetDerivedDefinitions();
+                    NativeMethods.AddDerivedInstrumentations(payload.DefinitionsId, payload.Definitions);
+                    Log.Information<int>("The profiler has been initialized with {Count} derived definitions.", payload.Definitions.Length);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error sending CallTarget derived integration definitions to native library");
+                }
+
+                TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_CallTargetDerivedDefsPinvoke, sw.ElapsedMilliseconds);
+                sw.Restart();
+
+                try
+                {
+                    Log.Debug("Sending CallTarget interface integration definitions to native library.");
+                    var payload = InstrumentationDefinitions.GetInterfaceDefinitions();
+                    NativeMethods.AddInterfaceInstrumentations(payload.DefinitionsId, payload.Definitions);
+                    Log.Information<int>("The profiler has been initialized with {Count} interface definitions.", payload.Definitions.Length);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error sending CallTarget interface integration definitions to native library");
+                }
+
+                TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_CallTargetInterfaceDefsPinvoke, sw.ElapsedMilliseconds);
+                sw.Restart();
+
+                if (tracer is null)
+                {
+                    Log.Debug("Skipping TraceMethods initialization because Tracer.Instance was null after InitializeNoNativeParts was invoked");
+                }
+                else
+                {
+                    try
+                    {
+                        InitRemoteConfigurationManagement(tracer);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(e, "Failed to initialize Remote Configuration Management.");
+                    }
+
+                    // RCM isn't _actually_ initialized at this point, as we do it in the background, so we record that separately
+                    sw.Restart();
+
+                    try
+                    {
+                        Log.Debug("Initializing TraceMethods instrumentation.");
+                        var traceMethodsConfiguration = tracer.Settings.TraceMethods;
+                        var payload = InstrumentationDefinitions.GetTraceMethodDefinitions();
+                        NativeMethods.InitializeTraceMethods(payload.DefinitionsId, payload.AssemblyName, payload.TypeName, traceMethodsConfiguration);
+                        Log.Information("TraceMethods instrumentation enabled with Assembly={AssemblyName}, Type={TypeName}, and Configuration={Configuration}.", payload.AssemblyName, payload.TypeName, traceMethodsConfiguration);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error initializing TraceMethods instrumentation");
+                    }
+
+                    TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_TraceMethodsPinvoke, sw.ElapsedMilliseconds);
+                    sw.Restart();
+                }
+
+                if (!Iast.Iast.Instance.Settings.Enabled)
+                {
+                    Log.Debug("Skipping Iast initialization because Iast is disabled");
+                }
+                else
+                {
+                    try
+                    {
+                        int defs = 0, derived = 0;
+                        Log.Debug("Adding CallTarget IAST integration definitions to native library.");
+                        var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.Iast);
+                        NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                        defs = payload.Definitions.Length;
+
+                        Log.Debug("Adding CallTarget IAST derived integration definitions to native library.");
+                        payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.Iast);
+                        NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                        derived = payload.Definitions.Length;
+
+                        Log.Information<int, int>("{Defs} IAST definitions and {Derived} IAST derived definitions added to the profiler.", defs, derived);
+
+                        Log.Debug("Registering IAST Callsite Dataflow Aspects into native library.");
+                        var aspects = NativeMethods.RegisterIastAspects(AspectDefinitions.Aspects);
+                        Log.Information<int>("{Aspects} IAST Callsite Dataflow Aspects added to the profiler.", aspects);
+                    }
+                    catch (Exception ex)
+                    {
+                        Iast.Iast.Instance.Settings.Enabled = false;
+                        Log.Error(ex, "DDIAST-0001-01: IAST could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
+                    }
+
+                    TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_Iast, sw.ElapsedMilliseconds);
+                    sw.Restart();
+                }
+            }
+
+#if NETSTANDARD2_0 || NETCOREAPP3_1
+            try
+            {
+                // On .NET Core 2.0-3.0 we see an occasional hang caused by OpenSSL being loaded
+                // while the app is shutting down, which results in flaky tests due to the short-
+                // lived nature of our apps. This appears to be a bug in the runtime (although
+                // we haven't yet confirmed that). Calling the `ToUuid()` method uses an MD5
+                // hash which calls into the native library, triggering the load.
+                _ = string.Empty.ToUUID();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error triggering eager OpenSSL load");
+            }
+#endif
+            LifetimeManager.Instance.AddShutdownTask(RunShutdown);
+
+            Log.Debug("Initialization finished.");
+
+            TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Total, swTotal.ElapsedMilliseconds);
+        }
+
+        /// <summary>
+        /// Initializes global instrumentation values.
+        /// </summary>
+        public static void InitializeLegacy()
+        {
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                Log.Debug("Enabling by ref instrumentation.");
+                NativeMethods.EnableByRefInstrumentation();
+                Log.Information("ByRef instrumentation enabled.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "ByRef instrumentation cannot be enabled: ");
+            }
+
+            TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_ByRefPinvoke, sw.ElapsedMilliseconds);
+            sw.Restart();
+
+            try
+            {
+                Log.Debug("Enabling calltarget state by ref.");
+                NativeMethods.EnableCallTargetStateByRef();
+                Log.Information("CallTarget State ByRef enabled.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "CallTarget state ByRef cannot be enabled: ");
+            }
+
+            TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_CallTargetStateByRefPinvoke, sw.ElapsedMilliseconds);
+            sw.Restart();
+
+            try
+            {
+                Log.Debug("Initializing TraceAttribute instrumentation.");
+                var payload = InstrumentationDefinitions.GetTraceAttributeDefinitions();
+                NativeMethods.AddTraceAttributeInstrumentation(payload.DefinitionsId, payload.AssemblyName, payload.TypeName);
+                Log.Information("TraceAttribute instrumentation enabled with Assembly={AssemblyName} and Type={TypeName}.", payload.AssemblyName, payload.TypeName);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error initializing TraceAttribute instrumentation");
+            }
+
+            TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_TraceAttributesPinvoke, sw.ElapsedMilliseconds);
+            sw.Restart();
 
             InitializeNoNativeParts();
 
             var tracer = Tracer.Instance;
 
-            TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.Managed, sw.ElapsedMilliseconds);
+            TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_Managed, sw.ElapsedMilliseconds);
             sw.Restart();
 
             try
@@ -160,7 +326,7 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error sending CallTarget integration definitions to native library");
             }
 
-            TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.CallTargetDefsPinvoke, sw.ElapsedMilliseconds);
+            TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_CallTargetDefsPinvoke, sw.ElapsedMilliseconds);
             sw.Restart();
 
             try
@@ -172,7 +338,7 @@ namespace Datadog.Trace.ClrProfiler
                 Serverless.Error("Error while loading Serverless definitions", ex);
             }
 
-            TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.Serverless, sw.ElapsedMilliseconds);
+            TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_Serverless, sw.ElapsedMilliseconds);
             sw.Restart();
 
             try
@@ -188,7 +354,7 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error sending CallTarget derived integration definitions to native library");
             }
 
-            TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.CallTargetDerivedDefsPinvoke, sw.ElapsedMilliseconds);
+            TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_CallTargetDerivedDefsPinvoke, sw.ElapsedMilliseconds);
             sw.Restart();
 
             try
@@ -204,7 +370,7 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error sending CallTarget interface integration definitions to native library");
             }
 
-            TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.CallTargetInterfaceDefsPinvoke, sw.ElapsedMilliseconds);
+            TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_CallTargetInterfaceDefsPinvoke, sw.ElapsedMilliseconds);
             sw.Restart();
 
             if (tracer is null)
@@ -238,7 +404,7 @@ namespace Datadog.Trace.ClrProfiler
                     Log.Error(ex, "Error initializing TraceMethods instrumentation");
                 }
 
-                TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.TraceMethodsPinvoke, sw.ElapsedMilliseconds);
+                TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_TraceMethodsPinvoke, sw.ElapsedMilliseconds);
                 sw.Restart();
             }
 
@@ -276,7 +442,7 @@ namespace Datadog.Trace.ClrProfiler
                     Log.Error(ex, "DDIAST-0001-01: IAST could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
                 }
 
-                TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.Iast, sw.ElapsedMilliseconds);
+                TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_Iast, sw.ElapsedMilliseconds);
                 sw.Restart();
             }
 
@@ -297,9 +463,7 @@ namespace Datadog.Trace.ClrProfiler
 #endif
             LifetimeManager.Instance.AddShutdownTask(RunShutdown);
 
-            Log.Debug("Initialization finished.");
-
-            TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.Total, swTotal.ElapsedMilliseconds);
+            Log.Debug("Legacy Initialization finished.");
         }
 
         private static void RunShutdown()
@@ -450,7 +614,7 @@ namespace Datadog.Trace.ClrProfiler
         private static void InitRemoteConfigurationManagement(Tracer tracer)
         {
             // Service Name must be lowercase, otherwise the agent will not be able to find the service
-            var serviceName = TraceUtil.NormalizeTag(tracer.Settings.ServiceNameInternal ?? tracer.DefaultServiceName);
+            var serviceName = TraceUtil.NormalizeTag(tracer.Settings.ServiceName ?? tracer.DefaultServiceName);
             var discoveryService = tracer.TracerManager.DiscoveryService;
 
             Task.Run(
@@ -461,7 +625,7 @@ namespace Datadog.Trace.ClrProfiler
 
                     var sw = Stopwatch.StartNew();
                     var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
-                    TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
+                    TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_DiscoveryService, sw.ElapsedMilliseconds);
 
                     if (isDiscoverySuccessful)
                     {
@@ -504,7 +668,7 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Failed to initialize Live Debugger");
             }
 
-            TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.DynamicInstrumentation, sw.ElapsedMilliseconds);
+            TelemetryFactory.Metrics.Record(Distribution.InitTime, MetricTags.Component_DynamicInstrumentation, sw.ElapsedMilliseconds);
         }
     }
 }

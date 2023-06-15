@@ -14,58 +14,25 @@ namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions
     internal static class Sources
     {
         private const string InstrumentationsCollectionName = "Instrumentations";
-        private const string DerivedInstrumentationsCollectionName = "DerivedInstrumentations";
-        private const string InterfaceInstrumentationsCollectionName = "InterfaceInstrumentations";
 
         public static string CreateCallTargetDefinitions(IReadOnlyCollection<CallTargetDefinitionSource> definitions)
         {
-            void BuildInstrumentationDefinitions(StringBuilder sb, List<CallTargetDefinitionSource> orderedDefinitions, int integrationType, string instrumentationsCollectionName)
+            void BuildInstrumentationDefinitions(StringBuilder sb, List<CallTargetDefinitionSource> orderedDefinitions, string instrumentationsCollectionName)
             {
                 string? integrationName = null;
-                var enumType = typeof(InstrumentationCategory);
-                var enumNames = Enum.GetNames(enumType);
-                var filteredDefs = orderedDefinitions.Where(o => o.IntegrationType == integrationType);
 
-                foreach (var name in enumNames)
-                {
-                    var defAttri = enumType.GetField(name).GetCustomAttributes(false).OfType<DefinitionsIdAttribute>().Single();
-                    var enumDefinitions = filteredDefs.Where(d => d.InstrumentationCategory == (InstrumentationCategory)Enum.Parse(enumType, name));
-
-                    // Template values
-                    var integrationTypeString = integrationType switch
-                    {
-                        0 => "root",
-                        1 => "derived",
-                        2 => "interface",
-                        _ => throw new ArgumentException(nameof(integrationType)),
-                    };
-                    Func<DefinitionsIdAttribute, string> getDefinitionsId = integrationType switch
-                    {
-                        0 => (DefinitionsIdAttribute def) => def.DefinitionsId,
-                        1 => (DefinitionsIdAttribute def) => def.DerivedDefinitionsId,
-                        2 => (DefinitionsIdAttribute def) => def.InterfaceDefinitionsId,
-                        _ => throw new ArgumentException(nameof(integrationType)),
-                    };
-
-                    sb.Append($@"
-            // {integrationTypeString} types for InstrumentationCategory {name}
-            {instrumentationsCollectionName}_{name} = new Payload
+                sb.Append($@"
+            // CallTarget types
+            {instrumentationsCollectionName} = new NativeCallTargetDefinition2[]
             {{
-                DefinitionsId = ""{getDefinitionsId(defAttri)}"",
-                Definitions = new NativeCallTargetDefinition[]
-                {{");
-                    foreach (var definition in enumDefinitions)
-                    {
-                        integrationName = WriteDefinition(definition, integrationName, sb);
-                    }
-
-                    sb.Append($@"
-                }}
-            }};
-
-            {instrumentationsCollectionName}Natives = {instrumentationsCollectionName}Natives.Concat({instrumentationsCollectionName}_{name}.Definitions);
-            ");
+");
+                foreach (var definition in orderedDefinitions)
+                {
+                    integrationName = WriteDefinition(definition, integrationName, sb);
                 }
+
+                sb.Append($@"
+            }};");
             }
 
             var sb = new StringBuilder();
@@ -81,21 +48,7 @@ namespace Datadog.Trace.ClrProfiler
 {{
     internal static partial class InstrumentationDefinitions
     {{
-        private static Payload {InstrumentationsCollectionName}_Tracing;
-        private static Payload {InstrumentationsCollectionName}_AppSec;
-        private static Payload {InstrumentationsCollectionName}_Iast;
-
-        private static Payload {DerivedInstrumentationsCollectionName}_Tracing;
-        private static Payload {DerivedInstrumentationsCollectionName}_AppSec;
-        private static Payload {DerivedInstrumentationsCollectionName}_Iast;
-
-        private static Payload {InterfaceInstrumentationsCollectionName}_Tracing;
-        private static Payload {InterfaceInstrumentationsCollectionName}_AppSec;
-        private static Payload {InterfaceInstrumentationsCollectionName}_Iast;
-
-        private static IEnumerable<NativeCallTargetDefinition> {InstrumentationsCollectionName}Natives = Array.Empty<NativeCallTargetDefinition>();
-        private static IEnumerable<NativeCallTargetDefinition> {DerivedInstrumentationsCollectionName}Natives = Array.Empty<NativeCallTargetDefinition>();
-        private static IEnumerable<NativeCallTargetDefinition> {InterfaceInstrumentationsCollectionName}Natives = Array.Empty<NativeCallTargetDefinition>();
+        private static IEnumerable<NativeCallTargetDefinition2> {InstrumentationsCollectionName} = Array.Empty<NativeCallTargetDefinition2>();
 
         static InstrumentationDefinitions()
         {{");
@@ -110,42 +63,12 @@ namespace Datadog.Trace.ClrProfiler
             var enumType = typeof(InstrumentationCategory);
             var enumNames = Enum.GetNames(enumType);
 
-            BuildInstrumentationDefinitions(sb, orderedDefinitions, 0, InstrumentationsCollectionName);
-            BuildInstrumentationDefinitions(sb, orderedDefinitions, 1, DerivedInstrumentationsCollectionName);
-            BuildInstrumentationDefinitions(sb, orderedDefinitions, 2, InterfaceInstrumentationsCollectionName);
+            BuildInstrumentationDefinitions(sb, orderedDefinitions, InstrumentationsCollectionName);
 
             sb.Append(@$"
         }}
 
-        private static Payload GetDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
-            => instrumentationCategory switch
-            {{
-                InstrumentationCategory.Tracing => {InstrumentationsCollectionName}_Tracing,
-                InstrumentationCategory.AppSec => {InstrumentationsCollectionName}_AppSec,
-                InstrumentationCategory.Iast => {InstrumentationsCollectionName}_Iast,
-                _ => default
-            }};
-
-        private static Payload GetDerivedDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
-            => instrumentationCategory switch
-            {{
-                InstrumentationCategory.Tracing => {DerivedInstrumentationsCollectionName}_Tracing,
-                InstrumentationCategory.AppSec => {DerivedInstrumentationsCollectionName}_AppSec,
-                InstrumentationCategory.Iast => {DerivedInstrumentationsCollectionName}_Iast,
-                _ => default
-            }};
-
-        private static Payload GetInterfaceDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
-            => instrumentationCategory switch
-            {{
-                InstrumentationCategory.Tracing => {InterfaceInstrumentationsCollectionName}_Tracing,
-                InstrumentationCategory.AppSec => {InterfaceInstrumentationsCollectionName}_AppSec,
-                InstrumentationCategory.Iast => {InterfaceInstrumentationsCollectionName}_Iast,
-                _ => default
-            }};
-
-        internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
-            string? integrationTypeName, System.Type targetType)
+        internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(string? integrationTypeName, System.Type targetType)
         {{
             return integrationTypeName switch
             {{
@@ -237,8 +160,7 @@ namespace Datadog.Trace.ClrProfiler
             };
         }
 
-        public static Datadog.Trace.Configuration.IntegrationId? GetAdoNetIntegrationId(
-            string? integrationTypeName, string? targetTypeName, string? assemblyName)
+        public static Datadog.Trace.Configuration.IntegrationId? GetAdoNetIntegrationId(string? integrationTypeName, string? targetTypeName, string? assemblyName)
         {
             return new System.Collections.Generic.KeyValuePair<string?, string?>(assemblyName, targetTypeName) switch
             {
@@ -287,7 +209,6 @@ namespace Datadog.Trace.ClrProfiler
                 sb.Append(@"=> Datadog.Trace.Configuration.IntegrationId.")
                   .Append(integrationName)
                   .Append(@",
-
                 ");
             }
 
@@ -313,13 +234,13 @@ namespace Datadog.Trace.ClrProfiler
 
                 integrationName = definition.IntegrationName;
                 sb.Append(
-                    $@"
-                    // {integrationName}");
+                $@"
+                // {integrationName}");
             }
 
             sb.Append(
-                   @"
-                    new (""")
+               @"
+                new (""")
               .Append(definition.AssemblyName)
               .Append(@""", """)
               .Append(definition.TargetTypeName)
@@ -356,7 +277,9 @@ namespace Datadog.Trace.ClrProfiler
 
             sb.Append(@", assemblyFullName, """)
               .Append(definition.InstrumentationTypeName)
-              .Append(@"""),");
+              .Append(@""",")
+              .Append($"{definition.IntegrationType},")
+              .Append($"{(int)definition.InstrumentationCategory}),");
             return integrationName;
         }
     }
