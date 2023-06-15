@@ -56,15 +56,21 @@ public static class EventTrackingSdk
 
             var setTag = TaggingUtils.GetSpanSetter(span);
 
-            setTag(Tags.AppSec.EventsUsersLogin.SuccessTrack, "true");
+            setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, "true");
+            setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessSdkSource, "true");
             setTag(Tags.User.Id, userId);
 
             if (metadata != null)
             {
                 foreach (var kvp in metadata)
                 {
-                    setTag(Tags.AppSec.EventsUsersLogin.Success + kvp.Key, kvp.Value);
+                    setTag($"{Tags.AppSec.EventsUsers.LoginEvent.Success}.{kvp.Key}", kvp.Value);
                 }
+            }
+
+            if (span is Span internalSpan)
+            {
+                Security.Instance.SetTraceSamplingPriority(internalSpan);
             }
         }
 
@@ -109,16 +115,22 @@ public static class EventTrackingSdk
 
             var setTag = TaggingUtils.GetSpanSetter(span);
 
-            setTag(Tags.AppSec.EventsUsersLogin.FailureTrack, "true");
-            setTag(Tags.AppSec.EventsUsersLogin.FailureUserId, userId);
-            setTag(Tags.AppSec.EventsUsersLogin.FailureUserExists, exists ? "true" : "false");
+            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
+            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureSdkSource, "true");
+            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, userId);
+            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, exists ? "true" : "false");
 
             if (metadata != null)
             {
                 foreach (var kvp in metadata)
                 {
-                    setTag(Tags.AppSec.EventsUsersLogin.Failure + kvp.Key, kvp.Value);
+                    setTag($"{Tags.AppSec.EventsUsers.LoginEvent.Failure}.{kvp.Key}", kvp.Value);
                 }
+            }
+
+            if (span is Span internalSpan)
+            {
+                Security.Instance.SetTraceSamplingPriority(internalSpan);
             }
         }
 
@@ -162,6 +174,8 @@ public static class EventTrackingSdk
             var setTag = TaggingUtils.GetSpanSetter(span);
 
             setTag(Tags.AppSec.Track(eventName), "true");
+
+            setTag($"_dd.{Tags.AppSec.Events}{eventName}.sdk", "true");
 
             if (metadata != null)
             {

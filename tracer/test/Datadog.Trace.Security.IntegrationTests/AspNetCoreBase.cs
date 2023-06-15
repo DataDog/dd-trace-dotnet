@@ -7,6 +7,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -36,6 +37,22 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             await Fixture.TryStartApp(this, EnableSecurity);
             SetHttpPort(Fixture.HttpPort);
+        }
+
+        [SkippableTheory]
+        [Trait("RunOnWindows", "True")]
+        [InlineData("loginevent.auto.success", "Input.Email=test@test.com&Input.Password=test")]
+        [InlineData("loginevent.auto.failure", "Input.Email=test@test.com&Input.Password=wrong")]
+        [InlineData("loginevent.auto.failure", "Input.Email=no_such_user@test.com&Input.Password=test")]
+        public async Task TestUserLoginEvent(string eventName, string bodyString)
+        {
+            await TryStartApp();
+            var agent = Fixture.Agent;
+            var url = "/Account/Index";
+            var settings = VerifyHelper.GetSpanVerifierSettings(eventName, bodyString);
+            await TestAppSecRequestWithVerifyAsync(agent, url, bodyString, 5, 1, settings, contentType: "application/x-www-form-urlencoded", methodNameOverride: nameof(TestUserLoginEvent));
+            // reset memory database (useless for net7 as it runs with EF7 on app.db
+            await SendRequestsAsync(this.Fixture.Agent, "/account/reset-memory-db");
         }
 
         [SkippableTheory]
