@@ -1786,8 +1786,9 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
     }
 }
 
-void CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size, UINT32 enabledCategories)
+long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size, UINT32 enabledCategories)
 {
+    long numReJITs = 0;
     shared::WSTRING definitionsId = shared::WSTRING(id);
     auto definitions = definitions_ids.Get();
 
@@ -1795,7 +1796,7 @@ void CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2
     if (defsIdFound)
     {
         Logger::Info("RegisterCallTargetDefinitions: Id already processed.");
-        return;
+        return 0;
     }
     definitions->emplace(definitionsId);
 
@@ -1858,15 +1859,18 @@ void CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2
             tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), integrationDefinitions, promise);
 
             // wait and get the value from the future<int>
-            const auto& numReJITs = future.get();
+            numReJITs = future.get();
             Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
         }
 
         Logger::Info("RegisterCallTargetDefinitions: Total integrations in profiler: ", integration_definitions_.size());
     }
+
+    return numReJITs;
 }
-void CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
+long CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
 {
+    long numReJITs = 0;
     if (rejit_handler != nullptr)
     {
         auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
@@ -1881,7 +1885,6 @@ void CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
             }
         }
 
-        ULONG numReJITs = 0;
         if (affectedDefinitions.size() > 0)
         {
             auto modules = module_ids.Get();
@@ -1895,9 +1898,11 @@ void CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
         }
         Logger::Debug("  Total number of ReJIT Requested: ", numReJITs);
     }
+    return numReJITs;
 }
-void CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
+long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
 {
+    long numReverts = 0;
     if (rejit_handler != nullptr)
     {
         auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
@@ -1912,7 +1917,6 @@ void CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
             }
         }
 
-        ULONG numReverts = 0;
         if (affectedDefinitions.size() > 0)
         {
             auto modules = module_ids.Get();
@@ -1926,9 +1930,10 @@ void CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
         }
         Logger::Debug("  Total number of Reverts Requested: ", numReverts);
     }
+    return numReverts;
 }
 
-void CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
+int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
 
@@ -1936,13 +1941,14 @@ void CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
     {
         Logger::Info("Registerubg IAST Aspects.");
         _dataflow->LoadAspects(aspects, aspectsLength);
+        return aspectsLength;
     }
     else
     {
         Logger::Info("IAST is disabled.");
     }
+    return 0;
 }
-
 
 
 void CorProfiler::AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* integration_assembly_name_ptr,

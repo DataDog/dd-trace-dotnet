@@ -329,66 +329,6 @@ namespace Datadog.Trace.AppSec
             return blockingAction;
         }
 
-        private static void AddAppsecSpecificInstrumentations()
-        {
-            int defs = 0, derived = 0;
-            try
-            {
-                Log.Debug("Adding CallTarget AppSec integration definitions to native library.");
-                var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.AppSec);
-                NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-                defs = payload.Definitions.Length;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error adding CallTarget AppSec integration definitions to native library");
-            }
-
-            try
-            {
-                Log.Debug("Adding CallTarget appsec derived integration definitions to native library.");
-                var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.AppSec);
-                NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-                derived = payload.Definitions.Length;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error adding CallTarget appsec derived integration definitions to native library");
-            }
-
-            Log.Information<int, int>("{DefinitionCount} AppSec definitions and {DerivedCount} AppSec derived definitions added to the profiler.", defs, derived);
-        }
-
-        private static void RemoveAppsecSpecificInstrumentations()
-        {
-            int defs = 0, derived = 0;
-            try
-            {
-                Log.Debug("Removing CallTarget AppSec integration definitions from native library.");
-                var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.AppSec);
-                NativeMethods.RemoveCallTargetDefinitions(payload.DefinitionsId, payload.Definitions);
-                defs = payload.Definitions.Length;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error removing CallTarget AppSec integration definitions from native library");
-            }
-
-            try
-            {
-                Log.Debug("Removing CallTarget appsec derived integration definitions from native library.");
-                var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.AppSec);
-                NativeMethods.RemoveCallTargetDefinitions(payload.DefinitionsId, payload.Definitions);
-                derived = payload.Definitions.Length;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error removing CallTarget appsec derived integration definitions from native library");
-            }
-
-            Log.Information<int, int>("{DefinitionCount} AppSec definitions and {DerivedCount} AppSec derived definitions removed from the profiler.", defs, derived);
-        }
-
         /// <summary> Frees resources </summary>
         public void Dispose() => _waf?.Dispose();
 
@@ -433,7 +373,7 @@ namespace Datadog.Trace.AppSec
                 oldWaf?.Dispose();
                 Log.Debug("Disposed old waf and affected new waf");
                 SubscribeToChanges(RcmProducts.AsmData, RcmProducts.Asm);
-                AddAppsecSpecificInstrumentations();
+                Instrumentation.EnableTracerInstrumentations(InstrumentationCategory.AppSec);
                 _rateLimiter ??= new(_settings.TraceRateLimit);
                 Enabled = true;
                 InitializationError = null;
@@ -478,7 +418,7 @@ namespace Datadog.Trace.AppSec
                     }
                 }
 
-                RemoveAppsecSpecificInstrumentations();
+                Instrumentation.DisableTracerInstrumentations(InstrumentationCategory.AppSec);
                 Enabled = false;
                 InitializationError = null;
                 Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);

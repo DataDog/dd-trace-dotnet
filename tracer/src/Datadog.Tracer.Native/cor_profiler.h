@@ -187,14 +187,14 @@ public:
     //
     // Tracer Integration methods #2
     //
-    void RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size, UINT32 enabledCategories = -1);
-    void EnableCallTargetDefinitions(UINT32 enaabledCategories);
-    void DisableCallTargetDefinitions(UINT32 disabledCategories);
+    long RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size, UINT32 enabledCategories = -1);
+    long EnableCallTargetDefinitions(UINT32 enabledCategories);
+    long DisableCallTargetDefinitions(UINT32 disabledCategories);
 
     //
     // Register Aspects into Dataflow
     //
-    void RegisterIastAspects(WCHAR** aspects, int aspectsLength);
+    int RegisterIastAspects(WCHAR** aspects, int aspectsLength);
 
 
     //

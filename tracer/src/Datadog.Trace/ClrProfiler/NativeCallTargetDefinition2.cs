@@ -147,5 +147,11 @@ namespace Datadog.Trace.ClrProfiler
 
             Marshal.FreeHGlobal(TargetSignatureTypes);
         }
+
+        public bool HasCategory(InstrumentationCategory category)
+        {
+            var cat = (uint)category;
+            return (Categories & cat) == cat;
+        }
     }
 }
