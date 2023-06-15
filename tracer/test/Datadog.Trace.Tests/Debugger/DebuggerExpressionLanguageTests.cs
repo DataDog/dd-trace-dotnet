@@ -127,6 +127,7 @@ namespace Datadog.Trace.Tests.Debugger
             DebuggerExpression? condition = null;
             DebuggerExpression[] templates;
             DebuggerExpression? metrics = null;
+            KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression[]>[]>[] spanDecorations = null;
             var dirName = new DirectoryInfo(Path.GetDirectoryName(expressionTestFilePath)).Name;
             if (dirName == ConditionsFolder)
             {
@@ -147,7 +148,7 @@ namespace Datadog.Trace.Tests.Debugger
                 throw new Exception($"{nameof(DebuggerExpressionLanguageTests)}.{nameof(GetEvaluator)}: Incorrect folder name");
             }
 
-            return (new ProbeExpressionEvaluator(templates, condition, metrics), scopeMembers);
+            return (new ProbeExpressionEvaluator(templates, condition, metrics, spanDecorations), scopeMembers);
         }
 
         private VerifySettings ConfigureVerifySettings(string expressionTestFilePath)

@@ -138,6 +138,8 @@ namespace Datadog.Trace.AppSec
 
         internal string? DdlibWafVersion => _waf?.Version;
 
+        internal bool TrackUserEvents => Enabled && Settings.UserEventsAutomatedTracking != "disabled";
+
         internal void SubscribeToChanges(params string[] productNames)
         {
             if (_rcmSubscription is not null)

@@ -3,12 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Datadog.Trace.Configuration
 {
     internal partial class ConfigurationKeys
@@ -57,12 +51,12 @@ namespace Datadog.Trace.Configuration
             internal const string WafTimeout = "DD_APPSEC_WAF_TIMEOUT";
 
             /// <summary>
-            /// The regex that will be used to obfuscate possible senative data in keys that are highlighted WAF as potentially malicious
+            /// The regex that will be used to obfuscate possible sensitive data in keys that are highlighted WAF as potentially malicious
             /// </summary>
             internal const string ObfuscationParameterKeyRegex = "DD_APPSEC_OBFUSCATION_PARAMETER_KEY_REGEXP";
 
             /// <summary>
-            /// The regex that will be used to obfuscate possible senative data in values that are highlighted WAF as potentially malicious
+            /// The regex that will be used to obfuscate possible sensitive data in values that are highlighted WAF as potentially malicious
             /// </summary>
             internal const string ObfuscationParameterValueRegex = "DD_APPSEC_OBFUSCATION_PARAMETER_VALUE_REGEXP";
 
@@ -75,6 +69,11 @@ namespace Datadog.Trace.Configuration
             /// Blocking response template for Json content. This template is used in combination with the status code to craft and send a response upon blocking the request.
             /// </summary>
             internal const string JsonBlockedTemplate = "DD_APPSEC_HTTP_BLOCKED_TEMPLATE_JSON";
+
+            /// <summary>
+            /// Automatic tracking of user events mode. Values can be disabled, safe or extended.
+            /// </summary>
+            internal const string UserEventsAutomatedTracking = "DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING";
         }
     }
 }

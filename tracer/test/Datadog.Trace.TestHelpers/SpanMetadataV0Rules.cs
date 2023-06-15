@@ -195,6 +195,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("elasticsearch.action")
                 .IsPresent("elasticsearch.method")
                 .IsPresent("elasticsearch.url")
+                .IsPresent("out.host")
                 .Matches("component", "elasticsearch-net")
                 .Matches("span.kind", "client"));
 

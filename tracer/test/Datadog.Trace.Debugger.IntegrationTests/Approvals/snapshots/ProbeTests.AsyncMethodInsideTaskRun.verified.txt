@@ -32,8 +32,8 @@
                 "value": "5"
               },
               "result": {
-                "isNull": "true",
-                "type": "String"
+                "type": "String",
+                "value": "RunInsideTask 01234"
               }
             }
           }

@@ -120,6 +120,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.FileAccess", "profi
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PPDB", "shared\src\native-lib\PPDB\PPDB.vcxproj", "{4B18A9EC-94FA-4098-A48D-83ED25E076D7}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ParallelCountSites", "profiler\src\Demos\Samples.ParallelCountSites\Samples.ParallelCountSites.csproj", "{C035C748-A864-4BBF-B214-3E5A621355F9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -388,6 +390,18 @@ Global
 		{4B18A9EC-94FA-4098-A48D-83ED25E076D7}.Release|x64.Build.0 = Release|x64
 		{4B18A9EC-94FA-4098-A48D-83ED25E076D7}.Release|x86.ActiveCfg = Release|Win32
 		{4B18A9EC-94FA-4098-A48D-83ED25E076D7}.Release|x86.Build.0 = Release|Win32
+		{C035C748-A864-4BBF-B214-3E5A621355F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C035C748-A864-4BBF-B214-3E5A621355F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C035C748-A864-4BBF-B214-3E5A621355F9}.Debug|x64.ActiveCfg = Debug|x64
+		{C035C748-A864-4BBF-B214-3E5A621355F9}.Debug|x64.Build.0 = Debug|x64
+		{C035C748-A864-4BBF-B214-3E5A621355F9}.Debug|x86.ActiveCfg = Debug|x86
+		{C035C748-A864-4BBF-B214-3E5A621355F9}.Debug|x86.Build.0 = Debug|x86
+		{C035C748-A864-4BBF-B214-3E5A621355F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C035C748-A864-4BBF-B214-3E5A621355F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C035C748-A864-4BBF-B214-3E5A621355F9}.Release|x64.ActiveCfg = Release|x64
+		{C035C748-A864-4BBF-B214-3E5A621355F9}.Release|x64.Build.0 = Release|x64
+		{C035C748-A864-4BBF-B214-3E5A621355F9}.Release|x86.ActiveCfg = Release|x86
+		{C035C748-A864-4BBF-B214-3E5A621355F9}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -427,6 +441,7 @@ Global
 		{81B54D16-F97E-4C53-92C3-59728BD23E8F} = {D2476213-2D12-43A8-966C-BCFCE098FD63}
 		{30516F61-8371-4506-9369-DB4BE0DE4837} = {D2476213-2D12-43A8-966C-BCFCE098FD63}
 		{4B18A9EC-94FA-4098-A48D-83ED25E076D7} = {26D13B93-529A-4A73-824D-885CAF1DC0C0}
+		{C035C748-A864-4BBF-B214-3E5A621355F9} = {D2476213-2D12-43A8-966C-BCFCE098FD63}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {917C242A-028D-42FD-BA47-E7317B6A36B4}

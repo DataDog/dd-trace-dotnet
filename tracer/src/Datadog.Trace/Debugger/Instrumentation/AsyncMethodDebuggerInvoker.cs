@@ -176,6 +176,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             var asyncState = state.LogState;
+            asyncState.MoveNextInvocationTarget = instance;
 
             asyncState.SnapshotCreator.StopSampling();
             var asyncCaptureInfo = new AsyncCaptureInfo(asyncState.MoveNextInvocationTarget, asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: asyncState.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: asyncState.MethodMetadataInfo.AsyncMethodHoistedArguments);
@@ -212,6 +213,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             var asyncState = state.LogState;
+            asyncState.MoveNextInvocationTarget = instance;
 
             asyncState.SnapshotCreator.StopSampling();
             var asyncCaptureInfo = new AsyncCaptureInfo(asyncState.MoveNextInvocationTarget, asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: asyncState.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: asyncState.MethodMetadataInfo.AsyncMethodHoistedArguments);

@@ -64,6 +64,15 @@ namespace Datadog.Trace.AppSec
             ObfuscationParameterValueRegex = config
                                             .WithKeys(ConfigurationKeys.AppSec.ObfuscationParameterValueRegex)
                                             .AsString(SecurityConstants.ObfuscationParameterValueRegexDefault, x => !string.IsNullOrWhiteSpace(x));
+
+            UserEventsAutomatedTracking = config
+                                         .WithKeys(ConfigurationKeys.AppSec.UserEventsAutomatedTracking)
+                                         .AsString(
+                                              "safe",
+                                              val => val.Equals("safe", StringComparison.OrdinalIgnoreCase)
+                                                  || val.Equals("disabled", StringComparison.OrdinalIgnoreCase)
+                                                  || val.Equals("extended", StringComparison.OrdinalIgnoreCase))
+                                         .ToLowerInvariant();
         }
 
         public bool Enabled { get; }
@@ -113,6 +122,11 @@ namespace Datadog.Trace.AppSec
         /// Gets the blocking response template for Html content. This template is used in combination with the status code to craft and send a response upon blocking the request.
         /// </summary>
         public string BlockedHtmlTemplate { get; }
+
+        /// <summary>
+        /// Gets the automatic tracking of user events mode. Values can be disabled, safe or extended.
+        /// </summary>
+        public string UserEventsAutomatedTracking { get; }
 
         /// <summary>
         /// Gets the response template for Json content. This template is used in combination with the status code to craft and send a response upon blocking the request.
