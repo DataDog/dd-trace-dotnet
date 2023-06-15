@@ -21,27 +21,22 @@ public class StringBuilderAppendFormatTests : InstrumentationTestsBase
         AddTainted(_otherTaintedString);
     }
 
-    private StringBuilder GetTaintedStringBuilder()
-    {
-        return AddTainted(new StringBuilder("taintedStringBuilder")) as StringBuilder;
-    }
-
     // [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.String,System.Object)")]
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderAppendFormatOneObjectFormatProvider_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-taintedStringBuilderLiteral equals to _untaintedString-+:",
-            GetTaintedStringBuilder().AppendFormat("Literal equals to {0}", _untaintedString),
-            () => GetTaintedStringBuilder().AppendFormat("Literal equals to {0}", _untaintedString));
+            GetTaintedStringBuilder("taintedStringBuilder").AppendFormat("Literal equals to {0}", _untaintedString),
+            () => GetTaintedStringBuilder("taintedStringBuilder").AppendFormat("Literal equals to {0}", _untaintedString));
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderAppendFormatOneObjectFormatProvider_ResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-taintedStringBuilderLiteral equals to _taintedString-+:",
-            GetTaintedStringBuilder().AppendFormat("Literal equals to {0}", _taintedString),
-            () => GetTaintedStringBuilder().AppendFormat("Literal equals to {0}", _taintedString));
+            GetTaintedStringBuilder("taintedStringBuilder").AppendFormat("Literal equals to {0}", _taintedString),
+            () => GetTaintedStringBuilder("taintedStringBuilder").AppendFormat("Literal equals to {0}", _taintedString));
     }
 
     [Fact]
@@ -66,8 +61,8 @@ public class StringBuilderAppendFormatTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderAppendFormatTwoObjects_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-taintedStringBuilderLiteral equals to _taintedString and not to _untaintedString-+:",
-            GetTaintedStringBuilder().AppendFormat("Literal equals to {0} and not to {1}", _taintedString, _untaintedString),
-            () => GetTaintedStringBuilder().AppendFormat("Literal equals to {0} and not to {1}", _taintedString, _untaintedString));
+            GetTaintedStringBuilder("taintedStringBuilder").AppendFormat("Literal equals to {0} and not to {1}", _taintedString, _untaintedString),
+            () => GetTaintedStringBuilder("taintedStringBuilder").AppendFormat("Literal equals to {0} and not to {1}", _taintedString, _untaintedString));
     }
 
     [Fact]
@@ -84,8 +79,8 @@ public class StringBuilderAppendFormatTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderAppendFormatThreeObjectFormatProvider_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-taintedStringBuilderLiteral including _taintedString and not _untaintedString and including also OtherTaintedString-+:",
-            GetTaintedStringBuilder().AppendFormat("Literal including {0} and not {1} and including also {2}", _taintedString, _untaintedString, _otherTaintedString),
-            () => GetTaintedStringBuilder().AppendFormat("Literal including {0} and not {1} and including also {2}", _taintedString, _untaintedString, _otherTaintedString));
+            GetTaintedStringBuilder("taintedStringBuilder").AppendFormat("Literal including {0} and not {1} and including also {2}", _taintedString, _untaintedString, _otherTaintedString),
+            () => GetTaintedStringBuilder("taintedStringBuilder").AppendFormat("Literal including {0} and not {1} and including also {2}", _taintedString, _untaintedString, _otherTaintedString));
     }
 
     [Fact]
@@ -139,8 +134,8 @@ public class StringBuilderAppendFormatTests : InstrumentationTestsBase
     {
         Customer customer = new Customer(AddTainted("TaintedCustomerName").ToString(), 999654);
         AssertTaintedFormatWithOriginalCallCheck(":+-taintedStringBuilder with tainted literal equals to TaintedCustomerName and number 0000-999-654-+:",
-            GetTaintedStringBuilder().AppendFormat(new CustomerNumberFormatter(), " with tainted literal equals to {0} and number {1}", customer.Name, customer.CustomerNumber).ToString(),
-            () => GetTaintedStringBuilder().AppendFormat(new CustomerNumberFormatter(), " with tainted literal equals to {0} and number {1}", customer.Name, customer.CustomerNumber).ToString());
+            GetTaintedStringBuilder("taintedStringBuilder").AppendFormat(new CustomerNumberFormatter(), " with tainted literal equals to {0} and number {1}", customer.Name, customer.CustomerNumber).ToString(),
+            () => GetTaintedStringBuilder("taintedStringBuilder").AppendFormat(new CustomerNumberFormatter(), " with tainted literal equals to {0} and number {1}", customer.Name, customer.CustomerNumber).ToString());
     }
 
     [Fact]
