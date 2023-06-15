@@ -177,6 +177,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             state.SnapshotCreator.StopSampling();
             state.MethodPhase = EvaluateAt.Exit;
+            state.InvocationTarget = instance;
 
             var captureInfo = new CaptureInfo<Exception>(value: exception, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.ExitStart, memberKind: ScopeMemberKind.Exception, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
 
@@ -209,6 +210,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             state.SnapshotCreator.StopSampling();
             state.MethodPhase = EvaluateAt.Exit;
+            state.InvocationTarget = instance;
 
             if (exception != null)
             {

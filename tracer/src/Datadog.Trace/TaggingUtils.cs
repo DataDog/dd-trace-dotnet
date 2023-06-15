@@ -11,10 +11,10 @@ internal class TaggingUtils
 {
     internal static Action<string, string> GetSpanSetter(ISpan span)
     {
-        return GetSpanSetter(span, out var _);
+        return GetSpanSetter(span, out _);
     }
 
-    internal static Action<string, string> GetSpanSetter(ISpan span, out Span spanClass)
+    internal static Action<string, string> GetSpanSetter(ISpan span, out Span spanClass, bool replaceIfExists = true)
     {
         TraceContext traceContext = null;
         if (span is Span spanClassTemp)
@@ -27,10 +27,27 @@ internal class TaggingUtils
             spanClass = null;
         }
 
-        Action<string, string> setTag =
-            traceContext != null
-                ? (name, value) => traceContext.Tags.SetTag(name, value)
-                : (name, value) => span.SetTag(name, value);
+        Action<string, string> setTag;
+        if (replaceIfExists)
+        {
+            setTag = traceContext != null
+                         ? (name, value) => traceContext.Tags.SetTag(name, value)
+                         : (name, value) => span.SetTag(name, value);
+        }
+        else
+        {
+            setTag =
+                traceContext != null
+                    ? (name, value) => traceContext.Tags.TryAddTag(name, value)
+                    : (name, value) =>
+                    {
+                        if (string.IsNullOrEmpty(span.GetTag(name)))
+                        {
+                            span.SetTag(name, value);
+                        }
+                    };
+        }
+
         return setTag;
     }
 }

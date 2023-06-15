@@ -13,6 +13,7 @@
    <assembly fullname="Grpc.Net.Client" />
    <assembly fullname="HotChocolate.Execution" />
    <assembly fullname="log4net" />
+   <assembly fullname="Microsoft.AspNetCore.Authentication.Abstractions" />
    <assembly fullname="Microsoft.AspNetCore.Http" />
    <assembly fullname="Microsoft.AspNetCore.Http.Abstractions">
       <type fullname="Microsoft.AspNetCore.Http.ConnectionInfo" />
@@ -36,6 +37,7 @@
       <type fullname="Microsoft.AspNetCore.Http.IRequestCookieCollection" />
       <type fullname="Microsoft.AspNetCore.Http.IResponseCookies" />
    </assembly>
+   <assembly fullname="Microsoft.AspNetCore.Identity" />
    <assembly fullname="Microsoft.AspNetCore.Mvc.Abstractions">
       <type fullname="Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor" />
       <type fullname="Microsoft.AspNetCore.Mvc.Abstractions.ParameterDescriptor" />
@@ -64,6 +66,7 @@
    <assembly fullname="Microsoft.Azure.WebJobs.Script.WebHost" />
    <assembly fullname="Microsoft.Data.SqlClient" />
    <assembly fullname="Microsoft.Data.Sqlite" />
+   <assembly fullname="Microsoft.Extensions.Identity.Core" />
    <assembly fullname="Microsoft.Extensions.Logging" />
    <assembly fullname="Microsoft.Extensions.Logging.Abstractions" />
    <assembly fullname="Microsoft.Extensions.Primitives">
@@ -860,6 +863,10 @@
       <type fullname="System.Runtime.Serialization.DataContractAttribute" />
       <type fullname="System.Runtime.Serialization.DataMemberAttribute" />
       <type fullname="System.Runtime.Serialization.IgnoreDataMemberAttribute" />
+   </assembly>
+   <assembly fullname="System.Security.Claims">
+      <type fullname="System.Security.Claims.Claim" />
+      <type fullname="System.Security.Claims.ClaimsPrincipal" />
    </assembly>
    <assembly fullname="System.Security.Cryptography" />
    <assembly fullname="System.Security.Cryptography.Algorithms">
