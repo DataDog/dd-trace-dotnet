@@ -16,6 +16,7 @@ using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Collectors;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Telemetry;
@@ -120,7 +121,10 @@ internal class TelemetryControllerV2 : ITelemetryController
         => _integrations.IntegrationRunning(integrationId);
 
     public void IntegrationGeneratedSpan(IntegrationId integrationId)
-        => _integrations.IntegrationGeneratedSpan(integrationId);
+    {
+        _metrics.RecordCountSpanCreated(integrationId.GetMetricTag());
+        _integrations.IntegrationGeneratedSpan(integrationId);
+    }
 
     public void IntegrationDisabledDueToError(IntegrationId integrationId, string error)
         => _integrations.IntegrationDisabledDueToError(integrationId, error);

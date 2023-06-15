@@ -296,6 +296,7 @@ namespace Datadog.Trace
         IScope ITracer.StartActive(string operationName)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.ITracer_StartActive);
+            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
             return StartActiveInternal(operationName);
         }
 
@@ -304,6 +305,7 @@ namespace Datadog.Trace
         IScope ITracer.StartActive(string operationName, SpanCreationSettings settings)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.ITracer_StartActive_Settings);
+            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
             var finishOnClose = settings.FinishOnClose ?? true;
             return StartActiveInternal(operationName, settings.Parent, serviceName: null, settings.StartTime, finishOnClose);
         }
@@ -317,6 +319,7 @@ namespace Datadog.Trace
         public IScope StartActive(string operationName)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_StartActive);
+            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
             return StartActiveInternal(operationName);
         }
 
@@ -330,6 +333,7 @@ namespace Datadog.Trace
         public IScope StartActive(string operationName, SpanCreationSettings settings)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_StartActive_Settings);
+            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
             var finishOnClose = settings.FinishOnClose ?? true;
             return StartActiveInternal(operationName, settings.Parent, serviceName: null, settings.StartTime, finishOnClose);
         }
