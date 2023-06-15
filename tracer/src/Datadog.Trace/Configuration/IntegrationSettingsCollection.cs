@@ -10,6 +10,7 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Configuration
 {
@@ -29,6 +30,7 @@ namespace Datadog.Trace.Configuration
         public IntegrationSettingsCollection(IConfigurationSource source)
             : this(source, TelemetryFactory.Config)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettingsCollection_Ctor_Source);
         }
 
         internal IntegrationSettingsCollection(IConfigurationSource source, IConfigurationTelemetry telemetry)
@@ -48,6 +50,7 @@ namespace Datadog.Trace.Configuration
         {
             get
             {
+                TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettingsCollection_Indexer_Name);
                 if (IntegrationRegistry.TryGetIntegrationId(integrationName, out var integrationId))
                 {
                     return _settings[(int)integrationId];

@@ -13,9 +13,9 @@ namespace Datadog.Trace.Configuration
         internal static class Rcm
         {
             /// <summary>
-            /// Configuration key for RCM poll interval (in milliseconds).
-            /// Default value is 5000 ms
-            /// Maximum value is 5000 ms
+            /// Configuration key for RCM poll interval (in seconds).
+            /// Default value is 5 s
+            /// Maximum value is 5 s
             /// </summary>
             /// <seealso cref="RemoteConfigurationSettings.PollInterval"/>
             public const string PollInterval = "DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS";
