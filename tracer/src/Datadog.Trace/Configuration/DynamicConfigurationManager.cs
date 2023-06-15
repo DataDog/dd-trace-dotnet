@@ -92,9 +92,11 @@ namespace Datadog.Trace.Configuration
 
             if (dynamicSettings.Equals(oldSettings.DynamicSettings))
             {
-                Log.Debug("No changes detected in the new configuration");
+                Log.Debug("No changes detected in the new dynamic configuration");
                 return;
             }
+
+            Log.Debug("Applying new dynamic configuration");
 
             var newSettings = oldSettings with { DynamicSettings = dynamicSettings };
 
