@@ -23,9 +23,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> MethodArgumentsData()
         {
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
-                bool fastPath = i < 9;
+                var fastPath = i < 9;
                 yield return new object[] { i, fastPath };
             }
         }
@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
                 int exceptionCount = Regex.Matches(processResult.StandardOutput, "Exception thrown.").Count;
 
-                string[] typeNames = new string[]
+                string[] typeNames =
                 {
                     ".VoidMethod",
                     ".ReturnValueMethod",
@@ -95,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 int begin2MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({2}\\)").Count;
                 int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
 
-                string[] typeNames = new string[]
+                string[] typeNames =
                 {
                     ".VoidMethod",
                     ".VoidRefMethod",
@@ -126,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 int begin2MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({2}\\)").Count;
                 int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
 
-                string[] typeNames = new string[]
+                string[] typeNames =
                 {
                     ".VoidMethod",
                 };
@@ -156,7 +156,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 int begin1MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
                 int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
 
-                string[] typeNames = new string[]
+                string[] typeNames =
                 {
                     ".VoidMethod",
                     ".OtherMethod",
@@ -183,12 +183,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = RunSampleAndWaitForExit(agent, arguments: "interface"))
             {
-                int begin1MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
+                int begin1MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\(").Count;
                 int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
 
-                string[] typeNames = new string[]
+                string[] typeNames =
                 {
                     ".VoidMethod",
+                    ".ReturnValueMethod",
                 };
 
                 Assert.Equal(3, begin1MethodCount);

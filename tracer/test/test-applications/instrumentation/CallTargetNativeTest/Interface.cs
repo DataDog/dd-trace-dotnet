@@ -23,7 +23,7 @@ partial class Program
         
         // Check we always select the explicit implementation over a normal implementation.
         IExplicitOverNormal explicitOverNormalImpl = new ExplicitOverNormalImpl();
-        Console.WriteLine($"{typeof(ExplicitOverNormalImpl).FullName}.ReturnString");
+        Console.WriteLine($"{typeof(ExplicitOverNormalImpl).FullName}.ReturnValueMethod");
         RunMethod(() =>
         {
             var value = explicitOverNormalImpl.ReturnValueMethod();
