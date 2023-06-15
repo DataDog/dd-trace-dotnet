@@ -57,6 +57,7 @@ const shared::WSTRING include_assemblies[]{
     WStr("Microsoft.Extensions.Logging"),
     WStr("Microsoft.Extensions.Logging.Abstractions"),
     WStr("System.Diagnostics.Process"),
+    WStr("Microsoft.Extensions.Identity.Core")
 };
 
 // Note that this list should be kept in sync with the values in shared/src/Datadog.Trace.ClrProfiler.Native/util.h

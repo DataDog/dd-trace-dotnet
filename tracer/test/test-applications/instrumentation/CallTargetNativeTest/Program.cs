@@ -133,6 +133,7 @@ namespace CallTargetNativeTest
             NativeMethods.AddInterfaceInstrumentations(Guid.NewGuid().ToString("N"), new NativeCallTargetDefinition[]
             {
                 new(TargetAssembly, typeof(InterfaceType).FullName, "VoidMethod", new[] { "_", "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop1ArgumentsVoidIntegration).FullName),
+                new(TargetAssembly, typeof(IExplicitOverNormal).FullName, "ReturnValueMethod", new[] { "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(ExplicitOverNormalIntegration).FullName),
             });
         }
 

@@ -8,7 +8,10 @@
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.RazorPages" Version="2.1.1" />
-    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.113.7" />
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="7.0.5" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.5" />
+    <PackageReference Include="SQLitePCLRaw.core" Version="2.1.5" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
   </ItemGroup>
 
   <!--Files shared with AspNetCore5 -->
@@ -16,7 +19,14 @@
     <Compile Include="..\Samples.Security.AspNetCore5\Controllers\**\*.*" Link="Controllers\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\Samples.Security.AspNetCore5\Data\**\*.cs" Link="Data\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\Samples.Security.AspNetCore5\Models\**\*.*" Link="Models\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Samples.Security.AspNetCore5\IdentityStores\**\*.*" Link="IdentityStores\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Samples.Security.AspNetCore5\Extensions.cs" Link="%(RecursiveDir)%(Filename)%(Extension)" />
+    <Content Include="..\Samples.Security.AspNetCore5\Data\**\*.db-*" Link="Data\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Content Include="..\Samples.Security.AspNetCore5\Data\**\*.db" Link="Data\%(RecursiveDir)%(Filename)%(Extension)" />
     <Content Include="..\Samples.Security.AspNetCore5\Views\**\*.*" Link="Views\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Content Update="appsettings.Development.json">
+      <DependentUpon>appsettings.json</DependentUpon>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
