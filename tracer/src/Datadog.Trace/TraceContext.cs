@@ -157,6 +157,7 @@ namespace Datadog.Trace
                 {
                     spansToWrite = _spans.GetArray();
                     _spans = default;
+                    TelemetryFactory.Metrics.RecordCountTraceSegmentsClosed();
                 }
                 else if (ShouldTriggerPartialFlush())
                 {
