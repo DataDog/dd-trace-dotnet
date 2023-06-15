@@ -89,7 +89,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
         iterate_explicit_interface_methods ?
             enumExplicitInterfaceMethods.begin() : enumMethods.begin();
     auto iteratorEnd = enumMethods.end();
-    auto explicitMode = true;
+    auto explicitMode = iterate_explicit_interface_methods;
 
     for (; enumIterator != iteratorEnd; enumIterator = ++enumIterator)
     {
