@@ -96,42 +96,6 @@ internal static class StringBuilderModuleImpl
         return result;
     }
 
-    public static StringBuilder TaintFullStringBuilderIfTainted(StringBuilder target, object? argument1 = null)
-    {
-        try
-        {
-            var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
-            {
-                return target;
-            }
-
-            var taintedObjects = iastContext.GetTaintedObjects();
-            var tainted = taintedObjects?.Get(target);
-
-            if (tainted == null)
-            {
-                return target;
-            }
-
-            if (tainted?.Ranges?.Length > 0)
-            {
-                var source = tainted.Ranges[0].Source;
-
-                if (source is not null)
-                {
-                    tainted.Ranges = new Range[] { new Range(0, target.Length, source) };
-                }
-            }
-        }
-        catch (Exception err)
-        {
-            Log.Error(err, "PropagationModuleImpl.TaintFullStringBuilderIfTainted exception");
-        }
-
-        return target;
-    }
-
     /// <summary> Taints a string.Insert operation </summary>
     /// <param name="target"> original string </param>
     /// <param name="previousLength"> previous length of the string builder </param>
@@ -218,6 +182,66 @@ internal static class StringBuilderModuleImpl
         }
 
         return target;
+    }
+
+    public static void FullTaintIfAnyTainted(StringBuilder target, object? firstInput = null, params object[]? otherInputs)
+    {
+        try
+        {
+            if (target is null)
+            {
+                return;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext is null)
+            {
+                return;
+            }
+
+            var taintedObjects = iastContext.GetTaintedObjects();
+            var tainted = PropagationModuleImpl.GetTainted(taintedObjects, target);
+            bool targetIsTainted = tainted is not null;
+
+            if (!targetIsTainted)
+            {
+                if (firstInput is null || (tainted = PropagationModuleImpl.GetTainted(taintedObjects, firstInput)) is null)
+                {
+                    if (otherInputs is null)
+                    {
+                        return;
+                    }
+
+                    for (int i = 0; i < otherInputs.Length; i++)
+                    {
+                        if ((tainted = PropagationModuleImpl.GetTainted(taintedObjects, otherInputs[i])) is not null)
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (tainted is null || tainted.Ranges.Length == 0)
+            {
+                return;
+            }
+
+            var rangesResult = new Range[] { new Range(0, target.Length, tainted.Ranges[0].Source) };
+
+            if (!targetIsTainted)
+            {
+                taintedObjects.Taint(target, rangesResult);
+            }
+            else
+            {
+                tainted.Ranges = rangesResult;
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "StringModuleImpl.FullTaintIfAnyTainted exception {Exception}", err.Message);
+        }
     }
 
     private static Range[]? GetRepeatedRange(int count, int valueLenght, TaintedObject? taintedValue)

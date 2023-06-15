@@ -45,6 +45,48 @@ internal static class PropagationModuleImpl
         }
     }
 
+    /// <summary> Taints a string.Remove operation </summary>
+    /// <param name="self"> original string </param>
+    /// <param name="result"> Result </param>
+    /// <param name="beginIndex"> start index </param>
+    /// <param name="endIndex"> end index </param>
+    /// <returns> result </returns>
+    public static object? OnStringRemove(object self, object result, int beginIndex, int endIndex)
+    {
+        try
+        {
+            if (self is null || result is null)
+            {
+                return result;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return result;
+            }
+
+            var taintedObjects = iastContext.GetTaintedObjects();
+            var taintedSelf = PropagationModuleImpl.GetTainted(taintedObjects, self);
+            if (taintedSelf == null)
+            {
+                return result;
+            }
+
+            var newRanges = Ranges.ForRemove(beginIndex, endIndex, taintedSelf.Ranges);
+            if (newRanges != null && newRanges.Length > 0)
+            {
+                taintedObjects.Taint(result, newRanges);
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "PropagationModuleImpl.OnStringRemove exception {Exception}", err.Message);
+        }
+
+        return result;
+    }
+
     public static object? PropagateResultWhenInputTainted(string result, object? firstInput, object? secondInput = null, object? thirdInput = null, object? fourthInput = null)
     {
         try

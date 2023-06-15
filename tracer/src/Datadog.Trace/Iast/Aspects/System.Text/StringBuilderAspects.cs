@@ -213,7 +213,7 @@ public class StringBuilderAspects
     public static StringBuilder AppendFormat(StringBuilder target, string format, object arg0)
     {
         var result = target.AppendFormat(format, arg0);
-        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, arg0);
         return result;
     }
 
@@ -227,7 +227,7 @@ public class StringBuilderAspects
     public static StringBuilder AppendFormat(StringBuilder target, string format, object arg0, object arg1)
     {
         var result = target.AppendFormat(format, arg0, arg1);
-        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, arg0, arg1);
         return result;
     }
 
@@ -242,7 +242,7 @@ public class StringBuilderAspects
     public static StringBuilder AppendFormat(StringBuilder target, string format, object arg0, object arg1, object arg2)
     {
         var result = target.AppendFormat(format, arg0, arg1, arg2);
-        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, arg0, arg1, arg2);
         return result;
     }
 
@@ -255,7 +255,7 @@ public class StringBuilderAspects
     public static StringBuilder AppendFormat(StringBuilder target, string format, object[] args)
     {
         var result = target.AppendFormat(format, args);
-        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, args);
         return result;
     }
 
@@ -268,8 +268,8 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.IFormatProvider,System.String,System.Object)")]
     public static StringBuilder AppendFormat(StringBuilder target, IFormatProvider provider, string format, object arg0)
     {
-        var result = target.AppendFormat(format, arg0);
-        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        var result = target.AppendFormat(provider, format, arg0);
+        StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, arg0);
         return result;
     }
 
@@ -283,8 +283,8 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.IFormatProvider,System.String,System.Object,System.Object)")]
     public static StringBuilder AppendFormat(StringBuilder target, IFormatProvider provider, string format, object arg0, object arg1)
     {
-        var result = target.AppendFormat(format, arg0, arg1);
-        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        var result = target.AppendFormat(provider, format, arg0, arg1);
+        StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, arg0, arg1);
         return result;
     }
 
@@ -299,8 +299,8 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.IFormatProvider,System.String,System.Object,System.Object,System.Object)")]
     public static StringBuilder AppendFormat(StringBuilder target, IFormatProvider provider, string format, object arg0, object arg1, object arg2)
     {
-        var result = target.AppendFormat(format, arg0, arg1, arg2);
-        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        var result = target.AppendFormat(provider, format, arg0, arg1, arg2);
+        StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, arg0, arg1, arg2);
         return result;
     }
 
@@ -314,7 +314,7 @@ public class StringBuilderAspects
     public static StringBuilder AppendFormat(StringBuilder target, IFormatProvider provider, string format, object[] args)
     {
         var result = target.AppendFormat(provider, format, args);
-        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, args);
         return result;
     }
 
@@ -328,7 +328,7 @@ public class StringBuilderAspects
     public static void CopyTo(StringBuilder target, int sourceIndex, char[] destination, int destinationIndex, int count)
     {
         target.CopyTo(sourceIndex, destination, destinationIndex, count);
-        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        PropagationModuleImpl.PropagateTaint(destination, target);
     }
 
     /// <summary>  StringBuilder.Insert aspect </summary>
@@ -595,7 +595,7 @@ public class StringBuilderAspects
     public static StringBuilder Remove(StringBuilder target, int startIndex, int length)
     {
         var result = target.Remove(startIndex, length);
-        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        PropagationModuleImpl.OnStringRemove(target, result, startIndex, startIndex + length);
         return result;
     }
 
@@ -608,7 +608,7 @@ public class StringBuilderAspects
     public static StringBuilder Replace(StringBuilder target, string oldValue, string newValue)
     {
         var result = target.Replace(oldValue, newValue);
-        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        StringBuilderModuleImpl.FullTaintIfAnyTainted(target, oldValue, newValue);
         return result;
     }
 
@@ -623,7 +623,7 @@ public class StringBuilderAspects
     public static StringBuilder Replace(StringBuilder target, string oldValue, string newValue, int startIndex, int count)
     {
         var result = target.Replace(oldValue, newValue, startIndex, count);
-        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        StringBuilderModuleImpl.FullTaintIfAnyTainted(target, oldValue, newValue);
         return result;
     }
 
@@ -636,7 +636,7 @@ public class StringBuilderAspects
     public static StringBuilder Replace(StringBuilder target, char oldChar, char newChar)
     {
         var result = target.Replace(oldChar, newChar);
-        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        StringBuilderModuleImpl.FullTaintIfAnyTainted(target);
         return result;
     }
 
@@ -651,7 +651,7 @@ public class StringBuilderAspects
     public static StringBuilder Replace(StringBuilder target, char oldChar, char newChar, int startIndex, int count)
     {
         var result = target.Replace(oldChar, newChar, startIndex, count);
-        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        StringBuilderModuleImpl.FullTaintIfAnyTainted(target);
         return result;
     }
 
@@ -662,6 +662,6 @@ public class StringBuilderAspects
     public static void SetLength(StringBuilder target, int length)
     {
         target.Length = length;
-        StringBuilderModuleImpl.TaintFullStringBuilderIfTainted(target);
+        StringBuilderModuleImpl.FullTaintIfAnyTainted(target);
     }
 }
