@@ -128,7 +128,6 @@ namespace Datadog.Trace.Agent
                 }
             }
 
-            TelemetryFactory.Metrics.RecordCountTraceEnqueued();
             if (_statsd != null)
             {
                 _statsd.Increment(TracerMetricNames.Queue.EnqueuedTraces);
@@ -332,14 +331,14 @@ namespace Datadog.Trace.Agent
 
                         var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans).ConfigureAwait(false);
 
-                        TelemetryFactory.Metrics.RecordCountTraceSent(buffer.TraceCount);
+                        TelemetryFactory.Metrics.RecordCountTraceChunkSent(buffer.TraceCount);
                         if (success)
                         {
                             _traceKeepRateCalculator.IncrementKeeps(buffer.TraceCount);
                         }
                         else
                         {
-                            TelemetryFactory.Metrics.RecordCountTraceDropped(MetricTags.DropReason.ApiError, buffer.TraceCount);
+                            TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.ApiError, buffer.TraceCount);
                             TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.ApiError, buffer.SpanCount);
                             _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
                         }
@@ -349,7 +348,7 @@ namespace Datadog.Trace.Agent
                 {
                     Log.Error(ex, "An unhandled error occurred while flushing a buffer");
                     _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
-                    TelemetryFactory.Metrics.RecordCountTraceDropped(MetricTags.DropReason.ApiError, buffer.TraceCount);
+                    TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.ApiError, buffer.TraceCount);
                     TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.ApiError, buffer.SpanCount);
                 }
                 finally
@@ -408,7 +407,11 @@ namespace Datadog.Trace.Agent
                     }
                 }
 
-                if (!shouldSendTrace)
+                if (shouldSendTrace)
+                {
+                    TelemetryFactory.Metrics.RecordCountTraceChunkEnqueued(MetricTags.TraceChunkEnqueueReason.P0Keep);
+                }
+                else
                 {
                     // If stats computation determined that we can drop the P0 Trace,
                     // skip all other processing
@@ -416,8 +419,8 @@ namespace Datadog.Trace.Agent
                     {
                         Interlocked.Increment(ref _droppedP0Traces);
                         Interlocked.Add(ref _droppedP0Spans, spans.Count);
-                        TelemetryFactory.Metrics.RecordCountTraceDropped(MetricTags.DropReason.SamplingDecision);
-                        TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.SamplingDecision, spans.Count);
+                        TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.P0Drop);
+                        TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.P0Drop, spans.Count);
                         return;
                     }
                     else
@@ -432,6 +435,10 @@ namespace Datadog.Trace.Agent
                     // TODO: Add telemetry metrics to record single span sampling
                     }
                 }
+            }
+            else
+            {
+                TelemetryFactory.Metrics.RecordCountTraceChunkEnqueued(MetricTags.TraceChunkEnqueueReason.Default);
             }
 
             // Add the current keep rate to the root span
@@ -494,7 +501,7 @@ namespace Datadog.Trace.Agent
             Interlocked.Increment(ref _droppedTraces);
             _traceKeepRateCalculator.IncrementDrops(1);
             TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.OverfullBuffer, spans.Count);
-            TelemetryFactory.Metrics.RecordCountTraceDropped(MetricTags.DropReason.OverfullBuffer);
+            TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.OverfullBuffer);
 
             if (_statsd != null)
             {

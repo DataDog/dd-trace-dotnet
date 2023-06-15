@@ -233,7 +233,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // The numbers here may change, but we should have _some_
             telemetry.GetDistributions(Distribution.InitTime).Sum(x => x.Points.Count).Should().BeGreaterThan(5);
 
-            telemetry.GetMetricDataPoints(Count.TraceEnqueued).Sum(x => x.Value).Should().Be(ExpectedTraces);
+            telemetry.GetMetricDataPoints(Count.TraceChunkEnqueued).Sum(x => x.Value).Should().Be(ExpectedTraces);
 
             // TODO: enable these once implemented
             // // The exact number of logs aren't important, but we should have some
