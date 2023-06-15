@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
 {
     public class NLogDuckTypingTests
     {
-#if NLOG_45
+#if (NLOG_45 || NLOG_50)
         [Fact]
         public void CanDuckTypeLoggingConfigurationInModernNlog()
         {
@@ -129,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
             var typedProxy = ((Target)proxy);
             typedProxy.WriteAsyncLogEvent(logInfo); // should not throw
 
-#if NLOG_45
+#if (NLOG_45 || NLOG_50)
             var proxyOfProxy = proxy.DuckCast<ITargetWithContextBaseProxy>();
             proxyOfProxy.Should().NotBeNull();
 
@@ -140,7 +140,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
 #endif
         }
 
-#if !NLOG_45
+#if (!NLOG_45 && !NLOG_50)
         [Fact]
         public void CanDuckTypeLogInfoInLegacyNLog()
         {

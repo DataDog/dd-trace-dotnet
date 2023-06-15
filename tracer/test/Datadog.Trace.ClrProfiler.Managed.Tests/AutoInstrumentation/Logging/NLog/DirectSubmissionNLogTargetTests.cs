@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
             var logger = logFactory.GetLogger(nameof(LoggerIncludesPropertiesInLog));
 
             // We don't currently record NDC/NDLC
-#if NLOG_45
+#if (NLOG_45 || NLOG_50)
             var messageTemplate = "This is a message with {Value}";
 #else
             var messageTemplate = "This is a message with {0}";

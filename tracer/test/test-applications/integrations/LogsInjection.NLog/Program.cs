@@ -36,7 +36,14 @@ namespace LogsInjection.NLog
 
             // Initialize NLog
             var appDirectory = Directory.GetParent(typeof(Program).Assembly.Location).FullName;
-#if NLOG_4_6
+#if NLOG_5_0
+            LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "NLog.50.config"));
+            Console.WriteLine("Using NLOG_5_0 configuration");
+
+            global::NLog.LogManager.ThrowExceptions = true;
+            global::NLog.Common.InternalLogger.LogToConsole = true;
+            global::NLog.Common.InternalLogger.LogLevel = LogLevel.Debug;
+#elif NLOG_4_6
             LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "NLog.46.config"));
             Console.WriteLine("Using NLOG_4_6 configuration");
 

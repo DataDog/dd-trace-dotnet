@@ -19,7 +19,16 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
 {
     internal static class NLogHelper
     {
-#if NLOG_45
+#if NLOG_50
+        public static DirectSubmissionNLogV5Target CreateTarget(IDatadogSink sink, DirectSubmissionLogLevel minimumLevel)
+            => new(sink, minimumLevel, LogSettingsHelper.GetFormatter());
+
+        public static ILogEventInfoProxy GetLogEventProxy(LogEventInfo logEvent)
+            => logEvent.DuckCast<ILogEventInfoProxy>();
+
+        public static void AddTargetToConfig(LoggingConfiguration config, object targetProxy)
+            => NLogCommon<LoggingConfiguration>.AddDatadogTargetNLog50(config, targetProxy);
+#elif NLOG_45
         public static DirectSubmissionNLogTarget CreateTarget(IDatadogSink sink, DirectSubmissionLogLevel minimumLevel)
             => new(sink, minimumLevel, LogSettingsHelper.GetFormatter());
 
@@ -39,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
 #if NLOG_43
         public static void AddTargetToConfig(LoggingConfiguration config, object targetProxy)
             => NLogCommon<LoggingConfiguration>.AddDatadogTargetNLog43To45(config, targetProxy);
-#elif !NLOG_45
+#elif (!NLOG_45 && !NLOG_50)
         public static void AddTargetToConfig(LoggingConfiguration config, object targetProxy)
             => NLogCommon<LoggingConfiguration>.AddDatadogTargetNLogPre43(config, targetProxy);
 #endif
