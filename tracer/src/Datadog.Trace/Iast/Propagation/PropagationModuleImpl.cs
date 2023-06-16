@@ -136,31 +136,38 @@ internal static class PropagationModuleImpl
 
     public static string[]? PropagateResultWhenInputTainted(string[]? results, object? input)
     {
-        if (!(results?.Length > 0) || input is null)
+        try
         {
-            return results;
-        }
-
-        var iastContext = IastModule.GetIastContext();
-        if (iastContext == null)
-        {
-            return results;
-        }
-
-        var taintedObjects = iastContext.GetTaintedObjects();
-
-        var tainted = taintedObjects.Get(input);
-        if (tainted?.Ranges?.Length > 0)
-        {
-            var source = tainted.Ranges[0].Source;
-
-            if (source is not null)
+            if (!(results?.Length > 0) || input is null)
             {
-                for (int i = 0; i < results.Length; i++)
+                return results;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return results;
+            }
+
+            var taintedObjects = iastContext.GetTaintedObjects();
+
+            var tainted = taintedObjects.Get(input);
+            if (tainted?.Ranges?.Length > 0)
+            {
+                var source = tainted.Ranges[0].Source;
+
+                if (source is not null)
                 {
-                    taintedObjects.Taint(results[i], new Range[] { new Range(0, results[i].Length, source) });
+                    for (int i = 0; i < results.Length; i++)
+                    {
+                        taintedObjects.Taint(results[i], new Range[] { new Range(0, results[i].Length, source) });
+                    }
                 }
             }
+        }
+        catch (Exception error)
+        {
+            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(PropagateResultWhenInputTainted)} exception");
         }
 
         return results;
