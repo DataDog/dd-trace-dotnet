@@ -37,6 +37,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
 
             // only contention profiler enabled so should only see the 2 related values per sample
             SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 2);
+            Assert.True(SamplesHelper.IsLabelPresent(runner.Environment.PprofDir, "raw duration"));
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0" })]

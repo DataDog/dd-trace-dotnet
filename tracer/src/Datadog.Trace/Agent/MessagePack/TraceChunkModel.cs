@@ -111,7 +111,7 @@ internal readonly struct TraceChunkModel
             // skip the HashSet to avoid initializing it yet, always iterate the array of spans.
             ContainsLocalRootSpan = IndexOf(localRootSpanId, spans.Count - 1) >= 0;
 
-            HasUpstreamService = localRootSpan.Context.ParentId is not (null or 0);
+            HasUpstreamService = localRootSpan.Context.ParentIdInternal is not (null or 0);
         }
     }
 
@@ -138,7 +138,7 @@ internal readonly struct TraceChunkModel
         }
 
         var span = _spans.Array![_spans.Offset + spanIndex];
-        var parentId = span.Context.ParentId ?? 0;
+        var parentId = span.Context.ParentIdInternal ?? 0;
         bool isLocalRoot = parentId is 0 || span.SpanId == LocalRootSpanId;
         bool isFirstSpan = spanIndex == 0;
 

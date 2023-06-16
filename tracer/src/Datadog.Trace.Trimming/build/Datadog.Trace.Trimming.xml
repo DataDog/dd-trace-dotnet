@@ -681,6 +681,7 @@
       <type fullname="System.Runtime.CompilerServices.SkipLocalsInitAttribute" />
       <type fullname="System.Runtime.CompilerServices.StateMachineAttribute" />
       <type fullname="System.Runtime.CompilerServices.StrongBox`1" />
+      <type fullname="System.Runtime.CompilerServices.SwitchExpressionException" />
       <type fullname="System.Runtime.CompilerServices.TaskAwaiter" />
       <type fullname="System.Runtime.CompilerServices.TaskAwaiter`1" />
       <type fullname="System.Runtime.CompilerServices.TupleElementNamesAttribute" />
@@ -818,6 +819,7 @@
       <type fullname="System.PlatformID" />
       <type fullname="System.Random" />
       <type fullname="System.ResolveEventHandler" />
+      <type fullname="System.Runtime.CompilerServices.SwitchExpressionException" />
       <type fullname="System.Security.Permissions.SecurityAction" />
       <type fullname="System.Security.Permissions.SecurityPermissionAttribute" />
       <type fullname="System.StringComparer" />

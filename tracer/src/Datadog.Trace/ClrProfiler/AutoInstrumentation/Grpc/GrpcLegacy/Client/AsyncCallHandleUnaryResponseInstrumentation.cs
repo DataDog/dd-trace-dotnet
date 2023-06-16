@@ -53,14 +53,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                 {
                     if (receivedStatus.Trailers is { Count: > 0 })
                     {
-                        span.SetHeaderTags(new MetadataHeadersCollection(receivedStatus.Trailers), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                        span.SetHeaderTags(new MetadataHeadersCollection(receivedStatus.Trailers), tracer.Settings.GrpcTagsInternal, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
                     }
                     else if (responseHeaders is not null)
                     {
                         var responseMetadata = responseHeaders.DuckCast<IMetadata>();
                         if (responseMetadata.Count > 0)
                         {
-                            span.SetHeaderTags(new MetadataHeadersCollection(responseMetadata), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                            span.SetHeaderTags(new MetadataHeadersCollection(responseMetadata), tracer.Settings.GrpcTagsInternal, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
                         }
                     }
                 }

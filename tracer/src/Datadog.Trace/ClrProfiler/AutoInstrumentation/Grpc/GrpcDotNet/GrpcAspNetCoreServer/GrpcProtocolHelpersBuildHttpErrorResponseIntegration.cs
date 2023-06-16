@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
                 // There won't be any response metadata, as interceptors haven't executed, but we can grab
                 // the request metadata directly from the HttpRequest
                 var request = response.HttpContext.Request;
-                span.SetHeaderTags(new HeadersCollectionAdapter(request.Headers), tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.RequestMetadataTagPrefix);
+                span.SetHeaderTags(new HeadersCollectionAdapter(request.Headers), tracer.Settings.GrpcTagsInternal, defaultTagPrefix: GrpcCommon.RequestMetadataTagPrefix);
             }
 
             return CallTargetState.GetDefault();

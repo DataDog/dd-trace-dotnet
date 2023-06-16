@@ -78,7 +78,7 @@ namespace Datadog.Trace.PlatformHelpers
         {
             var settings = tracer.Settings;
 
-            if (!settings.HeaderTags.IsNullOrEmpty())
+            if (!settings.HeaderTagsInternal.IsNullOrEmpty())
             {
                 try
                 {
@@ -86,7 +86,7 @@ namespace Datadog.Trace.PlatformHelpers
                     var requestHeaders = request.Headers;
                     if (requestHeaders != null)
                     {
-                        SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, new HeadersCollectionAdapter(requestHeaders), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                        SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, new HeadersCollectionAdapter(requestHeaders), settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                     }
                 }
                 catch (Exception ex)
@@ -166,7 +166,7 @@ namespace Datadog.Trace.PlatformHelpers
                     }
                 }
 
-                span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 if (security.Enabled)
                 {
                     var transport = new SecurityCoordinator(security, httpContext, span);
