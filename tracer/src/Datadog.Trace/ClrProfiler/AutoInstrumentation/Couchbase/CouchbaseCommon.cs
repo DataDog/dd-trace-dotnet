@@ -27,14 +27,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         internal const string MaxVersion3 = "3";
         internal const string IntegrationName = nameof(Configuration.IntegrationId.Couchbase);
 
-        private const string OperationName = "couchbase.query";
+        private const string DatabaseType = "couchbase";
         private const string ServiceName = "couchbase";
         private const IntegrationId IntegrationId = Configuration.IntegrationId.Couchbase;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CouchbaseCommon));
 
         internal static CallTargetState CommonOnMethodBeginV3<TOperation>(TOperation tOperation)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
+            var tracer = Tracer.Instance;
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
             {
                 // integration disabled, don't create a scope, skip this trace
                 return CallTargetState.GetDefault();
@@ -42,19 +43,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 
             var operation = tOperation.DuckCast<OperationStructV3>();
 
-            var tags = new CouchbaseTags()
-            {
-                OperationCode = operation.OpCode.ToString(),
-                Bucket = operation.BucketName,
-                Key = operation.Key,
-            };
+            CouchbaseTags tags = tracer.CurrentTraceSettings.Schema.Database.CreateCouchbaseTags();
+            tags.OperationCode = operation.OpCode.ToString();
+            tags.Bucket = operation.BucketName;
+            tags.Key = operation.Key;
 
-            return CommonOnMethodBegin(tags);
+            return CommonOnMethodBegin(tracer, tags);
         }
 
         internal static CallTargetState CommonOnMethodBegin<TOperation>(TOperation tOperation)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
+            var tracer = Tracer.Instance;
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
             {
                 // integration disabled, don't create a scope, skip this trace
                 return CallTargetState.GetDefault();
@@ -66,24 +66,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
             var port = operation.CurrentHost?.Port.ToString();
             var code = operation.OperationCode.ToString();
 
-            var tags = new CouchbaseTags()
-            {
-                OperationCode = code,
-                Key = operation.Key,
-                Host = host,
-                Port = port
-            };
+            CouchbaseTags tags = tracer.CurrentTraceSettings.Schema.Database.CreateCouchbaseTags();
+            tags.OperationCode = code;
+            tags.Key = operation.Key;
+            tags.Host = host;
+            tags.Port = port;
 
-            return CommonOnMethodBegin(tags);
+            return CommonOnMethodBegin(tracer, tags);
         }
 
-        private static CallTargetState CommonOnMethodBegin(CouchbaseTags tags)
+        private static CallTargetState CommonOnMethodBegin(Tracer tracer, CouchbaseTags tags)
         {
             try
             {
-                var tracer = Tracer.Instance;
-                var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, ServiceName);
-                var scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
+                string operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
+                string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
+
+                var scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
                 scope.Span.Type = SpanTypes.Db;
                 scope.Span.ResourceName = tags.OperationCode;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
