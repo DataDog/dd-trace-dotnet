@@ -227,29 +227,36 @@ internal static class PropagationModuleImpl
     /// <param name="resultLength"> Result's length </param>
     public static void OnStringSubSequence(object self, int beginIndex, object result, int resultLength)
     {
-        var iastContext = IastModule.GetIastContext();
-        if (iastContext == null)
+        try
         {
-            return;
-        }
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return;
+            }
 
-        var taintedObjects = iastContext.GetTaintedObjects();
-        var selfTainted = taintedObjects.Get(self);
-        if (selfTainted == null)
-        {
-            return;
-        }
+            var taintedObjects = iastContext.GetTaintedObjects();
+            var selfTainted = taintedObjects.Get(self);
+            if (selfTainted == null)
+            {
+                return;
+            }
 
-        var rangesSelf = selfTainted.Ranges;
-        if (rangesSelf.Length == 0)
-        {
-            return;
-        }
+            var rangesSelf = selfTainted.Ranges;
+            if (rangesSelf.Length == 0)
+            {
+                return;
+            }
 
-        var newRanges = Ranges.ForSubstring(beginIndex, resultLength, rangesSelf);
-        if (newRanges != null && newRanges.Length > 0)
+            var newRanges = Ranges.ForSubstring(beginIndex, resultLength, rangesSelf);
+            if (newRanges != null && newRanges.Length > 0)
+            {
+                taintedObjects.Taint(result, newRanges);
+            }
+        }
+        catch (Exception error)
         {
-            taintedObjects.Taint(result, newRanges);
+            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(OnStringSubSequence)} exception");
         }
     }
 
@@ -261,50 +268,57 @@ internal static class PropagationModuleImpl
     // exceed the string length
     public static void FixRangesIfNeeded(string result)
     {
-        var tainted = IastModule.GetIastContext()?.GetTaintedObjects()?.Get(result);
-        var ranges = tainted?.Ranges;
-
-        if (ranges == null)
+        try
         {
-            return;
+            var tainted = IastModule.GetIastContext()?.GetTaintedObjects()?.Get(result);
+            var ranges = tainted?.Ranges;
+
+            if (ranges == null)
+            {
+                return;
+            }
+
+            var incorrectRanges = false;
+            List<Range>? newRanges = null;
+
+            for (int i = 0; i < ranges.Length; i++)
+            {
+                var range = ranges[i];
+                if (range.Start >= result.Length)
+                {
+                    if (!incorrectRanges)
+                    {
+                        newRanges = FillValidRangesArray(ranges, i - 1);
+                        incorrectRanges = true;
+                    }
+                }
+                else if (range.Start + range.Length > result.Length)
+                {
+                    if (!incorrectRanges)
+                    {
+                        newRanges = FillValidRangesArray(ranges, i - 1);
+                        incorrectRanges = true;
+                    }
+
+                    newRanges?.Add(new Range(range.Start, result.Length - range.Start, range.Source));
+                }
+                else
+                {
+                    if (incorrectRanges)
+                    {
+                        newRanges?.Add(range);
+                    }
+                }
+            }
+
+            if (incorrectRanges)
+            {
+                tainted!.Ranges = newRanges!.ToArray();
+            }
         }
-
-        var incorrectRanges = false;
-        List<Range>? newRanges = null;
-
-        for (int i = 0; i < ranges.Length; i++)
+        catch (Exception error)
         {
-            var range = ranges[i];
-            if (range.Start >= result.Length)
-            {
-                if (!incorrectRanges)
-                {
-                    newRanges = FillValidRangesArray(ranges, i - 1);
-                    incorrectRanges = true;
-                }
-            }
-            else if (range.Start + range.Length > result.Length)
-            {
-                if (!incorrectRanges)
-                {
-                    newRanges = FillValidRangesArray(ranges, i - 1);
-                    incorrectRanges = true;
-                }
-
-                newRanges?.Add(new Range(range.Start, result.Length - range.Start, range.Source));
-            }
-            else
-            {
-                if (incorrectRanges)
-                {
-                    newRanges?.Add(range);
-                }
-            }
-        }
-
-        if (incorrectRanges)
-        {
-            tainted!.Ranges = newRanges!.ToArray();
+            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(FixRangesIfNeeded)} exception");
         }
     }
 
