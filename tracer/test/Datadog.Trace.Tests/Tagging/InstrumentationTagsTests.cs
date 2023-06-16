@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 using Datadog.Trace.Tagging;
 using FluentAssertions;
@@ -83,6 +84,44 @@ namespace Datadog.Trace.Tests.Tagging
 
             tags.SetTag("peer.service", customService);
             tags.BootstrapServers = bootstrapServer;
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void ElasticsearchV1Tags_PeerService_PopulatesFromDestinationHost()
+        {
+            var hostName = "host";
+            var tags = new ElasticsearchV1Tags();
+
+            tags.Host = hostName;
+
+            tags.PeerService.Should().Be(hostName);
+            tags.PeerServiceSource.Should().Be("network.destination.name");
+        }
+
+        [Fact]
+        public void ElasticsearchV1Tags_PeerService_PopulatesFromCustom()
+        {
+            var customService = "client-service";
+            var tags = new ElasticsearchV1Tags();
+
+            tags.SetTag("peer.service", customService);
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void ElasticsearchV1Tags_PeerService_CustomTakesPrecedence()
+        {
+            var hostName = "host";
+            var customService = "client-service";
+            var tags = new ElasticsearchV1Tags();
+
+            tags.SetTag("peer.service", customService);
+            tags.Host = hostName;
 
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");

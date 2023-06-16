@@ -6,11 +6,11 @@
 #nullable enable
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Util;
@@ -23,7 +23,6 @@ namespace Datadog.Trace.Configuration
     public class ImmutableTracerSettings
     {
         private readonly DomainMetadata _domainMetadata;
-        private readonly ConcurrentDictionary<string, string> _serviceNameCache = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImmutableTracerSettings"/> class
@@ -43,55 +42,55 @@ namespace Datadog.Trace.Configuration
         public ImmutableTracerSettings(TracerSettings settings)
         {
             // DD_ENV has precedence over DD_TAGS
-            Environment = GetExplicitSettingOrTag(settings.Environment, settings.GlobalTags, Tags.Env);
+            Environment = GetExplicitSettingOrTag(settings.EnvironmentInternal, settings.GlobalTagsInternal, Tags.Env);
 
             // DD_VERSION has precedence over DD_TAGS
-            ServiceVersion = GetExplicitSettingOrTag(settings.ServiceVersion, settings.GlobalTags, Tags.Version);
+            ServiceVersion = GetExplicitSettingOrTag(settings.ServiceVersionInternal, settings.GlobalTagsInternal, Tags.Version);
 
             // DD_GIT_COMMIT_SHA has precedence over DD_TAGS
-            GitCommitSha = GetExplicitSettingOrTag(settings.GitCommitSha, settings.GlobalTags, CommonTags.GitCommit);
+            GitCommitSha = GetExplicitSettingOrTag(settings.GitCommitSha, settings.GlobalTagsInternal, CommonTags.GitCommit);
 
             // DD_GIT_REPOSITORY_URL has precedence over DD_TAGS
-            GitRepositoryUrl = GetExplicitSettingOrTag(settings.GitRepositoryUrl, settings.GlobalTags, CommonTags.GitRepository);
+            GitRepositoryUrl = GetExplicitSettingOrTag(settings.GitRepositoryUrl, settings.GlobalTagsInternal, CommonTags.GitRepository);
 
             // create dictionary copy without "env", "version", "git.commit.sha" or "git.repository.url" tags
             // these value are used for "Environment" and "ServiceVersion", "GitCommitSha" and "GitRepositoryUrl" properties
             // or overriden with DD_ENV, DD_VERSION, DD_GIT_COMMIT_SHA and DD_GIT_REPOSITORY_URL respectively
-            var globalTags = settings.GlobalTags
+            var globalTags = settings.GlobalTagsInternal
                                      .Where(kvp => kvp.Key is not (Tags.Env or Tags.Version or CommonTags.GitCommit or CommonTags.GitRepository))
                                      .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
             GlobalTags = new ReadOnlyDictionary<string, string>(globalTags);
 
             GitMetadataEnabled = settings.GitMetadataEnabled;
-            ServiceName = settings.ServiceName;
-            TraceEnabled = settings.TraceEnabled;
-            Exporter = new ImmutableExporterSettings(settings.Exporter);
+            ServiceName = settings.ServiceNameInternal;
+            TraceEnabled = settings.TraceEnabledInternal;
+            Exporter = new ImmutableExporterSettings(settings.ExporterInternal);
 #pragma warning disable 618 // App analytics is deprecated, but still used
-            AnalyticsEnabled = settings.AnalyticsEnabled;
+            AnalyticsEnabled = settings.AnalyticsEnabledInternal;
 #pragma warning restore 618
-            MaxTracesSubmittedPerSecond = settings.MaxTracesSubmittedPerSecond;
-            CustomSamplingRules = settings.CustomSamplingRules;
+            MaxTracesSubmittedPerSecond = settings.MaxTracesSubmittedPerSecondInternal;
+            CustomSamplingRules = settings.CustomSamplingRulesInternal;
             SpanSamplingRules = settings.SpanSamplingRules;
-            GlobalSamplingRate = settings.GlobalSamplingRate;
-            Integrations = new ImmutableIntegrationSettingsCollection(settings.Integrations, settings.DisabledIntegrationNames);
-            HeaderTags = new ReadOnlyDictionary<string, string>(settings.HeaderTags);
-            GrpcTags = new ReadOnlyDictionary<string, string>(settings.GrpcTags);
+            GlobalSamplingRate = settings.GlobalSamplingRateInternal;
+            Integrations = new ImmutableIntegrationSettingsCollection(settings.IntegrationsInternal, settings.DisabledIntegrationNamesInternal);
+            HeaderTags = new ReadOnlyDictionary<string, string>(settings.HeaderTagsInternal);
+            GrpcTags = new ReadOnlyDictionary<string, string>(settings.GrpcTagsInternal);
             IpHeader = settings.IpHeader;
             IpHeaderEnabled = settings.IpHeaderEnabled;
-            TracerMetricsEnabled = settings.TracerMetricsEnabled;
-            StatsComputationEnabled = settings.StatsComputationEnabled;
+            TracerMetricsEnabled = settings.TracerMetricsEnabledInternal;
+            StatsComputationEnabled = settings.StatsComputationEnabledInternal;
             StatsComputationInterval = settings.StatsComputationInterval;
             RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled;
-            KafkaCreateConsumerScopeEnabled = settings.KafkaCreateConsumerScopeEnabled;
-            StartupDiagnosticLogEnabled = settings.StartupDiagnosticLogEnabled;
+            KafkaCreateConsumerScopeEnabled = settings.KafkaCreateConsumerScopeEnabledInternal;
+            StartupDiagnosticLogEnabled = settings.StartupDiagnosticLogEnabledInternal;
             HttpClientExcludedUrlSubstrings = settings.HttpClientExcludedUrlSubstrings;
             HttpServerErrorStatusCodes = settings.HttpServerErrorStatusCodes;
             HttpClientErrorStatusCodes = settings.HttpClientErrorStatusCodes;
             PeerServiceTagsEnabled = settings.PeerServiceTagsEnabled;
             RemoveClientServiceNamesEnabled = settings.RemoveClientServiceNamesEnabled;
             MetadataSchemaVersion = settings.MetadataSchemaVersion;
-            ServiceNameMappings = settings.ServiceNameMappings;
+            ServiceNameMappings = settings.ServiceNameMappings ?? new Dictionary<string, string>();
             TraceBufferSize = settings.TraceBufferSize;
             TraceBatchInterval = settings.TraceBatchInterval;
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
@@ -143,6 +142,11 @@ namespace Datadog.Trace.Configuration
             }
 
             DbmPropagationMode = settings.DbmPropagationMode;
+
+            // We need to take a snapshot of the config telemetry for the tracer settings,
+            // but we can't send it to the static collector, as this settings object may never be "activated"
+            Telemetry = new ConfigurationTelemetry();
+            settings.CollectTelemetry(Telemetry);
         }
 
         /// <summary>
@@ -194,6 +198,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         public ImmutableExporterSettings Exporter { get; }
 
+#pragma warning disable CS1574 // AnalyticsEnabled is obsolete
         /// <summary>
         /// Gets a value indicating whether default Analytics are enabled.
         /// Settings this value is a shortcut for setting
@@ -201,6 +206,7 @@ namespace Datadog.Trace.Configuration
         /// See the documentation for more details.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GlobalAnalyticsEnabled"/>
+#pragma warning restore CS1574
         [Obsolete(DeprecationMessages.AppAnalytics)]
         public bool AnalyticsEnabled { get; }
 
@@ -324,7 +330,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets configuration values for changing service names based on configuration
         /// </summary>
-        internal IDictionary<string, string>? ServiceNameMappings { get; }
+        internal IDictionary<string, string> ServiceNameMappings { get; }
 
         /// <summary>
         /// Gets a value indicating the size in bytes of the trace buffer
@@ -471,6 +477,11 @@ namespace Datadog.Trace.Configuration
         internal SchemaVersion MetadataSchemaVersion { get; }
 
         /// <summary>
+        /// Gets the telemetry that was collected from <see cref="TracerSettings"/> when this instance was built
+        /// </summary>
+        internal IConfigurationTelemetry Telemetry { get; }
+
+        /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources
         /// returned by <see cref="GlobalConfigurationSource.Instance"/>.
         /// </summary>
@@ -501,7 +512,7 @@ namespace Datadog.Trace.Configuration
         {
             if (TraceEnabled && !_domainMetadata.ShouldAvoidAppDomain())
             {
-                return Integrations[integration].Enabled ?? defaultValue;
+                return Integrations[integration].EnabledInternal ?? defaultValue;
             }
 
             return false;
@@ -511,40 +522,8 @@ namespace Datadog.Trace.Configuration
         internal double? GetIntegrationAnalyticsSampleRate(IntegrationId integration, bool enabledWithGlobalSetting)
         {
             var integrationSettings = Integrations[integration];
-            var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && AnalyticsEnabled);
-            return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
-        }
-
-        internal string GetServiceName(Tracer tracer, string serviceName)
-        {
-            if (ServiceNameMappings is not null && ServiceNameMappings.TryGetValue(serviceName, out var name))
-            {
-                return name;
-            }
-
-            if (MetadataSchemaVersion != SchemaVersion.V0 || RemoveClientServiceNamesEnabled)
-            {
-                return tracer.DefaultServiceName;
-            }
-
-            if (!_serviceNameCache.TryGetValue(serviceName, out var finalServiceName))
-            {
-                finalServiceName = $"{tracer.DefaultServiceName}-{serviceName}";
-                _serviceNameCache.TryAdd(serviceName, finalServiceName);
-            }
-
-            return finalServiceName;
-        }
-
-        internal bool TryGetServiceName(string key, out string? serviceName)
-        {
-            if (ServiceNameMappings is not null && ServiceNameMappings.TryGetValue(key, out serviceName))
-            {
-                return true;
-            }
-
-            serviceName = null;
-            return false;
+            var analyticsEnabled = integrationSettings.AnalyticsEnabledInternal ?? (enabledWithGlobalSetting && AnalyticsEnabled);
+            return analyticsEnabled ? integrationSettings.AnalyticsSampleRateInternal : (double?)null;
         }
     }
 }

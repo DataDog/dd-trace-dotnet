@@ -331,6 +331,7 @@ namespace Datadog.Trace.Debugger
         {
             var logs = new List<LogProbe>();
             var metrics = new List<MetricProbe>();
+            var spanDecoration = new List<SpanDecorationProbe>();
             var spans = new List<SpanProbe>();
             ServiceConfiguration serviceConfig = null;
 
@@ -345,6 +346,9 @@ namespace Datadog.Trace.Debugger
                             break;
                         case { } id when id.StartsWith(DefinitionPaths.MetricProbe):
                             metrics.Add(configContent.Deserialize<MetricProbe>().TypedFile);
+                            break;
+                        case { } id when id.StartsWith(DefinitionPaths.SpanDecorationProbe):
+                            spanDecoration.Add(configContent.Deserialize<SpanDecorationProbe>().TypedFile);
                             break;
                         case { } id when id.StartsWith(DefinitionPaths.SpanProbe):
                             spans.Add(configContent.Deserialize<SpanProbe>().TypedFile);
@@ -362,7 +366,7 @@ namespace Datadog.Trace.Debugger
                 }
             }
 
-            var probeConfiguration = new ProbeConfiguration() { ServiceConfiguration = serviceConfig, MetricProbes = metrics.ToArray(), LogProbes = logs.ToArray(), SpanProbes = spans.ToArray() };
+            var probeConfiguration = new ProbeConfiguration() { ServiceConfiguration = serviceConfig, MetricProbes = metrics.ToArray(), SpanDecorationProbes = spanDecoration.ToArray(), LogProbes = logs.ToArray(), SpanProbes = spans.ToArray() };
 
             _configurationUpdater.AcceptAdded(probeConfiguration);
         }

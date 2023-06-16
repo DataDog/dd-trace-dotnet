@@ -199,6 +199,9 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("elasticsearch.action")
                 .IsPresent("elasticsearch.method")
                 .IsPresent("elasticsearch.url")
+                .IsPresent("out.host")
+                .IsPresent("peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "network.destination.name", "peer.service")
                 .Matches("component", "elasticsearch-net")
                 .Matches("span.kind", "client"));
 
@@ -215,7 +218,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsGrpcV1(this MockSpan span, ISet<string> excludeTags) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
-                .Matches(Name, "grpc.request")
+                .MatchesOneOf(Name, "grpc.request", "grpc.server.request")
                 .Matches(Type, "grpc"))
             .Tags(s => s
                 .IsPresent("grpc.method.kind")
@@ -443,7 +446,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsWcfV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .Matches(Name, "wcf.request")
+                .Matches(Name, "http.server.request")
                 .Matches(Type, "web"))
             .Tags(s => s
                 .IsOptional("http.method")

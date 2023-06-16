@@ -34,8 +34,8 @@
                 "value": "AsyncInstanceMethod.RunAsync.Method"
               },
               "output": {
-                "isNull": "true",
-                "type": "String"
+                "type": "String",
+                "value": "AsyncInstanceMethod.RunAsync."
               }
             },
             "staticFields": {

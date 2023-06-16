@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.Agent;
@@ -38,7 +39,6 @@ namespace Datadog.Trace.Ci
         protected override TracerManager CreateTracerManagerFrom(
             ImmutableTracerSettings settings,
             IAgentWriter agentWriter,
-            ITraceSampler sampler,
             IScopeManager scopeManager,
             IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetrics,
@@ -48,19 +48,21 @@ namespace Datadog.Trace.Ci
             DataStreamsManager dataStreamsManager,
             string defaultServiceName,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
+            ITraceSampler traceSampler,
+            ISpanSampler spanSampler,
             IRemoteConfigurationManager remoteConfigurationManager)
         {
             if (_useLockedManager)
             {
-                return new CITracerManager.LockedManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, remoteConfigurationManager);
+                return new CITracerManager.LockedManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager);
             }
             else
             {
-                return new CITracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, remoteConfigurationManager);
+                return new CITracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager);
             }
         }
 
-        protected override IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings)
+        protected override IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager)
         {
             return new CIGitMetadataTagsProvider();
         }
@@ -70,7 +72,7 @@ namespace Datadog.Trace.Ci
             return new CISampler();
         }
 
-        protected override IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ITraceSampler sampler, IDiscoveryService discoveryService)
+        protected override IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
         {
             // Check for agentless scenario
             if (_settings.Agentless)
@@ -93,7 +95,7 @@ namespace Datadog.Trace.Ci
             // Event platform proxy not found
             // Set the tracer buffer size to the max
             var traceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
-            return new ApmAgentWriter(settings, sampler, discoveryService, traceBufferSize);
+            return new ApmAgentWriter(settings, updateSampleRates, discoveryService, traceBufferSize);
         }
 
         protected override IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)

@@ -328,6 +328,7 @@
     <ClInclude Include="DebugInfoStore.h" />
     <ClInclude Include="IDebugInfoStore.h" />
     <ClInclude Include="IExceptionsRecorder.h" />
+    <ClInclude Include="IThreadInfo.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">

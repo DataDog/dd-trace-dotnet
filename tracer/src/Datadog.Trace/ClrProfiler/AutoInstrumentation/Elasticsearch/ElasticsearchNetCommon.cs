@@ -7,14 +7,13 @@ using System;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 {
     internal static class ElasticsearchNetCommon
     {
-        public const string OperationName = "elasticsearch.query";
-        public const string ServiceName = "elasticsearch";
-        public const string SpanType = "elasticsearch";
+        public const string DatabaseType = "elasticsearch";
         public const string ComponentValue = "elasticsearch-net";
 
         public static readonly Type CancellationTokenType = typeof(CancellationToken);
@@ -37,6 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 
             var scope = CreateScope(tracer, integrationId, pathAndQuery, method, pipeline.RequestParameters, out var tags);
             tags.Url = url;
+            tags.Host = HttpRequestUtils.GetNormalizedHost(requestData.Uri?.Host);
             return scope;
         }
 
@@ -51,18 +51,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 
             string requestName = requestParameters?.GetType().Name.Replace("RequestParameters", string.Empty);
 
-            string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
+            string operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
+            string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
+            tags = tracer.CurrentTraceSettings.Schema.Database.CreateElasticsearchTags();
 
             Scope scope = null;
 
-            tags = new ElasticsearchTags();
-
             try
             {
-                scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
+                scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
                 var span = scope.Span;
                 span.ResourceName = requestName ?? path ?? string.Empty;
-                span.Type = SpanType;
+                span.Type = DatabaseType;
                 tags.Action = requestName;
                 tags.Method = method;
 

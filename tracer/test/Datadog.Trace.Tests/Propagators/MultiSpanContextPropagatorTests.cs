@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_All_IHeadersCollection()
         {
-            var traceContext = new TraceContext(tracer: null);
+            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
             traceContext.Origin = "rum";
             traceContext.Tags.SetTags(PropagatedTagsCollection);
@@ -83,7 +83,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Fact]
         public void Inject_All_CarrierAndDelegate()
         {
-            var traceContext = new TraceContext(tracer: null);
+            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
             traceContext.Origin = "rum";
             traceContext.Tags.SetTags(PropagatedTagsCollection);

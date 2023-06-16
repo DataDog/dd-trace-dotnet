@@ -349,7 +349,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         // These _may_ not get the expected values (though the _client_ spans always will)
                         // Depending on how the server handles them
                         var verySlowGrpcServerSpans = spans
-                                                    .Where(x => x.Name == "grpc.request" && x.Resource.EndsWith("VerySlow") && x.Tags["span.kind"] == "server")
+                                                    .Where(x => x.Type == SpanTypes.Grpc && x.Resource.EndsWith("VerySlow") && x.Tags["span.kind"] == "server")
                                                     .ToList();
                         foreach (var span in verySlowGrpcServerSpans)
                         {

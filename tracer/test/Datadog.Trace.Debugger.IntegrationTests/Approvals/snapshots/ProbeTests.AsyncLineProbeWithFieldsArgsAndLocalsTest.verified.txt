@@ -434,8 +434,8 @@
                 "value": "Ralph (99)Samples.Probes.TestRuns.Shared.GenericRalphMethod99Ralph"
               },
               "output": {
-                "isNull": "true",
-                "type": "String"
+                "type": "String",
+                "value": "Ralph (99)Samples.Probes.TestRuns.Shared.GenericRalph"
               }
             }
           }

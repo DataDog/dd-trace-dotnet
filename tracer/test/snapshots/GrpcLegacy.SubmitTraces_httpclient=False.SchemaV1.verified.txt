@@ -59,7 +59,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_4,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/StreamingBothWays,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -150,7 +150,7 @@
   {
     TraceId: Id_5,
     SpanId: Id_8,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/StreamingFromClient,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -247,7 +247,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_9,
     SpanId: Id_12,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -346,7 +346,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_13,
     SpanId: Id_16,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -445,7 +445,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_17,
     SpanId: Id_20,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -544,7 +544,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_21,
     SpanId: Id_24,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -643,7 +643,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_25,
     SpanId: Id_28,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -742,7 +742,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_29,
     SpanId: Id_32,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -841,7 +841,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_33,
     SpanId: Id_36,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -940,7 +940,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_37,
     SpanId: Id_40,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -1033,7 +1033,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_41,
     SpanId: Id_44,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/StreamingFromServer,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -1124,7 +1124,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_45,
     SpanId: Id_48,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/Unary,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -1215,7 +1215,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_49,
     SpanId: Id_52,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/Unary,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -1307,7 +1307,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_53,
     SpanId: Id_56,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/VerySlow,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -1401,7 +1401,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_57,
     SpanId: Id_60,
-    Name: grpc.request,
+    Name: grpc.server.request,
     Resource: /greet.tester.Greeter/VerySlow,
     Service: Samples.GrpcLegacy,
     Type: grpc,

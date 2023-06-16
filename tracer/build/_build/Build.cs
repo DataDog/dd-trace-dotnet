@@ -157,7 +157,8 @@ partial class Build : NukeBuild
         .DependsOn(PublishNativeTracer)
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
-        .DependsOn(BuildNativeLoader);
+        .DependsOn(BuildNativeLoader)
+        .DependsOn(CreateRootDescriptorsFile);
 
     Target BuildProfilerHome => _ => _
         .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
@@ -290,7 +291,7 @@ partial class Build : NukeBuild
     Target PackNuGet => _ => _
         .Description("Creates the NuGet packages from the compiled src directory")
         .After(Clean, CompileManagedSrc)
-        .DependsOn(CreateRequiredDirectories)
+        .DependsOn(CreateRequiredDirectories, CreateRootDescriptorsFile)
         .Executes(() =>
         {
             DotNetPack(s => s

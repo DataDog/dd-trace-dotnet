@@ -116,7 +116,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public void CleanUri_HttpUrlTag(string uri, string expected, bool includeQuerystring)
         {
             // Set up Tracer
-            var settings = new TracerSettings { QueryStringReportingEnabled = includeQuerystring };
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.QueryStringReportingEnabled, includeQuerystring } });
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
             var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);

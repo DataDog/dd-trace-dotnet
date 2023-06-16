@@ -1,0 +1,37 @@
+name: Verify app trimming xml file changes have been persisted
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify_app_trimming_descriptor_generator:
+    runs-on: windows-latest
+
+    steps:
+      - name: Support longpaths
+        run: git config --system core.longpaths true
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '7.0.101'
+
+      - name: "Removing existing Datadog.Trace.Trimming.xml"
+        run: Get-ChildItem –Path ".\tracer\src\Datadog.Trace.Trimming\build\Datadog.Trace.Trimming.xml" -Recurse -File | Remove-Item
+
+      - name: "Regenerating Datadog.Trace.Trimming.xml"
+        run: .\tracer\build.ps1 BuildTracerHome CreateRootDescriptorsFile
+
+      - name: "Verify no changes in Datadog.Trace.Trimming.xml"
+        run: |
+          git diff --quiet -- .\tracer\src\Datadog.Trace.Trimming\build
+          if ($LASTEXITCODE -eq 1) {
+            git diff -- .\tracer\src\Datadog.Trace.Trimming\build
+            Write-Error "Found changes in Datadog.Trace.Trimming.xml. Build the solution locally and ensure you have committed the Datadog.Trace.Trimming.xml changes."
+            Exit 1
+          } else {
+            echo "No changes found to generated files"
+          }
