@@ -63,8 +63,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
         {
             var removeSpanId = false;
             mdc.Set(CorrelationIdentifier.ServiceKey, tracer.DefaultServiceName ?? string.Empty);
-            mdc.Set(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersion ?? string.Empty);
-            mdc.Set(CorrelationIdentifier.EnvKey, tracer.Settings.Environment ?? string.Empty);
+            mdc.Set(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersionInternal ?? string.Empty);
+            mdc.Set(CorrelationIdentifier.EnvKey, tracer.Settings.EnvironmentInternal ?? string.Empty);
 
             var spanContext = tracer.DistributedSpanContext;
             if (spanContext is not null)
@@ -93,8 +93,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                             : new KeyValuePair<string, object>[5];
 
             array[0] = new KeyValuePair<string, object>(CorrelationIdentifier.ServiceKey, tracer.DefaultServiceName ?? string.Empty);
-            array[1] = new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersion ?? string.Empty);
-            array[2] = new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.Environment ?? string.Empty);
+            array[1] = new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersionInternal ?? string.Empty);
+            array[2] = new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.EnvironmentInternal ?? string.Empty);
 
             if (spanContext is not null)
             {

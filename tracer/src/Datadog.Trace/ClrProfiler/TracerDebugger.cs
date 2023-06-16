@@ -10,8 +10,8 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog;
 using SD = System.Diagnostics;
 
 namespace Datadog.Trace.ClrProfiler;
@@ -19,6 +19,8 @@ namespace Datadog.Trace.ClrProfiler;
 // Based on: https://github.com/microsoft/vstest/blob/main/src/Microsoft.TestPlatform.Execution.Shared/DebuggerBreakpoint.cs#L25
 internal static class TracerDebugger
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TracerDebugger));
+
     [Conditional("DEBUG")]
     internal static void WaitForDebugger()
     {
@@ -44,7 +46,7 @@ internal static class TracerDebugger
             Log.Information("Waiting for debugger attach...");
             var currentProcess = Process.GetCurrentProcess();
             Console.WriteLine("Process Id: {0}, Name: {1}", currentProcess.Id, currentProcess.ProcessName);
-            Log.Information<int, string>("Process Id: {id}, Name: {name}", currentProcess.Id, currentProcess.ProcessName);
+            Log.Information<int, string>("Process Id: {Id}, Name: {Name}", currentProcess.Id, currentProcess.ProcessName);
             while (!SD.Debugger.IsAttached)
             {
                 Task.Delay(1000).Wait();
@@ -68,7 +70,7 @@ internal static class TracerDebugger
             Log.Information("Waiting for native debugger attach...");
             var currentProcess = Process.GetCurrentProcess();
             Console.WriteLine("Process Id: {0}, Name: {1}", currentProcess.Id, currentProcess.ProcessName);
-            Log.Information<int, string>("Process Id: {id}, Name: {name}", currentProcess.Id, currentProcess.ProcessName);
+            Log.Information<int, string>("Process Id: {Id}, Name: {Name}", currentProcess.Id, currentProcess.ProcessName);
             while (!IsDebuggerPresent())
             {
                 Task.Delay(1000).Wait();
