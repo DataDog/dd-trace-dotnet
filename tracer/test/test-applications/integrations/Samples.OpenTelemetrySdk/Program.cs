@@ -167,9 +167,16 @@ public static class Program
         {
             // if we don't set the span as an error we won't check it for exception event
             // so if we only do RecordException, we wouldn't copy that info over as the span isn't marked as an Error
-            innerSpan.SetStatus(Status.Error.WithDescription("Something went wrong"));
-            innerSpan.RecordException(new ArgumentException("Example argument exception"));
-            innerSpan.UpdateName("InnerSpanUpdated");
+            try
+            {
+                throw new ArgumentException("Example argument exception");
+            }
+            catch (Exception ex)
+            {
+                innerSpan.SetStatus(Status.Error.WithDescription(ex.Message));
+                innerSpan.RecordException(ex);
+                innerSpan.UpdateName("InnerSpanUpdated");
+            }
         }
     }
 
