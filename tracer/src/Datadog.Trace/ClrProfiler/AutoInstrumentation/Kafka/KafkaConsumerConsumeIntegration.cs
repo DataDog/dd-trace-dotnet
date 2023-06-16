@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     consumeResult.Offset,
                     consumeResult.Message);
 
-                if (!Tracer.Instance.Settings.KafkaCreateConsumerScopeEnabled)
+                if (!Tracer.Instance.Settings.KafkaCreateConsumerScopeEnabledInternal)
                 {
                     // Close and dispose the scope immediately
                     scope.DisposeWithException(exception);

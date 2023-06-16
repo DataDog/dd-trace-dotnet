@@ -42,9 +42,11 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
         /// </summary>
+        [PublicApi]
         public TracerSettings()
-            : this(null)
+            : this(null, new ConfigurationTelemetry())
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Ctor);
         }
 
         /// <summary>
@@ -54,9 +56,11 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="useDefaultSources">If <c>true</c>, creates a <see cref="TracerSettings"/> populated from
         /// the default sources such as environment variables etc. If <c>false</c>, uses the default values.</param>
+        [PublicApi]
         public TracerSettings(bool useDefaultSources)
-            : this(useDefaultSources ? GlobalConfigurationSource.Instance : null)
+            : this(useDefaultSources ? GlobalConfigurationSource.Instance : null, new ConfigurationTelemetry())
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Ctor_UseDefaultSources);
         }
 
         /// <summary>
@@ -69,9 +73,11 @@ namespace Datadog.Trace.Configuration
         /// as we don't want to automatically record these values, only once they're "activated",
         /// in <see cref="Tracer.Configure"/>
         /// </remarks>
+        [PublicApi]
         public TracerSettings(IConfigurationSource? source)
         : this(source, new ConfigurationTelemetry())
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Ctor_Source);
         }
 
         internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
@@ -844,9 +850,11 @@ namespace Datadog.Trace.Configuration
         /// returned by <see cref="GlobalConfigurationSource.Instance"/>.
         /// </summary>
         /// <returns>A <see cref="TracerSettings"/> populated from the default sources.</returns>
+        [PublicApi]
         public static TracerSettings FromDefaultSources()
         {
-            return new TracerSettings(GlobalConfigurationSource.Instance);
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_FromDefaultSources);
+            return FromDefaultSourcesInternal();
         }
 
         /// <summary>
@@ -854,18 +862,25 @@ namespace Datadog.Trace.Configuration
         /// AppSettings where available, and a local datadog.json file, if present.
         /// </summary>
         /// <returns>A new <see cref="IConfigurationSource"/> instance.</returns>
+        [PublicApi]
         public static CompositeConfigurationSource CreateDefaultConfigurationSource()
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_CreateDefaultConfigurationSource);
             return GlobalConfigurationSource.CreateDefaultConfigurationSource();
         }
+
+        internal static TracerSettings FromDefaultSourcesInternal()
+            => new(GlobalConfigurationSource.Instance, new ConfigurationTelemetry());
 
         /// <summary>
         /// Sets the HTTP status code that should be marked as errors for client integrations.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.HttpClientErrorStatusCodes"/>
         /// <param name="statusCodes">Status codes that should be marked as errors</param>
+        [PublicApi]
         public void SetHttpClientErrorStatusCodes(IEnumerable<int> statusCodes)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_SetHttpClientErrorStatusCodes);
             var httpStatusErrorCodes = string.Join(",", statusCodes);
             _telemetry.Record(ConfigurationKeys.HttpClientErrorStatusCodes, httpStatusErrorCodes, recordValue: true, origin: ConfigurationOrigins.Code);
             HttpClientErrorStatusCodes = ParseHttpCodesToArray(httpStatusErrorCodes);
@@ -876,8 +891,10 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.HttpServerErrorStatusCodes"/>
         /// <param name="statusCodes">Status codes that should be marked as errors</param>
+        [PublicApi]
         public void SetHttpServerErrorStatusCodes(IEnumerable<int> statusCodes)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_SetHttpServerErrorStatusCodes);
             var httpStatusErrorCodes = string.Join(",", statusCodes);
             _telemetry.Record(ConfigurationKeys.HttpServerErrorStatusCodes, httpStatusErrorCodes, recordValue: true, origin: ConfigurationOrigins.Code);
             HttpServerErrorStatusCodes = ParseHttpCodesToArray(httpStatusErrorCodes);
@@ -888,8 +905,10 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="mappings">Mappings to use from original service name (e.g. <code>sql-server</code> or <code>graphql</code>)
         /// as the <see cref="KeyValuePair{TKey, TValue}.Key"/>) to replacement service names as <see cref="KeyValuePair{TKey, TValue}.Value"/>).</param>
+        [PublicApi]
         public void SetServiceNameMappings(IEnumerable<KeyValuePair<string, string>> mappings)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_SetServiceNameMappings);
             // Could optimise this to remove allocations/linq, but leave that for later if we find it's used a lot
             var dictionary = mappings.ToDictionary(x => x.Key, x => x.Value);
             _telemetry.Record(
@@ -905,9 +924,11 @@ namespace Datadog.Trace.Configuration
         /// Create an instance of <see cref="ImmutableTracerSettings"/> that can be used to build a <see cref="Tracer"/>
         /// </summary>
         /// <returns>The <see cref="ImmutableTracerSettings"/> that can be passed to a <see cref="Tracer"/> instance</returns>
+        [PublicApi]
         public ImmutableTracerSettings Build()
         {
-            return new ImmutableTracerSettings(this);
+            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Build);
+            return new ImmutableTracerSettings(this, true);
         }
 
         internal void CollectTelemetry(IConfigurationTelemetry destination)
@@ -1055,6 +1076,6 @@ namespace Datadog.Trace.Configuration
         }
 
         internal static TracerSettings Create(Dictionary<string, object?> settings)
-            => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)));
+            => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry());
     }
 }
