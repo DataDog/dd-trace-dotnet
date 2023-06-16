@@ -1470,7 +1470,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
         if (caller.type.id == mdTypeDefNil || caller.type.id == moduleTypeDef)
         {
-            Logger::Info("JITCompilationStarted: Startup hook skipped from <Module>");
+            Logger::Info("JITCompilationStarted: Startup hook skipped from <Module>.", caller.name, "()");
             return S_OK;
         }
 
@@ -1480,7 +1480,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         {
             if (pType->id == mdTypeDefNil || pType->id == moduleTypeDef)
             {
-                Logger::Info("JITCompilationStarted: Startup hook skipped from a type with <Module> as a parent.");
+                Logger::Info("JITCompilationStarted: Startup hook skipped from a type with <Module> as a parent. ", caller.type.name, ".", caller.name, "()");
                 return S_OK;
             }
                 
