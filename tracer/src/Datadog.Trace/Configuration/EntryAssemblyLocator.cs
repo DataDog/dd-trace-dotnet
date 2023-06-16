@@ -1,4 +1,4 @@
-﻿// <copyright file="EntryAssemblyLocator.cs" company="Datadog">
+// <copyright file="EntryAssemblyLocator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,12 +9,14 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security;
-using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Configuration;
 
 internal static class EntryAssemblyLocator
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EntryAssemblyLocator));
+
     /// <summary>
     /// Gets the entry assembly for the current application domain.
     /// </summary>
