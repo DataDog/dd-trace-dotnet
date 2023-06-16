@@ -54,7 +54,7 @@ namespace Datadog.Trace
                 sampler: null,
                 scopeManager: previous?.ScopeManager, // no configuration, so can always use the same one
                 statsd: null,
-                runtimeMetrics: previous?.RuntimeMetrics,
+                runtimeMetrics: null,
                 logSubmissionManager: previous?.DirectLogSubmission,
                 telemetry: null,
                 discoveryService: null,
