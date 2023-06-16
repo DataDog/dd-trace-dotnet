@@ -740,7 +740,7 @@ internal class IntelligentTestRunnerClient
 
     private async Task<string> GetRepositoryUrlAsync()
     {
-        if (CIEnvironmentValues.Instance.Repository is { } repository)
+        if (CIEnvironmentValues.Instance.Repository is { Length: > 0 } repository)
         {
             return repository;
         }
@@ -757,7 +757,7 @@ internal class IntelligentTestRunnerClient
 
     private async Task<string> GetBranchNameAsync()
     {
-        if (CIEnvironmentValues.Instance.Branch is { } branch)
+        if (CIEnvironmentValues.Instance.Branch is { Length: > 0 } branch)
         {
             return branch;
         }
