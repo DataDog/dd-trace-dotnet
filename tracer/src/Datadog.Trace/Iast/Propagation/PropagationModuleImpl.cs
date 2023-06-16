@@ -45,7 +45,7 @@ internal static class PropagationModuleImpl
         }
     }
 
-    public static object? PropagateResultWhenInputTainted(string result, object? firstInput, params object[]? otherInputs)
+    public static object? PropagateResultWhenInputTainted(string result, object? firstInput, object? secondInput = null, object? thirdInput = null, object? fourthInput = null)
     {
         try
         {
@@ -62,10 +62,38 @@ internal static class PropagationModuleImpl
 
             var taintedObjects = iastContext.GetTaintedObjects();
 
-            if (taintedObjects == null)
+            if (PropagateResultWhenInputTainted(result, firstInput, taintedObjects) ||
+                PropagateResultWhenInputTainted(result, secondInput, taintedObjects) ||
+                PropagateResultWhenInputTainted(result, thirdInput, taintedObjects) ||
+                PropagateResultWhenInputTainted(result, fourthInput, taintedObjects))
             {
                 return result;
             }
+        }
+        catch (Exception error)
+        {
+            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(PropagateResultWhenInputTainted)} exception");
+        }
+
+        return result;
+    }
+
+    public static object? PropagateResultWhenInputArrayTainted(string result, object? firstInput, object[]? otherInputs)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(result))
+            {
+                return result;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return result;
+            }
+
+            var taintedObjects = iastContext.GetTaintedObjects();
 
             if (PropagateResultWhenInputTainted(result, firstInput, taintedObjects))
             {
@@ -85,7 +113,7 @@ internal static class PropagationModuleImpl
         }
         catch (Exception error)
         {
-                       Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(PropagateResultWhenInputTainted)} exception");
+            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(PropagateResultWhenInputTainted)} exception");
         }
 
         return result;

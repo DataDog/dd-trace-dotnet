@@ -769,7 +769,7 @@ public class StringAspects
     public static string Format(string format, object[] args)
     {
         var result = string.Format(format, args);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, args);
+        PropagationModuleImpl.PropagateResultWhenInputArrayTainted(result, format, args);
         return result;
     }
 
@@ -832,7 +832,7 @@ public class StringAspects
     public static string Format(IFormatProvider provider, string format, object[] args)
     {
         var result = string.Format(provider, format, args);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, args);
+        PropagationModuleImpl.PropagateResultWhenInputArrayTainted(result, format, args);
         return result;
     }
 
