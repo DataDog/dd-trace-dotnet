@@ -21,16 +21,11 @@ namespace Datadog.Trace.Security.Unit.Tests
 {
     public class WafIpBlockTests : WafLibraryRequiredTest
     {
-        public WafIpBlockTests(WafLibraryInvokerFixture wafLibraryInvokerFixture)
-            : base(wafLibraryInvokerFixture)
-        {
-        }
-
         [Fact]
         public void TestOk()
         {
             var js = JsonSerializer.Create();
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
+            var initResult = Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty);
             using var sr = new StreamReader("rule-data1.json");
             using var jsonTextReader = new JsonTextReader(sr);
             var rulesData = js.Deserialize<List<RuleData>>(jsonTextReader);
@@ -72,7 +67,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestMergeWithWaf()
         {
             var js = JsonSerializer.Create();
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
+            var initResult = Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty);
 
             using var waf = initResult.Waf;
             waf.Should().NotBeNull();

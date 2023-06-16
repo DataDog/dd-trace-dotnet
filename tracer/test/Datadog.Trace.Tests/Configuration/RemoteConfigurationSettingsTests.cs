@@ -38,17 +38,17 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData(null, null, RemoteConfigurationSettings.DefaultPollIntervalMilliseconds)]
-        [InlineData("", null, RemoteConfigurationSettings.DefaultPollIntervalMilliseconds)]
-        [InlineData("invalid", null, RemoteConfigurationSettings.DefaultPollIntervalMilliseconds)]
-        [InlineData("50", "100", 50)]
-        [InlineData(null, "100", 100)]
-        [InlineData("invalid", "100", 100)]
-        [InlineData("0", "100", RemoteConfigurationSettings.DefaultPollIntervalMilliseconds)]
-        [InlineData("-1", "100", RemoteConfigurationSettings.DefaultPollIntervalMilliseconds)]
-        [InlineData("5000", "100", 5000)]
-        [InlineData("5001", "100", RemoteConfigurationSettings.DefaultPollIntervalMilliseconds)]
-        public void PollInterval(string value, string fallbackValue, int expected)
+        [InlineData(null, null, RemoteConfigurationSettings.DefaultPollIntervalSeconds)]
+        [InlineData("", null, RemoteConfigurationSettings.DefaultPollIntervalSeconds)]
+        [InlineData("invalid", null, RemoteConfigurationSettings.DefaultPollIntervalSeconds)]
+        [InlineData("0.5", "100", 0.5)]
+        [InlineData(null, "2", 2)]
+        [InlineData("invalid", "0.5", 0.5)]
+        [InlineData("0", "1", RemoteConfigurationSettings.DefaultPollIntervalSeconds)]
+        [InlineData("-1", "1", RemoteConfigurationSettings.DefaultPollIntervalSeconds)]
+        [InlineData("5", "1", 5)]
+        [InlineData("5.1", "1", RemoteConfigurationSettings.DefaultPollIntervalSeconds)]
+        public void PollInterval(string value, string fallbackValue, double expected)
         {
 #pragma warning disable CS0618
             var source = CreateConfigurationSource(
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             var settings = new RemoteConfigurationSettings(source, NullConfigurationTelemetry.Instance);
 
-            settings.PollInterval.Should().Be(TimeSpan.FromMilliseconds(expected));
+            settings.PollInterval.Should().Be(TimeSpan.FromSeconds(expected));
         }
     }
 }

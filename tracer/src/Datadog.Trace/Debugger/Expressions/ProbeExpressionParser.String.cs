@@ -26,13 +26,13 @@ internal partial class ProbeExpressionParser<T>
         return CallStringMethod(reader, parameters, itParameter, containsMethod);
     }
 
-    private Expression EndWith(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
+    private Expression EndsWith(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var endWithMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(string), nameof(string.EndsWith), new[] { typeof(string) });
         return CallStringMethod(reader, parameters, itParameter, endWithMethod);
     }
 
-    private Expression StartWith(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
+    private Expression StartsWith(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var startWithMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(string), nameof(string.StartsWith), new[] { typeof(string) });
         return CallStringMethod(reader, parameters, itParameter, startWithMethod);

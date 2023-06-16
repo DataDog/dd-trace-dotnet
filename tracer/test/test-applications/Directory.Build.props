@@ -42,5 +42,5 @@
     </Otherwise>
   </Choose>
 
-  <Import Project=".\Samples.Shared\Samples.Shared.projitems" Label="Shared" />
+  <Import Project=".\Samples.Shared\Samples.Shared.projitems" Label="Shared" Condition="'$(IncludeSharedSampleHelpers)' != 'false'" />
 </Project>

@@ -17,11 +17,18 @@ namespace Datadog.Trace.SourceGenerators.Tests
         public static (ImmutableArray<Diagnostic> Diagnostics, string Output) GetGeneratedOutput<T>(params string[] source)
             where T : IIncrementalGenerator, new()
         {
+            var (diagnostics, trees) = GetGeneratedTrees<T>(source);
+            return (diagnostics, trees.LastOrDefault() ?? string.Empty);
+        }
+
+        public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<T>(params string[] source)
+            where T : IIncrementalGenerator, new()
+        {
             var syntaxTrees = source.Select(static x => CSharpSyntaxTree.ParseText(x));
             var references = AppDomain.CurrentDomain.GetAssemblies()
-                .Where(_ => !_.IsDynamic && !string.IsNullOrWhiteSpace(_.Location))
-                .Select(_ => MetadataReference.CreateFromFile(_.Location))
-                .Concat(new[] { MetadataReference.CreateFromFile(typeof(T).Assembly.Location) });
+                                      .Where(_ => !_.IsDynamic && !string.IsNullOrWhiteSpace(_.Location))
+                                      .Select(_ => MetadataReference.CreateFromFile(_.Location))
+                                      .Concat(new[] { MetadataReference.CreateFromFile(typeof(T).Assembly.Location) });
             var compilation = CSharpCompilation.Create(
                 "Datadog.Trace.Generated",
                 syntaxTrees,
@@ -36,7 +43,7 @@ namespace Datadog.Trace.SourceGenerators.Tests
 
             var trees = outputCompilation.SyntaxTrees.ToList();
 
-            return (diagnostics, trees.Count != originalTreeCount ? trees[trees.Count - 1].ToString() : string.Empty);
+            return (diagnostics, trees.Skip(originalTreeCount).Select(x => x.ToString()).ToArray());
         }
     }
 }

@@ -23,6 +23,18 @@
     <PackageReference Include="libddwaf" Version="1.8.2" GeneratePathProperty="true" />
 
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+
+    <None Update="Data\app.db">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Update="Data\app.db-shm">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Update="Data\app.db-wal">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
@@ -60,5 +72,9 @@
     <None Update="wrong-tags-name-rule-set.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Data\" />
   </ItemGroup>
 </Project>
