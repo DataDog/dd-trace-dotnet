@@ -149,11 +149,6 @@ internal static class PropagationModuleImpl
 
         var taintedObjects = iastContext.GetTaintedObjects();
 
-        if (taintedObjects == null)
-        {
-            return results;
-        }
-
         var tainted = taintedObjects.Get(input);
         if (tainted?.Ranges?.Length > 0)
         {
