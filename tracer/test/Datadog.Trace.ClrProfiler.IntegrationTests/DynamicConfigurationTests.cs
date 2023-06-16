@@ -32,8 +32,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public DynamicConfigurationTests(ITestOutputHelper output)
             : base("Console", output)
         {
-            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.Telemetry.V2Enabled, "1");
-            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds, "1");
+            SetEnvironmentVariable(ConfigurationKeys.Telemetry.V2Enabled, "1");
+            SetEnvironmentVariable(ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds, "1");
         }
 
         [SkippableFact]
@@ -223,7 +223,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             latestConfig.Should().HaveCount(expectedKeys.Count(k => k.Value is not null));
         }
 
-        // TODO: Missing: tracing_header_tags, tracing_service_mapping
         public record Config
         {
             [JsonProperty("runtime_metrics_enabled")]
