@@ -225,7 +225,7 @@ public class InstrumentationTestsBase
         instrumented.ToString().Should().Be(notInstrumentedResult.ToString());
     }
 
-    protected void AssertUntaintedWithOriginalCallCheck(Func<Object> instrumented, Expression<Func<Object>> notInstrumented)
+    protected void AssertUntaintedWithOriginalCallCheck(Func<object> instrumented, Expression<Func<object>> notInstrumented)
     {
         var instrumentedResult = ExecuteFunc(instrumented);
         var notInstrumentedCompiled = notInstrumented.Compile();
