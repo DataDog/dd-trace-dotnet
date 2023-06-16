@@ -740,6 +740,11 @@ internal class IntelligentTestRunnerClient
 
     private async Task<string> GetRepositoryUrlAsync()
     {
+        if (CIEnvironmentValues.Instance.Repository is { } repository)
+        {
+            return repository;
+        }
+
         var gitOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "config --get remote.origin.url", _workingDirectory)).ConfigureAwait(false);
         if (gitOutput is null)
         {
@@ -752,6 +757,11 @@ internal class IntelligentTestRunnerClient
 
     private async Task<string> GetBranchNameAsync()
     {
+        if (CIEnvironmentValues.Instance.Branch is { } branch)
+        {
+            return branch;
+        }
+
         var gitOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "branch --show-current", _workingDirectory)).ConfigureAwait(false);
         if (gitOutput is null)
         {
