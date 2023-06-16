@@ -76,6 +76,14 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    public void TestStringCopyMethodsAspectCover()
+    {
+        TestMethodOverloads(typeof(string), "Copy");
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     public void TestToUpperMethodsAspectCover()
     {
         TestMethodOverloads(typeof(string), "ToUpper");
@@ -168,6 +176,38 @@ public class IastInstrumentationUnitTests : TestHelper
     {
         var overloadsToExclude = new List<string>() { "System.String Concat(System.Object)" };
         TestMethodOverloads(typeof(string), "Concat", overloadsToExclude);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestReplaceMethodsAspectCover()
+    {
+        var overloadsToExclude = new List<string>()
+        {
+        // special case
+#if !NETCOREAPP3_1_OR_GREATER
+            "System.String::Replace(System.String,System.String,System.StringComparison)",
+            "System.String::Replace(System.String,System.String,System.Boolean,System.Globalization.CultureInfo)"
+#endif
+        };
+        TestMethodOverloads(typeof(string), "Replace", overloadsToExclude);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestFormatMethodsAspectCover()
+    {
+        TestMethodOverloads(typeof(string), "Format");
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestSplitMethodsAspectCover()
+    {
+        TestMethodOverloads(typeof(string), "Split");
     }
 
     [SkippableFact]
