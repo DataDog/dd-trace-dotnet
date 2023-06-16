@@ -85,18 +85,23 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
     auto enable_by_ref_instrumentation = m_rejit_handler->GetEnableByRefInstrumentation();
     auto enable_calltarget_state_by_ref = m_rejit_handler->GetEnableCallTargetStateByRef();
 
-    auto enumIterator = enumMethods.begin();
-    auto combinedEnd = iterate_explicit_interface_methods ? enumExplicitInterfaceMethods.end() : enumMethods.end();
-    for (; enumIterator != combinedEnd; enumIterator = ++enumIterator)
+    auto enumIterator =
+        iterate_explicit_interface_methods ?
+            enumExplicitInterfaceMethods.begin() : enumMethods.begin();
+    auto iteratorEnd = enumMethods.end();
+    auto explicitMode = iterate_explicit_interface_methods;
+
+    for (; enumIterator != iteratorEnd; enumIterator = ++enumIterator)
     {
-        // When interface methods are being iterated and we reach the end of the regular method search,
-        // switch over to the explicit interface method search
-        if (iterate_explicit_interface_methods && !(enumIterator != enumMethods.end()))
+        // When interface methods are being iterated first we go over the explicit interface method search and then
+        // switch to the regular method search, just like the runtime behaves.
+        if (iterate_explicit_interface_methods && !(enumIterator != enumExplicitInterfaceMethods.end()))
         {
-            enumIterator = enumExplicitInterfaceMethods.begin();
+            enumIterator = enumMethods.begin();
+            explicitMode = false;
 
             // Immediately exit if the second enumerator has 0 entries
-            if (!(enumIterator != combinedEnd))
+            if (!(enumIterator != iteratorEnd))
             {
                 break;
             }
@@ -197,6 +202,13 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
 
         EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, methodDef,
                          functionInfo, moduleHandler);
+
+        // If we are in the explicit enumerator and we found the method, we don't look into the normal methods enumerators.
+        if (explicitMode)
+        {
+            Logger::Debug("      Explicit interface implementation found, skipping normal methods search. [", caller.type.name, ".", caller.name, "]");
+            break;
+        }
     }
 }
 

@@ -14,6 +14,8 @@ namespace Datadog.Trace.Debugger.Configurations.Models
 
         public MetricProbe[] MetricProbes { get; set; } = Array.Empty<MetricProbe>();
 
+        public SpanDecorationProbe[] SpanDecorationProbes { get; set; } = Array.Empty<SpanDecorationProbe>();
+
         public SpanProbe[] SpanProbes { get; set; } = Array.Empty<SpanProbe>();
 
         public ServiceConfiguration? ServiceConfiguration { get; set; }

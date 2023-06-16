@@ -671,8 +671,13 @@ internal partial class Sources
             return;
         }
 
+        var i = 0;
         foreach (var (_, metric) in names)
         {
+            sb.AppendLine(
+                $$"""
+                            // {{metric.MetricName}}, index = {{i}}
+                """);
             const string prefix =
                 """
                             new(
@@ -685,6 +690,7 @@ internal partial class Sources
                     {
                         foreach (var tag2Value in tag2Values)
                         {
+                            i++;
                             sb.Append(prefix)
                               .Append("new[] { \"")
                               .Append(tag1Value)
@@ -695,6 +701,7 @@ internal partial class Sources
                     }
                     else
                     {
+                        i++;
                         sb.Append(prefix)
                           .Append("new[] { \"")
                           .Append(tag1Value)
@@ -704,6 +711,7 @@ internal partial class Sources
             }
             else
             {
+                i++;
                 sb
                    .Append(prefix)
                    .AppendLine("null),");

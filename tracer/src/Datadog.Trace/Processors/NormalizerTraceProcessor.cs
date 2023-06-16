@@ -106,7 +106,7 @@ namespace Datadog.Trace.Processors
             if (span.StartTime < Year2000Time)
             {
                 Log.Debug("Fixing malformed trace. Start date is invalid (reason:invalid_start_date), setting span.start=time.now(): {Span}", span);
-                var now = span.Context.TraceContext.UtcNow;
+                var now = span.Context.TraceContext.Clock.UtcNow;
                 var start = now - span.Duration;
                 if (start.ToUnixTimeNanoseconds() < 0)
                 {

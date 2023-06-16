@@ -3,7 +3,7 @@
     TraceId: Id_1,
     SpanId: Id_2,
     Name: dd.dynamic.span,
-    Resource: GUIDt.Method,
+    Resource: SpanDecorationSameTags.Run,
     Service: Probes,
     Tags: {
       component: trace,
@@ -20,6 +20,22 @@
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: trace.annotation,
+    Resource: SpanDecorationSameTags.Annotate,
+    Service: Probes,
+    ParentId: Id_2,
+    Tags: {
+      component: trace,
+      env: integration_tests,
+      language: dotnet,
+      SpanDecorationSameTags: 3,
+      version: 1.0.0,
+      _dd.di.SpanDecorationSameTags.probe_id: Guid_3
     }
   }
 ]

@@ -206,13 +206,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
         {
             baseDirectory ??= Path.GetDirectoryName(MainModule);
 
-            var configurationSource = new CompositeConfigurationSource();
+            var configurationSource = new CompositeConfigurationSourceInternal();
 
-            configurationSource.Add(new DictionaryConfigurationSource(EnvironmentVariables));
+            configurationSource.AddInternal(new DictionaryConfigurationSource(EnvironmentVariables));
 
             if (appSettings != null)
             {
-                configurationSource.Add(appSettings);
+                configurationSource.AddInternal(appSettings);
             }
             else if (DotnetRuntime.HasFlag(Runtime.NetFx))
             {
@@ -220,13 +220,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
                 if (appConfigSource != null)
                 {
-                    configurationSource.Add(appConfigSource);
+                    configurationSource.AddInternal(appConfigSource);
                 }
             }
 
             if (GlobalConfigurationSource.TryLoadJsonConfigurationFile(configurationSource, baseDirectory, out var jsonConfigurationSource))
             {
-                configurationSource.Add(jsonConfigurationSource);
+                configurationSource.AddInternal(jsonConfigurationSource);
             }
 
             return configurationSource;
