@@ -144,7 +144,7 @@ public sealed class TestSuite
         var span = _span;
 
         // Calculate duration beforehand
-        duration ??= span.Context.TraceContext.ElapsedSince(span.StartTime);
+        duration ??= span.Context.TraceContext.Clock.ElapsedSince(span.StartTime);
 
         // Update status
         if (Tags.Status is { } status)

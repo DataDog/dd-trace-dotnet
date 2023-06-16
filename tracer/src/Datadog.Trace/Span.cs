@@ -5,6 +5,7 @@
 
 using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -37,15 +38,11 @@ namespace Datadog.Trace
         {
             Tags = tags ?? new CommonTags();
             Context = context;
-            StartTime = start ?? Context.TraceContext.UtcNow;
+            StartTime = start ?? Context.TraceContext.Clock.UtcNow;
 
             if (IsLogLevelDebugEnabled)
             {
-                var tagsType = Tags.GetType();
-
-                Log.Debug(
-                    "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{TagsType}])",
-                    new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, Tags, tagsType });
+                WriteCtorDebugMessage();
             }
         }
 
@@ -153,8 +150,9 @@ namespace Datadog.Trace
             sb.AppendLine($"OperationName: {OperationName}");
             sb.AppendLine($"Resource: {ResourceName}");
             sb.AppendLine($"Type: {Type}");
-            sb.AppendLine($"Start: {StartTime}");
+            sb.AppendLine($"Start: {StartTime.ToString("O")}");
             sb.AppendLine($"Duration: {Duration}");
+            sb.AppendLine($"End: {StartTime.Add(Duration).ToString("O")}");
             sb.AppendLine($"Error: {Error}");
             sb.AppendLine($"Meta: {Tags}");
 
@@ -351,7 +349,7 @@ namespace Datadog.Trace
         /// </summary>
         internal void Finish()
         {
-            Finish(Context.TraceContext.ElapsedSince(StartTime));
+            Finish(Context.TraceContext.Clock.ElapsedSince(StartTime));
         }
 
         /// <summary>
@@ -429,9 +427,7 @@ namespace Datadog.Trace
 
                 if (IsLogLevelDebugEnabled)
                 {
-                    Log.Debug(
-                        "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])",
-                        new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, ServiceName, ResourceName, OperationName, Tags });
+                    WriteCloseDebugMessage();
                 }
             }
         }
@@ -450,7 +446,7 @@ namespace Datadog.Trace
 
         internal void ResetStartTime()
         {
-            StartTime = Context.TraceContext.UtcNow;
+            StartTime = Context.TraceContext.Clock.UtcNow;
         }
 
         internal void SetStartTime(DateTimeOffset startTime)
@@ -461,6 +457,24 @@ namespace Datadog.Trace
         internal void SetDuration(TimeSpan duration)
         {
             Duration = duration;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void WriteCtorDebugMessage()
+        {
+            var tagsType = Tags.GetType();
+
+            Log.Debug(
+                "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{TagsType}])",
+                new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, Tags, tagsType });
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void WriteCloseDebugMessage()
+        {
+            Log.Debug(
+                "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])\nDetails:{ToString}",
+                new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, ServiceName, ResourceName, OperationName, Tags, ToString() });
         }
     }
 }
