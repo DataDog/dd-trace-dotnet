@@ -29,7 +29,7 @@ public class AccountController : Controller
     }
 
     [HttpPost]
-    public IActionResult SignOut()
+    public IActionResult LogOut()
     {
         _signInManager.SignOutAsync();
         return RedirectToAction(nameof(Index));
