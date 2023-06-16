@@ -56,6 +56,11 @@ namespace Datadog.Trace.TestHelpers
                 return;
             }
 
+            if (_path == null)
+            {
+                return;
+            }
+
             _ = Task.Run(() =>
             {
                 var args = $"-ma -accepteula -e {pid} {Path.GetTempPath()}";

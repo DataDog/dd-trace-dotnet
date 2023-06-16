@@ -1,11 +1,16 @@
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Samples.Security.AspNetCore5.Data;
+using Samples.Security.AspNetCore5.IdentityStores;
+using SQLitePCL;
 
 namespace Samples.Security.AspNetCore2
 {
@@ -23,8 +28,8 @@ namespace Samples.Security.AspNetCore2
 
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>()
-                .Build();
+                   .UseStartup<Startup>()
+                   .Build();
 
         public IConfiguration Configuration { get; }
 
@@ -33,6 +38,31 @@ namespace Samples.Security.AspNetCore2
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
+            if (Configuration.GetValue<bool>("CreateDb"))
+            {
+                DatabaseHelper.CreateAndFeedDatabase(Configuration.GetDefaultConnectionString());
+            }
+
+            var identityBuilder = services.AddIdentity<IdentityUser, IdentityRole>(
+                o =>
+                {
+                    o.Password.RequireDigit = false;
+                    o.Password.RequiredLength = 4;
+                    o.Password.RequireLowercase = false;
+                    o.Password.RequiredUniqueChars = 0;
+                    o.Password.RequireUppercase = false;
+                    o.Password.RequireNonAlphanumeric = false;
+                });
+            identityBuilder.AddRoleStore<RoleStore>();
+            if (Configuration.ShouldUseSqlLite())
+            {
+                raw.SetProvider(new SQLite3Provider_e_sqlite3());
+                identityBuilder.AddUserStore<UserStoreSqlLite>();
+            }
+            else
+            {
+                identityBuilder.AddUserStore<UserStoreMemory>();
+            }
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -43,30 +73,36 @@ namespace Samples.Security.AspNetCore2
                 app.UseDeveloperExceptionPage();
             }
 
-            app.Map("/alive-check", builder =>
-            {
-                builder.Run(async context =>
+            app.Map(
+                "/alive-check",
+                builder =>
                 {
-                    await context.Response.WriteAsync("Yes");
+                    builder.Run(
+                        async context =>
+                        {
+                            await context.Response.WriteAsync("Yes");
+                        });
                 });
-            });
 
-            app.Map("/shutdown", builder =>
-            {
-                builder.Run(async context =>
+            app.Map(
+                "/shutdown",
+                builder =>
                 {
-                    await context.Response.WriteAsync("Shutting down");
-                    _ = Task.Run(() => builder.ApplicationServices.GetService<IApplicationLifetime>().StopApplication());
+                    builder.Run(
+                        async context =>
+                        {
+                            await context.Response.WriteAsync("Shutting down");
+                            _ = Task.Run(() => builder.ApplicationServices.GetService<IApplicationLifetime>().StopApplication());
+                        });
                 });
-            });
-
-            app.UseMvc(routes =>
-            {
-                routes.MapRoute(
-                    name: "default",
-                    template: "{controller=Home}/{action=Index}/{id?}");
-            });
+            app.UseAuthentication();
+            app.UseMvc(
+                routes =>
+                {
+                    routes.MapRoute(
+                        name: "default",
+                        template: "{controller=Home}/{action=Index}/{id?}");
+                });
         }
     }
 }
-

@@ -64,8 +64,22 @@
                 "value": "Show Me!"
               },
               "iInterface": {
-                "isNull": "true",
-                "type": "IInterface"
+                "fields": {
+                  "_privateField": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "Field": {
+                    "type": "String",
+                    "value": "I'm a class field"
+                  },
+                  "ShowMe": {
+                    "type": "String",
+                    "value": ""
+                  }
+                },
+                "type": "Class",
+                "value": "Class"
               }
             }
           }

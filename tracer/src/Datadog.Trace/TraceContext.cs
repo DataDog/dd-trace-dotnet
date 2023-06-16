@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Datadog.Trace.ClrProfiler;
@@ -22,8 +21,8 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceContext>();
 
-        private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
-        private readonly long _timestamp = Stopwatch.GetTimestamp();
+        private readonly TraceClock _clock;
+
         private IastRequestContext _iastRequestContext;
 
         private ArrayBuilder<Span> _spans;
@@ -49,6 +48,7 @@ namespace Datadog.Trace
 
             Tracer = tracer;
             Tags = tags ?? new TraceTagCollection();
+            _clock = TraceClock.Instance;
         }
 
         public Span RootSpan
@@ -57,7 +57,7 @@ namespace Datadog.Trace
             private set => _rootSpan = value;
         }
 
-        public DateTimeOffset UtcNow => _utcStart.Add(Elapsed);
+        public TraceClock Clock => _clock;
 
         public IDatadogTracer Tracer { get; }
 
@@ -94,8 +94,6 @@ namespace Datadog.Trace
         /// Gets the IAST context.
         /// </summary>
         internal IastRequestContext IastRequestContext => _iastRequestContext;
-
-        private TimeSpan Elapsed => StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp);
 
         internal void EnableIastInRequest()
         {
@@ -230,11 +228,6 @@ namespace Datadog.Trace
             {
                 DistributedTracer.Instance.SetSamplingPriority(priority);
             }
-        }
-
-        public TimeSpan ElapsedSince(DateTimeOffset date)
-        {
-            return Elapsed + (_utcStart - date);
         }
 
         private void RunSpanSampler(ArraySegment<Span> spans)

@@ -167,7 +167,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         var initialAgentPort = TcpPortProvider.GetOpenPort();
                         HttpPort = TcpPortProvider.GetOpenPort();
 
-                        Agent = MockTracerAgent.Create(null, initialAgentPort);
+                        Agent = MockTracerAgent.Create(output, initialAgentPort);
                         Agent.SpanFilters.Add(IsNotServerLifeCheck);
                         output.WriteLine($"Starting OWIN sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
                         _process = helper.StartSample(Agent, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
@@ -206,7 +206,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             public async Task<IImmutableList<MockSpan>> WaitForSpans(ITestOutputHelper output, string path, int expectedSpanCount)
             {
-                var testStart = DateTime.UtcNow;
+                var testStart = DateTimeOffset.UtcNow;
 
                 await SubmitRequest(output, path);
                 return Agent.WaitForSpans(count: expectedSpanCount, minDateTime: testStart, returnAllOperations: true);

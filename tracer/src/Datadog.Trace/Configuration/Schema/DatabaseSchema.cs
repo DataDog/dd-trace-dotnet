@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 using Datadog.Trace.Tagging;
 
@@ -43,6 +44,13 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => _defaultServiceName,
             };
         }
+
+        public ElasticsearchTags CreateElasticsearchTags()
+            => _version switch
+            {
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new ElasticsearchTags(),
+                _ => new ElasticsearchV1Tags(),
+            };
 
         public MongoDbTags CreateMongoDbTags()
             => _version switch
