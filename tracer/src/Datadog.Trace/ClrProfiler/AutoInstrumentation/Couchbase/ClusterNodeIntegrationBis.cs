@@ -48,8 +48,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         /// <typeparam name="TCancellationToken">Type of the cancellationToken</typeparam>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TOperation, TConnection, TCancellationToken>(TTarget instance, TConnection connection, TOperation operation, TCancellationToken cancellationToken)
+            where TTarget : IClusterNode
         {
-            return CouchbaseCommon.CommonOnMethodBeginV3(operation);
+            var normalizedSeedNodes = CouchbaseCommon.GetNormalizedSeedNodesFromConnectionString(instance.Context.ClusterOptions.ConnectionStringValue);
+            return CouchbaseCommon.CommonOnMethodBeginV3(operation, normalizedSeedNodes);
         }
 
         /// <summary>

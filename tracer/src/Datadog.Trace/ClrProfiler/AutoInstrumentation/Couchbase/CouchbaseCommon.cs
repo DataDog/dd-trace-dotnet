@@ -4,11 +4,14 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 {
@@ -31,8 +34,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         private const string ServiceName = "couchbase";
         private const IntegrationId IntegrationId = Configuration.IntegrationId.Couchbase;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CouchbaseCommon));
+        private static readonly ConditionalWeakTable<object, string> ClientSourceToNormalizedSeedNodesMap = new();
 
-        internal static CallTargetState CommonOnMethodBeginV3<TOperation>(TOperation tOperation)
+        internal static CallTargetState CommonOnMethodBeginV3<TOperation>(TOperation tOperation, string normalizedSeedNodes)
         {
             var tracer = Tracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
@@ -47,11 +51,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
             tags.OperationCode = operation.OpCode.ToString();
             tags.Bucket = operation.BucketName;
             tags.Key = operation.Key;
+            tags.SeedNodes = normalizedSeedNodes;
 
             return CommonOnMethodBegin(tracer, tags);
         }
 
-        internal static CallTargetState CommonOnMethodBegin<TOperation>(TOperation tOperation)
+        internal static CallTargetState CommonOnMethodBegin<TOperation>(TOperation tOperation, string normalizedSeedNodes)
         {
             var tracer = Tracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
@@ -71,6 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
             tags.Key = operation.Key;
             tags.Host = host;
             tags.Port = port;
+            tags.SeedNodes = normalizedSeedNodes;
 
             return CommonOnMethodBegin(tracer, tags);
         }
@@ -122,6 +128,71 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 
             state.Scope.DisposeWithException(exception ?? result.Exception);
             return tResult;
+        }
+
+        internal static string GetNormalizedSeedNodesFromClientConfiguration(IClientConfiguration clientConfiguration)
+        {
+            if (ClientSourceToNormalizedSeedNodesMap.TryGetValue(clientConfiguration.Instance, out var normalizedSeedNodes))
+            {
+                return normalizedSeedNodes;
+            }
+
+            // Construct the normalized value from the list of hosts (each host will be {Host} or {Host}:{Port})
+            var sb = StringBuilderCache.Acquire(0);
+            IList<Uri> servers = clientConfiguration.Servers;
+
+            for (int i = 0; i < servers.Count; i++)
+            {
+                if (i != 0)
+                {
+                    sb.Append(',');
+                }
+
+                var uri = servers[i];
+                sb.Append($"{uri.Host}:{uri.Port}");
+            }
+
+            normalizedSeedNodes = StringBuilderCache.GetStringAndRelease(sb);
+
+#if NETCOREAPP3_1_OR_GREATER
+            ClientSourceToNormalizedSeedNodesMap.AddOrUpdate(clientConfiguration.Instance!, normalizedSeedNodes);
+#else
+            ClientSourceToNormalizedSeedNodesMap.GetValue(clientConfiguration.Instance!, x => normalizedSeedNodes);
+#endif
+
+            return normalizedSeedNodes;
+        }
+
+        internal static string GetNormalizedSeedNodesFromConnectionString(IConnectionString connectionStringValue)
+        {
+            if (ClientSourceToNormalizedSeedNodesMap.TryGetValue(connectionStringValue.Instance, out var normalizedSeedNodes))
+            {
+                return normalizedSeedNodes;
+            }
+
+            // Construct the normalized value from the list of hosts (each host will be {Host} or {Host}:{Port})
+            var sb = StringBuilderCache.Acquire(0);
+            var firstIteration = true;
+            foreach (var hostObj in connectionStringValue.Hosts)
+            {
+                if (!firstIteration)
+                {
+                    sb.Append(',');
+                }
+
+                sb.Append(hostObj.ToString());
+                firstIteration = false;
+            }
+
+            normalizedSeedNodes = StringBuilderCache.GetStringAndRelease(sb);
+
+#if NETCOREAPP3_1_OR_GREATER
+            ClientSourceToNormalizedSeedNodesMap.AddOrUpdate(connectionStringValue.Instance!, normalizedSeedNodes);
+#else
+            ClientSourceToNormalizedSeedNodesMap.GetValue(connectionStringValue.Instance!, x => normalizedSeedNodes);
+#endif
+
+            return normalizedSeedNodes;
         }
     }
 }
