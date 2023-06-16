@@ -106,7 +106,7 @@ internal static class PropagationModuleImpl
         return false;
     }
 
-    public static string[]? PropagateResultWhenInputTainted(string[] results, object input)
+    public static string[]? PropagateResultWhenInputTainted(string[]? results, object? input)
     {
         if (!(results?.Length > 0) || input is null)
         {
