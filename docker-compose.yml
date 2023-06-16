@@ -373,7 +373,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.304}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
     command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerIntegrationTests
     volumes:
@@ -422,7 +422,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.304}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:-true}
     volumes:
@@ -517,7 +517,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.304}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:-true} --targetplatform x64
     volumes:
@@ -568,7 +568,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.304}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --filter Category=Lambda --code-coverage ${runCodeCoverage:-true}
     volumes:
@@ -623,7 +623,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.304}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
     command: dotnet /build/bin/Debug/_build.dll RunExplorationTests --explorationTestUseCase ${explorationTestUseCase:-debugger} --explorationTestName ${explorationTestName:-eshoponweb} --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:-true}
     volumes:
@@ -699,7 +699,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.304}
     image: dd-trace-dotnet/${baseImage:-debian}-tester
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
     volumes:
@@ -797,7 +797,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.304}
     image: dd-trace-dotnet/${baseImage:-debian}-tester
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests --framework ${framework:-netcoreapp3.1} --targetplatform x64
     volumes:

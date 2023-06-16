@@ -9,7 +9,7 @@ BUILD_DIR="$ROOT_DIR/tracer/build/_build"
 IMAGE_NAME="dd-trace-dotnet/debian-base"
 
 docker build \
-   --build-arg DOTNETSDK_VERSION=7.0.101 \
+   --build-arg DOTNETSDK_VERSION=7.0.304 \
    --tag $IMAGE_NAME \
    --file "$BUILD_DIR/docker/centos7.dockerfile" \
    "$BUILD_DIR"
