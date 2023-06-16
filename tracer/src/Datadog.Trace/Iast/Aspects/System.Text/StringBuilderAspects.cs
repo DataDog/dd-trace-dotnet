@@ -6,6 +6,9 @@
 #nullable enable
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Propagation;
@@ -255,7 +258,7 @@ public class StringBuilderAspects
     public static StringBuilder AppendFormat(StringBuilder target, string format, object[] args)
     {
         var result = target.AppendFormat(format, args);
-        StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, args);
+        StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, format, args);
         return result;
     }
 
@@ -314,7 +317,7 @@ public class StringBuilderAspects
     public static StringBuilder AppendFormat(StringBuilder target, IFormatProvider provider, string format, object[] args)
     {
         var result = target.AppendFormat(provider, format, args);
-        StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, args);
+        StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, format, args);
         return result;
     }
 
@@ -328,7 +331,7 @@ public class StringBuilderAspects
     public static void CopyTo(StringBuilder target, int sourceIndex, char[] destination, int destinationIndex, int count)
     {
         target.CopyTo(sourceIndex, destination, destinationIndex, count);
-        PropagationModuleImpl.PropagateTaint(destination, target);
+        StringBuilderModuleImpl.FullTaintIfAnyTainted(destination, target);
     }
 
     /// <summary>  StringBuilder.Insert aspect </summary>
@@ -664,4 +667,130 @@ public class StringBuilderAspects
         target.Length = length;
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target);
     }
+
+#if NETCOREAPP3_1_OR_GREATER
+    /// <summary>StringBuilder.AppendJoin aspect</summary>
+    /// <param name="target">The StringBuilder instance.</param>
+    /// <param name="separator">The character to use as a separator.</param>
+    /// <param name="values">An array that contains the strings to concatenate and append to the current instance of the string builder.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.String,System.String[])")]
+    public static StringBuilder AppendJoin(StringBuilder target, string separator, string[] values)
+    {
+        var result = target.AppendJoin(separator, values);
+        StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, separator, values);
+        return result;
+    }
+
+    /// <summary>StringBuilder.AppendJoin aspect</summary>
+    /// <param name="target">The StringBuilder instance.</param>
+    /// <param name="separator">The character to use as a separator.</param>
+    /// <param name="values">An array that contains the strings to concatenate and append to the current instance of the string builder.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.String,System.Object[])")]
+    public static StringBuilder AppendJoin(StringBuilder target, string separator, object[] values)
+    {
+        var result = target.AppendJoin(separator, values);
+        StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, separator, values);
+        return result;
+    }
+
+    /// <summary>StringBuilder.AppendJoin aspect</summary>
+    /// <param name="target">The StringBuilder instance.</param>
+    /// <param name="separator">The character to use as a separator.</param>
+    /// <param name="values">An array that contains the strings to concatenate and append to the current instance of the string builder.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.Char,System.String[])")]
+    public static StringBuilder AppendJoin(StringBuilder target, char separator, string[] values)
+    {
+        var result = target.AppendJoin(separator, values);
+        StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, null, values);
+        return result;
+    }
+
+    /// <summary>StringBuilder.AppendJoin aspect</summary>
+    /// <param name="target">The StringBuilder instance.</param>
+    /// <param name="separator">The character to use as a separator.</param>
+    /// <param name="values">An array that contains the strings to concatenate and append to the current instance of the string builder.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.Char,System.Object[])")]
+    public static StringBuilder AppendJoin(StringBuilder target, char separator, object[] values)
+    {
+        var result = target.AppendJoin(separator, values);
+        StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, null, values);
+        return result;
+    }
+
+    /// <summary>StringBuilder.AppendJoin aspect</summary>
+    /// <param name="target">The StringBuilder instance.</param>
+    /// <param name="separator">The character to use as a separator.</param>
+    /// <param name="values">An array that contains the strings to concatenate and append to the current instance of the string builder.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)")]
+    public static StringBuilder AppendJoin(StringBuilder target, char separator, IEnumerable values)
+    {
+        if (values is null)
+        {
+#pragma warning disable CS8604 // We want to call the exact method overload even if values is null
+            return target.AppendJoin(separator, values as IEnumerable<object>);
+#pragma warning restore CS8604 // Enable
+        }
+
+        var valuesConverted = values as IEnumerable<object>;
+
+        if (valuesConverted is null)
+        {
+            // We have a IEnumerable of structs or basic types. This is a corner case.
+            try
+            {
+                valuesConverted = values.Cast<object>();
+            }
+            catch
+            {
+                // This should not ever happen
+                return target.AppendJoin(separator, values);
+            }
+        }
+
+        var result = target.AppendJoin(separator, valuesConverted);
+        StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, null, valuesConverted);
+        return result;
+    }
+
+    /// <summary>StringBuilder.AppendJoin aspect</summary>
+    /// <param name="target">The StringBuilder instance.</param>
+    /// <param name="separator">The character to use as a separator.</param>
+    /// <param name="values">An array that contains the strings to concatenate and append to the current instance of the string builder.</param>
+    /// <returns>The modified StringBuilder instance.</returns>
+    [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.String,System.Collections.Generic.IEnumerable`1<!!0>)")]
+    public static StringBuilder AppendJoin(StringBuilder target, string separator, IEnumerable values)
+    {
+        if (values is null)
+        {
+#pragma warning disable CS8604 // We want to call the exact method overload even if values is null
+            return target.AppendJoin(separator, values as IEnumerable<object>);
+#pragma warning restore CS8604 // Enable
+        }
+
+        var valuesConverted = values as IEnumerable<object>;
+
+        if (valuesConverted is null)
+        {
+            // We have a IEnumerable of structs or basic types. This is a corner case.
+            try
+            {
+                valuesConverted = values.Cast<object>();
+            }
+            catch
+            {
+                // This should not ever happen
+                return target.AppendJoin(separator, values);
+            }
+        }
+
+        var result = target.AppendJoin(separator, valuesConverted);
+        StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, separator, valuesConverted);
+        return result;
+    }
+#endif
 }

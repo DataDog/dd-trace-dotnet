@@ -6,9 +6,9 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Text;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Iast.Propagation;
 
@@ -184,11 +184,16 @@ internal static class StringBuilderModuleImpl
         return target;
     }
 
-    public static void FullTaintIfAnyTainted(StringBuilder target, object? firstInput = null, params object[]? otherInputs)
+    public static void FullTaintIfAnyTainted(char[] result, StringBuilder firstInput)
+    {
+        FullTaintIfAnyTaintedAux(result, result.Length, firstInput, null);
+    }
+
+    public static void FullTaintIfAnyTainted(StringBuilder target, object? firstInput = null, object? secondInput = null, object? thirdInput = null, object? fourthInput = null)
     {
         try
         {
-            if (target is null)
+            if (target is null || target.Length == 0)
             {
                 return;
             }
@@ -205,16 +210,69 @@ internal static class StringBuilderModuleImpl
 
             if (!targetIsTainted)
             {
-                if (firstInput is null || (tainted = PropagationModuleImpl.GetTainted(taintedObjects, firstInput)) is null)
+                if (((tainted = GetTaintedWithRanges(taintedObjects, firstInput)) is null) &&
+                    ((tainted = GetTaintedWithRanges(taintedObjects, secondInput)) is null) &&
+                    ((tainted = GetTaintedWithRanges(taintedObjects, thirdInput)) is null) &&
+                    ((tainted = GetTaintedWithRanges(taintedObjects, fourthInput)) is null))
+                {
+                    return;
+                }
+            }
+
+            var rangesResult = new Range[] { new Range(0, target.Length, tainted!.Ranges[0].Source) };
+            if (!targetIsTainted)
+            {
+                taintedObjects.Taint(target, rangesResult);
+            }
+            else
+            {
+                tainted.Ranges = rangesResult;
+            }
+        }
+        catch (Exception error)
+        {
+            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(FullTaintIfAnyTaintedAux)} exception");
+        }
+    }
+
+    public static void FullTaintIfAnyTaintedEnumerable(StringBuilder target, string? firstInput, IEnumerable? otherInputs)
+    {
+        FullTaintIfAnyTaintedAux(target, target.Length, firstInput, otherInputs);
+    }
+
+    private static void FullTaintIfAnyTaintedAux(object target, int targetLength, object? firstInput, IEnumerable? otherInputs)
+    {
+        try
+        {
+            if (target is null || targetLength == 0)
+            {
+                return;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext is null)
+            {
+                return;
+            }
+
+            var taintedObjects = iastContext.GetTaintedObjects();
+            var tainted = PropagationModuleImpl.GetTainted(taintedObjects, target);
+            bool targetIsTainted = tainted is not null;
+
+            if (!targetIsTainted)
+            {
+                tainted = GetTaintedWithRanges(taintedObjects, firstInput);
+                if (tainted is null)
                 {
                     if (otherInputs is null)
                     {
                         return;
                     }
 
-                    for (int i = 0; i < otherInputs.Length; i++)
+                    foreach (var input in otherInputs)
                     {
-                        if ((tainted = PropagationModuleImpl.GetTainted(taintedObjects, otherInputs[i])) is not null)
+                        tainted = GetTaintedWithRanges(taintedObjects, input);
+                        if (tainted is not null)
                         {
                             break;
                         }
@@ -222,12 +280,12 @@ internal static class StringBuilderModuleImpl
                 }
             }
 
-            if (tainted is null || tainted.Ranges.Length == 0)
+            if (tainted is null)
             {
                 return;
             }
 
-            var rangesResult = new Range[] { new Range(0, target.Length, tainted.Ranges[0].Source) };
+            var rangesResult = new Range[] { new Range(0, targetLength, tainted!.Ranges[0].Source) };
 
             if (!targetIsTainted)
             {
@@ -238,10 +296,16 @@ internal static class StringBuilderModuleImpl
                 tainted.Ranges = rangesResult;
             }
         }
-        catch (Exception err)
+        catch (Exception error)
         {
-            Log.Error(err, "StringModuleImpl.FullTaintIfAnyTainted exception {Exception}", err.Message);
+            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(FullTaintIfAnyTaintedAux)} exception");
         }
+    }
+
+    private static TaintedObject? GetTaintedWithRanges(TaintedObjects taintedObjects, object? value)
+    {
+        var tainted = PropagationModuleImpl.GetTainted(taintedObjects, value);
+        return tainted is not null && tainted?.Ranges.Length > 0 ? tainted : null;
     }
 
     private static Range[]? GetRepeatedRange(int count, int valueLenght, TaintedObject? taintedValue)
