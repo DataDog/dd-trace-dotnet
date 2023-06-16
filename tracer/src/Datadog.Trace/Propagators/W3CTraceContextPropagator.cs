@@ -443,6 +443,9 @@ namespace Datadog.Trace.Propagators
             }
         }
 
+#if NETCOREAPP3_1_OR_GREATER
+        [SkipLocalsInit]
+#endif
         internal static unsafe void SplitTraceStateValues(string header, out string? ddValues, out string? additionalValues)
         {
             // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
@@ -455,7 +458,7 @@ namespace Datadog.Trace.Propagators
             }
 
             header = header.Trim();
-            int ddStartIndex;
+            int ddStartIndex = 0;
 
             if (header.StartsWith("dd=", StringComparison.Ordinal))
             {
@@ -698,6 +701,9 @@ namespace Datadog.Trace.Propagators
                    _ => TrimAndJoinStringsRare(values),
                };
 
+#if NETCOREAPP3_1_OR_GREATER
+        [SkipLocalsInit]
+#endif
         private static unsafe string TrimAndJoinStringsRare(IEnumerable<string?> values)
         {
 #if NETCOREAPP3_1_OR_GREATER

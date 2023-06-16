@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ExtensionMethods
@@ -94,6 +95,9 @@ namespace Datadog.Trace.ExtensionMethods
         /// <param name="normalizePeriods">True if we replace dots by underscores</param>
         /// <param name="normalizedTagName">If the method returns true, the normalized tag name</param>
         /// <returns>Returns whether the conversion was successful</returns>
+#if NETCOREAPP3_1_OR_GREATER
+        [SkipLocalsInit]
+#endif
         public static unsafe bool TryConvertToNormalizedTagName(this string value, bool normalizePeriods, out string normalizedTagName)
         {
             if (string.IsNullOrWhiteSpace(value))

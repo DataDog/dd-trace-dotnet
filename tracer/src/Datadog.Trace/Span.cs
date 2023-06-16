@@ -5,6 +5,7 @@
 
 using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -139,6 +140,9 @@ namespace Datadog.Trace
         /// <returns>
         /// A <see cref="string" /> that represents this instance.
         /// </returns>
+#if NETCOREAPP3_1_OR_GREATER
+        [SkipLocalsInit]
+#endif
         public override unsafe string ToString()
         {
 #if NETCOREAPP3_1_OR_GREATER
