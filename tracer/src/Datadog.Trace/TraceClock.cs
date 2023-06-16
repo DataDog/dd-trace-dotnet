@@ -36,7 +36,7 @@ internal sealed class TraceClock
 
         // The following is to prevent the case of GC hitting between _utcStart and _timestamp set
         var retries = 3;
-        while ((DateTimeOffset.UtcNow - UtcNow).TotalMilliseconds > 16 || retries-- < 0)
+        while ((DateTimeOffset.UtcNow - UtcNow).TotalMilliseconds > 16 && retries-- > 0)
         {
             _utcStart = DateTimeOffset.UtcNow;
             _timestamp = Stopwatch.GetTimestamp();

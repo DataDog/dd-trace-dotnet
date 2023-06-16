@@ -34,6 +34,8 @@ internal enum PublicApiUsage
     [Description("tracer_forceflushasync")] Tracer_ForceFlushAsync,
     [Description("tracer_startactive")] Tracer_StartActive,
     [Description("tracer_startactive_settings")] Tracer_StartActive_Settings,
+    [Description("itracer_startactive")] ITracer_StartActive,
+    [Description("itracer_startactive_settings")] ITracer_StartActive_Settings,
 
     // These are problematic, as we use them _everywhere_ so means a lot of code changes
     // [Description("tracer_instance_get")] Tracer_Instance_Get,
@@ -70,11 +72,11 @@ internal enum PublicApiUsage
     [Description("correlationidentifier_version_get")]Correlation_Identifier_Version_Get,
 
     [Description("spancontext_ctor")] SpanContext_Ctor,
+    [Description("spancontext_parent_get")] SpanContext_Parent_Get,
+    [Description("spancontext_parentid_get")] SpanContext_ParentId_Get,
+    [Description("spancontext_servicename_get")] SpanContext_ServiceName_Get,
+    [Description("spancontext_servicename_set")] SpanContext_ServiceName_Set,
     // These are problematic as they're used in a _lot_ of places
-    // [Description("spancontext_parent_get")] SpanContext_Parent_Get,
-    // [Description("spancontext_parentid_get")] SpanContext_ParentId_Get,
-    // [Description("spancontext_servicename_get")] SpanContext_ServiceName_Get,
-    // [Description("spancontext_servicename_set")] SpanContext_ServiceName_Set,
     // [Description("spancontext_spanid_get")] SpanContext_SpanId_Get,
     // [Description("spancontext_traceid_get")] SpanContext_TraceId_Get,
 
@@ -215,4 +217,9 @@ internal enum PublicApiUsage
     [Description("immutabletracersettings_traceenabled_get")] ImmutableTracerSettings_TraceEnabled_Get,
     [Description("immutabletracersettings_tracermetricsenabled_get")] ImmutableTracerSettings_TracerMetricsEnabled_Get,
     [Description("immutabletracersettings_fromdefaultsources")] ImmutableTracerSettings_FromDefaultSources,
+
+    [Description("opentracingtracerfactory_createtracer")] OpenTracingTracerFactory_CreateTracer,
+    [Description("opentracingtracerfactory_wraptracer")] OpenTracingTracerFactory_WrapTracer,
+    [Description("opentracingtracer_ctor_datadogtracer")] OpenTracingTracer_Ctor_DatadogTracer,
+    [Description("opentracingtracer_ctor_datadogtracer_scopemanager")] OpenTracingTracer_Ctor_DatadogTracer_ScopeManager,
 }

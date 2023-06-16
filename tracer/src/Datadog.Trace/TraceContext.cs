@@ -42,8 +42,8 @@ namespace Datadog.Trace
             if (settings is not null)
             {
                 // these could be set from DD_ENV/DD_VERSION or from DD_TAGS
-                Environment = settings.Environment;
-                ServiceVersion = settings.ServiceVersion;
+                Environment = settings.EnvironmentInternal;
+                ServiceVersion = settings.ServiceVersionInternal;
             }
 
             Tracer = tracer;
@@ -123,7 +123,7 @@ namespace Datadog.Trace
 
         public void CloseSpan(Span span)
         {
-            bool ShouldTriggerPartialFlush() => Tracer.Settings.Exporter.PartialFlushEnabled && _spans.Count >= Tracer.Settings.Exporter.PartialFlushMinSpans;
+            bool ShouldTriggerPartialFlush() => Tracer.Settings.ExporterInternal.PartialFlushEnabledInternal && _spans.Count >= Tracer.Settings.ExporterInternal.PartialFlushMinSpansInternal;
 
             ArraySegment<Span> spansToWrite = default;
 

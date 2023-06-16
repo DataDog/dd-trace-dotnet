@@ -43,7 +43,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
         private readonly byte[] _originTimestampTypeBytes = StringEncoding.UTF8.GetBytes("origin");
 
         public DataStreamsMessagePackFormatter(ImmutableTracerSettings tracerSettings, string defaultServiceName)
-            : this(tracerSettings.Environment, defaultServiceName)
+            : this(tracerSettings.EnvironmentInternal, defaultServiceName)
         {
         }
 

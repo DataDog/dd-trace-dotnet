@@ -181,7 +181,7 @@ namespace Datadog.Trace.Ci.Configuration
 
         private TracerSettings InitializeTracerSettings()
         {
-            var tracerSettings = new TracerSettings(GlobalConfigurationSource.Instance);
+            var tracerSettings = new TracerSettings(GlobalConfigurationSource.Instance, new ConfigurationTelemetry());
 
             if (Logs)
             {

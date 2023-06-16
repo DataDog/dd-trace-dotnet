@@ -28,7 +28,7 @@ namespace Datadog.Trace.DatabaseMonitoring
 #else
                 var propagatorStringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 #endif
-                propagatorStringBuilder.Append($"/*{SqlCommentSpanService}='{Uri.EscapeDataString(context.ServiceName)}'");
+                propagatorStringBuilder.Append($"/*{SqlCommentSpanService}='{Uri.EscapeDataString(context.ServiceNameInternal)}'");
 
                 if (context.TraceContext?.Environment is { } envTag)
                 {
