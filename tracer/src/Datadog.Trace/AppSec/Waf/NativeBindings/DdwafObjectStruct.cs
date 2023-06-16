@@ -6,13 +6,15 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
     [StructLayout(LayoutKind.Explicit)]
     internal struct DdwafObjectStruct
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DdwafObjectStruct>();
+
         [FieldOffset(0)]
         public IntPtr ParameterName;
 

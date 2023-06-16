@@ -43,7 +43,7 @@ internal class LiveDebuggerFactory
         var probeStatusSink = ProbeStatusSink.Create(serviceName, settings);
 
         var apiFactory = AgentTransportStrategy.Get(
-            tracerSettings.Exporter,
+            tracerSettings.ExporterInternal,
             productName: "debugger",
             tcpTimeout: TimeSpan.FromSeconds(15),
             AgentHttpHeaderNames.MinimalHeaders,
@@ -57,11 +57,11 @@ internal class LiveDebuggerFactory
         var lineProbeResolver = LineProbeResolver.Create();
         var probeStatusPoller = ProbeStatusPoller.Create(probeStatusSink, settings);
 
-        var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Environment, tracerSettings.ServiceVersion);
+        var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.EnvironmentInternal, tracerSettings.ServiceVersionInternal);
 
         IDogStatsd statsd;
         if (FrameworkDescription.Instance.IsWindows()
-            && tracerSettings.Exporter.MetricsTransport == TransportType.UDS)
+            && tracerSettings.ExporterInternal.MetricsTransport == TransportType.UDS)
         {
             Log.Information("Metric probes are not supported on Windows when transport type is UDS");
             statsd = new NoOpStatsd();

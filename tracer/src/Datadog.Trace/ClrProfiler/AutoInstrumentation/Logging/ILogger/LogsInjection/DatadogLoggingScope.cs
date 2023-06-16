@@ -27,8 +27,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
         {
             _tracer = tracer;
             _service = tracer.DefaultServiceName ?? string.Empty;
-            _env = tracer.Settings.Environment ?? string.Empty;
-            _version = tracer.Settings.ServiceVersion ?? string.Empty;
+            _env = tracer.Settings.EnvironmentInternal ?? string.Empty;
+            _version = tracer.Settings.ServiceVersionInternal ?? string.Empty;
             _cachedFormat = string.Format(
                 CultureInfo.InvariantCulture,
                 "dd_service:\"{0}\", dd_env:\"{1}\", dd_version:\"{2}\"",

@@ -23,7 +23,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                 (propagationStyle is DbmPropagationLevel.Service or DbmPropagationLevel.Full))
             {
                 var propagatorSringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-                propagatorSringBuilder.Append($"/*{SqlCommentSpanService}='{Uri.EscapeDataString(context.ServiceName)}'");
+                propagatorSringBuilder.Append($"/*{SqlCommentSpanService}='{Uri.EscapeDataString(context.ServiceNameInternal)}'");
 
                 if (context.TraceContext?.Environment is { } envTag)
                 {

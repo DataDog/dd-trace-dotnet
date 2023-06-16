@@ -14,7 +14,7 @@ partial class IntegrationSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)64);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)70);
             return IntegrationNameInternal;
         }
     }
@@ -30,13 +30,13 @@ partial class IntegrationSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)62);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)68);
             return EnabledInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)63);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)69);
             EnabledInternal = value;
         }
     }
@@ -51,13 +51,13 @@ partial class IntegrationSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)58);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)64);
             return AnalyticsEnabledInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)59);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)65);
             AnalyticsEnabledInternal = value;
         }
     }
@@ -72,13 +72,13 @@ partial class IntegrationSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)60);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)66);
             return AnalyticsSampleRateInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)61);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)67);
             AnalyticsSampleRateInternal = value;
         }
     }
