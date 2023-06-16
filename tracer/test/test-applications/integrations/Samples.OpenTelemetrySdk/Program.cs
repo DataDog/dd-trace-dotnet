@@ -165,6 +165,9 @@ public static class Program
 
         using (var innerSpan = _tracer.StartActiveSpan("InnerSpan"))
         {
+            // if we don't set the span as an error we won't check it for exception event
+            // so if we only do RecordException, we wouldn't copy that info over as the span isn't marked as an Error
+            innerSpan.SetStatus(Status.Error.WithDescription("Something went wrong"));
             innerSpan.RecordException(new ArgumentException("Example argument exception"));
             innerSpan.UpdateName("InnerSpanUpdated");
         }
