@@ -1,4 +1,4 @@
-#if NETCOREAPP3_0_OR_GREATER
+#if NETCOREAPP3_1_OR_GREATER
 using System.Collections.Generic;
 using System.Text;
 using Xunit;
@@ -59,7 +59,7 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenAStringBuilderTainted_WhenAppendJoinStringString_ThenResultIsTainted5()
+    public void GivenAStringBuilderTainted_WhenAppendJoinStringString_ThenResultIsNotTainted5()
     {
         AssertUntaintedWithOriginalCallCheck(
             () => GetTaintedStringBuilder("test").AppendJoin((string)null, (string[]) null),
@@ -67,7 +67,7 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenAStringBuilderTainted_WhenAppendJoinStringString_ThenResultIsTainted6()
+    public void GivenAStringBuilderTainted_WhenAppendJoinStringString_ThenResultIsNotTainted6()
     {
         AssertUntaintedWithOriginalCallCheck(
             () => GetTaintedStringBuilder("test").AppendJoin(".", (string[]) null),
@@ -125,7 +125,7 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenAStringBuilderTainted_WhenAppendJoinStringObject_ThenResultIsTainted5()
+    public void GivenAStringBuilderTainted_WhenAppendJoinStringObject_ThenResultIsNotTainted5()
     {
         AssertUntaintedWithOriginalCallCheck(
             () => GetTaintedStringBuilder("test").AppendJoin((string)null, (object[]) null),
@@ -133,7 +133,7 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenAStringBuilderTainted_WhenAppendJoinStringObject_ThenResultIsTainted6()
+    public void GivenAStringBuilderTainted_WhenAppendJoinStringObject_ThenResultIsNotTainted6()
     {
         AssertUntaintedWithOriginalCallCheck(
             () => GetTaintedStringBuilder("test").AppendJoin(".", (object[]) null),
@@ -191,7 +191,7 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenAStringBuilderTainted_WhenAppendJoinStringIEnumerable_ThenResultIsTainted5()
+    public void GivenAStringBuilderTainted_WhenAppendJoinStringIEnumerable_ThenResultIsNotTainted5()
     {
         AssertUntaintedWithOriginalCallCheck(
             () => GetTaintedStringBuilder("test").AppendJoin((string)null, (List<object>)null),
@@ -199,7 +199,7 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenAStringBuilderTainted_WhenAppendJoinStringIEnumerable_ThenResultIsTainted6()
+    public void GivenAStringBuilderTainted_WhenAppendJoinStringIEnumerable_ThenResultIsNotTainted6()
     {
         AssertUntaintedWithOriginalCallCheck(
             () => GetTaintedStringBuilder("test").AppendJoin(".", (object[])null),
@@ -257,7 +257,7 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenAStringBuilderTainted_WhenAppendJoinCharString_ThenResultIsTainted5()
+    public void GivenAStringBuilderTainted_WhenAppendJoinCharString_ThenResultIsNotTainted5()
     {
         AssertUntaintedWithOriginalCallCheck(
             () => GetTaintedStringBuilder("test").AppendJoin((string)null, (string[])null),
@@ -265,7 +265,7 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenAStringBuilderTainted_WhenAppendJoinCharString_ThenResultIsTainted6()
+    public void GivenAStringBuilderTainted_WhenAppendJoinCharString_ThenResultIsNotTainted6()
     {
         AssertUntaintedWithOriginalCallCheck(
             () => GetTaintedStringBuilder("test").AppendJoin('.', (string[])null),
@@ -307,7 +307,7 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenAStringBuilderTainted_WhenAppendJoinCharObject_ThenResultIsTainted6()
+    public void GivenAStringBuilderTainted_WhenAppendJoinCharObject_ThenResultIsNotTainted6()
     {
         AssertUntaintedWithOriginalCallCheck(
             () => GetTaintedStringBuilder("test").AppendJoin('.', (object[])null),
@@ -359,7 +359,7 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenAStringBuilderTainted_WhenAppendJoinCharIEnumerable_ThenResultIsTainted6()
+    public void GivenAStringBuilderTainted_WhenAppendJoinCharIEnumerable_ThenResultIsNotTainted()
     {
         AssertUntaintedWithOriginalCallCheck(
             () => GetTaintedStringBuilder("test").AppendJoin('.', (object[])null),
