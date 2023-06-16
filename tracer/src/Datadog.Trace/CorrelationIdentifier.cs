@@ -47,7 +47,7 @@ namespace Datadog.Trace
             get
             {
                 TelemetryFactory.Metrics.Record(PublicApiUsage.Correlation_Identifier_Version_Get);
-                return Tracer.Instance.Settings.ServiceVersion ?? string.Empty;
+                return Tracer.Instance.Settings.ServiceVersionInternal ?? string.Empty;
             }
         }
 
@@ -59,7 +59,7 @@ namespace Datadog.Trace
             get
             {
                 TelemetryFactory.Metrics.Record(PublicApiUsage.Correlation_Identifier_Env_Get);
-                return Tracer.Instance.Settings.Environment ?? string.Empty;
+                return Tracer.Instance.Settings.EnvironmentInternal ?? string.Empty;
             }
         }
 

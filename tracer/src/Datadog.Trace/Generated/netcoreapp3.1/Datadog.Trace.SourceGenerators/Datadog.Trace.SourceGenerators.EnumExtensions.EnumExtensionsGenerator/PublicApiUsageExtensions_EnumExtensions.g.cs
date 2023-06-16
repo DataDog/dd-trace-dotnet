@@ -13,7 +13,7 @@ internal static partial class PublicApiUsageExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 151;
+    public const int Length = 161;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.PublicApiUsage"/> value.
@@ -42,12 +42,18 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_ForceFlushAsync => "tracer_forceflushasync",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive => "tracer_startactive",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive_Settings => "tracer_startactive_settings",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ITracer_StartActive => "itracer_startactive",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ITracer_StartActive_Settings => "itracer_startactive_settings",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_Env_Get => "correlationidentifier_env_get",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_Service_Get => "correlationidentifier_service_get",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_SpanId_Get => "correlationidentifier_spanid_get",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_TraceId_Get => "correlationidentifier_traceid_get",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_Version_Get => "correlationidentifier_version_get",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContext_Ctor => "spancontext_ctor",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContext_Parent_Get => "spancontext_parent_get",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContext_ParentId_Get => "spancontext_parentid_get",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContext_ServiceName_Get => "spancontext_servicename_get",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContext_ServiceName_Set => "spancontext_servicename_set",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ExporterSettings_Ctor => "exportersettings_ctor",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ExporterSettings_Ctor_Source => "exportersettings_ctor_source",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ExporterSettings_AgentUri_Get => "exportersettings_agenturi_get",
@@ -177,6 +183,10 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_TraceEnabled_Get => "immutabletracersettings_traceenabled_get",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_TracerMetricsEnabled_Get => "immutabletracersettings_tracermetricsenabled_get",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_FromDefaultSources => "immutabletracersettings_fromdefaultsources",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.OpenTracingTracerFactory_CreateTracer => "opentracingtracerfactory_createtracer",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.OpenTracingTracerFactory_WrapTracer => "opentracingtracerfactory_wraptracer",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.OpenTracingTracer_Ctor_DatadogTracer => "opentracingtracer_ctor_datadogtracer",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.OpenTracingTracer_Ctor_DatadogTracer_ScopeManager => "opentracingtracer_ctor_datadogtracer_scopemanager",
             _ => value.ToString(),
         };
 
@@ -206,12 +216,18 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_ForceFlushAsync,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive_Settings,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ITracer_StartActive,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ITracer_StartActive_Settings,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_Env_Get,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_Service_Get,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_SpanId_Get,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_TraceId_Get,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_Version_Get,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContext_Ctor,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContext_Parent_Get,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContext_ParentId_Get,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContext_ServiceName_Get,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContext_ServiceName_Set,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ExporterSettings_Ctor,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ExporterSettings_Ctor_Source,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ExporterSettings_AgentUri_Get,
@@ -341,6 +357,10 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_TraceEnabled_Get,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_TracerMetricsEnabled_Get,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_FromDefaultSources,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.OpenTracingTracerFactory_CreateTracer,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.OpenTracingTracerFactory_WrapTracer,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.OpenTracingTracer_Ctor_DatadogTracer,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.OpenTracingTracer_Ctor_DatadogTracer_ScopeManager,
         };
 
     /// <summary>
@@ -370,12 +390,18 @@ internal static partial class PublicApiUsageExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_ForceFlushAsync),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_StartActive_Settings),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ITracer_StartActive),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ITracer_StartActive_Settings),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_Env_Get),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_Service_Get),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_SpanId_Get),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_TraceId_Get),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Correlation_Identifier_Version_Get),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContext_Ctor),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContext_Parent_Get),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContext_ParentId_Get),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContext_ServiceName_Get),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContext_ServiceName_Set),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ExporterSettings_Ctor),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ExporterSettings_Ctor_Source),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ExporterSettings_AgentUri_Get),
@@ -505,6 +531,10 @@ internal static partial class PublicApiUsageExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_TraceEnabled_Get),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_TracerMetricsEnabled_Get),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_FromDefaultSources),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.OpenTracingTracerFactory_CreateTracer),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.OpenTracingTracerFactory_WrapTracer),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.OpenTracingTracer_Ctor_DatadogTracer),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.OpenTracingTracer_Ctor_DatadogTracer_ScopeManager),
         };
 
     /// <summary>
@@ -534,12 +564,18 @@ internal static partial class PublicApiUsageExtensions
             "tracer_forceflushasync",
             "tracer_startactive",
             "tracer_startactive_settings",
+            "itracer_startactive",
+            "itracer_startactive_settings",
             "correlationidentifier_env_get",
             "correlationidentifier_service_get",
             "correlationidentifier_spanid_get",
             "correlationidentifier_traceid_get",
             "correlationidentifier_version_get",
             "spancontext_ctor",
+            "spancontext_parent_get",
+            "spancontext_parentid_get",
+            "spancontext_servicename_get",
+            "spancontext_servicename_set",
             "exportersettings_ctor",
             "exportersettings_ctor_source",
             "exportersettings_agenturi_get",
@@ -669,5 +705,9 @@ internal static partial class PublicApiUsageExtensions
             "immutabletracersettings_traceenabled_get",
             "immutabletracersettings_tracermetricsenabled_get",
             "immutabletracersettings_fromdefaultsources",
+            "opentracingtracerfactory_createtracer",
+            "opentracingtracerfactory_wraptracer",
+            "opentracingtracer_ctor_datadogtracer",
+            "opentracingtracer_ctor_datadogtracer_scopemanager",
         };
 }
