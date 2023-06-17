@@ -1460,6 +1460,34 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     // Datadog.Trace.dll and its dependencies on disk.
     if (valid_startup_hook_callsite && !has_loader_injected_in_appdomain)
     {
+        // *********************************************************************
+        // Checking if the caller is inside of the <Module> type
+        // *********************************************************************
+
+        // The <Module> typeDef is always the first entry in the typeDef table.
+        // The CLR profiling api can return mdTypeDefNil for the <Module> type, so we skip that as well.
+        constexpr auto moduleTypeDef = mdTypeDefNil + (BYTE)1;
+
+        if (caller.type.id == mdTypeDefNil || caller.type.id == moduleTypeDef)
+        {
+            Logger::Debug("JITCompilationStarted: Startup hook skipped from <Module>.", caller.name, "()");
+            return S_OK;
+        }
+
+        // Look at the type parents in case we are in a nested type
+        auto pType = caller.type.parent_type;
+        while (pType != nullptr)
+        {
+            if (pType->id == mdTypeDefNil || pType->id == moduleTypeDef)
+            {
+                Logger::Debug("JITCompilationStarted: Startup hook skipped from a type with <Module> as a parent. ", caller.type.name, ".", caller.name, "()");
+                return S_OK;
+            }
+                
+            pType = pType->parent_type;
+        }
+        // *********************************************************************
+
         bool domain_neutral_assembly = runtime_information_.is_desktop() && corlib_module_loaded &&
                                        module_metadata->app_domain_id == corlib_app_domain_id;
         Logger::Info("JITCompilationStarted: Startup hook registered in function_id=", function_id,
