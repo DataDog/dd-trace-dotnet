@@ -81,7 +81,7 @@ void ContentionProvider::OnContention(double contentionDurationNs)
     {
         std::lock_guard lock(_contentionsLock);
 
-        if (!_sampler.Sample(bucket))
+        if (!_sampler.Sample(bucket, static_cast<uint64_t>(contentionDurationNs)))
         {
             return;
         }
