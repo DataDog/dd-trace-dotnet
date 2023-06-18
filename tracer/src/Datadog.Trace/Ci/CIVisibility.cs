@@ -78,7 +78,7 @@ namespace Datadog.Trace.Ci
                 if (!settings.ForceAgentsEvpProxy)
                 {
                     discoveryService = DiscoveryService.Create(
-                        new ImmutableExporterSettings(settings.TracerSettings.Exporter),
+                        new ImmutableExporterSettings(settings.TracerSettings.ExporterInternal, true),
                         tcpTimeout: TimeSpan.FromSeconds(5),
                         initialRetryDelayMs: 10,
                         maxRetryDelayMs: 1000,
@@ -98,18 +98,18 @@ namespace Datadog.Trace.Ci
 
             // Set the service name if empty
             Log.Debug("Setting up the service name");
-            if (string.IsNullOrEmpty(tracerSettings.ServiceName))
+            if (string.IsNullOrEmpty(tracerSettings.ServiceNameInternal))
             {
                 // Extract repository name from the git url and use it as a default service name.
-                tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+                tracerSettings.ServiceNameInternal = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
             }
 
             // Normalize the service name
-            tracerSettings.ServiceName = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceName);
+            tracerSettings.ServiceNameInternal = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceNameInternal);
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
+            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings, true), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
             _ = Tracer.Instance;
 
             // Initialize FrameworkDescription
@@ -163,18 +163,18 @@ namespace Datadog.Trace.Ci
 
             // Set the service name if empty
             Log.Debug("Setting up the service name");
-            if (string.IsNullOrEmpty(tracerSettings.ServiceName))
+            if (string.IsNullOrEmpty(tracerSettings.ServiceNameInternal))
             {
                 // Extract repository name from the git url and use it as a default service name.
-                tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+                tracerSettings.ServiceNameInternal = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
             }
 
             // Normalize the service name
-            tracerSettings.ServiceName = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceName);
+            tracerSettings.ServiceNameInternal = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceNameInternal);
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
+            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings, true), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
             _ = Tracer.Instance;
 
             // Initialize FrameworkDescription
@@ -343,10 +343,10 @@ namespace Datadog.Trace.Ci
 
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
-            factory = new HttpClientRequestFactory(tracerSettings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
+            factory = new HttpClientRequestFactory(tracerSettings.ExporterInternal.AgentUriInternal, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
 #else
             Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
-            factory = new ApiWebRequestFactory(tracerSettings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
+            factory = new ApiWebRequestFactory(tracerSettings.ExporterInternal.AgentUriInternal, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
 #endif
 
             var settings = Settings;

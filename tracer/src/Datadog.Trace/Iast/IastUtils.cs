@@ -11,31 +11,14 @@ namespace Datadog.Trace.Iast;
 
 internal static class IastUtils
 {
+    // From: https://probablydance.com/2018/06/16/fibonacci-hashing-the-optimization-that-the-world-forgot-or-a-better-alternative-to-integer-modulo/
+    // (Although, not sure how relevant it is in this case)
+    private const int GoldenRatio = 1618033987;
+
     private const int StartHash = 17;
 
     // Avoid infinite loops
     private const int MaxDepth = 5;
-
-    public static int GetHashCodeForArray(Array objects, int actualDepth = 0)
-    {
-        int hash = 17;
-
-        if (actualDepth >= MaxDepth)
-        {
-            return objects?.GetHashCode() ?? 0;
-        }
-
-        foreach (var element in objects)
-        {
-            var hashCode = (element is Array array) ? GetHashCodeForArray(array, actualDepth + 1) : element?.GetHashCode();
-            unchecked
-            {
-                hash = (hash * 23) + (hashCode ?? 0);
-            }
-        }
-
-        return hash;
-    }
 
     public static int GetHashCode<T>(T value)
     {
@@ -71,9 +54,20 @@ internal static class IastUtils
     }
 
     private static int GetHash<T>(T element)
-       => ((element is Array array)
-            ? GetHashCodeForArray(array, 1)
-            : element?.GetHashCode() ?? 0);
+    {
+        var hash =
+            element switch
+            {
+                string s => s.GetStaticHashCode(),
+                byte b => b,
+                short s => s,
+                int i => i,
+                long l => (int)l ^ (int)(l >> 32),
+                _ => element?.GetHashCode() ?? 0
+            };
+
+        return hash;
+    }
 
     public static int IdentityHashCode(object item)
     {
@@ -83,5 +77,32 @@ internal static class IastUtils
     public static Range[] GetRangesForString(string stringValue, Source source)
     {
         return new Range[] { new Range(0, stringValue.Length, source) };
+    }
+
+    internal static unsafe int GetStaticHashCode(this string? target)
+    {
+        if (target == null)
+        {
+            return -1;
+        }
+
+        fixed (char* charPtr = target)
+        {
+            var int32Length = target.Length / 2;
+            var intPtr = (int*)charPtr;
+
+            var hash = StartHash;
+            for (var i = 0; i < int32Length; i++)
+            {
+                hash += intPtr[i] * GoldenRatio;
+            }
+
+            if (target.Length % 2 != 0)
+            {
+                hash += ((int)charPtr[target.Length - 1]) * GoldenRatio;
+            }
+
+            return hash;
+        }
     }
 }

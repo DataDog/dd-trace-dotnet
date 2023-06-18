@@ -10,7 +10,7 @@ namespace Datadog.Trace.Telemetry;
 
 internal class DistributionMetricData
 {
-    public DistributionMetricData(string metric, double[] points, bool common)
+    public DistributionMetricData(string metric, List<double> points, bool common)
     {
         Metric = metric;
         Points = points;
@@ -26,12 +26,12 @@ internal class DistributionMetricData
     /// <summary>
     /// Gets or sets the points for the metric
     /// </summary>
-    public double[] Points { get; set; }
+    public List<double> Points { get; set; }
 
     /// <summary>
     /// Gets or sets a list of tags that will be associated with the points
     /// </summary>
-    public List<string>? Tags { get; set; }
+    public string[]? Tags { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether indicates whether the metric is common or language specific

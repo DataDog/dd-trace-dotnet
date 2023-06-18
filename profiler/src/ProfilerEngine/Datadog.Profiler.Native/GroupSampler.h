@@ -16,6 +16,8 @@ public:
     TGroup Group;
     uint64_t RealCount;
     uint64_t SampledCount;
+    uint64_t RealValue;
+    uint64_t SampledValue;
 };
 
 // Template class that support "sampling by group".
@@ -34,24 +36,27 @@ public:
 public:
     struct GroupInfo
     {
-        uint64_t Real;
-        uint64_t Sampled;
+        uint64_t RealCount;
+        uint64_t SampledCount;
+        uint64_t RealValue;
+        uint64_t SampledValue;
     };
 
 public:
-    bool Sample(TGroup group)
+    bool Sample(TGroup group, uint64_t value = 0)
     {
         std::unique_lock lock(_groupsMutex);
 
-        // increment the real count for the given group
+        // increment the real count and value for the given group
         GroupInfo* pInfo;
-        AddInGroup(group, pInfo);
+        AddInGroup(group, pInfo, value);
 
         auto [it, inserted] = _knownGroups.insert(std::move(group));
         if (inserted && _keepAtLeastOne)
         {
-            // increment the sampled count for the given group
-            pInfo->Sampled++;
+            // increment the sampled count and value for the given group
+            pInfo->SampledCount++;
+            pInfo->SampledValue += value;
 
             // This is the first time we see this group in this time window,
             // so force the sampling decision
@@ -61,29 +66,32 @@ public:
         auto sampled = _sampler.Sample();
         if (sampled)
         {
-            // increment the sampled count for the given group
-            pInfo->Sampled++;
+            // increment the sampled count and value for the given group
+            pInfo->SampledCount++;
+            pInfo->SampledValue += value;
         }
 
         return sampled;
     }
 
     // MUST be called under the lock
-    void AddInGroup(TGroup group, GroupInfo*& groupInfo)
+    void AddInGroup(TGroup group, GroupInfo*& groupInfo, uint64_t value = 0)
     {
         auto info = _groups.find(group);
         if (info != _groups.end())
         {
             groupInfo = &(info->second);
-            info->second.Real++;
-
+            info->second.RealCount++;
+            info->second.RealValue += value;
             return;
         }
 
         // need to add the info of this new group
         GroupInfo gi;
-        gi.Real = 1;
-        gi.Sampled = 0;
+        gi.RealCount = 1;
+        gi.SampledCount = 0;
+        gi.RealValue = value;
+        gi.SampledValue = 0;
         auto slot = _groups.insert_or_assign(group, gi);
         groupInfo = &((*slot.first).second);
     }
@@ -95,17 +103,19 @@ public:
 
         upscaleGroups.reserve(_groups.size());
 
-        for (auto& [name, counts] : _groups)
+        for (auto& [name, info] : _groups)
         {
-            auto sampledCount = counts.Sampled;
+            auto sampledCount = info.SampledCount;
             if (sampledCount > 0)
             {
-                upscaleGroups.push_back(UpscaleGroupInfo<TGroup>{name, counts.Real, sampledCount});
+                upscaleGroups.push_back(UpscaleGroupInfo<TGroup>{name, info.RealCount, sampledCount, info.RealValue, info.SampledValue});
             }
 
             // reset groups count
-            counts.Real = 0;
-            counts.Sampled = 0;
+            info.RealCount = 0;
+            info.SampledCount = 0;
+            info.RealValue = 0;
+            info.SampledValue = 0;
         }
 
         return upscaleGroups;

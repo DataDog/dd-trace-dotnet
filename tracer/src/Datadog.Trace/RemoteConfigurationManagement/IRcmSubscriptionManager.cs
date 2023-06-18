@@ -5,6 +5,7 @@
 
 #nullable enable
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace Datadog.Trace.RemoteConfigurationManagement;
 
@@ -21,4 +22,8 @@ internal interface IRcmSubscriptionManager
     void Unsubscribe(ISubscription subscription);
 
     List<ApplyDetails> Update(Dictionary<string, List<RemoteConfiguration>> configByProducts, Dictionary<string, List<RemoteConfigurationPath>> removedConfigsByProduct);
+
+    void SetCapability(BigInteger index, bool available);
+
+    byte[] GetCapabilities();
 }

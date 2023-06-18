@@ -12,6 +12,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -198,17 +199,17 @@ namespace Datadog.Trace.Agent
             {
                 try
                 {
-                    TelemetryMetrics.Instance.Record(Count.StatsApiRequests);
+                    TelemetryFactory.Metrics.RecordCountStatsApiRequests();
                     response = await request.PostAsync(new ArraySegment<byte>(buffer, 0, (int)stream.Length), MimeTypes.MsgPack).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
-                    var tag = ex is TimeoutException ? MetricTags.ApiError_Timeout : MetricTags.ApiError_NetworkError;
-                    TelemetryMetrics.Instance.Record(Count.StatsApiErrors, tag);
+                    var tag = ex is TimeoutException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
+                    TelemetryFactory.Metrics.RecordCountStatsApiErrors(tag);
                     throw;
                 }
 
-                TelemetryMetrics.Instance.Record(Count.StatsApiResponses, response.GetTelemetryStatusCodeMetricTag());
+                TelemetryFactory.Metrics.RecordCountStatsApiResponses(response.GetTelemetryStatusCodeMetricTag());
 
                 if (response.StatusCode is >= 200 and < 300)
                 {
@@ -233,7 +234,7 @@ namespace Datadog.Trace.Agent
                 }
                 else
                 {
-                    TelemetryMetrics.Instance.Record(Count.StatsApiErrors, MetricTags.ApiError_StatusCode);
+                    TelemetryFactory.Metrics.RecordCountStatsApiErrors(MetricTags.ApiError.StatusCode);
                 }
 
                 return success;
@@ -273,7 +274,7 @@ namespace Datadog.Trace.Agent
             {
                 try
                 {
-                    TelemetryMetrics.Instance.Record(Count.TraceApiRequests);
+                    TelemetryFactory.Metrics.RecordCountTraceApiRequests();
                     _statsd?.Increment(TracerMetricNames.Api.Requests);
                     response = await request.PostAsync(traces, MimeTypes.MsgPack).ConfigureAwait(false);
                 }
@@ -281,8 +282,8 @@ namespace Datadog.Trace.Agent
                 {
                     // count only network/infrastructure errors, not valid responses with error status codes
                     // (which are handled below)
-                    var tag = ex is TimeoutException ? MetricTags.ApiError_Timeout : MetricTags.ApiError_NetworkError;
-                    TelemetryMetrics.Instance.Record(Count.TraceApiErrors, tag);
+                    var tag = ex is TimeoutException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
+                    TelemetryFactory.Metrics.RecordCountTraceApiErrors(tag);
                     _statsd?.Increment(TracerMetricNames.Api.Errors);
                     throw;
                 }
@@ -296,7 +297,7 @@ namespace Datadog.Trace.Agent
                     _statsd?.Increment(TracerMetricNames.Api.Responses, tags: tags);
                 }
 
-                TelemetryMetrics.Instance.Record(Count.TraceApiResponses, response.GetTelemetryStatusCodeMetricTag());
+                TelemetryFactory.Metrics.RecordCountTraceApiResponses(response.GetTelemetryStatusCodeMetricTag());
 
                 // Attempt a retry if the status code is not SUCCESS
                 if (response.StatusCode < 200 || response.StatusCode >= 300)
@@ -314,7 +315,7 @@ namespace Datadog.Trace.Agent
                         }
                     }
 
-                    TelemetryMetrics.Instance.Record(Count.TraceApiErrors, MetricTags.ApiError_StatusCode);
+                    TelemetryFactory.Metrics.RecordCountTraceApiErrors(MetricTags.ApiError.StatusCode);
                     return false;
                 }
 

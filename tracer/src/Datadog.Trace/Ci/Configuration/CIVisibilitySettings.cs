@@ -150,7 +150,7 @@ namespace Datadog.Trace.Ci.Configuration
 
         public static CIVisibilitySettings FromDefaultSources()
         {
-            return new CIVisibilitySettings(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
+            return new CIVisibilitySettings(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
         }
 
         internal void SetCodeCoverageEnabled(bool value)
@@ -181,7 +181,7 @@ namespace Datadog.Trace.Ci.Configuration
 
         private TracerSettings InitializeTracerSettings()
         {
-            var tracerSettings = new TracerSettings(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
+            var tracerSettings = new TracerSettings(GlobalConfigurationSource.Instance, new ConfigurationTelemetry());
 
             if (Logs)
             {

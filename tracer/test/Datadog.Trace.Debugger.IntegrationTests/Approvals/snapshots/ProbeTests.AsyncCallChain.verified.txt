@@ -29,7 +29,7 @@
             "arguments": {
               "chain": {
                 "type": "Int32",
-                "value": "1"
+                "value": "2"
               },
               "this": {
                 "fields": {
@@ -98,7 +98,7 @@
             "arguments": {
               "chain": {
                 "type": "Int32",
-                "value": "2"
+                "value": "3"
               }
             },
             "locals": {

@@ -9,6 +9,9 @@ using System.Linq;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 #nullable enable
 
@@ -20,8 +23,10 @@ namespace Datadog.Trace
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContextExtractor>();
 
         /// <inheritdoc />
+        [PublicApi]
         public ISpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextExtractor_Extract);
             var spanContext = SpanContextPropagator.Instance.Extract(carrier, getter);
             if (spanContext is not null
              && Tracer.Instance.TracerManager.DataStreamsManager is { IsEnabled: true } dsm

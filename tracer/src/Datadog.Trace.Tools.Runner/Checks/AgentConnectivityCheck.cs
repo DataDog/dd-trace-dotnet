@@ -24,11 +24,11 @@ namespace Datadog.Trace.Tools.Runner.Checks
         {
             var settings = new ExporterSettings(process.Configuration, NullConfigurationTelemetry.Instance);
 
-            var url = settings.AgentUri.ToString();
+            var url = settings.AgentUriInternal.ToString();
 
             AnsiConsole.WriteLine(DetectedAgentUrlFormat(url));
 
-            return RunAsync(new ImmutableExporterSettings(settings));
+            return RunAsync(new ImmutableExporterSettings(settings, true));
         }
 
         public static async Task<bool> RunAsync(ImmutableExporterSettings settings)
@@ -68,7 +68,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
             catch (Exception ex)
             {
-                Utils.WriteError(ErrorDetectingAgent(settings.AgentUri.ToString(), ex.Message));
+                Utils.WriteError(ErrorDetectingAgent(settings.AgentUriInternal.ToString(), ex.Message));
                 return false;
             }
 
@@ -83,12 +83,12 @@ namespace Datadog.Trace.Tools.Runner.Checks
             if (settings.TracesTransport == TracesTransportType.UnixDomainSocket)
             {
                 transport = "domain sockets";
-                endpoint = settings.TracesUnixDomainSocketPath ?? "<not set>";
+                endpoint = settings.TracesUnixDomainSocketPathInternal ?? "<not set>";
             }
             else
             {
                 transport = "HTTP";
-                endpoint = settings.AgentUri.ToString();
+                endpoint = settings.AgentUriInternal.ToString();
             }
 
             AnsiConsole.WriteLine(ConnectToEndpointFormat(endpoint, transport));

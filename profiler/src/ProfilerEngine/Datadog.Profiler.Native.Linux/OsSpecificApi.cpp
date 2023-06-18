@@ -15,11 +15,13 @@
 
 #include <sys/syscall.h>
 #include <sys/sysinfo.h>
+
 #include "OsSpecificApi.h"
 #include "OpSysTools.h"
 #include "ScopeFinalizer.h"
 
 #include "IConfiguration.h"
+#include "IThreadInfo.h"
 #include "Log.h"
 #include "LinuxStackFramesCollector.h"
 #include "ProfilerSignalManager.h"
@@ -143,7 +145,7 @@ bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
     return true;
 }
 
-uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
+uint64_t GetThreadCpuTime(IThreadInfo* pThreadInfo)
 {
     bool isRunning = false;
     uint64_t cpuTime = 0;
@@ -155,7 +157,7 @@ uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
     return cpuTime;
 }
 
-bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
+bool IsRunning(IThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
 {
     bool isRunning = false;
     if (!GetCpuInfo(pThreadInfo->GetOsThreadId(), isRunning, cpuTime))

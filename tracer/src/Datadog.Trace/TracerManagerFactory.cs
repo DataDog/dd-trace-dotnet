@@ -1,4 +1,4 @@
-// <copyright file="TracerManagerFactory.cs" company="Datadog">
+ // <copyright file="TracerManagerFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
@@ -19,16 +18,19 @@ using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Datadog.Trace
 {
@@ -56,13 +58,14 @@ namespace Datadog.Trace
                 logSubmissionManager: previous?.DirectLogSubmission,
                 telemetry: null,
                 discoveryService: null,
-                dataStreamsManager: null);
+                dataStreamsManager: null,
+                remoteConfigurationManager: null);
 
             try
             {
                 if (Profiler.Instance.Status.IsProfilerReady)
                 {
-                    NativeInterop.SetApplicationInfoForAppDomain(RuntimeId.Get(), tracer.DefaultServiceName, tracer.Settings.Environment, tracer.Settings.ServiceVersion);
+                    NativeInterop.SetApplicationInfoForAppDomain(RuntimeId.Get(), tracer.DefaultServiceName, tracer.Settings.EnvironmentInternal, tracer.Settings.ServiceVersionInternal);
                 }
             }
             catch (Exception ex)
@@ -90,23 +93,24 @@ namespace Datadog.Trace
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
-            DataStreamsManager dataStreamsManager)
+            DataStreamsManager dataStreamsManager,
+            IRemoteConfigurationManager remoteConfigurationManager)
         {
-            settings ??= ImmutableTracerSettings.FromDefaultSources();
+            settings ??= new ImmutableTracerSettings(TracerSettings.FromDefaultSourcesInternal(), true);
 
-            var defaultServiceName = settings.ServiceName ??
-                                     GetApplicationName(settings) ??
-                                     UnknownServiceName;
+            var defaultServiceName = settings.ServiceNameInternal ??
+                GetApplicationName(settings) ??
+                UnknownServiceName;
 
             discoveryService ??= GetDiscoveryService(settings);
 
             bool runtimeMetricsEnabled = settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer;
 
-            statsd = (settings.TracerMetricsEnabled || runtimeMetricsEnabled)
+            statsd = (settings.TracerMetricsEnabledInternal || runtimeMetricsEnabled)
                          ? (statsd ?? CreateDogStatsdClient(settings, defaultServiceName))
                          : null;
             sampler ??= GetSampler(settings);
-            agentWriter ??= GetAgentWriter(settings, settings.TracerMetricsEnabled ? statsd : null, sampler, discoveryService);
+            agentWriter ??= GetAgentWriter(settings, settings.TracerMetricsEnabledInternal ? statsd : null, rates => sampler.SetDefaultSampleRates(rates), discoveryService);
             scopeManager ??= new AsyncLocalScopeManager();
 
             if (runtimeMetricsEnabled)
@@ -114,17 +118,17 @@ namespace Datadog.Trace
                 runtimeMetrics ??= new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService);
             }
 
-            var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings);
+            var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, scopeManager);
             logSubmissionManager = DirectLogSubmissionManager.Create(
                 logSubmissionManager,
                 settings.LogSubmissionSettings,
                 settings.AzureAppServiceMetadata,
                 defaultServiceName,
-                settings.Environment,
-                settings.ServiceVersion,
+                settings.EnvironmentInternal,
+                settings.ServiceVersionInternal,
                 gitMetadataTagsProvider);
 
-            telemetry ??= TelemetryFactory.CreateTelemetryController(settings);
+            telemetry ??= TelemetryFactory.Instance.CreateTelemetryController(settings);
             telemetry.RecordTracerSettings(settings, defaultServiceName);
 
             var security = Security.Instance;
@@ -143,13 +147,41 @@ namespace Datadog.Trace
 
             dataStreamsManager ??= DataStreamsManager.Create(settings, discoveryService, defaultServiceName);
 
-            var tracerManager = CreateTracerManagerFrom(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider);
-            return tracerManager;
+            if (remoteConfigurationManager == null)
+            {
+                var sw = Stopwatch.StartNew();
+
+                var rcmSettings = RemoteConfigurationSettings.FromDefaultSource();
+                var rcmApi = RemoteConfigurationApiFactory.Create(settings.ExporterInternal, rcmSettings, discoveryService);
+
+                // Service Name must be lowercase, otherwise the agent will not be able to find the service
+                var serviceName = TraceUtil.NormalizeTag(settings.ServiceNameInternal ?? defaultServiceName);
+
+                remoteConfigurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, settings, gitMetadataTagsProvider, RcmSubscriptionManager.Instance);
+
+                TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.Rcm, sw.ElapsedMilliseconds);
+            }
+
+            return CreateTracerManagerFrom(
+                settings,
+                agentWriter,
+                scopeManager,
+                statsd,
+                runtimeMetrics,
+                logSubmissionManager,
+                telemetry,
+                discoveryService,
+                dataStreamsManager,
+                defaultServiceName,
+                gitMetadataTagsProvider,
+                sampler,
+                GetSpanSampler(settings),
+                remoteConfigurationManager);
         }
 
-        protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings)
+        protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager)
         {
-            return new GitMetadataTagsProvider(settings);
+            return new GitMetadataTagsProvider(settings, scopeManager);
         }
 
         /// <summary>
@@ -158,7 +190,6 @@ namespace Datadog.Trace
         protected virtual TracerManager CreateTracerManagerFrom(
             ImmutableTracerSettings settings,
             IAgentWriter agentWriter,
-            ITraceSampler sampler,
             IScopeManager scopeManager,
             IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetrics,
@@ -167,28 +198,31 @@ namespace Datadog.Trace
             IDiscoveryService discoveryService,
             DataStreamsManager dataStreamsManager,
             string defaultServiceName,
-            IGitMetadataTagsProvider gitMetadataTagsProvider)
-            => new TracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider);
+            IGitMetadataTagsProvider gitMetadataTagsProvider,
+            ITraceSampler traceSampler,
+            ISpanSampler spanSampler,
+            IRemoteConfigurationManager remoteConfigurationManager)
+            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager);
 
         protected virtual ITraceSampler GetSampler(ImmutableTracerSettings settings)
         {
-            var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecond));
+            var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal));
 
-            if (!string.IsNullOrWhiteSpace(settings.CustomSamplingRules))
+            if (!string.IsNullOrWhiteSpace(settings.CustomSamplingRulesInternal))
             {
-                foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(settings.CustomSamplingRules))
+                foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(settings.CustomSamplingRulesInternal))
                 {
                     sampler.RegisterRule(rule);
                 }
             }
 
-            if (settings.GlobalSamplingRate != null)
+            if (settings.GlobalSamplingRateInternal != null)
             {
-                var globalRate = (float)settings.GlobalSamplingRate;
+                var globalRate = (float)settings.GlobalSamplingRateInternal;
 
                 if (globalRate < 0f || globalRate > 1f)
                 {
-                    Log.Warning("{ConfigurationKey} configuration of {ConfigurationValue} is out of range", ConfigurationKeys.GlobalSamplingRate, settings.GlobalSamplingRate);
+                    Log.Warning("{ConfigurationKey} configuration of {ConfigurationValue} is out of range", ConfigurationKeys.GlobalSamplingRate, settings.GlobalSamplingRateInternal);
                 }
                 else
                 {
@@ -209,37 +243,35 @@ namespace Datadog.Trace
             return new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules));
         }
 
-        protected virtual IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ITraceSampler sampler, IDiscoveryService discoveryService)
+        protected virtual IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
         {
-            var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
-            var api = new Api(apiRequestFactory, statsd, rates => sampler.SetDefaultSampleRates(rates), settings.Exporter.PartialFlushEnabled);
+            var apiRequestFactory = TracesTransportStrategy.Get(settings.ExporterInternal);
+            var api = new Api(apiRequestFactory, statsd, updateSampleRates, settings.ExporterInternal.PartialFlushEnabledInternal);
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
-            var spanSampler = GetSpanSampler(settings);
-
-            return new AgentWriter(api, statsAggregator, statsd, spanSampler, maxBufferSize: settings.TraceBufferSize);
+            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize);
         }
 
         protected virtual IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)
-            => DiscoveryService.Create(settings.Exporter);
+            => DiscoveryService.Create(settings.ExporterInternal);
 
         internal static IDogStatsd CreateDogStatsdClient(ImmutableTracerSettings settings, List<string> constantTags, string prefix = null)
         {
             try
             {
-                if (settings.Environment != null)
+                if (settings.EnvironmentInternal != null)
                 {
-                    constantTags?.Add($"env:{settings.Environment}");
+                    constantTags?.Add($"env:{settings.EnvironmentInternal}");
                 }
 
-                if (settings.ServiceVersion != null)
+                if (settings.ServiceVersionInternal != null)
                 {
-                    constantTags?.Add($"version:{settings.ServiceVersion}");
+                    constantTags?.Add($"version:{settings.ServiceVersionInternal}");
                 }
 
                 var statsd = new DogStatsdService();
-                switch (settings.Exporter.MetricsTransport)
+                switch (settings.ExporterInternal.MetricsTransport)
                 {
                     case MetricsTransportType.NamedPipe:
                         // Environment variables for windows named pipes are not explicitly passed to statsd.
@@ -257,7 +289,7 @@ namespace Datadog.Trace
                         Log.Information("Using unix domain sockets for metrics transport.");
                         statsd.Configure(new StatsdConfig
                         {
-                            StatsdServerName = $"{ExporterSettings.UnixDomainSocketPrefix}{settings.Exporter.MetricsUnixDomainSocketPath}",
+                            StatsdServerName = $"{ExporterSettings.UnixDomainSocketPrefix}{settings.ExporterInternal.MetricsUnixDomainSocketPathInternal}",
                             ConstantTags = constantTags?.ToArray(),
                             Prefix = prefix
                         });
@@ -267,8 +299,8 @@ namespace Datadog.Trace
                     default:
                         statsd.Configure(new StatsdConfig
                         {
-                            StatsdServerName = settings.Exporter.AgentUri.DnsSafeHost,
-                            StatsdPort = settings.Exporter.DogStatsdPort,
+                            StatsdServerName = settings.ExporterInternal.AgentUriInternal.DnsSafeHost,
+                            StatsdPort = settings.ExporterInternal.DogStatsdPortInternal,
                             ConstantTags = constantTags?.ToArray(),
                             Prefix = prefix
                         });

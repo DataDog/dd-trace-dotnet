@@ -4,10 +4,10 @@
 // </copyright>
 
 using System;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
@@ -21,8 +21,8 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceContext>();
 
-        private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
-        private readonly long _timestamp = Stopwatch.GetTimestamp();
+        private readonly TraceClock _clock;
+
         private IastRequestContext _iastRequestContext;
 
         private ArrayBuilder<Span> _spans;
@@ -32,7 +32,9 @@ namespace Datadog.Trace
 
         public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
         {
-            var settings = tracer?.Settings;
+            CurrentTraceSettings = tracer.PerTraceSettings;
+
+            var settings = tracer.Settings;
 
             // TODO: Environment, ServiceVersion, GitCommitSha, and GitRepositoryUrl are stored on the TraceContext
             // even though they likely won't change for the lifetime of the process. We should consider moving them
@@ -40,12 +42,13 @@ namespace Datadog.Trace
             if (settings is not null)
             {
                 // these could be set from DD_ENV/DD_VERSION or from DD_TAGS
-                Environment = settings.Environment;
-                ServiceVersion = settings.ServiceVersion;
+                Environment = settings.EnvironmentInternal;
+                ServiceVersion = settings.ServiceVersionInternal;
             }
 
             Tracer = tracer;
             Tags = tags ?? new TraceTagCollection();
+            _clock = TraceClock.Instance;
         }
 
         public Span RootSpan
@@ -54,9 +57,11 @@ namespace Datadog.Trace
             private set => _rootSpan = value;
         }
 
-        public DateTimeOffset UtcNow => _utcStart.Add(Elapsed);
+        public TraceClock Clock => _clock;
 
         public IDatadogTracer Tracer { get; }
+
+        public PerTraceSettings CurrentTraceSettings { get; }
 
         /// <summary>
         /// Gets the collection of trace-level tags.
@@ -90,8 +95,6 @@ namespace Datadog.Trace
         /// </summary>
         internal IastRequestContext IastRequestContext => _iastRequestContext;
 
-        private TimeSpan Elapsed => StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp);
-
         internal void EnableIastInRequest()
         {
             if (Volatile.Read(ref _iastRequestContext) is null)
@@ -108,7 +111,7 @@ namespace Datadog.Trace
                 // if we don't have a sampling priority yet, make a sampling decision now
                 if (_samplingPriority == null)
                 {
-                    SetSamplingPriority(Tracer.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default);
+                    SetSamplingPriority(CurrentTraceSettings?.TraceSampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default);
                 }
             }
 
@@ -120,7 +123,7 @@ namespace Datadog.Trace
 
         public void CloseSpan(Span span)
         {
-            bool ShouldTriggerPartialFlush() => Tracer.Settings.Exporter.PartialFlushEnabled && _spans.Count >= Tracer.Settings.Exporter.PartialFlushMinSpans;
+            bool ShouldTriggerPartialFlush() => Tracer.Settings.ExporterInternal.PartialFlushEnabledInternal && _spans.Count >= Tracer.Settings.ExporterInternal.PartialFlushMinSpansInternal;
 
             ArraySegment<Span> spansToWrite = default;
 
@@ -138,10 +141,7 @@ namespace Datadog.Trace
                     }
                     else
                     {
-                        if (_iastRequestContext is null)
-                        {
-                            IastRequestContext.AddIastDisabledFlagToSpan(span);
-                        }
+                        IastRequestContext.AddIastDisabledFlagToSpan(span);
                     }
                 }
             }
@@ -175,6 +175,7 @@ namespace Datadog.Trace
 
             if (spansToWrite.Count > 0)
             {
+                RunSpanSampler(spansToWrite);
                 Tracer.Write(spansToWrite);
             }
         }
@@ -192,6 +193,7 @@ namespace Datadog.Trace
 
             if (spansToWrite.Count > 0)
             {
+                RunSpanSampler(spansToWrite);
                 Tracer.Write(spansToWrite);
             }
         }
@@ -228,9 +230,20 @@ namespace Datadog.Trace
             }
         }
 
-        public TimeSpan ElapsedSince(DateTimeOffset date)
+        private void RunSpanSampler(ArraySegment<Span> spans)
         {
-            return Elapsed + (_utcStart - date);
+            if (CurrentTraceSettings?.SpanSampler is null)
+            {
+                return;
+            }
+
+            if (spans.Array![spans.Offset].Context.TraceContext?.SamplingPriority <= 0)
+            {
+                for (int i = 0; i < spans.Count; i++)
+                {
+                    CurrentTraceSettings.SpanSampler.MakeSamplingDecision(spans.Array[i + spans.Offset]);
+                }
+            }
         }
     }
 }

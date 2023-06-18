@@ -11,6 +11,8 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace
@@ -18,7 +20,7 @@ namespace Datadog.Trace
     /// <summary>
     /// The SpanContext contains all the information needed to express relationships between spans inside or outside the process boundaries.
     /// </summary>
-    public class SpanContext : ISpanContext, IReadOnlyDictionary<string, string>
+    public partial class SpanContext : ISpanContext, IReadOnlyDictionary<string, string>
     {
         private static readonly string[] KeyNames =
         {
@@ -51,7 +53,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class
-        /// from a propagated context. <see cref="Parent"/> will be null
+        /// from a propagated context. <see cref="ParentInternal"/> will be null
         /// since this is a root context locally.
         /// </summary>
         /// <param name="traceId">The propagated trace id.</param>
@@ -62,6 +64,7 @@ namespace Datadog.Trace
         public SpanContext(ulong? traceId, ulong spanId, SamplingPriority? samplingPriority = null, string serviceName = null)
             : this((TraceId)(traceId ?? 0), serviceName)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContext_Ctor);
             // public ctor must keep accepting legacy types:
             // - traceId: ulong? => TraceId
             // - samplingPriority: SamplingPriority? => int?
@@ -71,7 +74,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class
-        /// from a propagated context. <see cref="Parent"/> will be null
+        /// from a propagated context. <see cref="ParentInternal"/> will be null
         /// since this is a root context locally.
         /// </summary>
         /// <param name="traceId">The propagated trace id.</param>
@@ -89,7 +92,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class
-        /// from a propagated context. <see cref="Parent"/> will be null
+        /// from a propagated context. <see cref="ParentInternal"/> will be null
         /// since this is a root context locally.
         /// </summary>
         /// <param name="traceId">The propagated trace id.</param>
@@ -128,7 +131,7 @@ namespace Datadog.Trace
             var useAllBits = traceContext?.Tracer?.Settings?.TraceId128BitGenerationEnabled ?? false;
 
             SpanId = spanId > 0 ? spanId : RandomIdGenerator.Shared.NextSpanId(useAllBits);
-            Parent = parent;
+            ParentInternal = parent;
             TraceContext = traceContext;
 
             if (parent is SpanContext spanContext)
@@ -150,7 +153,7 @@ namespace Datadog.Trace
                           ? RandomIdGenerator.Shared.NextTraceId(useAllBits: false)
                           : traceId;
 
-            ServiceName = serviceName;
+            ServiceNameInternal = serviceName;
 
             // Because we have a ctor as part of the public api without accepting the origin tag,
             // we need to ensure new SpanContext created by this .ctor has the CI Visibility origin
@@ -165,7 +168,8 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the parent context.
         /// </summary>
-        public ISpanContext Parent { get; }
+        [GeneratePublicApi(PublicApiUsage.SpanContext_Parent_Get)]
+        internal ISpanContext ParentInternal { get; }
 
         /// <summary>
         /// Gets the 128-bit trace id.
@@ -181,7 +185,8 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the span id of the parent span.
         /// </summary>
-        public ulong? ParentId => Parent?.SpanId;
+        [GeneratePublicApi(PublicApiUsage.SpanContext_ParentId_Get)]
+        internal ulong? ParentIdInternal => ParentInternal?.SpanId;
 
         /// <summary>
         /// Gets the span id.
@@ -191,7 +196,8 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets or sets the service name to propagate to child spans.
         /// </summary>
-        public string ServiceName { get; set; }
+        [GeneratePublicApi(PublicApiUsage.SpanContext_ServiceName_Get, PublicApiUsage.SpanContext_ServiceName_Set)]
+        internal string ServiceNameInternal { get; set; }
 
         /// <summary>
         /// Gets or sets the origin of the trace.

@@ -6,15 +6,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Vendors.Serilog;
+using System.Numerics;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.RemoteConfigurationManagement;
 
 internal class RcmSubscriptionManager : IRcmSubscriptionManager
 {
     public static readonly IRcmSubscriptionManager Instance = new RcmSubscriptionManager();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RcmSubscriptionManager>();
+
     private readonly List<ISubscription> _subscriptions = new();
     private readonly object _syncRoot = new();
+    private BigInteger _capabilities;
 
     public bool HasAnySubscription => _subscriptions.Count > 0;
 
@@ -92,6 +96,31 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
         }
 
         return results;
+    }
+
+    public void SetCapability(BigInteger index, bool available)
+    {
+        if (available)
+        {
+            _capabilities |= index;
+        }
+        else
+        {
+            _capabilities &= ~index;
+        }
+    }
+
+    public byte[] GetCapabilities()
+    {
+        // capabilitiesArray needs to be big endian
+#if NETCOREAPP
+        var capabilitiesArray = _capabilities.ToByteArray(true, true);
+#else
+        var capabilitiesArray = _capabilities.ToByteArray();
+        Array.Reverse(capabilitiesArray);
+#endif
+
+        return capabilitiesArray;
     }
 
     private void RefreshProductKeys() => ProductKeys = _subscriptions.SelectMany(s => s.ProductKeys).Distinct().ToList();

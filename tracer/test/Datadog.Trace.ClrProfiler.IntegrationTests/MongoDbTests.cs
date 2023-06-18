@@ -44,6 +44,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-mongodb" : EnvironmentHelper.FullSampleName;
 

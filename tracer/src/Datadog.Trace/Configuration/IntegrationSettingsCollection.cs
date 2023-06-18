@@ -10,6 +10,7 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Configuration
 {
@@ -27,8 +28,9 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         [PublicApi]
         public IntegrationSettingsCollection(IConfigurationSource source)
-            : this(source, TelemetryFactoryV2.GetConfigTelemetry())
+            : this(source, TelemetryFactory.Config)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettingsCollection_Ctor_Source);
         }
 
         internal IntegrationSettingsCollection(IConfigurationSource source, IConfigurationTelemetry telemetry)
@@ -43,10 +45,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="integrationName">The name of the integration.</param>
         /// <returns>The integration-specific settings for the specified integration.</returns>
+        [PublicApi]
         public IntegrationSettings this[string integrationName]
         {
             get
             {
+                TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettingsCollection_Indexer_Name);
                 if (IntegrationRegistry.TryGetIntegrationId(integrationName, out var integrationId))
                 {
                     return _settings[(int)integrationId];

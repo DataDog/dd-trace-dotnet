@@ -13,6 +13,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [CollectionDefinition("LargePayloadTests", DisableParallelization = true)]
     public class LargePayloadTestBase : TestHelper
     {
         public LargePayloadTestBase(ITestOutputHelper output)

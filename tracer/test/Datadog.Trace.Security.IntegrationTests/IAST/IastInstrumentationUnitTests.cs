@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using Datadog.Trace.Configuration;
@@ -70,6 +71,14 @@ public class IastInstrumentationUnitTests : TestHelper
     public void TestJoinMethodsAspectCover()
     {
         TestMethodOverloads(typeof(string), "Join");
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestStringCopyMethodsAspectCover()
+    {
+        TestMethodOverloads(typeof(string), "Copy");
     }
 
     [SkippableFact]
@@ -167,6 +176,38 @@ public class IastInstrumentationUnitTests : TestHelper
     {
         var overloadsToExclude = new List<string>() { "System.String Concat(System.Object)" };
         TestMethodOverloads(typeof(string), "Concat", overloadsToExclude);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestReplaceMethodsAspectCover()
+    {
+        var overloadsToExclude = new List<string>()
+        {
+        // special case
+#if !NETCOREAPP3_1_OR_GREATER
+            "System.String::Replace(System.String,System.String,System.StringComparison)",
+            "System.String::Replace(System.String,System.String,System.Boolean,System.Globalization.CultureInfo)"
+#endif
+        };
+        TestMethodOverloads(typeof(string), "Replace", overloadsToExclude);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestFormatMethodsAspectCover()
+    {
+        TestMethodOverloads(typeof(string), "Format");
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public void TestSplitMethodsAspectCover()
+    {
+        TestMethodOverloads(typeof(string), "Split");
     }
 
     [SkippableFact]
@@ -357,7 +398,14 @@ public class IastInstrumentationUnitTests : TestHelper
 #else
             if (EnvironmentTools.IsLinux())
             {
-                arguments += " --TestCaseFilter:\"Category!=LinuxUnsupported\"";
+                if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+                {
+                    arguments += " --TestCaseFilter:\"(Category!=ArmUnsupported)&(Category!=LinuxUnsupported)\"";
+                }
+                else
+                {
+                    arguments += " --TestCaseFilter:\"Category!=LinuxUnsupported\"";
+                }
             }
 #endif
             SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests"));

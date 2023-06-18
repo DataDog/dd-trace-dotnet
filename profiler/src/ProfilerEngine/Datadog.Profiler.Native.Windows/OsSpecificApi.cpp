@@ -9,6 +9,7 @@
 #include "OsSpecificApi.h"
 
 #include "IConfiguration.h"
+#include "IThreadInfo.h"
 #include "StackFramesCollectorBase.h"
 #include "SystemTime.h"
 #include "Windows32BitStackFramesCollector.h"
@@ -30,7 +31,7 @@ std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
 #endif
 }
 
-uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
+uint64_t GetThreadCpuTime(IThreadInfo* pThreadInfo)
 {
     FILETIME creationTime, exitTime = {}; // not used here
     FILETIME kernelTime = {};
@@ -156,7 +157,7 @@ bool IsRunning(ULONG threadState)
     // If some callstacks show non cpu-bound frames at the top, return true only for Running state
 }
 
-bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
+bool IsRunning(IThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
 {
     failed = true;
     cpuTime = 0;

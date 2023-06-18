@@ -87,8 +87,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     }
                 }
 
+                string operationName = tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForComponent("wcf");
                 var tags = new WcfTags();
-                scope = tracer.StartActiveInternal("wcf.request", propagatedContext, tags: tags);
+                scope = tracer.StartActiveInternal(operationName, propagatedContext, tags: tags);
                 var span = scope.Span;
 
                 var requestHeaders = requestMessage.Headers;
@@ -106,7 +107,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 if (headers is not null)
                 {
                     var headerTagsProcessor = new SpanContextPropagator.SpanTagHeaderTagProcessor(span);
-                    SpanContextPropagator.Instance.ExtractHeaderTags(ref headerTagsProcessor, headers.Value, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                    SpanContextPropagator.Instance.ExtractHeaderTags(ref headerTagsProcessor, headers.Value, tracer.Settings.HeaderTagsInternal, SpanContextPropagator.HttpRequestHeadersTagPrefix);
                 }
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);

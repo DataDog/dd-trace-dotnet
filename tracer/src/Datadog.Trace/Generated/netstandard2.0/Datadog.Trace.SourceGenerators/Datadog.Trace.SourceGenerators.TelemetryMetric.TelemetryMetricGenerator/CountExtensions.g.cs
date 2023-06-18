@@ -5,9 +5,9 @@ namespace Datadog.Trace.Telemetry.Metrics;
 internal static partial class CountExtensions
 {
     /// <summary>
-    /// The number of members in the enum.
+    /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> metric.
     /// </summary>
-    public const int Length = 29;
+    public const int Length = 28;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -17,6 +17,7 @@ internal static partial class CountExtensions
     public static string GetName(this Datadog.Trace.Telemetry.Metrics.Count metric)
         => metric switch
         {
+            Datadog.Trace.Telemetry.Metrics.Count.LogCreated => "log_created",
             Datadog.Trace.Telemetry.Metrics.Count.IntegrationsError => "integrations_error",
             Datadog.Trace.Telemetry.Metrics.Count.SpanCreated => "span_created",
             Datadog.Trace.Telemetry.Metrics.Count.SpanFinished => "span_finished",
@@ -31,8 +32,6 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.TraceApiResponses => "trace_api.responses",
             Datadog.Trace.Telemetry.Metrics.Count.TraceApiErrors => "trace_api.errors",
             Datadog.Trace.Telemetry.Metrics.Count.TracePartialFlush => "trace_partial_flush",
-            Datadog.Trace.Telemetry.Metrics.Count.TracePartialFlushSpansClosed => "trace_partial_flush.spans_closed",
-            Datadog.Trace.Telemetry.Metrics.Count.TracePartialFlushSpansRemaining => "trace_partial_flush.spans_remaining",
             Datadog.Trace.Telemetry.Metrics.Count.ContextHeaderStyleInjected => "context_header_style.injected",
             Datadog.Trace.Telemetry.Metrics.Count.ContextHeaderStyleExtracted => "context_header_style.extracted",
             Datadog.Trace.Telemetry.Metrics.Count.StatsApiRequests => "stats_api.requests",
@@ -41,7 +40,7 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiRequests => "telemetry_api.requests",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiResponses => "telemetry_api.responses",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiErrors => "telemetry_api.errors",
-            Datadog.Trace.Telemetry.Metrics.Count.VersionConflictTracesCreated => "version_conflict_traces_created",
+            Datadog.Trace.Telemetry.Metrics.Count.VersionConflictTracerCreated => "version_conflict_tracer_created",
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogLogs => "direct_log_logs",
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiRequests => "direct_log_api.requests",
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiResponses => "direct_log_api.responses",
@@ -57,76 +56,12 @@ internal static partial class CountExtensions
     public static bool IsCommon(this Datadog.Trace.Telemetry.Metrics.Count metric)
         => metric switch
         {
-            Datadog.Trace.Telemetry.Metrics.Count.IntegrationsError => true,
-            Datadog.Trace.Telemetry.Metrics.Count.SpanCreated => true,
-            Datadog.Trace.Telemetry.Metrics.Count.SpanFinished => true,
-            Datadog.Trace.Telemetry.Metrics.Count.SpanSampled => true,
-            Datadog.Trace.Telemetry.Metrics.Count.SpanDropped => true,
-            Datadog.Trace.Telemetry.Metrics.Count.TraceCreated => true,
-            Datadog.Trace.Telemetry.Metrics.Count.TraceEnqueued => true,
-            Datadog.Trace.Telemetry.Metrics.Count.TraceSampled => true,
-            Datadog.Trace.Telemetry.Metrics.Count.TraceDropped => true,
-            Datadog.Trace.Telemetry.Metrics.Count.TraceSent => true,
-            Datadog.Trace.Telemetry.Metrics.Count.TraceApiRequests => true,
-            Datadog.Trace.Telemetry.Metrics.Count.TraceApiResponses => true,
-            Datadog.Trace.Telemetry.Metrics.Count.TraceApiErrors => true,
-            Datadog.Trace.Telemetry.Metrics.Count.TracePartialFlush => true,
-            Datadog.Trace.Telemetry.Metrics.Count.TracePartialFlushSpansClosed => true,
-            Datadog.Trace.Telemetry.Metrics.Count.TracePartialFlushSpansRemaining => true,
-            Datadog.Trace.Telemetry.Metrics.Count.ContextHeaderStyleInjected => true,
-            Datadog.Trace.Telemetry.Metrics.Count.ContextHeaderStyleExtracted => true,
-            Datadog.Trace.Telemetry.Metrics.Count.StatsApiRequests => true,
-            Datadog.Trace.Telemetry.Metrics.Count.StatsApiResponses => true,
-            Datadog.Trace.Telemetry.Metrics.Count.StatsApiErrors => true,
-            Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiRequests => true,
-            Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiResponses => true,
-            Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiErrors => true,
-            Datadog.Trace.Telemetry.Metrics.Count.VersionConflictTracesCreated => false,
+            Datadog.Trace.Telemetry.Metrics.Count.VersionConflictTracerCreated => false,
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogLogs => false,
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiRequests => false,
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiResponses => false,
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiErrors => false,
-            _ => false,
-        };
-
-    /// <summary>
-    /// Gets the number of tags the metric should have
-    /// </summary>
-    /// <param name="metric">The metric to check</param>
-    /// <returns>The number of tags the metric should have</returns>
-    public static int ExpectedTags(this Datadog.Trace.Telemetry.Metrics.Count metric)
-        => metric switch
-        {
-            Datadog.Trace.Telemetry.Metrics.Count.IntegrationsError => 3,
-            Datadog.Trace.Telemetry.Metrics.Count.SpanCreated => 2,
-            Datadog.Trace.Telemetry.Metrics.Count.SpanFinished => 0,
-            Datadog.Trace.Telemetry.Metrics.Count.SpanSampled => 0,
-            Datadog.Trace.Telemetry.Metrics.Count.SpanDropped => 1,
-            Datadog.Trace.Telemetry.Metrics.Count.TraceCreated => 1,
-            Datadog.Trace.Telemetry.Metrics.Count.TraceEnqueued => 0,
-            Datadog.Trace.Telemetry.Metrics.Count.TraceSampled => 0,
-            Datadog.Trace.Telemetry.Metrics.Count.TraceDropped => 1,
-            Datadog.Trace.Telemetry.Metrics.Count.TraceSent => 0,
-            Datadog.Trace.Telemetry.Metrics.Count.TraceApiRequests => 0,
-            Datadog.Trace.Telemetry.Metrics.Count.TraceApiResponses => 1,
-            Datadog.Trace.Telemetry.Metrics.Count.TraceApiErrors => 1,
-            Datadog.Trace.Telemetry.Metrics.Count.TracePartialFlush => 1,
-            Datadog.Trace.Telemetry.Metrics.Count.TracePartialFlushSpansClosed => 1,
-            Datadog.Trace.Telemetry.Metrics.Count.TracePartialFlushSpansRemaining => 1,
-            Datadog.Trace.Telemetry.Metrics.Count.ContextHeaderStyleInjected => 1,
-            Datadog.Trace.Telemetry.Metrics.Count.ContextHeaderStyleExtracted => 1,
-            Datadog.Trace.Telemetry.Metrics.Count.StatsApiRequests => 1,
-            Datadog.Trace.Telemetry.Metrics.Count.StatsApiResponses => 1,
-            Datadog.Trace.Telemetry.Metrics.Count.StatsApiErrors => 1,
-            Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiRequests => 1,
-            Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiResponses => 2,
-            Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiErrors => 1,
-            Datadog.Trace.Telemetry.Metrics.Count.VersionConflictTracesCreated => 1,
-            Datadog.Trace.Telemetry.Metrics.Count.DirectLogLogs => 1,
-            Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiRequests => 0,
-            Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiResponses => 1,
-            Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiErrors => 1,
-            _ => 0,
+            _ => true,
         };
 
     /// <summary>

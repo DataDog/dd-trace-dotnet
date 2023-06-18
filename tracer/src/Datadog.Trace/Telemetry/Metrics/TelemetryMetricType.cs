@@ -27,5 +27,5 @@ internal static class TelemetryMetricType
     /// <summary>
     /// A distribution type records all the submitted values
     /// </summary>
-    public const string Distribution = "disribution";
+    public const string Distribution = "distribution";
 }

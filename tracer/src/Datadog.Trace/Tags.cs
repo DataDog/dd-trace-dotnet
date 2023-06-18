@@ -349,7 +349,17 @@ namespace Datadog.Trace
         /// <summary>
         /// The queue name associated with the AWS SDK span.
         /// </summary>
+        internal const string AwsTopicName = "aws.topic.name";
+
+        /// <summary>
+        /// The queue name associated with the AWS SDK span.
+        /// </summary>
         internal const string AwsQueueName = "aws.queue.name";
+
+        /// <summary>
+        /// The topic arn associated with the AWS SDK span.
+        /// </summary>
+        internal const string AwsTopicArn = "aws.topic.arn";
 
         /// <summary>
         /// The queue URL associated with the AWS SDK span.
@@ -579,14 +589,39 @@ namespace Datadog.Trace
 
             internal static string Track(string eventName) => $"{Events}{eventName}.track";
 
-            internal static class EventsUsersLogin
+            internal static class EventsUsers
             {
-                internal const string Success = AppSec.Events + "users.login.success.";
-                internal const string Failure = AppSec.Events + "users.login.failure.";
-                internal const string SuccessTrack = Success + "track";
-                internal const string FailureTrack = Failure + "track";
-                internal const string FailureUserId = Failure + "usr.id";
-                internal const string FailureUserExists = Failure + "usr.exists";
+                internal const string EventsUsersRoot = Events + "users";
+
+                internal static class LoginEvent
+                {
+                    private const string Root = EventsUsersRoot + ".login";
+                    internal const string Success = Root + ".success";
+                    internal const string SuccessSdkSource = $"_dd.{Success}.sdk";
+                    internal const string SuccessAutoMode = $"_dd.{Success}.auto.mode";
+                    internal const string SuccessTrack = Success + ".track";
+
+                    internal const string Failure = Root + ".failure";
+                    internal const string FailureUserId = Failure + ".usr.id";
+                    internal const string FailureAutoMode = $"_dd.{Failure}.auto.mode";
+                    internal const string FailureSdkSource = $"_dd.{Failure}.sdk";
+                    internal const string FailureTrack = Failure + ".track";
+                    internal const string FailureUserExists = Failure + ".usr.exists";
+                }
+
+                internal static class SignUpEvent
+                {
+                    private const string Root = EventsUsersRoot + ".signup";
+                    private const string Success = Root + ".success";
+                    internal const string SuccessSdkSource = $"_dd.{Success}.sdk";
+                    internal const string SuccessAutoMode = $"_dd.{Success}.auto.mode";
+                    internal const string SuccessTrack = Success + ".track";
+
+                    private const string RootFailure = Root + ".failure";
+                    internal const string FailureSdkSource = $"_dd.{RootFailure}.sdk";
+                    internal const string FailureAutoMode = $"_dd.{RootFailure}.auto.mode";
+                    internal const string FailureTrack = RootFailure + ".track";
+                }
             }
         }
 

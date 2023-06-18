@@ -27,7 +27,7 @@ public class TraceTags
         var settings = new TracerSettings { GlobalSamplingRate = 0 };
 
         _testApi = new MockApi();
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, spanSampler: null);
+        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
         _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
     }
 

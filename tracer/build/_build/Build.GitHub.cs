@@ -445,6 +445,7 @@ partial class Build
                 "tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj",
                 "tracer/src/Datadog.Trace/Datadog.Trace.csproj",
                 "tracer/src/Datadog.Trace/TracerConstants.cs",
+                "tracer/src/Datadog.Trace.Trimming/Datadog.Trace.Trimming.csproj",
                 "tracer/tools/PipelineMonitor/PipelineMonitor.csproj",
             };
 

@@ -31,19 +31,17 @@ internal class GlobalConfigurationSource
     internal static CompositeConfigurationSource CreateDefaultConfigurationSource()
     {
         // env > AppSettings > datadog.json
-        var configurationSource = new CompositeConfigurationSource
-        {
-            new EnvironmentConfigurationSource(),
+        var configurationSource = new CompositeConfigurationSourceInternal();
+        configurationSource.AddInternal(new EnvironmentConfigurationSourceInternal());
 
 #if NETFRAMEWORK
-            // on .NET Framework only, also read from app.config/web.config
-            new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings, ConfigurationOrigins.AppConfig)
+        // on .NET Framework only, also read from app.config/web.config
+        configurationSource.AddInternal(new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings, ConfigurationOrigins.AppConfig));
 #endif
-        };
 
         if (TryLoadJsonConfigurationFile(configurationSource, null, out var jsonConfigurationSource))
         {
-            configurationSource.Add(jsonConfigurationSource);
+            configurationSource.AddInternal(jsonConfigurationSource);
         }
 
         return configurationSource;
@@ -53,7 +51,7 @@ internal class GlobalConfigurationSource
     {
         try
         {
-            var telemetry = TelemetryFactoryV2.GetConfigTelemetry();
+            var telemetry = TelemetryFactory.Config;
 
             // if environment variable is not set, look for default file name in the current directory
             var configurationFileName = new ConfigurationBuilder(configurationSource, telemetry)

@@ -24,13 +24,6 @@ public class DirectoryInfoTests : InstrumentationTestsBase
         AddTainted(taintedSubFolderValue);
     }
 
-    [Fact]
-    public void GivenADirectoryInfo_WhenCreatingFromTaintedString_LocationIsCorrect()
-    {
-        ExecuteAction(() => { new DirectoryInfo(taintedPathValue); });
-        AssertLocation(nameof(DirectoryInfoTests));
-    }
-
     // Cover System.IO.DirectoryInfo::.ctor(System.String)
 
     [Fact]

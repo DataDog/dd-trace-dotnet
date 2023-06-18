@@ -55,7 +55,7 @@ Configuration::Configuration()
     _isAgentLess = GetEnvironmentValue(EnvironmentVariables::Agentless, false);
     _exceptionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ExceptionSampleLimit, 100);
     _allocationSampleLimit = GetEnvironmentValue(EnvironmentVariables::AllocationSampleLimit, 2000);
-    _contentionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ContentionSampleLimit, 1500);
+    _contentionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ContentionSampleLimit, 3000);
     _contentionDurationThreshold = GetEnvironmentValue(EnvironmentVariables::ContentionDurationThreshold, 100);
     _cpuWallTimeSamplingRate = ExtractCpuWallTimeSamplingRate();
     _walltimeThreadsThreshold = ExtractWallTimeThreadsThreshold();

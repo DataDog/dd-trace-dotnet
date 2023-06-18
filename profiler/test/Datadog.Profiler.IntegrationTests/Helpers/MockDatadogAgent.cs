@@ -218,7 +218,7 @@ namespace Datadog.Profiler.IntegrationTests
                     x => Output.WriteLine(x),
                     _readinessNotifier);
 
-                _profilesListenerTask = Task.Run(_namedPipeServer.Start);
+                _profilesListenerTask = _namedPipeServer.Start();
             }
 
             public string ProfilesPipeName { get; }
@@ -234,11 +234,12 @@ namespace Datadog.Profiler.IntegrationTests
             {
                 Interlocked.Increment(ref _nbTime);
 
-                var buffer = new byte[1 << 32];
-
-                await ss.ReadAsync(buffer, cancellationToken);
-                await ss.WriteAsync(_responseBytes, cancellationToken);
-                NbCallsOnProfilingEndpoint++;
+                while (ss.IsConnected)
+                {
+                    _ = MockHttpParser.ReadRequest(ss);
+                    await ss.WriteAsync(_responseBytes, cancellationToken);
+                    NbCallsOnProfilingEndpoint++;
+                }
             }
         }
 

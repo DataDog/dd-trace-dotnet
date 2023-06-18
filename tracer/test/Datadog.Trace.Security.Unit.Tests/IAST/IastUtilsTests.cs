@@ -11,46 +11,30 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
 {
     public class IastUtilsTests
     {
-        [Fact]
-        public void GivenAHashCalcutation_WhenGetHashCodeAndGetHashCodeForArray_ResultsAreTheSame()
+        [Theory]
+        [InlineData(null, -1)]
+        [InlineData("", 17)]
+        [InlineData("a", -1964493196)]
+        [InlineData("ab", -24234380)]
+        [InlineData("abc", 1247340381)]
+        [InlineData("𐐷", -1450785452)]
+        public void GetStaticHashCode_IsDeterministic(string input, int result)
         {
-            var elem1 = new Range();
-            var elem2 = 33;
-            var elem3 = "WWW";
-            IastUtils.GetHashCode(elem1, elem2, elem3).Should().Be(IastUtils.GetHashCodeForArray(new object[] { elem1, elem2, elem3 }));
+            var i = input.GetStaticHashCode();
+            i.Should().Be(result);
         }
 
         [Fact]
-        public void GivenAHashCalcutation_WhenGetHashCodeAndGetHashCodeForArray_ResultsAreTheSame2()
+        public void GetStaticHashCode_Vulnerability_GetHashCode_IsDeterministic()
         {
-            var elem2 = 33;
-            var elem3 = new object[] { elem2 };
-            IastUtils.GetHashCode(elem3).Should().Be(IastUtils.GetHashCodeForArray(new object[] { elem3 }));
-        }
+            var source = new Source(2, "name", "sqlvalue1");
+            var source2 = new Source(3, "name2", "sql_value2");
+            var ranges = new Range[] { new Range(0, 2, source), new Range(2, 2, source2) };
+            var evidence = new Evidence("sql_query", ranges);
+            var vulnerability = new Vulnerability("sqli", new Location(), evidence);
 
-        [Fact]
-        public void GivenAHashCalcutation_WhenGetHashCodeAndGetHashCodeForArray_ResultsAreTheSame3()
-        {
-            var elem1 = new Range();
-            var elem2 = 33;
-            var elem3 = new object[] { elem1, elem2 };
-            IastUtils.GetHashCode(elem1, elem3).Should().Be(IastUtils.GetHashCodeForArray(new object[] { elem1, elem3 }));
-        }
-
-        [Fact]
-        public void GivenAHashCalcutation_WhenGetHashCodeAndGetHashCodeForArray_ResultsAreTheSame4()
-        {
-            var elem3 = new object[1];
-            elem3[0] = 33;
-            IastUtils.GetHashCode(elem3).Should().Be(IastUtils.GetHashCodeForArray(new object[] { elem3 }));
-        }
-
-        [Fact]
-        public void GivenAHashCalcutation_WhenGetHashCodeAndGetHashCodeForArray_ResultsAreTheSame5()
-        {
-            var elem3 = new object[1];
-            elem3[0] = elem3;
-            IastUtils.GetHashCode(elem3).Should().Be(IastUtils.GetHashCodeForArray(new object[] { elem3 }));
+            var i = vulnerability.GetHashCode();
+            i.Should().Be(453619706);
         }
     }
 }

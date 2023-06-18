@@ -62,7 +62,7 @@ namespace Datadog.Trace.Activity
             }
 
             // Fixup "version" tag
-            if (Tracer.Instance.Settings.ServiceVersion is null
+            if (Tracer.Instance.Settings.ServiceVersionInternal is null
                 && span.GetTag("service.version") is { Length: > 1 } otelServiceVersion)
             {
                 span.SetTag(Tags.Version, otelServiceVersion);

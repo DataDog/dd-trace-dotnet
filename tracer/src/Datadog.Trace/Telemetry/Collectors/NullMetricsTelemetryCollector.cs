@@ -4,49 +4,15 @@
 // </copyright>
 
 #nullable enable
-using System;
-using System.Collections.Generic;
 using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Telemetry;
 
-internal class NullMetricsTelemetryCollector : IMetricsTelemetryCollector
+internal partial class NullMetricsTelemetryCollector : IMetricsTelemetryCollector
 {
     public static readonly NullMetricsTelemetryCollector Instance = new();
 
     public void Record(PublicApiUsage api)
-    {
-    }
-
-    public void Record(Count metric, int increment = 1)
-    {
-    }
-
-    public void Record(Count metric, MetricTags tag, int increment = 1)
-    {
-    }
-
-    public void Record(Count metric, MetricTags tag1, MetricTags tag2, int increment = 1)
-    {
-    }
-
-    public void Record(Count metric, MetricTags tag1, MetricTags tag2, MetricTags tag3, int increment = 1)
-    {
-    }
-
-    public void Record(Gauge metric, int value)
-    {
-    }
-
-    public void Record(Gauge metric, MetricTags tag, int value)
-    {
-    }
-
-    public void Record(Distribution metric, double value)
-    {
-    }
-
-    public void Record(Distribution metric, MetricTags tag, double value)
     {
     }
 

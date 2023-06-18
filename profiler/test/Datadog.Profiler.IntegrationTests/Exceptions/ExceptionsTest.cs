@@ -501,7 +501,6 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 exceptionSamples[4].Should().Be(("System.Exception", "E1", 1, stack1));
                 exceptionSamples[5].Should().Be(("System.Exception", "E2", 1, stack1));
             }
-
         }
     }
 }

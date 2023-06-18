@@ -11,6 +11,13 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] Aspects = new string[] {
+"[AspectClass(\"EntityFramework\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.EntityCommandAspect",
+"  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReader(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Propagation,[])] ReviewSqlCommand(System.Object)",
+"  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Propagation,[])] ReviewSqlCommand(System.Object)",
+"  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Propagation,[])] ReviewSqlCommand(System.Object)",
+"[AspectClass(\"System.Data,System.Data.Common\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.DbCommandAspect",
+"  [AspectMethodInsertBefore(\"System.Data.Common.DbCommand::ExecuteNonQueryAsync(System.Threading.CancellationToken)\",\"\",[1],[False],[None],Propagation,[])] ReviewExecuteNonQuery(System.Object)",
+"  [AspectMethodInsertBefore(\"System.Data.Common.DbCommand::ExecuteNonQueryAsync()\",\"\",[0],[False],[None],Propagation,[])] ReviewExecuteNonQuery(System.Object)",
 "[AspectClass(\"mscorlib,System.IO.FileSystem,System.Runtime\",[None],Sink,[PathTraversal])] Datadog.Trace.Iast.Aspects.DirectoryAspect",
 "  [AspectMethodInsertBefore(\"System.IO.Directory::CreateDirectory(System.String)\",\"\",[0],[False],[None],Propagation,[])] ReviewPath(System.String)",
 "  [AspectMethodInsertBefore(\"System.IO.Directory::Delete(System.String)\",\"\",[0],[False],[None],Propagation,[])] ReviewPath(System.String)",
@@ -195,6 +202,23 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.String::PadLeft(System.Int32,System.Char)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] PadLeft(System.String,System.Int32,System.Char)",
 "  [AspectMethodReplace(\"System.String::PadRight(System.Int32)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] PadRight(System.String,System.Int32)",
 "  [AspectMethodReplace(\"System.String::PadRight(System.Int32,System.Char)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] PadRight(System.String,System.Int32,System.Char)",
+"  [AspectMethodReplace(\"System.String::Format(System.String,System.Object)\",\"\",[0],[False],[StringLiterals],Propagation,[])] Format(System.String,System.Object)",
+"  [AspectMethodReplace(\"System.String::Format(System.String,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals],Propagation,[])] Format(System.String,System.Object,System.Object)",
+"  [AspectMethodReplace(\"System.String::Format(System.String,System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals],Propagation,[])] Format(System.String,System.Object,System.Object,System.Object)",
+"  [AspectMethodReplace(\"System.String::Format(System.String,System.Object[])\",\"\",[0],[False],[None],Propagation,[])] Format(System.String,System.Object[])",
+"  [AspectMethodReplace(\"System.String::Format(System.IFormatProvider,System.String,System.Object)\",\"\",[0],[False],[None],Propagation,[])] Format(System.IFormatProvider,System.String,System.Object)",
+"  [AspectMethodReplace(\"System.String::Format(System.IFormatProvider,System.String,System.Object,System.Object)\",\"\",[0],[False],[None],Propagation,[])] Format(System.IFormatProvider,System.String,System.Object,System.Object)",
+"  [AspectMethodReplace(\"System.String::Format(System.IFormatProvider,System.String,System.Object,System.Object,System.Object)\",\"\",[0],[False],[None],Propagation,[])] Format(System.IFormatProvider,System.String,System.Object,System.Object,System.Object)",
+"  [AspectMethodReplace(\"System.String::Format(System.IFormatProvider,System.String,System.Object[])\",\"\",[0],[False],[None],Propagation,[])] Format(System.IFormatProvider,System.String,System.Object[])",
+"  [AspectMethodReplace(\"System.String::Replace(System.Char,System.Char)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Replace(System.String,System.Char,System.Char)",
+"  [AspectMethodReplace(\"System.String::Replace(System.String,System.String)\",\"\",[0],[False],[StringLiterals],Propagation,[])] Replace(System.String,System.String,System.String)",
+"  [AspectMethodReplace(\"System.String::Split(System.Char[])\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Split(System.String,System.Char[])",
+"  [AspectMethodReplace(\"System.String::Split(System.Char[],System.Int32)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Split(System.String,System.Char[],System.Int32)",
+"  [AspectMethodReplace(\"System.String::Split(System.Char[],System.StringSplitOptions)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Split(System.String,System.Char[],System.StringSplitOptions)",
+"  [AspectMethodReplace(\"System.String::Split(System.Char[],System.Int32,System.StringSplitOptions)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Split(System.String,System.Char[],System.Int32,System.StringSplitOptions)",
+"  [AspectMethodReplace(\"System.String::Split(System.String[],System.StringSplitOptions)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Split(System.String,System.String[],System.StringSplitOptions)",
+"  [AspectMethodReplace(\"System.String::Split(System.String[],System.Int32,System.StringSplitOptions)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Split(System.String,System.String[],System.Int32,System.StringSplitOptions)",
+"  [AspectMethodReplace(\"System.String::Copy(System.String)\",\"\",[0],[False],[StringLiteral_0],Propagation,[])] Copy(System.String)",
         };
     }
 }

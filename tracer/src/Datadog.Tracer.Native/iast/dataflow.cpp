@@ -76,7 +76,8 @@ static const WSTRING _fixedAssemblyExcludeFilters[] = {
     WStr("NUnit3.TestAdapter"),
     WStr("nunit.*"),
     WStr("vstest.console"),
-    WStr("testhost.*"),    
+    WStr("testhost.*"),
+    WStr("Oracle.ManagedDataAccess"),
     LastEntry, // Can't have an empty array. This must be the last element
 };
 static const WSTRING _fixedMethodIncludeFilters[] = {

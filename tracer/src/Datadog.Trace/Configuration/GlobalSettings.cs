@@ -9,6 +9,7 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Configuration
@@ -26,7 +27,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="telemetry">Records the origin of telemetry values</param>
         internal GlobalSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
-            DebugEnabled = new ConfigurationBuilder(source, telemetry)
+            DebugEnabledInternal = new ConfigurationBuilder(source, telemetry)
                           .WithKeys(ConfigurationKeys.DebugEnabled)
                           .AsBool(false);
 
@@ -41,12 +42,19 @@ namespace Datadog.Trace.Configuration
         /// Set in code via <see cref="SetDebugEnabled"/>
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DebugEnabled"/>
-        public bool DebugEnabled { get; private set; }
+        public bool DebugEnabled
+        {
+            get
+            {
+                TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_DebugEnabled_Get);
+                return DebugEnabledInternal;
+            }
+        }
 
         /// <summary>
         /// Gets the global settings instance.
         /// </summary>
-        internal static GlobalSettings Instance { get; private set; } = FromDefaultSources();
+        internal static GlobalSettings Instance { get; private set; } = CreateFromDefaultSources();
 
         /// <summary>
         /// Gets a value indicating whether the use
@@ -56,6 +64,8 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal bool DiagnosticSourceEnabled { get; }
 
+        internal bool DebugEnabledInternal { get; private set; }
+
         /// <summary>
         /// Set whether debug mode is enabled.
         /// Affects the level of logs written to file.
@@ -64,12 +74,13 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public static void SetDebugEnabled(bool enabled)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_SetDebugEnabled);
             SetDebugEnabledInternal(enabled);
         }
 
         internal static void SetDebugEnabledInternal(bool enabled)
         {
-            Instance.DebugEnabled = enabled;
+            Instance.DebugEnabledInternal = enabled;
 
             if (enabled)
             {
@@ -80,18 +91,20 @@ namespace Datadog.Trace.Configuration
                 DatadogLogging.UseDefaultLevel();
             }
 
-            TelemetryFactoryV2.GetConfigTelemetry().Record(ConfigurationKeys.DebugEnabled, enabled, ConfigurationOrigins.Code);
+            TelemetryFactory.Config.Record(ConfigurationKeys.DebugEnabled, enabled, ConfigurationOrigins.Code);
         }
 
         /// <summary>
         /// Used to refresh global settings when environment variables or config sources change.
         /// This is not necessary if changes are set via code, only environment.
         /// </summary>
+        [PublicApi]
         public static void Reload()
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_Reload);
             DatadogLogging.Reset();
             GlobalConfigurationSource.Reload();
-            Instance = FromDefaultSources();
+            Instance = CreateFromDefaultSources();
         }
 
         /// <summary>
@@ -99,9 +112,14 @@ namespace Datadog.Trace.Configuration
         /// returned by <see cref="GlobalConfigurationSource.Instance"/>.
         /// </summary>
         /// <returns>A <see cref="TracerSettings"/> populated from the default sources.</returns>
+        [PublicApi]
         public static GlobalSettings FromDefaultSources()
         {
-            return new GlobalSettings(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
+            TelemetryFactory.Metrics.Record(PublicApiUsage.GlobalSettings_FromDefaultSources);
+            return CreateFromDefaultSources();
         }
+
+        private static GlobalSettings CreateFromDefaultSources()
+            => new(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
     }
 }

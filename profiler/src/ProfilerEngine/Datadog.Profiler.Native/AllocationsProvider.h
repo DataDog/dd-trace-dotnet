@@ -57,6 +57,7 @@ private:
     GenericSampler _sampler;
     int32_t _sampleLimit;
     IConfiguration const* const _pConfiguration;
+    bool _shouldSubSample;
     std::shared_ptr<CounterMetric> _allocationsCountMetric;
     std::shared_ptr<MeanMaxMetric> _allocationsSizeMetric;
     std::shared_ptr<CounterMetric> _sampledAllocationsCountMetric;
