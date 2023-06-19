@@ -342,8 +342,10 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.String)")]
     public static StringBuilder Insert(StringBuilder target, int index, string value)
     {
-        var previousLength = target.Length;
-        var result = target.Insert(index, value);
+        var previousLength = target?.Length ?? 0;
+
+        // We want the null reference exception to be launched here if target is null
+        var result = target!.Insert(index, value);
         StringBuilderModuleImpl.OnStringBuilderInsert(target, previousLength, index, value);
         return result;
     }
@@ -357,8 +359,10 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.String,System.Int32)")]
     public static StringBuilder Insert(StringBuilder target, int index, string value, int count)
     {
-        var previousLength = target.Length;
-        var result = target.Insert(index, value, count);
+        var previousLength = target?.Length ?? 0;
+
+        // We want the null reference exception to be launched here if target is null
+        var result = target!.Insert(index, value, count);
         StringBuilderModuleImpl.OnStringBuilderInsert(target, previousLength, index, value, count);
         return result;
     }
@@ -371,8 +375,10 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Char)")]
     public static StringBuilder Insert(StringBuilder target, int index, char value)
     {
-        var previousLength = target.Length;
-        var result = target.Insert(index, value);
+        var previousLength = target?.Length ?? 0;
+
+        // We want the null reference exception to be launched here if target is null
+        var result = target!.Insert(index, value);
         StringBuilderModuleImpl.OnStringBuilderInsert(target, previousLength, index, value);
         return result;
     }
@@ -385,8 +391,10 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Char[])")]
     public static StringBuilder Insert(StringBuilder target, int index, char[] value)
     {
-        var previousLength = target.Length;
-        var result = target.Insert(index, value);
+        var previousLength = target?.Length ?? 0;
+
+        // We want the null reference exception to be launched here if target is null
+        var result = target!.Insert(index, value);
         StringBuilderModuleImpl.OnStringBuilderInsert(target, previousLength, index, value);
         return result;
     }
@@ -401,8 +409,10 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Char[],System.Int32,System.Int32)")]
     public static StringBuilder Insert(StringBuilder target, int index, char[] value, int startIndex, int charCount)
     {
-        var previousLength = target.Length;
-        var result = target.Insert(index, value, startIndex, charCount);
+        var previousLength = target?.Length ?? 0;
+
+        // We want the null reference exception to be launched here if target is null
+        var result = target!.Insert(index, value, startIndex, charCount);
         StringBuilderModuleImpl.OnStringBuilderInsert(target, previousLength, index, value, 1, startIndex, charCount);
         return result;
     }
@@ -415,8 +425,10 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Int32)")]
     public static StringBuilder Insert(StringBuilder target, int index, int value)
     {
-        var previousLength = target.Length;
-        var result = target.Insert(index, value);
+        var previousLength = target?.Length ?? 0;
+
+        // We want the null reference exception to be launched here if target is null
+        var result = target!.Insert(index, value);
         StringBuilderModuleImpl.OnStringBuilderInsert(target, previousLength, index, value);
         return result;
     }
@@ -429,8 +441,10 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Int64)")]
     public static StringBuilder Insert(StringBuilder target, int index, long value)
     {
-        var previousLength = target.Length;
-        var result = target.Insert(index, value);
+        var previousLength = target?.Length ?? 0;
+
+        // We want the null reference exception to be launched here if target is null
+        var result = target!.Insert(index, value);
         StringBuilderModuleImpl.OnStringBuilderInsert(target, previousLength, index, value);
         return result;
     }
@@ -443,8 +457,10 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Single)")]
     public static StringBuilder Insert(StringBuilder target, int index, float value)
     {
-        var previousLength = target.Length;
-        var result = target.Insert(index, value);
+        var previousLength = target?.Length ?? 0;
+
+        // We want the null reference exception to be launched here if target is null
+        var result = target!.Insert(index, value);
         StringBuilderModuleImpl.OnStringBuilderInsert(target, previousLength, index, value);
         return result;
     }
@@ -457,8 +473,10 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Double)")]
     public static StringBuilder Insert(StringBuilder target, int index, double value)
     {
-        var previousLength = target.Length;
-        var result = target.Insert(index, value);
+        var previousLength = target?.Length ?? 0;
+
+        // We want the null reference exception to be launched here if target is null
+        var result = target!.Insert(index, value);
         StringBuilderModuleImpl.OnStringBuilderInsert(target, previousLength, index, value);
         return result;
     }
@@ -471,8 +489,10 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Decimal)")]
     public static StringBuilder Insert(StringBuilder target, int index, decimal value)
     {
-        var previousLength = target.Length;
-        var result = target.Insert(index, value);
+        var previousLength = target?.Length ?? 0;
+
+        // We want the null reference exception to be launched here if target is null
+        var result = target!.Insert(index, value);
         StringBuilderModuleImpl.OnStringBuilderInsert(target, previousLength, index, value);
         return result;
     }
@@ -485,8 +505,10 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.UInt16)")]
     public static StringBuilder Insert(StringBuilder target, int index, ushort value)
     {
-        var previousLength = target.Length;
-        var result = target.Insert(index, value);
+        var previousLength = target?.Length ?? 0;
+
+        // We want the null reference exception to be launched here if target is null
+        var result = target!.Insert(index, value);
         StringBuilderModuleImpl.OnStringBuilderInsert(target, previousLength, index, value);
         return result;
     }
@@ -499,8 +521,10 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.UInt32)")]
     public static StringBuilder Insert(StringBuilder target, int index, uint value)
     {
-        var previousLength = target.Length;
-        var result = target.Insert(index, value);
+        var previousLength = target?.Length ?? 0;
+
+        // We want the null reference exception to be launched here if target is null
+        var result = target!.Insert(index, value);
         StringBuilderModuleImpl.OnStringBuilderInsert(target, previousLength, index, value);
         return result;
     }
@@ -513,8 +537,10 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.UInt64)")]
     public static StringBuilder Insert(StringBuilder target, int index, ulong value)
     {
-        var previousLength = target.Length;
-        var result = target.Insert(index, value);
+        var previousLength = target?.Length ?? 0;
+
+        // We want the null reference exception to be launched here if target is null
+        var result = target!.Insert(index, value);
         StringBuilderModuleImpl.OnStringBuilderInsert(target, previousLength, index, value);
         return result;
     }
@@ -527,8 +553,10 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Boolean)")]
     public static StringBuilder Insert(StringBuilder target, int index, bool value)
     {
-        var previousLength = target.Length;
-        var result = target.Insert(index, value);
+        var previousLength = target?.Length ?? 0;
+
+        // We want the null reference exception to be launched here if target is null
+        var result = target!.Insert(index, value);
         StringBuilderModuleImpl.OnStringBuilderInsert(target, previousLength, index, value);
         return result;
     }
@@ -541,8 +569,10 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.SByte)")]
     public static StringBuilder Insert(StringBuilder target, int index, sbyte value)
     {
-        var previousLength = target.Length;
-        var result = target.Insert(index, value);
+        var previousLength = target?.Length ?? 0;
+
+        // We want the null reference exception to be launched here if target is null
+        var result = target!.Insert(index, value);
         StringBuilderModuleImpl.OnStringBuilderInsert(target, previousLength, index, value);
         return result;
     }
@@ -555,8 +585,10 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Byte)")]
     public static StringBuilder Insert(StringBuilder target, int index, byte value)
     {
-        var previousLength = target.Length;
-        var result = target.Insert(index, value);
+        var previousLength = target?.Length ?? 0;
+
+        // We want the null reference exception to be launched here if target is null
+        var result = target!.Insert(index, value);
         StringBuilderModuleImpl.OnStringBuilderInsert(target, previousLength, index, value);
         return result;
     }
@@ -569,8 +601,10 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Int16)")]
     public static StringBuilder Insert(StringBuilder target, int index, short value)
     {
-        var previousLength = target.Length;
-        var result = target.Insert(index, value);
+        var previousLength = target?.Length ?? 0;
+
+        // We want the null reference exception to be launched here if target is null
+        var result = target!.Insert(index, value);
         StringBuilderModuleImpl.OnStringBuilderInsert(target, previousLength, index, value);
         return result;
     }
@@ -583,8 +617,10 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Object)")]
     public static StringBuilder Insert(StringBuilder target, int index, object value)
     {
-        var previousLength = target.Length;
-        var result = target.Insert(index, value);
+        var previousLength = target?.Length ?? 0;
+
+        // We want the null reference exception to be launched here if target is null
+        var result = target!.Insert(index, value);
         StringBuilderModuleImpl.OnStringBuilderInsert(target, previousLength, index, value);
         return result;
     }

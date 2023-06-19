@@ -230,7 +230,7 @@ internal static class StringBuilderModuleImpl
         }
     }
 
-    public static void FullTaintIfAnyTainted(char[] result, StringBuilder firstInput)
+    public static void FullTaintIfAnyTainted(char[] result, StringBuilder? firstInput)
     {
         FullTaintIfAnyTaintedAux(result, result.Length, firstInput, null);
     }
@@ -244,7 +244,7 @@ internal static class StringBuilderModuleImpl
     {
         try
         {
-            if (target is null || targetLength == 0)
+            if (targetLength == 0)
             {
                 return;
             }

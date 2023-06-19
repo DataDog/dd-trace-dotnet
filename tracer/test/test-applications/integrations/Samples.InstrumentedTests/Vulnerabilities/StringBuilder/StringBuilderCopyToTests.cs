@@ -33,5 +33,15 @@ public class StringBuilderCopyToTests : InstrumentationTestsBase
             () => new StringBuilder(_taintedValue).CopyTo(sourceIndex, result, destinationIndex, count), 
             () => new StringBuilder(_taintedValue).CopyTo(sourceIndex, result, destinationIndex, count));
     }
+
+    [Fact]
+    public void GivenATaintedString_WhenCallingCopyToWrongArguments_ArgumentNullException()
+    {
+        char[] result = null;
+
+        AssertUntaintedWithOriginalCallCheck(
+            () => new StringBuilder(_taintedValue).CopyTo(0, result, 1, 1),
+            () => new StringBuilder(_taintedValue).CopyTo(0, result, 1, 1));
+    }
 }
 
