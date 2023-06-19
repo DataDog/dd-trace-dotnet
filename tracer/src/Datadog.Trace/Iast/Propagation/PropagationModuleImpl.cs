@@ -51,11 +51,11 @@ internal static class PropagationModuleImpl
     /// <param name="beginIndex"> start index </param>
     /// <param name="endIndex"> end index </param>
     /// <returns> result </returns>
-    public static object? OnStringRemove(object self, object result, int beginIndex, int endIndex)
+    public static object? OnStringRemove(object self, object? result, int beginIndex, int endIndex)
     {
         try
         {
-            if (self is null || result is null)
+            if (result is null)
             {
                 return result;
             }

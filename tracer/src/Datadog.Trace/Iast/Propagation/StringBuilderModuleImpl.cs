@@ -188,7 +188,7 @@ internal static class StringBuilderModuleImpl
     {
         try
         {
-            if (target is null || target.Length == 0)
+            if (target.Length == 0)
             {
                 return;
             }
