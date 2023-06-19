@@ -27,10 +27,12 @@ namespace Datadog.Trace.Telemetry.Transports
         private readonly IApiRequestFactory _requestFactory;
         private readonly Uri _endpoint;
         private readonly string? _containerId;
+        private readonly bool _enableDebug;
 
-        protected JsonTelemetryTransport(IApiRequestFactory requestFactory)
+        protected JsonTelemetryTransport(IApiRequestFactory requestFactory, bool enableDebug)
         {
             _requestFactory = requestFactory;
+            _enableDebug = enableDebug;
             _endpoint = _requestFactory.GetEndpoint(TelemetryConstants.TelemetryPath);
             _containerId = ContainerMetadata.GetContainerId();
         }
@@ -62,6 +64,11 @@ namespace Datadog.Trace.Telemetry.Transports
                 {
                     request.AddHeader(TelemetryConstants.ApiVersionHeader, v2Data.ApiVersion);
                     request.AddHeader(TelemetryConstants.RequestTypeHeader, v2Data.RequestType);
+                }
+
+                if (_enableDebug)
+                {
+                    request.AddHeader(TelemetryConstants.DebugHeader, "true");
                 }
 
                 // Optional in V1, required in V2
