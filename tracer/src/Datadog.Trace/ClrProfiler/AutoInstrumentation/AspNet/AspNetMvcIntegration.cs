@@ -61,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     string host = httpContext.Request.Headers.Get("Host");
                     var userAgent = httpContext.Request.Headers.Get(HttpHeaderNames.UserAgent);
                     string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
-                    var url = httpContext.Request.GetUrl(tracer.TracerManager.QueryStringManager);
+                    var url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
                     string resourceName = null;
 
                     RouteData routeData = controllerContext.RouteData;

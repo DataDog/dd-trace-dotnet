@@ -11,7 +11,7 @@ namespace Datadog.Trace.Util.Http
 {
     internal static partial class HttpRequestExtensions
     {
-        internal static string GetUrl(this HttpRequest request, QueryStringManager queryStringManager = null)
+        internal static string GetUrlForSpan(this HttpRequest request, QueryStringManager queryStringManager)
         {
             var queryString = request.QueryString.Value;
             return HttpRequestUtils.GetUrl(
@@ -22,6 +22,15 @@ namespace Datadog.Trace.Util.Http
                 request.Path.ToUriComponent(),
                 queryString,
                 queryStringManager);
+        }
+
+        internal static string GetUrlForWaf(this HttpRequest request)
+        {
+            var pathBase = request.PathBase.ToUriComponent();
+            var path = request.Path.ToUriComponent();
+            var queryString = request.QueryString.Value;
+
+            return $"{pathBase}{path}{queryString}";
         }
     }
 }
