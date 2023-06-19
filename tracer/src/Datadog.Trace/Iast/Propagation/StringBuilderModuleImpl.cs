@@ -176,17 +176,12 @@ internal static class StringBuilderModuleImpl
                 taintedTarget.Ranges = rangesResult;
             }
         }
-        catch (Exception err)
+        catch (Exception error)
         {
-            Log.Error(err, "StringModuleImpl.OnStringBuilderInsert exception {Exception}", err.Message);
+            Log.Error(error, $"{nameof(StringBuilderModuleImpl)}.{nameof(OnStringBuilderInsert)} exception");
         }
 
         return target;
-    }
-
-    public static void FullTaintIfAnyTainted(char[] result, StringBuilder firstInput)
-    {
-        FullTaintIfAnyTaintedAux(result, result.Length, firstInput, null);
     }
 
     public static void FullTaintIfAnyTainted(StringBuilder target, object? firstInput = null, object? secondInput = null, object? thirdInput = null, object? fourthInput = null)
@@ -231,8 +226,13 @@ internal static class StringBuilderModuleImpl
         }
         catch (Exception error)
         {
-            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(FullTaintIfAnyTaintedAux)} exception");
+            Log.Error(error, $"{nameof(StringBuilderModuleImpl)}.{nameof(FullTaintIfAnyTainted)} exception");
         }
+    }
+
+    public static void FullTaintIfAnyTainted(char[] result, StringBuilder firstInput)
+    {
+        FullTaintIfAnyTaintedAux(result, result.Length, firstInput, null);
     }
 
     public static void FullTaintIfAnyTaintedEnumerable(StringBuilder target, string? firstInput, IEnumerable? otherInputs)
@@ -262,13 +262,8 @@ internal static class StringBuilderModuleImpl
             if (!targetIsTainted)
             {
                 tainted = GetTaintedWithRanges(taintedObjects, firstInput);
-                if (tainted is null)
+                if (tainted is null && otherInputs is not null)
                 {
-                    if (otherInputs is null)
-                    {
-                        return;
-                    }
-
                     foreach (var input in otherInputs)
                     {
                         tainted = GetTaintedWithRanges(taintedObjects, input);
@@ -298,7 +293,7 @@ internal static class StringBuilderModuleImpl
         }
         catch (Exception error)
         {
-            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(FullTaintIfAnyTaintedAux)} exception");
+            Log.Error(error, $"{nameof(StringBuilderModuleImpl)}.{nameof(FullTaintIfAnyTaintedAux)} exception");
         }
     }
 
@@ -310,27 +305,21 @@ internal static class StringBuilderModuleImpl
 
     private static Range[]? GetRepeatedRange(int count, int valueLenght, TaintedObject? taintedValue)
     {
-        var valueToInsertRanges = taintedValue?.Ranges;
-        if (valueToInsertRanges != null && count > 1)
+        var valueRanges = taintedValue?.Ranges;
+        if (valueRanges != null && count > 1)
         {
             var originalValueLength = valueLenght / count;
             for (int i = 1; i < count; i++)
             {
-                valueToInsertRanges = Ranges.MergeRanges((i * originalValueLength), valueToInsertRanges, taintedValue!.Ranges);
+                valueRanges = Ranges.MergeRanges((i * originalValueLength), valueRanges, taintedValue!.Ranges);
             }
         }
 
-        return valueToInsertRanges;
+        return valueRanges;
     }
 
     private static Range[]? GetSubRange(int index, int charCount, TaintedObject? taintedValue)
     {
-        var valueToInsertRanges = taintedValue?.Ranges;
-        if (valueToInsertRanges != null)
-        {
-            valueToInsertRanges = Ranges.ForSubstring(index, charCount, valueToInsertRanges);
-        }
-
-        return valueToInsertRanges;
+        return (taintedValue?.Ranges is null ? null : Ranges.ForSubstring(index, charCount, taintedValue.Ranges));
     }
 }

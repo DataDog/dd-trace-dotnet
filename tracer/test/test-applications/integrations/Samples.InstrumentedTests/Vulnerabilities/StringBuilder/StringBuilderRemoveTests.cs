@@ -1,4 +1,3 @@
-using System;
 using System.Text;
 using Xunit;
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringBuilderPropagation;
@@ -6,29 +5,29 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringBuilderPropagatio
 public class StringBuilderRemoveTests : InstrumentationTestsBase
 {
     private string _taintedValue = "tainted";
-    private StringBuilder TaintedStringBuilder = new StringBuilder("TaintedStringBuilder");
-    private string TaintedString = "TaintedString";
-    private string UntaintedString = "UntaintedString";
+    private StringBuilder _taintedStringBuilder = new StringBuilder("TaintedStringBuilder");
+    private string _taintedString = "TaintedString";
+    private string _untaintedString = "UntaintedString";
 
     public StringBuilderRemoveTests()
     {
         AddTainted(_taintedValue);
-        AddTainted(TaintedString);
-        AddTainted(TaintedStringBuilder);
+        AddTainted(_taintedString);
+        AddTainted(_taintedStringBuilder);
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTainted_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedBuilder-+:", 
-            TaintedStringBuilder.Remove(7, 6), 
-            () => TaintedStringBuilder.Remove(7, 6));
+            _taintedStringBuilder.Remove(7, 6), 
+            () => _taintedStringBuilder.Remove(7, 6));
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTainted_ResultIsTainted2()
     {
-        StringBuilder strb = TaintedStringBuilder.Append(UntaintedString);
+        StringBuilder strb = _taintedStringBuilder.Append(_untaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedBuilder-+:UntaintedString", 
             strb.Remove(7, 6), 
             () => strb.Remove(7, 6));
@@ -37,7 +36,7 @@ public class StringBuilderRemoveTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTainted_ResultIsTainted3()
     {
-        StringBuilder strb = TaintedStringBuilder.Append(TaintedString);
+        StringBuilder strb = _taintedStringBuilder.Append(_taintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedBuilder-+::+-TaintedString-+:", 
             strb.Remove(7, 6), 
             () => strb.Remove(7, 6));
@@ -46,8 +45,8 @@ public class StringBuilderRemoveTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTainted_ResultIsTainted4()
     {
-        StringBuilder strb = TaintedStringBuilder.Append(UntaintedString);
-        strb = strb.Append(TaintedString);
+        StringBuilder strb = _taintedStringBuilder.Append(_untaintedString);
+        strb = strb.Append(_taintedString);
 
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedStringBuilder-+:Untainted:+-TaintedString-+:", 
             strb.Remove(29, 6), 
@@ -57,8 +56,8 @@ public class StringBuilderRemoveTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTainted_ResultIsTainted5()
     {
-        StringBuilder strb = TaintedStringBuilder.Append(UntaintedString);
-        strb = strb.Append(TaintedString);
+        StringBuilder strb = _taintedStringBuilder.Append(_untaintedString);
+        strb = strb.Append(_taintedString);
 
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedBuilder-+:UntaintedString:+-TaintedString-+:", 
             strb.Remove(7, 6), 
@@ -69,16 +68,16 @@ public class StringBuilderRemoveTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTainted_ResultIsTainted6()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedBuilderUntaintedString and tainted literal equals to TaintedString-+:",
-            GetTaintedStringBuilder("TaintedStringBuilder").Append(UntaintedString).AppendFormat(" and tainted literal equals to {0}", TaintedString).Remove(7, 6), 
-            () => GetTaintedStringBuilder("TaintedStringBuilder").Append(UntaintedString).AppendFormat(" and tainted literal equals to {0}", TaintedString).Remove(7, 6));
+            GetTaintedStringBuilder("TaintedStringBuilder").Append(_untaintedString).AppendFormat(" and tainted literal equals to {0}", _taintedString).Remove(7, 6), 
+            () => GetTaintedStringBuilder("TaintedStringBuilder").Append(_untaintedString).AppendFormat(" and tainted literal equals to {0}", _taintedString).Remove(7, 6));
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTainted_ResultIsTainted7()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-StringBuilderUntaintedString and tainted literal equals to TaintedString-+:",
-            GetTaintedStringBuilder("TaintedStringBuilder").Append(UntaintedString).AppendFormat(" and tainted literal equals to {0}", TaintedString).Remove(0, 7), 
-            () => GetTaintedStringBuilder("TaintedStringBuilder").Append(UntaintedString).AppendFormat(" and tainted literal equals to {0}", TaintedString).Remove(0, 7));
+            GetTaintedStringBuilder("TaintedStringBuilder").Append(_untaintedString).AppendFormat(" and tainted literal equals to {0}", _taintedString).Remove(0, 7), 
+            () => GetTaintedStringBuilder("TaintedStringBuilder").Append(_untaintedString).AppendFormat(" and tainted literal equals to {0}", _taintedString).Remove(0, 7));
     }
 
     [Fact]
@@ -97,40 +96,16 @@ public class StringBuilderRemoveTests : InstrumentationTestsBase
             () => new StringBuilder(_taintedValue).Append("abc").Remove(3, 3).ToString());
     }
 
-    [Fact]
-    //[ExpectedException(typeof(ArgumentOutOfRangeException))]
-    public void GivenATaintedString_WhenCallingStringBuilderRemoveTaintedWrongAnguments_ArgumentOutOfRangeException()
+    [Theory]
+    [InlineData(30, 3)]
+    [InlineData(-30, 3)]
+    [InlineData(3, 30)]
+    [InlineData(3, -3)]
+    public void GivenATaintedString_WhenCallingStringBuilderRemoveTaintedWrongAnguments_ArgumentOutOfRangeException(int index1, int index2)
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).Remove(30, 3), 
-            () => new StringBuilder(_taintedValue).Remove(30, 3));
-    }
-
-    [Fact]
-    //[ExpectedException(typeof(ArgumentOutOfRangeException))]
-    public void GivenATaintedString_WhenCallingStringBuilderRemoveTaintedWrongAnguments_ArgumentOutOfRangeException2()
-    {
-        AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).Remove(-30, 3), 
-            () => new StringBuilder(_taintedValue).Remove(-30, 3));
-    }
-
-    [Fact]
-    //[ExpectedException(typeof(ArgumentOutOfRangeException))]
-    public void GivenATaintedString_WhenCallingStringBuilderRemoveTaintedWrongAnguments_ArgumentOutOfRangeException3()
-    {
-        AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).Remove(3, 30), 
-            () => new StringBuilder(_taintedValue).Remove(3, 30));
-    }
-
-    [Fact]
-    //[ExpectedException(typeof(ArgumentOutOfRangeException))]
-    public void GivenATaintedString_WhenCallingStringBuilderRemoveTaintedWrongAnguments_ArgumentOutOfRangeException4()
-    {
-        AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).Remove(3, -3), 
-            () => new StringBuilder(_taintedValue).Remove(3, -3));
+            () => new StringBuilder(_taintedValue).Remove(index1, index2), 
+            () => new StringBuilder(_taintedValue).Remove(index1, index2));
     }
 }
 

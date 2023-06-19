@@ -1,4 +1,3 @@
-using System;
 using System.Text;
 using Xunit;
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringBuilderPropagation;
@@ -20,64 +19,19 @@ public class StringBuilderCopyToTests : InstrumentationTestsBase
         AssertTainted(result);
     }
 
-    [Fact]
-    //[ExpectedException(typeof(ArgumentOutOfRangeException))]
-    public void GivenATaintedString_WhenCallingCopyToWrongArguments_ArgumentOutOfRangeException()
+    [Theory]
+    [InlineData(-1, 0, 3)]
+    [InlineData(1000, 0, 3)]
+    [InlineData(1, -1, 3)]
+    [InlineData(1, 1000, 3)]
+    [InlineData(1, 0, -3)]
+    [InlineData(1, 0, 1000)]
+    public void GivenATaintedString_WhenCallingCopyToWrongArguments_ArgumentOutOfRangeException(int sourceIndex, int destinationIndex, int count)
     {
         char[] result = new char[20];
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).CopyTo(-1, result, 0, 3), 
-            () => new StringBuilder(_taintedValue).CopyTo(-1, result, 0, 3));
-    }
-
-    [Fact]
-    //[ExpectedException(typeof(ArgumentOutOfRangeException))]
-    public void GivenATaintedString_WhenCallingCopyToWrongArguments_ArgumentOutOfRangeException2()
-    {
-        char[] result = new char[20];
-        AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).CopyTo(1000, result, 0, 3), 
-            () => new StringBuilder(_taintedValue).CopyTo(1000, result, 0, 3));
-    }
-
-    [Fact]
-    //[ExpectedException(typeof(ArgumentOutOfRangeException))]
-    public void GivenATaintedString_WhenCallingCopyToWrongArguments_ArgumentOutOfRangeException3()
-    {
-        char[] result = new char[20];
-        AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).CopyTo(1, result, -1, 3), 
-            () => new StringBuilder(_taintedValue).CopyTo(1, result, -1, 3));
-    }
-
-    [Fact]
-    //[ExpectedException(typeof(ArgumentException))]
-    public void GivenATaintedString_WhenCallingCopyToWrongArguments_ArgumentException()
-    {
-        char[] result = new char[20];
-        AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).CopyTo(1, result, 1000, 3), 
-            () => new StringBuilder(_taintedValue).CopyTo(1, result, 1000, 3));
-    }
-
-    [Fact]
-    //[ExpectedException(typeof(ArgumentOutOfRangeException))]
-    public void GivenATaintedString_WhenCallingCopyToWrongArguments_ArgumentOutOfRangeException5()
-    {
-        char[] result = new char[20];
-        AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).CopyTo(1, result, 0, -3), 
-            () => new StringBuilder(_taintedValue).CopyTo(1, result, 0, -3));
-    }
-
-    [Fact]    
-    //[ExpectedException(typeof(ArgumentException))]
-    public void GivenATaintedString_WhenCallingCopyToWrongArguments_ArgumentException2()
-    {
-        char[] result = new char[20];
-        AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).CopyTo(1, result, 0, 1000), 
-            () => new StringBuilder(_taintedValue).CopyTo(1, result, 0, 1000));
+            () => new StringBuilder(_taintedValue).CopyTo(sourceIndex, result, destinationIndex, count), 
+            () => new StringBuilder(_taintedValue).CopyTo(sourceIndex, result, destinationIndex, count));
     }
 }
 

@@ -113,20 +113,16 @@ public class StringBuilderInsertTests : InstrumentationTestsBase
 
     // test System.Text.StringBuilder::Insert(System.Int32,System.String,System.Int32)
 
-    [Fact]
-    public void GivenATaintedString_WhenCallingStringBuilderInsertStringAndCount_ResultIsTainted()
+    [Theory]
+    [InlineData(":+-tainted-+:", 3, "www", 0)]
+    [InlineData(":+-tai-+:wwwwww:+-nted-+:", 3, "www", 2)]
+    [InlineData(":+-tainted-+:", 3, (string)null, 2)]
+    public void GivenATaintedString_WhenCallingStringBuilderInsertStringAndCount_ResultIsTainted(
+        string expected, int index, string value, int count)
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:",
-            new StringBuilder(_taintedValue).Insert(3, "www", 0).ToString(),
-            () => new StringBuilder(_taintedValue).Insert(3, "www", 0).ToString());
-    }
-
-    [Fact]
-    public void GivenATaintedString_WhenCallingStringBuilderInsertStringAndZeroCount_ResultIsTainted()
-    {
-        AssertTaintedFormatWithOriginalCallCheck(":+-tai-+:wwwwww:+-nted-+:",
-            new StringBuilder(_taintedValue).Insert(3, "www", 2).ToString(),
-            () => new StringBuilder(_taintedValue).Insert(3, "www", 2).ToString());
+        AssertTaintedFormatWithOriginalCallCheck(expected,
+            new StringBuilder(_taintedValue).Insert(index, value, count).ToString(),
+            () => new StringBuilder(_taintedValue).Insert(index, value, count).ToString());
     }
 
     [Fact]
@@ -143,14 +139,6 @@ public class StringBuilderInsertTests : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck(":+-tai-+::+-TAINTED2-+::+-TAINTED2-+::+-nted-+:",
             new StringBuilder(_taintedValue).Insert(3, _taintedValue2, 2).ToString(),
             () => new StringBuilder(_taintedValue).Insert(3, _taintedValue2, 2).ToString());
-    }
-
-    [Fact]
-    public void GivenATaintedString_WhenCallingStringBuilderInsertNullStringAndCount_ResultIsTainted()
-    {
-        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:",
-            new StringBuilder(_taintedValue).Insert(3, (string)null, 2).ToString(),
-            () => new StringBuilder(_taintedValue).Insert(3, (string)null, 2).ToString());
     }
 
     // test System.Text.StringBuilder::Insert(System.Int32,System.Char)
@@ -215,46 +203,16 @@ public class StringBuilderInsertTests : InstrumentationTestsBase
             () => new StringBuilder(_taintedValue).Insert(3, _taintedValue2.ToCharArray(), 3, 3).ToString());
     }
 
-    [Fact]
-    //[ExpectedException(typeof(ArgumentOutOfRangeException))]
-    public void GivenATaintedString_WhenCallingStringBuilderInsertCharArrayTaintedAndWrongIndex_ArgumentOutOfRangeException()
+    [Theory]
+    [InlineData(-3, 3)]
+    [InlineData(3, 300)]
+    [InlineData(300, 3)]
+    [InlineData(3, -3)]
+    public void GivenATaintedString_WhenCallingStringBuilderInsertCharArrayTaintedAndWrongIndex_ArgumentOutOfRangeException(int startIndex, int charCount)
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).Insert(3, _taintedValue2.ToCharArray(), -3, 3),
-            () => new StringBuilder(_taintedValue).Insert(3, _taintedValue2.ToCharArray(), -3, 3));
-    }
-
-    [Fact]
-    //[ExpectedException(typeof(ArgumentOutOfRangeException))]
-    public void GivenATaintedString_WhenCallingStringBuilderInsertCharArrayTaintedAndWrongCount_ArgumentOutOfRangeException()
-    {
-        AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).Insert(3, _taintedValue2.ToCharArray(), 3, 300),
-            () => new StringBuilder(_taintedValue).Insert(3, _taintedValue2.ToCharArray(), 3, 300));
-    }
-
-    [Fact]
-    //[ExpectedException(typeof(ArgumentOutOfRangeException))]
-    public void GivenATaintedString_WhenCallingStringBuilderInsertCharArrayTaintedAndWrongCount_ArgumentOutOfRangeException2()
-    {
-        AssertUntaintedWithOriginalCallCheck(() => new StringBuilder(_taintedValue).Insert(3, _taintedValue2.ToCharArray(), 300, 3),
-            () => new StringBuilder(_taintedValue).Insert(3, _taintedValue2.ToCharArray(), 300, 3));
-    }
-
-    [Fact]
-    //[ExpectedException(typeof(ArgumentOutOfRangeException))]
-    public void GivenATaintedString_WhenCallingStringBuilderInsertCharArrayTaintedAndWrongCount_ArgumentOutOfRangeException3()
-    {
-        AssertUntaintedWithOriginalCallCheck(() => new StringBuilder(_taintedValue).Insert(3, _taintedValue2.ToCharArray(), 3, -3),
-            () => new StringBuilder(_taintedValue).Insert(3, _taintedValue2.ToCharArray(), 3, -3));
-    }
-
-    [Fact]
-    //[ExpectedException(typeof(ArgumentOutOfRangeException))]
-    public void GivenATaintedString_WhenCallingStringBuilderInsertCharArrayTaintedAndWrongCount_ArgumentOutOfRangeException4()
-    {
-        AssertUntaintedWithOriginalCallCheck(() => new StringBuilder(_taintedValue).Insert(3, _taintedValue2.ToCharArray(), -3, 3),
-            () => new StringBuilder(_taintedValue).Insert(3, _taintedValue2.ToCharArray(), -3, 3));
+            () => new StringBuilder(_taintedValue).Insert(3, _taintedValue2.ToCharArray(), startIndex, charCount),
+            () => new StringBuilder(_taintedValue).Insert(3, _taintedValue2.ToCharArray(), startIndex, charCount));
     }
 
     // test System.Text.StringBuilder::Insert(System.Int32,System.Int32)
