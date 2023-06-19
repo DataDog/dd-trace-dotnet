@@ -63,6 +63,7 @@ namespace Datadog.Trace.AppSec.Waf
             else
             {
                 var jtokenRoot = WafConfigurator.DeserializeEmbeddedRules(embeddedRulesetPath);
+                // TODO here we parse the embedded ruleset but we also parse it in BuildDictionaryForWafAccordingToIncomingUpdate, could unify the two?
                 var configObj = Encoder.Encode(jtokenRoot!, wafLibraryInvoker, argsToDispose, applySafetyLimits: false);
                 initResult = wafConfigurator.ConfigureAndDispose(configObj, embeddedRulesetPath, argsToDispose, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
                 initResult.EmbeddedRules = jtokenRoot;

@@ -47,6 +47,22 @@ namespace Datadog.Trace.Security.Unit.Tests
             Execute(waf, new[] { "testrule", "testrule", "crs-942-290-new" }, true, "block");
         }
 
+        [Fact]
+        public void RulesUpdateWithCustomActions()
+        {
+            var configurationStatus = new ConfigurationStatus("ruleset-with-custom-actions.json");
+            var initResult = Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty, configurationStatus);
+            using var waf = initResult.Waf;
+            waf.Should().NotBeNull();
+
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
+            var res = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+            res.Success.Should().BeTrue();
+            res.LoadedRules.Should().Be(1);
+            res.Errors.Should().BeEmpty();
+            Execute(waf, new[] { "testrule", "testrule", "crs-942-290-new" }, true, "block");
+        }
+
         [Theory]
         [InlineData("[$ne]|arg|crs-942-290", "attack|appscan_fingerprint|crs-913-120")]
         [InlineData("attack|appscan_fingerprint|crs-913-120", "value|sleep(10)|crs-942-160")]

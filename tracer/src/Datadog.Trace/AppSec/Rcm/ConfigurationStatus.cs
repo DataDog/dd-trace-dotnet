@@ -27,6 +27,7 @@ internal record ConfigurationStatus
     internal const string WafExclusionsKey = "exclusions";
     internal const string WafRulesDataKey = "rules_data";
     internal const string WafCustomRulesKey = "custom_rules";
+    internal const string WafActionKey = "actions";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationStatus>();
 
@@ -49,6 +50,8 @@ internal record ConfigurationStatus
     internal Dictionary<string, AsmFeature> AsmFeaturesByFile { get; } = new();
 
     internal Dictionary<string, JArray> CustomRulesByFile { get; } = new();
+
+    internal Dictionary<string, Action[]> ActionsByFile { get; } = new();
 
     internal IncomingUpdateStatus IncomingUpdateState { get; } = new();
 
@@ -121,8 +124,15 @@ internal record ConfigurationStatus
             if (FallbackEmbeddedRuleSet == null)
             {
                 var result = WafConfigurator.DeserializeEmbeddedRules(_embeddedRulesPath);
-                if (result != null)
+                if (result is JObject resultObj)
                 {
+                    var actionsObj = resultObj.Properties().FirstOrDefault(x => x.Name == "actions");
+                    var actions = actionsObj?.Value?.ToObject<Action[]>().ToDictionary(x => x.Id!, x => x);
+                    if (actions != null)
+                    {
+                        Actions = actions;
+                    }
+
                     FallbackEmbeddedRuleSet = RuleSet.From(result);
                 }
             }
@@ -133,6 +143,11 @@ internal record ConfigurationStatus
         {
             var rulesetFromRcm = RulesByFile.Values.FirstOrDefault();
             rulesetFromRcm?.AddToDictionaryAtRoot(dictionary);
+        }
+
+        if (IncomingUpdateState.WafKeysToApply.Contains(WafActionKey))
+        {
+            Actions = ActionsByFile.SelectMany(x => x.Value).ToDictionary(x => x.Id!, x => x);
         }
 
         return dictionary;
