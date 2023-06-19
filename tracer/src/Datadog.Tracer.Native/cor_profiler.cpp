@@ -1709,7 +1709,9 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
                 TypeReference(integrationAssembly, integrationType, {}, {}),
                 isDerived,
                 isInterface,
-                true);
+                true,
+                -1,
+                enable ? -1 : 0);
 
             if (Logger::IsDebugEnabled())
             {
@@ -1765,7 +1767,6 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
                 {
                     integration_definitions_.push_back(integration);
                 }
-                integration.SetEnabled(false);
             }
 
             Logger::Info("Total number of modules to analyze: ", modules->size());

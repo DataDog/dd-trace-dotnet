@@ -29,38 +29,38 @@ partial class Program
         string param1 = "concat1";
         string param2 = "CONCAT2";
         string espected = param1 + param2;
-        RunMethod(() => tests.AspectCtorReplace(param1, param2, espected), $"[AspectCtorReplace]DebugAspects.AspectCtorReplace(string {param1}, string {param2})");
-        RunMethod(() => tests.AspectMethodReplace(param1, param2, espected), $"[AspectMethodReplace]DebugAspects.AspectMethodReplace(string {param1}, string {param2})");
-        RunMethod(() => tests.AspectMethodInsertBefore_0(param1, param2, espected), $"[AspectMethodInsertBefore]DebugAspects.AspectMethodInsertBefore_0(string {param2})");
-        RunMethod(() => tests.AspectMethodInsertBefore_1(param1, param2, espected), $"[AspectMethodInsertBefore]DebugAspects.AspectMethodInsertBefore_1(string {param1})");
-        RunMethod(() => tests.AspectMethodInsertAfter(param1, param2, espected), $"[AspectMethodInsertAfter]DebugAspects.AspectMethodInsertAfter(string {espected})");
-    }
-
-    private static void RunMethod(Action action, string aspectMethod)
-    {
-        var cOut = Console.Out;
-        Console.SetOut(sWriter);
-        action();
-        sWriter.Flush();
-        var str = Encoding.UTF8.GetString(mStream.GetBuffer(), 0, (int)mStream.Length);
-        mStream.SetLength(0);
-        if (!string.IsNullOrEmpty(aspectMethod))
-        {
-            if (!str.Contains(aspectMethod))
-            {
-                throw new Exception("Profiler didn't return a valid Debug Aspect Method execution");
-            }
-        }
-        if (!string.IsNullOrEmpty(str))
-        {
-            cOut.Write("     " + string.Join("\n     ", str.Split('\n')));
-        }
-        Console.SetOut(cOut);
-        Console.WriteLine();
+        CallSiteTests.RunMethod(() => tests.AspectCtorReplace(param1, param2, espected), $"[AspectCtorReplace]DebugAspects.AspectCtorReplace(string {param1}, string {param2})");
+        CallSiteTests.RunMethod(() => tests.AspectMethodReplace(param1, param2, espected), $"[AspectMethodReplace]DebugAspects.AspectMethodReplace(string {param1}, string {param2})");
+        CallSiteTests.RunMethod(() => tests.AspectMethodInsertBefore_0(param1, param2, espected), $"[AspectMethodInsertBefore]DebugAspects.AspectMethodInsertBefore_0(string {param2})");
+        CallSiteTests.RunMethod(() => tests.AspectMethodInsertBefore_1(param1, param2, espected), $"[AspectMethodInsertBefore]DebugAspects.AspectMethodInsertBefore_1(string {param1})");
+        CallSiteTests.RunMethod(() => tests.AspectMethodInsertAfter(param1, param2, espected), $"[AspectMethodInsertAfter]DebugAspects.AspectMethodInsertAfter(string {espected})");
     }
 
     public class CallSiteTests
     {
+        internal static void RunMethod(Action action, string aspectMethod)
+        {
+            var cOut = Console.Out;
+            Console.SetOut(sWriter);
+            action();
+            sWriter.Flush();
+            var str = Encoding.UTF8.GetString(mStream.GetBuffer(), 0, (int)mStream.Length);
+            mStream.SetLength(0);
+            if (!string.IsNullOrEmpty(aspectMethod))
+            {
+                if (!str.Contains(aspectMethod))
+                {
+                    throw new Exception("Profiler didn't return a valid Debug Aspect Method execution");
+                }
+            }
+            if (!string.IsNullOrEmpty(str))
+            {
+                cOut.Write("     " + string.Join("\n     ", str.Split('\n')));
+            }
+            Console.SetOut(cOut);
+            Console.WriteLine();
+        }
+
         public object AspectCtorReplace(string param1, string param2, string espected)
         {
             var result = new CallSiteTargets(param1, param2); //This new call should be probed with the instance

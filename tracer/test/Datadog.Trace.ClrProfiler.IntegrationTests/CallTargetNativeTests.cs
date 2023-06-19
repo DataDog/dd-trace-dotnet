@@ -244,5 +244,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 processResult.StandardOutput.Should().ContainAll(typeNames);
             }
         }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        public void CategorizedCallTargetIntegrations()
+        {
+            SetInstrumentationVerification();
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (var processResult = RunSampleAndWaitForExit(agent, arguments: "categories"))
+            {
+                int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\(").Count;
+                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+                int notInstrumentedMethodCount = Regex.Matches(processResult.StandardOutput, "OK: Not instrumented").Count;
+
+                // Enabled, Disabled, Enabled -> 2 functions per cycle
+                Assert.Equal(20, beginMethodCount);
+                Assert.Equal(20, endMethodCount);
+                Assert.Equal(10, notInstrumentedMethodCount);
+
+                VerifyInstrumentation(processResult.Process);
+            }
+        }
     }
 }

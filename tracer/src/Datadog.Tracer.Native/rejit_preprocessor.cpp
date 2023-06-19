@@ -495,9 +495,16 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
             const auto is_interface = GetIsInterface(definition);
             const auto is_enabled = GetIsEnabled(definition);
 
-            if (SupportsSelectiveEnablement() && !is_enabled)
+            if (SupportsSelectiveEnablement())
             {
-                continue; // Disabled calltarget
+                if (!isRevert && !is_enabled)
+                {
+                    continue; // Disabled calltarget
+                }
+                else if (isRevert && is_enabled)
+                {
+                    continue; // Enabled calltarget
+                }
             }
 
             if (is_derived || is_interface)
