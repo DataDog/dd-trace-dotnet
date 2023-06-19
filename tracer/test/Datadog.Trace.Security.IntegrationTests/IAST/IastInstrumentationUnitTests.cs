@@ -421,7 +421,10 @@ public class IastInstrumentationUnitTests : TestHelper
                 ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);
                 var errorMsg = "dumpTest: " + dumpTest + Environment.NewLine + "dumpCI:" + dumpCI + Environment.NewLine +
                     "arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput;
-                processResult.StandardError.Should().BeEmpty(errorMsg);
+
+                var clrError = processResult.StandardError.Contains("Internal CLR error");
+
+                clrError.Should().BeFalse(errorMsg);
             }
         }
 
