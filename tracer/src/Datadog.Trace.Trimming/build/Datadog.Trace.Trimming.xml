@@ -181,6 +181,7 @@
    <assembly fullname="System.Data.SqlClient" />
    <assembly fullname="System.Data.SQLite" />
    <assembly fullname="System.Diagnostics.Debug">
+      <type fullname="System.Diagnostics.Debug" />
       <type fullname="System.Diagnostics.Debugger" />
       <type fullname="System.Diagnostics.DebuggerBrowsableAttribute" />
       <type fullname="System.Diagnostics.DebuggerBrowsableState" />
@@ -479,6 +480,7 @@
       <type fullname="System.Diagnostics.CodeAnalysis.DisallowNullAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.DoesNotReturnAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.DoesNotReturnIfAttribute" />
+      <type fullname="System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.MaybeNullAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.MemberNotNullAttribute" />
@@ -488,6 +490,8 @@
       <type fullname="System.Diagnostics.CodeAnalysis.NotNullWhenAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute" />
       <type fullname="System.Diagnostics.ConditionalAttribute" />
+      <type fullname="System.Diagnostics.Debug" />
+      <type fullname="System.Diagnostics.Debug/AssertInterpolatedStringHandler" />
       <type fullname="System.Diagnostics.DebuggableAttribute" />
       <type fullname="System.Diagnostics.DebuggableAttribute/DebuggingModes" />
       <type fullname="System.Diagnostics.Debugger" />
@@ -578,6 +582,7 @@
       <type fullname="System.MethodAccessException" />
       <type fullname="System.MidpointRounding" />
       <type fullname="System.MulticastDelegate" />
+      <type fullname="System.Net.WebUtility" />
       <type fullname="System.NonSerializedAttribute" />
       <type fullname="System.NotImplementedException" />
       <type fullname="System.NotSupportedException" />
@@ -812,6 +817,7 @@
       <type fullname="System.IO.TextReader" />
       <type fullname="System.IO.TextWriter" />
       <type fullname="System.Math" />
+      <type fullname="System.Net.WebUtility" />
       <type fullname="System.Numerics.BitOperations" />
       <type fullname="System.OperatingSystem" />
       <type fullname="System.PlatformID" />

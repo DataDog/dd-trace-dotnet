@@ -339,7 +339,7 @@ public class KafkaProduceSyncIntegration
     ParameterTypeNames = new[] { KafkaConstants.TopicPartitionTypeName, KafkaConstants.MessageTypeName, ClrNames.CancellationToken },
     MinimumVersion = ""1.4.0"",
     MaximumVersion = ""1.*.*"",
-    CallTargetIntegrationType = IntegrationType.Derived,
+    CallTargetIntegrationKind = CallTargetKind.Derived,
     IntegrationName = KafkaConstants.IntegrationName)]
 public class KafkaProduceAsyncIntegration
 {
@@ -439,7 +439,7 @@ public class KafkaProduceSyncIntegration
     ParameterTypeNames = new[] { KafkaConstants.TopicPartitionTypeName, KafkaConstants.MessageTypeName, ClrNames.CancellationToken },
     MinimumVersion = ""1.4.0"",
     MaximumVersion = ""1.*.*"",
-    CallTargetIntegrationType = IntegrationType.Interface,
+    CallTargetIntegrationKind = CallTargetKind.Interface,
     IntegrationName = KafkaConstants.IntegrationName)]
 public class KafkaProduceAsyncIntegration
 {
@@ -853,7 +853,7 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
     MinimumVersion = ""2.0.0.0"",
     MaximumVersion = ""6.*.*.*.*"",
     IntegrationName = AspNetCoreConstants.IntegrationName,
-    CallTargetIntegrationType = IntegrationType.Derived,
+    CallTargetIntegrationKind = CallTargetKind.Derived,
     InstrumentationCategory = InstrumentationCategory.AppSec)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -956,7 +956,7 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
     MinimumVersion = ""2.0.0.0"",
     MaximumVersion = ""6.*.*.*.*"",
     IntegrationName = AspNetCoreConstants.IntegrationName,
-    CallTargetIntegrationType = IntegrationType.Derived,
+    CallTargetIntegrationKind = CallTargetKind.Derived,
     InstrumentationCategory = InstrumentationCategory.Tracing | InstrumentationCategory.AppSec)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -1605,7 +1605,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             MethodName = ""ExecuteNonQuery"",
             ReturnTypeName = ""System.Int32"",
             CallTargetType = typeof(CommandExecuteNonQueryIntegration),
-            CallTargetIntegrationType = IntegrationType.Default)]
+            CallTargetIntegrationKind = CallTargetKind.Default)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class CommandExecuteNonQueryAttribute : Attribute
         {
@@ -1624,7 +1624,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             MethodName = ""ExecuteNonQuery"",
             ReturnTypeName = ""System.Int32"",
             CallTargetType = typeof(CommandExecuteNonQueryIntegration),
-            CallTargetIntegrationType = IntegrationType.Derived)]
+            CallTargetIntegrationKind = CallTargetKind.Derived)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class CommandExecuteNonQueryDerivedAttribute : Attribute
         {
