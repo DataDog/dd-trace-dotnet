@@ -571,7 +571,7 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
 
     const auto tryInstruction = beforeLineProbe->m_pPrev;
 
-    const auto instrumentationSequence = ProbesMetadataTracker::Instance()->GetNextInstrumentationSequence();
+    const auto instrumentationVersion = ProbesMetadataTracker::Instance()->GetNextInstrumentationVersion();
 
     // ***
     // BEGIN METHOD PART
@@ -580,7 +580,7 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
     ILInstr* beginCallInstruction;
 
     rewriterWrapper.LoadInt32(instrumentedMethodIndex);
-    rewriterWrapper.LoadInt32(instrumentationSequence);
+    rewriterWrapper.LoadInt32(instrumentationVersion);
 
     auto hr = debuggerTokens->WriteShouldUpdateProbeInfo(&rewriterWrapper, &beginCallInstruction, probeType);
     IfFailRet(hr);
@@ -637,7 +637,7 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
 
     // UpdateProbeInfo
     rewriterWrapper.LoadInt32(instrumentedMethodIndex);
-    rewriterWrapper.LoadInt32(instrumentationSequence);
+    rewriterWrapper.LoadInt32(instrumentationVersion);
     rewriterWrapper.LoadToken(function_token);
     rewriterWrapper.LoadToken(caller->type.id);
 
@@ -655,7 +655,7 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
     if (isMultiProbe)
     {
         // Multiple method probes
-        rewriterWrapper.LoadInt32(instrumentationSequence);
+        rewriterWrapper.LoadInt32(instrumentationVersion);
     }
     else
     {
@@ -805,7 +805,7 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
     }
 
     rewriterWrapper.LoadInt32(instrumentedMethodIndex);
-    rewriterWrapper.LoadInt32(instrumentationSequence);
+    rewriterWrapper.LoadInt32(instrumentationVersion);
     rewriterWrapper.LoadLocalAddress(stateLocalIndex);
 
     hr = debuggerTokens->WriteDispose(&rewriterWrapper, &endMethodCallInstr, probeType);
@@ -1555,7 +1555,7 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
 
     const auto tryInstruction = beforeLineProbe->m_pPrev;
 
-    const auto instrumentationSequence = ProbesMetadataTracker::Instance()->GetNextInstrumentationSequence();
+    const auto instrumentationVersion = ProbesMetadataTracker::Instance()->GetNextInstrumentationVersion();
 
     const auto probeType = AsyncMethodProbe;
     // ***
@@ -1565,7 +1565,7 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
     ILInstr* beginCallInstruction;
 
     rewriterWrapper.LoadInt32(instrumentedMethodIndex);
-    rewriterWrapper.LoadInt32(instrumentationSequence);
+    rewriterWrapper.LoadInt32(instrumentationVersion);
     rewriterWrapper.LoadArgument(0);
     rewriterWrapper.LoadFieldAddress(isReEntryFieldTok);
     
@@ -1627,7 +1627,7 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
     hr = LoadInstanceIntoStack(caller, isStatic, rewriterWrapper, &loadInstanceInstr, debugger_tokens);
     IfFailRet(hr);
     rewriterWrapper.LoadInt32(instrumentedMethodIndex);
-    rewriterWrapper.LoadInt32(instrumentationSequence);
+    rewriterWrapper.LoadInt32(instrumentationVersion);
     rewriterWrapper.LoadToken(function_token);
     rewriterWrapper.LoadToken(caller->type.id);
 
@@ -1642,7 +1642,7 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
     brFalse->m_pTarget = loadInstanceInstr;
 
     rewriterWrapper.LoadInt32(instrumentedMethodIndex);
-    rewriterWrapper.LoadInt32(instrumentationSequence);
+    rewriterWrapper.LoadInt32(instrumentationVersion);
     
     loadInstanceInstr = rewriterWrapper.LoadArgument(0);
     rewriterWrapper.LoadFieldAddress(isReEntryFieldTok);

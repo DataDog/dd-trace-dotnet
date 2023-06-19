@@ -28,42 +28,42 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// Determines if the instrumentation should call <see cref="UpdateProbeInfo"/>.
         /// </summary>
         /// <param name="methodMetadataIndex">The unique index of the method.</param>
-        /// <param name="instrumentationSequence">The unique identifier of the instrumentation.</param>
+        /// <param name="instrumentationVersion">The unique identifier of the instrumentation.</param>
         /// <returns>true if <see cref="UpdateProbeInfo"/> should be called, false otherwise.</returns>
-        public static bool ShouldUpdateProbeInfo(int methodMetadataIndex, int instrumentationSequence)
+        public static bool ShouldUpdateProbeInfo(int methodMetadataIndex, int instrumentationVersion)
         {
             if (!MethodMetadataCollection.Instance.IndexExists(methodMetadataIndex))
             {
                 return true;
             }
 
-            return MethodMetadataCollection.Instance.Get(methodMetadataIndex).InstrumentationSequence != instrumentationSequence;
+            return MethodMetadataCollection.Instance.Get(methodMetadataIndex).InstrumentationVersion != instrumentationVersion;
         }
 
         /// <summary>
-        /// Updates the ProbeIds and ProbeMetadataIndices associated with the <see cref="MethodMetadataInfo"/> associated with the given <paramref name="methodMetadataIndex"/> and sets the corresponding <paramref name="instrumentationSequence"/>.
+        /// Updates the ProbeIds and ProbeMetadataIndices associated with the <see cref="MethodMetadataInfo"/> associated with the given <paramref name="methodMetadataIndex"/> and sets the corresponding <paramref name="instrumentationVersion"/>.
         /// </summary>
         /// <param name="probeIds">Probe Ids</param>
         /// <param name="probeMetadataIndices">Probe Metadata Indices</param>
         /// <param name="methodMetadataIndex">The unique index of the method.</param>
-        /// <param name="instrumentationSequence">The sequence of this particular instrumentation.</param>
+        /// <param name="instrumentationVersion">The version of this particular instrumentation.</param>
         /// <param name="methodHandle">The handle of the executing method</param>
         /// <param name="typeHandle">The handle of the type</param>
         public static void UpdateProbeInfo(
             string[] probeIds,
             int[] probeMetadataIndices,
             int methodMetadataIndex,
-            int instrumentationSequence,
+            int instrumentationVersion,
             RuntimeMethodHandle methodHandle,
             RuntimeTypeHandle typeHandle)
         {
             if (!MethodMetadataCollection.Instance.TryCreateNonAsyncMethodMetadataIfNotExists(methodMetadataIndex, in methodHandle, in typeHandle))
             {
-                Log.Warning("BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. methodMetadataId = {MethodMetadataIndex}, instrumentationSequence = {InstrumentationSequence}", new object[] { methodMetadataIndex, instrumentationSequence });
+                Log.Warning("BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. methodMetadataId = {MethodMetadataIndex}, instrumentationVersion = {InstrumentationVersion}", new object[] { methodMetadataIndex, instrumentationVersion });
                 return;
             }
 
-            MethodMetadataCollection.Instance.Get(methodMetadataIndex).Update(probeIds, probeMetadataIndices, instrumentationSequence);
+            MethodMetadataCollection.Instance.Get(methodMetadataIndex).Update(probeIds, probeMetadataIndices, instrumentationVersion);
         }
 
         /// <summary>
@@ -358,10 +358,10 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// Used to clean up resources. Called upon entering the (instrumentation's) finally block.
         /// </summary>
         /// <param name="methodMetadataIndex">The unique index of the method.</param>
-        /// <param name="instrumentationSequence">The unique identifier of the instrumentation.</param>
+        /// <param name="instrumentationVersion">The unique identifier of the instrumentation.</param>
         /// <param name="state">Debugger states</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Dispose(int methodMetadataIndex, int instrumentationSequence, ref MethodDebuggerState state)
+        public static void Dispose(int methodMetadataIndex, int instrumentationVersion, ref MethodDebuggerState state)
         {
             // Should clean up the state. E.g: If we retrieved it from an Object Pool, we should return it here.
             InstrumentationAllocator.ReturnObject(ref state);

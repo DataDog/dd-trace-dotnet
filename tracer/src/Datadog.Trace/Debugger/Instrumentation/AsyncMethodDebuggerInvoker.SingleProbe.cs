@@ -29,11 +29,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// Determines if the instrumentation should call <see cref="UpdateProbeInfo{T}"/>.
         /// </summary>
         /// <param name="methodMetadataIndex">The unique index of the method.</param>
-        /// <param name="instrumentationSequence">The unique identifier of the instrumentation.</param>
+        /// <param name="instrumentationVersion">The unique identifier of the instrumentation.</param>
         /// <param name="state">If it the first entry to the state machine MoveNext method</param>
         /// <returns>true if <see cref="UpdateProbeInfo{T}"/> should be called, false otherwise.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool ShouldUpdateProbeInfo(int methodMetadataIndex, int instrumentationSequence, ref AsyncDebuggerState state)
+        public static bool ShouldUpdateProbeInfo(int methodMetadataIndex, int instrumentationVersion, ref AsyncDebuggerState state)
         {
             if (!MethodMetadataCollection.Instance.IndexExists(methodMetadataIndex))
             {
@@ -42,27 +42,27 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             ref var methodMetadataInfo = ref MethodMetadataCollection.Instance.Get(methodMetadataIndex);
 
-            var isDifferentSequence = methodMetadataInfo.InstrumentationSequence != instrumentationSequence;
+            var isDifferentVersion = methodMetadataInfo.InstrumentationVersion != instrumentationVersion;
 
-            if (IsReEnter(ref state) && isDifferentSequence)
+            if (IsReEnter(ref state) && isDifferentVersion)
             {
-                // Re-enter but with different instrumentation version/sequence. Ditching state and avoiding the collection of further instrumentation data.
+                // Re-enter but with different instrumentation version. Ditching state and avoiding the collection of further instrumentation data.
                 state.LogStates = AsyncMethodDebuggerState.CreateInvalidatedDebuggerStates();
                 return false;
             }
 
-            return isDifferentSequence;
+            return isDifferentVersion;
         }
 
         /// <summary>
-        /// Updates the ProbeIds and ProbeMetadataIndices associated with the <see cref="MethodMetadataInfo"/> associated with the given <paramref name="methodMetadataIndex"/> and sets the corresponding <paramref name="instrumentationSequence"/>.
+        /// Updates the ProbeIds and ProbeMetadataIndices associated with the <see cref="MethodMetadataInfo"/> associated with the given <paramref name="methodMetadataIndex"/> and sets the corresponding <paramref name="instrumentationVersion"/>.
         /// </summary>
         /// <typeparam name="TTarget">Target object of the method. Note that it could be typeof(object) and not a concrete type</typeparam>
         /// <param name="probeIds">Probe Ids</param>
         /// <param name="probeMetadataIndices">Probe Metadata Indices</param>
         /// <param name="instance">Instance value</param>
         /// <param name="methodMetadataIndex">The unique index of the method.</param>
-        /// <param name="instrumentationSequence">The sequence of this particular instrumentation.</param>
+        /// <param name="instrumentationVersion">The version of this particular instrumentation.</param>
         /// <param name="methodHandle">The handle of the executing method</param>
         /// <param name="typeHandle">The handle of the type</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -71,7 +71,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             int[] probeMetadataIndices,
             TTarget instance,
             int methodMetadataIndex,
-            int instrumentationSequence,
+            int instrumentationVersion,
             RuntimeMethodHandle methodHandle,
             RuntimeTypeHandle typeHandle)
         {
@@ -93,11 +93,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             if (!MethodMetadataCollection.Instance.TryCreateAsyncMethodMetadataIfNotExists(instance, methodMetadataIndex, in methodHandle, in typeHandle, kickoffInfo))
             {
-                Log.Warning("BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. methodMetadataId = {MethodMetadataIndex}, instrumentationSequence = {InstrumentationSequence}", new object[] { methodMetadataIndex, instrumentationSequence });
+                Log.Warning("BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. methodMetadataId = {MethodMetadataIndex}, instrumentationVersion = {InstrumentationVersion}", new object[] { methodMetadataIndex, instrumentationVersion });
                 return;
             }
 
-            MethodMetadataCollection.Instance.Get(methodMetadataIndex).Update(probeIds, probeMetadataIndices, instrumentationSequence);
+            MethodMetadataCollection.Instance.Get(methodMetadataIndex).Update(probeIds, probeMetadataIndices, instrumentationVersion);
         }
 
         /// <summary>
@@ -127,11 +127,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="instance">Instance value</param>
         /// <param name="methodMetadataIndex">The index used to lookup for the <see cref="MethodMetadataInfo"/> associated with the executing method</param>
         /// <param name="probeMetadataIndex">The index used to lookup for the <see cref="ProbeData"/></param>
-        /// <param name="instrumentationSequence">The sequence of this particular instrumentation.</param>
+        /// <param name="instrumentationVersion">The version of this particular instrumentation.</param>
         /// <param name="probeId">The id of the probe</param>
         /// <param name="state">If it the first entry to the state machine MoveNext method</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void BeginMethod<TTarget>(TTarget instance, int methodMetadataIndex, int probeMetadataIndex, int instrumentationSequence, string probeId, ref AsyncMethodDebuggerState state)
+        public static void BeginMethod<TTarget>(TTarget instance, int methodMetadataIndex, int probeMetadataIndex, int instrumentationVersion, string probeId, ref AsyncMethodDebuggerState state)
         {
             if (!MethodMetadataCollection.Instance.IndexExists(methodMetadataIndex))
             {

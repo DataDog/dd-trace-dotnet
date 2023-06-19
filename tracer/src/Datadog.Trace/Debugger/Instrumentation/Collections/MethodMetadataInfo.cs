@@ -83,24 +83,24 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         public int[] ProbeMetadataIndices { get; private set; }
 
         /// <summary>
-        /// Gets the unique sequence of the active instrumentation that is being applied. It basically identifies the probe ids combination that is currently applied.
-        /// If a probe is getting added and/or removed, then this number will be re-updated using new instrumentation, and have a new sequence number, "hard-coded" by the instrumentation.
+        /// Gets the unique version of the active instrumentation that is being applied. It basically identifies the probe ids combination that is currently applied.
+        /// If a probe is getting added and/or removed, then this number will be re-updated using new instrumentation, and have a new version number, "hard-coded" by the instrumentation.
         /// </summary>
-        public int InstrumentationSequence { get; private set; } = -1;
+        public int InstrumentationVersion { get; private set; } = -1;
 
         /// <summary>
         /// Updates, atomically using a locking object for syncing, <see cref="ProbeIds"/> and <see cref="ProbeMetadataIndices"/>.
         /// </summary>
         /// <param name="probeIds">Updated probe ids.</param>
         /// <param name="probeMetadataIndices">Updated probe metadata indices.</param>
-        /// <param name="instrumentationSequence">The (new) unique identifier of the instrumentation that is currently applied.</param>
-        public void Update(string[] probeIds, int[] probeMetadataIndices, int instrumentationSequence)
+        /// <param name="instrumentationVersion">The (new) unique identifier of the instrumentation that is currently applied.</param>
+        public void Update(string[] probeIds, int[] probeMetadataIndices, int instrumentationVersion)
         {
             lock (_locker)
             {
                 ProbeIds = probeIds;
                 ProbeMetadataIndices = probeMetadataIndices;
-                InstrumentationSequence = instrumentationSequence;
+                InstrumentationVersion = instrumentationVersion;
             }
         }
     }

@@ -20,14 +20,14 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <typeparam name="TTarget">Target object of the method. Note that it could be typeof(object) and not a concrete type</typeparam>
         /// <param name="instance">Instance value</param>
         /// <param name="methodMetadataIndex">The index used to lookup for the <see cref="MethodMetadataInfo"/> associated with the executing method</param>
-        /// <param name="instrumentationSequence">The sequence of this particular instrumentation.</param>
+        /// <param name="instrumentationVersion">The version of this particular instrumentation.</param>
         /// <param name="isReEntryToMoveNext">If it the first entry to the state machine MoveNext method</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void BeginMethod<TTarget>(TTarget instance, int methodMetadataIndex, int instrumentationSequence, ref AsyncDebuggerState isReEntryToMoveNext)
+        public static void BeginMethod<TTarget>(TTarget instance, int methodMetadataIndex, int instrumentationVersion, ref AsyncDebuggerState isReEntryToMoveNext)
         {
             if (!MethodMetadataCollection.Instance.IndexExists(methodMetadataIndex))
             {
-                Log.Warning("BeginMethod: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {Type}, instance type name = {Name}, methodMetadaId = {MethodMetadataIndex}, instrumentationSequence = {InstrumentationSequence}", new object[] { typeof(TTarget), instance?.GetType().Name, methodMetadataIndex, instrumentationSequence });
+                Log.Warning("BeginMethod: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {Type}, instance type name = {Name}, methodMetadaId = {MethodMetadataIndex}, instrumentationVersion = {InstrumentationVersion}", new object[] { typeof(TTarget), instance?.GetType().Name, methodMetadataIndex, instrumentationVersion });
                 isReEntryToMoveNext.LogStates = AsyncMethodDebuggerState.CreateInvalidatedDebuggerStates();
                 return;
             }
@@ -46,9 +46,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
             var probesIds = methodMetadataInfo.ProbeIds;
             var probeMetadataIndices = methodMetadataInfo.ProbeMetadataIndices;
 
-            if (instrumentationSequence != methodMetadataInfo.InstrumentationSequence)
+            if (instrumentationVersion != methodMetadataInfo.InstrumentationVersion)
             {
-                Log.Warning("BeginMethod: The instrumentation sequence is different, received sequence: {InstrumentationSequence}, but the kept sequence is: {KeptSequenceNumber}", new object[] { instrumentationSequence, methodMetadataInfo.InstrumentationSequence });
+                Log.Warning("BeginMethod: The instrumentation version is different, received version: {InstrumentationVersion}, but the kept version is: {KeptVersionNumber}", new object[] { instrumentationVersion, methodMetadataInfo.InstrumentationVersion });
                 isReEntryToMoveNext.LogStates = AsyncMethodDebuggerState.CreateInvalidatedDebuggerStates();
                 return;
             }
@@ -63,7 +63,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             for (var stateIndex = 0; stateIndex < isReEntryToMoveNext.LogStates.Length; stateIndex++)
             {
-                BeginMethod(instance, methodMetadataIndex, probeMetadataIndices[stateIndex], instrumentationSequence, probesIds[stateIndex], ref isReEntryToMoveNext.LogStates[stateIndex]);
+                BeginMethod(instance, methodMetadataIndex, probeMetadataIndices[stateIndex], instrumentationVersion, probesIds[stateIndex], ref isReEntryToMoveNext.LogStates[stateIndex]);
             }
         }
 

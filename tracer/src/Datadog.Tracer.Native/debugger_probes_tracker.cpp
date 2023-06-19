@@ -193,7 +193,7 @@ int debugger::ProbesMetadataTracker::GetInstrumentedMethodIndex(const ModuleID m
      return _methodIndexMap[methodIdentifier];
  }
 
-int debugger::ProbesMetadataTracker::GetNextInstrumentationSequence()
+int debugger::ProbesMetadataTracker::GetNextInstrumentationVersion()
 {
-     return std::atomic_fetch_add(&_nextInstrumentationSequence, 1);
+     return std::atomic_fetch_add(&_nextInstrumentationVersion, 1);
 }

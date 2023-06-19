@@ -464,7 +464,7 @@ HRESULT DebuggerTokens::CreateBeginMethodStartMarkerRefSignature(ProbeType probe
     signature[offset++] = ELEMENT_TYPE_MVAR;
     signature[offset++] = 0x00;
     signature[offset++] = ELEMENT_TYPE_I4; // methodMetadataIndex
-    signature[offset++] = ELEMENT_TYPE_I4; // instrumentationSequence / probeMetadataIndex (depending on multi probe / not)
+    signature[offset++] = ELEMENT_TYPE_I4; // instrumentationVersion / probeMetadataIndex (depending on multi probe / not)
 
     if (!isMultiProbe && !isAsyncMethod)
     {

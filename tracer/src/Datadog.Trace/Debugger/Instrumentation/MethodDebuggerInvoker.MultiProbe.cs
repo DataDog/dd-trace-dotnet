@@ -25,14 +25,14 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <typeparam name="TTarget">Target type</typeparam>
         /// <param name="instance">Instance value</param>
         /// <param name="methodMetadataIndex">The index used to lookup for the <see cref="MethodMetadataInfo"/> associated with the executing method</param>
-        /// <param name="instrumentationSequence">The version of the instrumentation</param>
+        /// <param name="instrumentationVersion">The version of the instrumentation</param>
         /// <returns>Live debugger state</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static MethodDebuggerState[] BeginMethod_StartMarker<TTarget>(TTarget instance, int methodMetadataIndex, int instrumentationSequence)
+        public static MethodDebuggerState[] BeginMethod_StartMarker<TTarget>(TTarget instance, int methodMetadataIndex, int instrumentationVersion)
         {
             if (!MethodMetadataCollection.Instance.IndexExists(methodMetadataIndex))
             {
-                Log.Warning("BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {Type}, instance type name = {Name}, methodMetadaId = {MethodMetadataIndex}, instrumentationSequence = {InstrumentationSequence}", new object[] { typeof(TTarget), instance?.GetType().Name, methodMetadataIndex, instrumentationSequence });
+                Log.Warning("BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {Type}, instance type name = {Name}, methodMetadaId = {MethodMetadataIndex}, instrumentationVersion = {InstrumentationVersion}", new object[] { typeof(TTarget), instance?.GetType().Name, methodMetadataIndex, instrumentationVersion });
                 return CreateInvalidatedDebuggerStates();
             }
 
@@ -40,9 +40,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
             var probesIds = methodMetadataInfo.ProbeIds;
             var probeMetadataIndices = methodMetadataInfo.ProbeMetadataIndices;
 
-            if (instrumentationSequence != methodMetadataInfo.InstrumentationSequence)
+            if (instrumentationVersion != methodMetadataInfo.InstrumentationVersion)
             {
-                Log.Warning("BeginMethod_StartMarker: The instrumentation sequence is different, received sequence: {InstrumentationSequence}, but the kept sequence is: {KeptSequenceNumber}", new object[] { instrumentationSequence, methodMetadataInfo.InstrumentationSequence });
+                Log.Warning("BeginMethod_StartMarker: The instrumentation version is different, received version: {InstrumentationVersion}, but the kept version is: {KeptVersionNumber}", new object[] { instrumentationVersion, methodMetadataInfo.InstrumentationVersion });
                 return CreateInvalidatedDebuggerStates();
             }
 
@@ -190,10 +190,10 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// Used to clean up resources. Called upon entering the (instrumentation's) finally block.
         /// </summary>
         /// <param name="methodMetadataIndex">The unique index of the method.</param>
-        /// <param name="instrumentationSequence">The unique identifier of the instrumentation.</param>
+        /// <param name="instrumentationVersion">The unique identifier of the instrumentation.</param>
         /// <param name="states">Debugger states</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Dispose(int methodMetadataIndex, int instrumentationSequence, ref MethodDebuggerState[] states)
+        public static void Dispose(int methodMetadataIndex, int instrumentationVersion, ref MethodDebuggerState[] states)
         {
             // Should clean up states array. E.g: If we retrieved it from an Object Pool, we should return it here.
             InstrumentationAllocator.ReturnArray(ref states);
