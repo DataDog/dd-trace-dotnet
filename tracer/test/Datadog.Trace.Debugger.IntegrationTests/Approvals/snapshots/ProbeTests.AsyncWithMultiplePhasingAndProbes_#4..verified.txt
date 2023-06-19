@@ -1,0 +1,79 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "107": {
+              "arguments": {
+                "calleeName": {
+                  "type": "String",
+                  "value": "Acc"
+                },
+                "num": {
+                  "type": "Int32",
+                  "value": "2"
+                }
+              },
+              "locals": {
+                "a": {
+                  "type": "Int32",
+                  "value": "6"
+                },
+                "i": {
+                  "type": "Int32",
+                  "value": "8"
+                },
+                "sum": {
+                  "type": "Int32",
+                  "value": "1120"
+                }
+              },
+              "staticFields": {
+                "ConditionEvaluatesToFalseJson": {
+                  "type": "String",
+                  "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"num\"},\r\n      {\"ref\": \"a\"}\r\n    ]\r\n}"
+                },
+                "ConditionEvaluatesToTrueJson": {
+                  "type": "String",
+                  "value": "{\r\n    \"lt\": [\r\n      {\"ref\": \"num\"},\r\n      {\"ref\": \"a\"}\r\n    ]\r\n}"
+                },
+                "Json": {
+                  "type": "String",
+                  "value": "{\"ref\": \"a\"}"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "AsyncWithMultiplePhasingAndProbes.cs",
+            "lines": [
+              107
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Acc",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncWithMultiplePhasingAndProbes",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]
