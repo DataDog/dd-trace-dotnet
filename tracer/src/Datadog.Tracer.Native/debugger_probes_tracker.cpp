@@ -84,17 +84,17 @@ bool debugger::ProbesMetadataTracker::TryGetNextInstrumentedProbeIndex(const sha
      {
          const auto methodIdentifier = trace::MethodIdentifier(moduleId, methodId);
 
-         // Check if an index previously given
+         // Check if an index was previously assigned for this method
          const auto iter = probeMetadata->methodIndexMap.find(methodIdentifier);
          if (iter != probeMetadata->methodIndexMap.end() && iter->second > -1)
          {
-             // Exist
+             // An index was already assigned, so let's grab it
              probeIndex = iter->second;
          }
          else
          {
-             // Does not exist
-             // Try reuse existing index, if one is available
+             // An index was not yet assigned for this method.
+             // Try to reuse an existing index, if one is available, otherwise create a new one.
              if (!_freeProbeIndices.empty())
              {
                  probeIndex = _freeProbeIndices.front();

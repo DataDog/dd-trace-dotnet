@@ -15,7 +15,7 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.Debugger.Instrumentation
 {
     /// <summary>
-    /// MethodDebuggerInvoker for multiple probes scenario (where there are more than one _method_ probe).
+    /// MethodDebuggerInvoker for multiple probes scenario (where there is more than one _method_ probe).
     /// </summary>
     public static partial class MethodDebuggerInvoker
     {
@@ -39,13 +39,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
             ref var methodMetadataInfo = ref MethodMetadataCollection.Instance.Get(methodMetadataIndex);
             var probesIds = methodMetadataInfo.ProbeIds;
             var probeMetadataIndices = methodMetadataInfo.ProbeMetadataIndices;
-
-            if (instrumentationVersion != methodMetadataInfo.InstrumentationVersion)
-            {
-                Log.Warning("BeginMethod_StartMarker: The instrumentation version is different, received version: {InstrumentationVersion}, but the kept version is: {KeptVersionNumber}", new object[] { instrumentationVersion, methodMetadataInfo.InstrumentationVersion });
-                return CreateInvalidatedDebuggerStates();
-            }
-
             var states = InstrumentationAllocator.RentArray<MethodDebuggerState>(probesIds.Length);
 
             for (var stateIndex = 0; stateIndex < states.Length; stateIndex++)
@@ -187,7 +180,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         }
 
         /// <summary>
-        /// Used to clean up resources. Called upon entering the (instrumentation's) finally block.
+        /// Used to clean up resources. Called upon entering the instrumented code's finally block.
         /// </summary>
         /// <param name="methodMetadataIndex">The unique index of the method.</param>
         /// <param name="instrumentationVersion">The unique identifier of the instrumentation.</param>
