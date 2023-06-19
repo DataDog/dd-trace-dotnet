@@ -113,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler
                     Log.Debug("Enabling CallTarget integration definitions in native library.");
 
                     InstrumentationCategory enabledCategories = InstrumentationCategory.Tracing;
-                    if (Security.Instance.Settings.Enabled)
+                    if (Security.Instance.Enabled || Security.Instance.Settings.CanBeToggled)
                     {
                         Log.Debug("Enabling AppSec call target category");
                         enabledCategories |= InstrumentationCategory.AppSec;
