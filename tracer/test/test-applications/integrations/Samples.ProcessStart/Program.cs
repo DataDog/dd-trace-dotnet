@@ -93,7 +93,7 @@ namespace Samples.ProcessStart
             try
             {
                 // Test - Non-existing executable with UseShellExecute = false and Arguments = "arg1-false"
-                Process.Start(new ProcessStartInfo("nonexisting2-false.exe") { UseShellExecute = false, Arguments = "arg1-false" });
+                Process.Start(new ProcessStartInfo("nonexisting2-false.exe") { UseShellExecute = false, Arguments = "arg1-false test \"quoted string\" 'simple quoted' \"with a double \\\"quote inside" });
             }
             catch (Win32Exception) { }
 

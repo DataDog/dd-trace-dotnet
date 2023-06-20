@@ -119,8 +119,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                 var commandExec = new List<string> { filename };
                 if (!string.IsNullOrWhiteSpace(arguments))
                 {
-                    // Arguments are provided in a raw strings, we need to split them
-                    var split = arguments.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    // Arguments are provided in a raw strings, we need to lex them
+                    var split = SplitStringIntoArguments(arguments);
                     commandExec.AddRange(split);
                 }
                 else if (argumentList is not null)
@@ -169,6 +169,66 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 
             truncated = true;
             return value.Substring(0, maxLength);
+        }
+
+        private static List<string> SplitStringIntoArguments(string input)
+        {
+            var result = new List<string>();
+            var currentArgument = string.Empty;
+            var inSingleQuotes = false;
+            var inDoubleQuotes = false;
+            var escapeNextCharacter = false;
+
+            foreach (var currentChar in input)
+            {
+                if (escapeNextCharacter)
+                {
+                    currentArgument += currentChar;
+                    escapeNextCharacter = false;
+                }
+                else if (currentChar == '\\')
+                {
+                    escapeNextCharacter = true;
+                }
+                else if (currentChar == '"' && !inSingleQuotes)
+                {
+                    inDoubleQuotes = !inDoubleQuotes;
+                    if (!inDoubleQuotes)
+                    {
+                        result.Add(currentArgument);
+                        currentArgument = string.Empty;
+                    }
+                }
+                else if (currentChar == '\'' && !inDoubleQuotes)
+                {
+                    inSingleQuotes = !inSingleQuotes;
+                    if (!inSingleQuotes)
+                    {
+                        result.Add(currentArgument);
+                        currentArgument = string.Empty;
+                    }
+                }
+                else if (currentChar == ' ' && !inSingleQuotes && !inDoubleQuotes)
+                {
+                    if (currentArgument.Length > 0)
+                    {
+                        result.Add(currentArgument);
+                        currentArgument = string.Empty;
+                    }
+                }
+                else
+                {
+                    currentArgument += currentChar;
+                }
+            }
+
+            // Add the last argument if it's not empty
+            if (currentArgument.Length > 0)
+            {
+                result.Add(currentArgument);
+            }
+
+            return result;
         }
     }
 }

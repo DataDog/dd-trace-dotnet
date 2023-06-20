@@ -69,7 +69,7 @@ Path=testPath
       cmd.environment_variables:
 Path=testPath
 ,
-      cmd.exec: ["nonexisting2-false.exe","arg1-false"],
+      cmd.exec: ["nonexisting2-false.exe","arg1-false","test","quoted string","simple quoted","with a double \"quote inside"],
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,

@@ -84,8 +84,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.AddSimpleScrubber("PATH=testPath", "Path=testPath");
 
 #if !NETCOREAPP3_1_OR_GREATER
-                // The collect command will have different spans depending on the dotnet version
-                // Because ArgumentList is not available in .NET Core 2.0 or .NET Framework
+                // The collect command will have different spans depending of the dotnet version
+                // ArgumentList is not available in .NET Core <=2.0 and .NET Framework
                 // and some tests are performed on ArgumentList
                 filename += ".netfxOrNetCore2";
 #endif
