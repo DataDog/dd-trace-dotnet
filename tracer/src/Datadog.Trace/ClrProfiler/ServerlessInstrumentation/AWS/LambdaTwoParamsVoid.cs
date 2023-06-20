@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(TTarget instance, TArg1 incomingEvent, TArg2 context)
         {
-            Serverless.Debug("OnMethodBeginOK - two params");
+            Serverless.Debug("OnMethodBeginOK - two params Void");
             return LambdaCommon.StartInvocationTwoParameters(RequestBuilder, incomingEvent, context);
         }
 
@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         /// <param name="state">Calltarget state value</param>
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
         {
-            Serverless.Debug("OnMethodEnd - two params");
+            Serverless.Debug("OnMethodEnd - two params void");
             return LambdaCommon.EndInvocationVoid(exception, state.Scope, RequestBuilder);
         }
     }
