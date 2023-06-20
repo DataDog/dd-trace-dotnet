@@ -95,7 +95,8 @@ public class StringBuilderAspects
         var initialLength = target?.Length ?? 0;
         var length = value?.Length ?? 0;
         // We want the null reference exception to be launched here if target is null
-        return StringBuilderModuleImpl.OnStringBuilderAppend(target!.Append(value), initialLength, value, length, 0, length);
+        var result = target!.Append(value);
+        return StringBuilderModuleImpl.OnStringBuilderAppend(result, initialLength, value, length, 0, length);
     }
 
 #if !NETFRAMEWORK
@@ -109,7 +110,8 @@ public class StringBuilderAspects
         var initialLength = target?.Length ?? 0;
         var length = value?.Length ?? 0;
         // We want the null reference exception to be launched here if target is null
-        return StringBuilderModuleImpl.OnStringBuilderAppend(target!.Append(value), initialLength, value, length, 0, length);
+        var result = target!.Append(value);
+        return StringBuilderModuleImpl.OnStringBuilderAppend(result, initialLength, value, length, 0, length);
     }
 #endif
 
@@ -124,7 +126,8 @@ public class StringBuilderAspects
     {
         var initialLength = target?.Length ?? 0;
         // We want the null reference exception to be launched here if target is null
-        return StringBuilderModuleImpl.OnStringBuilderAppend(target!.Append(value, startIndex, count), initialLength, value, value?.Length ?? 0, startIndex, count);
+        var result = target!.Append(value, startIndex, count);
+        return StringBuilderModuleImpl.OnStringBuilderAppend(result, initialLength, value, value?.Length ?? 0, startIndex, count);
     }
 
 #if !NETFRAMEWORK
@@ -141,9 +144,11 @@ public class StringBuilderAspects
         // We want the null reference exception to be launched here if target is null
         // netcore2.1 defines this overload, but not netstandard, so we have to call ToString()
 #if NETSTANDARD
-        return StringBuilderModuleImpl.OnStringBuilderAppend(target!.Append(value?.ToString(), startIndex, count), initialLength, value, value?.Length ?? 0, startIndex, count);
+        var result = target!.Append(value?.ToString(), startIndex, count);
+        return StringBuilderModuleImpl.OnStringBuilderAppend(result, initialLength, value, value?.Length ?? 0, startIndex, count);
 #else
-        return StringBuilderModuleImpl.OnStringBuilderAppend(target!.Append(value, startIndex, count), initialLength, value, value?.Length ?? 0, startIndex, count);
+        var result = target!.Append(value, startIndex, count);
+        return StringBuilderModuleImpl.OnStringBuilderAppend(result, initialLength, value, value?.Length ?? 0, startIndex, count);
 #endif
     }
 #endif
@@ -159,7 +164,8 @@ public class StringBuilderAspects
     {
         var initialLength = target?.Length ?? 0;
         // We want the null reference exception to be launched here if target is null
-        return StringBuilderModuleImpl.OnStringBuilderAppend(target!.Append(value, startIndex, charCount), initialLength, value, value?.Length ?? 0, startIndex, charCount);
+        var result = target!.Append(value, startIndex, charCount);
+        return StringBuilderModuleImpl.OnStringBuilderAppend(result, initialLength, value, value?.Length ?? 0, startIndex, charCount);
     }
 
     /// <summary>  StringBuilder.Append aspect </summary>
@@ -185,7 +191,8 @@ public class StringBuilderAspects
         }
 
         // We want the null reference exception to be launched here if target is null
-        return StringBuilderModuleImpl.OnStringBuilderAppend(target!.Append(value), initialLength, valueObject, length, 0, length);
+        var result = target!.Append(value);
+        return StringBuilderModuleImpl.OnStringBuilderAppend(result, initialLength, valueObject, length, 0, length);
     }
 
     /// <summary>  StringBuilder.Append aspect </summary>
@@ -214,7 +221,8 @@ public class StringBuilderAspects
         var length = value?.Length ?? 0;
         // We do not take into account the endline char because it is not tainted
         // We want the null reference exception to be launched here if target is null
-        return StringBuilderModuleImpl.OnStringBuilderAppend(target!.AppendLine(value), initialLength, value, length, 0, length);
+        var result = target!.AppendLine(value);
+        return StringBuilderModuleImpl.OnStringBuilderAppend(result, initialLength, value, length, 0, length);
     }
 
     /// <summary>  StringBuilder.AppendFormat aspect </summary>
