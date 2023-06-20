@@ -111,6 +111,7 @@ namespace iast
     {
         if (_fullName.size() == 0)
         {
+            std::lock_guard<std::mutex> lock(_fullNameMutex);
             _fullName = GetTypeName() + WStr("::") + _name;
             auto signature = GetSignature();
             if (signature != nullptr)
@@ -383,11 +384,18 @@ namespace iast
         //auto Profiler = module->Profiler;
         bool verify = true; // Profiler->VerifyIL();
         bool dump = true; // Profiler->DumpIL();
+
+        if (!DebugActiveProcess(GetCurrentProcessId()))
+        {
+            trace::Logger::Error("DebugActiveProcess failed with error ", GetLastError());
+        }
+
         if (verify || dump)
         {
             if (!_rewriter) 
             {
                 trace::Logger::Debug("MethodInfo::SetMethodIL -> No rewritter present. Creating one to verify new IL...");
+                
                 _rewriter = new ILRewriter(this);
                 if (FAILED(_rewriter->Import(pMethodIL)))
                 {

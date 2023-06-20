@@ -63,6 +63,9 @@ namespace iast
         virtual SignatureInfo* GetSignature();
         ULONG GetParameterCount();
         CorElementType GetReturnCorType();
+
+    private:
+        std::mutex _fullNameMutex;
     };
 
     class MethodSpec : public MemberRefInfo

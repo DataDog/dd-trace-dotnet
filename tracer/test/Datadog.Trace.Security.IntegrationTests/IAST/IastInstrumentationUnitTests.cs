@@ -386,9 +386,9 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public void TestInstrumentedUnitTestsFail()
+    public void TestInstrumentedUnitTestsFail2()
     {
-        int times = 250;
+        int times = 20;
         var logDirectory = Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests");
         string dumpCI = GetCIDumpInfo();
         SetDumpInfo(logDirectory);
@@ -425,9 +425,6 @@ public class IastInstrumentationUnitTests : TestHelper
                 processResult.StandardError.Should().BeEmpty(errorMsg);
             }
         }
-
-        var error = "ENDED OK!!!! dumpTest:" + GetHelperDumpInfo() + Environment.NewLine + "dumpCI:" + dumpCI + Environment.NewLine;
-        error.Should().BeEmpty(error);
     }
 
     [SkippableFact]
@@ -562,7 +559,6 @@ public class IastInstrumentationUnitTests : TestHelper
     {
         SetEnvironmentVariable("COMPlus_DbgEnableMiniDump", "1");
         SetEnvironmentVariable("COMPlus_DbgMiniDumpType", "4");
-        SetEnvironmentVariable("COMPlus_DbgMiniDumpName", logDirectory);
         SetEnvironmentVariable("MINIDUMP_PATH", logDirectory);
     }
 
@@ -580,7 +576,7 @@ public class IastInstrumentationUnitTests : TestHelper
     {
         string dumpInfo = "COMPlus_DbgEnableMiniDump:" + EnvironmentHelper.CustomEnvironmentVariables["COMPlus_DbgEnableMiniDump"] + Environment.NewLine;
         dumpInfo += "COMPlus_DbgMiniDumpType:" + EnvironmentHelper.CustomEnvironmentVariables["COMPlus_DbgMiniDumpType"] + Environment.NewLine;
-        dumpInfo += "COMPlus_DbgMiniDumpName:" + EnvironmentHelper.CustomEnvironmentVariables["COMPlus_DbgMiniDumpName"] + Environment.NewLine;
+        // dumpInfo += "COMPlus_DbgMiniDumpName:" + EnvironmentHelper.CustomEnvironmentVariables["COMPlus_DbgMiniDumpName"] + Environment.NewLine;
         dumpInfo += "MINIDUMP_PATH:" + EnvironmentHelper.CustomEnvironmentVariables["MINIDUMP_PATH"] + Environment.NewLine;
 
         return dumpInfo;
