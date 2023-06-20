@@ -64,6 +64,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         CustomSamplingRules = "[{\"sample_rate\":0.1}]",
                         ServiceNameMapping = "[{\"from_name\":\"foo\", \"to_name\":\"bar\"}]",
                         TraceHeaderTags = "[{ \"header\": \"User-Agent\", \"tag_name\": \"http.user_agent\" }]"
+                    },
+                    new Config
+                    {
+                        RuntimeMetricsEnabled = true,
+                        DebugLogsEnabled = true,
+                        DataStreamsEnabled = true,
+                        LogsInjectionEnabled = true,
+                        SpanSamplingRules = "[{\"service\": \"cart*\"}]",
+                        TraceSampleRate = .5,
+                        CustomSamplingRules = "[{\"sample_rate\":0.1}]",
+                        ServiceNameMapping = "foo:bar",
+                        TraceHeaderTags = "User-Agent:http_user_agent"
                     });
 
                 await UpdateAndValidateConfig(
@@ -77,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         LogsInjectionEnabled = false,
                         SpanSamplingRules = string.Empty,
                         TraceSampleRate = null,
-                        CustomSamplingRules = string.Empty
+                        CustomSamplingRules = string.Empty,
                     });
             }
             finally
@@ -163,11 +175,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var json = JObject.Parse(match.Groups["diagnosticLog"].Value);
 
-            static string FlattenJsonDictionary(string json)
+            static string FlattenJsonArray(JToken json)
             {
-                var dictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+                if (json is JArray array)
+                {
+                    return string.Join(";", array);
+                }
 
-                return new JArray(dictionary.Select(kvp => $"{kvp.Key}:{kvp.Value}")).ToString();
+                return string.Empty;
             }
 
             json["runtime_metrics_enabled"]?.Value<bool>().Should().Be(expectedConfig.RuntimeMetricsEnabled);
@@ -177,8 +192,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             json["sampling_rules"]?.Value<string>().Should().Be(expectedConfig.CustomSamplingRules);
             json["span_sampling_rules"]?.Value<string>().Should().Be(expectedConfig.SpanSamplingRules);
             json["data_streams_enabled"]?.Value<bool>().Should().Be(expectedConfig.DataStreamsEnabled);
-            json["header_tags"]?.Value<string>().Should().Be(FlattenJsonDictionary(expectedConfig.TraceHeaderTags));
-            json["service_mapping"]?.Value<string>().Should().Be(FlattenJsonDictionary(expectedConfig.ServiceNameMapping));
+            FlattenJsonArray(json["header_tags"]).Should().Be(expectedConfig.TraceHeaderTags ?? string.Empty);
+            FlattenJsonArray(json["service_mapping"]).Should().Be(expectedConfig.ServiceNameMapping ?? string.Empty);
         }
 
         private void AssertConfigurationChanged(ConcurrentStack<object> events, Config config)

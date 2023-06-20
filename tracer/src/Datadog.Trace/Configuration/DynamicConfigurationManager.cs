@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -110,36 +111,50 @@ namespace Datadog.Trace.Configuration
                 return Enumerable.Empty<ApplyDetails>();
             }
 
-            IConfigurationSource configurationSource;
-
-            if (apmLibrary.Count == 1)
-            {
-                configurationSource = new DynamicConfigConfigurationSource(Encoding.UTF8.GetString(apmLibrary[0].Contents), ConfigurationOrigins.RemoteConfig);
-            }
-            else
-            {
-                var compositeConfigurationSource = new CompositeConfigurationSourceInternal();
-
-                foreach (var item in apmLibrary)
-                {
-                    compositeConfigurationSource.AddInternal(new DynamicConfigConfigurationSource(Encoding.UTF8.GetString(item.Contents), ConfigurationOrigins.RemoteConfig));
-                }
-
-                configurationSource = compositeConfigurationSource;
-            }
-
-            var configurationBuilder = new ConfigurationBuilder(configurationSource, TelemetryFactory.Config);
-
-            OnConfigurationChanged(configurationBuilder);
-
             var result = new ApplyDetails[apmLibrary.Count];
 
-            for (int i = 0; i < apmLibrary.Count; i++)
+            try
             {
-                result[i] = ApplyDetails.FromOk(apmLibrary[i].Path.Path);
-            }
+                IConfigurationSource configurationSource;
 
-            return result;
+                if (apmLibrary.Count == 1)
+                {
+                    configurationSource = new DynamicConfigConfigurationSource(Encoding.UTF8.GetString(apmLibrary[0].Contents), ConfigurationOrigins.RemoteConfig);
+                }
+                else
+                {
+                    var compositeConfigurationSource = new CompositeConfigurationSourceInternal();
+
+                    foreach (var item in apmLibrary)
+                    {
+                        compositeConfigurationSource.AddInternal(new DynamicConfigConfigurationSource(Encoding.UTF8.GetString(item.Contents), ConfigurationOrigins.RemoteConfig));
+                    }
+
+                    configurationSource = compositeConfigurationSource;
+                }
+
+                var configurationBuilder = new ConfigurationBuilder(configurationSource, TelemetryFactory.Config);
+
+                OnConfigurationChanged(configurationBuilder);
+
+                for (int i = 0; i < apmLibrary.Count; i++)
+                {
+                    result[i] = ApplyDetails.FromOk(apmLibrary[i].Path.Path);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while applying dynamic configuration");
+
+                for (int i = 0; i < apmLibrary.Count; i++)
+                {
+                    result[i] = ApplyDetails.FromError(apmLibrary[i].Path.Path, ex.ToString());
+                }
+
+                return result;
+            }
         }
     }
 }
