@@ -422,9 +422,7 @@ public class IastInstrumentationUnitTests : TestHelper
                 var errorMsg = "dumpTest: " + dumpTest + Environment.NewLine + "dumpCI:" + dumpCI + Environment.NewLine +
                     "arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput;
 
-                var clrError = processResult.StandardError.Contains("Internal CLR error");
-
-                clrError.Should().BeFalse(errorMsg);
+                processResult.StandardError.Should().BeEmpty(errorMsg);
             }
         }
 
