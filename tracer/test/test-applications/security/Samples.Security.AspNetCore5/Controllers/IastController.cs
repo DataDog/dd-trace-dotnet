@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Samples.Security.Data;
 
@@ -234,6 +235,45 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return Content("The provided file could not be opened");
             }
+        }
+
+        [HttpGet("GetInsecureCookie")]
+        [Route("GetInsecureCookie")]
+        public IActionResult GetInsecureCookie()
+        {
+            var cookieOptions = new CookieOptions();
+            cookieOptions.Secure = false;
+            Response.Cookies.Append("insecureKey", "insecureValue", cookieOptions);
+            var cookieOptionsSafe = new CookieOptions();
+            cookieOptionsSafe.Secure = true;
+            Response.Cookies.Append("SecureKey", "SecureValue", cookieOptionsSafe);
+            return Content("Sending InsecureCookie");
+        }
+
+        [HttpGet("NoHttpOnlyCookie")]
+        [Route("NoHttpOnlyCookie")]
+        public IActionResult NoHttpOnlyCookie()
+        {
+            var cookieOptions = new CookieOptions();
+            cookieOptions.HttpOnly = false;
+            Response.Cookies.Append("NoHttpOnlyKey", "NoHttpOnlyValue", cookieOptions);
+            var cookieOptionsSafe = new CookieOptions();
+            cookieOptionsSafe.HttpOnly = true;
+            Response.Cookies.Append("HttpOnlyKey", "HttpOnlyValue", cookieOptionsSafe);
+            return Content("Sending NoHttpOnlyCookie");
+        }
+
+        [HttpGet("NoSameSiteCookie")]
+        [Route("NoSameSiteCookie")]
+        public IActionResult NoSameSiteCookie()
+        {
+            var cookieOptions = new CookieOptions();
+            cookieOptions.SameSite = SameSiteMode.None;
+            Response.Cookies.Append("NoSameSiteKey", "NoSameSiteValue", cookieOptions);
+            var cookieOptionsSafe = new CookieOptions();
+            cookieOptionsSafe.SameSite = SameSiteMode.Strict;
+            Response.Cookies.Append("SameSiteKey", "SameSiteValue", cookieOptionsSafe);
+            return Content("Sending NoSameSiteCookie");
         }
 
         private ActionResult ExecuteQuery(string query)
