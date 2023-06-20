@@ -138,7 +138,7 @@ internal static class StringBuilderModuleImpl
 
             Range[]? valueToInsertRanges;
 
-            if (valueToInsertCharCount > 0 && valueToInsert is char[] valueToInsertArray)
+            if (valueToInsertCharCount > 0)
             {
                 valueToInsertRanges = GetSubRange(valueToInsertIndex, valueToInsertCharCount, taintedValue);
             }
