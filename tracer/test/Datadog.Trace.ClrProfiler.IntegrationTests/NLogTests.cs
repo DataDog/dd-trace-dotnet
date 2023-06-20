@@ -52,8 +52,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var minMdc = new Version("4.0.0");
             foreach (var item in PackageVersions.NLog)
             {
-                if (item.Length < 1) { continue; }
-
                 var version = (string)item[0] == string.Empty ?
                                   new Version("5.0.0") : // DEFAULT_SAMPLES
                                   new Version((string)item[0]);
