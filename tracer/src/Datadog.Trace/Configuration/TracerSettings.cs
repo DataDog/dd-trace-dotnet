@@ -520,7 +520,7 @@ namespace Datadog.Trace.Configuration
             PublicApiUsage.TracerSettings_MaxTracesSubmittedPerSecond_Get,
             PublicApiUsage.TracerSettings_MaxTracesSubmittedPerSecond_Set)]
 #pragma warning disable CS0618
-        [ConfigKey(ConfigurationKeys.MaxTracesSubmittedPerSecond)]
+        [ConfigKey(ConfigurationKeys.TraceRateLimit)]
 #pragma warning restore CS0618
         internal int MaxTracesSubmittedPerSecondInternal { get; private set; }
 

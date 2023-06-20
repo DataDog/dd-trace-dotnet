@@ -10,8 +10,8 @@ namespace Datadog.Trace.Telemetry.Transports;
 
 internal class AgentlessTelemetryTransport : JsonTelemetryTransport
 {
-    public AgentlessTelemetryTransport(IApiRequestFactory requestFactory)
-        : base(requestFactory)
+    public AgentlessTelemetryTransport(IApiRequestFactory requestFactory, bool debugEnabled)
+        : base(requestFactory, debugEnabled)
     {
     }
 
