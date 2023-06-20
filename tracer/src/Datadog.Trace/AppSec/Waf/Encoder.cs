@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -21,6 +22,7 @@ namespace Datadog.Trace.AppSec.Waf
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Encoder));
         private static readonly int ObjectStructSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
+        internal static readonly UnmanagedMemoryPool Pool = new(WafConstants.MaxStringLength, 150);
 
         public static ObjType DecodeArgsType(DDWAF_OBJ_TYPE t)
         {
@@ -140,9 +142,9 @@ namespace Datadog.Trace.AppSec.Waf
             return value;
         }
 
-        public static DdwafObjectStruct Encode2(object? o, List<GCHandle> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = false)
+        public static DdwafObjectStruct Encode2(object? o, List<GCHandle> argToFree, List<IntPtr> argToFree2, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = false)
         {
-            DdwafObjectStruct ProcessKeyValuePairs(System.Collections.IEnumerable enumerableDic, Func<object, string?> getKey, Func<object, object?> getValue)
+            DdwafObjectStruct ProcessKeyValuePairs<T>(IEnumerable<T> enumerableDic, int count, Func<T, string?> getKey, Func<T, object?> getValue)
             {
                 var ddWafObjectMap = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
                 if (!string.IsNullOrEmpty(key))
@@ -164,7 +166,8 @@ namespace Datadog.Trace.AppSec.Waf
                     return ddWafObjectMap;
                 }
 
-                var children = new List<DdwafObjectStruct>();
+                var children = new DdwafObjectStruct[count < WafConstants.MaxContainerSize ? count : WafConstants.MaxContainerSize];
+                var idx = 0;
                 foreach (var keyValue in enumerableDic)
                 {
                     var key = getKey(keyValue!);
@@ -174,27 +177,36 @@ namespace Datadog.Trace.AppSec.Waf
                         continue;
                     }
 
-                    var result = Encode2(getValue(keyValue!), argToFree, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
-                    children.Add(result);
-                    if (children.Count == WafConstants.MaxContainerSize)
+                    var result = Encode2(getValue(keyValue!), argToFree, argToFree2, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
+                    children[idx++] = result;
+                    if (idx == WafConstants.MaxContainerSize)
                     {
                         Log.Warning<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
                         break;
                     }
                 }
 
-                AddToArray(ref ddWafObjectMap, children.ToArray());
+                AddToArray(ref ddWafObjectMap, children);
 
                 return ddWafObjectMap;
             }
 
-            IntPtr ConvertToUtf8(string s)
+            unsafe IntPtr ConvertToUtf8(string s)
             {
+#if NETCOREAPP3_1_OR_GREATER
+                var unmanagedMemory = Pool.Rent();
+                var destination = new Span<byte>((void*)unmanagedMemory, WafConstants.MaxStringLength);
+                var writtenBytes = Encoding.UTF8.GetBytes(s, destination);
+                destination.Slice(0, writtenBytes + 1)[^1] = (byte)'\0';
+                argToFree2.Add(unmanagedMemory);
+                return unmanagedMemory;
+#else
                 var bytes = Encoding.UTF8.GetBytes(s);
                 var pinnedArray = GCHandle.Alloc(bytes, GCHandleType.Pinned);
                 argToFree.Add(pinnedArray);
                 var pointer = Marshal.UnsafeAddrOfPinnedArrayElement(bytes, 0);
                 return pointer;
+#endif
             }
 
             void AddToArray(ref DdwafObjectStruct map, params DdwafObjectStruct[] children)
@@ -250,26 +262,43 @@ namespace Datadog.Trace.AppSec.Waf
                     break;
 
                 case IEnumerable<KeyValuePair<string, object>> objDict:
-                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, obj => ((KeyValuePair<string, object>)obj).Key, obj => ((KeyValuePair<string, object>)obj).Value);
+                {
+                    var count = objDict is ICollection<KeyValuePair<string, object>> dct ? dct.Count : objDict.Count();
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, obj => obj.Key, obj => obj.Value);
                     break;
+                }
 
                 case IEnumerable<KeyValuePair<string, string>> objDict:
-                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, obj => ((KeyValuePair<string, string>)obj).Key, obj => ((KeyValuePair<string, string>)obj).Value);
+                {
+                    var count = objDict is ICollection<KeyValuePair<string, string>> dct ? dct.Count : objDict.Count();
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, obj => obj.Key, obj => obj.Value);
                     break;
+                }
 
                 case IEnumerable<KeyValuePair<string, JToken>> objDict:
-                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, obj => ((JProperty)obj).Name, obj => ((JProperty)obj).Value);
+                {
+                    var count = objDict is ICollection<KeyValuePair<string, JToken>> dct ? dct.Count : objDict.Count();
+                    // THE FOLLOWING NEEDS A FIX: CURRENTLY WE ARE USING THE (OBJECT) CASTING TO AVOID COMPILATION ERROR, BUT THIS WILL FAIL IN RUNTIME.
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, obj => ((JProperty)(object)obj).Name, obj => ((JProperty)(object)obj).Value);
                     break;
+                }
 
                 case IEnumerable<KeyValuePair<string, string[]>> objDict:
-                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, obj => ((KeyValuePair<string, string[]>)obj).Key, obj => ((KeyValuePair<string, string[]>)obj).Value);
+                {
+                    var count = objDict is ICollection<KeyValuePair<string, string[]>> dct ? dct.Count : objDict.Count();
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, obj => obj.Key, obj => obj.Value);
                     break;
+                }
 
                 case IEnumerable<KeyValuePair<string, List<string>>> objDict:
-                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, obj => ((KeyValuePair<string, List<string>>)obj).Key, obj => ((KeyValuePair<string, List<string>>)obj).Value);
+                {
+                    var count = objDict is ICollection<KeyValuePair<string, List<string>>> dct ? dct.Count : objDict.Count();
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, obj => obj.Key, obj => obj.Value);
                     break;
+                }
 
                 case System.Collections.IEnumerable list:
+                {
                     ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY };
                     if (!string.IsNullOrEmpty(key))
                     {
@@ -282,21 +311,43 @@ namespace Datadog.Trace.AppSec.Waf
                         break;
                     }
 
-                    var children = new List<DdwafObjectStruct>();
-                    foreach (var val in list)
+                    if (list is IList { Count: { } count } listInstance)
                     {
-                        if (children.Count == WafConstants.MaxContainerSize)
+                        var children = new DdwafObjectStruct[count];
+                        for (var idx = 0; idx < count; idx++)
                         {
-                            Log.Warning<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
-                            break;
+                            if (idx == WafConstants.MaxContainerSize)
+                            {
+                                Log.Warning<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
+                                break;
+                            }
+
+                            var result = Encode2(listInstance[idx], argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                            children[idx] = result;
                         }
 
-                        var result = Encode2(val, argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
-                        children.Add(result);
+                        AddToArray(ref ddwafObjectStruct, children);
+                    }
+                    else
+                    {
+                        var children = new List<DdwafObjectStruct>();
+                        foreach (var val in list)
+                        {
+                            if (children.Count == WafConstants.MaxContainerSize)
+                            {
+                                Log.Warning<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
+                                break;
+                            }
+
+                            var result = Encode2(val, argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                            children.Add(result);
+                        }
+
+                        AddToArray(ref ddwafObjectStruct, children.ToArray());
                     }
 
-                    AddToArray(ref ddwafObjectStruct, children.ToArray());
                     break;
+                }
 
                 default:
                     Log.Warning("Couldn't encode object of unknown type {Type}, falling back to ToString", o.GetType());

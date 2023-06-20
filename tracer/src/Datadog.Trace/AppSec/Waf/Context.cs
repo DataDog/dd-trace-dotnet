@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
@@ -31,6 +32,7 @@ namespace Datadog.Trace.AppSec.Waf
         private readonly List<IntPtr> _argCache3 = new();
         private readonly Stopwatch _stopwatch;
         private readonly WafLibraryInvoker _wafLibraryInvoker;
+        private readonly List<IntPtr> _utf8StringsList = new();
 
         private bool _disposed;
         private ulong _totalRuntimeOverRuns;
@@ -41,6 +43,7 @@ namespace Datadog.Trace.AppSec.Waf
             _contextHandle = contextHandle;
             _waf = waf;
             _wafLibraryInvoker = wafLibraryInvoker;
+            _utf8StringsList = new List<IntPtr>();
             _stopwatch = new Stopwatch();
         }
 
@@ -128,12 +131,19 @@ namespace Datadog.Trace.AppSec.Waf
 
             // not restart cause it's the total runtime over runs, and we run several * during request
             _stopwatch.Start();
-            var pwArgs = Encoder.Encode2(addresses, applySafetyLimits: true, argToFree: _argCache2);
 
             DDWAF_RET_CODE code;
             lock (_sync)
             {
-                code = _waf.Run(_contextHandle, ref pwArgs, ref retNative, timeoutMicroSeconds);
+                var pwArgs = Encoder.Encode2(addresses, applySafetyLimits: true, argToFree: _argCache2, argToFree2: _utf8StringsList);
+                code = WafRun(timeoutMicroSeconds, ref pwArgs, ref retNative);
+#if NETCOREAPP3_1_OR_GREATER
+                foreach (var nMem in _utf8StringsList)
+                {
+                    Encoder.Pool.Return(nMem);
+                }
+#endif
+                _utf8StringsList.Clear();
             }
 
             _stopwatch.Stop();
@@ -150,6 +160,12 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             return result;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private DDWAF_RET_CODE WafRun(ulong timeoutMicroSeconds, ref DdwafObjectStruct pwArgs, ref DdwafResultStruct retNative)
+        {
+            return _waf.Run(_contextHandle, ref pwArgs, ref retNative, timeoutMicroSeconds);
         }
 
         public IResult? Run(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
