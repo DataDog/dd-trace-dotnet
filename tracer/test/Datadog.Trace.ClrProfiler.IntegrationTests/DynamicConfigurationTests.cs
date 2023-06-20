@@ -55,26 +55,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     logEntryWatcher,
                     new Config
                     {
-                        RuntimeMetricsEnabled = true,
-                        DebugLogsEnabled = true,
-                        DataStreamsEnabled = true,
+                        // RuntimeMetricsEnabled = true,
+                        // DebugLogsEnabled = true,
+                        // DataStreamsEnabled = true,
                         LogInjectionEnabled = true,
-                        SpanSamplingRules = "[{\"service\": \"cart*\"}]",
+                        // SpanSamplingRules = "[{\"service\": \"cart*\"}]",
                         TraceSampleRate = .5,
-                        CustomSamplingRules = "[{\"sample_rate\":0.1}]",
-                        ServiceNameMapping = "[{\"from_key\":\"foo\", \"to_name\":\"bar\"}]",
+                        // CustomSamplingRules = "[{\"sample_rate\":0.1}]",
+                        // ServiceNameMapping = "[{\"from_key\":\"foo\", \"to_name\":\"bar\"}]",
                         TraceHeaderTags = "[{ \"header\": \"User-Agent\", \"tag_name\": \"http.user_agent\" }]"
                     },
                     new Config
                     {
-                        RuntimeMetricsEnabled = true,
-                        DebugLogsEnabled = true,
-                        DataStreamsEnabled = true,
+                        // RuntimeMetricsEnabled = true,
+                        // DebugLogsEnabled = true,
+                        // DataStreamsEnabled = true,
                         LogInjectionEnabled = true,
-                        SpanSamplingRules = "[{\"service\": \"cart*\"}]",
+                        // SpanSamplingRules = "[{\"service\": \"cart*\"}]",
                         TraceSampleRate = .5,
-                        CustomSamplingRules = "[{\"sample_rate\":0.1}]",
-                        ServiceNameMapping = "foo:bar",
+                        // CustomSamplingRules = "[{\"sample_rate\":0.1}]",
+                        // ServiceNameMapping = "foo:bar",
                         TraceHeaderTags = "User-Agent:http_user_agent"
                     });
 
@@ -83,13 +83,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     logEntryWatcher,
                     new Config
                     {
-                        RuntimeMetricsEnabled = false,
-                        DebugLogsEnabled = false,
-                        DataStreamsEnabled = false,
+                        // RuntimeMetricsEnabled = false,
+                        // DebugLogsEnabled = false,
+                        // DataStreamsEnabled = false,
                         LogInjectionEnabled = false,
-                        SpanSamplingRules = string.Empty,
+                        // SpanSamplingRules = string.Empty,
                         TraceSampleRate = null,
-                        CustomSamplingRules = string.Empty,
+                        // CustomSamplingRules = string.Empty,
                     });
             }
             finally
@@ -185,15 +185,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 return string.Empty;
             }
 
-            json["runtime_metrics_enabled"]?.Value<bool>().Should().Be(expectedConfig.RuntimeMetricsEnabled);
-            json["debug"]?.Value<bool>().Should().Be(expectedConfig.DebugLogsEnabled);
+            // json["runtime_metrics_enabled"]?.Value<bool>().Should().Be(expectedConfig.RuntimeMetricsEnabled);
+            // json["debug"]?.Value<bool>().Should().Be(expectedConfig.DebugLogsEnabled);
             json["log_injection_enabled"]?.Value<bool>().Should().Be(expectedConfig.LogInjectionEnabled);
             json["sample_rate"]?.Value<double?>().Should().Be(expectedConfig.TraceSampleRate);
-            json["sampling_rules"]?.Value<string>().Should().Be(expectedConfig.CustomSamplingRules);
-            json["span_sampling_rules"]?.Value<string>().Should().Be(expectedConfig.SpanSamplingRules);
-            json["data_streams_enabled"]?.Value<bool>().Should().Be(expectedConfig.DataStreamsEnabled);
+            // json["sampling_rules"]?.Value<string>().Should().Be(expectedConfig.CustomSamplingRules);
+            // json["span_sampling_rules"]?.Value<string>().Should().Be(expectedConfig.SpanSamplingRules);
+            // json["data_streams_enabled"]?.Value<bool>().Should().Be(expectedConfig.DataStreamsEnabled);
             FlattenJsonArray(json["header_tags"]).Should().Be(expectedConfig.TraceHeaderTags ?? string.Empty);
-            FlattenJsonArray(json["service_mapping"]).Should().Be(expectedConfig.ServiceNameMapping ?? string.Empty);
+            // FlattenJsonArray(json["service_mapping"]).Should().Be(expectedConfig.ServiceNameMapping ?? string.Empty);
         }
 
         private void AssertConfigurationChanged(ConcurrentStack<object> events, Config config)
@@ -224,15 +224,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var expectedKeys = new (string Key, object Value)[]
             {
-                (ConfigurationKeys.RuntimeMetricsEnabled, config.RuntimeMetricsEnabled),
-                (ConfigurationKeys.DebugEnabled, config.DebugLogsEnabled),
+                // (ConfigurationKeys.RuntimeMetricsEnabled, config.RuntimeMetricsEnabled),
+                // (ConfigurationKeys.DebugEnabled, config.DebugLogsEnabled),
                 (ConfigurationKeys.LogsInjectionEnabled, config.LogInjectionEnabled),
                 (ConfigurationKeys.GlobalSamplingRate, config.TraceSampleRate),
-                (ConfigurationKeys.CustomSamplingRules, config.CustomSamplingRules),
-                (ConfigurationKeys.SpanSamplingRules, config.SpanSamplingRules),
-                (ConfigurationKeys.DataStreamsMonitoring.Enabled, config.DataStreamsEnabled),
+                // (ConfigurationKeys.CustomSamplingRules, config.CustomSamplingRules),
+                // (ConfigurationKeys.SpanSamplingRules, config.SpanSamplingRules),
+                // (ConfigurationKeys.DataStreamsMonitoring.Enabled, config.DataStreamsEnabled),
                 (ConfigurationKeys.HeaderTags, config.TraceHeaderTags == null ? string.Empty : JToken.Parse(config.TraceHeaderTags).ToString()),
-                (ConfigurationKeys.ServiceNameMappings, config.ServiceNameMapping == null ? string.Empty : JToken.Parse(config.ServiceNameMapping).ToString())
+                // (ConfigurationKeys.ServiceNameMappings, config.ServiceNameMapping == null ? string.Empty : JToken.Parse(config.ServiceNameMapping).ToString())
             };
 
             foreach (var (key, value) in expectedKeys)
@@ -270,11 +270,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         internal record Config
         {
-            [JsonProperty("runtime_metrics_enabled")]
-            public bool RuntimeMetricsEnabled { get; init; }
+            // [JsonProperty("runtime_metrics_enabled")]
+            // public bool RuntimeMetricsEnabled { get; init; }
 
-            [JsonProperty("tracing_debug")]
-            public bool DebugLogsEnabled { get; init; }
+            // [JsonProperty("tracing_debug")]
+            // public bool DebugLogsEnabled { get; init; }
 
             [JsonProperty("log_injection_enabled")]
             public bool LogInjectionEnabled { get; init; }
@@ -282,22 +282,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             [JsonProperty("tracing_sampling_rate")]
             public double? TraceSampleRate { get; init; }
 
-            [JsonProperty("tracing_sampling_rules")]
-            public string CustomSamplingRules { get; init; }
+            // [JsonProperty("tracing_sampling_rules")]
+            // public string CustomSamplingRules { get; init; }
 
-            [JsonProperty("span_sampling_rules")]
-            public string SpanSamplingRules { get; init; }
+            // [JsonProperty("span_sampling_rules")]
+            // public string SpanSamplingRules { get; init; }
 
-            [JsonProperty("data_streams_enabled")]
-            public bool DataStreamsEnabled { get; init; }
+            // [JsonProperty("data_streams_enabled")]
+            // public bool DataStreamsEnabled { get; init; }
 
             [JsonProperty("tracing_header_tags")]
             [JsonConverter(typeof(PlainJsonStringConverter))]
             public string TraceHeaderTags { get; init; }
 
-            [JsonProperty("tracing_service_mapping")]
-            [JsonConverter(typeof(PlainJsonStringConverter))]
-            public string ServiceNameMapping { get; init; }
+            // [JsonProperty("tracing_service_mapping")]
+            // [JsonConverter(typeof(PlainJsonStringConverter))]
+            // public string ServiceNameMapping { get; init; }
         }
     }
 }

@@ -61,22 +61,22 @@ namespace Datadog.Trace.Configuration
             var oldSettings = Tracer.Instance.Settings;
 
             var headerTags = TracerSettings.InitializeHeaderTags(settings, ConfigurationKeys.HeaderTags, oldSettings.HeaderTagsNormalizationFixEnabled);
-            var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(settings, ConfigurationKeys.ServiceNameMappings);
+            // var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(settings, ConfigurationKeys.ServiceNameMappings);
 
             var dynamicSettings = new ImmutableDynamicSettings
             {
-                RuntimeMetricsEnabled = settings.WithKeys(ConfigurationKeys.RuntimeMetricsEnabled).AsBool(),
-                DataStreamsMonitoringEnabled = settings.WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled).AsBool(),
-                CustomSamplingRules = settings.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString(),
+                // RuntimeMetricsEnabled = settings.WithKeys(ConfigurationKeys.RuntimeMetricsEnabled).AsBool(),
+                // DataStreamsMonitoringEnabled = settings.WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled).AsBool(),
+                // CustomSamplingRules = settings.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString(),
                 GlobalSamplingRate = settings.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble(),
-                SpanSamplingRules = settings.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString(),
+                // SpanSamplingRules = settings.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString(),
                 LogsInjectionEnabled = settings.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool(),
                 HeaderTags = headerTags == null ? null : new ReadOnlyDictionary<string, string>(headerTags),
-                ServiceNameMappings = serviceNameMappings == null ? null : new ReadOnlyDictionary<string, string>(serviceNameMappings)
+                // ServiceNameMappings = serviceNameMappings == null ? null : new ReadOnlyDictionary<string, string>(serviceNameMappings)
             };
 
             // Needs to be done before returning, to feed the value to the telemetry
-            var debugLogsEnabled = settings.WithKeys(ConfigurationKeys.DebugEnabled).AsBool();
+            // var debugLogsEnabled = settings.WithKeys(ConfigurationKeys.DebugEnabled).AsBool();
 
             if (dynamicSettings.Equals(oldSettings.DynamicSettings))
             {
@@ -88,6 +88,7 @@ namespace Datadog.Trace.Configuration
 
             var newSettings = oldSettings with { DynamicSettings = dynamicSettings };
 
+            /*
             if (debugLogsEnabled != null && debugLogsEnabled.Value != GlobalSettings.Instance.DebugEnabled)
             {
                 GlobalSettings.SetDebugEnabledInternal(debugLogsEnabled.Value);
@@ -95,6 +96,7 @@ namespace Datadog.Trace.Configuration
 
                 NativeMethods.UpdateSettings(new[] { ConfigurationKeys.DebugEnabled }, new[] { debugLogsEnabled.Value ? "1" : "0" });
             }
+            */
 
             Tracer.ConfigureInternal(newSettings);
         }

@@ -8,7 +8,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -16,19 +15,17 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
 {
     internal class DynamicConfigConfigurationSource : JsonConfigurationSource
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DynamicConfigConfigurationSource));
-
         private static readonly IReadOnlyDictionary<string, string> Mapping = new Dictionary<string, string>
         {
-            { ConfigurationKeys.DebugEnabled, "tracing_debug" },
-            { ConfigurationKeys.RuntimeMetricsEnabled, "runtime_metrics_enabled" },
+            // { ConfigurationKeys.DebugEnabled, "tracing_debug" },
+            // { ConfigurationKeys.RuntimeMetricsEnabled, "runtime_metrics_enabled" },
             { ConfigurationKeys.HeaderTags, "tracing_header_tags" },
-            { ConfigurationKeys.ServiceNameMappings, "tracing_service_mapping" },
+            // { ConfigurationKeys.ServiceNameMappings, "tracing_service_mapping" },
             { ConfigurationKeys.LogsInjectionEnabled, "log_injection_enabled" },
-            { ConfigurationKeys.GlobalSamplingRate, "tracing_sample_rate" },
-            { ConfigurationKeys.CustomSamplingRules, "tracing_sampling_rules" },
-            { ConfigurationKeys.SpanSamplingRules, "span_sampling_rules" },
-            { ConfigurationKeys.DataStreamsMonitoring.Enabled, "data_streams_enabled" }
+            { ConfigurationKeys.GlobalSamplingRate, "tracing_sampling_rate" },
+            // { ConfigurationKeys.CustomSamplingRules, "tracing_sampling_rules" },
+            // { ConfigurationKeys.SpanSamplingRules, "span_sampling_rules" },
+            // { ConfigurationKeys.DataStreamsMonitoring.Enabled, "data_streams_enabled" }
         };
 
         internal DynamicConfigConfigurationSource(string json, ConfigurationOrigins origin)

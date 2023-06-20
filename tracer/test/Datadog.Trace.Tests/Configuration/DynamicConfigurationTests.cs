@@ -17,7 +17,7 @@ namespace Datadog.Trace.Tests.Configuration
     [TracerRestorer]
     public class DynamicConfigurationTests
     {
-        [Fact]
+        [Fact(Skip = "Disabled until service mapping is re-implemented in dynamic config")]
         public void ApplyServiceMappingToNewTraces()
         {
             var scope = Tracer.Instance.StartActive("Trace1");
