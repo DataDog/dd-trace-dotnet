@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Formatting;
 using Datadog.Trace.Configuration;
@@ -41,6 +42,41 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 yield return item.Concat(false);
                 yield return item.Concat(true);
+            }
+        }
+
+        public static IEnumerable<object[]> GetContextTestData()
+        {
+            var minScopeContext = new Version("5.0.0");
+            var minMdlc = new Version("4.6.0");
+            var minMdc = new Version("4.0.0");
+            foreach (var item in PackageVersions.NLog)
+            {
+                if (item.Length < 1) { continue; }
+
+                var version = (string)item[0] == string.Empty ?
+                                  new Version("5.0.0") : // DEFAULT_SAMPLES
+                                  new Version((string)item[0]);
+
+                if (version >= minScopeContext)
+                {
+                    yield return item.Concat(false).Concat("ScopeContext");
+                    yield return item.Concat(true).Concat("ScopeContext");
+                }
+
+                if (version >= minMdlc)
+                {
+                    yield return item.Concat(false).Concat("Mdlc");
+                    yield return item.Concat(true).Concat("Mdlc");
+                }
+
+                if (version >= minMdc)
+                {
+                    yield return item.Concat(false).Concat("Mdc");
+                    yield return item.Concat(true).Concat("Mdc");
+                }
+
+                // No need to test without context properties, as that is thoroughly covered in other tests
             }
         }
 
@@ -147,6 +183,46 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                .And.OnlyContain(x => !string.IsNullOrEmpty(x.TraceId))
                .And.OnlyContain(x => !string.IsNullOrEmpty(x.SpanId));
             VerifyInstrumentation(processResult.Process);
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetContextTestData))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        public void InjectsLogsWithContextWhenEnabled(string packageVersion, bool enableLogShipping, string context)
+        {
+            SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
+            SetInstrumentationVerification();
+            using var logsIntake = new MockLogsIntake();
+            if (enableLogShipping)
+            {
+                EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.NLog), nameof(InjectsLogsWhenEnabled));
+            }
+
+            var expectedCorrelatedTraceCount = 1;
+            var expectedCorrelatedSpanCount = 1;
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (var processResult = RunSampleAndWaitForExit(agent, context, packageVersion: packageVersion))
+            {
+                var spans = agent.WaitForSpans(1, 2500);
+                Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
+
+                var testFiles = GetTestFiles(packageVersion);
+                ValidateLogCorrelation(spans, testFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion);
+                VerifyInstrumentation(processResult.Process);
+
+                if (testFiles.Length < 2) { throw new Exception("This test is not meant to run on versions that don't support json"); }
+
+                var test = testFiles[1];
+                var logFilePath = Path.Combine(EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion), test.FileName);
+                var logs = GetLogFileContents(logFilePath);
+                foreach (var log in logs)
+                {
+                    log.Should().MatchRegex(string.Format(test.RegexFormat, "CustomContextKey", @"""CustomContextValue"""));
+                }
+            }
         }
 
         private LogFileTest[] GetTestFiles(string packageVersion, bool logsInjectionEnabled = true)

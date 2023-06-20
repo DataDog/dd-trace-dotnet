@@ -14,6 +14,14 @@ namespace LogsInjection.NLog
 {
     public class Program
     {
+        private enum ContextProperty
+        {
+            None,
+            Mdc,
+            Mdlc,
+            ScopeContext
+        }
+
         public static int Main(string[] args)
         {
             // This test creates and unloads an appdomain
@@ -33,6 +41,13 @@ namespace LogsInjection.NLog
             Console.WriteLine(" * Checking if the profiler is attached: {0}", isAttached);
 
             LoggingMethods.DeleteExistingLogs();
+
+            var contextProperty = ContextProperty.None;
+            if (args.Length > 0 && !ContextProperty.TryParse(args[0], true, out contextProperty))
+            {
+                throw new ArgumentException("Invalid context property '{0}'", args[0]);
+            }
+            Console.WriteLine("Context property injection: {0}", contextProperty);
 
             // Initialize NLog
             var appDirectory = Directory.GetParent(typeof(Program).Assembly.Location).FullName;
@@ -80,8 +95,38 @@ namespace LogsInjection.NLog
             }
 #endif
 
-            Logger Logger = LogManager.GetCurrentClassLogger();
-            return LoggingMethods.RunLoggingProcedure(Logger.Info);
+            return LoggingMethods.RunLoggingProcedure(message => AddToContextAndLog(message, contextProperty));
+        }
+
+        private static void AddToContextAndLog(string message, ContextProperty contextProperty)
+        {
+            string propKey = "CustomContextKey", propValue = "CustomContextValue";
+
+            switch (contextProperty)
+            {
+                case ContextProperty.ScopeContext:
+#if NLOG_5_0
+                    global::NLog.ScopeContext.PushProperty(propKey, propValue);
+                    break;
+#else
+                    throw new ArgumentException("Invalid context property '{0}' for this NLog version", contextProperty);
+#endif
+                case ContextProperty.Mdlc:
+#if NLOG_5_0 || NLOG_4_6
+                    global::NLog.MappedDiagnosticsLogicalContext.Set(propKey, propValue);
+                    break;
+#else
+                    throw new ArgumentException("Invalid context property '{0}' for this NLog version", contextProperty);
+#endif
+                case ContextProperty.Mdc:
+                    global::NLog.MappedDiagnosticsContext.Set(propKey, propValue);
+                    break;
+            }
+
+            Logger logger = LogManager.GetCurrentClassLogger();
+            logger.Info(message);
+
+            // No need to remove properties from context, as program is going to exit immediately
         }
     }
 
