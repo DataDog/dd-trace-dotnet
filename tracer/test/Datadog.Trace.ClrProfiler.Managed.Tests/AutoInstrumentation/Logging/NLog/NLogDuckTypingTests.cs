@@ -129,7 +129,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
             var typedProxy = ((Target)proxy);
             typedProxy.WriteAsyncLogEvent(logInfo); // should not throw
 
-#if (NLOG_45 || NLOG_50)
+#if (NLOG_50)
+            var proxyOfProxy = proxy.DuckCast<ITargetWithContextV5BaseProxy>();
+            proxyOfProxy.Should().NotBeNull();
+
+            var results = proxyOfProxy.GetAllProperties(logInfo.LogEvent.DuckCast<ILogEventInfoProxy>());
+            results.Should().NotBeNull();
+
+            target.SetBaseProxy(proxyOfProxy);
+#elif (NLOG_45)
             var proxyOfProxy = proxy.DuckCast<ITargetWithContextBaseProxy>();
             proxyOfProxy.Should().NotBeNull();
 

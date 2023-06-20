@@ -46,9 +46,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 if (_targetType?.GetProperty("IncludeScopeProperties") is not null)
                 {
                     _nLogVersion = NLogVersion.NLog50;
-                    _targetProxy = CreateNLogV5TargetProxy(new DirectSubmissionNLogV5Target(
-                                                               TracerManager.Instance.DirectLogSubmission.Sink,
-                                                               TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel));
+                    _targetProxy = CreateNLogTargetProxy(new DirectSubmissionNLogV5Target(
+                                                             TracerManager.Instance.DirectLogSubmission.Sink,
+                                                             TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel));
                     return;
                 }
 
@@ -88,12 +88,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             }
         }
 
-        internal enum NLogVersion
+        private enum NLogVersion
         {
-            NLog50 = 0,
-            NLog45 = 1,
-            NLog43To45 = 2,
-            NLogPre43 = 3,
+            NLog50,
+            NLog45,
+            NLog43To45,
+            NLogPre43,
         }
 
         public static void AddDatadogTarget(object loggingConfiguration)
@@ -303,7 +303,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         }
 
         // internal for testing
-        internal static object CreateNLogV5TargetProxy(DirectSubmissionNLogV5Target target)
+        internal static object CreateNLogTargetProxy(DirectSubmissionNLogV5Target target)
         {
             if (_targetType is null)
             {

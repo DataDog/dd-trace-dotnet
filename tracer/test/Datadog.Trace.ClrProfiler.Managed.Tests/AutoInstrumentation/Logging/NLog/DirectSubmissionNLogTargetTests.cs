@@ -80,6 +80,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
             var mdclKey = "some mdclKey";
             var mdclValue = "some mdclValue";
 #endif
+#if NLOG_50
+            var scKey = "some ScopeContextKey";
+            var scValue = "some ScopeContextValue";
+            IDisposable scProp = null;
+#endif
             // var nestedScope = "some nested name";
             // var nestedDictionary = new Dictionary<string, object> { { "nlcKey", 657 } };
             // var dictValues = nestedDictionary.First();
@@ -89,6 +94,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
 #if !NLOG_2
                 MappedDiagnosticsLogicalContext.Set(mdclKey, mdclValue);
 #endif
+#if NLOG_50
+                scProp = ScopeContext.PushProperty(scKey, scValue);
+#endif
                 logger.Error(messageTemplate, 123);
             }
             finally
@@ -96,6 +104,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
                 MappedDiagnosticsContext.Remove(mdcKey);
 #if !NLOG_2
                 MappedDiagnosticsLogicalContext.Remove(mdclKey);
+#endif
+#if NLOG_50
+                scProp.Dispose();
 #endif
             }
 
@@ -113,6 +124,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
 #if !NLOG_2
                .And.Contain(mdclKey)
                .And.Contain(mdclValue)
+#endif
+#if NLOG_50
+               .And.Contain(scKey)
+               .And.Contain(scValue)
 #endif
                // .And.Contain(nestedScope)
                // .And.Contain(dictValues.Key)
