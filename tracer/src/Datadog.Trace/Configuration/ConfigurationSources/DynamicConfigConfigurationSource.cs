@@ -24,7 +24,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
             { ConfigurationKeys.RuntimeMetricsEnabled, "runtime_metrics_enabled" },
             { ConfigurationKeys.HeaderTags, "tracing_header_tags" },
             { ConfigurationKeys.ServiceNameMappings, "tracing_service_mapping" },
-            { ConfigurationKeys.LogsInjectionEnabled, "logs_injection_enabled" },
+            { ConfigurationKeys.LogsInjectionEnabled, "log_injection_enabled" },
             { ConfigurationKeys.GlobalSamplingRate, "tracing_sample_rate" },
             { ConfigurationKeys.CustomSamplingRules, "tracing_sampling_rules" },
             { ConfigurationKeys.SpanSamplingRules, "span_sampling_rules" },
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
 
         private static IDictionary<string, string> ReadServiceMapping(JToken token)
         {
-            return ((JArray)token).ToDictionary(t => t["from_name"]!.Value<string>()!, t => t["to_name"]!.Value<string>()!);
+            return ((JArray)token).ToDictionary(t => t["from_key"]!.Value<string>()!, t => t["to_name"]!.Value<string>()!);
         }
 
         private protected override JToken? SelectToken(string key)

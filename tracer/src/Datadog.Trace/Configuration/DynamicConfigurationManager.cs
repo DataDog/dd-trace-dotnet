@@ -84,7 +84,7 @@ namespace Datadog.Trace.Configuration
                 return;
             }
 
-            Log.Debug("Applying new dynamic configuration");
+            Log.Information("Applying new dynamic configuration");
 
             var newSettings = oldSettings with { DynamicSettings = dynamicSettings };
 

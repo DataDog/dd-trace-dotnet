@@ -58,11 +58,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         RuntimeMetricsEnabled = true,
                         DebugLogsEnabled = true,
                         DataStreamsEnabled = true,
-                        LogsInjectionEnabled = true,
+                        LogInjectionEnabled = true,
                         SpanSamplingRules = "[{\"service\": \"cart*\"}]",
                         TraceSampleRate = .5,
                         CustomSamplingRules = "[{\"sample_rate\":0.1}]",
-                        ServiceNameMapping = "[{\"from_name\":\"foo\", \"to_name\":\"bar\"}]",
+                        ServiceNameMapping = "[{\"from_key\":\"foo\", \"to_name\":\"bar\"}]",
                         TraceHeaderTags = "[{ \"header\": \"User-Agent\", \"tag_name\": \"http.user_agent\" }]"
                     },
                     new Config
@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         RuntimeMetricsEnabled = true,
                         DebugLogsEnabled = true,
                         DataStreamsEnabled = true,
-                        LogsInjectionEnabled = true,
+                        LogInjectionEnabled = true,
                         SpanSamplingRules = "[{\"service\": \"cart*\"}]",
                         TraceSampleRate = .5,
                         CustomSamplingRules = "[{\"sample_rate\":0.1}]",
@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         RuntimeMetricsEnabled = false,
                         DebugLogsEnabled = false,
                         DataStreamsEnabled = false,
-                        LogsInjectionEnabled = false,
+                        LogInjectionEnabled = false,
                         SpanSamplingRules = string.Empty,
                         TraceSampleRate = null,
                         CustomSamplingRules = string.Empty,
@@ -187,7 +187,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             json["runtime_metrics_enabled"]?.Value<bool>().Should().Be(expectedConfig.RuntimeMetricsEnabled);
             json["debug"]?.Value<bool>().Should().Be(expectedConfig.DebugLogsEnabled);
-            json["log_injection_enabled"]?.Value<bool>().Should().Be(expectedConfig.LogsInjectionEnabled);
+            json["log_injection_enabled"]?.Value<bool>().Should().Be(expectedConfig.LogInjectionEnabled);
             json["sample_rate"]?.Value<double?>().Should().Be(expectedConfig.TraceSampleRate);
             json["sampling_rules"]?.Value<string>().Should().Be(expectedConfig.CustomSamplingRules);
             json["span_sampling_rules"]?.Value<string>().Should().Be(expectedConfig.SpanSamplingRules);
@@ -226,7 +226,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 (ConfigurationKeys.RuntimeMetricsEnabled, config.RuntimeMetricsEnabled),
                 (ConfigurationKeys.DebugEnabled, config.DebugLogsEnabled),
-                (ConfigurationKeys.LogsInjectionEnabled, config.LogsInjectionEnabled),
+                (ConfigurationKeys.LogsInjectionEnabled, config.LogInjectionEnabled),
                 (ConfigurationKeys.GlobalSamplingRate, config.TraceSampleRate),
                 (ConfigurationKeys.CustomSamplingRules, config.CustomSamplingRules),
                 (ConfigurationKeys.SpanSamplingRules, config.SpanSamplingRules),
@@ -276,10 +276,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             [JsonProperty("tracing_debug")]
             public bool DebugLogsEnabled { get; init; }
 
-            [JsonProperty("logs_injection_enabled")]
-            public bool LogsInjectionEnabled { get; init; }
+            [JsonProperty("log_injection_enabled")]
+            public bool LogInjectionEnabled { get; init; }
 
-            [JsonProperty("tracing_sample_rate")]
+            [JsonProperty("tracing_sampling_rate")]
             public double? TraceSampleRate { get; init; }
 
             [JsonProperty("tracing_sampling_rules")]
