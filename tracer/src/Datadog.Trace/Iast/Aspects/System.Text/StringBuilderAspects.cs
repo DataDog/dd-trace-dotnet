@@ -38,7 +38,7 @@ public class StringBuilderAspects
     /// <param name="capacity"> StringBuilder initial capacity </param>
     /// <returns> Nerw StringBuilder </returns>
     [AspectCtorReplace("System.Text.StringBuilder::.ctor(System.String,System.Int32)", AspectFilter.StringLiteral_1)]
-    public static StringBuilder Init(string value, int capacity)
+    public static StringBuilder Init(string? value, int capacity)
     {
         var result = new StringBuilder(value, capacity);
         PropagationModuleImpl.PropagateTaint(value, result);
@@ -52,7 +52,7 @@ public class StringBuilderAspects
     /// <param name="capacity"> StringBuilder initial capacity </param>
     /// <returns> Nerw StringBuilder </returns>
     [AspectCtorReplace("System.Text.StringBuilder::.ctor(System.String,System.Int32,System.Int32,System.Int32)", AspectFilter.StringLiteral_1)]
-    public static StringBuilder Init(string value, int startIndex, int length, int capacity)
+    public static StringBuilder Init(string? value, int startIndex, int length, int capacity)
     {
         var result = new StringBuilder(value, startIndex, length, capacity);
         StringBuilderModuleImpl.OnStringBuilderSubSequence(value, startIndex, length, result);
@@ -63,9 +63,9 @@ public class StringBuilderAspects
     /// <param name="target"> StringBuilder instance </param>
     /// <returns> instance.ToString() </returns>
     [AspectMethodReplace("System.Object::ToString()", "System.Text.StringBuilder")]
-    public static string ToString(StringBuilder target)
+    public static string ToString(StringBuilder? target)
     {
-        var result = target.ToString();
+        var result = target!.ToString();
         PropagationModuleImpl.PropagateTaint(target, result);
         PropagationModuleImpl.FixRangesIfNeeded(result);
         return result;
@@ -77,9 +77,9 @@ public class StringBuilderAspects
     /// <param name="length"> length parameter </param>
     /// <returns> instance.ToString() </returns>
     [AspectMethodReplace("System.Text.StringBuilder::ToString(System.Int32,System.Int32)")]
-    public static string ToString(StringBuilder target, int startIndex, int length)
+    public static string ToString(StringBuilder? target, int startIndex, int length)
     {
-        var result = target.ToString(startIndex, length);
+        var result = target!.ToString(startIndex, length);
         PropagationModuleImpl.OnStringSubSequence(target, startIndex, result, result.Length);
         PropagationModuleImpl.FixRangesIfNeeded(result);
         return result;
@@ -90,7 +90,7 @@ public class StringBuilderAspects
     /// <param name="value"> value parameter </param>
     /// <returns> instance.Append() </returns>
     [AspectMethodReplace("System.Text.StringBuilder::Append(System.String)", AspectFilter.StringLiteral_1)]
-    public static StringBuilder Append(StringBuilder target, string? value)
+    public static StringBuilder Append(StringBuilder? target, string? value)
     {
         var initialLength = target?.Length ?? 0;
         var length = value?.Length ?? 0;
@@ -104,7 +104,7 @@ public class StringBuilderAspects
     /// <param name="value"> value parameter </param>
     /// <returns> instance.Append() </returns>
     [AspectMethodReplace("System.Text.StringBuilder::Append(System.Text.StringBuilder)")]
-    public static StringBuilder Append(StringBuilder target, StringBuilder? value)
+    public static StringBuilder Append(StringBuilder? target, StringBuilder? value)
     {
         var initialLength = target?.Length ?? 0;
         var length = value?.Length ?? 0;
@@ -120,7 +120,7 @@ public class StringBuilderAspects
     /// <param name="count"> count parameter </param>
     /// <returns> instance.Append() </returns>
     [AspectMethodReplace("System.Text.StringBuilder::Append(System.String,System.Int32,System.Int32)", AspectFilter.StringLiteral_1)]
-    public static StringBuilder Append(StringBuilder target, string? value, int startIndex, int count)
+    public static StringBuilder Append(StringBuilder? target, string? value, int startIndex, int count)
     {
         var initialLength = target?.Length ?? 0;
         // We want the null reference exception to be launched here if target is null
@@ -135,7 +135,7 @@ public class StringBuilderAspects
     /// <param name="count"> count parameter </param>
     /// <returns> instance.Append() </returns>
     [AspectMethodReplace("System.Text.StringBuilder::Append(System.Text.StringBuilder,System.Int32,System.Int32)", AspectFilter.StringLiteral_1)]
-    public static StringBuilder Append(StringBuilder target, StringBuilder? value, int startIndex, int count)
+    public static StringBuilder Append(StringBuilder? target, StringBuilder? value, int startIndex, int count)
     {
         var initialLength = target?.Length ?? 0;
         // We want the null reference exception to be launched here if target is null
@@ -155,7 +155,7 @@ public class StringBuilderAspects
         /// <param name="charCount"> charCount parameter </param>
         /// <returns> instance.Append() </returns>
     [AspectMethodReplace("System.Text.StringBuilder::Append(System.Char[],System.Int32,System.Int32)")]
-    public static StringBuilder Append(StringBuilder target, char[]? value, int startIndex, int charCount)
+    public static StringBuilder Append(StringBuilder? target, char[]? value, int startIndex, int charCount)
     {
         var initialLength = target?.Length ?? 0;
         // We want the null reference exception to be launched here if target is null
@@ -167,7 +167,7 @@ public class StringBuilderAspects
     /// <param name="value"> string parameter </param>
     /// <returns> instance.Append() </returns>
     [AspectMethodReplace("System.Text.StringBuilder::Append(System.Object)")]
-    public static StringBuilder Append(StringBuilder target, object? value)
+    public static StringBuilder Append(StringBuilder? target, object? value)
     {
         var initialLength = target?.Length ?? 0;
 
@@ -193,7 +193,7 @@ public class StringBuilderAspects
     /// <param name="value"> string parameter </param>
     /// <returns> instance.Append() </returns>
     [AspectMethodReplace("System.Text.StringBuilder::Append(System.Char[])")]
-    public static StringBuilder Append(StringBuilder target, char[]? value)
+    public static StringBuilder Append(StringBuilder? target, char[]? value)
     {
         var initialLength = target?.Length ?? 0;
         var length = value?.Length ?? 0;
@@ -208,7 +208,7 @@ public class StringBuilderAspects
     /// <param name="value"> string parameter </param>
     /// <returns> instance.AppendLine() </returns>
     [AspectMethodReplace("System.Text.StringBuilder::AppendLine(System.String)", AspectFilter.StringLiteral_1)]
-    public static StringBuilder AppendLine(StringBuilder target, string? value)
+    public static StringBuilder AppendLine(StringBuilder? target, string? value)
     {
         var initialLength = target?.Length ?? 0;
         var length = value?.Length ?? 0;
@@ -223,9 +223,9 @@ public class StringBuilderAspects
     /// <param name="arg0">An object to format and append.</param>
     /// <returns>A reference to the StringBuilder after the append operation has occurred.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.String,System.Object)")]
-    public static StringBuilder AppendFormat(StringBuilder target, string format, object arg0)
+    public static StringBuilder AppendFormat(StringBuilder? target, string? format, object? arg0)
     {
-        var result = target.AppendFormat(format, arg0);
+        var result = target!.AppendFormat(format!, arg0);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, arg0);
         return result;
     }
@@ -237,9 +237,9 @@ public class StringBuilderAspects
     /// <param name="arg1">The second object to format and append.</param>
     /// <returns>A reference to the StringBuilder after the append operation has occurred.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.String,System.Object,System.Object)")]
-    public static StringBuilder AppendFormat(StringBuilder target, string format, object arg0, object arg1)
+    public static StringBuilder AppendFormat(StringBuilder? target, string? format, object? arg0, object? arg1)
     {
-        var result = target.AppendFormat(format, arg0, arg1);
+        var result = target!.AppendFormat(format!, arg0, arg1);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, arg0, arg1);
         return result;
     }
@@ -252,9 +252,9 @@ public class StringBuilderAspects
     /// <param name="arg2">The third object to format and append.</param>
     /// <returns>A reference to the StringBuilder after the append operation has occurred.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.String,System.Object,System.Object,System.Object)")]
-    public static StringBuilder AppendFormat(StringBuilder target, string format, object arg0, object arg1, object arg2)
+    public static StringBuilder AppendFormat(StringBuilder? target, string? format, object? arg0, object? arg1, object? arg2)
     {
-        var result = target.AppendFormat(format, arg0, arg1, arg2);
+        var result = target!.AppendFormat(format!, arg0, arg1, arg2);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, arg0, arg1, arg2);
         return result;
     }
@@ -265,9 +265,9 @@ public class StringBuilderAspects
     /// <param name="args">An array of objects to format and append.</param>
     /// <returns>A reference to the StringBuilder after the append operation has occurred.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.String,System.Object[])")]
-    public static StringBuilder AppendFormat(StringBuilder target, string format, object[] args)
+    public static StringBuilder AppendFormat(StringBuilder? target, string? format, object[]? args)
     {
-        var result = target.AppendFormat(format, args);
+        var result = target!.AppendFormat(format!, args!);
         StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, format, args);
         return result;
     }
@@ -279,9 +279,9 @@ public class StringBuilderAspects
     /// <param name="arg0">An object to format and append.</param>
     /// <returns>A reference to the StringBuilder after the append operation has occurred.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.IFormatProvider,System.String,System.Object)")]
-    public static StringBuilder AppendFormat(StringBuilder target, IFormatProvider provider, string format, object arg0)
+    public static StringBuilder AppendFormat(StringBuilder? target, IFormatProvider? provider, string? format, object? arg0)
     {
-        var result = target.AppendFormat(provider, format, arg0);
+        var result = target!.AppendFormat(provider, format!, arg0);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, arg0);
         return result;
     }
@@ -294,9 +294,9 @@ public class StringBuilderAspects
     /// <param name="arg1">The second object to format and append.</param>
     /// <returns>A reference to the StringBuilder after the append operation has occurred.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.IFormatProvider,System.String,System.Object,System.Object)")]
-    public static StringBuilder AppendFormat(StringBuilder target, IFormatProvider provider, string format, object arg0, object arg1)
+    public static StringBuilder AppendFormat(StringBuilder? target, IFormatProvider? provider, string? format, object? arg0, object? arg1)
     {
-        var result = target.AppendFormat(provider, format, arg0, arg1);
+        var result = target!.AppendFormat(provider, format!, arg0, arg1);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, arg0, arg1);
         return result;
     }
@@ -310,9 +310,9 @@ public class StringBuilderAspects
     /// <param name="arg2">The third object to format and append.</param>
     /// <returns>A reference to the StringBuilder after the append operation has occurred.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.IFormatProvider,System.String,System.Object,System.Object,System.Object)")]
-    public static StringBuilder AppendFormat(StringBuilder target, IFormatProvider provider, string format, object arg0, object arg1, object arg2)
+    public static StringBuilder AppendFormat(StringBuilder? target, IFormatProvider? provider, string? format, object? arg0, object? arg1, object? arg2)
     {
-        var result = target.AppendFormat(provider, format, arg0, arg1, arg2);
+        var result = target!.AppendFormat(provider, format!, arg0, arg1, arg2);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, arg0, arg1, arg2);
         return result;
     }
@@ -324,9 +324,9 @@ public class StringBuilderAspects
     /// <param name="args">An array of objects to format and append.</param>
     /// <returns>A reference to the StringBuilder after the append operation has occurred.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.IFormatProvider,System.String,System.Object[])")]
-    public static StringBuilder AppendFormat(StringBuilder target, IFormatProvider provider, string format, object[] args)
+    public static StringBuilder AppendFormat(StringBuilder? target, IFormatProvider? provider, string? format, object[]? args)
     {
-        var result = target.AppendFormat(provider, format, args);
+        var result = target!.AppendFormat(provider, format!, args!);
         StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, format, args);
         return result;
     }
@@ -338,9 +338,9 @@ public class StringBuilderAspects
     /// <param name="destinationIndex">The index in destination at which storing begins.</param>
     /// <param name="count">The number of characters to copy.</param>
     [AspectMethodReplace("System.Text.StringBuilder::CopyTo(System.Int32,System.Char[],System.Int32,System.Int32)")]
-    public static void CopyTo(StringBuilder target, int sourceIndex, char[] destination, int destinationIndex, int count)
+    public static void CopyTo(StringBuilder? target, int sourceIndex, char[]? destination, int destinationIndex, int count)
     {
-        target.CopyTo(sourceIndex, destination, destinationIndex, count);
+        target!.CopyTo(sourceIndex, destination!, destinationIndex, count);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(destination, target);
     }
 
@@ -350,7 +350,7 @@ public class StringBuilderAspects
     /// <param name="value">The string to insert.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.String)")]
-    public static StringBuilder Insert(StringBuilder target, int index, string value)
+    public static StringBuilder Insert(StringBuilder? target, int index, string? value)
     {
         var previousLength = target?.Length ?? 0;
 
@@ -367,7 +367,7 @@ public class StringBuilderAspects
     /// <param name="count">The number of copies of the string to insert.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.String,System.Int32)")]
-    public static StringBuilder Insert(StringBuilder target, int index, string value, int count)
+    public static StringBuilder Insert(StringBuilder? target, int index, string? value, int count)
     {
         var previousLength = target?.Length ?? 0;
 
@@ -383,7 +383,7 @@ public class StringBuilderAspects
     /// <param name="value">The character to insert.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Char)")]
-    public static StringBuilder Insert(StringBuilder target, int index, char value)
+    public static StringBuilder Insert(StringBuilder? target, int index, char value)
     {
         var previousLength = target?.Length ?? 0;
 
@@ -399,7 +399,7 @@ public class StringBuilderAspects
     /// <param name="value">The character array to insert.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Char[])")]
-    public static StringBuilder Insert(StringBuilder target, int index, char[] value)
+    public static StringBuilder Insert(StringBuilder? target, int index, char[]? value)
     {
         var previousLength = target?.Length ?? 0;
 
@@ -417,7 +417,7 @@ public class StringBuilderAspects
     /// <param name="charCount">The number of characters to insert.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Char[],System.Int32,System.Int32)")]
-    public static StringBuilder Insert(StringBuilder target, int index, char[] value, int startIndex, int charCount)
+    public static StringBuilder Insert(StringBuilder? target, int index, char[]? value, int startIndex, int charCount)
     {
         var previousLength = target?.Length ?? 0;
 
@@ -433,7 +433,7 @@ public class StringBuilderAspects
     /// <param name="value">The integer to insert.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Int32)")]
-    public static StringBuilder Insert(StringBuilder target, int index, int value)
+    public static StringBuilder Insert(StringBuilder? target, int index, int value)
     {
         var previousLength = target?.Length ?? 0;
 
@@ -449,7 +449,7 @@ public class StringBuilderAspects
     /// <param name="value">The long integer to insert.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Int64)")]
-    public static StringBuilder Insert(StringBuilder target, int index, long value)
+    public static StringBuilder Insert(StringBuilder? target, int index, long value)
     {
         var previousLength = target?.Length ?? 0;
 
@@ -465,7 +465,7 @@ public class StringBuilderAspects
     /// <param name="value">The single-precision floating-point number to insert.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Single)")]
-    public static StringBuilder Insert(StringBuilder target, int index, float value)
+    public static StringBuilder Insert(StringBuilder? target, int index, float value)
     {
         var previousLength = target?.Length ?? 0;
 
@@ -481,7 +481,7 @@ public class StringBuilderAspects
     /// <param name="value">The double-precision floating-point number to insert.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Double)")]
-    public static StringBuilder Insert(StringBuilder target, int index, double value)
+    public static StringBuilder Insert(StringBuilder? target, int index, double value)
     {
         var previousLength = target?.Length ?? 0;
 
@@ -497,7 +497,7 @@ public class StringBuilderAspects
     /// <param name="value">The decimal number to insert.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Decimal)")]
-    public static StringBuilder Insert(StringBuilder target, int index, decimal value)
+    public static StringBuilder Insert(StringBuilder? target, int index, decimal value)
     {
         var previousLength = target?.Length ?? 0;
 
@@ -513,7 +513,7 @@ public class StringBuilderAspects
     /// <param name="value">The unsigned short integer to insert.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.UInt16)")]
-    public static StringBuilder Insert(StringBuilder target, int index, ushort value)
+    public static StringBuilder Insert(StringBuilder? target, int index, ushort value)
     {
         var previousLength = target?.Length ?? 0;
 
@@ -529,7 +529,7 @@ public class StringBuilderAspects
     /// <param name="value">The unsigned integer to insert.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.UInt32)")]
-    public static StringBuilder Insert(StringBuilder target, int index, uint value)
+    public static StringBuilder Insert(StringBuilder? target, int index, uint value)
     {
         var previousLength = target?.Length ?? 0;
 
@@ -545,7 +545,7 @@ public class StringBuilderAspects
     /// <param name="value">The unsigned long integer to insert.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.UInt64)")]
-    public static StringBuilder Insert(StringBuilder target, int index, ulong value)
+    public static StringBuilder Insert(StringBuilder? target, int index, ulong value)
     {
         var previousLength = target?.Length ?? 0;
 
@@ -561,7 +561,7 @@ public class StringBuilderAspects
     /// <param name="value">The Boolean value to insert.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Boolean)")]
-    public static StringBuilder Insert(StringBuilder target, int index, bool value)
+    public static StringBuilder Insert(StringBuilder? target, int index, bool value)
     {
         var previousLength = target?.Length ?? 0;
 
@@ -577,7 +577,7 @@ public class StringBuilderAspects
     /// <param name="value">The signed byte to insert.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.SByte)")]
-    public static StringBuilder Insert(StringBuilder target, int index, sbyte value)
+    public static StringBuilder Insert(StringBuilder? target, int index, sbyte value)
     {
         var previousLength = target?.Length ?? 0;
 
@@ -593,7 +593,7 @@ public class StringBuilderAspects
     /// <param name="value">The byte to insert.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Byte)")]
-    public static StringBuilder Insert(StringBuilder target, int index, byte value)
+    public static StringBuilder Insert(StringBuilder? target, int index, byte value)
     {
         var previousLength = target?.Length ?? 0;
 
@@ -609,7 +609,7 @@ public class StringBuilderAspects
     /// <param name="value">The short integer to insert.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Int16)")]
-    public static StringBuilder Insert(StringBuilder target, int index, short value)
+    public static StringBuilder Insert(StringBuilder? target, int index, short value)
     {
         var previousLength = target?.Length ?? 0;
 
@@ -625,7 +625,7 @@ public class StringBuilderAspects
     /// <param name="value">The object to insert.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Insert(System.Int32,System.Object)")]
-    public static StringBuilder Insert(StringBuilder target, int index, object value)
+    public static StringBuilder Insert(StringBuilder? target, int index, object value)
     {
         var previousLength = target?.Length ?? 0;
 
@@ -641,9 +641,9 @@ public class StringBuilderAspects
     /// <param name="length">The number of characters to remove.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Remove(System.Int32,System.Int32)")]
-    public static StringBuilder Remove(StringBuilder target, int startIndex, int length)
+    public static StringBuilder Remove(StringBuilder? target, int startIndex, int length)
     {
-        var result = target.Remove(startIndex, length);
+        var result = target!.Remove(startIndex, length);
         PropagationModuleImpl.OnStringRemove(target, result, startIndex, startIndex + length);
         return result;
     }
@@ -654,9 +654,9 @@ public class StringBuilderAspects
     /// <param name="newValue">The replacement value.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Replace(System.String,System.String)")]
-    public static StringBuilder Replace(StringBuilder target, string oldValue, string newValue)
+    public static StringBuilder Replace(StringBuilder? target, string? oldValue, string? newValue)
     {
-        var result = target.Replace(oldValue, newValue);
+        var result = target!.Replace(oldValue!, newValue);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target, oldValue, newValue);
         return result;
     }
@@ -669,9 +669,9 @@ public class StringBuilderAspects
     /// <param name="count">The number of characters to be replaced.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Replace(System.String,System.String,System.Int32,System.Int32)")]
-    public static StringBuilder Replace(StringBuilder target, string oldValue, string newValue, int startIndex, int count)
+    public static StringBuilder Replace(StringBuilder? target, string? oldValue, string? newValue, int startIndex, int count)
     {
-        var result = target.Replace(oldValue, newValue, startIndex, count);
+        var result = target!.Replace(oldValue!, newValue, startIndex, count);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target, oldValue, newValue);
         return result;
     }
@@ -682,9 +682,9 @@ public class StringBuilderAspects
     /// <param name="newChar">The replacement character.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Replace(System.Char,System.Char)")]
-    public static StringBuilder Replace(StringBuilder target, char oldChar, char newChar)
+    public static StringBuilder Replace(StringBuilder? target, char oldChar, char newChar)
     {
-        var result = target.Replace(oldChar, newChar);
+        var result = target!.Replace(oldChar, newChar);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target);
         return result;
     }
@@ -697,9 +697,9 @@ public class StringBuilderAspects
     /// <param name="count">The number of characters to be replaced.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::Replace(System.Char,System.Char,System.Int32,System.Int32)")]
-    public static StringBuilder Replace(StringBuilder target, char oldChar, char newChar, int startIndex, int count)
+    public static StringBuilder Replace(StringBuilder? target, char oldChar, char newChar, int startIndex, int count)
     {
-        var result = target.Replace(oldChar, newChar, startIndex, count);
+        var result = target!.Replace(oldChar, newChar, startIndex, count);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target);
         return result;
     }
@@ -708,9 +708,9 @@ public class StringBuilderAspects
     /// <param name="target">The StringBuilder instance for which the length is set.</param>
     /// <param name="length">The new length of the StringBuilder instance.</param>
     [AspectMethodReplace("System.Text.StringBuilder::set_Length(System.Int32)")]
-    public static void SetLength(StringBuilder target, int length)
+    public static void SetLength(StringBuilder? target, int length)
     {
-        target.Length = length;
+        target!.Length = length;
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target);
     }
 
@@ -721,9 +721,9 @@ public class StringBuilderAspects
     /// <param name="values">An array that contains the strings to concatenate and append to the current instance of the string builder.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.String,System.String[])")]
-    public static StringBuilder AppendJoin(StringBuilder target, string separator, string[] values)
+    public static StringBuilder AppendJoin(StringBuilder? target, string? separator, string[]? values)
     {
-        var result = target.AppendJoin(separator, values);
+        var result = target!.AppendJoin(separator, values!);
         StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, separator, values);
         return result;
     }
@@ -734,9 +734,9 @@ public class StringBuilderAspects
     /// <param name="values">An array that contains the strings to concatenate and append to the current instance of the string builder.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.String,System.Object[])")]
-    public static StringBuilder AppendJoin(StringBuilder target, string separator, object[] values)
+    public static StringBuilder AppendJoin(StringBuilder? target, string? separator, object[]? values)
     {
-        var result = target.AppendJoin(separator, values);
+        var result = target!.AppendJoin(separator, values!);
         StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, separator, values);
         return result;
     }
@@ -747,9 +747,9 @@ public class StringBuilderAspects
     /// <param name="values">An array that contains the strings to concatenate and append to the current instance of the string builder.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.Char,System.String[])")]
-    public static StringBuilder AppendJoin(StringBuilder target, char separator, string[] values)
+    public static StringBuilder AppendJoin(StringBuilder? target, char separator, string[]? values)
     {
-        var result = target.AppendJoin(separator, values);
+        var result = target!.AppendJoin(separator, values!);
         StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, null, values);
         return result;
     }
@@ -760,9 +760,9 @@ public class StringBuilderAspects
     /// <param name="values">An array that contains the strings to concatenate and append to the current instance of the string builder.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.Char,System.Object[])")]
-    public static StringBuilder AppendJoin(StringBuilder target, char separator, object[] values)
+    public static StringBuilder AppendJoin(StringBuilder? target, char separator, object[]? values)
     {
-        var result = target.AppendJoin(separator, values);
+        var result = target!.AppendJoin(separator, values!);
         StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, null, values);
         return result;
     }
@@ -773,12 +773,12 @@ public class StringBuilderAspects
     /// <param name="values">An array that contains the strings to concatenate and append to the current instance of the string builder.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)")]
-    public static StringBuilder AppendJoin(StringBuilder target, char separator, IEnumerable values)
+    public static StringBuilder AppendJoin(StringBuilder? target, char separator, IEnumerable? values)
     {
-        if (values is null)
+        if (values is null || target is null)
         {
 #pragma warning disable CS8604 // We want to call the exact method overload even if values is null
-            return target.AppendJoin(separator, values as IEnumerable<object>);
+            return target!.AppendJoin(separator, values as IEnumerable<object>);
 #pragma warning restore CS8604 // Enable
         }
 
@@ -809,12 +809,12 @@ public class StringBuilderAspects
     /// <param name="values">An array that contains the strings to concatenate and append to the current instance of the string builder.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.String,System.Collections.Generic.IEnumerable`1<!!0>)")]
-    public static StringBuilder AppendJoin(StringBuilder target, string separator, IEnumerable values)
+    public static StringBuilder AppendJoin(StringBuilder? target, string? separator, IEnumerable? values)
     {
-        if (values is null)
+        if (values is null || target is null)
         {
 #pragma warning disable CS8604 // We want to call the exact method overload even if values is null
-            return target.AppendJoin(separator, values as IEnumerable<object>);
+            return target!.AppendJoin(separator, values as IEnumerable<object>);
 #pragma warning restore CS8604 // Enable
         }
 

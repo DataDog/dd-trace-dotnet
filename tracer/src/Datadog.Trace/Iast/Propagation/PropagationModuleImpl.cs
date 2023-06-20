@@ -46,16 +46,16 @@ internal static class PropagationModuleImpl
     }
 
     /// <summary> Taints a string.Remove operation </summary>
-    /// <param name="self"> original string </param>
+    /// <param name="target"> original string </param>
     /// <param name="result"> Result </param>
     /// <param name="beginIndex"> start index </param>
     /// <param name="endIndex"> end index </param>
     /// <returns> result </returns>
-    public static object? OnStringRemove(object self, object? result, int beginIndex, int endIndex)
+    public static object? OnStringRemove(object? target, object? result, int beginIndex, int endIndex)
     {
         try
         {
-            if (result is null)
+            if (result is null || target is null)
             {
                 return result;
             }
@@ -67,7 +67,7 @@ internal static class PropagationModuleImpl
             }
 
             var taintedObjects = iastContext.GetTaintedObjects();
-            var taintedSelf = PropagationModuleImpl.GetTainted(taintedObjects, self);
+            var taintedSelf = PropagationModuleImpl.GetTainted(taintedObjects, target);
             if (taintedSelf == null)
             {
                 return result;

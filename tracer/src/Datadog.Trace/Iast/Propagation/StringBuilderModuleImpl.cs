@@ -77,7 +77,7 @@ internal static class StringBuilderModuleImpl
         return builder;
     }
 
-    public static StringBuilder? OnStringBuilderSubSequence(string originalString, int beginIndex, int length, StringBuilder result)
+    public static StringBuilder? OnStringBuilderSubSequence(string? originalString, int beginIndex, int length, StringBuilder? result)
     {
         try
         {
@@ -86,7 +86,7 @@ internal static class StringBuilderModuleImpl
                 return result;
             }
 
-            PropagationModuleImpl.OnStringSubSequence(originalString, beginIndex, result, length);
+            PropagationModuleImpl.OnStringSubSequence(originalString!, beginIndex, result, length);
         }
         catch (Exception err)
         {
@@ -188,7 +188,7 @@ internal static class StringBuilderModuleImpl
     {
         try
         {
-            if (target.Length == 0)
+            if (target == null || target.Length == 0)
             {
                 return;
             }
@@ -230,14 +230,20 @@ internal static class StringBuilderModuleImpl
         }
     }
 
-    public static void FullTaintIfAnyTainted(char[] result, StringBuilder? firstInput)
+    public static void FullTaintIfAnyTainted(char[]? result, StringBuilder? firstInput)
     {
-        FullTaintIfAnyTaintedAux(result, result.Length, firstInput, null);
+        if (result is not null && firstInput is not null)
+        {
+            FullTaintIfAnyTaintedAux(result, result.Length, firstInput, null);
+        }
     }
 
     public static void FullTaintIfAnyTaintedEnumerable(StringBuilder target, string? firstInput, IEnumerable? otherInputs)
     {
-        FullTaintIfAnyTaintedAux(target, target.Length, firstInput, otherInputs);
+        if (firstInput is not null || otherInputs is not null)
+        {
+            FullTaintIfAnyTaintedAux(target, target.Length, firstInput, otherInputs);
+        }
     }
 
     private static void FullTaintIfAnyTaintedAux(object target, int targetLength, object? firstInput, IEnumerable? otherInputs)
