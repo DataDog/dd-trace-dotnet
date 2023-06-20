@@ -116,14 +116,14 @@ namespace Datadog.Trace.ClrProfiler
                         enabledCategories |= InstrumentationCategory.AppSec;
                     }
 
+                    var defs = NativeMethods.RegisterCallTargetDefinitions("Tracing", InstrumentationDefinitions.Instrumentations, (uint)enabledCategories);
+                    Log.Information<int>("The profiler has been initialized with {Count} definitions.", defs);
+
                     if (Iast.Iast.Instance.Settings.Enabled)
                     {
                         Log.Debug("Enabling Iast call target category");
-                        enabledCategories |= InstrumentationCategory.Iast;
+                        EnableTracerInstrumentations(InstrumentationCategory.Iast);
                     }
-
-                    var defs = NativeMethods.RegisterCallTargetDefinitions("Tracing", InstrumentationDefinitions.Instrumentations, (uint)enabledCategories);
-                    Log.Information<int>("The profiler has been initialized with {Count} definitions.", defs);
                 }
                 catch (Exception ex)
                 {
