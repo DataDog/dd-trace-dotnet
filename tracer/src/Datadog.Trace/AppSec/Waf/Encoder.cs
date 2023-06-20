@@ -142,9 +142,9 @@ namespace Datadog.Trace.AppSec.Waf
             return value;
         }
 
-        public static DdwafObjectStruct Encode2(object? o, List<GCHandle> argToFree, List<IntPtr> argToFree2, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = false)
+        public static unsafe DdwafObjectStruct Encode2(object? o, List<GCHandle> argToFree, List<IntPtr> argToFree2, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = false)
         {
-            DdwafObjectStruct ProcessKeyValuePairs<T>(IEnumerable<T> enumerableDic, int count, Func<T, string?> getKey, Func<T, object?> getValue)
+            DdwafObjectStruct ProcessKeyValuePairs<T>(IEnumerable<T> enumerableDic, int count, delegate*<T, string?> getKey, delegate*<T, object?> getValue)
             {
                 var ddWafObjectMap = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
                 if (!string.IsNullOrEmpty(key))
@@ -156,10 +156,13 @@ namespace Datadog.Trace.AppSec.Waf
                 {
                     IEnumerable<string> GetItemsAsString()
                     {
+                        var lst = new List<string>();
                         foreach (var x in enumerableDic)
                         {
-                            yield return $"{getKey(x!)}, {getValue(x!)}";
+                            lst.Add($"{getKey(x!)}, {getValue(x!)}");
                         }
+
+                        return lst;
                     }
 
                     Log.Warning("EncodeDictionary: object graph too deep, truncating nesting {Items}", string.Join(", ", GetItemsAsString()));
@@ -177,8 +180,7 @@ namespace Datadog.Trace.AppSec.Waf
                         continue;
                     }
 
-                    var result = Encode2(getValue(keyValue!), argToFree, argToFree2, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
-                    children[idx++] = result;
+                    children[idx++] = Encode2(getValue(keyValue!), argToFree, argToFree2, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
                     if (idx == WafConstants.MaxContainerSize)
                     {
                         Log.Warning<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
@@ -264,14 +266,18 @@ namespace Datadog.Trace.AppSec.Waf
                 case IEnumerable<KeyValuePair<string, object>> objDict:
                 {
                     var count = objDict is ICollection<KeyValuePair<string, object>> dct ? dct.Count : objDict.Count();
-                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, obj => obj.Key, obj => obj.Value);
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, &GetKey1, &GetValue1);
+                    static string GetKey1(KeyValuePair<string, object> item) => item.Key;
+                    static object GetValue1(KeyValuePair<string, object> item) => item.Value;
                     break;
                 }
 
                 case IEnumerable<KeyValuePair<string, string>> objDict:
                 {
                     var count = objDict is ICollection<KeyValuePair<string, string>> dct ? dct.Count : objDict.Count();
-                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, obj => obj.Key, obj => obj.Value);
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, &GetKey2, &GetValue2);
+                    static string GetKey2(KeyValuePair<string, string> item) => item.Key;
+                    static object GetValue2(KeyValuePair<string, string> item) => item.Value;
                     break;
                 }
 
@@ -279,21 +285,27 @@ namespace Datadog.Trace.AppSec.Waf
                 {
                     var count = objDict is ICollection<KeyValuePair<string, JToken>> dct ? dct.Count : objDict.Count();
                     // THE FOLLOWING NEEDS A FIX: CURRENTLY WE ARE USING THE (OBJECT) CASTING TO AVOID COMPILATION ERROR, BUT THIS WILL FAIL IN RUNTIME.
-                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, obj => ((JProperty)(object)obj).Name, obj => ((JProperty)(object)obj).Value);
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, &GetKey3, &GetValue3);
+                    static string GetKey3(KeyValuePair<string, JToken> item) => ((JProperty)(object)item).Name;
+                    static object GetValue3(KeyValuePair<string, JToken> item) => ((JProperty)(object)item).Value;
                     break;
                 }
 
                 case IEnumerable<KeyValuePair<string, string[]>> objDict:
                 {
                     var count = objDict is ICollection<KeyValuePair<string, string[]>> dct ? dct.Count : objDict.Count();
-                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, obj => obj.Key, obj => obj.Value);
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, &GetKey4, &GetValue4);
+                    static string GetKey4(KeyValuePair<string, string[]> item) => item.Key;
+                    static object GetValue4(KeyValuePair<string, string[]> item) => item.Value;
                     break;
                 }
 
                 case IEnumerable<KeyValuePair<string, List<string>>> objDict:
                 {
                     var count = objDict is ICollection<KeyValuePair<string, List<string>>> dct ? dct.Count : objDict.Count();
-                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, obj => obj.Key, obj => obj.Value);
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, &GetKey5, &GetValue5);
+                    static string GetKey5(KeyValuePair<string, List<string>> item) => item.Key;
+                    static object GetValue5(KeyValuePair<string, List<string>> item) => item.Value;
                     break;
                 }
 
