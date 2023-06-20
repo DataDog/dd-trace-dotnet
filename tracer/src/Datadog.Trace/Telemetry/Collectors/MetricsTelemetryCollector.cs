@@ -269,22 +269,22 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
 
         public void Clear()
         {
-            for (var i = 0; i < PublicApiUsageExtensions.Length; i++)
+            for (var i = 0; i < PublicApiCounts.Length; i++)
             {
                 PublicApiCounts[i] = 0;
             }
 
-            for (var i = 0; i < CountExtensions.Length; i++)
+            for (var i = 0; i < Counts.Length; i++)
             {
                 Counts[i].Value = 0;
             }
 
-            for (var i = 0; i < GaugeExtensions.Length; i++)
+            for (var i = 0; i < Gauges.Length; i++)
             {
                 Gauges[i].Value = 0;
             }
 
-            for (var i = 0; i < DistributionExtensions.Length; i++)
+            for (var i = 0; i < Distributions.Length; i++)
             {
                 while (Distributions[i].Values.TryDequeue(out _)) { }
             }
