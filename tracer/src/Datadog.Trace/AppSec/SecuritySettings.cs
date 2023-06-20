@@ -27,7 +27,7 @@ namespace Datadog.Trace.AppSec
             var config = new ConfigurationBuilder(source, telemetry);
             BlockedHtmlTemplate = config
                                  .WithKeys(ConfigurationKeys.AppSec.HtmlBlockedTemplate)
-                                 .AsString(SecurityConstants.BlockedHtmlTemplate);
+                                 .AsRedactedString(SecurityConstants.BlockedHtmlTemplate); // Redacted because it's huge
 
             BlockedJsonTemplate = config
                                  .WithKeys(ConfigurationKeys.AppSec.JsonBlockedTemplate)
