@@ -416,7 +416,7 @@ partial class Build : NukeBuild
                 var (framework, runtimes) = IsOsx switch
                 {
                     true => (TargetFramework.NETCOREAPP3_1, "net6.0"),
-                    false => (TargetFramework.NET6_0, "net472 netcoreapp3.1"),
+                    false => (TargetFramework.NET6_0, "net472 netcoreapp3.1 net6.0"),
                 };
                 
                 DotNetRun(s => s
