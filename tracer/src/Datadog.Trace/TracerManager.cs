@@ -525,7 +525,7 @@ namespace Datadog.Trace
                     writer.WriteValue(instanceSettings.StatsComputationEnabledInternal);
 
                     writer.WritePropertyName("header_tags");
-                    WriteDictionary(instanceSettings.HeaderTags);
+                    WriteDictionary(instanceSettings.HeaderTagsInternal);
 
                     writer.WritePropertyName("service_mapping");
                     WriteDictionary(instanceSettings.ServiceNameMappings);

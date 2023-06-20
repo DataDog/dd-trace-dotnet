@@ -250,7 +250,6 @@ namespace Datadog.Trace.Configuration
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_LogsInjectionEnabled_Get)]
         internal bool LogsInjectionEnabledInternal => DynamicSettings.LogsInjectionEnabled ?? _logsInjectionEnabled;
 
-
         /// <summary>
         /// Gets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
         /// Default is <c>100</c>.

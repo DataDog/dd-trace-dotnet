@@ -264,17 +264,14 @@ namespace Datadog.Trace
         /// or null to use the default configuration sources. This is used to configure global settings</param>
         [PublicApi]
         public static void Configure(TracerSettings settings)
-            => Configure(settings?.Build());
-
-        internal static void Configure(ImmutableTracerSettings settings)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Configure);
-            ConfigureInternal(settings);
+            ConfigureInternal(settings is null ? null : new ImmutableTracerSettings(settings, true));
         }
 
-        internal static void ConfigureInternal(TracerSettings settings)
+        internal static void ConfigureInternal(ImmutableTracerSettings settings)
         {
-            TracerManager.ReplaceGlobalManager(settings is null ? null : new ImmutableTracerSettings(settings, true), TracerManagerFactory.Instance);
+            TracerManager.ReplaceGlobalManager(settings, TracerManagerFactory.Instance);
             Tracer.Instance.TracerManager.Start();
         }
 

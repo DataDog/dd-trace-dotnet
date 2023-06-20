@@ -1069,5 +1069,22 @@ namespace Datadog.Trace.Configuration
 
         internal static TracerSettings Create(Dictionary<string, object?> settings)
             => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry());
+
+        internal void CollectTelemetry(IConfigurationTelemetry destination)
+        {
+            // copy the current settings into telemetry
+            _telemetry.CopyTo(destination);
+
+            // record changes made in code directly to destination
+            _initialSettings.RecordChanges(this, destination);
+
+            // If ExporterSettings has been replaced, it will have its own telemetry collector
+            // so we need to record those values too.
+            if (ExporterInternal.Telemetry is { } exporterTelemetry
+             && exporterTelemetry != _telemetry)
+            {
+                exporterTelemetry.CopyTo(destination);
+            }
+        }
     }
 }

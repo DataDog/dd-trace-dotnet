@@ -95,7 +95,7 @@ namespace Datadog.Trace.Configuration
                 NativeMethods.UpdateSettings(new[] { ConfigurationKeys.DebugEnabled }, new[] { debugLogsEnabled.Value ? "1" : "0" });
             }
 
-            Tracer.Configure(newSettings);
+            Tracer.ConfigureInternal(newSettings);
         }
 
         private IEnumerable<ApplyDetails> ConfigurationUpdated(Dictionary<string, List<RemoteConfiguration>> configByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)
