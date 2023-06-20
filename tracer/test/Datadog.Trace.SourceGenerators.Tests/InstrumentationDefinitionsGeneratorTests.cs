@@ -700,6 +700,7 @@ namespace Datadog.Trace.ClrProfiler
 
             var (diagnostics, output) = TestHelpers.GetGeneratedOutput<InstrumentationDefinitionsGenerator>(
                 SourceHelper.InstrumentMethodAttribute,
+                SourceHelper.AdoNetConstants,
                 SourceHelper.AdoNetInstrumentationAttribute,
                 SourceHelper.ClrNames,
                 SourceHelper.KafkaConstants,
@@ -814,6 +815,7 @@ namespace Datadog.Trace.ClrProfiler
 
             var (diagnostics, output) = TestHelpers.GetGeneratedOutput<InstrumentationDefinitionsGenerator>(
                 SourceHelper.InstrumentMethodAttribute,
+                SourceHelper.AdoNetConstants,
                 SourceHelper.AdoNetInstrumentationAttribute,
                 SourceHelper.ClrNames,
                 SourceHelper.KafkaConstants,
@@ -1371,11 +1373,11 @@ internal class InstrumentMethodAttribute : Attribute
     public string MaximumVersion { get; set; }
     public string IntegrationName { get; set; }
     public Type CallTargetType { get; set; }
-    public IntegrationType CallTargetIntegrationType { get; set; };
+    public CallTargetKind CallTargetIntegrationKind { get; set; } = CallTargetKind.Default;
     public InstrumentationCategory InstrumentationCategory { get; set; };
 }
 
-internal enum IntegrationType
+internal enum CallTargetKind
 {
     /// <summary>
     /// Default calltarget integration
@@ -1490,8 +1492,45 @@ namespace Datadog.Trace.ClrProfiler
     }
 }";
 
-            public const string AdoNetInstrumentationAttribute = @"
+            public const string AdoNetConstants = """
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
+{
+    internal static class AdoNetConstants
+    {
+        public static class TypeNames
+        {
+            public const string CommandBehavior = "System.Data.CommandBehavior";
+
+            public const string DbDataReaderType = "System.Data.Common.DbDataReader";
+            public const string DbDataReaderTaskType = "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>";
+
+            public const string Int32TaskType = "System.Threading.Tasks.Task`1<System.Int32>";
+            public const string ObjectTaskType = "System.Threading.Tasks.Task`1<System.Object>";
+        }
+
+        public static class MethodNames
+        {
+            public const string ExecuteNonQuery = "ExecuteNonQuery";
+            public const string ExecuteNonQueryAsync = "ExecuteNonQueryAsync";
+
+            public const string ExecuteScalar = "ExecuteScalar";
+            public const string ExecuteScalarAsync = "ExecuteScalarAsync";
+
+            public const string ExecuteReader = "ExecuteReader";
+            public const string ExecuteReaderAsync = "ExecuteReaderAsync";
+
+            public const string ExecuteDbDataReader = "ExecuteDbDataReader";
+            public const string ExecuteDbDataReaderAsync = "ExecuteDbDataReaderAsync";
+        }
+    }
+}
+""";
+
+            public const string AdoNetInstrumentationAttribute = """
 using System;
+using System.ComponentModel;
+using System.Data;
+using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
@@ -1499,6 +1538,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     /// Attribute that indicates that the decorated class is meant to intercept a method
     /// by modifying the method body with callbacks. Used to generate the integration definitions file.
     /// </summary>
+    /// <remarks>
+    /// Beware that the fullname of this class is being used for App Trimming support in the _build/Build.Steps.cs file
+    /// as string. Avoid changing the name and/or namespace of this class.
+    /// </remarks>
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
     internal sealed class AdoNetClientInstrumentMethodsAttribute : Attribute
     {
@@ -1542,7 +1585,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         public string DataReaderTaskType { get; set; }
 
         /// <summary>
-        /// Gets or sets the names of attributes decorated with <see cref=""AdoNetTargetSignatureAttribute""/>.
+        /// Gets or sets the names of attributes decorated with <see cref="AdoNetTargetSignatureAttribute"/>.
         /// Describes all the signatures to instrument
         /// Required.
         /// </summary>
@@ -1554,17 +1597,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             internal enum AdoNetTargetSignatureReturnType
             {
                 /// <summary>
-                ///  Uses the fixed return type specified in <see cref=""AdoNetTargetSignatureAttribute.ReturnTypeName"" />
+                ///  Uses the fixed return type specified in <see cref="AdoNetTargetSignatureAttribute.ReturnTypeName" />
                 /// </summary>
                 Default,
 
                 /// <summary>
-                ///  Uses the return type specified in <see cref=""AdoNetClientInstrumentMethodsAttribute.DataReaderType"" />
+                ///  Uses the return type specified in <see cref="AdoNetClientInstrumentMethodsAttribute.DataReaderType" />
                 /// </summary>
                 DataReaderType,
 
                 /// <summary>
-                ///  Uses the return type specified in <see cref=""AdoNetClientInstrumentMethodsAttribute.DataReaderTaskType"" />
+                ///  Uses the return type specified in <see cref="AdoNetClientInstrumentMethodsAttribute.DataReaderTaskType" />
                 /// </summary>
                 DataReaderTaskType,
             }
@@ -1593,7 +1636,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             /// <summary>
             /// Gets or sets the CallTarget integration type
             /// </summary>
-            public IntegrationType CallTargetIntegrationType { get; set; } = IntegrationType.Default;
+            public CallTargetKind CallTargetIntegrationKind { get; set; } = CallTargetKind.Default;
 
             /// <summary>
             /// Gets or sets the return type to use with this signature
@@ -1602,8 +1645,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         }
 
         [AdoNetTargetSignature(
-            MethodName = ""ExecuteNonQuery"",
-            ReturnTypeName = ""System.Int32"",
+            MethodName = AdoNetConstants.MethodNames.ExecuteNonQueryAsync,
+            ReturnTypeName = AdoNetConstants.TypeNames.Int32TaskType,
+            ParameterTypeNames = new[] { ClrNames.CancellationToken },
+            CallTargetType = typeof(CommandExecuteNonQueryAsyncIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class CommandExecuteNonQueryAsyncAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteNonQuery,
+            ReturnTypeName = ClrNames.Int32,
             CallTargetType = typeof(CommandExecuteNonQueryIntegration),
             CallTargetIntegrationKind = CallTargetKind.Default)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
@@ -1612,7 +1665,76 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         }
 
         [AdoNetTargetSignature(
-            MethodName = ""ExecuteReader"",
+            MethodName = AdoNetConstants.MethodNames.ExecuteNonQuery,
+            ReturnTypeName = ClrNames.Int32,
+            CallTargetType = typeof(CommandExecuteNonQueryIntegration),
+            CallTargetIntegrationKind = CallTargetKind.Derived)]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class CommandExecuteNonQueryDerivedAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteNonQuery,
+            ReturnTypeName = ClrNames.Int32,
+            ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
+            CallTargetType = typeof(CommandExecuteNonQueryWithBehaviorIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class CommandExecuteNonQueryWithBehaviorAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteReaderAsync,
+            ReturnType = AdoNetTargetSignatureAttribute.AdoNetTargetSignatureReturnType.DataReaderTaskType,
+            CallTargetType = typeof(CommandExecuteReaderAsyncIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class CommandExecuteReaderAsyncAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteReaderAsync,
+            ReturnType = AdoNetTargetSignatureAttribute.AdoNetTargetSignatureReturnType.DataReaderTaskType,
+            ParameterTypeNames = new[] { ClrNames.CancellationToken },
+            CallTargetType = typeof(CommandExecuteReaderWithCancellationAsyncIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class CommandExecuteReaderWithCancellationAsyncAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteReaderAsync,
+            ReturnType = AdoNetTargetSignatureAttribute.AdoNetTargetSignatureReturnType.DataReaderTaskType,
+            ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
+            CallTargetType = typeof(CommandExecuteReaderWithBehaviorAsyncIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class CommandExecuteReaderWithBehaviorAsyncAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteReaderAsync,
+            ReturnType = AdoNetTargetSignatureAttribute.AdoNetTargetSignatureReturnType.DataReaderTaskType,
+            ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
+            CallTargetType = typeof(CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class CommandExecuteReaderWithBehaviorAndCancellationAsyncAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteDbDataReaderAsync,
+            ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderTaskType,
+            ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
+            CallTargetType = typeof(CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class CommandExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteReader,
             ReturnType = AdoNetTargetSignatureAttribute.AdoNetTargetSignatureReturnType.DataReaderType,
             CallTargetType = typeof(CommandExecuteReaderIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
@@ -1621,24 +1743,150 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         }
 
         [AdoNetTargetSignature(
-            MethodName = ""ExecuteNonQuery"",
-            ReturnTypeName = ""System.Int32"",
-            CallTargetType = typeof(CommandExecuteNonQueryIntegration),
-            CallTargetIntegrationKind = CallTargetKind.Derived)]
+            MethodName = AdoNetConstants.MethodNames.ExecuteReader,
+            ReturnType = AdoNetTargetSignatureAttribute.AdoNetTargetSignatureReturnType.DataReaderType,
+            ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
+            CallTargetType = typeof(CommandExecuteReaderWithBehaviorIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class CommandExecuteNonQueryDerivedAttribute : Attribute
+        internal class CommandExecuteReaderWithBehaviorAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteDbDataReader,
+            ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderType,
+            ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
+            CallTargetType = typeof(CommandExecuteReaderWithBehaviorIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class CommandExecuteDbDataReaderWithBehaviorAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteDbDataReader,
+            ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderType,
+            ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
+            CallTargetIntegrationKind = CallTargetKind.Derived,
+            CallTargetType = typeof(CommandExecuteReaderWithBehaviorIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class CommandExecuteDbDataReaderWithBehaviorDerivedAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteScalarAsync,
+            ReturnTypeName = AdoNetConstants.TypeNames.ObjectTaskType,
+            ParameterTypeNames = new[] { ClrNames.CancellationToken },
+            CallTargetType = typeof(CommandExecuteScalarAsyncIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class CommandExecuteScalarAsyncAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteScalar,
+            ReturnTypeName = ClrNames.Object,
+            CallTargetType = typeof(CommandExecuteScalarIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class CommandExecuteScalarAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteScalar,
+            ReturnTypeName = ClrNames.Object,
+            CallTargetIntegrationKind = CallTargetKind.Derived,
+            CallTargetType = typeof(CommandExecuteScalarIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class CommandExecuteScalarDerivedAttribute : Attribute
+        {
+        }
+
+        [AdoNetTargetSignature(
+            MethodName = AdoNetConstants.MethodNames.ExecuteScalar,
+            ReturnTypeName = ClrNames.Object,
+            ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
+            CallTargetType = typeof(CommandExecuteScalarWithBehaviorIntegration))]
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+        internal class CommandExecuteScalarWithBehaviorAttribute : Attribute
         {
         }
     }
 
+    /// <summary>
+    /// CallTarget instrumentation for:
+    /// int [Command].ExecuteNonQuery()
+    /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class CommandExecuteNonQueryIntegration
     {
+        /// <summary>
+        /// OnMethodBegin callback
+        /// </summary>
+        /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
+        /// <returns>Calltarget state value</returns>
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
+        {
+            return new CallTargetState(DbScopeFactory.Cache<TTarget>.CreateDbCommandScope(Tracer.Instance, (IDbCommand)instance));
+        }
+
+        /// <summary>
+        /// OnMethodEnd callback
+        /// </summary>
+        /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <typeparam name="TReturn">Type of the return value</typeparam>
+        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="returnValue">Task of HttpResponse message instance</param>
+        /// <param name="exception">Exception instance in case the original code threw an exception.</param>
+        /// <param name="state">Calltarget state value</param>
+        /// <returns>A response value, in an async scenario will be T of Task of T</returns>
+        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        {
+            state.Scope.DisposeWithException(exception);
+            return new CallTargetReturn<TReturn>(returnValue);
+        }
     }
+
+    /// <summary>
+    /// CallTarget instrumentation for:
+    /// [*]DataReader [Command].ExecuteReader()
+    /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class CommandExecuteReaderIntegration
     {
+        /// <summary>
+        /// OnMethodBegin callback
+        /// </summary>
+        /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
+        /// <returns>Calltarget state value</returns>
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
+        {
+            return new CallTargetState(DbScopeFactory.Cache<TTarget>.CreateDbCommandScope(Tracer.Instance, (IDbCommand)instance));
+        }
+
+        /// <summary>
+        /// OnMethodEnd callback
+        /// </summary>
+        /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <typeparam name="TReturn">Type of the return value</typeparam>
+        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="returnValue">Task of HttpResponse message instance</param>
+        /// <param name="exception">Exception instance in case the original code threw an exception.</param>
+        /// <param name="state">Calltarget state value</param>
+        /// <returns>A response value, in an async scenario will be T of Task of T</returns>
+        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        {
+            state.Scope.DisposeWithException(exception);
+            return new CallTargetReturn<TReturn>(returnValue);
+        }
     }
+
 }
-";
+""";
         }
     }
 }

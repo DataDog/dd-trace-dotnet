@@ -169,7 +169,7 @@ namespace Datadog.Trace.ClrProfiler
             integrationName = null;
             foreach (var definition in orderedDefinitions)
             {
-                if (!definition.IsAdoNetIntegration || definition.IntegrationType != 0)
+                if (!definition.IsAdoNetIntegration || definition.IntegrationKind != 0)
                 {
                     // only non-derived "adonet" integrations
                     continue;
@@ -278,7 +278,7 @@ namespace Datadog.Trace.ClrProfiler
             sb.Append(@", assemblyFullName, """)
               .Append(definition.InstrumentationTypeName)
               .Append(@""",")
-              .Append($"{definition.IntegrationType},")
+              .Append($"{definition.IntegrationKind},")
               .Append($"{(int)definition.InstrumentationCategory}),");
             return integrationName;
         }
