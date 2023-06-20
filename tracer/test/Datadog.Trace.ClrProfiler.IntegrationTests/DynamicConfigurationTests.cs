@@ -34,6 +34,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable(ConfigurationKeys.Telemetry.V2Enabled, "1");
             SetEnvironmentVariable(ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds, "1");
+            SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "5");
         }
 
         [SkippableFact]
@@ -60,7 +61,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         LogsInjectionEnabled = true,
                         SpanSamplingRules = "[{\"service\": \"cart*\"}]",
                         TraceSampleRate = .5,
-                        CustomSamplingRules = "[{\"sample_rate\":0.1}]"
+                        CustomSamplingRules = "[{\"sample_rate\":0.1}]",
+                        ServiceNameMapping = "[{\"from_name\":\"foo\", \"to_name\":\"bar\"}]",
+                        TraceHeaderTags = "[{ \"header\": \"User-Agent\", \"tag_name\": \"http.user_agent\" }]"
                     });
 
                 await UpdateAndValidateConfig(
@@ -160,7 +163,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var json = JObject.Parse(match.Groups["diagnosticLog"].Value);
 
-            // Can't validate tracing_header_tags and tracing_service_mapping because they're not in the diagnostic log
+            static string FlattenJsonDictionary(string json)
+            {
+                var dictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+
+                return new JArray(dictionary.Select(kvp => $"{kvp.Key}:{kvp.Value}")).ToString();
+            }
+
             json["runtime_metrics_enabled"]?.Value<bool>().Should().Be(expectedConfig.RuntimeMetricsEnabled);
             json["debug"]?.Value<bool>().Should().Be(expectedConfig.DebugLogsEnabled);
             json["log_injection_enabled"]?.Value<bool>().Should().Be(expectedConfig.LogsInjectionEnabled);
@@ -168,6 +177,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             json["sampling_rules"]?.Value<string>().Should().Be(expectedConfig.CustomSamplingRules);
             json["span_sampling_rules"]?.Value<string>().Should().Be(expectedConfig.SpanSamplingRules);
             json["data_streams_enabled"]?.Value<bool>().Should().Be(expectedConfig.DataStreamsEnabled);
+            json["header_tags"]?.Value<string>().Should().Be(FlattenJsonDictionary(expectedConfig.TraceHeaderTags));
+            json["service_mapping"]?.Value<string>().Should().Be(FlattenJsonDictionary(expectedConfig.ServiceNameMapping));
         }
 
         private void AssertConfigurationChanged(ConcurrentStack<object> events, Config config)
@@ -187,6 +198,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     if (key.Origin == "remote_config")
                     {
+                        key.Error.Should().BeNull();
                         latestConfig[key.Name] = key.Value;
                     }
                 }
@@ -204,8 +216,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 (ConfigurationKeys.CustomSamplingRules, config.CustomSamplingRules),
                 (ConfigurationKeys.SpanSamplingRules, config.SpanSamplingRules),
                 (ConfigurationKeys.DataStreamsMonitoring.Enabled, config.DataStreamsEnabled),
-                (ConfigurationKeys.HeaderTags, config.TraceHeaderTags ?? string.Empty),
-                (ConfigurationKeys.ServiceNameMappings, config.ServiceNameMapping ?? string.Empty)
+                (ConfigurationKeys.HeaderTags, config.TraceHeaderTags == null ? string.Empty : JToken.Parse(config.TraceHeaderTags).ToString()),
+                (ConfigurationKeys.ServiceNameMappings, config.ServiceNameMapping == null ? string.Empty : JToken.Parse(config.ServiceNameMapping).ToString())
             };
 
             foreach (var (key, value) in expectedKeys)
@@ -223,7 +235,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             latestConfig.Should().HaveCount(expectedKeys.Count(k => k.Value is not null));
         }
 
-        public record Config
+        internal class PlainJsonStringConverter : JsonConverter
+        {
+            public override bool CanConvert(Type objectType)
+            {
+                return objectType == typeof(string);
+            }
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                return reader.Value;
+            }
+
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                writer.WriteRawValue((string)value);
+            }
+        }
+
+        internal record Config
         {
             [JsonProperty("runtime_metrics_enabled")]
             public bool RuntimeMetricsEnabled { get; init; }
@@ -247,9 +277,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             public bool DataStreamsEnabled { get; init; }
 
             [JsonProperty("tracing_header_tags")]
+            [JsonConverter(typeof(PlainJsonStringConverter))]
             public string TraceHeaderTags { get; init; }
 
             [JsonProperty("tracing_service_mapping")]
+            [JsonConverter(typeof(PlainJsonStringConverter))]
             public string ServiceNameMapping { get; init; }
         }
     }

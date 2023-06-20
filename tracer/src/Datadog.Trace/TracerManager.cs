@@ -324,6 +324,21 @@ namespace Datadog.Trace
 
                 using (var writer = new JsonTextWriter(stringWriter))
                 {
+                    void WriteDictionary(IReadOnlyDictionary<string, string> dictionary)
+                    {
+                        writer.WriteStartArray();
+
+                        if (dictionary is not null)
+                        {
+                            foreach (var kvp in dictionary)
+                            {
+                                writer.WriteValue($"{kvp.Key}:{kvp.Value}");
+                            }
+                        }
+
+                        writer.WriteEndArray();
+                    }
+
                     // ReSharper disable MethodHasAsyncOverload
                     writer.WriteStartObject();
 
@@ -384,15 +399,7 @@ namespace Datadog.Trace
                     writer.WriteValue(instanceSettings.CustomSamplingRulesInternal);
 
                     writer.WritePropertyName("tags");
-
-                    writer.WriteStartArray();
-
-                    foreach (var entry in instanceSettings.GlobalTagsInternal)
-                    {
-                        writer.WriteValue(string.Concat(entry.Key, ":", entry.Value));
-                    }
-
-                    writer.WriteEndArray();
+                    WriteDictionary(instanceSettings.GlobalTagsInternal);
 
                     writer.WritePropertyName("log_injection_enabled");
                     writer.WriteValue(instanceSettings.LogsInjectionEnabledInternal);
@@ -516,6 +523,12 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("stats_computation_enabled");
                     writer.WriteValue(instanceSettings.StatsComputationEnabledInternal);
+
+                    writer.WritePropertyName("header_tags");
+                    WriteDictionary(instanceSettings.HeaderTags);
+
+                    writer.WritePropertyName("service_mapping");
+                    WriteDictionary(instanceSettings.ServiceNameMappings);
 
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload

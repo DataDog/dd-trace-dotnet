@@ -6,7 +6,9 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -14,12 +16,24 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
 {
     internal class DynamicConfigConfigurationSource : JsonConfigurationSource
     {
-        private readonly IReadOnlyDictionary<string, string> _mapping;
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DynamicConfigConfigurationSource));
 
-        internal DynamicConfigConfigurationSource(string json, IReadOnlyDictionary<string, string> mapping, ConfigurationOrigins origin)
+        private static readonly IReadOnlyDictionary<string, string> Mapping = new Dictionary<string, string>
+        {
+            { ConfigurationKeys.DebugEnabled, "tracing_debug" },
+            { ConfigurationKeys.RuntimeMetricsEnabled, "runtime_metrics_enabled" },
+            { ConfigurationKeys.HeaderTags, "tracing_header_tags" },
+            { ConfigurationKeys.ServiceNameMappings, "tracing_service_mapping" },
+            { ConfigurationKeys.LogsInjectionEnabled, "logs_injection_enabled" },
+            { ConfigurationKeys.GlobalSamplingRate, "tracing_sample_rate" },
+            { ConfigurationKeys.CustomSamplingRules, "tracing_sampling_rules" },
+            { ConfigurationKeys.SpanSamplingRules, "span_sampling_rules" },
+            { ConfigurationKeys.DataStreamsMonitoring.Enabled, "data_streams_enabled" }
+        };
+
+        internal DynamicConfigConfigurationSource(string json, ConfigurationOrigins origin)
             : base(json, origin, j => Deserialize(j))
         {
-            _mapping = mapping;
         }
 
         private static JToken? Deserialize(string config)
@@ -34,9 +48,39 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
             return jobject;
         }
 
+        private static IDictionary<string, string> ReadHeaderTags(JToken token)
+        {
+            return ((JArray)token).ToDictionary(t => t["header"]!.Value<string>()!, t => t["tag_name"]!.Value<string>()!);
+        }
+
+        private static IDictionary<string, string> ReadServiceMapping(JToken token)
+        {
+            return ((JArray)token).ToDictionary(t => t["from_name"]!.Value<string>()!, t => t["to_name"]!.Value<string>()!);
+        }
+
         private protected override JToken? SelectToken(string key)
         {
-            return base.SelectToken(_mapping.TryGetValue(key, out var newKey) ? newKey : key);
+            return base.SelectToken(Mapping.TryGetValue(key, out var newKey) ? newKey : key);
+        }
+
+        private protected override IDictionary<string, string>? ConvertToDictionary(string key, JToken token)
+        {
+            if (!Mapping.TryGetValue(key, out var mappedKey))
+            {
+                mappedKey = key;
+            }
+
+            if (mappedKey == "tracing_service_mapping")
+            {
+                return ReadServiceMapping(token);
+            }
+
+            if (mappedKey == "tracing_header_tags")
+            {
+                return ReadHeaderTags(token);
+            }
+
+            return base.ConvertToDictionary(key, token);
         }
     }
 }

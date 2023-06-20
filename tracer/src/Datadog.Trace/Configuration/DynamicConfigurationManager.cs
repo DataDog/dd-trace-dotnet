@@ -26,19 +26,6 @@ namespace Datadog.Trace.Configuration
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DynamicConfigurationManager>();
 
-        private static readonly IReadOnlyDictionary<string, string> Mapping = new Dictionary<string, string>
-        {
-            { ConfigurationKeys.DebugEnabled, "tracing_debug" },
-            { ConfigurationKeys.RuntimeMetricsEnabled, "runtime_metrics_enabled" },
-            { ConfigurationKeys.HeaderTags, "tracing_header_tags" },
-            { ConfigurationKeys.ServiceNameMappings, "tracing_service_mapping" },
-            { ConfigurationKeys.LogsInjectionEnabled, "logs_injection_enabled" },
-            { ConfigurationKeys.GlobalSamplingRate, "tracing_sample_rate" },
-            { ConfigurationKeys.CustomSamplingRules, "tracing_sampling_rules" },
-            { ConfigurationKeys.SpanSamplingRules, "span_sampling_rules" },
-            { ConfigurationKeys.DataStreamsMonitoring.Enabled, "data_streams_enabled" }
-        };
-
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private ISubscription? _subscription;
 
@@ -127,7 +114,7 @@ namespace Datadog.Trace.Configuration
 
             if (apmLibrary.Count == 1)
             {
-                configurationSource = new DynamicConfigConfigurationSource(Encoding.UTF8.GetString(apmLibrary[0].Contents), Mapping, ConfigurationOrigins.RemoteConfig);
+                configurationSource = new DynamicConfigConfigurationSource(Encoding.UTF8.GetString(apmLibrary[0].Contents), ConfigurationOrigins.RemoteConfig);
             }
             else
             {
@@ -135,7 +122,7 @@ namespace Datadog.Trace.Configuration
 
                 foreach (var item in apmLibrary)
                 {
-                    compositeConfigurationSource.AddInternal(new DynamicConfigConfigurationSource(Encoding.UTF8.GetString(item.Contents), Mapping, ConfigurationOrigins.RemoteConfig));
+                    compositeConfigurationSource.AddInternal(new DynamicConfigConfigurationSource(Encoding.UTF8.GetString(item.Contents), ConfigurationOrigins.RemoteConfig));
                 }
 
                 configurationSource = compositeConfigurationSource;

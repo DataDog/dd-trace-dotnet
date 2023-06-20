@@ -198,8 +198,7 @@ namespace Datadog.Trace.Configuration
             {
                 try
                 {
-                    var dictionary = token
-                        ?.ToObject<ConcurrentDictionary<string, string>>();
+                    var dictionary = ConvertToDictionary(key, token);
                     return dictionary;
                 }
                 catch (Exception e)
@@ -373,6 +372,11 @@ namespace Datadog.Trace.Configuration
 
         private protected virtual JToken? SelectToken(string key) => _configuration?.SelectToken(key, errorWhenNoMatch: false);
 
+        private protected virtual IDictionary<string, string>? ConvertToDictionary(string key, JToken token)
+        {
+            return token.ToObject<ConcurrentDictionary<string, string>>();
+        }
+
         private ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
         {
             var token = SelectToken(key);
@@ -385,11 +389,11 @@ namespace Datadog.Trace.Configuration
 
             try
             {
-                if (token.Type == JTokenType.Object)
+                if (token.Type == JTokenType.Object || token.Type == JTokenType.Array)
                 {
                     try
                     {
-                        var dictionary = token.ToObject<ConcurrentDictionary<string, string>>();
+                        var dictionary = ConvertToDictionary(key, token);
                         if (dictionary is null)
                         {
                             return null;
