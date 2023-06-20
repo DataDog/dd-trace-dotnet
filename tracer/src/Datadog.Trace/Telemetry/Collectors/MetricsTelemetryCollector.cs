@@ -119,7 +119,11 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
                                 metricName,
                                 points: new MetricSeries { new(timestamp, value) },
                                 common: metric.IsCommon(),
-                                type: TelemetryMetricType.Count) { Tags = metricKey.Tags });
+                                type: TelemetryMetricType.Count)
+                            {
+                                Namespace = metric.GetNamespace(),
+                                Tags = metricKey.Tags,
+                            });
                     }
 
                     index--;
@@ -145,7 +149,11 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
                                 metricName,
                                 points: new MetricSeries { new(timestamp, value) },
                                 common: metric.IsCommon(),
-                                type: TelemetryMetricType.Gauge) { Tags = metricKey.Tags });
+                                type: TelemetryMetricType.Gauge)
+                            {
+                                Namespace = metric.GetNamespace(),
+                                Tags = metricKey.Tags
+                            });
                     }
 
                     index--;
@@ -188,7 +196,11 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
                         new DistributionMetricData(
                             metricName,
                             points: points,
-                            common: metric.IsCommon()) { Tags = metricKey.Tags, });
+                            common: metric.IsCommon())
+                        {
+                            Namespace = metric.GetNamespace(),
+                            Tags = metricKey.Tags,
+                        });
                 }
 
                 index--;
