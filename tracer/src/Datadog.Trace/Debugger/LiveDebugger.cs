@@ -182,6 +182,8 @@ namespace Datadog.Trace.Debugger
                 var lineProbes = new List<NativeLineProbeDefinition>();
                 var spanProbes = new List<NativeSpanProbeDefinition>();
 
+                var fetchProbeStatus = new List<FetchProbeStatus>();
+
                 foreach (var probe in addedProbes)
                 {
                     switch (GetProbeLocationType(probe))
@@ -196,17 +198,21 @@ namespace Datadog.Trace.Debugger
                             {
                                 case LiveProbeResolveStatus.Bound:
                                     lineProbes.Add(new NativeLineProbeDefinition(location.ProbeDefinition.Id, location.MVID, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
+                                    fetchProbeStatus.Add(new FetchProbeStatus(probe.Id));
                                     break;
                                 case LiveProbeResolveStatus.Unbound:
                                     _unboundProbes.Add(probe);
+
+                                    fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, new ProbeStatus(probe.Id, Sink.Models.Status.RECEIVED, errorMessage: null)));
                                     break;
                                 case LiveProbeResolveStatus.Error:
-                                    AddErrorProbeStatus(probe.Id, errorMessage: message);
+                                    fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, new ProbeStatus(probe.Id, Sink.Models.Status.ERROR, errorMessage: message)));
                                     break;
                             }
 
                             break;
                         case ProbeLocationType.Method:
+                            fetchProbeStatus.Add(new FetchProbeStatus(probe.Id));
                             if (probe is SpanProbe)
                             {
                                 var spanDefinition = new NativeSpanProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
@@ -220,6 +226,7 @@ namespace Datadog.Trace.Debugger
 
                             break;
                         case ProbeLocationType.Unrecognized:
+                            fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, new ProbeStatus(probe.Id, Sink.Models.Status.ERROR, errorMessage: "Unknown probe type")));
                             break;
                     }
                 }
@@ -228,7 +235,7 @@ namespace Datadog.Trace.Debugger
                 using var disposableSpanProbes = new DisposableEnumerable<NativeSpanProbeDefinition>(spanProbes);
                 DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), Array.Empty<NativeRemoveProbeRequest>());
 
-                _probeStatusPoller.AddProbes(addedProbes.Select(probe => probe.Id).ToArray());
+                _probeStatusPoller.AddProbes(fetchProbeStatus.ToArray());
 
                 foreach (var probe in addedProbes.Where(probe => probe is not SpanProbe))
                 {
@@ -264,12 +271,16 @@ namespace Datadog.Trace.Debugger
 
                 RemoveUnboundProbes(removedProbesIds);
 
-                var revertProbes = removedProbesIds
-                   .Select(probeId => new NativeRemoveProbeRequest(probeId));
-
-                DebuggerNativeMethods.InstrumentProbes(Array.Empty<NativeMethodProbeDefinition>(), Array.Empty<NativeLineProbeDefinition>(), Array.Empty<NativeSpanProbeDefinition>(), revertProbes.ToArray());
-
+                var probesToRemoveFromNative = _probeStatusPoller.GetFetchedProbes(removedProbesIds);
                 _probeStatusPoller.RemoveProbes(removedProbesIds);
+
+                if (probesToRemoveFromNative.Any())
+                {
+                    var revertProbes = probesToRemoveFromNative
+                       .Select(probeId => new NativeRemoveProbeRequest(probeId));
+
+                    DebuggerNativeMethods.InstrumentProbes(Array.Empty<NativeMethodProbeDefinition>(), Array.Empty<NativeLineProbeDefinition>(), Array.Empty<NativeSpanProbeDefinition>(), revertProbes.ToArray());
+                }
 
                 foreach (var id in removedProbesIds)
                 {

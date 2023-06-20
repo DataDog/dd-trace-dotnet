@@ -11,8 +11,10 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
     {
         void StartPolling();
 
-        void AddProbes(string[] newProbes);
+        void AddProbes(FetchProbeStatus[] newProbes);
 
-        void RemoveProbes(string[] newProbes);
+        void RemoveProbes(string[] removeProbes);
+
+        string[] GetFetchedProbes(string[] candidateProbeIds);
     }
 }

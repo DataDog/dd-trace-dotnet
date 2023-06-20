@@ -592,7 +592,7 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
     COR_SIGNATURE stringData{ELEMENT_TYPE_STRING};
     TypeSignature stringType = {0, 1, &stringData};
 
-    rewriterWrapper.LoadInt32(methodProbes.size());
+    rewriterWrapper.LoadInt32(static_cast<INT32>(methodProbes.size()));
     hr = debuggerTokens->WriteRentArray(&rewriterWrapper, stringType, &beginCallInstruction);
     IfFailRet(hr);
 
@@ -612,7 +612,7 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
     COR_SIGNATURE intData{ELEMENT_TYPE_I4};
     TypeSignature intType = {0, 1, &intData};
 
-    rewriterWrapper.LoadInt32(methodProbes.size());
+    rewriterWrapper.LoadInt32(static_cast<INT32>(methodProbes.size()));
     hr = debuggerTokens->WriteRentArray(&rewriterWrapper, intType, &beginCallInstruction);
     IfFailRet(hr);
 
@@ -1579,7 +1579,7 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
     COR_SIGNATURE stringData{ELEMENT_TYPE_STRING};
     TypeSignature stringType = {0, 1, &stringData};
 
-    rewriterWrapper.LoadInt32(methodProbes.size());
+    rewriterWrapper.LoadInt32(static_cast<INT32>(methodProbes.size()));
     hr = debugger_tokens->WriteRentArray(&rewriterWrapper, stringType, &beginCallInstruction);
     IfFailRet(hr);
 
@@ -1599,7 +1599,7 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
     COR_SIGNATURE intData{ELEMENT_TYPE_I4};
     TypeSignature intType = {0, 1, &intData};
 
-    rewriterWrapper.LoadInt32(methodProbes.size());
+    rewriterWrapper.LoadInt32(static_cast<INT32>(methodProbes.size()));
     hr = debugger_tokens->WriteRentArray(&rewriterWrapper, intType, &beginCallInstruction);
     IfFailRet(hr);
 
