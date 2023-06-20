@@ -139,7 +139,7 @@
     <!-- Integration: NLog -->
     <!-- Assembly: NLog -->
     <!-- Latest package https://www.nuget.org/packages/NLog/5.1.4 -->
-    <PackageReference Include="NLog" Version="5.1.4" />
+    <PackageReference Include="NLog" Version="5.2.0" />
 
     <!-- Integration: Npgsql -->
     <!-- Assembly: Npgsql -->
