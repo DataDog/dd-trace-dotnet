@@ -65,6 +65,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Object::ToString()", "System.Text.StringBuilder")]
     public static string ToString(StringBuilder? target)
     {
+        // We want the null reference exception to be launched here if target is null
         var result = target!.ToString();
         PropagationModuleImpl.PropagateTaint(target, result);
         PropagationModuleImpl.FixRangesIfNeeded(result);
@@ -79,6 +80,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::ToString(System.Int32,System.Int32)")]
     public static string ToString(StringBuilder? target, int startIndex, int length)
     {
+        // We want the null reference exception to be launched here if target is null
         var result = target!.ToString(startIndex, length);
         PropagationModuleImpl.OnStringSubSequence(target, startIndex, result, result.Length);
         PropagationModuleImpl.FixRangesIfNeeded(result);
@@ -233,6 +235,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.String,System.Object)")]
     public static StringBuilder AppendFormat(StringBuilder? target, string? format, object? arg0)
     {
+        // We want the null reference exception to be launched here if target is null
         var result = target!.AppendFormat(format!, arg0);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, arg0);
         return result;
@@ -247,6 +250,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.String,System.Object,System.Object)")]
     public static StringBuilder AppendFormat(StringBuilder? target, string? format, object? arg0, object? arg1)
     {
+        // We want the null reference exception to be launched here if target is null
         var result = target!.AppendFormat(format!, arg0, arg1);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, arg0, arg1);
         return result;
@@ -262,6 +266,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.String,System.Object,System.Object,System.Object)")]
     public static StringBuilder AppendFormat(StringBuilder? target, string? format, object? arg0, object? arg1, object? arg2)
     {
+        // We want the null reference exception to be launched here if target is null
         var result = target!.AppendFormat(format!, arg0, arg1, arg2);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, arg0, arg1, arg2);
         return result;
@@ -275,6 +280,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.String,System.Object[])")]
     public static StringBuilder AppendFormat(StringBuilder? target, string? format, object[]? args)
     {
+        // We want the null reference exception to be launched here if target is null
         var result = target!.AppendFormat(format!, args!);
         StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, format, args);
         return result;
@@ -289,6 +295,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.IFormatProvider,System.String,System.Object)")]
     public static StringBuilder AppendFormat(StringBuilder? target, IFormatProvider? provider, string? format, object? arg0)
     {
+        // We want the null reference exception to be launched here if target is null
         var result = target!.AppendFormat(provider, format!, arg0);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, arg0);
         return result;
@@ -304,6 +311,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.IFormatProvider,System.String,System.Object,System.Object)")]
     public static StringBuilder AppendFormat(StringBuilder? target, IFormatProvider? provider, string? format, object? arg0, object? arg1)
     {
+        // We want the null reference exception to be launched here if target is null
         var result = target!.AppendFormat(provider, format!, arg0, arg1);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, arg0, arg1);
         return result;
@@ -320,6 +328,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.IFormatProvider,System.String,System.Object,System.Object,System.Object)")]
     public static StringBuilder AppendFormat(StringBuilder? target, IFormatProvider? provider, string? format, object? arg0, object? arg1, object? arg2)
     {
+        // We want the null reference exception to be launched here if target is null
         var result = target!.AppendFormat(provider, format!, arg0, arg1, arg2);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target, format, arg0, arg1, arg2);
         return result;
@@ -334,6 +343,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.IFormatProvider,System.String,System.Object[])")]
     public static StringBuilder AppendFormat(StringBuilder? target, IFormatProvider? provider, string? format, object[]? args)
     {
+        // We want the null reference exception to be launched here if target is null
         var result = target!.AppendFormat(provider, format!, args!);
         StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, format, args);
         return result;
@@ -348,6 +358,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::CopyTo(System.Int32,System.Char[],System.Int32,System.Int32)")]
     public static void CopyTo(StringBuilder? target, int sourceIndex, char[]? destination, int destinationIndex, int count)
     {
+        // We want the null reference exception to be launched here if target is null
         target!.CopyTo(sourceIndex, destination!, destinationIndex, count);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(destination, target);
     }
@@ -651,6 +662,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Remove(System.Int32,System.Int32)")]
     public static StringBuilder Remove(StringBuilder? target, int startIndex, int length)
     {
+        // We want the null reference exception to be launched here if target is null
         var result = target!.Remove(startIndex, length);
         PropagationModuleImpl.OnStringRemove(target, result, startIndex, startIndex + length);
         return result;
@@ -664,6 +676,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Replace(System.String,System.String)")]
     public static StringBuilder Replace(StringBuilder? target, string? oldValue, string? newValue)
     {
+        // We want the null reference exception to be launched here if target is null
         var result = target!.Replace(oldValue!, newValue);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target, oldValue, newValue);
         return result;
@@ -679,6 +692,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Replace(System.String,System.String,System.Int32,System.Int32)")]
     public static StringBuilder Replace(StringBuilder? target, string? oldValue, string? newValue, int startIndex, int count)
     {
+        // We want the null reference exception to be launched here if target is null
         var result = target!.Replace(oldValue!, newValue, startIndex, count);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target, oldValue, newValue);
         return result;
@@ -692,6 +706,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Replace(System.Char,System.Char)")]
     public static StringBuilder Replace(StringBuilder? target, char oldChar, char newChar)
     {
+        // We want the null reference exception to be launched here if target is null
         var result = target!.Replace(oldChar, newChar);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target);
         return result;
@@ -707,6 +722,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::Replace(System.Char,System.Char,System.Int32,System.Int32)")]
     public static StringBuilder Replace(StringBuilder? target, char oldChar, char newChar, int startIndex, int count)
     {
+        // We want the null reference exception to be launched here if target is null
         var result = target!.Replace(oldChar, newChar, startIndex, count);
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target);
         return result;
@@ -718,6 +734,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::set_Length(System.Int32)")]
     public static void SetLength(StringBuilder? target, int length)
     {
+        // We want the null reference exception to be launched here if target is null
         target!.Length = length;
         StringBuilderModuleImpl.FullTaintIfAnyTainted(target);
     }
@@ -731,6 +748,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.String,System.String[])")]
     public static StringBuilder AppendJoin(StringBuilder? target, string? separator, string[]? values)
     {
+        // We want the null reference exception to be launched here if target is null
         var result = target!.AppendJoin(separator, values!);
         StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, separator, values);
         return result;
@@ -744,6 +762,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.String,System.Object[])")]
     public static StringBuilder AppendJoin(StringBuilder? target, string? separator, object[]? values)
     {
+        // We want the null reference exception to be launched here if target is null
         var result = target!.AppendJoin(separator, values!);
         StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, separator, values);
         return result;
@@ -757,6 +776,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.Char,System.String[])")]
     public static StringBuilder AppendJoin(StringBuilder? target, char separator, string[]? values)
     {
+        // We want the null reference exception to be launched here if target is null
         var result = target!.AppendJoin(separator, values!);
         StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, null, values);
         return result;
@@ -770,6 +790,7 @@ public class StringBuilderAspects
     [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.Char,System.Object[])")]
     public static StringBuilder AppendJoin(StringBuilder? target, char separator, object[]? values)
     {
+        // We want the null reference exception to be launched here if target is null
         var result = target!.AppendJoin(separator, values!);
         StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, null, values);
         return result;
