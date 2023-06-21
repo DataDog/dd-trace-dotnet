@@ -138,7 +138,11 @@ namespace Datadog.Trace.Propagators
             var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
             var sampled = samplingPriority > 0 ? "1" : "0";
 
+#if NET6_0_OR_GREATER
+            return string.Create(null, stackalloc char[128], $"{context.RawTraceId}-{context.RawSpanId}-{sampled}");
+#else
             return $"{context.RawTraceId}-{context.RawSpanId}-{sampled}";
+#endif
         }
     }
 }
