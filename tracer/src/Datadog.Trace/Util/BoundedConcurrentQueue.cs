@@ -45,7 +45,7 @@ namespace Datadog.Trace.Util
         // Internal for testing
         internal ConcurrentQueue<T> InnerQueue => _queue;
 
-        public int Count => _queue.Count;
+        public int Count => _counter;
 
         public bool IsEmpty => _queue.IsEmpty;
 
