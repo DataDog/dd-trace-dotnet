@@ -9,8 +9,7 @@ Copyright 2017 Datadog, Inc.
   <PropertyGroup>
     <!-- IL2007: Could not resolve assembly specified in descriptor file -->
     <!-- IL2008: Could not resolve type specified in descriptor file -->
-    <!-- IL2026: Members attributed with RequiresUnreferencedCode may break when trimming -->
-    <NoWarn>IL2007;IL2008;IL2026</NoWarn>
+    <NoWarn>IL2007;IL2008</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
