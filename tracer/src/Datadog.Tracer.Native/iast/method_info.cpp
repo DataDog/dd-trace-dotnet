@@ -385,11 +385,6 @@ namespace iast
         bool verify = true; // Profiler->VerifyIL();
         bool dump = true; // Profiler->DumpIL();
 
-        if (!DebugActiveProcess(GetCurrentProcessId()))
-        {
-            trace::Logger::Error("DebugActiveProcess failed with error ", GetLastError());
-        }
-
         if (verify || dump)
         {
             if (!_rewriter) 
