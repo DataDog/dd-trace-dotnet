@@ -22,7 +22,8 @@ namespace Datadog.Trace.AppSec.Waf
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Encoder));
         private static readonly int ObjectStructSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
-        internal static readonly UnmanagedMemoryPool Pool = new(WafConstants.MaxStringLength, 150);
+        internal const int MaxBytesForMaxStringLength = WafConstants.MaxStringLength * 4;
+        internal static readonly UnmanagedMemoryPool Pool = new(MaxBytesForMaxStringLength, 150);
 
         public static ObjType DecodeArgsType(DDWAF_OBJ_TYPE t)
         {
@@ -197,7 +198,7 @@ namespace Datadog.Trace.AppSec.Waf
             {
 #if NETCOREAPP3_1_OR_GREATER
                 var unmanagedMemory = Pool.Rent();
-                var destination = new Span<byte>((void*)unmanagedMemory, WafConstants.MaxStringLength);
+                var destination = new Span<byte>((void*)unmanagedMemory, MaxBytesForMaxStringLength);
                 var writtenBytes = Encoding.UTF8.GetBytes(s, destination);
                 destination.Slice(0, writtenBytes + 1)[^1] = (byte)'\0';
                 argToFree2.Add(unmanagedMemory);
