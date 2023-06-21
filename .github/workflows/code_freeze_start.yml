@@ -42,10 +42,7 @@ jobs:
           page_number: 4
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Trigger AAS deploy
-        run: |
-          curl -X POST \
-          -H "Accept: application/vnd.github.v3+json" \
-          -H "Authorization: Bearer ${{ secrets.GH_TOKEN_PIERO }}" \
-          https://api.github.com/repos/DataDog/datadog-aas-extension/dispatches \
-          -d '{"event_type": "dd-trace-code-freeze", "client_payload": {"sha":"'"$GITHUB_SHA"'" } }'
+      - uses: ./.github/actions/deploy-aas-dev-apps
+        name: 'Trigger AAS deploy'
+        with:
+          aas_github_token: ${{ secrets.GITHUB_TOKEN }}
