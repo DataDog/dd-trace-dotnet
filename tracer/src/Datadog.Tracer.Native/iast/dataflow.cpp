@@ -17,20 +17,59 @@ static const WSTRING LastEntry = WStr("-");
 static const WSTRING _fixedAppDomainIncludeFilters[] = {
     LastEntry, // Can't have an empty array
 };
-static const WSTRING _fixedAppDomainExcludeFilters[] = {
-    WStr("DD*"), 
-    WStr("DataDog*"),
-    LastEntry, // Can't have an empty array. This must be the last element
-};
-static const WSTRING _fixedAssemblyIncludeFilters[] = {
-    LastEntry, // Can't have an empty array. This must be the last element
-};
 static const WSTRING _fixedAssemblyExcludeFilters[] = {
+    WStr("System*"),
     WStr("Datadog.*"),
+    WStr("Kudu*"),
+    WStr("Microsoft*"),
+    WStr("MSBuild"),
     WStr("dotnet"),
+    WStr("netstandard"),
+    WStr("AspNet.*"),
+    WStr("msvcm90*"),
+    WStr("Mono.*"),
+    WStr("NuGet.*"),
+    WStr("PCRE.*"),
+    WStr("Antlr*"),
+    WStr("Azure.Messaging.ServiceBus*"),
+    WStr("PostSharp"),
+    WStr("SMDiagnostics"),
+    WStr("testhost"),
+    WStr("WebGrease"),
+    WStr("YamlDotNet"),
+    WStr("EnvSettings*"),
+    WStr("EntityFramework*"),
+    WStr("linq2db*"),
+    WStr("Newtonsoft.Json*"),
+    WStr("log4net*"),
+    WStr("Autofac*"),
+    WStr("StackExchange*"),
+    WStr("BundleTransformer*"),
+    WStr("LibSassHost*"),
+    WStr("ClearScript*"),
+    WStr("NewRelic*"),
+    WStr("AppDynamics*"),
+    WStr("NProfiler*"),
+    WStr("KTJdotnetTls*"),
+    WStr("KTJUniDC*"),
+    WStr("Dynatrace*"),
+    WStr("oneagent*"),
+    WStr("CommandLine"),
+    WStr("Moq"),
+    WStr("Castle.Core"),
+    WStr("MiniProfiler*"),
+    WStr("MySql*"),
+    WStr("Serilog*"),
+    WStr("ServiceStack*"),
+    WStr("mscorlib"),
+    WStr("Xunit.*"),
+    WStr("xunit.*"),
+    WStr("FluentAssertions"),
+    WStr("NUnit3.TestAdapter"),
+    WStr("nunit.*"),
+    WStr("vstest.console"),
     WStr("testhost.*"),
-    WStr("Microsoft.TestPlatform.CoreUtilities"),
-    WStr("Microsoft.VisualStudio.TestPlatform.Common"),
+    WStr("Oracle.ManagedDataAccess"),
     LastEntry, // Can't have an empty array. This must be the last element
 };
 static const WSTRING _fixedMethodIncludeFilters[] = {
@@ -44,6 +83,18 @@ static const WSTRING _fixedMethodIncludeFilters[] = {
 };
 static const WSTRING _fixedMethodExcludeFilters[] = {
     WStr("DataDog*"),
+    WStr("System.Web.Mvc*"),
+    WStr("System.Web.PrefixContainer*"),
+    WStr("Microsoft.ClearScript*"),
+    WStr("JavaScriptEngineSwitcher*"),
+    WStr("IBM.Tivoli*"),
+    WStr("Dynatrace*"),
+    WStr("Microsoft.AspNetCore.Razor.Tools*"),
+    WStr("Microsoft.Extensions.CommandLineUtils*"),
+    WStr("System.Net.Http*"),
+    WStr("System.ServiceModel*"),
+    WStr("System.Web.Http*"),
+    WStr("MongoDB.*"),
     LastEntry, // Can't have an empty array. This must be the last element
 };
 
