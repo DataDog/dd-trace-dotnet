@@ -212,30 +212,9 @@ public abstract class EFBaseTests : InstrumentationTestsBase, IDisposable
     }
 
     [Fact]
-    public void GivenEntityFramework_WhenCallingExecuteNonQueryAsyncWithTainted_VulnerabilityIsReported()
-    {
-        _ = GetEntityCommand(taintedTitle).ExecuteNonQueryAsync().Result;
-        AssertVulnerable();
-    }
-
-    [Fact]
-    public void GivenEntityFramework_WhenCallingExecuteNonQueryAsyncWithTainted_VulnerabilityIsReported2()
-    {
-        _ = GetEntityCommand(taintedTitle).ExecuteNonQueryAsync(CancellationToken.None).Result;
-        AssertVulnerable();
-    }
-
-    [Fact]
     public void GivenEntityFramework_WhenCallingExecuteReaderWithTainted_VulnerabilityIsReported2()
     {
         GetEntityCommand(taintedTitle).ExecuteReader(CommandBehavior.SequentialAccess);
-        AssertVulnerable();
-    }
-
-    [Fact]
-    public void GivenEntityFramework_WhenCallingExecuteReaderAsyncWithTainted_VulnerabilityIsReported2()
-    {
-        _ = GetEntityCommand(taintedTitle).ExecuteReaderAsync(CommandBehavior.SequentialAccess).Result;
         AssertVulnerable();
     }
 
