@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Specialized;
+using System.Globalization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.TestHelpers;
@@ -25,7 +26,7 @@ namespace Datadog.Trace.Tests.Configuration
             Tracer.Instance.CurrentTraceSettings.GetServiceName(Tracer.Instance, "test")
                .Should().Be($"{Tracer.Instance.DefaultServiceName}-test");
 
-            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig("test:ok"));
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig((ConfigurationKeys.ServiceNameMappings, "test:ok")));
 
             Tracer.Instance.CurrentTraceSettings.GetServiceName(Tracer.Instance, "test")
                .Should().Be($"{Tracer.Instance.DefaultServiceName}-test", "the old configuration should be used inside of the active trace");
@@ -36,9 +37,30 @@ namespace Datadog.Trace.Tests.Configuration
                .Should().Be("ok", "the new configuration should be used outside of the active trace");
         }
 
-        private static ConfigurationBuilder CreateConfig(string serviceNamesMapping)
+        [Fact]
+        public void ApplyConfigurationTwice()
         {
-            var values = new NameValueCollection { [ConfigurationKeys.ServiceNameMappings] = serviceNamesMapping };
+            var tracer = TracerManager.Instance;
+
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig((ConfigurationKeys.GlobalSamplingRate, "0.4")));
+
+            var newTracer = TracerManager.Instance;
+
+            newTracer.Should().NotBeSameAs(tracer);
+
+            DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig((ConfigurationKeys.GlobalSamplingRate, "0.4")));
+
+            TracerManager.Instance.Should().BeSameAs(newTracer);
+        }
+
+        private static ConfigurationBuilder CreateConfig(params (string Key, string Value)[] settings)
+        {
+            var values = new NameValueCollection();
+
+            foreach (var (key, value) in settings)
+            {
+                values[key] = value;
+            }
 
             var configurationSource = new NameValueConfigurationSource(values);
 

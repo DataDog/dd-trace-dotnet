@@ -110,7 +110,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Console";
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*");
 
-            EnvironmentHelper.CustomEnvironmentVariables["DD_TRACE_SAMPLE_RATE"] = "0.9";
+            SetEnvironmentVariable("DD_TRACE_SAMPLE_RATE", "0.9");
             using var sample = StartSample(agent, string.Empty, string.Empty, aspNetCorePort: 5000);
 
             try
