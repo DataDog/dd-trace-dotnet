@@ -862,10 +862,10 @@ namespace Datadog.Trace.Configuration
         internal bool TraceId128BitLoggingEnabled { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the tracer will send the shell commands of
+        /// Gets a value indicating whether the tracer will send the shell commands of
         /// the "command_execution" integration to the agent.
         /// </summary>
-        internal bool CommandsCollectionEnabled { get; set; }
+        internal bool CommandsCollectionEnabled { get; }
 
         /// <summary>
         /// Gets the AAS settings
