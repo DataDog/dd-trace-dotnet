@@ -16,7 +16,7 @@ TEST(ApplicationStoreTest, GetDefaultName)
     const std::string expectedServiceName = "DefaultServiceName";
     const std::string expectedVersion = "DefaultVersion";
     const std::string expectedEnvironment = "DefaultEnvironment";
-        
+
     EXPECT_CALL(mockConfiguration, GetServiceName()).WillRepeatedly(ReturnRef(expectedServiceName));
     EXPECT_CALL(mockConfiguration, GetVersion()).WillRepeatedly(ReturnRef(expectedVersion));
     EXPECT_CALL(mockConfiguration, GetEnvironment()).WillRepeatedly(ReturnRef(expectedEnvironment));
@@ -38,11 +38,12 @@ TEST(ApplicationStoreTest, SetName)
 
     const auto runtimeId = "{82F18E9B-138D-4202-8D21-7BE1AF82EC8B}";
 
-    const auto expectedApplicationInfo = ApplicationInfo(
+    const auto expectedApplicationInfo = ApplicationInfo
+    {
         "ExpectedServiceName",
         "ExpectedEnvironment",
-        "ExpectedVersion"
-    );
+        "ExpectedVersion",
+    };
 
     applicationStore.SetApplicationInfo(
         runtimeId,

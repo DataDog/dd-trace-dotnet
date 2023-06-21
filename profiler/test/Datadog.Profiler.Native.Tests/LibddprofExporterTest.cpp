@@ -61,10 +61,10 @@ TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
     auto applicationStore = MockApplicationStore();
 
     std::string firstRid = "MyRid";
-    ApplicationInfo firstApplicationInfo("MyApp", "myenv", "1.0.2");
+    ApplicationInfo firstApplicationInfo{"MyApp", "myenv", "1.0.2"};
 
     std::string secondRid = "MyRid2";
-    ApplicationInfo secondApplicationInfo("OtherApplication", "myenv", "1.0.2");
+    ApplicationInfo secondApplicationInfo{"OtherApplication", "myenv", "1.0.2"};
 
     // Multiple applications
     EXPECT_CALL(applicationStore, GetApplicationInfo(firstRid)).WillRepeatedly(Return(firstApplicationInfo));
@@ -177,10 +177,10 @@ TEST(LibddprofExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     auto applicationStore = MockApplicationStore();
 
     std::string firstRid = "MyRid";
-    ApplicationInfo firstApplicationInfo("MyApp", "myenv", "1.0.2");
+    ApplicationInfo firstApplicationInfo{"MyApp", "myenv", "1.0.2"};
 
     std::string secondRid = "MyRid2";
-    ApplicationInfo secondApplicationInfo("OtherApplication", "myenv", "1.0.2");
+    ApplicationInfo secondApplicationInfo{"OtherApplication", "myenv", "1.0.2"};
 
     EXPECT_CALL(applicationStore, GetApplicationInfo(firstRid)).WillRepeatedly(Return(firstApplicationInfo));
     EXPECT_CALL(applicationStore, GetApplicationInfo(secondRid)).WillRepeatedly(Return(secondApplicationInfo));
@@ -284,10 +284,10 @@ TEST(LibddprofExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplication
     auto applicationStore = MockApplicationStore();
 
     std::string firstRid = "MyRid";
-    ApplicationInfo firstApplicationInfo("MyApp", "myenv", "1.0.2");
+    ApplicationInfo firstApplicationInfo{"MyApp", "myenv", "1.0.2"};
 
     std::string secondRid = "MyRid2";
-    ApplicationInfo secondApplicationInfo("OtherApplication", "myenv", "1.0.2");
+    ApplicationInfo secondApplicationInfo{"OtherApplication", "myenv", "1.0.2"};
 
     EXPECT_CALL(applicationStore, GetApplicationInfo(firstRid)).WillRepeatedly(Return(firstApplicationInfo));
     EXPECT_CALL(applicationStore, GetApplicationInfo(secondRid)).WillRepeatedly(Return(secondApplicationInfo));
