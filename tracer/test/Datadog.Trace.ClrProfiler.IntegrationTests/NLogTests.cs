@@ -21,6 +21,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class NLogTests : LogsInjectionTestBase
     {
+        private const string ContextNone = "None";
+        private const string CustomContextKey = "CustomContextKey";
+        private const string CustomContextValue = "CustomContextValue";
+
         private readonly LogFileTest _textFile = new()
         {
             FileName = "log-textFile.log",
@@ -47,8 +51,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                   new Version("5.0.0") : // DEFAULT_SAMPLES
                                   new Version((string)item[0]);
 
-                yield return item.Concat(false).Concat("None");
-                yield return item.Concat(true).Concat("None");
+                yield return item.Concat(false).Concat(ContextNone);
+                yield return item.Concat(true).Concat(ContextNone);
 
                 if (version >= minScopeContext)
                 {
@@ -136,12 +140,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.NLog), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(GetTestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void DirectlyShipsLogs(string packageVersion)
+        public void DirectlyShipsLogs(string packageVersion, bool enableLogShipping, string context)
         {
+            if (!enableLogShipping) { throw new Xunit.SkipException("Direct log submission disabled does not apply to this test"); }
+
             var hostName = "integration_nlog_tests";
             using var logsIntake = new MockLogsIntake();
 
@@ -151,7 +157,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var agentPort = TcpPortProvider.GetOpenPort();
             using var agent = MockTracerAgent.Create(Output, agentPort);
-            using var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            using var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion, arguments: context);
 
             ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
 
@@ -177,11 +183,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                .And.OnlyContain(x => !string.IsNullOrEmpty(x.TraceId))
                .And.OnlyContain(x => !string.IsNullOrEmpty(x.SpanId));
             VerifyInstrumentation(processResult.Process);
+
+            if (context != ContextNone)
+            {
+                Func<MockLogsIntake.Log, string, string, bool> hasProperty = (log, key, value) =>
+                {
+                    var prop = log.TryGetProperty(key);
+                    return prop.Exists && prop.Value == value;
+                };
+                logs.Should().Contain(x => hasProperty(x, CustomContextKey, CustomContextValue));
+            }
         }
 
         private void VerifyContextProperties(LogFileTest[] testFiles, string packageVersion, string context)
         {
-            if (context == "None") { return; }
+            if (context == ContextNone) { return; }
 
             // Skip for versions that don't support json
             if (testFiles.Length < 2) { return; }
@@ -191,7 +207,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var logs = GetLogFileContents(logFilePath);
             foreach (var log in logs)
             {
-                log.Should().MatchRegex(string.Format(test.RegexFormat, "CustomContextKey", @"""CustomContextValue"""));
+                log.Should().MatchRegex(string.Format(test.RegexFormat, CustomContextKey, $@"""{CustomContextValue}"""));
             }
         }
 
