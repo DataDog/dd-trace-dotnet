@@ -35,6 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable(ConfigurationKeys.Telemetry.V2Enabled, "1");
             SetEnvironmentVariable(ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds, "1");
             SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "5");
+            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
         }
 
         [SkippableFact]
