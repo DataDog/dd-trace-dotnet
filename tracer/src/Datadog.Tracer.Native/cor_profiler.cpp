@@ -1517,6 +1517,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         }
 
         Logger::Debug("JITCompilationStarted: Startup hook registered.");
+        hr = this->info_->ApplyMetaData(module_id);
+        if (FAILED(hr))
+        {
+            Logger::Warn("JITCompilationStarted: Error applying metadata to module_id: ", module_id);
+        }
     }
 
     return S_OK;
