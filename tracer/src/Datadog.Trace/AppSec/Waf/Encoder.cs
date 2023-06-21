@@ -212,7 +212,7 @@ namespace Datadog.Trace.AppSec.Waf
 #endif
             }
 
-            void AddToArray(ref DdwafObjectStruct map, params DdwafObjectStruct[] children)
+            void AddToArray(ref DdwafObjectStruct map, DdwafObjectStruct[] children)
             {
                 if (children.Length == 0)
                 {
