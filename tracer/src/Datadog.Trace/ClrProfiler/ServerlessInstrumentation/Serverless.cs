@@ -6,8 +6,8 @@
 using System;
 using System.IO;
 
-using Datadog.Trace.Util;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 {
@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
                 Debug("Sending CallTarget serverless integration definitions to native library.");
                 var serverlessDefinitions = GetServerlessDefinitions(handlerName);
                 // enable debug mode
-                GlobalSettings.SetDebugEnabled(true);
+                GlobalSettings.SetDebugEnabledInternal(true);
                 NativeMethods.InitializeProfiler(DefinitionsId, serverlessDefinitions);
 
                 Debug("The profiler has been initialized with serverless definitions, count = " + serverlessDefinitions.Length);
