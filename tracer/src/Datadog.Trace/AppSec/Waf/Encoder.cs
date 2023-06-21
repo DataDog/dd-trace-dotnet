@@ -8,6 +8,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
@@ -145,7 +146,8 @@ namespace Datadog.Trace.AppSec.Waf
 
         public static unsafe DdwafObjectStruct Encode2(object? o, List<GCHandle> argToFree, List<IntPtr> argToFree2, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = false)
         {
-            DdwafObjectStruct ProcessKeyValuePairs<T>(IEnumerable<T> enumerableDic, int count, delegate*<T, string?> getKey, delegate*<T, object?> getValue)
+            DdwafObjectStruct ProcessKeyValuePairs<TKey, TValue>(IEnumerable<KeyValuePair<TKey, TValue>> enumerableDic, int count, delegate*<KeyValuePair<TKey, TValue>, string?> getKey, delegate*<KeyValuePair<TKey, TValue>, object?> getValue)
+                where TKey : notnull
             {
                 var ddWafObjectMap = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
                 if (!string.IsNullOrEmpty(key))
@@ -171,6 +173,63 @@ namespace Datadog.Trace.AppSec.Waf
                 }
 
                 var children = new DdwafObjectStruct[count < WafConstants.MaxContainerSize ? count : WafConstants.MaxContainerSize];
+#if NETCOREAPP3_1_OR_GREATER
+                if (enumerableDic is IDictionary)
+                {
+                    if (typeof(KeyValuePair<TKey, TValue>) == typeof(KeyValuePair<string, string>))
+                    {
+                        EnumerateItems<string, string>();
+                    }
+                    else if (typeof(KeyValuePair<TKey, TValue>) == typeof(KeyValuePair<string, object>))
+                    {
+                        EnumerateItems<string, object>();
+                    }
+                    else if (typeof(KeyValuePair<TKey, TValue>) == typeof(KeyValuePair<string, string[]>))
+                    {
+                        EnumerateItems<string, string[]>();
+                    }
+                    else if (typeof(KeyValuePair<TKey, TValue>) == typeof(KeyValuePair<string, List<string>>))
+                    {
+                        EnumerateItems<string, List<string>>();
+                    }
+                    else if (typeof(KeyValuePair<TKey, TValue>) == typeof(KeyValuePair<string, JToken>))
+                    {
+                        EnumerateItems<string, JToken>();
+                    }
+                    else
+                    {
+                        EnumerateItems<TKey, TValue>();
+                    }
+                }
+                else
+                {
+                    EnumerateItems<TKey, TValue>();
+                }
+
+                void EnumerateItems<TKeySource, TValueSource>()
+                    where TKeySource : notnull
+                {
+                    var idx = 0;
+                    foreach (var originalKeyValue in (Dictionary<TKeySource, TValueSource>)enumerableDic)
+                    {
+                        var item = originalKeyValue;
+                        var keyValue = Unsafe.As<KeyValuePair<TKeySource, TValueSource>, KeyValuePair<TKey, TValue>>(ref item);
+                        var key = getKey(keyValue!);
+                        if (string.IsNullOrEmpty(key))
+                        {
+                            Log.Warning("EncodeDictionary: ignoring dictionary member with null name");
+                            continue;
+                        }
+
+                        children[idx++] = Encode2(getValue(keyValue!), argToFree, argToFree2, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
+                        if (idx == WafConstants.MaxContainerSize)
+                        {
+                            Log.Warning<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
+                            break;
+                        }
+                    }
+                }
+#else
                 var idx = 0;
                 foreach (var keyValue in enumerableDic)
                 {
@@ -188,6 +247,7 @@ namespace Datadog.Trace.AppSec.Waf
                         break;
                     }
                 }
+#endif
 
                 AddToArray(ref ddWafObjectMap, children);
 
