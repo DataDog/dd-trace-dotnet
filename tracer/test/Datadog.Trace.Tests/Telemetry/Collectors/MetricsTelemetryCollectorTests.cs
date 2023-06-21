@@ -43,10 +43,10 @@ public class MetricsTelemetryCollectorTests
         {
             new
             {
-                Metric = PublicApiUsage.Tracer_Configure.ToStringFast(),
+                Metric = "public_api",
                 Points = new[] { new { Value = 2 } },
                 Type = TelemetryMetricType.Count,
-                Tags = (string[])null,
+                Tags = new[] { PublicApiUsage.Tracer_Configure.ToStringFast() },
                 Common = false,
                 Namespace = (string)null,
             },

@@ -83,14 +83,17 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
                     value = int.MaxValue;
                 }
 
-                if (value > 0 && ((PublicApiUsage)i).ToStringFast() is { } metricName)
+                if (value > 0 && ((PublicApiUsage)i).ToStringFast() is { } tagName)
                 {
                     data.Add(
                         new MetricData(
-                            metricName,
+                            "public_api",
                             points: new MetricSeries { new(timestamp, value) },
                             common: false,
-                            type: TelemetryMetricType.Count));
+                            type: TelemetryMetricType.Count)
+                        {
+                            Tags = new[] { tagName }, // Annoying, should try to optimise this
+                        });
                 }
             }
         }
