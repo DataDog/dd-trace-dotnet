@@ -28,17 +28,39 @@ ApplicationInfo ApplicationStore::GetApplicationInfo(const std::string& runtimeI
     {
         _pConfiguration->GetServiceName(),
         _pConfiguration->GetEnvironment(),
-        _pConfiguration->GetVersion()
+        _pConfiguration->GetVersion(),
+        _pConfiguration->GetGitRepositoryUrl(),
+        _pConfiguration->GetGitCommitSha()
     };
 }
 
-
 void ApplicationStore::SetApplicationInfo(const std::string& runtimeId, const std::string& serviceName, const std::string& environment, const std::string& version)
 {
-    const ApplicationInfo info(serviceName, environment, version);
-
     std::lock_guard lock(_infosLock);
-    _infos.insert_or_assign(runtimeId, info);
+    auto& info = _infos[runtimeId];
+    info.ServiceName = serviceName;
+    info.Environment = environment;
+    info.Version = version;
+
+    // TODO see later: this should be done only if even the feature is disabled in the Tracer
+    //      we still want the profiler to provide such information
+    if (info.RepositoryUrl.empty())
+    {
+        info.RepositoryUrl = _pConfiguration->GetGitRepositoryUrl();
+    }
+
+    if (info.CommitSha.empty())
+    {
+        info.CommitSha = _pConfiguration->GetGitCommitSha();
+    }
+}
+
+void ApplicationStore::SetGitMetadata(std::string runtimeId, std::string respositoryUrl, std::string commitSha)
+{
+    std::lock_guard lock(_infosLock);
+    auto& info = _infos[std::move(runtimeId)];
+    info.RepositoryUrl = std::move(respositoryUrl);
+    info.CommitSha = std::move(commitSha);
 }
 
 const char* ApplicationStore::GetName()
