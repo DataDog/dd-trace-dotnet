@@ -109,14 +109,14 @@ namespace LogsInjection.NLog
                     global::NLog.ScopeContext.PushProperty(propKey, propValue);
                     break;
 #else
-                    throw new ArgumentException("Invalid context property '{0}' for this NLog version", contextProperty);
+                    throw new ArgumentException("Invalid context property '{0}' for this NLog version", contextProperty.ToString());
 #endif
                 case ContextProperty.Mdlc:
 #if NLOG_5_0 || NLOG_4_6
                     global::NLog.MappedDiagnosticsLogicalContext.Set(propKey, propValue);
                     break;
 #else
-                    throw new ArgumentException("Invalid context property '{0}' for this NLog version", contextProperty);
+                    throw new ArgumentException("Invalid context property '{0}' for this NLog version", contextProperty.ToString());
 #endif
                 case ContextProperty.Mdc:
                     global::NLog.MappedDiagnosticsContext.Set(propKey, propValue);
