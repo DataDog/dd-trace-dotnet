@@ -38,15 +38,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> GetTestData()
         {
-            foreach (var item in PackageVersions.NLog)
-            {
-                yield return item.Concat(false);
-                yield return item.Concat(true);
-            }
-        }
-
-        public static IEnumerable<object[]> GetContextTestData()
-        {
             var minScopeContext = new Version("5.0.0");
             var minMdlc = new Version("4.6.0");
             var minMdc = new Version("4.0.0");
@@ -55,6 +46,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var version = (string)item[0] == string.Empty ?
                                   new Version("5.0.0") : // DEFAULT_SAMPLES
                                   new Version((string)item[0]);
+
+                yield return item.Concat(false).Concat("None");
+                yield return item.Concat(true).Concat("None");
 
                 if (version >= minScopeContext)
                 {
@@ -83,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void InjectsLogsWhenEnabled(string packageVersion, bool enableLogShipping)
+        public void InjectsLogsWhenEnabled(string packageVersion, bool enableLogShipping, string context)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             SetInstrumentationVerification();
@@ -97,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var expectedCorrelatedSpanCount = 1;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            using (var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion, arguments: context))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
@@ -105,6 +99,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var testFiles = GetTestFiles(packageVersion);
                 ValidateLogCorrelation(spans, testFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion);
                 VerifyInstrumentation(processResult.Process);
+                VerifyContextProperties(testFiles, packageVersion, context);
             }
         }
 
@@ -113,7 +108,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void DoesNotInjectLogsWhenDisabled(string packageVersion, bool enableLogShipping)
+        public void DoesNotInjectLogsWhenDisabled(string packageVersion, bool enableLogShipping, string context)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "false");
             SetInstrumentationVerification();
@@ -127,7 +122,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var expectedCorrelatedSpanCount = 0;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            using (var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion, arguments: context))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
@@ -136,6 +131,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 ValidateLogCorrelation(spans, testFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion, disableLogCorrelation: true);
 
                 VerifyInstrumentation(processResult.Process);
+                VerifyContextProperties(testFiles, packageVersion, context);
             }
         }
 
@@ -183,43 +179,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             VerifyInstrumentation(processResult.Process);
         }
 
-        [SkippableTheory]
-        [MemberData(nameof(GetContextTestData))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("SupportsInstrumentationVerification", "True")]
-        public void InjectsLogsWithContextWhenEnabled(string packageVersion, bool enableLogShipping, string context)
+        private void VerifyContextProperties(LogFileTest[] testFiles, string packageVersion, string context)
         {
-            SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
-            SetInstrumentationVerification();
-            using var logsIntake = new MockLogsIntake();
-            if (enableLogShipping)
+            if (context == "None") { return; }
+
+            // Skip for versions that don't support json
+            if (testFiles.Length < 2) { return; }
+
+            var test = testFiles[1];
+            var logFilePath = Path.Combine(EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion), test.FileName);
+            var logs = GetLogFileContents(logFilePath);
+            foreach (var log in logs)
             {
-                EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.NLog), nameof(InjectsLogsWhenEnabled));
-            }
-
-            var expectedCorrelatedTraceCount = 1;
-            var expectedCorrelatedSpanCount = 1;
-
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = RunSampleAndWaitForExit(agent, context, packageVersion: packageVersion))
-            {
-                var spans = agent.WaitForSpans(1, 2500);
-                Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
-
-                var testFiles = GetTestFiles(packageVersion);
-                ValidateLogCorrelation(spans, testFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion);
-                VerifyInstrumentation(processResult.Process);
-
-                if (testFiles.Length < 2) { throw new Exception("This test is not meant to run on versions that don't support json"); }
-
-                var test = testFiles[1];
-                var logFilePath = Path.Combine(EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion), test.FileName);
-                var logs = GetLogFileContents(logFilePath);
-                foreach (var log in logs)
-                {
-                    log.Should().MatchRegex(string.Format(test.RegexFormat, "CustomContextKey", @"""CustomContextValue"""));
-                }
+                log.Should().MatchRegex(string.Format(test.RegexFormat, "CustomContextKey", @"""CustomContextValue"""));
             }
         }
 
