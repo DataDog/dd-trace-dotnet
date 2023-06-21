@@ -12,19 +12,19 @@ internal partial interface IMetricsTelemetryCollector
 
     public void RecordCountSpanFinished(int increment = 1);
 
-    public void RecordCountSpanSampled(int increment = 1);
+    public void RecordCountSpanEnqueuedForSerialization(Datadog.Trace.Telemetry.Metrics.MetricTags.SpanEnqueueReason tag, int increment = 1);
 
     public void RecordCountSpanDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.DropReason tag, int increment = 1);
 
-    public void RecordCountTraceCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.TraceContinuation tag, int increment = 1);
+    public void RecordCountTraceSegmentCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.TraceContinuation tag, int increment = 1);
 
-    public void RecordCountTraceEnqueued(int increment = 1);
+    public void RecordCountTraceChunkEnqueued(Datadog.Trace.Telemetry.Metrics.MetricTags.TraceChunkEnqueueReason tag, int increment = 1);
 
-    public void RecordCountTraceSampled(int increment = 1);
+    public void RecordCountTraceChunkDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.DropReason tag, int increment = 1);
 
-    public void RecordCountTraceDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.DropReason tag, int increment = 1);
+    public void RecordCountTraceChunkSent(int increment = 1);
 
-    public void RecordCountTraceSent(int increment = 1);
+    public void RecordCountTraceSegmentsClosed(int increment = 1);
 
     public void RecordCountTraceApiRequests(int increment = 1);
 

@@ -13,6 +13,8 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Propagators
@@ -107,6 +109,7 @@ namespace Datadog.Trace.Propagators
         public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
+            TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.TraceContext);
             var traceparent = CreateTraceParentHeader(context);
             carrierSetter.Set(carrier, TraceParentHeaderName, traceparent);
 
@@ -304,6 +307,7 @@ namespace Datadog.Trace.Propagators
                 rawTraceId: rawTraceId,
                 rawParentId: rawSpanId);
 
+            TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.TraceContext);
             return true;
         }
 

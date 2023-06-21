@@ -6,6 +6,8 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Propagators
@@ -26,6 +28,7 @@ namespace Datadog.Trace.Propagators
         public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
+            TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.B3SingleHeader);
             var header = CreateHeader(context);
             carrierSetter.Set(carrier, B3, header);
         }
@@ -127,6 +130,7 @@ namespace Datadog.Trace.Propagators
                 spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId);
 #endif
 
+                TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.B3SingleHeader);
                 return true;
             }
 
