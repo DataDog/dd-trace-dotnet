@@ -6,7 +6,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
@@ -70,6 +72,52 @@ public class TelemetryMetricExtensionsTests
            .OnlyHaveUniqueItems();
     }
 
+    [Fact]
+    public void MustHaveValidTagsForEveryCount()
+    {
+        var keys = typeof(MetricsTelemetryCollector).GetMethod("GetCountBuffer", BindingFlags.Static | BindingFlags.NonPublic);
+        CheckTagsAreValid(keys);
+    }
+
+    [Fact]
+    public void MustHaveValidTagsForEveryGauge()
+    {
+        var keys = typeof(MetricsTelemetryCollector).GetMethod("GetGaugeBuffer", BindingFlags.Static | BindingFlags.NonPublic);
+        CheckTagsAreValid(keys);
+    }
+
+    [Fact]
+    public void MustHaveValidTagsForEveryDistribution()
+    {
+        var keys = typeof(MetricsTelemetryCollector).GetMethod("GetDistributionBuffer", BindingFlags.Static | BindingFlags.NonPublic);
+        CheckTagsAreValid(keys);
+    }
+
+    private static void CheckTagsAreValid(MethodInfo getMetricKeys)
+    {
+        var values = (Array)getMetricKeys.Invoke(null, Array.Empty<object>());
+        for (var i = 0; i < values.Length; i++)
+        {
+            var duckTyped = values.GetValue(i).DuckCast<MetricKeyDuckType>();
+            var tags = duckTyped.Tags;
+            if (tags is null)
+            {
+                continue;
+            }
+
+            tags.Should()
+                .OnlyContain(x => x.ToLowerInvariant() == x, "should all be lowercase")
+                .And.OnlyContain(x => x.Trim() == x, "should not have any whitespace");
+        }
+    }
+
     private static IEnumerable<T> GetEnums<T>()
         => Enum.GetValues(typeof(T)).Cast<T>();
+
+    [DuckCopy]
+    public struct MetricKeyDuckType
+    {
+        [DuckField]
+        public string[] Tags;
+    }
 }
