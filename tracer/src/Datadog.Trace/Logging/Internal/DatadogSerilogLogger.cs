@@ -212,7 +212,7 @@ namespace Datadog.Trace.Logging
                 TelemetryFactory.Metrics.RecordCountLogCreated(LevelToTag(level));
                 if (_rateLimiter.ShouldLog(sourceFile, sourceLine, out var skipCount))
                 {
-                    // RFC suggests we should always add the "messages skipped" line, but feels like necessary noise
+                    // RFC suggests we should always add the "messages skipped" line, but feels like unnecessary noise
                     if (skipCount > 0)
                     {
                         var newArgs = new object[args.Length + 1];
