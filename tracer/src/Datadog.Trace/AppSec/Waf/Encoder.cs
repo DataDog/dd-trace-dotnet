@@ -487,8 +487,6 @@ namespace Datadog.Trace.AppSec.Waf
                             {
                                 childrenArray[idx] = data;
                             }
-
-                            idx++;
                         }
 
                         if (childrenArray is null)
