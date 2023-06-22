@@ -112,12 +112,15 @@ namespace iast
         if (_fullName.size() == 0)
         {
             std::lock_guard<std::mutex> lock(_fullNameMutex);
-            _fullName = GetTypeName() + WStr("::") + _name;
-            auto signature = GetSignature();
-            if (signature != nullptr)
+            if (_fullName.size() == 0)
             {
-                _fullNameWithReturnType = signature->CharacterizeMember(_fullName, true);
-                _fullName = signature->CharacterizeMember(_fullName, false);
+                _fullName = GetTypeName() + WStr("::") + _name;
+                auto signature = GetSignature();
+                if (signature != nullptr)
+                {
+                    _fullNameWithReturnType = signature->CharacterizeMember(_fullName, true);
+                    _fullName = signature->CharacterizeMember(_fullName, false);
+                }
             }
         }
         return includeReturnType ? _fullNameWithReturnType : _fullName;
