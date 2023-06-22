@@ -145,7 +145,7 @@ namespace Datadog.Trace.AppSec.Waf
             return value;
         }
 
-        public static unsafe DdwafObjectStruct Encode2(object? o, List<GCHandle> argToFree, List<IntPtr> argToFree2, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = false)
+        public static unsafe DdwafObjectStruct Encode2<TInstance>(TInstance? o, List<GCHandle> argToFree, List<IntPtr> argToFree2, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = false)
         {
             DdwafObjectStruct ProcessKeyValuePairs<TKey, TValue>(IEnumerable<KeyValuePair<TKey, TValue>> enumerableDic, int count, delegate*<KeyValuePair<TKey, TValue>, string?> getKey, delegate*<KeyValuePair<TKey, TValue>, object?> getValue)
                 where TKey : notnull
@@ -450,14 +450,41 @@ namespace Datadog.Trace.AppSec.Waf
                                 break;
                             }
 
+                            DdwafObjectStruct data;
+                            // Avoid boxing of known values types from the switch above
+                            if (listInstance is IList<bool> boolCollection)
+                            {
+                                data = Encode2(boolCollection[idx], argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                            }
+                            else if (listInstance is IList<int> intCollection)
+                            {
+                                data = Encode2(intCollection[idx], argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                            }
+                            else if (listInstance is IList<uint> uintCollection)
+                            {
+                                data = Encode2(uintCollection[idx], argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                            }
+                            else if (listInstance is IList<long> longCollection)
+                            {
+                                data = Encode2(longCollection[idx], argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                            }
+                            else if (listInstance is IList<ulong> ulongCollection)
+                            {
+                                data = Encode2(ulongCollection[idx], argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                            }
+                            else
+                            {
+                                data = Encode2(listInstance[idx], argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                            }
+
                             if (childrenArray is null)
                             {
-                                *(DdwafObjectStruct*)itemData = Encode2(listInstance[idx], argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                                *(DdwafObjectStruct*)itemData = data;
                                 itemData += DdwafObjectStructSize;
                             }
                             else
                             {
-                                childrenArray[idx] = Encode2(listInstance[idx], argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                                childrenArray[idx] = data;
                             }
 
                             idx++;
