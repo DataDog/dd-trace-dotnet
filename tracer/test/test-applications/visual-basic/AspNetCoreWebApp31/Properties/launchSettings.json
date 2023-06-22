@@ -1,0 +1,50 @@
+﻿{
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:33675",
+      "sslPort": 44385
+    }
+  },
+  "profiles": {
+    "IIS Express Datadog": {
+      "commandName": "IISExpress",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "DD_TRACE_HEADER_TAGS": "sample.correlation.identifier, Server",
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
+        "DD_VERSION": "1.0.0",
+        "CORECLR_ENABLE_PROFILING": "1",
+        "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer",
+        "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+      },
+      "use64Bit": true,
+      "nativeDebugging": true
+    },
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "use64Bit": true,
+      "nativeDebugging": true
+    },
+    "AspNetCoreWebApp31": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DD_TRACE_HEADER_TAGS": "sample.correlation.identifier, Server",
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
+        "DD_VERSION": "1.0.0",
+        "CORECLR_ENABLE_PROFILING": "1",
+        "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer",
+        "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+      },
+      "applicationUrl": "http://localhost:54568",
+      "nativeDebugging": true
+    }
+  }
+}
