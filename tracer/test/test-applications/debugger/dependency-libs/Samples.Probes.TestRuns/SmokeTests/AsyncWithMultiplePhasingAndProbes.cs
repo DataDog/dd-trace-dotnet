@@ -29,7 +29,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
 
     // Phase 6
     [LogLineProbeTestData(lineNumber: 102, phase: 6, expectedNumberOfSnapshots: 0, ExpectProbeStatusFailure = true)]
-    public class AsyncWithMultiplePhasingAndProbes : IAsyncRun
+    public class AsyncWithMultiplePhasingAndProbes
     {
         private const string Json = @"{""ref"": ""a""}";
         private const string ConditionEvaluatesToFalseJson = @"{

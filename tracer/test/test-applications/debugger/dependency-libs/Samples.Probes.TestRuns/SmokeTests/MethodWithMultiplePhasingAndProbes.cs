@@ -29,7 +29,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
 
     // Phase 6
     [LogLineProbeTestData(lineNumber: 94, phase: 6, expectedNumberOfSnapshots: 0, expectProbeStatusFailure: true)]
-    public class MethodWithMultiplePhasingAndProbes : IRun
+    public class MethodWithMultiplePhasingAndProbes
     {
         private const string Json = @"{""ref"": ""a""}";
         private const string ConditionEvaluatesToFalseJson = @"{
