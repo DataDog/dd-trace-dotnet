@@ -129,12 +129,9 @@ private:
     int32_t _codeHotspotsThreadsThreshold;
     bool _useBacktrace2;
     bool _isAllocationRecorderEnabled;
-<<<<<<< HEAD
     bool _isGcThreadsCpuTimeEnabled;
-=======
     std::string _gitRepositoryUrl;
     std::string _gitCommitSha;
->>>>>>> ab37bc0ae (Propagate git repository url and commit hash from tracer to profiler)
 
     double _minimumCores;
     std::string _namedPipeName;
