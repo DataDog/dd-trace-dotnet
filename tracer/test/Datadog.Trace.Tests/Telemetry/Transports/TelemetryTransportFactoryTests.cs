@@ -29,7 +29,8 @@ public class TelemetryTransportFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             v2Enabled: v2Enabled,
-            metricsEnabled: true);
+            metricsEnabled: true,
+            debugEnabled: false);
 
         var exporterSettings = new ImmutableExporterSettings(new ExporterSettings());
 

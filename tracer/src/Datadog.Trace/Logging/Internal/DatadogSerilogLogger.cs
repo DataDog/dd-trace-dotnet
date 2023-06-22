@@ -6,6 +6,8 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core.Pipeline;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -207,9 +209,10 @@ namespace Datadog.Trace.Logging
         {
             try
             {
+                TelemetryFactory.Metrics.RecordCountLogCreated(LevelToTag(level));
                 if (_rateLimiter.ShouldLog(sourceFile, sourceLine, out var skipCount))
                 {
-                    // RFC suggests we should always add the "messages skipped" line, but feels like uneccessary noise
+                    // RFC suggests we should always add the "messages skipped" line, but feels like necessary noise
                     if (skipCount > 0)
                     {
                         var newArgs = new object[args.Length + 1];
@@ -240,6 +243,16 @@ namespace Datadog.Trace.Logging
                     // ignore
                 }
             }
+
+            static MetricTags.LogLevel LevelToTag(LogEventLevel logLevel)
+                => logLevel switch
+                {
+                    LogEventLevel.Verbose => MetricTags.LogLevel.Debug,
+                    LogEventLevel.Debug => MetricTags.LogLevel.Debug,
+                    LogEventLevel.Information => MetricTags.LogLevel.Information,
+                    LogEventLevel.Warning => MetricTags.LogLevel.Warning,
+                    _ => MetricTags.LogLevel.Error,
+                };
         }
     }
 }

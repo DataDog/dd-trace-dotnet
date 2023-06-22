@@ -63,6 +63,9 @@ namespace Samples.AspNetCoreSimpleController
             Console.WriteLine(" * DD_INTERNAL_TELEMETRY_V2_ENABLED: '{0}'",
                               Environment.GetEnvironmentVariable("DD_INTERNAL_TELEMETRY_V2_ENABLED"));
 
+            Console.WriteLine(" * DD_TELEMETRY_METRICS_ENABLED: '{0}'",
+                              Environment.GetEnvironmentVariable("DD_TELEMETRY_METRICS_ENABLED"));
+
             Console.WriteLine(" * Using managed tracer version '{0}' and native tracer version '{1}'",
                               managedTracerVersion, nativeTracerVersion);
             Console.WriteLine();

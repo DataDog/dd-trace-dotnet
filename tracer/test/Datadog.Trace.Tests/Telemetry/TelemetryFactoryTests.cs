@@ -36,7 +36,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             v2Enabled: v2Enabled,
-            metricsEnabled: false);
+            metricsEnabled: false,
+            debugEnabled: false);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings);
 
@@ -58,7 +59,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             v2Enabled: v2Enabled,
-            metricsEnabled: false);
+            metricsEnabled: false,
+            debugEnabled: false);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings);
 
@@ -82,7 +84,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             v2Enabled: false,
-            metricsEnabled: false);
+            metricsEnabled: false,
+            debugEnabled: false);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings);
 
@@ -108,7 +111,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             v2Enabled: true,
-            metricsEnabled: false);
+            metricsEnabled: false,
+            debugEnabled: false);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings);
 
@@ -133,7 +137,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             v2Enabled: false,
-            metricsEnabled: false);
+            metricsEnabled: false,
+            debugEnabled: false);
 
         var controller1 = factory.CreateTelemetryController(tracerSettings, settings);
         var metrics1 = TelemetryFactory.Metrics;
@@ -174,7 +179,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             v2Enabled: true,
-            metricsEnabled: false);
+            metricsEnabled: false,
+            debugEnabled: false);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings);
 
@@ -198,7 +204,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
             v2Enabled: true,
-            metricsEnabled: true);
+            metricsEnabled: true,
+            debugEnabled: false);
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings);
 
@@ -224,7 +231,8 @@ public class TelemetryFactoryTests
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: dependencyCollectionEnabled,
             v2Enabled: true,
-            metricsEnabled: true);
+            metricsEnabled: true,
+            debugEnabled: false);
 
         var controller1 = factory.CreateTelemetryController(tracerSettings, settings);
         var metrics1 = TelemetryFactory.Metrics;

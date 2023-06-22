@@ -1,0 +1,45 @@
+name: Deploy AAS test apps
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * TUE'
+    - cron: '0 0 * * FRI'
+
+jobs:
+  deploy_aas_test_apps:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+    steps:
+      - uses: octokit/request-action@v2.x
+        name: 'Open Code Freeze Milestone'
+        id: milestones
+        if: github.event_name != 'workflow_dispatch'
+        with:
+          route: GET /repos/{owner}/{repo}/milestones
+          owner: DataDog
+          repo: dd-trace-dotnet
+          state: open
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: 'Check if code freeze is in place'
+        if: github.event_name != 'workflow_dispatch' # don't check if triggered manually
+        run: |
+          json=$(cat << 'ENDOFMESSAGE'
+            ${{ steps.milestones.outputs.data }}
+          ENDOFMESSAGE
+          )
+          
+          if addr=$(echo $json | jq -er '.[] | select(.title == "Code Freeze")'); then
+            echo "A code freeze is in place, we should not trigger a deployment."
+            echo "stop=true" >> "$GITHUB_ENV"
+          fi
+
+      - uses: ./.github/actions/deploy-aas-dev-apps
+        name: 'Trigger AAS deploy'
+        if: env.stop != 'true'
+        with:
+          aas_github_token: ${{ secrets.GITHUB_TOKEN }}
