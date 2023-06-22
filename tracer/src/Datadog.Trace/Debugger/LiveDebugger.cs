@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#pragma warning disable SA1402 // FileMayOnlyContainASingleType - StyleCop did not enforce this for records initially
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -461,3 +463,5 @@ internal record BoundLineProbeLocation
 
     public int LineNumber { get; set; }
 }
+
+#pragma warning restore SA1402 // FileMayOnlyContainASingleType - StyleCop did not enforce this for records initially
