@@ -41,18 +41,7 @@ void ApplicationStore::SetApplicationInfo(const std::string& runtimeId, const st
     info.ServiceName = serviceName;
     info.Environment = environment;
     info.Version = version;
-
-    // TODO see later: this should be done only if even the feature is disabled in the Tracer
-    //      we still want the profiler to provide such information
-    if (info.RepositoryUrl.empty())
-    {
-        info.RepositoryUrl = _pConfiguration->GetGitRepositoryUrl();
-    }
-
-    if (info.CommitSha.empty())
-    {
-        info.CommitSha = _pConfiguration->GetGitCommitSha();
-    }
+    // Here we do not set the RepositoryUrl and CommitSha fields from configuration
 }
 
 void ApplicationStore::SetGitMetadata(std::string runtimeId, std::string respositoryUrl, std::string commitSha)

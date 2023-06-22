@@ -16,10 +16,14 @@ TEST(ApplicationStoreTest, GetDefaultName)
     const std::string expectedServiceName = "DefaultServiceName";
     const std::string expectedVersion = "DefaultVersion";
     const std::string expectedEnvironment = "DefaultEnvironment";
+    const std::string expectedGitRepository = "DefaultGitRepository";
+    const std::string expectedGitCommitSha = "DefaultGitCommitSha";
 
     EXPECT_CALL(mockConfiguration, GetServiceName()).WillRepeatedly(ReturnRef(expectedServiceName));
     EXPECT_CALL(mockConfiguration, GetVersion()).WillRepeatedly(ReturnRef(expectedVersion));
     EXPECT_CALL(mockConfiguration, GetEnvironment()).WillRepeatedly(ReturnRef(expectedEnvironment));
+    EXPECT_CALL(mockConfiguration, GetGitRepositoryUrl()).WillRepeatedly(ReturnRef(expectedGitRepository));
+    EXPECT_CALL(mockConfiguration, GetGitCommitSha()).WillRepeatedly(ReturnRef(expectedGitCommitSha));
 
     ApplicationStore applicationStore(configuration.get());
 
@@ -28,6 +32,8 @@ TEST(ApplicationStoreTest, GetDefaultName)
     ASSERT_EQ(info.ServiceName, expectedServiceName);
     ASSERT_EQ(info.Version, expectedVersion);
     ASSERT_EQ(info.Environment, expectedEnvironment);
+    ASSERT_EQ(info.RepositoryUrl, expectedGitRepository);
+    ASSERT_EQ(info.CommitSha, expectedGitCommitSha);
 }
 
 TEST(ApplicationStoreTest, SetName)
@@ -43,6 +49,8 @@ TEST(ApplicationStoreTest, SetName)
         "ExpectedServiceName",
         "ExpectedEnvironment",
         "ExpectedVersion",
+        "ExpectedGitRepositoryUrl",
+        "ExpectedGitCommitSha"
     };
 
     applicationStore.SetApplicationInfo(
@@ -51,9 +59,16 @@ TEST(ApplicationStoreTest, SetName)
         expectedApplicationInfo.Environment,
         expectedApplicationInfo.Version);
 
-    const auto& info = applicationStore.GetApplicationInfo(runtimeId);
+    applicationStore.SetGitMetadata(
+        runtimeId,
+        expectedApplicationInfo.RepositoryUrl,
+        expectedApplicationInfo.CommitSha);
+
+    auto const& info = applicationStore.GetApplicationInfo(runtimeId);
 
     ASSERT_EQ(info.Environment, expectedApplicationInfo.Environment);
     ASSERT_EQ(info.ServiceName, expectedApplicationInfo.ServiceName);
     ASSERT_EQ(info.Version, expectedApplicationInfo.Version);
+    ASSERT_EQ(info.RepositoryUrl, expectedApplicationInfo.RepositoryUrl);
+    ASSERT_EQ(info.CommitSha, expectedApplicationInfo.CommitSha);
 }
