@@ -2,11 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
-#if NETCOREAPP || NET5_0_OR_GREATER
-using System.Runtime.InteropServices;
-#endif
-using System.Runtime.Versioning;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {

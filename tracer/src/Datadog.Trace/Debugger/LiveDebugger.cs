@@ -356,6 +356,13 @@ namespace Datadog.Trace.Debugger
                     {
                         _unboundProbes.Remove(boundProbe);
                     }
+
+                    // Update probe statuses
+
+                    var probeIds = noLongerUnboundProbes.Select(p => p.Id).ToArray();
+                    var newProbeStatuses = noLongerUnboundProbes.Select(p => new FetchProbeStatus(p.Id)).ToArray();
+
+                    _probeStatusPoller.UpdateProbes(probeIds, newProbeStatuses);
                 }
             }
         }
