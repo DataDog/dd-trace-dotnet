@@ -41,7 +41,8 @@ void ApplicationStore::SetApplicationInfo(const std::string& runtimeId, const st
     info.ServiceName = serviceName;
     info.Environment = environment;
     info.Version = version;
-    // Here we do not set the RepositoryUrl and CommitSha fields from configuration
+    info.RepositoryUrl = _pConfiguration->GetGitRepositoryUrl();
+    info.CommitSha = _pConfiguration->GetGitCommitSha();
 }
 
 void ApplicationStore::SetGitMetadata(std::string runtimeId, std::string respositoryUrl, std::string commitSha)
