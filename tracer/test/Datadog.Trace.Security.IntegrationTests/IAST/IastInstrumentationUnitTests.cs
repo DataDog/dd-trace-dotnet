@@ -386,55 +386,13 @@ public class IastInstrumentationUnitTests : TestHelper
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public void TestInstrumentedUnitTestsFail2()
-    {
-        int times = 20;
-        var logDirectory = Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests");
-        string dumpCI = GetCIDumpInfo();
-        SetDumpInfo(logDirectory);
-
-        for (int i = 0; i < times; i++)
-        {
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            {
-                EnableIast(true);
-                EnableEvidenceRedaction(false);
-                string arguments = string.Empty;
-#if NET462
-                arguments = @" /Framework:"".NETFramework,Version=v4.6.2"" ";
-#else
-                if (EnvironmentTools.IsLinux())
-                {
-                    if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
-                    {
-                        arguments += " --TestCaseFilter:\"(Category!=ArmUnsupported)&(Category!=LinuxUnsupported)\"";
-                    }
-                    else
-                    {
-                        arguments += " --TestCaseFilter:\"Category!=LinuxUnsupported\"";
-                    }
-                }
-#endif
-                SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logDirectory);
-                SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "0");
-                string dumpTest = GetHelperDumpInfo();
-                ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);
-                var errorMsg = "dumpTest: " + dumpTest + Environment.NewLine + "dumpCI:" + dumpCI + Environment.NewLine +
-                    "arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput;
-
-                processResult.StandardError.Should().BeEmpty(errorMsg);
-            }
-        }
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
     public void TestInstrumentedUnitTests()
     {
         using (var agent = EnvironmentHelper.GetMockAgent())
         {
             EnableIast(true);
+            var logDirectory = Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests");
+            SetDumpInfo(logDirectory);
             EnableEvidenceRedaction(false);
             string arguments = string.Empty;
 #if NET462
@@ -452,7 +410,7 @@ public class IastInstrumentationUnitTests : TestHelper
                 }
             }
 #endif
-            SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests"));
+            SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logDirectory);
             SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "0");
             ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);
             processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
@@ -559,26 +517,8 @@ public class IastInstrumentationUnitTests : TestHelper
     {
         SetEnvironmentVariable("COMPlus_DbgEnableMiniDump", "1");
         SetEnvironmentVariable("COMPlus_DbgMiniDumpType", "4");
+        // Getting: The pid argument is no longer supported when using this one
+        // SetEnvironmentVariable("COMPlus_DbgMiniDumpName", logDirectory);
         SetEnvironmentVariable("MINIDUMP_PATH", logDirectory);
-    }
-
-    private string GetCIDumpInfo()
-    {
-        string dumpInfo = "COMPlus_DbgEnableMiniDump:" + Environment.GetEnvironmentVariable("COMPlus_DbgEnableMiniDump") + Environment.NewLine;
-        dumpInfo += "COMPlus_DbgMiniDumpType:" + Environment.GetEnvironmentVariable("COMPlus_DbgMiniDumpType") + Environment.NewLine;
-        dumpInfo += "COMPlus_DbgMiniDumpName:" + Environment.GetEnvironmentVariable("COMPlus_DbgMiniDumpName") + Environment.NewLine;
-        dumpInfo += "MINIDUMP_PATH:" + Environment.GetEnvironmentVariable("MINIDUMP_PATH") + Environment.NewLine;
-
-        return dumpInfo;
-    }
-
-    private string GetHelperDumpInfo()
-    {
-        string dumpInfo = "COMPlus_DbgEnableMiniDump:" + EnvironmentHelper.CustomEnvironmentVariables["COMPlus_DbgEnableMiniDump"] + Environment.NewLine;
-        dumpInfo += "COMPlus_DbgMiniDumpType:" + EnvironmentHelper.CustomEnvironmentVariables["COMPlus_DbgMiniDumpType"] + Environment.NewLine;
-        // dumpInfo += "COMPlus_DbgMiniDumpName:" + EnvironmentHelper.CustomEnvironmentVariables["COMPlus_DbgMiniDumpName"] + Environment.NewLine;
-        dumpInfo += "MINIDUMP_PATH:" + EnvironmentHelper.CustomEnvironmentVariables["MINIDUMP_PATH"] + Environment.NewLine;
-
-        return dumpInfo;
     }
 }
