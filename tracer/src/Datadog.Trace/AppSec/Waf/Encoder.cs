@@ -25,6 +25,7 @@ namespace Datadog.Trace.AppSec.Waf
         private static readonly int ObjectStructSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
         internal const int MaxBytesForMaxStringLength = WafConstants.MaxStringLength * 4;
         internal static readonly UnmanagedMemoryPool Pool = new(MaxBytesForMaxStringLength, 150);
+        internal static readonly int DdwafObjectStructSize = Marshal.SizeOf<DdwafObjectStruct>();
 
         public static ObjType DecodeArgsType(DDWAF_OBJ_TYPE t)
         {
@@ -172,7 +173,18 @@ namespace Datadog.Trace.AppSec.Waf
                     return ddWafObjectMap;
                 }
 
-                var children = new DdwafObjectStruct[count < WafConstants.MaxContainerSize ? count : WafConstants.MaxContainerSize];
+                var childrenCount = count < WafConstants.MaxContainerSize ? count : WafConstants.MaxContainerSize;
+                var childrenData = IntPtr.Zero;
+                DdwafObjectStruct[]? childrenArray = null;
+                if (DdwafObjectStructSize * childrenCount < MaxBytesForMaxStringLength)
+                {
+                    childrenData = Pool.Rent();
+                }
+                else
+                {
+                    childrenArray = new DdwafObjectStruct[childrenCount];
+                }
+
 #if NETCOREAPP3_1_OR_GREATER
                 if (enumerableDic is IDictionary)
                 {
@@ -210,6 +222,7 @@ namespace Datadog.Trace.AppSec.Waf
                     where TKeySource : notnull
                 {
                     var idx = 0;
+                    var itemData = childrenData;
                     foreach (var originalKeyValue in (Dictionary<TKeySource, TValueSource>)enumerableDic)
                     {
                         var item = originalKeyValue;
@@ -221,7 +234,17 @@ namespace Datadog.Trace.AppSec.Waf
                             continue;
                         }
 
-                        children[idx++] = Encode2(getValue(keyValue!), argToFree, argToFree2, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
+                        if (childrenArray is null)
+                        {
+                            *(DdwafObjectStruct*)itemData = Encode2(getValue(keyValue!), argToFree, argToFree2, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
+                            itemData += DdwafObjectStructSize;
+                        }
+                        else
+                        {
+                            childrenArray[idx] = Encode2(getValue(keyValue!), argToFree, argToFree2, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
+                        }
+
+                        idx++;
                         if (idx == WafConstants.MaxContainerSize)
                         {
                             Log.Warning<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
@@ -231,6 +254,7 @@ namespace Datadog.Trace.AppSec.Waf
                 }
 #else
                 var idx = 0;
+                var itemData = childrenData;
                 foreach (var keyValue in enumerableDic)
                 {
                     var key = getKey(keyValue!);
@@ -240,7 +264,17 @@ namespace Datadog.Trace.AppSec.Waf
                         continue;
                     }
 
-                    children[idx++] = Encode2(getValue(keyValue!), argToFree, argToFree2, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
+                    if (childrenArray is null)
+                    {
+                        *(DdwafObjectStruct*)itemData = Encode2(getValue(keyValue!), argToFree, argToFree2, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
+                        itemData += DdwafObjectStructSize;
+                    }
+                    else
+                    {
+                        childrenArray[idx] = Encode2(getValue(keyValue!), argToFree, argToFree2, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
+                    }
+
+                    idx++;
                     if (idx == WafConstants.MaxContainerSize)
                     {
                         Log.Warning<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
@@ -249,7 +283,16 @@ namespace Datadog.Trace.AppSec.Waf
                 }
 #endif
 
-                AddToArray(ref ddWafObjectMap, children);
+                if (childrenArray is null)
+                {
+                    ddWafObjectMap.Array = childrenData;
+                    ddWafObjectMap.NbEntries = (ulong)childrenCount;
+                    argToFree2.Add(childrenData);
+                }
+                else
+                {
+                    AddToArray(ref ddWafObjectMap, childrenArray);
+                }
 
                 return ddWafObjectMap;
             }
@@ -370,7 +413,7 @@ namespace Datadog.Trace.AppSec.Waf
                     break;
                 }
 
-                case System.Collections.IEnumerable list:
+                case IEnumerable list:
                 {
                     ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY };
                     if (!string.IsNullOrEmpty(key))
@@ -386,7 +429,19 @@ namespace Datadog.Trace.AppSec.Waf
 
                     if (list is IList { Count: { } count } listInstance)
                     {
-                        var children = new DdwafObjectStruct[count];
+                        var childrenCount = count < WafConstants.MaxContainerSize ? count : WafConstants.MaxContainerSize;
+                        var childrenData = IntPtr.Zero;
+                        DdwafObjectStruct[]? childrenArray = null;
+                        if (DdwafObjectStructSize * childrenCount < MaxBytesForMaxStringLength)
+                        {
+                            childrenData = Pool.Rent();
+                        }
+                        else
+                        {
+                            childrenArray = new DdwafObjectStruct[childrenCount];
+                        }
+
+                        var itemData = childrenData;
                         for (var idx = 0; idx < count; idx++)
                         {
                             if (idx == WafConstants.MaxContainerSize)
@@ -395,11 +450,29 @@ namespace Datadog.Trace.AppSec.Waf
                                 break;
                             }
 
-                            var result = Encode2(listInstance[idx], argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
-                            children[idx] = result;
+                            if (childrenArray is null)
+                            {
+                                *(DdwafObjectStruct*)itemData = Encode2(listInstance[idx], argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                                itemData += DdwafObjectStructSize;
+                            }
+                            else
+                            {
+                                childrenArray[idx] = Encode2(listInstance[idx], argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                            }
+
+                            idx++;
                         }
 
-                        AddToArray(ref ddwafObjectStruct, children);
+                        if (childrenArray is null)
+                        {
+                            ddwafObjectStruct.Array = childrenData;
+                            ddwafObjectStruct.NbEntries = (ulong)childrenCount;
+                            argToFree2.Add(childrenData);
+                        }
+                        else
+                        {
+                            AddToArray(ref ddwafObjectStruct, childrenArray);
+                        }
                     }
                     else
                     {
