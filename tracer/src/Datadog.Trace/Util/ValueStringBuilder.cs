@@ -15,20 +15,21 @@ using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.Util;
 
-// Extracted from:
+// Based on:
 // https://source.dot.net/#System.Diagnostics.Process/src/libraries/Common/src/System/Text/ValueStringBuilder.cs,157e1a7ce4de87da
 internal unsafe ref struct ValueStringBuilder
 {
+    private readonly void* _charsPtr;
+    private readonly int _length;
     private char[]? _arrayToReturnToPool;
     private Span<char> _backChars;
-    private void* _charsPtr;
-    private int _length;
     private int _pos;
 
     public ValueStringBuilder(void* ptr, int length)
     {
         _charsPtr = ptr;
         _length = length;
+        _pos = 0;
     }
 
     public ValueStringBuilder(Span<char> initialBuffer)
@@ -64,12 +65,23 @@ internal unsafe ref struct ValueStringBuilder
         }
     }
 
-    public int Capacity => Chars.Length;
+    public int Capacity
+    {
+        get
+        {
+            if (!_backChars.IsEmpty)
+            {
+                return _backChars.Length;
+            }
+
+            return _charsPtr != null ? _length : 0;
+        }
+    }
 
     public void EnsureCapacity(int capacity)
     {
         // If the caller has a bug and calls this with negative capacity, make sure to call Grow to throw an exception.
-        if ((uint)capacity > (uint)Chars.Length)
+        if ((uint)capacity > (uint)Capacity)
         {
             Grow(capacity - _pos);
         }
@@ -156,14 +168,16 @@ internal unsafe ref struct ValueStringBuilder
 
     public void Insert(int index, char value, int count)
     {
-        if (_pos > Chars.Length - count)
+        var chars = Chars;
+        if (_pos > chars.Length - count)
         {
             Grow(count);
+            chars = Chars;
         }
 
         var remaining = _pos - index;
-        Chars.Slice(index, remaining).CopyTo(Chars.Slice(index + count));
-        Chars.Slice(index, count).Fill(value);
+        chars.Slice(index, remaining).CopyTo(chars.Slice(index + count));
+        chars.Slice(index, count).Fill(value);
         _pos += count;
     }
 
@@ -175,15 +189,17 @@ internal unsafe ref struct ValueStringBuilder
         }
 
         var count = s.Length;
+        var chars = Chars;
 
-        if (_pos > (Chars.Length - count))
+        if (_pos > (chars.Length - count))
         {
             Grow(count);
+            chars = Chars;
         }
 
         var remaining = _pos - index;
-        Chars.Slice(index, remaining).CopyTo(Chars.Slice(index + count));
-        s.AsSpan().CopyTo(Chars.Slice(index));
+        chars.Slice(index, remaining).CopyTo(chars.Slice(index + count));
+        s.AsSpan().CopyTo(chars.Slice(index));
         _pos += count;
     }
 
@@ -212,10 +228,12 @@ internal unsafe ref struct ValueStringBuilder
         }
 
         var pos = _pos;
+        var chars = Chars;
+
         // very common case, e.g. appending strings from NumberFormatInfo like separators, percent symbols, etc.
-        if (s.Length == 1 && (uint)pos < (uint)Chars.Length)
+        if (s.Length == 1 && (uint)pos < (uint)chars.Length)
         {
-            Chars[pos] = s[0];
+            chars[pos] = s[0];
             _pos = pos + 1;
         }
         else
@@ -234,23 +252,27 @@ internal unsafe ref struct ValueStringBuilder
     private void AppendSlow(string s)
     {
         var pos = _pos;
-        if (pos > Chars.Length - s.Length)
+        var chars = Chars;
+        if (pos > chars.Length - s.Length)
         {
             Grow(s.Length);
+            chars = Chars;
         }
 
-        s.AsSpan().CopyTo(Chars.Slice(pos));
+        s.AsSpan().CopyTo(chars.Slice(pos));
         _pos += s.Length;
     }
 
     public void Append(char c, int count)
     {
-        if (_pos > Chars.Length - count)
+        var chars = Chars;
+        if (_pos > chars.Length - count)
         {
             Grow(count);
+            chars = Chars;
         }
 
-        var dst = Chars.Slice(_pos, count);
+        var dst = chars.Slice(_pos, count);
         for (var i = 0; i < dst.Length; i++)
         {
             dst[i] = c;
@@ -261,13 +283,15 @@ internal unsafe ref struct ValueStringBuilder
 
     public void Append(char* value, int length)
     {
+        var chars = Chars;
         var pos = _pos;
-        if (pos > Chars.Length - length)
+        if (pos > chars.Length - length)
         {
             Grow(length);
+            chars = Chars;
         }
 
-        var dst = Chars.Slice(_pos, length);
+        var dst = chars.Slice(_pos, length);
         for (var i = 0; i < dst.Length; i++)
         {
             dst[i] = *value++;
@@ -279,12 +303,14 @@ internal unsafe ref struct ValueStringBuilder
     public void Append(ReadOnlySpan<char> value)
     {
         var pos = _pos;
-        if (pos > Chars.Length - value.Length)
+        var chars = Chars;
+        if (pos > chars.Length - value.Length)
         {
             Grow(value.Length);
+            chars = Chars;
         }
 
-        value.CopyTo(Chars.Slice(_pos));
+        value.CopyTo(chars.Slice(_pos));
         _pos += value.Length;
     }
 
@@ -292,13 +318,15 @@ internal unsafe ref struct ValueStringBuilder
     public Span<char> AppendSpan(int length)
     {
         var origPos = _pos;
-        if (origPos > Chars.Length - length)
+        var chars = Chars;
+        if (origPos > chars.Length - length)
         {
             Grow(length);
+            chars = Chars;
         }
 
         _pos = origPos + length;
-        return Chars.Slice(origPos, length);
+        return chars.Slice(origPos, length);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -320,18 +348,19 @@ internal unsafe ref struct ValueStringBuilder
     private void Grow(int additionalCapacityBeyondPos)
     {
         const uint ArrayMaxLength = 0x7FFFFFC7; // same as Array.MaxLength
+        var chars = Chars;
 
         // Increase to at least the required size (_pos + additionalCapacityBeyondPos), but try
         // to double the size if possible, bounding the doubling to not go beyond the max array length.
         var newCapacity = (int)Math.Max(
             (uint)(_pos + additionalCapacityBeyondPos),
-            Math.Min((uint)Chars.Length * 2, ArrayMaxLength));
+            Math.Min((uint)chars.Length * 2, ArrayMaxLength));
 
         // Make sure to let Rent throw an exception if the caller has a bug and the desired capacity is negative.
         // This could also go negative if the actual required length wraps around.
         var poolArray = ArrayPool<char>.Shared.Rent(newCapacity);
 
-        Chars.Slice(0, _pos).CopyTo(poolArray);
+        chars.Slice(0, _pos).CopyTo(poolArray);
 
         var toReturn = _arrayToReturnToPool;
         _backChars = _arrayToReturnToPool = poolArray;
