@@ -1288,9 +1288,11 @@ void CorProfiler::DisableTracerCLRProfiler()
 
 void CorProfiler::UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
 {
+    WSTRING debugVarName = WStr("DD_TRACE_DEBUG");
+
     for (int i = 0; i < length; i++)
     {
-        if (WSTRING(keys[i]) == WStr("DD_TRACE_DEBUG"))
+        if (WSTRING(keys[i]) == debugVarName)
         {
             if (values[i] == nullptr || *values[i] == WStr('\0'))
             {
@@ -1486,7 +1488,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
         // The <Module> typeDef is always the first entry in the typeDef table.
         // The CLR profiling api can return mdTypeDefNil for the <Module> type, so we skip that as well.
-        constexpr auto moduleTypeDef = mdTypeDefNil + (BYTE)1;
+        constexpr auto moduleTypeDef = mdTypeDefNil + (BYTE) 1;
 
         if (caller.type.id == mdTypeDefNil || caller.type.id == moduleTypeDef)
         {
@@ -1500,10 +1502,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         {
             if (pType->id == mdTypeDefNil || pType->id == moduleTypeDef)
             {
-                Logger::Debug("JITCompilationStarted: Startup hook skipped from a type with <Module> as a parent. ", caller.type.name, ".", caller.name, "()");
+                Logger::Debug("JITCompilationStarted: Startup hook skipped from a type with <Module> as a parent. ",
+                              caller.type.name, ".", caller.name, "()");
                 return S_OK;
             }
-                
+
             pType = pType->parent_type;
         }
         // *********************************************************************
