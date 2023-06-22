@@ -47,9 +47,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var minMdc = new Version("4.0.0");
             foreach (var item in PackageVersions.NLog)
             {
-                var version = (string)item[0] == string.Empty ?
-                                  new Version("5.0.0") : // DEFAULT_SAMPLES
-                                  new Version((string)item[0]);
+                Version version;
+                var defaultSamples = (string)item[0] == string.Empty;
+                if (defaultSamples)
+                {
+                    // LogsInjection.NLog uses different versions depending on framework
+                    version = EnvironmentHelper.IsNetFramework() ?
+                                  new Version("2.1.0") :
+                                  new Version("5.0.0");
+                }
+                else
+                {
+                    version = new Version((string)item[0]);
+                }
 
                 yield return item.Concat(false).Concat(ContextNone);
                 yield return item.Concat(true).Concat(ContextNone);

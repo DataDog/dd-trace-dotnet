@@ -88,6 +88,11 @@ namespace Datadog.Trace.TestHelpers
             return RuntimeFrameworkDescription.Contains("core") || IsNet5();
         }
 
+        public static bool IsNetFramework()
+        {
+            return RuntimeFrameworkDescription.Contains("framework");
+        }
+
         public static bool IsAlpine() => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine"));
 
         public static string GetMonitoringHomePath()
