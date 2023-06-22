@@ -1,0 +1,265 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "intArg": {
+                "type": "Int32",
+                "value": "6"
+              },
+              "this": {
+                "type": "MultiProbeWithSpanTest",
+                "value": "MultiProbeWithSpanTest"
+              }
+            },
+            "staticFields": {
+              "LogJson": {
+                "type": "String",
+                "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"myAwesomeLocal\"},\r\n      5\r\n    ]\r\n}"
+              },
+              "LogJson2": {
+                "type": "String",
+                "value": "{\r\n    \"lt\": [\r\n      {\"ref\": \"intArg\"},\r\n      {\"ref\": \"myAwesomeLocal\"}\r\n    ]\r\n}"
+              },
+              "MetricJson": {
+                "type": "String",
+                "value": "{\"ref\": \"intArg\"}"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "intArg": {
+                "type": "Int32",
+                "value": "6"
+              },
+              "this": {
+                "type": "MultiProbeWithSpanTest",
+                "value": "MultiProbeWithSpanTest"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "String",
+                "value": "Argument: 6, 12"
+              },
+              "myAwesomeLocal": {
+                "type": "Int32",
+                "value": "12"
+              }
+            },
+            "staticFields": {
+              "LogJson": {
+                "type": "String",
+                "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"myAwesomeLocal\"},\r\n      5\r\n    ]\r\n}"
+              },
+              "LogJson2": {
+                "type": "String",
+                "value": "{\r\n    \"lt\": [\r\n      {\"ref\": \"intArg\"},\r\n      {\"ref\": \"myAwesomeLocal\"}\r\n    ]\r\n}"
+              },
+              "MetricJson": {
+                "type": "String",
+                "value": "{\"ref\": \"intArg\"}"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.SmokeTests.MultiProbeWithSpanTest"
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.MultiProbeWithSpanTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "53": {
+              "arguments": {
+                "intArg": {
+                  "type": "Int32",
+                  "value": "6"
+                },
+                "this": {
+                  "type": "MultiProbeWithSpanTest",
+                  "value": "MultiProbeWithSpanTest"
+                }
+              },
+              "locals": {
+                "myAwesomeLocal": {
+                  "type": "Int32",
+                  "value": "12"
+                }
+              },
+              "staticFields": {
+                "LogJson": {
+                  "type": "String",
+                  "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"myAwesomeLocal\"},\r\n      5\r\n    ]\r\n}"
+                },
+                "LogJson2": {
+                  "type": "String",
+                  "value": "{\r\n    \"lt\": [\r\n      {\"ref\": \"intArg\"},\r\n      {\"ref\": \"myAwesomeLocal\"}\r\n    ]\r\n}"
+                },
+                "MetricJson": {
+                  "type": "String",
+                  "value": "{\"ref\": \"intArg\"}"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "MultiProbeWithSpanTest.cs",
+            "lines": [
+              53
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.MultiProbeWithSpanTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "return": {
+            "arguments": {
+              "intArg": {
+                "type": "Int32",
+                "value": "6"
+              },
+              "this": {
+                "type": "MultiProbeWithSpanTest",
+                "value": "MultiProbeWithSpanTest"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "String",
+                "value": "Argument: 6, 12"
+              },
+              "myAwesomeLocal": {
+                "type": "Int32",
+                "value": "12"
+              }
+            },
+            "staticFields": {
+              "LogJson": {
+                "type": "String",
+                "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"myAwesomeLocal\"},\r\n      5\r\n    ]\r\n}"
+              },
+              "LogJson2": {
+                "type": "String",
+                "value": "{\r\n    \"lt\": [\r\n      {\"ref\": \"intArg\"},\r\n      {\"ref\": \"myAwesomeLocal\"}\r\n    ]\r\n}"
+              },
+              "MetricJson": {
+                "type": "String",
+                "value": "{\"ref\": \"intArg\"}"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.SmokeTests.MultiProbeWithSpanTest"
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.MultiProbeWithSpanTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.SmokeTests.MultiProbeWithSpanTest"
+          }
+        },
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.MultiProbeWithSpanTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]
