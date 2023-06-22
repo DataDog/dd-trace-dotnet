@@ -8,6 +8,8 @@ using System.Threading;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission
 {
@@ -65,6 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
             }
 
             var log = new Log4NetDatadogLogEvent(logEvent, logEvent.TimeStamp.ToUniversalTime());
+            TelemetryFactory.Metrics.RecordCountDirectLogLogs(MetricTags.IntegrationName.Log4Net);
             _sink.EnqueueLog(log);
         }
 

@@ -14,6 +14,8 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent
@@ -190,6 +192,8 @@ namespace Datadog.Trace.Agent
                 {
                     _currentBuffer = (_currentBuffer + 1) % BufferCount;
                 }
+
+                TelemetryFactory.Metrics.RecordGaugeStatsBuckets(buffer.Buckets.Count);
 
                 if (buffer.Buckets.Count > 0)
                 {

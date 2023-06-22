@@ -502,11 +502,22 @@ public class ProbesTests : TestHelper
             var requests = await agent.WaitForStatsdRequests(metricProbes.Length);
             requests.Should().OnlyContain(s => s.Contains($"service:{EnvironmentHelper.SampleName}"));
 
+            var retried = false;
+
             foreach (var probeAttributeBase in metricProbes)
             {
                 var metricName = (probeAttributeBase as MetricMethodProbeTestDataAttribute)?.MetricName ?? (probeAttributeBase as MetricLineProbeTestDataAttribute)?.MetricName;
                 Assert.NotNull(metricName);
                 var req = requests.SingleOrDefault(r => r.Contains(metricName));
+
+                if (!retried && req == null)
+                {
+                    retried = true;
+                    await Task.Delay(2000);
+                    requests = await agent.WaitForStatsdRequests(metricProbes.Length);
+                    req = requests.SingleOrDefault(r => r.Contains(metricName)); // retry
+                }
+
                 Assert.NotNull(req);
                 req.Should().Contain($"service:{EnvironmentHelper.SampleName}");
             }

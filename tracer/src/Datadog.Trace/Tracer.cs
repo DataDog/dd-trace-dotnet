@@ -296,6 +296,7 @@ namespace Datadog.Trace
         IScope ITracer.StartActive(string operationName)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.ITracer_StartActive);
+            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
             return StartActiveInternal(operationName);
         }
 
@@ -304,6 +305,7 @@ namespace Datadog.Trace
         IScope ITracer.StartActive(string operationName, SpanCreationSettings settings)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.ITracer_StartActive_Settings);
+            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
             var finishOnClose = settings.FinishOnClose ?? true;
             return StartActiveInternal(operationName, settings.Parent, serviceName: null, settings.StartTime, finishOnClose);
         }
@@ -317,6 +319,7 @@ namespace Datadog.Trace
         public IScope StartActive(string operationName)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_StartActive);
+            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
             return StartActiveInternal(operationName);
         }
 
@@ -330,6 +333,7 @@ namespace Datadog.Trace
         public IScope StartActive(string operationName, SpanCreationSettings settings)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_StartActive_Settings);
+            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
             var finishOnClose = settings.FinishOnClose ?? true;
             return StartActiveInternal(operationName, settings.Parent, serviceName: null, settings.StartTime, finishOnClose);
         }
@@ -417,6 +421,7 @@ namespace Datadog.Trace
                     // propagation headers. Create a new TraceContext (this will start a new trace) and initialize
                     // it with the propagated values (sampling priority, origin, tags, W3C trace state, etc).
                     traceContext = new TraceContext(this, parentSpanContext.PropagatedTags);
+                    TelemetryFactory.Metrics.RecordCountTraceSegmentCreated(MetricTags.TraceContinuation.Continued);
 
                     var samplingPriority = parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority();
                     traceContext.SetSamplingPriority(samplingPriority);
@@ -430,6 +435,7 @@ namespace Datadog.Trace
                 // a user-defined ISpanContext implementation, or null (no parent). we don't have a TraceContext,
                 // so create a new one (this will start a new trace).
                 traceContext = new TraceContext(this, tags: null);
+                TelemetryFactory.Metrics.RecordCountTraceSegmentCreated(MetricTags.TraceContinuation.New);
 
                 // in a version-mismatch scenario, try to get the sampling priority from the "other" tracer
                 var samplingPriority = DistributedTracer.Instance.GetSamplingPriority();

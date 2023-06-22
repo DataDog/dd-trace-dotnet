@@ -23,7 +23,7 @@ public class MetricsTelemetryCollectorTests
         collector.RecordCountSpanFinished(15);
         collector.RecordCountIntegrationsError(MetricTags.IntegrationName.Aerospike, MetricTags.InstrumentationError.Invoker);
         collector.RecordCountSpanCreated(MetricTags.IntegrationName.Aerospike);
-        collector.RecordCountSpanDropped(MetricTags.DropReason.SingleSpanSampling, 23);
+        collector.RecordCountSpanDropped(MetricTags.DropReason.P0Drop, 23);
         collector.RecordGaugeStatsBuckets(234);
         collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Total, 23);
         collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Total, 46);
@@ -79,7 +79,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.SpanDropped.GetName(),
                 Points = new[] { new { Value = 23 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { "reason:single_span_sampling" },
+                Tags = new[] { "reason:p0_drop" },
             },
             new
             {

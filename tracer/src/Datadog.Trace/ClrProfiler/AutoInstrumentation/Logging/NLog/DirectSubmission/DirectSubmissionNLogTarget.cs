@@ -10,6 +10,8 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission
 {
@@ -67,6 +69,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             var logFormatter = _formatter ?? TracerManager.Instance.DirectLogSubmission.Formatter;
             var serializedLog = NLogLogFormatter.FormatLogEvent(logFormatter, logEvent);
 
+            TelemetryFactory.Metrics.RecordCountDirectLogLogs(MetricTags.IntegrationName.NLog);
             _sink.EnqueueLog(new NLogDatadogLogEvent(serializedLog));
         }
 

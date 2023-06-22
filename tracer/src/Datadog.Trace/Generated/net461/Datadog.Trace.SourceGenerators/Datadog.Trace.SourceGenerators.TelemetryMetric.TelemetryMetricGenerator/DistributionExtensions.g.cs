@@ -40,6 +40,7 @@ internal static partial class DistributionExtensions
     public static string? GetNamespace(this Datadog.Trace.Telemetry.Metrics.Distribution metric)
         => metric switch
         {
+            Datadog.Trace.Telemetry.Metrics.Distribution.InitTime => "general",
             _ => null,
         };
 }

@@ -13,13 +13,13 @@ namespace Datadog.Trace.Util.Http
 {
     internal static partial class HttpRequestExtensions
     {
-        internal static string GetUrl(this IHttpRequestMessage request, QueryStringManager queryStringManager)
+        internal static string GetUrlForSpan(this IHttpRequestMessage request, QueryStringManager queryStringManager)
             => HttpRequestUtils.GetUrl(request.RequestUri, queryStringManager);
 
-        internal static string GetUrl(this HttpRequestBase request, QueryStringManager queryStringManager)
+        internal static string GetUrlForSpan(this HttpRequestBase request, QueryStringManager queryStringManager)
             => HttpRequestUtils.GetUrl(request.Url, queryStringManager);
 
-        internal static string GetUrl(this HttpRequest request, QueryStringManager queryStringManager)
+        internal static string GetUrlForSpan(this HttpRequest request, QueryStringManager queryStringManager)
             => HttpRequestUtils.GetUrl(request.Url, queryStringManager);
     }
 }

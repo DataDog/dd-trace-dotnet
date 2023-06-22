@@ -6,6 +6,7 @@
 #nullable enable
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.SourceGenerators;
+using NS = Datadog.Trace.Telemetry.MetricNamespaceConstants;
 
 namespace Datadog.Trace.Telemetry.Metrics;
 
@@ -17,92 +18,91 @@ internal enum Distribution
 #region General Namespace
 
     /// <summary>
-    /// The time it takes to import/initialize the tracer on startup. If this consists of multiple steps/components, tagged by the component/total
+    /// The time it takes to import/initialize the tracer on startup. If this consists of multiple steps/components, tagged by the component/total e.g. `component:call_target`. Component tags will vary by language
     /// </summary>
-    [TelemetryMetric<MetricTags.InitializationComponent>("init_time")] InitTime,
+    [TelemetryMetric<MetricTags.InitializationComponent>("init_time", isCommon: true, NS.General)] InitTime,
 #endregion
 
 // These metrics are all desirable, but are not feasible until the API accepts dd-sketches for distributions
-
 // #region Tracers Namespace
 //
 //     /// <summary>
-//     /// The number of spans in the trace when finished
+//     /// The number of spans in the trace chunk when it is enqueued
 //     /// </summary>
-//     [TelemetryMetric("trace_size", 0)] TraceSize,
-//
-//    /// <summary>
-//    /// The number of spans included when partial flush is triggered
-//    /// </summary>
-//    [TelemetryMetric("trace_partial_flush.spans_closed", 1)] TracePartialFlushSpansClosed,
-//
-//    /// <summary>
-//    /// The number of open spans remaining in the trace when partial flush is triggered
-//    /// </summary>
-//    [TelemetryMetric("trace_partial_flush.spans_remaining", 1)] TracePartialFlushSpansRemaining,
+//     [TelemetryMetric("trace_chunk_size")] TraceChunkSize,
 //
 //     /// <summary>
-//     /// The size in bytes of the serialized trace
+//     /// The size in bytes of the serialized trace chunk
 //     /// </summary>
-//     [TelemetryMetric("trace_serialization.bytes", 0)] TraceSerializationBytes,
+//     [TelemetryMetric("trace_chunk_serialization.bytes")] TraceChunkSerializationBytes,
 //
 //     /// <summary>
-//     /// The time it takes to serialize a trace
+//     /// The time it takes to serialize a trace chunk
 //     /// </summary>
-//     [TelemetryMetric("trace_serialization.ms", 0)] TraceSerializationMs,
+//     [TelemetryMetric("trace_chunk_serialization.ms")] TraceChunkSerializationMs,
 //
 //     /// <summary>
 //     /// The size of the payload sent to the endpoint in bytes
 //     /// </summary>
-//     [TelemetryMetric("trace_api.requests.bytes", 0)] TraceApiRequestsBytes,
+//     [TelemetryMetric("trace_api.bytes")] TraceApiRequestsBytes,
 //
 //     /// <summary>
 //     /// The time it takes to send the payload sent to the endpoint in ms
 //     /// </summary>
-//     [TelemetryMetric("trace_api.requests.ms", 0)] TraceApiRequestsMs,
+//     [TelemetryMetric("trace_api.ms")] TraceApiRequestsMs,
 //
 //     /// <summary>
-//     /// The time it takes to flush the trace payload to the agent. Note that this is not the "per trace" time, this is the "per payload" time
+//     /// The time it takes to flush the trace payload to the agent. Note that this is not the per trace time, this is the per payload time
 //     /// </summary>
-//     [TelemetryMetric("trace_api.ms", 0)] TraceApiMs,
+//     [TelemetryMetric("trace_api.ms")] TraceApiMs,
+//
+//     /// <summary>
+//     /// The number of spans included when partial flush is triggered
+//     /// </summary>
+//     [TelemetryMetric<MetricTags.PartialFlushReason>("trace_partial_flush.spans_closed")] TracePartialFlushSpansClosed,
+//
+//     /// <summary>
+//     /// The number of open spans remaining in the trace when partial flush is triggered
+//     /// </summary>
+//     [TelemetryMetric<MetricTags.PartialFlushReason>("trace_partial_flush.spans_remaining")] TracePartialFlushSpansRemaining,
 //
 //     /// <summary>
 //     /// The size of the payload sent to the stats endpoint in bytes
 //     /// </summary>
-//     [TelemetryMetric("stats_api.requests.bytes", 0)] StatsApiRequestsBytes,
+//     [TelemetryMetric("stats_api.bytes")] StatsApiRequestsBytes,
 //
 //     /// <summary>
-//     /// The size of the payload sent to the stats endpoint in milliseconds
+//     /// The time it takes to send the payload sent to the endpoint in ms
 //     /// </summary>
-//     [TelemetryMetric("stats_api.requests.ms", 0)] StatsApiRequestsMs,
+//     [TelemetryMetric("stats_api.ms")] StatsApiRequestsMs,
 // #endregion
 // #region Telemetry Namespace
 //
 //     /// <summary>
-//     /// The size of the payload sent to the stats endpoint in bytes, tagged by the endpoint (Agent, Agentless)
+//     /// The size of the payload sent to the stats endpoint in bytes, tagged by the endpoint (`endpoint:agent`, `endpoint:agentless`)
 //     /// </summary>
-//     [TelemetryMetric("telemetry_api.requests.bytes", 1)] TelemetryApiRequestsBytes,
+//     [TelemetryMetric<MetricTags.TelemetryEndpoint>("telemetry_api.bytes", isCommon: true, NS.Telemetry)] TelemetryApiRequestsBytes,
 //
 //     /// <summary>
-//     /// The time to send to the stats endpoint in milliseconds, tagged by the endpoint (Agent, Agentless)
+//     /// The time it takes to send the payload sent to the endpoint in ms, tagged by the endpoint (`endpoint:agent`, `endpoint:agentless`)
 //     /// </summary>
-//     [TelemetryMetric("telemetry_api.requests.ms", 1)] TelemetryApiRequestsMs,
+//     [TelemetryMetric<MetricTags.TelemetryEndpoint>("telemetry_api.requests.ms", isCommon: true, NS.Telemetry)] TelemetryApiRequestsMs,
 // #endregion
 // #region .NET Namespace
 //
 //     /// <summary>
 //     /// The number of logs included in a payload patch, sent to the submission endpoint
 //     /// </summary>
-//     [TelemetryMetric("direct_log_api_batch_size", 0, isCommon: false)] DirectLogApiBatchSize,
+//     [TelemetryMetric("direct_log_api.batch_size", isCommon: false)] DirectLogApiBatchSize,
 //
 //     /// <summary>
 //     /// The size of the payload sent to the direct log submission endpoint in bytes, regardless of success
 //     /// </summary>
-//     [TelemetryMetric("direct_log_api.requests.bytes", 0, isCommon: false)] DirectLogApiRequestsBytes,
+//     [TelemetryMetric("direct_log_api.bytes", isCommon: false)] DirectLogApiRequestsBytes,
 //
 //     /// <summary>
 //     /// The time to send the payload to the direct log submission endpoint in ms, regardless of success
 //     /// </summary>
-//     [TelemetryMetric("direct_log_api.requests.ms", 0, isCommon: false)] DirectLogApiRequestsMs,
+//     [TelemetryMetric("direct_log_api.ms", isCommon: false)] DirectLogApiRequestsMs,
 // #endregion
 }
