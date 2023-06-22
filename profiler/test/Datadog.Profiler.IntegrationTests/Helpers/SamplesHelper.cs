@@ -80,6 +80,31 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return threadNames.Count;
         }
 
+        public static bool IsLabelPresent(string directory, string labelName)
+        {
+            foreach (var profile in GetProfiles(directory))
+            {
+                foreach (var sample in profile.Sample)
+                {
+                    bool labelIsHere = false;
+                    foreach (var label in sample.Labels(profile))
+                    {
+                        if (label.Name == labelName)
+                        {
+                            labelIsHere = true;
+                        }
+                    }
+
+                    if (!labelIsHere)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
         internal static IEnumerable<(string Type, string Message, long Count, StackTrace Stacktrace)> ExtractExceptionSamples(string directory)
         {
             static IEnumerable<(string Type, string Message, long Count, StackTrace Stacktrace, long Time)> SamplesWithTimestamp(string directory)

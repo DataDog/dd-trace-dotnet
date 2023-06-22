@@ -13,6 +13,8 @@ using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace
@@ -42,8 +44,8 @@ namespace Datadog.Trace
             if (settings is not null)
             {
                 // these could be set from DD_ENV/DD_VERSION or from DD_TAGS
-                Environment = settings.Environment;
-                ServiceVersion = settings.ServiceVersion;
+                Environment = settings.EnvironmentInternal;
+                ServiceVersion = settings.ServiceVersionInternal;
             }
 
             Tracer = tracer;
@@ -123,7 +125,7 @@ namespace Datadog.Trace
 
         public void CloseSpan(Span span)
         {
-            bool ShouldTriggerPartialFlush() => Tracer.Settings.Exporter.PartialFlushEnabled && _spans.Count >= Tracer.Settings.Exporter.PartialFlushMinSpans;
+            bool ShouldTriggerPartialFlush() => Tracer.Settings.ExporterInternal.PartialFlushEnabledInternal && _spans.Count >= Tracer.Settings.ExporterInternal.PartialFlushMinSpansInternal;
 
             ArraySegment<Span> spansToWrite = default;
 
@@ -155,6 +157,7 @@ namespace Datadog.Trace
                 {
                     spansToWrite = _spans.GetArray();
                     _spans = default;
+                    TelemetryFactory.Metrics.RecordCountTraceSegmentsClosed();
                 }
                 else if (ShouldTriggerPartialFlush())
                 {
@@ -170,6 +173,7 @@ namespace Datadog.Trace
                     // the number of remaining spans is probably big as well.
                     // Therefore, we bypass the resize logic and immediately allocate the array to its maximum size
                     _spans = new ArrayBuilder<Span>(spansToWrite.Count);
+                    TelemetryFactory.Metrics.RecordCountTracePartialFlush(MetricTags.PartialFlushReason.LargeTrace);
                 }
             }
 

@@ -55,7 +55,7 @@ internal partial class TracerSettingsSnapshot : SettingsSnapshotBase
         RecordIfChanged(telemetry, "DD_TRACE_ENABLED", TraceEnabledInternal, settings.TraceEnabledInternal);
         RecordIfChanged(telemetry, "DD_DISABLED_INTEGRATIONS", DisabledIntegrationNamesInternal, GetHashSet(settings.DisabledIntegrationNamesInternal));
         RecordIfChanged(telemetry, "DD_TRACE_ANALYTICS_ENABLED", AnalyticsEnabledInternal, settings.AnalyticsEnabledInternal);
-        RecordIfChanged(telemetry, "DD_MAX_TRACES_PER_SECOND", MaxTracesSubmittedPerSecondInternal, settings.MaxTracesSubmittedPerSecondInternal);
+        RecordIfChanged(telemetry, "DD_TRACE_RATE_LIMIT", MaxTracesSubmittedPerSecondInternal, settings.MaxTracesSubmittedPerSecondInternal);
         RecordIfChanged(telemetry, "DD_TRACE_SAMPLING_RULES", CustomSamplingRulesInternal, settings.CustomSamplingRulesInternal);
         RecordIfChanged(telemetry, "DD_TRACE_SAMPLE_RATE", GlobalSamplingRateInternal, settings.GlobalSamplingRateInternal);
         RecordIfChanged(telemetry, "DD_TAGS", GlobalTagsInternal, GetDictionary(settings.GlobalTagsInternal));

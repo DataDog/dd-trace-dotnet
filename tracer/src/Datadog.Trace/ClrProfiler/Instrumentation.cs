@@ -153,6 +153,7 @@ namespace Datadog.Trace.ClrProfiler
                 var payload = InstrumentationDefinitions.GetAllDefinitions();
                 NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
                 Log.Information<int>("The profiler has been initialized with {Count} definitions.", payload.Definitions.Length);
+                TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, payload.Definitions.Length);
             }
             catch (Exception ex)
             {
@@ -180,6 +181,7 @@ namespace Datadog.Trace.ClrProfiler
                 var payload = InstrumentationDefinitions.GetDerivedDefinitions();
                 NativeMethods.AddDerivedInstrumentations(payload.DefinitionsId, payload.Definitions);
                 Log.Information<int>("The profiler has been initialized with {Count} derived definitions.", payload.Definitions.Length);
+                TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTargetDerived, payload.Definitions.Length);
             }
             catch (Exception ex)
             {
@@ -195,6 +197,7 @@ namespace Datadog.Trace.ClrProfiler
                 var payload = InstrumentationDefinitions.GetInterfaceDefinitions();
                 NativeMethods.AddInterfaceInstrumentations(payload.DefinitionsId, payload.Definitions);
                 Log.Information<int>("The profiler has been initialized with {Count} interface definitions.", payload.Definitions.Length);
+                TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTargetInterfaces, payload.Definitions.Length);
             }
             catch (Exception ex)
             {
@@ -252,17 +255,20 @@ namespace Datadog.Trace.ClrProfiler
                     var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.Iast);
                     NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
                     defs = payload.Definitions.Length;
+                    TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.Iast, defs);
 
                     Log.Debug("Adding CallTarget IAST derived integration definitions to native library.");
                     payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.Iast);
                     NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
                     derived = payload.Definitions.Length;
+                    TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.IastDerived, derived);
 
                     Log.Information<int, int>("{Defs} IAST definitions and {Derived} IAST derived definitions added to the profiler.", defs, derived);
 
                     Log.Debug("Registering IAST Callsite Dataflow Aspects into native library.");
                     var aspects = NativeMethods.RegisterIastAspects(AspectDefinitions.Aspects);
                     Log.Information<int>("{Aspects} IAST Callsite Dataflow Aspects added to the profiler.", aspects);
+                    TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.IastAspects, aspects);
                 }
                 catch (Exception ex)
                 {
@@ -444,7 +450,7 @@ namespace Datadog.Trace.ClrProfiler
         private static void InitRemoteConfigurationManagement(Tracer tracer)
         {
             // Service Name must be lowercase, otherwise the agent will not be able to find the service
-            var serviceName = TraceUtil.NormalizeTag(tracer.Settings.ServiceName ?? tracer.DefaultServiceName);
+            var serviceName = TraceUtil.NormalizeTag(tracer.Settings.ServiceNameInternal ?? tracer.DefaultServiceName);
             var discoveryService = tracer.TracerManager.DiscoveryService;
 
             Task.Run(

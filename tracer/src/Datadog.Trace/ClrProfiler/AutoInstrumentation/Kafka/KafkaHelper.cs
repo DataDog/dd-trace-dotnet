@@ -201,7 +201,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     message?.Headers?.Remove(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext);
                     message?.Headers?.Remove(DataStreamsPropagationHeaders.TemporaryEdgeTags);
 
-                    if (!tracer.Settings.KafkaCreateConsumerScopeEnabled && message?.Headers is not null)
+                    if (!tracer.Settings.KafkaCreateConsumerScopeEnabledInternal && message?.Headers is not null)
                     {
                         // This is a brilliant and horrible approach to let customers who are already
                         // extracting the span context from a Kafka message automatically get
@@ -249,7 +249,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             try
             {
                 if (!tracer.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId)
-                    || !tracer.Settings.KafkaCreateConsumerScopeEnabled)
+                    || !tracer.Settings.KafkaCreateConsumerScopeEnabledInternal)
                 {
                     // integration disabled, skip this trace
                     return;

@@ -10,6 +10,8 @@ class RawContentionSample : public RawSample
 {
 public:
     inline static const std::string BucketLabelName = "Duration bucket";
+    inline static const std::string RawCountLabelName = "raw count";
+    inline static const std::string RawDurationLabelName = "raw duration";
 
 public:
     RawContentionSample() = default;
@@ -40,6 +42,8 @@ public:
 
         sample->AddLabel(Label{BucketLabelName, std::move(Bucket)});
         sample->AddValue(1, contentionCountIndex);
+        sample->AddNumericLabel(NumericLabel{RawCountLabelName, 1});
+        sample->AddNumericLabel(NumericLabel{RawDurationLabelName, static_cast<uint64_t>(ContentionDuration)});
         sample->AddValue(static_cast<std::int64_t>(ContentionDuration), contentionDurationIndex);
     }
 

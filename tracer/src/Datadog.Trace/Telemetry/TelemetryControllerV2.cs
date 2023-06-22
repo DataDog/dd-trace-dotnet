@@ -16,6 +16,7 @@ using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Collectors;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Telemetry;
@@ -112,14 +113,18 @@ internal class TelemetryControllerV2 : ITelemetryController
 
     public void RecordProfilerSettings(Profiler profiler)
     {
-        // Nothing to record, remove this method when telemetry V1 is removed
+        _configuration.Record(ConfigTelemetryData.ProfilerLoaded, profiler.Status.IsProfilerReady, ConfigurationOrigins.Default);
+        _configuration.Record(ConfigTelemetryData.CodeHotspotsEnabled, profiler.ContextTracker.IsEnabled, ConfigurationOrigins.Default);
     }
 
     public void IntegrationRunning(IntegrationId integrationId)
         => _integrations.IntegrationRunning(integrationId);
 
     public void IntegrationGeneratedSpan(IntegrationId integrationId)
-        => _integrations.IntegrationGeneratedSpan(integrationId);
+    {
+        _metrics.RecordCountSpanCreated(integrationId.GetMetricTag());
+        _integrations.IntegrationGeneratedSpan(integrationId);
+    }
 
     public void IntegrationDisabledDueToError(IntegrationId integrationId, string error)
         => _integrations.IntegrationDisabledDueToError(integrationId, error);

@@ -23,7 +23,8 @@ namespace Datadog.Trace.Telemetry
             TimeSpan heartbeatInterval,
             bool dependencyCollectionEnabled,
             bool v2Enabled,
-            bool metricsEnabled)
+            bool metricsEnabled,
+            bool debugEnabled)
         {
             TelemetryEnabled = telemetryEnabled;
             ConfigurationError = configurationError;
@@ -33,6 +34,7 @@ namespace Datadog.Trace.Telemetry
             DependencyCollectionEnabled = dependencyCollectionEnabled;
             V2Enabled = v2Enabled;
             MetricsEnabled = metricsEnabled;
+            DebugEnabled = debugEnabled;
         }
 
         /// <summary>
@@ -52,6 +54,8 @@ namespace Datadog.Trace.Telemetry
         public bool DependencyCollectionEnabled { get; }
 
         public bool V2Enabled { get; }
+
+        public bool DebugEnabled { get; }
 
         public bool MetricsEnabled { get; }
 
@@ -142,6 +146,9 @@ namespace Datadog.Trace.Telemetry
             // Currently disabled, will be flipped to true in later versions as part of the rollout
             var v2Enabled = config.WithKeys(ConfigurationKeys.Telemetry.V2Enabled).AsBool(false);
 
+            // For testing purposes only
+            var debugEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DebugEnabled).AsBool(false);
+
             // Currently disabled, will be flipped to true in later versions as part of the rollout
             // Also, will require v2 enabled
             var metricsEnabled = config
@@ -169,7 +176,8 @@ namespace Datadog.Trace.Telemetry
                 TimeSpan.FromSeconds(heartbeatInterval),
                 dependencyCollectionEnabled,
                 v2Enabled,
-                metricsEnabled);
+                metricsEnabled,
+                debugEnabled);
         }
 
         private static bool? IsAgentAvailable()

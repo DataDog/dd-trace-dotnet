@@ -7,6 +7,8 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -35,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler
                     var parentTracer = parent.DuckCast<IAutomaticTracer>();
 
                     Log.Information("Building manual tracer, connected to {Assembly}", parent.GetType().Assembly);
-
+                    TelemetryFactory.Metrics.RecordCountVersionConflictTracerCreated();
                     Instance = new ManualTracer(parentTracer);
                 }
             }

@@ -78,14 +78,14 @@ namespace Datadog.Trace.AspNet
 
         internal static void AddHeaderTagsFromHttpResponse(HttpContext httpContext, Scope scope)
         {
-            if (!Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty() &&
+            if (!Tracer.Instance.Settings.HeaderTagsInternal.IsNullOrEmpty() &&
                 httpContext != null &&
                 HttpRuntime.UsingIntegratedPipeline &&
                 _canReadHttpResponseHeaders)
             {
                 try
                 {
-                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
                 catch (PlatformNotSupportedException ex)
                 {
@@ -148,14 +148,14 @@ namespace Datadog.Trace.AspNet
                 string host = httpRequest.Headers.Get("Host");
                 var userAgent = httpRequest.Headers.Get(HttpHeaderNames.UserAgent);
                 string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
-                string url = httpContext.Request.GetUrl(tracer.TracerManager.QueryStringManager);
+                string url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
                 var tags = new WebTags();
                 scope = tracer.StartActiveInternal(_requestOperationName, propagatedContext, tags: tags);
                 // Leave resourceName blank for now - we'll update it in OnEndRequest
                 scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, userAgent, tags);
                 if (headers is not null)
                 {
-                    SpanContextPropagator.Instance.AddHeadersToSpanAsTags(scope.Span, headers.Value, tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                    SpanContextPropagator.Instance.AddHeadersToSpanAsTags(scope.Span, headers.Value, tracer.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                 }
 
                 if (tracer.Settings.IpHeaderEnabled || Security.Instance.Enabled)

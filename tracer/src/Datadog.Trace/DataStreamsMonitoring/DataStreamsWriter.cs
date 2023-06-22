@@ -74,9 +74,9 @@ internal class DataStreamsWriter : IDataStreamsWriter
         string defaultServiceName)
         => new DataStreamsWriter(
             new DataStreamsAggregator(
-                new DataStreamsMessagePackFormatter(settings.Environment, defaultServiceName),
+                new DataStreamsMessagePackFormatter(settings.EnvironmentInternal, defaultServiceName),
                 bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs),
-            new DataStreamsApi(DataStreamsTransportStrategy.GetAgentIntakeFactory(settings.Exporter)),
+            new DataStreamsApi(DataStreamsTransportStrategy.GetAgentIntakeFactory(settings.ExporterInternal)),
             bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs,
             discoveryService);
 

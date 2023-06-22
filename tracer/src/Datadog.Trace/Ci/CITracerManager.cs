@@ -55,7 +55,7 @@ namespace Datadog.Trace.Ci
                 traceSampler,
                 spanSampler,
                 remoteConfigurationManager,
-                GetProcessors(settings.Exporter.PartialFlushEnabled, agentWriter is CIVisibilityProtocolWriter))
+                GetProcessors(settings.ExporterInternal.PartialFlushEnabledInternal, agentWriter is CIVisibilityProtocolWriter))
         {
         }
 

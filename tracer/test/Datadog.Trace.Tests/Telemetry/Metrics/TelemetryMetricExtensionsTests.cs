@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
@@ -22,6 +23,9 @@ public class TelemetryMetricExtensionsTests
           .Concat(GetEnums<Gauge>().Select(x => new object[] { x, x.GetName() }))
           .Concat(GetEnums<Distribution>().Select(x => new object[] { x, x.GetName() }))
           .ToList();
+
+    public static IEnumerable<object[]> IntegrationIds
+        => IntegrationRegistry.Ids.Values.Select(x => new object[] { x });
 
     [Theory]
     [MemberData(nameof(AllEnums))]
@@ -44,6 +48,24 @@ public class TelemetryMetricExtensionsTests
     {
         AllEnums
            .Select(x => (string)x[1])
+           .Should()
+           .OnlyHaveUniqueItems();
+    }
+
+    [Theory]
+    [MemberData(nameof(IntegrationIds))]
+    public void MustHaveMetricTagForAllIntegrations(int id)
+    {
+        var integrationId = (IntegrationId)id;
+        var getTag = () => integrationId.GetMetricTag();
+        getTag.Should().NotThrow("should have a mapping to a metric tag for every IntegrationId. Add a new entry to IntegrationIdExtensions");
+    }
+
+    [Fact]
+    public void MustHaveUniqueMetricTagForAllIntegrations()
+    {
+        IntegrationIds
+           .Select(x => ((IntegrationId)x[0]).GetMetricTag())
            .Should()
            .OnlyHaveUniqueItems();
     }
