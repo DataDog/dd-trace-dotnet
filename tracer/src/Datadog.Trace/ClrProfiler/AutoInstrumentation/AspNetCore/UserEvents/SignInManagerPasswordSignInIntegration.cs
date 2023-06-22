@@ -63,7 +63,20 @@ public static class SignInManagerPasswordSignInIntegration
     {
         if (!returnValue.Succeeded && Security.Instance is { TrackUserEvents: true } security)
         {
-            SignInHelper.FillSpanWithFailureLoginEvent(security, in state, returnValue);
+            var span = state.Scope.Span;
+            var setTag = TaggingUtils.GetSpanSetter(span, out _);
+            var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
+
+            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
+            tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, "false");
+            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, security.Settings.UserEventsAutomatedTracking);
+            if (security.Settings.UserEventsAutomatedTracking == SecuritySettings.UserTrackingExtendedMode)
+            {
+                // if we get here and the tag doesn't exist, the user doesn't exist, we dont have an ID but a username that doesn't exist
+                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserName, state.State!.ToString());
+            }
+
+            security.SetTraceSamplingPriority(span);
         }
 
         return returnValue;

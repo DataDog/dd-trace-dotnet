@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
         {
             var claimsPrincipal = state.State as ClaimsPrincipal;
             // https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
-            var claimsToTest = new[] { ClaimTypes.NameIdentifier, ClaimTypes.Name, "sub" };
+            var claimsToTestInSafeMode = new[] { ClaimTypes.NameIdentifier, ClaimTypes.Name, "sub" };
             if (claimsPrincipal?.Claims != null && Security.Instance is { TrackUserEvents: true } security)
             {
                 var span = state.Scope.Span;
@@ -65,7 +65,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, Security.Instance.Settings.UserEventsAutomatedTracking);
                 foreach (var claim in claimsPrincipal.Claims)
                 {
-                    if (claimsToTest.Contains(claim.Type))
+                    if (security.Settings.UserEventsAutomatedTracking == SecuritySettings.UserTrackingExtendedMode)
+                    {
+                        switch (claim.Type)
+                        {
+                            case ClaimTypes.NameIdentifier or "sub":
+                                tryAddTag(Tags.User.Id, claim.Value);
+                                break;
+                            case ClaimTypes.Email:
+                                tryAddTag(Tags.User.Email, claim.Value);
+                                break;
+                            case ClaimTypes.Name:
+                                tryAddTag(Tags.User.Name, claim.Value);
+                                break;
+                        }
+                    }
+                    else if (claimsToTestInSafeMode.Contains(claim.Type))
                     {
                         if (Guid.TryParse(claim.Value, out _))
                         {
@@ -73,8 +88,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                             break;
                         }
                     }
-
-                    // todo in extended mode, email, username, login (if not available, see signin integrations
                 }
 
                 security.SetTraceSamplingPriority(span);
