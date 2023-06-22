@@ -188,23 +188,24 @@ namespace Datadog.Trace.AppSec.Waf
 #if NETCOREAPP3_1_OR_GREATER
                 if (enumerableDic is IDictionary)
                 {
-                    if (typeof(KeyValuePair<TKey, TValue>) == typeof(KeyValuePair<string, string>))
+                    var typeKVP = typeof(KeyValuePair<TKey, TValue>);
+                    if (typeKVP == typeof(KeyValuePair<string, string>))
                     {
                         EnumerateItems<string, string>();
                     }
-                    else if (typeof(KeyValuePair<TKey, TValue>) == typeof(KeyValuePair<string, object>))
+                    else if (typeKVP == typeof(KeyValuePair<string, object>))
                     {
                         EnumerateItems<string, object>();
                     }
-                    else if (typeof(KeyValuePair<TKey, TValue>) == typeof(KeyValuePair<string, string[]>))
+                    else if (typeKVP == typeof(KeyValuePair<string, string[]>))
                     {
                         EnumerateItems<string, string[]>();
                     }
-                    else if (typeof(KeyValuePair<TKey, TValue>) == typeof(KeyValuePair<string, List<string>>))
+                    else if (typeKVP == typeof(KeyValuePair<string, List<string>>))
                     {
                         EnumerateItems<string, List<string>>();
                     }
-                    else if (typeof(KeyValuePair<TKey, TValue>) == typeof(KeyValuePair<string, JToken>))
+                    else if (typeKVP == typeof(KeyValuePair<string, JToken>))
                     {
                         EnumerateItems<string, JToken>();
                     }
