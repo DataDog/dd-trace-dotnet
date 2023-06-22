@@ -1,13 +1,13 @@
 #include "dataflow.h"
-#include "../../../../shared/src/native-src/com_ptr.h"
-#include "aspect_filter_factory.h"
+#include "iast_util.h"
+#include "module_info.h"
+#include "method_info.h"
 #include "dataflow_aspects.h"
 #include "dataflow_il_rewriter.h"
-#include "iast_util.h"
-#include "method_info.h"
-#include "module_info.h"
-#include <chrono>
+#include "aspect_filter_factory.h"
 #include <fstream>
+#include <chrono>
+#include "../../../../shared/src/native-src/com_ptr.h"
 
 using namespace std::chrono;
 
@@ -18,7 +18,8 @@ static const WSTRING _fixedAppDomainIncludeFilters[] = {
     LastEntry, // Can't have an empty array
 };
 static const WSTRING _fixedAppDomainExcludeFilters[] = {
-    WStr("DD*"), WStr("DataDog*"),
+    WStr("DD*"), 
+    WStr("DataDog*"),
     LastEntry, // Can't have an empty array. This must be the last element
 };
 static const WSTRING _fixedAssemblyIncludeFilters[] = {
@@ -149,8 +150,8 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler)
     {
         WCHAR version[1024];
         ULONG versionLength;
-        if (SUCCEEDED(_profiler->GetRuntimeInformation(nullptr, &m_runtimeType, nullptr, nullptr, nullptr, nullptr,
-                                                       1024, &versionLength, version)))
+        if (SUCCEEDED(_profiler->GetRuntimeInformation(nullptr, &m_runtimeType, nullptr, nullptr, nullptr, nullptr, 1024,
+                                                    &versionLength, version)))
         {
             m_runtimeVersion = GetVersionInfo(version);
         }
@@ -172,36 +173,36 @@ HRESULT Dataflow::Init()
     try
     {
         //_initThread = new std::thread([this]() {
-        // Init config
-        // Domain filters
-        for (int x = 0; _fixedAppDomainIncludeFilters[x] != LastEntry; x++)
-        {
-            _domainIncludeFilters.push_back(_fixedAppDomainIncludeFilters[x]);
-        }
-        for (int x = 0; _fixedAppDomainExcludeFilters[x] != LastEntry; x++)
-        {
-            _domainExcludeFilters.push_back(_fixedAppDomainExcludeFilters[x]);
-        }
+            // Init config
+            // Domain filters
+            for (int x = 0; _fixedAppDomainIncludeFilters[x] != LastEntry; x++)
+            {
+                _domainIncludeFilters.push_back(_fixedAppDomainIncludeFilters[x]);
+            }
+            for (int x = 0; _fixedAppDomainExcludeFilters[x] != LastEntry; x++)
+            {
+                _domainExcludeFilters.push_back(_fixedAppDomainExcludeFilters[x]);
+            }
 
-        // Assembly filters
-        for (int x = 0; _fixedAssemblyIncludeFilters[x] != LastEntry; x++)
-        {
-            _assemblyIncludeFilters.push_back(_fixedAssemblyIncludeFilters[x]);
-        }
-        for (int x = 0; _fixedAssemblyExcludeFilters[x] != LastEntry; x++)
-        {
-            _assemblyExcludeFilters.push_back(_fixedAssemblyExcludeFilters[x]);
-        }
+            // Assembly filters
+            for (int x = 0; _fixedAssemblyIncludeFilters[x] != LastEntry; x++)
+            {
+                _assemblyIncludeFilters.push_back(_fixedAssemblyIncludeFilters[x]);
+            }
+            for (int x = 0; _fixedAssemblyExcludeFilters[x] != LastEntry; x++)
+            {
+                _assemblyExcludeFilters.push_back(_fixedAssemblyExcludeFilters[x]);
+            }
 
-        // Method filters
-        for (int x = 0; _fixedMethodIncludeFilters[x] != LastEntry; x++)
-        {
-            _methodIncludeFilters.push_back(_fixedMethodIncludeFilters[x]);
-        }
-        for (int x = 0; _fixedMethodExcludeFilters[x] != LastEntry; x++)
-        {
-            _methodExcludeFilters.push_back(_fixedMethodExcludeFilters[x]);
-        }
+            // Method filters
+            for (int x = 0; _fixedMethodIncludeFilters[x] != LastEntry; x++)
+            {
+                _methodIncludeFilters.push_back(_fixedMethodIncludeFilters[x]);
+            }
+            for (int x = 0; _fixedMethodExcludeFilters[x] != LastEntry; x++)
+            {
+                _methodExcludeFilters.push_back(_fixedMethodExcludeFilters[x]);
+            }
         //});
     }
     catch (std::exception& err)
@@ -237,7 +238,7 @@ HRESULT Dataflow::Destroy()
     DEL_MAP_VALUES(_modules);
     DEL_MAP_VALUES(_appDomains);
     DEL_MAP_VALUES(_moduleAspects);
-    // DEL(_initThread);
+    //DEL(_initThread);
     return hr;
 }
 
@@ -261,7 +262,8 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength)
             aspectClass = new DataflowAspectClass(this, aspectsName, line);
             if (!aspectClass->IsValid())
             {
-                trace::Logger::Info("Dataflow::LoadAspects -> Detected invalid aspect class ", aspectClass->ToString());
+                trace::Logger::Info("Dataflow::LoadAspects -> Detected invalid aspect class ",
+                                    aspectClass->ToString());
                 DEL(aspectClass);
             }
             else
@@ -293,14 +295,14 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength)
     _loaded = true;
 }
 
+
 HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 {
     CSGUARD(_cs);
     auto it = _appDomains.find(appDomainId);
     if (it != _appDomains.end())
     {
-        trace::Logger::Debug("AppDomainShutdown: AppDomainId = ", Hex((ULONG) appDomainId), " [ ", it->second->Name,
-                             " ] ");
+        trace::Logger::Debug("AppDomainShutdown: AppDomainId = ", Hex((ULONG)appDomainId), " [ ", it->second->Name, " ] ");
         DEL(it->second);
         _appDomains.erase(appDomainId);
         return S_OK;
@@ -320,8 +322,7 @@ HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
     WCHAR wszName[1024];
 
     DWORD dwModuleFlags;
-    HRESULT hr = _profiler->GetModuleInfo2(moduleId, &pbBaseLoadAddr, cchNameIn, &cchNameOut, wszPath, &assemblyId,
-                                           &dwModuleFlags);
+    HRESULT hr = _profiler->GetModuleInfo2(moduleId, &pbBaseLoadAddr, cchNameIn, &cchNameOut, wszPath, &assemblyId, &dwModuleFlags);
     if (FAILED(hr))
     {
         trace::Logger::Error("GetModuleInfo2 failed for ModuleId ", moduleId);
@@ -330,8 +331,7 @@ HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
     if ((dwModuleFlags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0)
     {
         return S_OK;
-    } // Ignore any Windows Runtime modules.  We cannot obtain writeable metadata interfaces on them or instrument their
-      // IL
+    } // Ignore any Windows Runtime modules.  We cannot obtain writeable metadata interfaces on them or instrument their IL
 
     hr = _profiler->GetAssemblyInfo(assemblyId, 1024, nullptr, wszName, &appDomainId, &modIDDummy);
     if (FAILED(hr))
@@ -371,13 +371,13 @@ HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
         auto it = _modules.find(moduleId);
         if (it != _modules.end())
         {
-            trace::Logger::Debug("ModuleUnloadFinished: ModuleID = ", Hex((ULONG) moduleId), " [ ",
-                                 it->second->_appDomain.Name, " ] ", it->second->_name);
+            trace::Logger::Debug("ModuleUnloadFinished: ModuleID = ", Hex((ULONG)moduleId), " [ ", it->second->_appDomain.Name,
+                                 " ] ", it->second->_name);
             DEL(it->second);
         }
         else
         {
-            trace::Logger::Debug("ModuleUnloadFinished: ModuleID = ", Hex((ULONG) moduleId), " (Not found)");
+            trace::Logger::Debug("ModuleUnloadFinished: ModuleID = ", Hex((ULONG)moduleId), " (Not found)");
         }
         _modules.erase(moduleId);
     }
@@ -385,22 +385,22 @@ HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
     return S_OK;
 }
 
-HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMetadataImport,
-                                      IMetaDataEmit2** ppMetadataEmit, IMetaDataAssemblyImport** ppAssemblyImport,
+HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMetadataImport, IMetaDataEmit2** ppMetadataEmit,
+                                      IMetaDataAssemblyImport** ppAssemblyImport,
                                       IMetaDataAssemblyEmit** ppAssemblyEmit)
 {
     HRESULT hr = S_OK;
-    if (SUCCEEDED(hr))
+    if (SUCCEEDED(hr)) 
     {
         IUnknown* piUnk = nullptr;
-        hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataImport2, &piUnk);
+        hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataImport2, &piUnk); 
         if (SUCCEEDED(hr))
         {
             hr = piUnk->QueryInterface(IID_IMetaDataImport2, (void**) ppMetadataImport);
         }
         REL(piUnk);
     }
-    if (SUCCEEDED(hr))
+    if (SUCCEEDED(hr)) 
     {
         IUnknown* piUnk = nullptr;
         hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataEmit2, &piUnk);
@@ -410,7 +410,7 @@ HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMe
         }
         REL(piUnk);
     }
-    if (SUCCEEDED(hr))
+    if (SUCCEEDED(hr)) 
     {
         IUnknown* piUnk = nullptr;
         hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataAssemblyImport, &piUnk);
@@ -420,7 +420,7 @@ HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMe
         }
         REL(piUnk);
     }
-    if (SUCCEEDED(hr))
+    if (SUCCEEDED(hr)) 
     {
         IUnknown* piUnk = nullptr;
         hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataAssemblyEmit, &piUnk);
@@ -494,8 +494,7 @@ ModuleInfo* Dataflow::GetModuleInfo(WSTRING moduleName, AppDomainID appDomainId,
         {
             auto ppModuleInfo = iterator->second;
 
-            if ((ppModuleInfo->_appDomain.Id == appDomainId) ||
-                (lookInSharedRepos && ppModuleInfo->_appDomain.IsSharedAssemblyRepository))
+            if ((ppModuleInfo->_appDomain.Id == appDomainId) || (lookInSharedRepos && ppModuleInfo->_appDomain.IsSharedAssemblyRepository))
             {
                 return ppModuleInfo;
             }
@@ -552,10 +551,7 @@ bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
 }
 bool Dataflow::JITCompilationStarted(ModuleID moduleId, mdToken methodId)
 {
-    if (!_loaded)
-    {
-        return false;
-    }
+    if (!_loaded) { return false; }
 
     auto method = JITProcessMethod(moduleId, methodId);
     if (method && method->HasChanged())
@@ -567,10 +563,7 @@ bool Dataflow::JITCompilationStarted(ModuleID moduleId, mdToken methodId)
 MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, bool isRejit)
 {
     MethodInfo* method = nullptr;
-    if (!_loaded)
-    {
-        return method;
-    }
+    if (!_loaded) { return method; }
 
     auto module = GetModuleInfo(moduleId);
     if (module && !module->IsExcluded())
@@ -594,10 +587,11 @@ MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, bool
     return method;
 }
 
-bool IsCandidate(unsigned m_opcode)
+    bool IsCandidate(unsigned m_opcode)
 {
     return (m_opcode == CEE_CALL || m_opcode == CEE_CALLI || m_opcode == CEE_CALLVIRT || m_opcode == CEE_NEWOBJ);
 }
+
 
 HRESULT SetILFunctionBody(MethodInfo* method, ICorProfilerFunctionControl* pFunctionControl, ULONG size, LPCBYTE pBody)
 {
@@ -660,7 +654,7 @@ std::vector<DataflowAspectReference*> Dataflow::GetAspects(ModuleInfo* module)
 }
 
 InstrumentResult Dataflow::InstrumentInstruction(ILRewriter* rewriter, ILInstr* instruction,
-                                                 std::vector<DataflowAspectReference*>& aspects)
+                                                       std::vector<DataflowAspectReference*>& aspects)
 {
     auto res = InstrumentResult{instruction, false};
     for (auto aspect : aspects)
