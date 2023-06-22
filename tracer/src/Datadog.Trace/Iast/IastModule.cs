@@ -16,6 +16,7 @@ using Datadog.Trace.Iast.SensitiveData;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util.Http;
+using Datadog.Trace.Vendors.dnlib.DotNet;
 
 namespace Datadog.Trace.Iast;
 
@@ -107,6 +108,21 @@ internal static class IastModule
         }
     }
 
+    public static Scope? OnInsecureCookie(IntegrationId integrationId, string cookieName)
+    {
+        return GetScopeWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.InsecureCookie, ("INSECURE_COOKIE:" + cookieName).GetStaticHashCode());
+    }
+
+    public static Scope? OnNoHttpOnlyCookie(IntegrationId integrationId, string cookieName)
+    {
+        return GetScopeWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoHttpOnlyCookie, ("NO_HTTPONLY_COOKIE:" + cookieName).GetStaticHashCode());
+    }
+
+    public static Scope? OnNoSamesiteCookie(IntegrationId integrationId, string cookieName)
+    {
+        return GetScopeWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoSameSiteCookie, ("NO_SAMESITE_COOKIE:" + cookieName).GetStaticHashCode());
+    }
+
     public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId)
     {
         var algorithm = type.BaseType?.Name;
@@ -145,6 +161,40 @@ internal static class IastModule
     internal static VulnerabilityBatch GetVulnerabilityBatch()
     {
         return new VulnerabilityBatch(EvidenceRedactorLazy.Value);
+    }
+
+    private static Scope? GetScopeWebVulnerability(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, int hashId)
+    {
+        var tracer = Tracer.Instance;
+        if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
+        {
+            // integration disabled, don't create a scope, skip this span
+            return null;
+        }
+
+        var currentSpan = (tracer.ActiveScope as Scope)?.Span;
+        var traceContext = currentSpan?.Context?.TraceContext;
+
+        if (traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
+        {
+            // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
+            // not activated for this particular request
+            return null;
+        }
+
+        var vulnerability = new Vulnerability(
+            vulnerabilityType,
+            hashId,
+            new Evidence(evidenceValue, null),
+            integrationId);
+
+        if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
+        {
+            traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
+            return null;
+        }
+
+        return null;
     }
 
     private static Scope? GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, bool taintedFromEvidenceRequired = false)
