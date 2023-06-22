@@ -26,7 +26,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             sb.Append('}');
 
             var resultString = Util.StringBuilderCache.GetStringAndRelease(sb);
-            messageAttributes[SnsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(resultString);
+            var bytes = Encoding.UTF8.GetBytes(resultString);
+            var base64String = Convert.ToBase64String(bytes);
+            messageAttributes[SnsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(base64String);
         }
 
         public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext spanContext)

@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 {
     internal static class CachedMessageHeadersHelper<TMarkerType>
     {
-        private const string StringDataType = "String";
+        private const string BinaryDataType = "Binary";
 
         private static readonly Func<string, object> _createMessageAttributeValue;
         private static readonly Func<IDictionary> _createDict;
@@ -36,12 +36,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             messageAttributeIL.Emit(OpCodes.Newobj, messageAttributeValueCtor);
 
             messageAttributeIL.Emit(OpCodes.Dup);
-            messageAttributeIL.Emit(OpCodes.Ldstr, StringDataType);
+            messageAttributeIL.Emit(OpCodes.Ldstr, BinaryDataType);
             messageAttributeIL.Emit(OpCodes.Callvirt, messageAttributeValueType.GetProperty("DataType").GetSetMethod());
 
             messageAttributeIL.Emit(OpCodes.Dup);
             messageAttributeIL.Emit(OpCodes.Ldarg_0);
-            messageAttributeIL.Emit(OpCodes.Callvirt, messageAttributeValueType.GetProperty("StringValue").GetSetMethod());
+            messageAttributeIL.Emit(OpCodes.Callvirt, messageAttributeValueType.GetProperty("BinaryValue").GetSetMethod());
 
             messageAttributeIL.Emit(OpCodes.Ret);
 
