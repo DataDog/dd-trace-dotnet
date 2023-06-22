@@ -15,6 +15,7 @@ internal class UnmanagedMemoryPool : IDisposable
     private readonly IntPtr[] _items;
     private readonly int _blockSize;
     private IntPtr _firstItem;
+    private int _initialSearchIndex;
     private bool _isDisposed;
 
     public UnmanagedMemoryPool(int blockSize, int poolSize)
@@ -22,6 +23,7 @@ internal class UnmanagedMemoryPool : IDisposable
         _blockSize = blockSize;
         _items = new IntPtr[poolSize];
         _firstItem = IntPtr.Zero;
+        _initialSearchIndex = 0;
     }
 
     public IntPtr Rent()
@@ -43,11 +45,12 @@ internal class UnmanagedMemoryPool : IDisposable
     private IntPtr RentSlow()
     {
         var items = _items;
-        for (var i = 0; i < items.Length; i++)
+        for (var i = _initialSearchIndex; i < items.Length; i++)
         {
             var inst = Interlocked.Exchange(ref items[i], IntPtr.Zero);
             if (inst != IntPtr.Zero)
             {
+                _initialSearchIndex = i + 1;
                 return inst;
             }
         }
@@ -75,6 +78,7 @@ internal class UnmanagedMemoryPool : IDisposable
         {
             if (Interlocked.CompareExchange(ref items[i], block, IntPtr.Zero) == IntPtr.Zero)
             {
+                _initialSearchIndex = 0;
                 return;
             }
         }
