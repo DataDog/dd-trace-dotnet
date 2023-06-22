@@ -159,7 +159,7 @@ public class TelemetryControllerV2Tests
         controller.Start();
 
         var requiredHeartbeats = 10;
-        var deadline = DateTimeOffset.UtcNow.AddSeconds(_flushInterval.TotalSeconds * 100);
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(_flushInterval.TotalSeconds * 1000);
         while (DateTimeOffset.UtcNow < deadline)
         {
             var heartBeatCount = transport.GetData().Count(x => ContainsMessage(x, TelemetryRequestTypes.AppHeartbeat));

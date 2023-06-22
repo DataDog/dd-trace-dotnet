@@ -41,7 +41,7 @@ internal class SpanProbe : ProbeDefinition, IEquatable<SpanProbe>
             return false;
         }
 
-        return Equals((LogProbe)obj);
+        return Equals((SpanProbe)obj);
     }
 
     public override int GetHashCode()

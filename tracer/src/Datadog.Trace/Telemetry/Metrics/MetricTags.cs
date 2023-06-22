@@ -45,10 +45,40 @@ internal static class MetricTags
         [Description("new_continued:continued")] Continued,
     }
 
+    internal enum SpanEnqueueReason
+    {
+        /// <summary>
+        /// The span was part of a p0 trace that was kept for sending to the agent
+        /// </summary>
+        [Description("reason:p0_keep")] P0Keep,
+
+        /// <summary>
+        /// The span was selected via single_span_sampling, and otherwise would have been dropped as a p0 span
+        /// </summary>
+        [Description("reason:single_span_sampling")] SingleSpanSampling,
+
+        /// <summary>
+        /// The tracer is not dropping p0 spans, so the span was enqueued 'by default' for sending to the trace-agent
+        /// </summary>
+        [Description("reason:default")] Default,
+    }
+
+    internal enum TraceChunkEnqueueReason
+    {
+        /// <summary>
+        /// The span was part of a p0 trace that was kept for sending to the agent
+        /// </summary>
+        [Description("reason:p0_keep")] P0Keep,
+
+        /// <summary>
+        /// The tracer is not dropping p0 spans, so the span was enqueued 'by default' for sending to the trace-agent
+        /// </summary>
+        [Description("reason:default")] Default,
+    }
+
     internal enum DropReason
     {
-        [Description("reason:sampling_decision")] SamplingDecision,
-        [Description("reason:single_span_sampling")] SingleSpanSampling,
+        [Description("reason:p0_drop")] P0Drop,
         [Description("reason:overfull_buffer")] OverfullBuffer,
         [Description("reason:serialization_error")] SerializationError,
         [Description("reason:api_error")] ApiError,
@@ -83,7 +113,7 @@ internal static class MetricTags
     internal enum ApiError
     {
         [Description("type:timeout")] Timeout,
-        [Description("type:network_error")] NetworkError,
+        [Description("type:network")] NetworkError,
         [Description("type:status_code")] StatusCode,
     }
 
@@ -119,6 +149,10 @@ internal static class MetricTags
 
     internal enum IntegrationName
     {
+        // manual integration
+        [Description("integrations_name:datadog")]Manual,
+        [Description("integrations_name:opentracing")]OpenTracing,
+        // automatic integration
         [Description("integrations_name:httpmessagehandler")]HttpMessageHandler,
         [Description("integrations_name:httpsocketshandler")]HttpSocketsHandler,
         [Description("integrations_name:winhttphandler")]WinHttpHandler,
@@ -146,6 +180,7 @@ internal static class MetricTags
         [Description("integrations_name:cosmosdb")]CosmosDb,
         [Description("integrations_name:awssdk")]AwsSdk,
         [Description("integrations_name:awssqs")]AwsSqs,
+        [Description("integrations_name:awssns")]AwsSns,
         [Description("integrations_name:ilogger")]ILogger,
         [Description("integrations_name:aerospike")]Aerospike,
         [Description("integrations_name:azurefunctions")]AzureFunctions,

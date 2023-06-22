@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 
@@ -86,6 +87,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         public static void AssertConfiguration(this MockTelemetryAgent telemetry, string key) => telemetry.AssertConfiguration(key, value: null);
+
+        internal static IEnumerable<(string[] Tags, double Value, long Timestamp)> GetMetricDataPoints(this MockTelemetryAgent telemetry, Count metric, string tag1 = null, string tag2 = null, string tag3 = null)
+        {
+            telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
+
+            var allData = telemetry.Telemetry.ToArray();
+            return GetMetricData(allData, metric.GetName(), tag1, tag2, tag3);
+        }
+
+        internal static IEnumerable<(string[] Tags, double Value, long Timestamp)> GetMetricDataPoints(this MockTelemetryAgent telemetry, Gauge metric, string tag1 = null, string tag2 = null, string tag3 = null)
+        {
+            telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
+
+            var allData = telemetry.Telemetry.ToArray();
+            return GetMetricData(allData, metric.GetName(), tag1, tag2, tag3);
+        }
+
+        internal static IEnumerable<DistributionMetricData> GetDistributions(this MockTelemetryAgent telemetry, Distribution distribution, string tag1 = null, string tag2 = null, string tag3 = null)
+        {
+            telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
+
+            var allData = telemetry.Telemetry.ToArray();
+            return GetDistributions(allData, distribution.GetName(), tag1, tag2, tag3);
+        }
 
         internal static void AssertConfiguration(ICollection<TelemetryWrapper> allData, string key, object value = null)
         {
@@ -183,6 +208,61 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             integration.Error.Should().BeNullOrEmpty();
+        }
+
+        internal static IEnumerable<(string[] Tags, double Value, long Timestamp)> GetMetricData(ICollection<TelemetryWrapper> allData, string metricName, string tag1 = null, string tag2 = null, string tag3 = null)
+        {
+            allData.Should().ContainSingle(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
+
+            var metricPayloads = allData
+                                .OrderByDescending(x => x.SeqId)
+                                .Select(
+                                     data => data switch
+                                     {
+                                         _ when data.TryGetPayload<GenerateMetricsPayload>(TelemetryRequestTypes.GenerateMetrics) is { } p => p.Series,
+                                         _ => null
+                                     })
+                                .Where(x => x is not null)
+                                .SelectMany(x => x)
+                                .Where(x => IsRequiredMetric(x, metricName, tag1, tag2, tag3))
+                                .SelectMany(x => x.Points.Select(pt => (x.Tags, pt.Value, pt.Timestamp)));
+
+            return metricPayloads;
+
+            static bool IsRequiredMetric(MetricData datum, string metricName, string tag1 = null, string tag2 = null, string tag3 = null)
+            {
+                return datum.Metric == metricName
+                    && (tag1 is null || (datum.Tags?.Contains(tag1) ?? false))
+                    && (tag2 is null || (datum.Tags?.Contains(tag2) ?? false))
+                    && (tag3 is null || (datum.Tags?.Contains(tag3) ?? false));
+            }
+        }
+
+        internal static IEnumerable<DistributionMetricData> GetDistributions(ICollection<TelemetryWrapper> allData, string metricName, string tag1 = null, string tag2 = null, string tag3 = null)
+        {
+            allData.Should().ContainSingle(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
+
+            var distributions = allData
+                                .OrderByDescending(x => x.SeqId)
+                                .Select(
+                                     data => data switch
+                                     {
+                                         _ when data.TryGetPayload<DistributionsPayload>(TelemetryRequestTypes.Distributions) is { } p => p.Series,
+                                         _ => null
+                                     })
+                                .Where(x => x is not null)
+                                .SelectMany(x => x)
+                                .Where(x => IsRequiredDistribution(x, metricName, tag1, tag2, tag3));
+
+            return distributions;
+
+            static bool IsRequiredDistribution(DistributionMetricData datum, string metricName, string tag1 = null, string tag2 = null, string tag3 = null)
+            {
+                return datum.Metric == metricName
+                    && (tag1 is null || (datum.Tags?.Contains(tag1) ?? false))
+                    && (tag2 is null || (datum.Tags?.Contains(tag2) ?? false))
+                    && (tag3 is null || (datum.Tags?.Contains(tag3) ?? false));
+            }
         }
     }
 }

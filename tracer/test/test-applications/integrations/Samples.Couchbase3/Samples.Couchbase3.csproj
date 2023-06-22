@@ -6,6 +6,7 @@
     <OutputType>Exe</OutputType>
     <RequiresDockerDependency>true</RequiresDockerDependency>
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
 
   <ItemGroup>

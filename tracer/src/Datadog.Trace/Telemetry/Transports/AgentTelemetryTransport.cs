@@ -6,15 +6,18 @@
 #nullable enable
 using System;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Telemetry.Transports;
 
 internal class AgentTelemetryTransport : JsonTelemetryTransport
 {
-    public AgentTelemetryTransport(IApiRequestFactory requestFactory)
-        : base(requestFactory)
+    public AgentTelemetryTransport(IApiRequestFactory requestFactory, bool debugEnabled)
+        : base(requestFactory, debugEnabled)
     {
     }
 
     public override string GetTransportInfo() => nameof(AgentTelemetryTransport) + " to " + GetEndpointInfo();
+
+    protected override MetricTags.TelemetryEndpoint GetEndpointMetricTag() => MetricTags.TelemetryEndpoint.Agent;
 }

@@ -57,9 +57,14 @@ namespace BenchmarkComparison
                                                {
                                                    var baseBenchmark = GetValueOrDefault(baseBenchmarksByName, id);
                                                    var diffBenchmark = GetValueOrDefault(diffBenchmarksByName, id);
+                                                   if (baseBenchmark is null || diffBenchmark is null)
+                                                   {
+                                                       return default;
+                                                   }
 
                                                    return (Id: id, Base: baseBenchmark, Diff: diffBenchmark);
                                                })
+                                              .Where(i => i.Id is not null)
                                               .ToList();
                        var benchmarkComparisons = matchedBenchmarks
                                                  .Select(x => new BenchmarkComparison(x.Id, x.Base, x.Diff, EquivalenceTestConclusion.Unknown))
@@ -75,9 +80,20 @@ namespace BenchmarkComparison
                    })
                   .ToList();
 
-            static string GetName(Benchmark benchmark) => benchmark.DisplayInfo.Contains("Toolchain=net472")
-                                                       ? $"{benchmark.FullName}-net472"
-                                                       : $"{benchmark.FullName}-netcoreapp3.1";
+            static string GetName(Benchmark benchmark)
+            {
+                if (benchmark.DisplayInfo.Contains("Toolchain=net472"))
+                {
+                    return $"{benchmark.FullName}-net472";
+                }
+
+                if (benchmark.DisplayInfo.Contains("Toolchain=net6.0"))
+                {
+                    return $"{benchmark.FullName}-net6.0";
+                }
+
+                return $"{benchmark.FullName}-netcoreapp3.1";
+            }
 
             static T GetValueOrDefault<T>(Dictionary<string, T> dict, string key)
                 => dict.TryGetValue(key, out var value) ? value : default;

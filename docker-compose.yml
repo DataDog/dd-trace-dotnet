@@ -366,6 +366,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - DD_INTERNAL_TELEMETRY_V2_ENABLED
+      - DD_TELEMETRY_METRICS_ENABLED
 
   ProfilerIntegrationTests:
     build:
@@ -413,6 +414,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - DD_INTERNAL_TELEMETRY_V2_ENABLED
+      - DD_TELEMETRY_METRICS_ENABLED
     hostname: integrationtests
 
   IntegrationTests:
@@ -487,6 +489,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - DD_INTERNAL_TELEMETRY_V2_ENABLED
+      - DD_TELEMETRY_METRICS_ENABLED
     hostname: integrationtests
     depends_on:
       - aerospike
@@ -557,6 +560,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - DD_INTERNAL_TELEMETRY_V2_ENABLED
+      - DD_TELEMETRY_METRICS_ENABLED
     hostname: integrationtests
 
   IntegrationTests.Serverless:
@@ -611,6 +615,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - DD_INTERNAL_TELEMETRY_V2_ENABLED
+      - DD_TELEMETRY_METRICS_ENABLED
     hostname: integrationtests
 
   ExplorationTests:
@@ -661,6 +666,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - DD_INTERNAL_TELEMETRY_V2_ENABLED
+      - DD_TELEMETRY_METRICS_ENABLED
 
   StartDependencies:
     image: andrewlock/wait-for-dependencies
@@ -752,6 +758,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - DD_INTERNAL_TELEMETRY_V2_ENABLED
+      - DD_TELEMETRY_METRICS_ENABLED
     depends_on:
       - servicestackredis_arm64
       - stackexchangeredis_arm64
@@ -831,6 +838,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - DD_INTERNAL_TELEMETRY_V2_ENABLED
+      - DD_TELEMETRY_METRICS_ENABLED
 
   start-test-agent:
     image: andrewlock/wait-for-dependencies

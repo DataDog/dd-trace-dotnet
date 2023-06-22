@@ -17,6 +17,7 @@ namespace Datadog.Trace.Telemetry
 
         public const string ApiKeyHeader = "DD-API-KEY";
         public const string ApiVersionHeader = "DD-Telemetry-API-Version";
+        public const string DebugHeader = "DD-Telemetry-Debug-Enabled";
         public const string RequestTypeHeader = "DD-Telemetry-Request-Type";
         public const string ClientLibraryLanguageHeader = "DD-Client-Library-Language";
         public const string ClientLibraryVersionHeader = "DD-Client-Library-Version";

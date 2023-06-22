@@ -368,7 +368,7 @@ internal readonly partial struct SecurityCoordinator
         var dict = new Dictionary<string, object>(capacity: 7)
         {
             { AddressesConstants.RequestMethod, request.HttpMethod },
-            { AddressesConstants.RequestUriRaw, request.Url.AbsoluteUri },
+            { AddressesConstants.RequestUriRaw, request.Url.PathAndQuery },
             { AddressesConstants.RequestQuery, queryDic },
             { AddressesConstants.ResponseStatus, request.RequestContext.HttpContext.Response.StatusCode.ToString() },
             { AddressesConstants.RequestHeaderNoCookies, headersDic },
