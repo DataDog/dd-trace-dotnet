@@ -1035,18 +1035,15 @@ partial class Build : NukeBuild
            var gitChanges = GetGitChangedFiles(baseBranch);
            Logger.Information($"Found {gitChanges.Length} modified paths");
 
-           var profilerStagesToSkip = GetProfilerStagesThatWillNotRun(gitChanges);
            var tracerStagesToSkip = GetTracerStagesThatWillNotRun(gitChanges);
 
-           var message = "Based on git changes, " + (profilerStagesToSkip, tracerStagesToSkip) switch
+           var message = "Based on git changes, " + tracerStagesToSkip switch
            {
-               ({ Count: 0 }, { Count: 0 }) => "profiler pipeline and tracer pipeline will both run. Skipping noop pipeline",
-               ({ Count: > 0 }, { Count: 0 }) => "profiler pipeline will not run. Generating github status updates for for profiler stages",
-               ({ Count: 0 }, { Count: > 0 }) => "tracer pipeline will not run. Generating github status updates for tracer stages",
+               { Count: 0 } => "Azure pipeline will run. Skipping noop pipeline",
                _ => "neither profiler or tracer pipelines will run. Generating github status updates for both stages",
            };
 
-           var allStages = string.Join(";", profilerStagesToSkip.Concat(tracerStagesToSkip));
+           var allStages = string.Join(";", tracerStagesToSkip);
 
            Logger.Information(message);
            Logger.Information("Setting noop_stages: " + allStages);
@@ -1069,24 +1066,6 @@ partial class Build : NukeBuild
                           : tracerConfig.Stages.Select(x => x.Stage).ToList();
            }
 
-           List<string> GetProfilerStagesThatWillNotRun(string[] gitChanges)
-           {
-               var profilerConfig = GetProfilerPipelineDefinition();
-
-               var profilerExcludePaths = profilerConfig.On?.PullRequest?.PathsIgnore ?? Array.Empty<string>();
-               Matcher profilerPathMatcher = new();
-               profilerPathMatcher.AddInclude("**");
-               profilerPathMatcher.AddExcludePatterns(profilerExcludePaths);
-
-               Logger.Information($"Found {profilerExcludePaths.Length} exclude paths for the profiler");
-
-               var willProfilerPipelineRun = profilerPathMatcher.Match(gitChanges).HasMatches;
-
-               return willProfilerPipelineRun
-                          ? new List<string>()
-                          : GenerateProfilerJobsName(profilerConfig).ToList();
-           }
-
            PipelineDefinition GetTracerPipelineDefinition()
            {
                var consolidatedPipelineYaml = RootDirectory / ".azure-pipelines" / "ultimate-pipeline.yml";
@@ -1098,73 +1077,6 @@ partial class Build : NukeBuild
 
                using var sr = new StreamReader(consolidatedPipelineYaml);
                return deserializer.Deserialize<PipelineDefinition>(sr);
-           }
-
-           ProfilerPipelineDefinition GetProfilerPipelineDefinition()
-           {
-               var profilerPipelineYaml = RootDirectory / ".github" / "workflows" / "profiler-pipeline.yml";
-               Logger.Information($"Reading {profilerPipelineYaml} YAML file");
-               var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
-                                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                                 .IgnoreUnmatchedProperties()
-                                 .Build();
-
-               using var sr = new StreamReader(profilerPipelineYaml);
-               return deserializer.Deserialize<ProfilerPipelineDefinition>(sr);
-           }
-
-           // taken from https://ericlippert.com/2010/06/28/computing-a-cartesian-product-with-linq/
-           static IEnumerable<IEnumerable<T>> CartesianProduct<T>(IEnumerable<IEnumerable<T>> sequences)
-           {
-               // base case:
-               IEnumerable<IEnumerable<T>> result = new[] { Enumerable.Empty<T>() };
-               foreach (var sequence in sequences)
-               {
-                   // recursive case: use SelectMany to build
-                   // the new product out of the old one
-                   result =
-                       from seq in result
-                       from item in sequence
-                       select seq.Concat(new[] { item });
-               }
-               return result;
-           }
-
-           static IEnumerable<string> GenerateProfilerJobsName(ProfilerPipelineDefinition profiler)
-           {
-               foreach (var (name, job) in profiler.Jobs)
-               {
-                   var jobName = job?.Name ?? name;
-                   if (job.Strategy == null || job.Strategy.Matrix == null)
-                   {
-                       yield return jobName;
-                   }
-                   else
-                   {
-                       var matrix = job.Strategy.Matrix;
-                       var excludedConfigurations = matrix.SingleOrDefault(kv => kv.Key == "exclude").Value;
-
-                       List<List<string>> exclusions = new();
-
-                       if (excludedConfigurations != null)
-                       {
-                           foreach (Dictionary<object, object> exc in excludedConfigurations)
-                           {
-                               exclusions.Add(exc.Values.Cast<string>().ToList());
-                           }
-                       }
-
-                       foreach (var product in CartesianProduct(matrix.Where(kv => kv.Key != "exclude").Select(kv => kv.Value)))
-                       {
-                           if (exclusions.Any(l => l.All(e => product.Contains(e))))
-                           {
-                               continue;
-                           }
-
-                           yield return $"{jobName} ({string.Join(", ", product)})";
-                       }
-                   }
-               }
            }
        });
 
