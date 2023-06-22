@@ -10,6 +10,7 @@ using System.Threading;
 using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.Debugger.ProbeStatuses
 {
@@ -19,7 +20,7 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
 
         private readonly ProbeStatusSink _probeStatusSink;
         private readonly TimeSpan _period;
-        private readonly HashSet<string> _probes = new();
+        private readonly HashSet<FetchProbeStatus> _probes = new();
         private readonly object _locker = new object();
         private Timer _pollerTimer;
         private bool _isPolling;
@@ -56,12 +57,29 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
         {
             lock (_locker)
             {
-                if (_probes.Count == 0)
+                if (!_probes.Any())
                 {
                     return;
                 }
 
-                var probeStatuses = DebuggerNativeMethods.GetProbesStatuses(_probes.ToArray());
+                var probesToFetch = _probes.
+                                    Where(p => p.ShouldFetch())
+                                   .Select(p => p.ProbeId)
+                                   .ToArray();
+
+                var probeStatuses = _probes.Where(p => !p.ShouldFetch())
+                                           .Select(p => p.ProbeStatus)
+                                           .ToList();
+
+                if (probesToFetch.Any())
+                {
+                    probeStatuses.AddRange(DebuggerNativeMethods.GetProbesStatuses(probesToFetch));
+                }
+
+                if (!probeStatuses.Any())
+                {
+                    return;
+                }
 
                 foreach (var probeStatus in probeStatuses)
                 {
@@ -89,7 +107,7 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
             }
         }
 
-        public void AddProbes(string[] newProbes)
+        public void AddProbes(FetchProbeStatus[] newProbes)
         {
             lock (_locker)
             {
@@ -101,12 +119,24 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
         {
             lock (_locker)
             {
-                _probes.ExceptWith(removedProbes);
+                _probes.RemoveWhere(p => removedProbes.Contains(p.ProbeId));
 
                 foreach (var rmProbe in removedProbes)
                 {
                     _probeStatusSink.Remove(rmProbe);
                 }
+            }
+        }
+
+        public string[] GetFetchedProbes(string[] candidateProbeIds)
+        {
+            lock (_locker)
+            {
+                return _probes
+                      .Where(p => p.ShouldFetch() && candidateProbeIds
+                                .Contains(p.ProbeId))
+                      .Select(p => p.ProbeId)
+                      .ToArray();
             }
         }
 

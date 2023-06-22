@@ -17,8 +17,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public ref struct MethodDebuggerState
+    public struct MethodDebuggerState
     {
+        /// <summary>
+        /// Gets a disabled states
+        /// </summary>
+        internal static readonly MethodDebuggerState[] DisabledStates = { new() { IsActive = false } };
+
         private readonly string _probeId;
         private readonly Scope _scope;
 

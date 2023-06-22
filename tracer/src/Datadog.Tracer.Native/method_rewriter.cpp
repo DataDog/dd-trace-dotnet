@@ -701,6 +701,13 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     Logger::Info("*** CallTarget_RewriterCallback() Finished: ", caller->type.name, ".", caller->name,
                  "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
                  ", IntegrationType=", integration_definition->integration_type.name, ", Arguments=", numArgs, "]");
+
+    hr = this->m_corProfiler->info_->ApplyMetaData(module_id);
+    if (FAILED(hr))
+    {
+        Logger::Warn("*** CallTarget_RewriterCallback() Finished: Error applying metadata to module_id: ", module_id);
+    }
+
     return S_OK;
 }
 

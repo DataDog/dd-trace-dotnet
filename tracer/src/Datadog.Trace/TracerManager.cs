@@ -594,8 +594,6 @@ namespace Datadog.Trace
                     var flushTracesTask = instance.AgentWriter?.FlushAndCloseAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing DirectLogSubmission.");
                     var logSubmissionTask = instance.DirectLogSubmission?.DisposeAsync() ?? Task.CompletedTask;
-                    Log.Debug("Disposing Telemetry.");
-                    var telemetryTask = instance.Telemetry?.DisposeAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing DiscoveryService.");
                     var discoveryService = instance.DiscoveryService?.DisposeAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing Data streams.");
@@ -604,7 +602,13 @@ namespace Datadog.Trace
                     instance.RemoteConfigurationManager?.Dispose();
 
                     Log.Debug("Waiting for disposals.");
-                    await Task.WhenAll(flushTracesTask, logSubmissionTask, telemetryTask, discoveryService, dataStreamsTask).ConfigureAwait(false);
+                    await Task.WhenAll(flushTracesTask, logSubmissionTask, discoveryService, dataStreamsTask).ConfigureAwait(false);
+
+                    Log.Debug("Disposing Telemetry");
+                    if (instance.Telemetry is { })
+                    {
+                        await instance.Telemetry.DisposeAsync().ConfigureAwait(false);
+                    }
 
                     Log.Debug("Disposing Runtime Metrics");
                     instance.RuntimeMetrics?.Dispose();

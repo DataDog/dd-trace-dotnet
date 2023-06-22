@@ -90,7 +90,11 @@ namespace Datadog.Trace.ServiceFabric
 
         public static string GetSpanName(string spanKind)
         {
+#if NET6_0_OR_GREATER
+            return string.Create(null, stackalloc char[128], $"{SpanNamePrefix}.{spanKind}");
+#else
             return $"{SpanNamePrefix}.{spanKind}";
+#endif
         }
 
         public static Span CreateSpan(

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#pragma warning disable SA1402 // FileMayOnlyContainASingleType - StyleCop did not enforce this for records initially
+
 namespace Datadog.Trace.Debugger.Configurations.Models;
 
 internal record Decoration
@@ -25,3 +27,5 @@ internal record TagValue
 
     public SnapshotSegment[] Segments { get; set; }
 }
+
+#pragma warning restore SA1402 // FileMayOnlyContainASingleType - StyleCop did not enforce this for records initially
