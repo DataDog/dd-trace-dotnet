@@ -22,29 +22,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         static CachedMessageHeadersHelper()
         {
             // Initialize delegate for creating a MessageAttributeValue object
+            Console.WriteLine("getTypeAwsSimpleNoti :) ");
             var messageAttributeValueType = typeof(TMarkerType).Assembly.GetType("Amazon.SimpleNotificationService.Model.MessageAttributeValue");
+            Console.WriteLine("between");
             var messageAttributeValueCtor = messageAttributeValueType.GetConstructor(System.Type.EmptyTypes);
-
+            Console.WriteLine("after get constructor");
             DynamicMethod createMessageAttributeValueMethod = new DynamicMethod(
                 $"SnsCachedMessageHeadersHelpers",
                 messageAttributeValueType,
                 parameterTypes: new Type[] { typeof(string) },
                 typeof(DuckType).Module,
                 true);
-
+            Console.WriteLine("b4 ILGen");
             ILGenerator messageAttributeIL = createMessageAttributeValueMethod.GetILGenerator();
             messageAttributeIL.Emit(OpCodes.Newobj, messageAttributeValueCtor);
 
             messageAttributeIL.Emit(OpCodes.Dup);
             messageAttributeIL.Emit(OpCodes.Ldstr, BinaryDataType);
             messageAttributeIL.Emit(OpCodes.Callvirt, messageAttributeValueType.GetProperty("DataType").GetSetMethod());
-
+            Console.WriteLine("after datatype opcode");
             messageAttributeIL.Emit(OpCodes.Dup);
             messageAttributeIL.Emit(OpCodes.Ldarg_0);
             messageAttributeIL.Emit(OpCodes.Callvirt, messageAttributeValueType.GetProperty("BinaryValue").GetSetMethod());
 
             messageAttributeIL.Emit(OpCodes.Ret);
-
+            Console.WriteLine("after BinaryValue opcode");
             _createMessageAttributeValue = (Func<string, object>)createMessageAttributeValueMethod.CreateDelegate(typeof(Func<string, object>));
 
             // Initialize delegate for creating a Dictionary<string, MessageAttributeValue> object
@@ -64,6 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             dictIL.Emit(OpCodes.Ret);
 
             _createDict = (Func<IDictionary>)createDictMethod.CreateDelegate(typeof(Func<IDictionary>));
+            Console.WriteLine("all reflect done");
         }
 
         public static IDictionary CreateMessageAttributes()

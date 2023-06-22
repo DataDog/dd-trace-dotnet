@@ -26,6 +26,8 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
 
     <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.103.5" />
+
 
   </ItemGroup>
 

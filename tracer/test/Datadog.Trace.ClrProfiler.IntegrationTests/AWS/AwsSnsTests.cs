@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Amazon.SQS;
+using Amazon.SQS.Model;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -21,9 +23,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
     [UsesVerify]
     public class AwsSnsTests : TracingIntegrationTest
     {
+        private AmazonSQSClient _sqsClient;
+
         public AwsSnsTests(ITestOutputHelper output)
             : base("AWS.SimpleNotificationService", output)
         {
+            _sqsClient = new AmazonSQSClient(new AmazonSQSConfig { ServiceURL = "http://localhost:4566" });
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -54,6 +59,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var frameworkName = "NetCore";
 #endif
                 var spans = agent.WaitForSpans(expectedCount);
+                // Poll the SQS queue for messages
+                var receiveMessageRequest = new ReceiveMessageRequest
+                {
+                    QueueUrl = "http://localhost:4566/queue/MyQueue",  // replace with your queue URL
+                    MaxNumberOfMessages = 10
+                };
+                var messages = await _sqsClient.ReceiveMessageAsync(receiveMessageRequest);
+
+                // Assert the message attribute was added
+                foreach (var message in messages.Messages)
+                {
+                    message.MessageAttributes.Should().ContainKey("TraceContext");
+                    // Extract the datadog trace context as a b64 string, decode it and assert it's the same as for the sns spans
+                    var traceContext = message.MessageAttributes["TraceContext"].StringValue;
+                    // Add your decoding and assertion logic here
+                }
+
                 var snsSpans = spans.Where(span => span.Name == "sns.request");
                 ValidateIntegrationSpans(snsSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 

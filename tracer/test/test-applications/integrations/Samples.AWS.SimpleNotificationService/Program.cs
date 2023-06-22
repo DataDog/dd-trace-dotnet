@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Amazon.Runtime;
 using Amazon.SimpleNotificationService;
 using Amazon.SimpleNotificationService.Model;
+using Amazon.SQS;
+using Amazon.SQS.Model;
 
 namespace Samples.AWS.SNS
 {
@@ -11,14 +14,66 @@ namespace Samples.AWS.SNS
         private static async Task Main(string[] args)
         {
             var snsClient = GetAmazonSimpleNotificationServiceClient();
+            var sqsClient = GetAmazonSQSClient();
 
             string topicName = "MyTopic";
+            string queueName = "MyQueue";
+
             string topicArn = await GetOrCreateTopicAsync(snsClient, topicName);
+            string queueUrl = await GetOrCreateQueueAsync(sqsClient, queueName);
+
+            await SubscribeQueueToTopicAsync(sqsClient, snsClient, queueUrl, topicArn);
+
             string message = "Hello, SNS!";
 
             await PublishMessageAsync(snsClient, topicArn, message);
             await DeleteTopicAsync(snsClient, topicArn);
         }
+        private static AmazonSQSClient GetAmazonSQSClient()
+        {
+            if (Environment.GetEnvironmentVariable("AWS_ACCESSKEY") is string accessKey &&
+                Environment.GetEnvironmentVariable("AWS_SECRETKEY") is string secretKey &&
+                Environment.GetEnvironmentVariable("AWS_REGION") is string region)
+            {
+                var awsCredentials = new BasicAWSCredentials(accessKey, secretKey);
+                var sqsConfig = new AmazonSQSConfig 
+                { 
+                    ServiceURL = "http://localhost:4566",
+                    RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(region)
+                };
+                return new AmazonSQSClient(awsCredentials, sqsConfig);
+            }
+            else
+            {
+                var awsCredentials = new BasicAWSCredentials("x", "x");
+                var sqsConfig = new AmazonSQSConfig { ServiceURL = "http://localhost:4566" };
+                return new AmazonSQSClient(awsCredentials, sqsConfig);
+            }
+        }
+
+        private static async Task<string> GetOrCreateQueueAsync(AmazonSQSClient sqsClient, string queueName)
+        {
+            var createQueueRequest = new CreateQueueRequest { QueueName = queueName };
+            var createQueueResponse = await sqsClient.CreateQueueAsync(createQueueRequest);
+
+            return createQueueResponse.QueueUrl;
+        }
+        
+
+        private static async Task SubscribeQueueToTopicAsync(AmazonSQSClient sqsClient, AmazonSimpleNotificationServiceClient snsClient, string queueUrl, string topicArn)
+        {
+            var attributesResponse = await sqsClient.GetQueueAttributesAsync(new GetQueueAttributesRequest
+            {
+                QueueUrl = queueUrl,
+                AttributeNames = new List<string> { "QueueArn" }
+            });
+
+            string queueArn = attributesResponse.Attributes["QueueArn"];
+
+            await snsClient.SubscribeQueueAsync(topicArn, sqsClient, queueUrl);
+        }
+
+
 
         private static AmazonSimpleNotificationServiceClient GetAmazonSimpleNotificationServiceClient()
         {
@@ -58,13 +113,25 @@ namespace Samples.AWS.SNS
                 TopicArn = topicArn,
                 Message = message
             };
-
-            var response = await snsClient.PublishAsync(request);
-
-            Console.WriteLine($"Message published. Message ID: {response.MessageId}");
+            Console.WriteLine("topicArn:");
+            Console.WriteLine(topicArn);
+            Console.WriteLine("message:");
+            Console.WriteLine(message);
+            Console.WriteLine("before PublishAsync");
+            try
+            {
+                var response = await snsClient.PublishAsync(request);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to PublishAsync: {ex.Message}");
+                throw;
+            }
+            Console.WriteLine("after pub async");
+            Console.WriteLine("Message published");
         }
 
-        private static async Task DeleteTopicAsync(AmazonSimpleNotificationServiceClient snsClient, string topicArn)
+        public static async Task DeleteTopicAsync(AmazonSimpleNotificationServiceClient snsClient, string topicArn)
         {
             var deleteTopicRequest = new DeleteTopicRequest { TopicArn = topicArn };
             await snsClient.DeleteTopicAsync(deleteTopicRequest);
