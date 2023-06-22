@@ -10,11 +10,13 @@ public class AccountController : Controller
 {
     private readonly SignInManager<IdentityUser> _signInManager;
     private readonly UserManager<IdentityUser> _userManager;
+    private readonly IUserStore<IdentityUser> _userStore;
 
-    public AccountController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager)
+    public AccountController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager, IUserStore<IdentityUser> userStore)
     {
         _signInManager = signInManager;
         _userManager = userManager;
+        _userStore = userStore;
     }
 
     [HttpGet]
@@ -25,7 +27,7 @@ public class AccountController : Controller
             return Content($"Logged in as{User.Identity.Name}");
         }
 
-        return View(new LoginModel { Input = new LoginModel.InputModel { Email = "test@test.com", Password = "test" } });
+        return View(new LoginModel { Input = new LoginModel.InputModel { UserName = "TestUser", Password = "test" } });
     }
 
     [HttpPost]
@@ -63,7 +65,7 @@ public class AccountController : Controller
         {
             // This doesn't count login failures towards account lockout
             // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-            var result = await _signInManager.PasswordSignInAsync(model.Input.Email, model.Input.Password, model.Input.RememberMe, lockoutOnFailure: false);
+            var result = await _signInManager.PasswordSignInAsync(model.Input.UserName, model.Input.Password, model.Input.RememberMe, lockoutOnFailure: false);
             if (result.Succeeded)
             {
                 return LocalRedirect(returnUrl);
@@ -93,7 +95,7 @@ public class AccountController : Controller
         returnUrl ??= Url.Content("~/");
         if (ModelState.IsValid)
         {
-            var user = new IdentityUser { UserName = model.Input.Email, Email = model.Input.Email };
+            var user = new IdentityUser { UserName = model.Input.UserName, Email = model.Input.Email };
             var result = await _userManager.CreateAsync(user, model.Input.Password);
             if (result.Succeeded)
             {
