@@ -17,7 +17,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -46,7 +46,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -75,7 +75,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -104,7 +104,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -133,7 +133,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -162,7 +162,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -191,7 +191,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -220,7 +220,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -255,7 +255,7 @@ StackExchange.Redis.RedisServerException: ERR no such key
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -290,7 +290,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -319,7 +319,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -348,7 +348,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -377,7 +377,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -406,7 +406,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -435,7 +435,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -464,7 +464,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -493,7 +493,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -522,7 +522,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -551,7 +551,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -580,7 +580,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -609,7 +609,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -638,7 +638,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -673,7 +673,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -702,7 +702,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -731,7 +731,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -760,7 +760,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -789,7 +789,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -818,7 +818,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -847,7 +847,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -876,7 +876,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -905,7 +905,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -934,7 +934,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -963,7 +963,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -992,7 +992,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1021,7 +1021,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1050,7 +1050,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1079,7 +1079,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1108,7 +1108,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1137,7 +1137,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1166,7 +1166,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1195,7 +1195,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1224,7 +1224,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1253,7 +1253,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1282,7 +1282,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1311,7 +1311,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1340,7 +1340,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1369,7 +1369,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1398,7 +1398,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1427,7 +1427,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1456,7 +1456,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1485,7 +1485,7 @@ StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key hold
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1520,7 +1520,7 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1549,7 +1549,7 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1578,7 +1578,7 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1607,7 +1607,7 @@ StackExchange.Redis.RedisServerException: ERR value is not an integer or out of 
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1642,7 +1642,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1671,7 +1671,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1700,7 +1700,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1729,7 +1729,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1758,7 +1758,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1787,7 +1787,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1816,7 +1816,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1845,7 +1845,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1874,7 +1874,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1903,7 +1903,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1932,7 +1932,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1961,7 +1961,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -1990,7 +1990,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2019,7 +2019,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2048,7 +2048,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2077,7 +2077,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2106,7 +2106,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2135,7 +2135,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2164,7 +2164,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2193,7 +2193,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2222,7 +2222,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2251,7 +2251,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2286,7 +2286,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2321,7 +2321,7 @@ StackExchange.Redis.RedisServerException: ERR source and destination objects are
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2356,7 +2356,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2385,7 +2385,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2414,7 +2414,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2443,7 +2443,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2472,7 +2472,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2501,7 +2501,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2530,7 +2530,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2559,7 +2559,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2588,7 +2588,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2617,7 +2617,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2646,7 +2646,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2675,7 +2675,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -2702,7 +2702,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -2730,7 +2730,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -2758,7 +2758,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -2786,7 +2786,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -2814,7 +2814,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2843,7 +2843,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2872,7 +2872,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2901,7 +2901,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -2929,7 +2929,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -2957,7 +2957,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -2986,7 +2986,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3021,7 +3021,7 @@ StackExchange.Redis.RedisServerException: ERR no such key
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3056,7 +3056,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3091,7 +3091,7 @@ StackExchange.Redis.RedisServerException: ERR DUMP payload version or checksum a
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3126,7 +3126,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3155,7 +3155,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3184,7 +3184,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3213,7 +3213,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3242,7 +3242,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3271,7 +3271,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3300,7 +3300,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3329,7 +3329,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3358,7 +3358,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3387,7 +3387,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3416,7 +3416,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3445,7 +3445,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3474,7 +3474,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3503,7 +3503,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3532,7 +3532,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3561,7 +3561,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3590,7 +3590,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3619,7 +3619,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3648,7 +3648,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3677,7 +3677,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3706,7 +3706,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3735,7 +3735,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3764,7 +3764,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3793,7 +3793,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3822,7 +3822,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3851,7 +3851,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3880,7 +3880,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3909,7 +3909,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3938,7 +3938,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3967,7 +3967,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -3996,7 +3996,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4025,7 +4025,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4054,7 +4054,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4083,7 +4083,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4112,7 +4112,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4141,7 +4141,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4170,7 +4170,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4199,7 +4199,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4228,7 +4228,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4257,7 +4257,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4286,7 +4286,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4315,7 +4315,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4344,7 +4344,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4373,7 +4373,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4402,7 +4402,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4431,7 +4431,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4460,7 +4460,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4489,7 +4489,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4518,7 +4518,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4547,7 +4547,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4576,7 +4576,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4605,7 +4605,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4634,7 +4634,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4663,7 +4663,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4692,7 +4692,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4721,7 +4721,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4750,7 +4750,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4779,7 +4779,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4808,7 +4808,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4837,7 +4837,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4866,7 +4866,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4895,7 +4895,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4924,7 +4924,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4953,7 +4953,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -4982,7 +4982,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5011,7 +5011,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5040,7 +5040,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5069,7 +5069,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5098,7 +5098,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5127,7 +5127,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5156,7 +5156,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5185,7 +5185,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5214,7 +5214,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5243,7 +5243,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5272,7 +5272,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5301,7 +5301,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5330,7 +5330,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5359,7 +5359,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5388,7 +5388,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,
@@ -5417,7 +5417,7 @@ at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message,
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       db.redis.database_index: 1.0,

@@ -307,7 +307,7 @@ namespace Datadog.Trace.Tests.Tagging
             tags.Host = host;
 
             tags.PeerService.Should().Be(host);
-            tags.PeerServiceSource.Should().Be("network.destination.name");
+            tags.PeerServiceSource.Should().Be("out.host");
         }
 
         [Fact]
