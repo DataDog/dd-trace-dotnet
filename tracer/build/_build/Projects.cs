@@ -29,6 +29,7 @@ public static class Projects
     public const string DebuggerIntegrationTests = "Datadog.Trace.Debugger.IntegrationTests";
     public const string DebuggerSamples = "Samples.Probes";
     public const string DebuggerSamplesTestRuns = "Samples.Probes.TestRuns";
+    public const string DebuggerUnreferencedExternal = "Samples.Probes.Unreferenced.External";
 
     public const string RazorPages = "Samples.AspNetCoreRazorPages";
 }

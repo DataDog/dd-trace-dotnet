@@ -29,6 +29,8 @@ partial class Build
 
     Project DebuggerSamplesTestRuns => Solution.GetProject(Projects.DebuggerSamplesTestRuns);
 
+    Project DebuggerUnreferencedExternal => Solution.GetProject(Projects.DebuggerUnreferencedExternal);
+
     Target BuildAndRunDebuggerIntegrationTests => _ => _
         .Description("Builds and runs the debugger integration tests")
         .DependsOn(BuildDebuggerIntegrationTests)
@@ -60,6 +62,7 @@ partial class Build
         .Requires(() => DebugType != null)
         .Executes(() =>
         {
+            DotnetBuild(DebuggerUnreferencedExternal, framework: Framework, noDependencies: false);
             DotnetBuild(DebuggerSamplesTestRuns, framework: Framework, noDependencies: false);
         });
 
