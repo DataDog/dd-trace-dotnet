@@ -76,7 +76,7 @@ public static class SignInManagerPasswordSignInUserIntegration
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, security.Settings.UserEventsAutomatedTracking);
                 tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, userExists ? "true" : "false");
 
-                if (userExists && security.Settings.UserEventsAutomatedTracking == SecuritySettings.UserTrackingExtendedMode)
+                if (userExists && security.IsExtendedUserTrackingEnabled)
                 {
                     tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, user!.Id?.ToString());
                     tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureEmail, user.Email);
@@ -90,7 +90,7 @@ public static class SignInManagerPasswordSignInUserIntegration
                     }
                 }
             }
-            else if (userExists && security.Settings.UserEventsAutomatedTracking == SecuritySettings.UserTrackingExtendedMode)
+            else if (userExists && security.IsExtendedUserTrackingEnabled)
             {
                 // AuthenticatedHttpcontExtextensions should fill these, but on core <3.1 email doesnt appear in claims
                 // so let's try to fill these up here if we have the chance to come here

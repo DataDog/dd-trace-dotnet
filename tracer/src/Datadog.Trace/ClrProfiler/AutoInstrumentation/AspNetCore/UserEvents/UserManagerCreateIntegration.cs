@@ -73,7 +73,7 @@ public static class UserManagerCreateIntegration
             {
                 setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessTrack, "true");
                 setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessAutoMode, security.Settings.UserEventsAutomatedTracking);
-                if (security.Settings.UserEventsAutomatedTracking == SecuritySettings.UserTrackingExtendedMode)
+                if (security.IsExtendedUserTrackingEnabled)
                 {
                     tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, user!.Id?.ToString());
                     tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessEmail, user.Email);
@@ -88,7 +88,7 @@ public static class UserManagerCreateIntegration
             {
                 setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureTrack, "true");
                 setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureAutoMode, security.Settings.UserEventsAutomatedTracking);
-                if (security.Settings.UserEventsAutomatedTracking == SecuritySettings.UserTrackingExtendedMode)
+                if (security.IsExtendedUserTrackingEnabled)
                 {
                     tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserId, user!.Id?.ToString());
                     tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureEmail, user.Email);

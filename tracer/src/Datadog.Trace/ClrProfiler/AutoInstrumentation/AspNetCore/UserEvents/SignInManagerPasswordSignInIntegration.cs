@@ -70,7 +70,7 @@ public static class SignInManagerPasswordSignInIntegration
             setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
             tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, "false");
             setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, security.Settings.UserEventsAutomatedTracking);
-            if (security.Settings.UserEventsAutomatedTracking == SecuritySettings.UserTrackingExtendedMode)
+            if (security.IsExtendedUserTrackingEnabled)
             {
                 // if we get here and the tag doesn't exist, the user doesn't exist, we dont have an ID but a username that doesn't exist
                 tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserName, state.State!.ToString());

@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, Security.Instance.Settings.UserEventsAutomatedTracking);
                 foreach (var claim in claimsPrincipal.Claims)
                 {
-                    if (security.Settings.UserEventsAutomatedTracking == SecuritySettings.UserTrackingExtendedMode)
+                    if (security.IsExtendedUserTrackingEnabled)
                     {
                         switch (claim.Type)
                         {
