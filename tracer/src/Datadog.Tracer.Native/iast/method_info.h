@@ -65,7 +65,7 @@ namespace iast
         CorElementType GetReturnCorType();
 
     private:
-        std::mutex _fullNameMutex;
+        std::atomic<byte> _fullNameCounterLock;
     };
 
     class MethodSpec : public MemberRefInfo

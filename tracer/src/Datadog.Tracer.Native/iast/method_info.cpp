@@ -109,18 +109,14 @@ namespace iast
 
     WSTRING MemberRefInfo::GetFullName(bool includeReturnType)
     {
-        if (_fullName.size() == 0)
+        if (_fullName.size() == 0 && _fullNameCounterLock.fetch_add(1, std::memory_order_acquire) == 0)
         {
-            std::lock_guard<std::mutex> lock(_fullNameMutex);
-            if (_fullName.size() == 0)
+            _fullName = GetTypeName() + WStr("::") + _name;
+            auto signature = GetSignature();
+            if (signature != nullptr)
             {
-                _fullName = GetTypeName() + WStr("::") + _name;
-                auto signature = GetSignature();
-                if (signature != nullptr)
-                {
-                    _fullNameWithReturnType = signature->CharacterizeMember(_fullName, true);
-                    _fullName = signature->CharacterizeMember(_fullName, false);
-                }
+                _fullNameWithReturnType = signature->CharacterizeMember(_fullName, true);
+                _fullName = signature->CharacterizeMember(_fullName, false);
             }
         }
         return includeReturnType ? _fullNameWithReturnType : _fullName;
