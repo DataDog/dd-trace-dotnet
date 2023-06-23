@@ -381,8 +381,8 @@ namespace Datadog.Trace.AppSec.Waf
             IntPtr ConvertToUtf8(string s)
             {
                 IntPtr unmanagedMemory;
-                var bytesCount = Encoding.UTF8.GetMaxByteCount(s.Length);
-                if (bytesCount <= MaxBytesForMaxStringLength)
+                var bytesCount = Encoding.UTF8.GetMaxByteCount(s.Length) + 1;
+                if (bytesCount < MaxBytesForMaxStringLength)
                 {
                     unmanagedMemory = Pool.Rent();
                     fixed (char* chrPtr = s)
