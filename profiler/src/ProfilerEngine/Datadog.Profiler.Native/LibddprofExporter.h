@@ -42,14 +42,14 @@ public:
         IRuntimeInfo* runtimeInfo,
         IEnabledProfilers* enabledProfilers,
         MetricsRegistry& metricsRegistry,
-        IAllocationsRecorder* allocationsRecorder,
-        IProcessSamplesProvider* processSamplesProvider
+        IAllocationsRecorder* allocationsRecorder
         );
     ~LibddprofExporter() override;
     bool Export() override;
     void Add(std::shared_ptr<Sample> const& sample) override;
     void SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint) override;
     void RegisterUpscaleProvider(IUpscaleProvider* provider) override;
+    void RegisterProcessSamplesProvider(ISamplesProvider* provider) override;
 
 private:
     class SerializedProfile
@@ -148,6 +148,7 @@ private:
     std::string GenerateFilePath(const std::string& applicationName, int idx, const std::string& extension) const;
     std::string CreateMetricsFileContent() const;
     std::vector<UpscalingInfo> GetUpscalingInfos();
+    std::list<std::shared_ptr<Sample>> GetProcessSamples();
     std::optional<ProfileInfoScope> GetInfo(const std::string& runtimeId);
 
     static tags CommonTags;
@@ -185,7 +186,7 @@ private:
     fs::path _metricsFileFolder;
     IAllocationsRecorder* _allocationsRecorder;
     std::vector<IUpscaleProvider*> _upscaledProviders;
-    IProcessSamplesProvider* _processSamplesProvider;
+    std::vector<ISamplesProvider*> _processSamplesProviders;
 
 public:  // for tests
     static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);

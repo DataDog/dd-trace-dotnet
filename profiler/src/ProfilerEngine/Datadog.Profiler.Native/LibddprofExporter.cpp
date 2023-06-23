@@ -8,8 +8,8 @@
 #include "IApplicationStore.h"
 #include "IEnabledProfilers.h"
 #include "IMetricsSender.h"
-#include "IProcessSamplesProvider.h"
 #include "IRuntimeInfo.h"
+#include "ISamplesProvider.h"
 #include "IUpscaleProvider.h"
 #include "Log.h"
 #include "OpSysTools.h"
@@ -69,14 +69,12 @@ LibddprofExporter::LibddprofExporter(
     IRuntimeInfo* runtimeInfo,
     IEnabledProfilers* enabledProfilers,
     MetricsRegistry& metricsRegistry,
-    IAllocationsRecorder* allocationsRecorder,
-    IProcessSamplesProvider* processSamplesProvider) :
+    IAllocationsRecorder* allocationsRecorder) :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _locationsAndLinesSize{512},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
-    _allocationsRecorder{allocationsRecorder},
-    _processSamplesProvider{processSamplesProvider}
+    _allocationsRecorder{allocationsRecorder}
 {
     _exporterBaseTags = CreateTags(configuration, runtimeInfo, enabledProfilers);
     _endpoint = CreateEndpoint(configuration);
@@ -153,6 +151,12 @@ void LibddprofExporter::RegisterUpscaleProvider(IUpscaleProvider* provider)
 {
     assert(provider != nullptr);
     _upscaledProviders.push_back(provider);
+}
+
+void LibddprofExporter::RegisterProcessSamplesProvider(ISamplesProvider* provider)
+{
+    assert(provider != nullptr);
+    _processSamplesProviders.push_back(provider);
 }
 
 LibddprofExporter::Tags LibddprofExporter::CreateTags(
@@ -510,6 +514,16 @@ void LibddprofExporter::AddUpscalingRules(ddog_prof_Profile* profile, std::vecto
     }
 }
 
+std::list<std::shared_ptr<Sample>> LibddprofExporter::GetProcessSamples()
+{
+    std::list<std::shared_ptr<Sample>> samples;
+    for (auto const& provider : _processSamplesProviders)
+    {
+        samples.splice(samples.end() , provider->GetSamples());
+    }
+    return samples;
+}
+
 void LibddprofExporter::AddAdditionalSamples(ddog_prof_Profile* profile, std::list<std::shared_ptr<Sample>> const& samples)
 {
     for (auto const& sample : samples)
@@ -558,7 +572,7 @@ bool LibddprofExporter::Export()
     auto upscalingInfos = GetUpscalingInfos();
 
     // Process-level samples
-    auto processSamples = _processSamplesProvider->GetSamples();
+    auto processSamples = GetProcessSamples();
 
     for (auto& runtimeId : keys)
     {

@@ -247,7 +247,6 @@
     <ClInclude Include="IExceptionsRecorder.h" />
     <ClInclude Include="IGarbageCollectionsListener.h" />
     <ClInclude Include="IGarbageCollectorInfo.h" />
-    <ClInclude Include="IProcessSamplesProvider.h" />
     <ClInclude Include="ISampledAllocationsListener.h" />
     <ClInclude Include="IThreadInfo.h" />
     <ClInclude Include="IUpscaleProvider.h" />

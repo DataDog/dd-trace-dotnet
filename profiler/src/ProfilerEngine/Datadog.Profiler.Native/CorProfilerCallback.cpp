@@ -337,8 +337,6 @@ bool CorProfilerCallback::InitializeServices()
         _garbageCollectorInfo = std::make_unique<GarbageCollectorInfo>();
     }
 
-    _processSamplesProvider = std::make_unique<ProcessSamplesProvider>(_garbageCollectorInfo.get(), _pCpuTimeProvider);
-
     // The different elements of the libddprof pipeline are created and linked together
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
     _pExporter = std::make_unique<LibddprofExporter>(
@@ -348,9 +346,12 @@ bool CorProfilerCallback::InitializeServices()
         _pRuntimeInfo.get(),
         _pEnabledProfilers.get(),
         _metricsRegistry,
-        _pAllocationsRecorder.get(),
-        _processSamplesProvider.get()
+        _pAllocationsRecorder.get()
         );
+
+    _processSamplesProvider = std::make_unique<ProcessSamplesProvider>(_garbageCollectorInfo.get(), _pCpuTimeProvider);
+
+    _pExporter->RegisterProcessSamplesProvider(_processSamplesProvider.get());
 
     if (_pContentionProvider != nullptr)
     {

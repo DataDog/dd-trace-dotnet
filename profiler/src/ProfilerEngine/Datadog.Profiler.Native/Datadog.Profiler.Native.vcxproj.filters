@@ -329,6 +329,10 @@
     <ClInclude Include="IDebugInfoStore.h" />
     <ClInclude Include="IExceptionsRecorder.h" />
     <ClInclude Include="IThreadInfo.h" />
+    <ClInclude Include="GarbageCollectorInfo.h" />
+    <ClInclude Include="IGarbageCollectorInfo.h" />
+    <ClInclude Include="ProcessSamplesProvider.h" />
+    <ClInclude Include="ScopedHandle.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -491,6 +495,12 @@
       <Filter>Allocations</Filter>
     </ClCompile>
     <ClCompile Include="DebugInfoStore.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="GarbageCollectorInfo.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="ProcessSamplesProvider.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>

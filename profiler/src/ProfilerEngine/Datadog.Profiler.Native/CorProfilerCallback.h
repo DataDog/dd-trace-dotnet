@@ -20,7 +20,7 @@
 #include "IFrameStore.h"
 #include "IGarbageCollectorInfo.h"
 #include "IMetricsSender.h"
-#include "IProcessSamplesProvider.h"
+#include "ISamplesProvider.h"
 #include "WallTimeProvider.h"
 #include "CpuTimeProvider.h"
 #include "SamplesCollector.h"
@@ -243,7 +243,7 @@ private :
     std::shared_ptr<ProxyMetric> _managedThreadsWithContextMetric;
 
     std::unique_ptr<IGarbageCollectorInfo> _garbageCollectorInfo;
-    std::unique_ptr<IProcessSamplesProvider> _processSamplesProvider;
+    std::unique_ptr<ISamplesProvider> _processSamplesProvider;
 
 private:
     static void ConfigureDebugLog();

@@ -3,14 +3,14 @@
 
 #pragma once
 
-#include "IProcessSamplesProvider.h"
+#include "ISamplesProvider.h"
 #include "IThreadInfo.h"
 
 class CpuTimeProvider;
 class IConfiguration;
 class IGarbageCollectorInfo;
 
-class ProcessSamplesProvider : public IProcessSamplesProvider
+class ProcessSamplesProvider : public ISamplesProvider
 {
 public:
     ProcessSamplesProvider(IGarbageCollectorInfo* gcInfo, CpuTimeProvider* cpuTimeProvider);
