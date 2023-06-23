@@ -190,14 +190,25 @@ public class LiveDebuggerTests
             Called = true;
         }
 
-        public void AddProbes(string[] newProbes)
+        public void AddProbes(FetchProbeStatus[] newProbes)
         {
             Called = true;
         }
 
-        public void RemoveProbes(string[] newProbes)
+        public void RemoveProbes(string[] removeProbes)
         {
             Called = true;
+        }
+
+        public void UpdateProbes(string[] probeIds, FetchProbeStatus[] newProbeStatuses)
+        {
+            Called = true;
+        }
+
+        public string[] GetFetchedProbes(string[] candidateProbeIds)
+        {
+            Called = true;
+            return candidateProbeIds;
         }
 
         public void Dispose()
