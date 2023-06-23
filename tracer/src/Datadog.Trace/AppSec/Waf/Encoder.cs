@@ -54,6 +54,8 @@ namespace Datadog.Trace.AppSec.Waf
 
         public static object Decode(Obj o) => InnerDecode(o.InnerStruct);
 
+        public static object Decode(DdwafObjectStruct o) => InnerDecode(o);
+
         public static object InnerDecode(DdwafObjectStruct o)
         {
             switch (DecodeArgsType(o.Type))

@@ -37,15 +37,15 @@ namespace Datadog.Trace.Security.Unit.Tests
             using var context = initResult.Waf.CreateContext();
             var result = context!.Run(new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "51.222.158.205" } }, WafTests.TimeoutMicroSeconds);
             result.Should().NotBeNull();
-            result!.ReturnCode.Should().Be(ReturnCode.Match);
-            result!.Actions.Should().NotBeEmpty();
-            result!.Actions.Should().Contain("block");
+            result!.Value.ReturnCode.Should().Be(ReturnCode.Match);
+            result!.Value.Actions.Should().NotBeEmpty();
+            result!.Value.Actions.Should().Contain("block");
             result = context.Run(
                 new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "188.243.182.156" } },
                 WafTests.TimeoutMicroSeconds);
             result.Should().NotBeNull();
-            result!.ReturnCode.Should().Be(ReturnCode.Ok);
-            result.Actions.Should().BeEmpty();
+            result!.Value.ReturnCode.Should().Be(ReturnCode.Ok);
+            result.Value.Actions.Should().BeEmpty();
         }
 
         [Fact]
@@ -85,10 +85,10 @@ namespace Datadog.Trace.Security.Unit.Tests
                 new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "188.243.182.156" } },
                 WafTests.TimeoutMicroSeconds);
             result.Should().NotBeNull();
-            result!.ReturnCode.Should().Be(ReturnCode.Match);
-            result.Actions.Should().NotBeEmpty();
-            result.Actions.Should().Contain("block");
-            result.ShouldBlock.Should().BeTrue();
+            result!.Value.ReturnCode.Should().Be(ReturnCode.Match);
+            result.Value.Actions.Should().NotBeEmpty();
+            result.Value.Actions.Should().Contain("block");
+            result.Value.ShouldBlock.Should().BeTrue();
         }
     }
 }
