@@ -32,7 +32,7 @@
 #include "EnvironmentVariables.h"
 #include "ExceptionsProvider.h"
 #include "FrameStore.h"
-#include "GarbageCollectorInfo.h"
+#include "GCThreadsCpuProvider.h"
 #include "IMetricsSender.h"
 #include "IMetricsSenderFactory.h"
 #include "LibddprofExporter.h"
@@ -40,7 +40,6 @@
 #include "ManagedThreadList.h"
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
-#include "ProcessSamplesProvider.h"
 #include "ProfilerEngineStatus.h"
 #include "RuntimeIdStore.h"
 #include "RuntimeInfo.h"
@@ -331,12 +330,6 @@ bool CorProfilerCallback::InitializeServices()
 
     _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
 
-
-    if (_pConfiguration->IsGcThreadsCpuTimeEnabled())
-    {
-        _garbageCollectorInfo = std::make_unique<GarbageCollectorInfo>();
-    }
-
     // The different elements of the libddprof pipeline are created and linked together
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
     _pExporter = std::make_unique<LibddprofExporter>(
@@ -349,9 +342,12 @@ bool CorProfilerCallback::InitializeServices()
         _pAllocationsRecorder.get()
         );
 
-    _processSamplesProvider = std::make_unique<ProcessSamplesProvider>(_garbageCollectorInfo.get(), _pCpuTimeProvider);
+    if (_pCpuTimeProvider != nullptr && _pRuntimeInfo->GetDotnetMajorVersion() >= 5)
+    {
+        _gcThreadsCpuProvider = std::make_unique<GCThreadsCpuProvider>(_pCpuTimeProvider);
 
-    _pExporter->RegisterProcessSamplesProvider(_processSamplesProvider.get());
+        _pExporter->RegisterProcessSamplesProvider(_gcThreadsCpuProvider.get());
+    }
 
     if (_pContentionProvider != nullptr)
     {

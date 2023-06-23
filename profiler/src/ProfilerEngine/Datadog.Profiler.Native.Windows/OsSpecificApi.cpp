@@ -285,7 +285,8 @@ std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
 
                     if (threadHnd.IsValid())
                     {
-                        result.push_back(std::make_shared<WindowsThreadInfo>(te.th32ThreadID, std::move(threadHnd), OpSysTools::GetNativeThreadName(threadHnd)));
+                        auto name = OpSysTools::GetNativeThreadName(threadHnd);
+                        result.push_back(std::make_shared<WindowsThreadInfo>(te.th32ThreadID, std::move(threadHnd), std::move(name)));
                     }
                 }
                 te.dwSize = sizeof(te);

@@ -524,7 +524,7 @@ std::list<std::shared_ptr<Sample>> LibddprofExporter::GetProcessSamples()
     return samples;
 }
 
-void LibddprofExporter::AddAdditionalSamples(ddog_prof_Profile* profile, std::list<std::shared_ptr<Sample>> const& samples)
+void LibddprofExporter::AddProcessSamples(ddog_prof_Profile* profile, std::list<std::shared_ptr<Sample>> const& samples)
 {
     for (auto const& sample : samples)
     {
@@ -611,7 +611,7 @@ bool LibddprofExporter::Export()
             continue;
         }
 
-        AddAdditionalSamples(profile, processSamples);
+        AddProcessSamples(profile, processSamples);
 
         AddUpscalingRules(profile, upscalingInfos);
 
