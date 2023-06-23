@@ -72,13 +72,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{13B8D121-5
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Profiler.IntegrationTests", "profiler\test\Datadog.Profiler.IntegrationTests\Datadog.Profiler.IntegrationTests.csproj", "{5ADAED1E-F0DC-48D9-B376-6E189B68163E}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{6E32F61C-8640-40D2-85A3-7866EE43A1A2}"
-	ProjectSection(SolutionItems) = preProject
-		.github\scripts\package_and_deploy.sh = .github\scripts\package_and_deploy.sh
-		.github\scripts\run-managed-unit-tests.sh = .github\scripts\run-managed-unit-tests.sh
-		.github\scripts\run-native-unit-tests.sh = .github\scripts\run-native-unit-tests.sh
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{CEE19D49-18E1-42B6-A156-C84E862D9555}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ProfilerEngine", "ProfilerEngine", "{767D6F82-B598-4637-B569-E3C4ABE8D470}"
