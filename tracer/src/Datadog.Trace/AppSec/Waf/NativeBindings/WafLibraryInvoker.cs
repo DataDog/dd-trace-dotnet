@@ -76,13 +76,13 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate void FreeResultDelegate(ref DdwafResultStruct output);
 
-        private delegate IntPtr InitDelegate(IntPtr wafRule, ref DdwafConfigStruct config, IntPtr diagnostics);
+        private delegate IntPtr InitDelegate(ref DdwafObjectStruct wafRule, ref DdwafConfigStruct config, IntPtr diagnostics);
 
-        private delegate IntPtr UpdateDelegate(IntPtr oldWafHandle, IntPtr wafRule, IntPtr diagnostics);
+        private delegate IntPtr UpdateDelegate(IntPtr oldWafHandle, ref DdwafObjectStruct wafData, IntPtr diagnostics);
 
         private delegate IntPtr InitContextDelegate(IntPtr wafHandle);
 
-        private delegate DDWAF_RET_CODE RunDelegate(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs);
+        private delegate DDWAF_RET_CODE RunDelegate(IntPtr context, ref DdwafObjectStruct newArgs, ref DdwafResultStruct result, ulong timeLeftInUs);
 
         private delegate void DestroyDelegate(IntPtr handle);
 
@@ -188,7 +188,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return _version;
         }
 
-        internal IntPtr Init(IntPtr wafRule, ref DdwafConfigStruct config, IntPtr diagnostics) => _initField(wafRule, ref config, diagnostics);
+        internal IntPtr Init(ref DdwafObjectStruct wafRule, ref DdwafConfigStruct config, IntPtr diagnostics) => _initField(ref wafRule, ref config, diagnostics);
 
         /// <summary>
         /// Only give a non null ruleSetInfo when updating rules. When updating rules overrides, rules datas, the ruleSetInfo will return no error and no diagnostics, even if there are, it's misleading, so give null in this case.
@@ -197,11 +197,11 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         /// <param name="wafData">a pointer to the new waf data (rules or overrides or other)</param>
         /// <param name="diagnostics">errors and diagnostics of the update, only for valid for new rules</param>
         /// <returns>the new waf handle, if error, will be a nullptr</returns>
-        internal IntPtr Update(IntPtr oldWafHandle, IntPtr wafData, IntPtr diagnostics) => _updateField(oldWafHandle, wafData, diagnostics);
+        internal IntPtr Update(IntPtr oldWafHandle, ref DdwafObjectStruct wafData, IntPtr diagnostics) => _updateField(oldWafHandle, ref wafData, diagnostics);
 
         internal IntPtr InitContext(IntPtr powerwafHandle) => _initContextField(powerwafHandle);
 
-        internal DDWAF_RET_CODE Run(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs) => _runField(context, newArgs, ref result, timeLeftInUs);
+        internal DDWAF_RET_CODE Run(IntPtr context, ref DdwafObjectStruct newArgs, ref DdwafResultStruct result, ulong timeLeftInUs) => _runField(context, ref newArgs, ref result, timeLeftInUs);
 
         internal void Destroy(IntPtr wafHandle) => _destroyField(wafHandle);
 

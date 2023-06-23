@@ -3,19 +3,21 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Waf
 {
-    internal class Result : IResult
+    internal readonly struct Result : IResult
     {
-        private readonly DDWAF_RET_CODE returnCode;
+        private readonly DDWAF_RET_CODE _returnCode;
 
         public Result(DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
         {
-            this.returnCode = returnCode;
+            _returnCode = returnCode;
             Actions = returnStruct.Actions.DecodeStringArray();
             ShouldBeReported = returnCode >= DDWAF_RET_CODE.DDWAF_MATCH;
             var events = returnStruct.Events.DecodeObjectArray();
@@ -32,7 +34,7 @@ namespace Datadog.Trace.AppSec.Waf
             Timeout = returnStruct.Timeout;
         }
 
-        public ReturnCode ReturnCode => Encoder.DecodeReturnCode(returnCode);
+        public ReturnCode ReturnCode => Encoder.DecodeReturnCode(_returnCode);
 
         public string Data { get; }
 
