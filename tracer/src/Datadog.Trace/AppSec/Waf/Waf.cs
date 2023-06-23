@@ -53,29 +53,28 @@ namespace Datadog.Trace.AppSec.Waf
         {
             var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
             InitResult initResult;
-            var argsToDispose = new List<Obj>();
 
             if (rulesFromRcm != null)
             {
-                var configObj = Encoder.Encode(rulesFromRcm, wafLibraryInvoker, argsToDispose, applySafetyLimits: false);
-                initResult = wafConfigurator.ConfigureAndDispose(configObj, "RemoteConfig", argsToDispose, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+                using var configObj = Encoder.Encode(rulesFromRcm, applySafetyLimits: false);
+                initResult = wafConfigurator.ConfigureAndDispose(configObj.Result, "RemoteConfig", obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
             }
             else
             {
                 var jtokenRoot = WafConfigurator.DeserializeEmbeddedRules(embeddedRulesetPath);
-                var configObj = Encoder.Encode(jtokenRoot!, wafLibraryInvoker, argsToDispose, applySafetyLimits: false);
-                initResult = wafConfigurator.ConfigureAndDispose(configObj, embeddedRulesetPath, argsToDispose, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+                using var configObj = Encoder.Encode(jtokenRoot!, applySafetyLimits: false);
+                initResult = wafConfigurator.ConfigureAndDispose(configObj.Result, embeddedRulesetPath, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
                 initResult.EmbeddedRules = jtokenRoot;
             }
 
             return initResult;
         }
 
-        private UpdateResult UpdateWafAndDisposeItems(Obj updateData, IEnumerable<Obj> argsToDispose, DdwafRuleSetInfo? ruleSetInfo = null)
+        private UpdateResult UpdateWaf(DdwafObjectStruct updateData, DdwafRuleSetInfo? ruleSetInfo = null)
         {
             try
             {
-                var newHandle = _wafLibraryInvoker.Update(_wafHandle, updateData.RawPtr, ruleSetInfo);
+                var newHandle = _wafLibraryInvoker.Update(_wafHandle, ref updateData, ruleSetInfo);
 
                 if (newHandle != IntPtr.Zero)
                 {
@@ -100,14 +99,6 @@ namespace Datadog.Trace.AppSec.Waf
                 if (ruleSetInfo != null)
                 {
                     _wafLibraryInvoker.RuleSetInfoFree(ruleSetInfo);
-                }
-
-                _wafLibraryInvoker.ObjectFreePtr(updateData.RawPtr);
-                updateData.Dispose();
-
-                foreach (var arg in argsToDispose)
-                {
-                    arg.Dispose();
                 }
             }
 
@@ -156,11 +147,10 @@ namespace Datadog.Trace.AppSec.Waf
 
         public UpdateResult Update(IDictionary<string, object> arguments)
         {
-            var argsToDispose = new List<Obj>();
             UpdateResult updated;
             try
             {
-                var encodedArgs = Encoder.Encode(arguments, _wafLibraryInvoker, argsToDispose, false);
+                using var encodedArgs = Encoder.Encode(arguments, applySafetyLimits: false);
                 DdwafRuleSetInfo? rulesetInfo = null;
                 // only if rules are provided will the waf give metrics
                 if (arguments.ContainsKey("rules"))
@@ -168,7 +158,7 @@ namespace Datadog.Trace.AppSec.Waf
                     rulesetInfo = new DdwafRuleSetInfo();
                 }
 
-                updated = UpdateWafAndDisposeItems(encodedArgs, argsToDispose, rulesetInfo);
+                updated = UpdateWaf(encodedArgs.Result, rulesetInfo);
             }
             catch
             {
@@ -179,7 +169,7 @@ namespace Datadog.Trace.AppSec.Waf
         }
 
         // Doesn't require a non disposed waf handle, but as the WAF instance needs to be valid for the lifetime of the context, if waf is disposed, don't run (unpredictable)
-        public DDWAF_RET_CODE Run(IntPtr contextHandle, IntPtr rawArgs, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds) => _wafLibraryInvoker.Run(contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
+        public DDWAF_RET_CODE Run(IntPtr contextHandle, ref DdwafObjectStruct args, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds) => _wafLibraryInvoker.Run(contextHandle, ref args, ref retNative, timeoutMicroSeconds);
 
         internal static List<RuleData> MergeRuleData(IEnumerable<RuleData> res)
         {

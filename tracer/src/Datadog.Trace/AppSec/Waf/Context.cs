@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -14,18 +15,18 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf
 {
+    // the context handle should be locked, it is not safe for concurrent access and two
+    // waf events may be processed at the same time due to code being run asynchronously
     internal class Context : IContext
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Context>();
 
-        // the context handle should be locked, it is not safe for concurrent access and two
-        // waf events may be processed at the same time due to code being run asynchronously
-        private readonly object _sync = new object();
         private readonly IntPtr _contextHandle;
 
         private readonly Waf _waf;
 
-        private readonly List<Obj> _argCache = new();
+        private readonly List<GCHandle> _argCache = new();
+        private readonly List<IntPtr> _argCache2 = new();
         private readonly Stopwatch _stopwatch;
         private readonly WafLibraryInvoker _wafLibraryInvoker;
 
@@ -55,7 +56,7 @@ namespace Datadog.Trace.AppSec.Waf
             return new Context(contextHandle, waf, wafLibraryInvoker);
         }
 
-        public IResult? Run(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
+        public Result? Run(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
         {
             if (_disposed)
             {
@@ -78,13 +79,26 @@ namespace Datadog.Trace.AppSec.Waf
 
             // not restart cause it's the total runtime over runs, and we run several * during request
             _stopwatch.Start();
-            using var pwArgs = Encoder.Encode(addresses, _wafLibraryInvoker, _argCache, applySafetyLimits: true);
-            var rawArgs = pwArgs.RawPtr;
 
             DDWAF_RET_CODE code;
-            lock (_sync)
+            lock (_stopwatch)
             {
-                code = _waf.Run(_contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
+                var pwArgs = Encoder.Encode(addresses, applySafetyLimits: true, argToFree: _argCache, argToFree2: _argCache2);
+                code = _waf.Run(_contextHandle, ref pwArgs, ref retNative, timeoutMicroSeconds);
+
+                foreach (var arg in _argCache)
+                {
+                    arg.Free();
+                }
+
+                _argCache.Clear();
+
+                foreach (var nMem in _argCache2)
+                {
+                    Encoder.Pool.Return(nMem);
+                }
+
+                _argCache2.Clear();
             }
 
             _stopwatch.Stop();
@@ -112,12 +126,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             _disposed = true;
 
-            foreach (var arg in _argCache)
-            {
-                arg.Dispose();
-            }
-
-            lock (_sync)
+            lock (_stopwatch)
             {
                 _wafLibraryInvoker.ContextDestroy(_contextHandle);
             }

@@ -18,5 +18,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         DDWAF_OBJ_ARRAY = 1 << 3,
         /** Value shall be decoded as an array of ddwaf_object of length nbEntries, each item having a parameterName. **/
         DDWAF_OBJ_MAP = 1 << 4,
+        DDWAF_OBJ_BOOL = 1 << 5,
     }
 }
