@@ -195,6 +195,55 @@ public class ProbesTests : TestHelper
         }
     }
 
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task LineProbeUnboundProbeBecomesBoundTest()
+    {
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(UnboundProbeBecomesBoundTest));
+        var guidGenerator = new DeterministicGuidGenerator();
+
+        var probes = new[]
+        {
+            DebuggerTestHelper.CreateLogLineProbe(typeof(Samples.Probes.Unreferenced.External.ExternalTest), new LogLineProbeTestDataAttribute(lineNumber: 11), guidGenerator),
+            DebuggerTestHelper.CreateLogLineProbe(typeof(Samples.Probes.Unreferenced.External.ExternalTest), new LogLineProbeTestDataAttribute(lineNumber: 12), guidGenerator),
+        };
+
+        var expectedNumberOfSnapshots = probes.Length;
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        SetDebuggerEnvironment(agent);
+        using var logEntryWatcher = CreateLogEntryWatcher();
+        using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+        try
+        {
+            SetProbeConfiguration(agent, probes);
+            await logEntryWatcher.WaitForLogEntry($"ProbeID {probes.First().Id} is unbound.");
+            await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+
+            await sample.RunCodeSample();
+
+            await logEntryWatcher.WaitForLogEntry($"LiveDebugger.CheckUnboundProbes: {expectedNumberOfSnapshots} unbound probes became bound.");
+
+            Assert.True(await agent.WaitForNoSnapshots(), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
+
+            await sample.RunCodeSample();
+
+            var statuses = await agent.WaitForProbesStatuses(probes.Length);
+            Assert.Equal(probes.Length, statuses?.Length);
+
+            await ApproveStatuses(statuses, testDescription, isMultiPhase: false, phaseNumber: 1);
+
+            var snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
+            Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
+            await ApproveSnapshots(snapshots, testDescription, isMultiPhase: false, phaseNumber: 1);
+        }
+        finally
+        {
+            await sample.StopSample();
+        }
+    }
+
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]

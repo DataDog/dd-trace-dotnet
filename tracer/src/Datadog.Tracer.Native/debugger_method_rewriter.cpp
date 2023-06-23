@@ -2324,6 +2324,13 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
     Logger::Info("*** DebuggerMethodRewriter::Rewrite() Finished: ", caller->type.name, ".", caller->name,
                  "() [IsVoid=", isVoid, ", IsStatic=", isStatic, ", Arguments=", numArgs, "]");
+
+    hr = this->m_corProfiler->info_->ApplyMetaData(module_id);
+    if (FAILED(hr))
+    {
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Finished: Error applying metadata to module_id: ", module_id);
+    }
+
     return S_OK;
 }
 
