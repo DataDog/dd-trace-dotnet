@@ -17,6 +17,8 @@ using FluentAssertions.Execution;
 using Xunit;
 using Xunit.Abstractions;
 
+#pragma warning disable 0618 // MDC and MDLC are obsolete
+
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class NLogTests : LogsInjectionTestBase
@@ -44,7 +46,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             var minScopeContext = new Version("5.0.0");
             var minMdlc = new Version("4.6.0");
-            var minMdc = new Version("4.0.0");
             foreach (var item in PackageVersions.NLog)
             {
                 Version version;
@@ -75,14 +76,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     yield return item.Concat(false).Concat("Mdlc");
                     yield return item.Concat(true).Concat("Mdlc");
                 }
-
-                if (version >= minMdc)
-                {
-                    yield return item.Concat(false).Concat("Mdc");
-                    yield return item.Concat(true).Concat("Mdc");
-                }
-
-                // No need to test without context properties, as that is thoroughly covered in other tests
             }
         }
 
