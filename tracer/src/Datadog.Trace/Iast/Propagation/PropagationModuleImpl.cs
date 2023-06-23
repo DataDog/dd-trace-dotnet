@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Logging;
@@ -373,5 +374,14 @@ internal static class PropagationModuleImpl
         }
 
         return newRanges;
+    }
+
+    // Helper method to convert IEnumerable to IEnumerable<object>
+    public static IEnumerable<object?> EnumerateAsObjects(IEnumerable enumerable)
+    {
+        foreach (var item in enumerable)
+        {
+            yield return item;
+        }
     }
 }

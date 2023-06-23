@@ -12,6 +12,7 @@ using System.Linq;
 using System.Text;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Propagation;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Iast.Aspects.System.Text;
@@ -22,6 +23,8 @@ namespace Datadog.Trace.Iast.Aspects.System.Text;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class StringBuilderAspects
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StringBuilderAspects));
+
     /// <summary> StringBuildr ctor aspect </summary>
     /// <param name="value"> Init string </param>
     /// <returns> New StringBuilder </returns>
@@ -802,7 +805,7 @@ public class StringBuilderAspects
     /// <param name="values">An array that contains the strings to concatenate and append to the current instance of the string builder.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)")]
-    public static StringBuilder AppendJoin(StringBuilder? target, char separator, IEnumerable? values)
+    public static StringBuilder AppendJoin(StringBuilder? target, char separator, object? values)
     {
         if (values is null || target is null)
         {
@@ -811,23 +814,29 @@ public class StringBuilderAspects
 #pragma warning restore CS8604 // Enable
         }
 
-        var valuesConverted = values as IEnumerable<object>;
+        var valuesConverted = values as IEnumerable<object?>;
 
-        if (valuesConverted is null)
+        if (values is IEnumerable valuesEnumerable)
         {
-            // We have a IEnumerable of structs or basic types. This is a corner case.
             try
             {
-                valuesConverted = values.Cast<object>();
+                valuesConverted = PropagationModuleImpl.EnumerateAsObjects(valuesEnumerable);
             }
-            catch
+            catch (Exception error)
             {
+                Log.Error(error, $"{nameof(StringBuilderAspects)}.{nameof(AppendJoin)} exception");
                 // This should not ever happen
                 return target.AppendJoin(separator, values);
             }
         }
+        else
+        {
+            Log.Error($"{nameof(StringBuilderAspects)}.{nameof(AppendJoin)} ERROR in IEnumerable parameter");
+            // This should not ever happen
+            return target.AppendJoin(separator, values);
+        }
 
-        var result = target.AppendJoin(separator, valuesConverted);
+        var result = target.AppendJoin(separator, valuesConverted!);
         StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, null, valuesConverted);
         return result;
     }
@@ -838,7 +847,7 @@ public class StringBuilderAspects
     /// <param name="values">An array that contains the strings to concatenate and append to the current instance of the string builder.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.String,System.Collections.Generic.IEnumerable`1<!!0>)")]
-    public static StringBuilder AppendJoin(StringBuilder? target, string? separator, IEnumerable? values)
+    public static StringBuilder AppendJoin(StringBuilder? target, string? separator, object? values)
     {
         if (values is null || target is null)
         {
@@ -847,23 +856,33 @@ public class StringBuilderAspects
 #pragma warning restore CS8604 // Enable
         }
 
-        var valuesConverted = values as IEnumerable<object>;
+        var valuesConverted = values as IEnumerable<object?>;
 
         if (valuesConverted is null)
         {
             // We have a IEnumerable of structs or basic types. This is a corner case.
-            try
+            if (values is IEnumerable valuesEnumerable)
             {
-                valuesConverted = values.Cast<object>();
+                try
+                {
+                    valuesConverted = PropagationModuleImpl.EnumerateAsObjects(valuesEnumerable);
+                }
+                catch (Exception error)
+                {
+                    Log.Error(error, $"{nameof(StringBuilderAspects)}.{nameof(AppendJoin)} exception");
+                    // This should not ever happen
+                    return target.AppendJoin(separator, values);
+                }
             }
-            catch
+            else
             {
+                Log.Error($"{nameof(StringBuilderAspects)}.{nameof(AppendJoin)} ERROR in IEnumerable parameter");
                 // This should not ever happen
                 return target.AppendJoin(separator, values);
             }
         }
 
-        var result = target.AppendJoin(separator, valuesConverted);
+        var result = target.AppendJoin(separator, valuesConverted!);
         StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, separator, valuesConverted);
         return result;
     }
