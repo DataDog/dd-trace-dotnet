@@ -108,7 +108,7 @@ namespace Datadog.Trace.AppSec.Waf
             return result;
         }
 
-        public IResult? Run2(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
+        public Result? Run2(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
         {
             if (_disposed)
             {

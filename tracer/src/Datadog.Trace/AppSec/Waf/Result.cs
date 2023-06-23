@@ -10,13 +10,13 @@ using Datadog.Trace.AppSec.Waf.NativeBindings;
 
 namespace Datadog.Trace.AppSec.Waf
 {
-    internal class Result : IResult
+    internal readonly struct Result : IResult
     {
-        private readonly DDWAF_RET_CODE returnCode;
+        private readonly DDWAF_RET_CODE _returnCode;
 
         public Result(DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
         {
-            this.returnCode = returnCode;
+            _returnCode = returnCode;
             Actions = new((int)returnStruct.ActionsSize);
             ReadActions(returnStruct);
             ShouldBlock = Actions.Contains("block");
@@ -26,7 +26,7 @@ namespace Datadog.Trace.AppSec.Waf
             Data = ShouldBeReported ? Marshal.PtrToStringAnsi(returnStruct.Data) : string.Empty;
         }
 
-        public ReturnCode ReturnCode => Encoder.DecodeReturnCode(returnCode);
+        public ReturnCode ReturnCode => Encoder.DecodeReturnCode(_returnCode);
 
         public string Data { get; }
 

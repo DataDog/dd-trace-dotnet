@@ -351,13 +351,22 @@ namespace Datadog.Trace.AppSec.Waf
             DdwafObjectStruct ddwafObjectStruct;
             switch (o)
             {
-                case string or int or uint or long:
+                case string str:
+                {
+                    var encodeString = applySafetyLimits ? TruncateLongString(str) : str;
+                    ddwafObjectStruct = GetStringObject(key, encodeString);
+                    break;
+                }
+
+                case int or uint or long:
                 case ulong or JValue:
                 case null:
+                {
                     var value = o?.ToString() ?? string.Empty;
                     var encodeString = applySafetyLimits ? TruncateLongString(value) : value;
                     ddwafObjectStruct = GetStringObject(key, encodeString);
                     break;
+                }
 
                 case bool b:
                     ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_BOOL, Boolean = b ? (byte)1 : (byte)0 };
