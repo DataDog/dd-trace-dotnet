@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
     {
         private const string StringDataType = "Binary";
 
-		private static readonly Func<MemoryStream, object> _createMessageAttributeValue;
+        private static readonly Func<MemoryStream, object> _createMessageAttributeValue;
         private static readonly Func<IDictionary> _createDict;
 
         static CachedMessageHeadersHelper()
