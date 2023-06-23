@@ -199,4 +199,3 @@ package:
   stage: deploy
   variables:
     PRODUCT_NAME: auto_inject-dotnet
-    PACKAGE_FILTER: dotnet
