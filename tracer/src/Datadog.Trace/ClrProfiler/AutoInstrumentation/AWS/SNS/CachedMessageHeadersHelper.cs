@@ -48,7 +48,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 
             _createMessageAttributeValue = (Func<MemoryStream, object>)createMessageAttributeValueMethod.CreateDelegate(typeof(Func<MemoryStream, object>));
 
-
             // Initialize delegate for creating a Dictionary<string, MessageAttributeValue> object
             var genericDictType = typeof(Dictionary<,>);
             var constructedDictType = genericDictType.MakeGenericType(new Type[] { typeof(string), messageAttributeValueType });
@@ -73,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             return _createDict();
         }
 
-        public static object CreateMessageAttributeValue(string value)
+        public static object CreateMessageAttributeValue(MemoryStream value)
         {
             return _createMessageAttributeValue(value);
         }
