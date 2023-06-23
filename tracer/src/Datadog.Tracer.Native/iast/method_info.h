@@ -66,7 +66,7 @@ namespace iast
         CorElementType GetReturnCorType();
 
     private:
-        std::atomic<int> _fullNameCounterLock;
+        std::atomic<unsigned char> _fullNameCounterLock;
     };
 
     class MethodSpec : public MemberRefInfo
