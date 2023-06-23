@@ -28,11 +28,14 @@ namespace Datadog.Trace.Configuration
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DynamicConfigurationManager>();
 
         private readonly IRcmSubscriptionManager _subscriptionManager;
+        private readonly ConfigurationTelemetry _configurationTelemetry;
+
         private ISubscription? _subscription;
 
         public DynamicConfigurationManager(IRcmSubscriptionManager subscriptionManager)
         {
             _subscriptionManager = subscriptionManager;
+            _configurationTelemetry = new ConfigurationTelemetry();
         }
 
         public void Start()
@@ -135,9 +138,12 @@ namespace Datadog.Trace.Configuration
                     configurationSource = compositeConfigurationSource;
                 }
 
-                var configurationBuilder = new ConfigurationBuilder(configurationSource, TelemetryFactory.Config);
+                var configurationBuilder = new ConfigurationBuilder(configurationSource, _configurationTelemetry);
 
                 OnConfigurationChanged(configurationBuilder);
+
+                _configurationTelemetry.CopyTo(TelemetryFactory.Config);
+                _configurationTelemetry.Clear();
 
                 for (int i = 0; i < apmLibrary.Count; i++)
                 {

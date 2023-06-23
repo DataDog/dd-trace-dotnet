@@ -161,16 +161,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             request.Client.State.ConfigStates.Should().ContainSingle(f => f.Id == fileId)
                .Subject.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);
 
-            var log = await logEntryWatcher.WaitForLogEntry(DiagnosticLog);
-
-            agent.WaitForLatestTelemetry(IsConfigurationChangedEvent);
-
-            AssertConfigurationChanged(agent.Telemetry, config);
+            var log = await logEntryWatcher.WaitForLogEntries(new[] { "Configuration updated, sending app-client-configuration-change", DiagnosticLog });
 
             using var context = new AssertionScope();
-            context.AddReportable("log", log);
 
-            var match = Regex.Match(log, diagnosticLogRegex);
+            for (int i = 0; i < log.Length; i++)
+            {
+                context.AddReportable($"log {i}", log[i]);
+            }
+
+            var diagnosticLog = log.First(l => l.Contains(DiagnosticLog));
+
+            var match = Regex.Match(diagnosticLog, diagnosticLogRegex);
 
             match.Success.Should().BeTrue();
 
@@ -195,6 +197,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // json["data_streams_enabled"]?.Value<bool>().Should().Be(expectedConfig.DataStreamsEnabled);
             FlattenJsonArray(json["header_tags"]).Should().Be(expectedConfig.TraceHeaderTags ?? string.Empty);
             // FlattenJsonArray(json["service_mapping"]).Should().Be(expectedConfig.ServiceNameMapping ?? string.Empty);
+
+            agent.WaitForLatestTelemetry(IsConfigurationChangedEvent);
+
+            AssertConfigurationChanged(agent.Telemetry, config);
         }
 
         private void AssertConfigurationChanged(ConcurrentStack<object> events, Config config)
