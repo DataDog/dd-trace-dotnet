@@ -1040,7 +1040,7 @@ partial class Build : NukeBuild
            var message = "Based on git changes, " + tracerStagesToSkip switch
            {
                { Count: 0 } => "Azure pipeline will run. Skipping noop pipeline",
-               _ => "neither profiler or tracer pipelines will run. Generating github status updates for both stages",
+               _ => "Tracer pipelines will not run. Generating github status updates",
            };
 
            var allStages = string.Join(";", tracerStagesToSkip);
