@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 #include "../../../../shared/src/native-src/pal.h"
 #include <map>
 #include <set>
