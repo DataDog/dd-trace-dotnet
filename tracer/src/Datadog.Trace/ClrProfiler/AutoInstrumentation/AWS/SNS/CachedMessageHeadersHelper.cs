@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
 using Datadog.Trace.DuckTyping;
@@ -28,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             DynamicMethod createMessageAttributeValueMethod = new DynamicMethod(
                 $"SnsCachedMessageHeadersHelpers",
                 messageAttributeValueType,
-                parameterTypes: new Type[] { typeof(string) },
+                parameterTypes: new Type[] { typeof(MemoryStream) },
                 typeof(DuckType).Module,
                 true);
 
@@ -45,7 +46,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 
             messageAttributeIL.Emit(OpCodes.Ret);
 
-            _createMessageAttributeValue = (Func<string, object>)createMessageAttributeValueMethod.CreateDelegate(typeof(Func<string, object>));
+            _createMessageAttributeValue = (Func<MemoryStream, object>)createMessageAttributeValueMethod.CreateDelegate(typeof(Func<MemoryStream, object>));
+
 
             // Initialize delegate for creating a Dictionary<string, MessageAttributeValue> object
             var genericDictType = typeof(Dictionary<,>);
