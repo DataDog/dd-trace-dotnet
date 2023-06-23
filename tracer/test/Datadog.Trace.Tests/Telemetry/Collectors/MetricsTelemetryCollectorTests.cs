@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Linq;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
@@ -52,10 +54,10 @@ public class MetricsTelemetryCollectorTests
             },
             new
             {
-                Metric = PublicApiUsage.Tracer_Ctor.ToStringFast(),
+                Metric = "public_api",
                 Points = new[] { new { Value = 1 } },
                 Type = TelemetryMetricType.Count,
-                Tags = (string[])null,
+                Tags = new[] { PublicApiUsage.Tracer_Ctor.ToStringFast() },
                 Common = false,
                 Namespace = (string)null,
             },
