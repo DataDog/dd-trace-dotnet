@@ -25,8 +25,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         private readonly Waf _waf;
 
-        private readonly List<GCHandle> _argCache = new();
-        private readonly List<IntPtr> _argCache2 = new();
+        private readonly List<IntPtr> _argCache = new();
         private readonly Stopwatch _stopwatch;
         private readonly WafLibraryInvoker _wafLibraryInvoker;
 
@@ -83,22 +82,15 @@ namespace Datadog.Trace.AppSec.Waf
             DDWAF_RET_CODE code;
             lock (_stopwatch)
             {
-                var pwArgs = Encoder.Encode(addresses, applySafetyLimits: true, argToFree: _argCache, argToFree2: _argCache2);
+                var pwArgs = Encoder.Encode(addresses, applySafetyLimits: true, argToFree: _argCache);
                 code = _waf.Run(_contextHandle, ref pwArgs, ref retNative, timeoutMicroSeconds);
 
-                foreach (var arg in _argCache)
-                {
-                    arg.Free();
-                }
-
-                _argCache.Clear();
-
-                foreach (var nMem in _argCache2)
+                foreach (var nMem in _argCache)
                 {
                     Encoder.Pool.Return(nMem);
                 }
 
-                _argCache2.Clear();
+                _argCache.Clear();
             }
 
             _stopwatch.Stop();

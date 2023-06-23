@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
@@ -195,12 +194,11 @@ namespace Datadog.Trace.AppSec.Waf
 
         public static EncodeResult Encode<TInstance>(TInstance? o, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true)
         {
-            var lstHandles = new List<GCHandle>();
             var lstPointers = new List<IntPtr>();
-            return new EncodeResult(lstHandles, lstPointers, Encode(o, lstHandles, lstPointers, remainingDepth, key, applySafetyLimits));
+            return new EncodeResult(lstPointers, Encode(o, lstPointers, remainingDepth, key, applySafetyLimits));
         }
 
-        public static unsafe DdwafObjectStruct Encode<TInstance>(TInstance? o, List<GCHandle> argToFree, List<IntPtr> argToFree2, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true)
+        public static unsafe DdwafObjectStruct Encode<TInstance>(TInstance? o, List<IntPtr> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true)
         {
             DdwafObjectStruct ProcessKeyValuePairs<TKey, TValue>(IEnumerable<KeyValuePair<TKey, TValue>> enumerableDic, int count, delegate*<KeyValuePair<TKey, TValue>, string?> getKey, delegate*<KeyValuePair<TKey, TValue>, object?> getValue)
                 where TKey : notnull
@@ -229,18 +227,9 @@ namespace Datadog.Trace.AppSec.Waf
                 }
 
                 var childrenCount = count < WafConstants.MaxContainerSize ? count : WafConstants.MaxContainerSize;
-                var childrenData = IntPtr.Zero;
-                DdwafObjectStruct[]? childrenArray = null;
-                if (ObjectStructSize * childrenCount < MaxBytesForMaxStringLength)
-                {
-                    childrenData = Pool.Rent();
-                }
-                else
-                {
-                    childrenArray = new DdwafObjectStruct[childrenCount];
-                }
+                var childrenFromPool = ObjectStructSize * childrenCount < MaxBytesForMaxStringLength;
+                var childrenData = childrenFromPool ? Pool.Rent() : Marshal.AllocHGlobal(ObjectStructSize * childrenCount);
 
-#if NETCOREAPP3_1_OR_GREATER
                 if (enumerableDic is System.Collections.IDictionary)
                 {
                     var typeKVP = typeof(KeyValuePair<TKey, TValue>);
@@ -282,15 +271,8 @@ namespace Datadog.Trace.AppSec.Waf
                             continue;
                         }
 
-                        if (childrenArray is null)
-                        {
-                            *(DdwafObjectStruct*)itemData = Encode(getValue(keyValue!), argToFree, argToFree2, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
-                            itemData += ObjectStructSize;
-                        }
-                        else
-                        {
-                            childrenArray[idx] = Encode(getValue(keyValue!), argToFree, argToFree2, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
-                        }
+                        *(DdwafObjectStruct*)itemData = Encode(getValue(keyValue!), argToFree, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
+                        itemData += ObjectStructSize;
 
                         idx++;
                         if (idx == WafConstants.MaxContainerSize)
@@ -309,7 +291,7 @@ namespace Datadog.Trace.AppSec.Waf
                     foreach (var originalKeyValue in (Dictionary<TKeySource, TValueSource>)enumerableDic)
                     {
                         var item = originalKeyValue;
-                        var keyValue = Unsafe.As<KeyValuePair<TKeySource, TValueSource>, KeyValuePair<TKey, TValue>>(ref item);
+                        var keyValue = UnsafeHelper.As<KeyValuePair<TKeySource, TValueSource>, KeyValuePair<TKey, TValue>>(ref item);
                         var key = getKey(keyValue!);
                         if (string.IsNullOrEmpty(key))
                         {
@@ -317,15 +299,8 @@ namespace Datadog.Trace.AppSec.Waf
                             continue;
                         }
 
-                        if (childrenArray is null)
-                        {
-                            *(DdwafObjectStruct*)itemData = Encode(getValue(keyValue!), argToFree, argToFree2, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
-                            itemData += ObjectStructSize;
-                        }
-                        else
-                        {
-                            childrenArray[idx] = Encode(getValue(keyValue!), argToFree, argToFree2, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
-                        }
+                        *(DdwafObjectStruct*)itemData = Encode(getValue(keyValue!), argToFree, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
+                        itemData += ObjectStructSize;
 
                         idx++;
                         if (idx == WafConstants.MaxContainerSize)
@@ -335,48 +310,10 @@ namespace Datadog.Trace.AppSec.Waf
                         }
                     }
                 }
-#else
-                var idx = 0;
-                var itemData = childrenData;
-                foreach (var keyValue in enumerableDic)
-                {
-                    var key = getKey(keyValue!);
-                    if (string.IsNullOrEmpty(key))
-                    {
-                        Log.Warning("EncodeDictionary: ignoring dictionary member with null name");
-                        continue;
-                    }
 
-                    if (childrenArray is null)
-                    {
-                        *(DdwafObjectStruct*)itemData = Encode(getValue(keyValue!), argToFree, argToFree2, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
-                        itemData += ObjectStructSize;
-                    }
-                    else
-                    {
-                        childrenArray[idx] = Encode(getValue(keyValue!), argToFree, argToFree2, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
-                    }
-
-                    idx++;
-                    if (idx == WafConstants.MaxContainerSize)
-                    {
-                        Log.Warning<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
-                        break;
-                    }
-                }
-#endif
-
-                if (childrenArray is null)
-                {
-                    ddWafObjectMap.Array = childrenData;
-                    ddWafObjectMap.NbEntries = (ulong)childrenCount;
-                    argToFree2.Add(childrenData);
-                }
-                else
-                {
-                    AddToArray(ref ddWafObjectMap, childrenArray);
-                }
-
+                ddWafObjectMap.Array = childrenData;
+                ddWafObjectMap.NbEntries = (ulong)childrenCount;
+                argToFree.Add(childrenData);
                 return ddWafObjectMap;
             }
 
@@ -405,23 +342,8 @@ namespace Datadog.Trace.AppSec.Waf
                     }
                 }
 
-                argToFree2.Add(unmanagedMemory);
+                argToFree.Add(unmanagedMemory);
                 return unmanagedMemory;
-            }
-
-            void AddToArray(ref DdwafObjectStruct map, DdwafObjectStruct[] children)
-            {
-                if (children.Length == 0)
-                {
-                    return;
-                }
-
-                var structArray = children;
-                var gcHandle = GCHandle.Alloc(structArray, GCHandleType.Pinned);
-                argToFree.Add(gcHandle);
-                var bufferPtr = Marshal.UnsafeAddrOfPinnedArrayElement(structArray, 0);
-                map.Array = bufferPtr;
-                map.NbEntries = (ulong)structArray.Length;
             }
 
             void FillParamName(ref DdwafObjectStruct ddwafObjectStruct, string paramName)
@@ -532,16 +454,8 @@ namespace Datadog.Trace.AppSec.Waf
                     if (list is System.Collections.IList { Count: { } count } listInstance)
                     {
                         var childrenCount = count < WafConstants.MaxContainerSize ? count : WafConstants.MaxContainerSize;
-                        var childrenData = IntPtr.Zero;
-                        DdwafObjectStruct[]? childrenArray = null;
-                        if (ObjectStructSize * childrenCount < MaxBytesForMaxStringLength)
-                        {
-                            childrenData = Pool.Rent();
-                        }
-                        else
-                        {
-                            childrenArray = new DdwafObjectStruct[childrenCount];
-                        }
+                        var childrenFromPool = ObjectStructSize * childrenCount < MaxBytesForMaxStringLength;
+                        var childrenData = childrenFromPool ? Pool.Rent() : Marshal.AllocHGlobal(ObjectStructSize * childrenCount);
 
                         var itemData = childrenData;
                         for (var idx = 0; idx < count; idx++)
@@ -556,67 +470,66 @@ namespace Datadog.Trace.AppSec.Waf
                             // Avoid boxing of known values types from the switch above
                             if (listInstance is IList<bool> boolCollection)
                             {
-                                data = Encode(boolCollection[idx], argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                                data = Encode(boolCollection[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
                             }
                             else if (listInstance is IList<int> intCollection)
                             {
-                                data = Encode(intCollection[idx], argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                                data = Encode(intCollection[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
                             }
                             else if (listInstance is IList<uint> uintCollection)
                             {
-                                data = Encode(uintCollection[idx], argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                                data = Encode(uintCollection[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
                             }
                             else if (listInstance is IList<long> longCollection)
                             {
-                                data = Encode(longCollection[idx], argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                                data = Encode(longCollection[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
                             }
                             else if (listInstance is IList<ulong> ulongCollection)
                             {
-                                data = Encode(ulongCollection[idx], argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                                data = Encode(ulongCollection[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
                             }
                             else
                             {
-                                data = Encode(listInstance[idx], argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                                data = Encode(listInstance[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
                             }
 
-                            if (childrenArray is null)
-                            {
-                                *(DdwafObjectStruct*)itemData = data;
-                                itemData += ObjectStructSize;
-                            }
-                            else
-                            {
-                                childrenArray[idx] = data;
-                            }
+                            *(DdwafObjectStruct*)itemData = data;
+                            itemData += ObjectStructSize;
                         }
 
-                        if (childrenArray is null)
-                        {
-                            ddwafObjectStruct.Array = childrenData;
-                            ddwafObjectStruct.NbEntries = (ulong)childrenCount;
-                            argToFree2.Add(childrenData);
-                        }
-                        else
-                        {
-                            AddToArray(ref ddwafObjectStruct, childrenArray);
-                        }
+                        ddwafObjectStruct.Array = childrenData;
+                        ddwafObjectStruct.NbEntries = (ulong)childrenCount;
+                        argToFree.Add(childrenData);
                     }
                     else
                     {
-                        var children = new List<DdwafObjectStruct>();
+                        var childrenCount = 0;
+                        // Let's enumerate first.
                         foreach (var val in list)
                         {
-                            if (children.Count == WafConstants.MaxContainerSize)
+                            childrenCount++;
+                            if (childrenCount == WafConstants.MaxContainerSize)
                             {
                                 Log.Warning<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
                                 break;
                             }
-
-                            var result = Encode(val, argToFree, argToFree2, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
-                            children.Add(result);
                         }
 
-                        AddToArray(ref ddwafObjectStruct, children.ToArray());
+                        if (childrenCount > 0)
+                        {
+                            var childrenFromPool = ObjectStructSize * childrenCount < MaxBytesForMaxStringLength;
+                            var childrenData = childrenFromPool ? Pool.Rent() : Marshal.AllocHGlobal(ObjectStructSize * childrenCount);
+                            var itemData = childrenData;
+                            foreach (var val in list)
+                            {
+                                *(DdwafObjectStruct*)itemData = Encode(val, argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                                itemData += ObjectStructSize;
+                            }
+
+                            ddwafObjectStruct.Array = childrenData;
+                            ddwafObjectStruct.NbEntries = (ulong)childrenCount;
+                            argToFree.Add(childrenData);
+                        }
                     }
 
                     break;
@@ -633,26 +546,17 @@ namespace Datadog.Trace.AppSec.Waf
 
         public readonly ref struct EncodeResult
         {
-            private readonly List<GCHandle> _gcHandles;
             private readonly List<IntPtr> _pointers;
             public readonly DdwafObjectStruct Result;
 
-            internal EncodeResult(List<GCHandle> gcHandles, List<IntPtr> pointers, DdwafObjectStruct result)
+            internal EncodeResult(List<IntPtr> pointers, DdwafObjectStruct result)
             {
-                _gcHandles = gcHandles;
                 _pointers = pointers;
                 Result = result;
             }
 
             public void Dispose()
             {
-                foreach (var handle in _gcHandles)
-                {
-                    handle.Free();
-                }
-
-                _gcHandles.Clear();
-
                 foreach (var pointer in _pointers)
                 {
                     Pool.Return(pointer);
