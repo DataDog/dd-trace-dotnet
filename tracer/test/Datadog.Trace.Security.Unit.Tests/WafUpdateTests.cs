@@ -146,19 +146,19 @@ namespace Datadog.Trace.Security.Unit.Tests
             using var context = waf.CreateContext();
             var result = context.Run(args, TimeoutMicroSeconds);
             var spectedResult = isAttack ? ReturnCode.Match : ReturnCode.Ok;
-            result.ReturnCode.Should().Be(spectedResult);
+            result!.Value.ReturnCode.Should().Be(spectedResult);
             if (spectedResult == ReturnCode.Match)
             {
                 var rule = attackParts[2];
-                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
+                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Value.Data).FirstOrDefault();
                 resultData.Rule.Id.Should().Be(rule);
                 resultData.RuleMatches[0].Parameters[0].Address.Should().Be(address);
             }
 
             if (expectedAction != null)
             {
-                result.ShouldBlock.Should().BeTrue();
-                result.Actions.Should().OnlyContain(s => s == expectedAction);
+                result.Value.ShouldBlock.Should().BeTrue();
+                result.Value.Actions.Should().OnlyContain(s => s == expectedAction);
             }
         }
     }
