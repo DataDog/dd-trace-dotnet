@@ -5,8 +5,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Amazon.Runtime;
 using Amazon.SQS;
 using Amazon.SQS.Model;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
@@ -28,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         public AwsSnsTests(ITestOutputHelper output)
             : base("AWS.SimpleNotificationService", output)
         {
-            _sqsClient = new AmazonSQSClient(new AmazonSQSConfig { ServiceURL = "http://localhost:4566" });
+            _sqsClient = GetAmazonSQSClient();
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -43,6 +46,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         [Trait("Category", "EndToEnd")]
         public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
+            Console.WriteLine("trying to sleep for debugger");
+            Console.WriteLine($"Test started in process with id: {System.Diagnostics.Process.GetCurrentProcess().Id}");
+            while (!System.Diagnostics.Debugger.IsAttached)
+            {
+                Thread.Sleep(1000);
+            }
+
+            Console.WriteLine("debugger connected to process");
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-aws-sns" : EnvironmentHelper.FullSampleName;
@@ -62,15 +73,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 // Poll the SQS queue for messages
                 var receiveMessageRequest = new ReceiveMessageRequest
                 {
-                    QueueUrl = "http://localhost:4566/queue/MyQueue",  // replace with your queue URL
+                    QueueUrl = "http://localhost:4566/000000000000/MyQueue",  // replace with your queue URL
                     MaxNumberOfMessages = 10
                 };
                 var messages = await _sqsClient.ReceiveMessageAsync(receiveMessageRequest);
-
+                Console.WriteLine("messages");
+                Console.WriteLine(messages);
                 // Assert the message attribute was added
                 foreach (var message in messages.Messages)
                 {
-                    message.MessageAttributes.Should().ContainKey("TraceContext");
+                    Console.WriteLine("message");
+                    Console.WriteLine(message);
+                    Console.WriteLine("MessageAttributes");
+                    Console.WriteLine(message.MessageAttributes);
+                    Console.WriteLine("Printing msg attr keys");
+                    foreach (var key in message.MessageAttributes.Keys)
+                    {
+                        Console.WriteLine(key);
+                    }
+
+                    Console.WriteLine("Done Printing msg attr keys");
+                    message.MessageAttributes.Should().ContainKey("_datadog");
                     // Extract the datadog trace context as a b64 string, decode it and assert it's the same as for the sns spans
                     var traceContext = message.MessageAttributes["TraceContext"].StringValue;
                     // Add your decoding and assertion logic here
@@ -99,6 +122,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 await VerifyHelper.VerifySpans(spans, settings);
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.AwsSns);
+            }
+        }
+
+        private AmazonSQSClient GetAmazonSQSClient()
+        {
+            if (Environment.GetEnvironmentVariable("AWS_ACCESSKEY") is string accessKey &&
+                Environment.GetEnvironmentVariable("AWS_SECRETKEY") is string secretKey &&
+                Environment.GetEnvironmentVariable("AWS_REGION") is string region)
+            {
+                var awsCredentials = new BasicAWSCredentials(accessKey, secretKey);
+                var sqsConfig = new AmazonSQSConfig
+                {
+                    ServiceURL = "http://localhost:4566",
+                    RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(region)
+                };
+                return new AmazonSQSClient(awsCredentials, sqsConfig);
+            }
+            else
+            {
+                var awsCredentials = new BasicAWSCredentials("x", "x");
+                var sqsConfig = new AmazonSQSConfig { ServiceURL = "http://localhost:4566" };
+                return new AmazonSQSClient(awsCredentials, sqsConfig);
             }
         }
     }

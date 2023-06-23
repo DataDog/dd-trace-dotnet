@@ -55,6 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             {
                 ContextPropagation.InjectHeadersIntoMessage<TPublishRequest>(requestProxy, scope.Span.Context);
             }
+
             Console.WriteLine("b4 return calltargetstate");
             return new CallTargetState(scope);
         }

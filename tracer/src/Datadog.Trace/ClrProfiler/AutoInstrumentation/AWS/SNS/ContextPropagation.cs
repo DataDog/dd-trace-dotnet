@@ -26,10 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             sb.Append('}');
 
             var resultString = Util.StringBuilderCache.GetStringAndRelease(sb);
-            var bytes = Encoding.UTF8.GetBytes(resultString);
-            var base64String = Convert.ToBase64String(bytes);
-            messageAttributes[SnsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(base64String);
-            Console.WriteLine("after createmessageatrvalue");
+            messageAttributes[SnsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(resultString);
         }
 
         public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext spanContext)
@@ -73,9 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             }
 
             // Inject the tracing headers
-            Console.WriteLine("b4 call to inject");
             Inject<TMessageRequest>(spanContext, carrier.MessageAttributes);
-            Console.WriteLine("aft call to inject");
         }
 
         private readonly struct StringBuilderCarrierSetter : ICarrierSetter<StringBuilder>
