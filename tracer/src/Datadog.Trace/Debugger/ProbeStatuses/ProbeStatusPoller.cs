@@ -128,6 +128,15 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
             }
         }
 
+        public void UpdateProbes(string[] probeIds, FetchProbeStatus[] newProbeStatuses)
+        {
+            lock (_locker)
+            {
+                RemoveProbes(probeIds);
+                AddProbes(newProbeStatuses);
+            }
+        }
+
         public string[] GetFetchedProbes(string[] candidateProbeIds)
         {
             lock (_locker)

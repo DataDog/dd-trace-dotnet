@@ -21,7 +21,8 @@
       "tracer\\test\\Datadog.Trace.Tests\\Datadog.Trace.Tests.csproj",
       "tracer\\test\\test-applications\\debugger\\Samples.Probes\\Samples.Probes.csproj",
       "tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.External\\Samples.Probes.External.csproj",
-      "tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.TestRuns\\Samples.Probes.TestRuns.csproj"
+      "tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.TestRuns\\Samples.Probes.TestRuns.csproj",
+      "tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.Unreferenced.External\\Samples.Probes.Unreferenced.External.csproj"
     ]
   }
 }
