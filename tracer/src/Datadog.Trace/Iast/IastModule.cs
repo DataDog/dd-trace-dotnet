@@ -197,6 +197,14 @@ internal static class IastModule
         return null;
     }
 
+    public static bool AddRequestVulnerabilitiesAllowed()
+    {
+        var currentSpan = (Tracer.Instance.ActiveScope as Scope)?.Span;
+        var traceContext = currentSpan?.Context?.TraceContext;
+        var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
+        return isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() == true;
+    }
+
     private static Scope? GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, bool taintedFromEvidenceRequired = false)
     {
         var tracer = Tracer.Instance;
@@ -216,6 +224,13 @@ internal static class IastModule
             return null;
         }
 
+        if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
+        {
+            // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
+            // not activated for this particular request
+            return null;
+        }
+
         TaintedObject? tainted = null;
         if (taintedFromEvidenceRequired)
         {
@@ -224,13 +239,6 @@ internal static class IastModule
             {
                 return null;
             }
-        }
-
-        if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
-        {
-            // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
-            // not activated for this particular request
-            return null;
         }
 
         var frameInfo = StackWalker.GetFrame();

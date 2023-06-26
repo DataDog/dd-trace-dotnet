@@ -5,32 +5,88 @@
 
 #nullable enable
 
-#if !NETFRAMEWORK
-
 using System;
-using System.Net;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast;
+using Datadog.Trace.Logging;
+#if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
 using Microsoft.Net.Http.Headers;
+#else
+using System.Web;
+#endif
 
 namespace Datadog.Trace.IAST
 {
     internal static class CookieAnalyzer
     {
-        private static Uri _dummyUri = new Uri("http://127.0.0.1");
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CookieAnalyzer));
 
-        // Extract the cookie information of a request from a IHeaderDictionary
-        public static void AnalyzeCookies(IHeaderDictionary headers, IntegrationId integrationId)
+#if NETFRAMEWORK
+        public static void AnalyzeCookies(HttpCookieCollection cookies, IntegrationId integrationId)
         {
-            if (!headers.TryGetValue(Microsoft.Net.Http.Headers.HeaderNames.SetCookie, out var cookieHeaderValues))
+            try
+            {
+                foreach (string cookieKey in cookies)
+                {
+                    var cookie = cookies[cookieKey];
+                    ReportVulnerabilities(integrationId, cookie);
+                }
+            }
+            catch (Exception error)
+            {
+                Log.Error(error, $"{nameof(CookieAnalyzer)}.{nameof(AnalyzeCookies)}.net461 exception");
+            }
+        }
+
+        private static void ReportVulnerabilities(IntegrationId integrationId, HttpCookie cookie)
+        {
+            var name = cookie.Name.ToString();
+            var value = cookie.Value.ToString();
+
+            // Insecure cookies with empty values are allowed
+            if (string.IsNullOrEmpty(value))
             {
                 return;
             }
 
-            foreach (var cookieHeaderValue in cookieHeaderValues)
+            string? samesiteCookie = cookie.Values["SameSite"];
+            if (samesiteCookie?.Equals("Strict", System.StringComparison.InvariantCultureIgnoreCase) is not true)
             {
-                AnalyzeCookie(cookieHeaderValue, integrationId);
+                IastModule.OnNoSamesiteCookie(integrationId, name);
+            }
+
+            if (!cookie.HttpOnly)
+            {
+                IastModule.OnNoHttpOnlyCookie(integrationId, name);
+            }
+
+            if (!cookie.Secure)
+            {
+                IastModule.OnInsecureCookie(integrationId, name);
+            }
+        }
+#endif
+
+#if !NETFRAMEWORK
+        // Extract the cookie information of a request from a IHeaderDictionary
+        public static void AnalyzeCookies(IHeaderDictionary headers, IntegrationId integrationId)
+        {
+            try
+            {
+                if (!headers.TryGetValue(HeaderNames.SetCookie, out var cookieHeaderValues))
+                {
+                    return;
+                }
+
+                foreach (var cookieHeaderValue in cookieHeaderValues)
+                {
+                    AnalyzeCookie(cookieHeaderValue, integrationId);
+                }
+            }
+            catch (Exception error)
+            {
+                Log.Error(error, $"{nameof(CookieAnalyzer)}.{nameof(AnalyzeCookies)}.netcore exception");
             }
         }
 
@@ -38,45 +94,37 @@ namespace Datadog.Trace.IAST
         {
             if (!string.IsNullOrEmpty(cookieHeaderValue))
             {
-                var cookieContainer = new CookieContainer();
-                cookieContainer.SetCookies(_dummyUri, cookieHeaderValue);
-                var parsedCookie = cookieContainer.GetCookies(_dummyUri);
-
-                if (parsedCookie.Count == 1)
-                {
-                    var cookie = parsedCookie[0];
-                    var value = cookie.Value;
-
-                    // Insecure cookies with empty values are allowed
-                    if (!string.IsNullOrEmpty(value))
-                    {
-                        // CookieContainer does not parse the samesite attribute of the cookie.
-                        // A cookie has the same site attribute ok only if it defines the samesite value as strict. Lax or none are invalid. The default value is invalid also.
-                        bool sameSiteOk = cookieHeaderValue.ToLower().Contains("samesite=strict");
-                        ReportVulnerabilities(integrationId, cookie, sameSiteOk);
-                    }
-                }
+                var cookieHeader = SetCookieHeaderValue.Parse(cookieHeaderValue);
+                ReportVulnerabilities(integrationId, cookieHeader);
             }
         }
 
-        private static void ReportVulnerabilities(IntegrationId integrationId, Cookie cookie, bool sameSiteOk)
+        private static void ReportVulnerabilities(IntegrationId integrationId, SetCookieHeaderValue cookie)
         {
-            if (!sameSiteOk)
+            var name = cookie.Name.ToString();
+            var value = cookie.Value.ToString();
+
+            // Insecure cookies with empty values are allowed
+            if (string.IsNullOrEmpty(value))
             {
-                IastModule.OnNoSamesiteCookie(integrationId, cookie.Name);
+                return;
+            }
+
+            if (cookie.SameSite != Microsoft.Net.Http.Headers.SameSiteMode.Strict)
+            {
+                IastModule.OnNoSamesiteCookie(integrationId, name);
             }
 
             if (!cookie.HttpOnly)
             {
-                IastModule.OnNoHttpOnlyCookie(integrationId, cookie.Name);
+                IastModule.OnNoHttpOnlyCookie(integrationId, name);
             }
 
             if (!cookie.Secure)
             {
-                IastModule.OnInsecureCookie(integrationId, cookie.Name);
+                IastModule.OnInsecureCookie(integrationId, name);
             }
         }
+#endif
     }
 }
-
-#endif

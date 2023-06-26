@@ -15,6 +15,7 @@ using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Iast;
 using Datadog.Trace.IAST;
 using Microsoft.AspNetCore.Http;
 
@@ -78,7 +79,7 @@ public static class FireOnStartCommon
                     }
                 }
 
-                if (iastEnabled)
+                if (iastEnabled && IastModule.AddRequestVulnerabilitiesAllowed())
                 {
                     CookieAnalyzer.AnalyzeCookies(responseHeaders, IntegrationId.AspNetCore);
                 }

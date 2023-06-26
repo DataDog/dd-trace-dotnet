@@ -16,6 +16,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Iast;
+using Datadog.Trace.IAST;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -273,6 +274,11 @@ namespace Datadog.Trace.AspNet
 
                             securityCoordinator.AddResponseHeadersToSpanAndCleanup();
                             securityContextCleaned = true;
+                        }
+
+                        if (Iast.Iast.Instance.Settings.Enabled && IastModule.AddRequestVulnerabilitiesAllowed())
+                        {
+                            CookieAnalyzer.AnalyzeCookies(app.Context.Response.Cookies, IntegrationId);
                         }
 
                         // HttpServerUtility.TransferRequest presents an issue: The IIS request pipeline is run a second time
