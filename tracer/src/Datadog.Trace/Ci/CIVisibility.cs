@@ -15,11 +15,13 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
+using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Ci
 {
@@ -144,6 +146,13 @@ namespace Datadog.Trace.Ci
             else if (settings.GitUploadEnabled != false)
             {
                 Log.Warning("ITR: Upload git metadata cannot be activated. Agent doesn't support the event platform proxy endpoint.");
+            }
+
+            var benchmarkTraceId = EnvironmentHelpers.GetEnvironmentVariable("DD_CIVISIBILITY_BENCHMARK_TRACEID");
+            var benchmarkSpanId = EnvironmentHelpers.GetEnvironmentVariable("DD_CIVISIBILITY_BENCHMARK_SPANID");
+            if (!string.IsNullOrEmpty(benchmarkTraceId) && !string.IsNullOrEmpty(benchmarkSpanId))
+            {
+                Profiler.Instance.ContextTracker.SetEndpoint(ulong.Parse(benchmarkSpanId), "benchmark");
             }
         }
 

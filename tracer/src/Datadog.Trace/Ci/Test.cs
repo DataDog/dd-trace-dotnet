@@ -25,16 +25,25 @@ public sealed class Test
     private int _finished;
 
     internal Test(TestSuite suite, string name, DateTimeOffset? startDate)
+        : this(suite, name, startDate, default, 0)
+    {
+    }
+
+    internal Test(TestSuite suite, string name, DateTimeOffset? startDate, TraceId traceId, ulong spanId)
     {
         Suite = suite;
         var module = suite.Module;
 
         var tags = new TestSpanTags(Suite.Tags, name);
-        var scope = Tracer.Instance.StartActiveInternal(
+        var tracer = Tracer.Instance;
+        var span = tracer.StartSpan(
             string.IsNullOrEmpty(module.Framework) ? "test" : $"{module.Framework!.ToLowerInvariant()}.test",
             tags: tags,
-            startTime: startDate);
+            startTime: startDate,
+            traceId: traceId,
+            spanId: spanId);
 
+        var scope = tracer.TracerManager.ScopeManager.Activate(span, true);
         scope.Span.Type = SpanTypes.Test;
         scope.Span.ResourceName = $"{suite.Name}.{name}";
         scope.Span.Context.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep, SamplingMechanism.Manual);

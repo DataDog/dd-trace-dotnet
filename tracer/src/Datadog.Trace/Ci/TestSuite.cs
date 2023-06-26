@@ -186,4 +186,17 @@ public sealed class TestSuite
     {
         return new Test(this, name, startDate);
     }
+
+    /// <summary>
+    /// Create a new test for this suite
+    /// </summary>
+    /// <param name="name">Name of the test</param>
+    /// <param name="startDate">Test start date</param>
+    /// <param name="traceId">Trace Id</param>
+    /// <param name="spanId">Span Id</param>
+    /// <returns>Test instance</returns>
+    internal Test CreateTest(string name, DateTimeOffset startDate, TraceId traceId, ulong spanId)
+    {
+        return new Test(this, name, startDate, traceId, spanId);
+    }
 }

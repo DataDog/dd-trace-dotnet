@@ -137,7 +137,16 @@ internal class DatadogExporter : IExporter
                         }
                     }
 
-                    var testMethod = testSuiteWithEndDate.Suite.CreateTest(testName, benchmarkStartDate);
+                    Test? testMethod;
+                    if (DatadogProfilerDiagnoser.Default.IdsByBenchmarks.TryGetValue(report.BenchmarkCase, out var ids))
+                    {
+                        testMethod = testSuiteWithEndDate.Suite.CreateTest(testName, benchmarkStartDate, ids.TraceId, ids.SpanId);
+                    }
+                    else
+                    {
+                        testMethod = testSuiteWithEndDate.Suite.CreateTest(testName, benchmarkStartDate);
+                    }
+
                     testMethod.SetTestMethodInfo(descriptor.WorkloadMethod);
                     testMethod.SetBenchmarkMetadata(
                         new BenchmarkHostInfo
@@ -274,7 +283,7 @@ internal class DatadogExporter : IExporter
         var sb = new StringBuilder();
         foreach (var item in DatadogProfilerDiagnoser.Default.IdsByBenchmarks)
         {
-            sb.AppendLine($"{item.Key} - ({item.Value.TraceId}, {item.Value.SpanId})");
+            sb.AppendLine($"{item.Key.FolderInfo} - ({item.Value.TraceId}, {item.Value.SpanId})");
         }
 
         return new[] { $"Datadog Exporter ran successfully.\n{sb}" };
