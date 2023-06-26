@@ -22,7 +22,7 @@ internal class TelemetryDataBuilderV2
         HostTelemetryDataV2 host,
         in TelemetryInput input,
         bool sendAppStarted,
-        int? namingSchemeVersion)
+        string? namingSchemeVersion)
     {
         List<MessageBatchData>? data = null;
 
@@ -117,10 +117,10 @@ internal class TelemetryDataBuilderV2
         return GetRequest(application, host, new MessageBatchPayload(data), namingSchemeVersion);
     }
 
-    public TelemetryDataV2 BuildAppClosingTelemetryData(ApplicationTelemetryDataV2 application, HostTelemetryDataV2 host, int? namingSchemeVersion)
+    public TelemetryDataV2 BuildAppClosingTelemetryData(ApplicationTelemetryDataV2 application, HostTelemetryDataV2 host, string? namingSchemeVersion)
         => GetRequest(application, host, TelemetryRequestTypes.AppClosing, payload: null, namingSchemeVersion);
 
-    public TelemetryDataV2 BuildHeartbeatData(ApplicationTelemetryDataV2 application, HostTelemetryDataV2 host, int? namingSchemeVersion)
+    public TelemetryDataV2 BuildHeartbeatData(ApplicationTelemetryDataV2 application, HostTelemetryDataV2 host, string? namingSchemeVersion)
         => GetRequest(application, host, TelemetryRequestTypes.AppHeartbeat, payload: null, namingSchemeVersion);
 
     public TelemetryDataV2 BuildExtendedHeartbeatData(
@@ -129,7 +129,7 @@ internal class TelemetryDataBuilderV2
         ICollection<ConfigurationKeyValue>? configuration,
         ICollection<DependencyTelemetryData>? dependencies,
         ICollection<IntegrationTelemetryData>? integrations,
-        int? namingSchemeVersion)
+        string? namingSchemeVersion)
         => GetRequest(
             application,
             host,
@@ -147,7 +147,7 @@ internal class TelemetryDataBuilderV2
         HostTelemetryDataV2 host,
         string requestType,
         IPayload? payload,
-        int? namingSchemeVersion)
+        string? namingSchemeVersion)
     {
         var sequence = Interlocked.Increment(ref _sequence);
 
@@ -168,7 +168,7 @@ internal class TelemetryDataBuilderV2
         ApplicationTelemetryDataV2 application,
         HostTelemetryDataV2 host,
         MessageBatchPayload? payload,
-        int? namingSchemeVersion)
+        string? namingSchemeVersion)
     {
         var sequence = Interlocked.Increment(ref _sequence);
 
