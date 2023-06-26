@@ -34,6 +34,8 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
     /// </summary>
     public static readonly DatadogProfilerDiagnoser Default = new();
 
+    public Dictionary<int, (TraceId TraceId, ulong SpanId)> IdsByBenchmarks { get; } = new();
+
     public IEnumerable<string> Ids { get; } = new[] { "DatadogProfiler" };
 
     public IEnumerable<IExporter> Exporters { get; } = Array.Empty<IExporter>();
@@ -54,6 +56,10 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
     {
         if (signal == HostSignal.BeforeProcessStart)
         {
+            var traceId = RandomIdGenerator.Shared.NextTraceId(true);
+            var spanId = RandomIdGenerator.Shared.NextSpanId(true);
+
+            IdsByBenchmarks[parameters.BenchmarkId.Value] = (traceId, spanId);
             var monitoringHome = EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
 
             // if the monitoringHome is defined but invalid, we clean the monitoringHome variable.
@@ -170,6 +176,9 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
 
             environment["DD_NATIVELOADER_CONFIGFILE"] = loaderConfig;
             environment["DD_TRACE_ENABLED"] = "0";
+
+            environment["DD_CIVISIBILITY_BENCHMARK_TRACEID"] = traceId.ToString();
+            environment["DD_CIVISIBILITY_BENCHMARK_SPANID"] = spanId.ToString();
 
             const string profilerEnabled = "DD_PROFILING_ENABLED";
             if (!environment.TryGetValue(profilerEnabled, out _))

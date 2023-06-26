@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Environments;
@@ -270,7 +271,13 @@ internal class DatadogExporter : IExporter
             return new[] { "Datadog Exporter error: " + exception };
         }
 
-        return new[] { "Datadog Exporter ran successfully." };
+        var sb = new StringBuilder();
+        foreach (var item in DatadogProfilerDiagnoser.Default.IdsByBenchmarks)
+        {
+            sb.AppendLine($"{item.Key} - ({item.Value.TraceId}, {item.Value.SpanId})");
+        }
+
+        return new[] { $"Datadog Exporter ran successfully.\n{sb}" };
     }
 
     private class TestSuiteWithEndDate
