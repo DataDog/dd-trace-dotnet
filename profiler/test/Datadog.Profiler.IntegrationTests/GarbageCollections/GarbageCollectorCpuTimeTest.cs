@@ -129,5 +129,45 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             var gcStackTrace = new StackTrace(new StackFrame(GcFrame));
             SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStackTrace));
         }
+
+        [TestAppFact("Samples.Computer01", new[] { "netcoreapp3.1" })]
+        public void CheckFeatureIsDisabledIfNetCoreVersionIsLessThan_5(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
+            runner.Environment.SetVariable(EnvironmentVariables.GcThreadsCpuTimeEnabled, "1");
+
+            // make sure walltime is activated to have samples
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            // enable gc server
+            runner.Environment.SetVariable("COMPlus_gcServer", "1");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            runner.Run(agent);
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            var gcStackTrace = new StackTrace(new StackFrame(GcFrame));
+            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStackTrace));
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net45" })]
+        public void CheckFeatureIsDisabledIfDotNetFramework(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
+            runner.Environment.SetVariable(EnvironmentVariables.GcThreadsCpuTimeEnabled, "1");
+
+            // make sure walltime is activated to have samples
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            // enable gc server
+            runner.Environment.SetVariable("COMPlus_gcServer", "1");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            runner.Run(agent);
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            var gcStackTrace = new StackTrace(new StackFrame(GcFrame));
+            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStackTrace));
+        }
     }
 }

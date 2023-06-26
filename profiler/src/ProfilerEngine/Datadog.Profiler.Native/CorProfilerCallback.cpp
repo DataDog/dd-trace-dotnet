@@ -342,7 +342,9 @@ bool CorProfilerCallback::InitializeServices()
         _pAllocationsRecorder.get()
         );
 
-    if (_pCpuTimeProvider != nullptr && _pRuntimeInfo->GetDotnetMajorVersion() >= 5)
+    if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
+        _pCpuTimeProvider != nullptr &&
+        _pRuntimeInfo->GetDotnetMajorVersion() >= 5)
     {
         _gcThreadsCpuProvider = std::make_unique<GCThreadsCpuProvider>(_pCpuTimeProvider);
 
