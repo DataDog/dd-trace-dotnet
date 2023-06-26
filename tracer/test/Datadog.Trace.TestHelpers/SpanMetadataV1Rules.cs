@@ -274,9 +274,10 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("component")
                 .Matches("span.kind", "client"));
 
-        public static Result IsKafkaV1(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsKafkaInboundV1(this MockSpan span) => Result.FromSpan(span)
+            .WithMarkdownSection("Kafka - Inbound")
             .Properties(s => s
-                .MatchesOneOf(Name, "kafka.process", "kafka.send")
+                .Matches(Name, "kafka.process")
                 .Matches(Type, "queue"))
             .Metrics(s => s
                 .IsPresent("_dd.measured")
@@ -290,7 +291,26 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .MatchesOneOf("_dd.peer.service.source", "messaging.kafka.bootstrap.servers", "peer.service")
                 .Matches("component", "kafka")
-                .IsPresent("span.kind"));
+                .Matches("span.kind", "consumer"));
+
+        public static Result IsKafkaOutboundV1(this MockSpan span) => Result.FromSpan(span)
+            .WithMarkdownSection("Kafka - Outbound")
+            .Properties(s => s
+                .Matches(Name, "kafka.send")
+                .Matches(Type, "queue"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured")
+                .IsOptional("message.queue_time_ms"))
+            .Tags(s => s
+                .IsOptional("kafka.group")
+                .IsOptional("kafka.offset")
+                .IsOptional("kafka.partition")
+                .IsOptional("kafka.tombstone")
+                .IsPresent("messaging.kafka.bootstrap.servers")
+                .IsPresent("peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "messaging.kafka.bootstrap.servers", "peer.service")
+                .Matches("component", "kafka")
+                .Matches("span.kind", "producer"));
 
         public static Result IsMongoDbV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
