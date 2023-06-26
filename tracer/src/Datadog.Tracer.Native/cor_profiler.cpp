@@ -81,8 +81,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
                                                     is_ci_visibility_enabled) &&
             is_ci_visibility_enabled)
         {
-            if ((process_name == WStr("dotnet") || process_name == WStr("dotnet.exe")) && process_command_line.
-                find(WStr("testhost")) == WSTRING::npos)
+            if ((process_name == WStr("dotnet") || process_name == WStr("dotnet.exe")) &&
+                process_command_line.find(WStr("testhost")) == WSTRING::npos &&
+                GetEnvironmentValue(WStr("DD_CIVISIBILITY_BENCHMARK_NAME")) == EmptyWStr)
             {
                 Logger::Info("The Tracer Profiler has been disabled because the process is running in CI Visibility "
                     "mode, the name is 'dotnet' but the commandline doesn't contain 'testhost'");

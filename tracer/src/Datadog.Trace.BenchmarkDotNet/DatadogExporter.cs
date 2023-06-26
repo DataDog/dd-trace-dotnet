@@ -280,13 +280,7 @@ internal class DatadogExporter : IExporter
             return new[] { "Datadog Exporter error: " + exception };
         }
 
-        var sb = new StringBuilder();
-        foreach (var item in DatadogProfilerDiagnoser.Default.IdsByBenchmarks)
-        {
-            sb.AppendLine($"{item.Key.FolderInfo} - ({item.Value.TraceId}, {item.Value.SpanId})");
-        }
-
-        return new[] { $"Datadog Exporter ran successfully.\n{sb}" };
+        return new[] { $"Datadog Exporter ran successfully." };
     }
 
     private class TestSuiteWithEndDate

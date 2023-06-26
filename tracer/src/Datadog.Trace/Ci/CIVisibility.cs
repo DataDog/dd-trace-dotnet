@@ -72,6 +72,15 @@ namespace Datadog.Trace.Ci
             Log.Information("Initializing CI Visibility");
             var settings = Settings;
 
+            var benchmarkName = EnvironmentHelpers.GetEnvironmentVariable("DD_CIVISIBILITY_BENCHMARK_NAME");
+            var benchmarkSpanId = EnvironmentHelpers.GetEnvironmentVariable("DD_CIVISIBILITY_BENCHMARK_SPANID");
+            if (!string.IsNullOrEmpty(benchmarkName) && !string.IsNullOrEmpty(benchmarkSpanId))
+            {
+                Profiler.Instance.ContextTracker.SetEndpoint(ulong.Parse(benchmarkSpanId), benchmarkName);
+                Log.Information("SetEndpoint: {SpanId} | {Name}", ulong.Parse(benchmarkSpanId), benchmarkName);
+                return;
+            }
+
             // In case we are running using the agent, check if the event platform proxy is supported.
             IDiscoveryService discoveryService = NullDiscoveryService.Instance;
             var eventPlatformProxyEnabled = false;
@@ -146,13 +155,6 @@ namespace Datadog.Trace.Ci
             else if (settings.GitUploadEnabled != false)
             {
                 Log.Warning("ITR: Upload git metadata cannot be activated. Agent doesn't support the event platform proxy endpoint.");
-            }
-
-            var benchmarkTraceId = EnvironmentHelpers.GetEnvironmentVariable("DD_CIVISIBILITY_BENCHMARK_TRACEID");
-            var benchmarkSpanId = EnvironmentHelpers.GetEnvironmentVariable("DD_CIVISIBILITY_BENCHMARK_SPANID");
-            if (!string.IsNullOrEmpty(benchmarkTraceId) && !string.IsNullOrEmpty(benchmarkSpanId))
-            {
-                Profiler.Instance.ContextTracker.SetEndpoint(ulong.Parse(benchmarkSpanId), "/benchmark");
             }
         }
 
@@ -459,6 +461,12 @@ namespace Datadog.Trace.Ci
             // By configuration
             if (Settings.Enabled)
             {
+                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("DD_CIVISIBILITY_BENCHMARK_SPANID")))
+                {
+                    Log.Information("CI Visibility Enabled by Configuration (BENCHMARKDOTNET)");
+                    return true;
+                }
+
                 processName ??= GetProcessName();
                 // When is enabled by configuration we only enable it to the testhost child process if the process name is dotnet.
                 if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase) && Environment.CommandLine.IndexOf("testhost.dll", StringComparison.OrdinalIgnoreCase) == -1)

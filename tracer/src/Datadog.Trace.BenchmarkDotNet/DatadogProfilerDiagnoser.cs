@@ -178,6 +178,7 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
             // environment["DD_TRACE_ENABLED"] = "0";
 
             environment[ConfigurationKeys.CIVisibility.Enabled] = "1";
+            environment["DD_CIVISIBILITY_BENCHMARK_NAME"] = parameters.BenchmarkCase.Descriptor.FolderInfo;
             environment["DD_CIVISIBILITY_BENCHMARK_TRACEID"] = traceId.ToString();
             environment["DD_CIVISIBILITY_BENCHMARK_SPANID"] = spanId.ToString();
 
