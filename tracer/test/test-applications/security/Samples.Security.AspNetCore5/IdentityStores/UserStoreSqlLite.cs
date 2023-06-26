@@ -71,7 +71,7 @@ public class UserStoreSqlLite : UserStoreBase<IdentityUser, string, IdentityUser
 
     public override Task<IdentityResult> CreateAsync(IdentityUser user, CancellationToken cancellationToken = new CancellationToken())
     {
-        var res = DatabaseHelper.ExecuteNonQuery(_configuration, $"insert into AspNetUsers(Id, Email, NormalizedEmail, EmailConfirmed, PasswordHash, TwoFactorEnabled, UserName, NormalizedUserName, PhoneNumberConfirmed, LockoutEnabled, AccessFailedCount ) Values ('{Guid.NewGuid().ToString()}', '{user.Email}', '{user.NormalizedEmail}', '{(user.EmailConfirmed ? 1 : 0)}', '{user.PasswordHash}', {(user.TwoFactorEnabled ? 1 : 0)}, '{user.UserName}', '{user.NormalizedUserName}', '0', 1, 0)");
+        var res = DatabaseHelper.ExecuteNonQuery(_configuration, $"insert into AspNetUsers(Id, Email, NormalizedEmail, EmailConfirmed, PasswordHash, TwoFactorEnabled, UserName, NormalizedUserName, PhoneNumberConfirmed, LockoutEnabled, AccessFailedCount, ConcurrencyStamp, SecurityStamp ) Values ('{Guid.NewGuid().ToString()}', '{user.Email}', '{user.NormalizedEmail}', '{(user.EmailConfirmed ? 1 : 0)}', '{user.PasswordHash}', {(user.TwoFactorEnabled ? 1 : 0)}, '{user.UserName}', '{user.NormalizedUserName}', '0', 1, 0, '{user.ConcurrencyStamp}', '{user.SecurityStamp}')");
         return Task.FromResult(res == 1 ? IdentityResult.Success : IdentityResult.Failed());
     }
 
@@ -87,7 +87,7 @@ public class UserStoreSqlLite : UserStoreBase<IdentityUser, string, IdentityUser
         if (first is not null)
         {
             var item = (IDictionary<string, object>)first;
-            return Task.FromResult(new IdentityUser { Email = item["Email"]?.ToString(), Id = item["Id"]?.ToString() });
+            return Task.FromResult(FromDicToUser(item));
         }
 
         return null;
@@ -105,21 +105,26 @@ public class UserStoreSqlLite : UserStoreBase<IdentityUser, string, IdentityUser
         var res = rows.FirstOrDefault();
         if (res is IDictionary<string, object> user)
         {
-            return Task.FromResult(
-                new IdentityUser
-                {
-                    UserName = user["UserName"]?.ToString(),
-                    NormalizedUserName = user["NormalizedUserName"]?.ToString(),
-                    Email = user["Email"]?.ToString(),
-                    NormalizedEmail = user["NormalizedEmail"]?.ToString(),
-                    PasswordHash = user["PasswordHash"]?.ToString(),
-                    SecurityStamp = user["SecurityStamp"]?.ToString(),
-                    Id = user["Id"]?.ToString(),
-                    EmailConfirmed = user["EmailConfirmed"]?.ToString() == "1"
-                });
+            return Task.FromResult(FromDicToUser(user));
         }
 
         return Task.FromResult<IdentityUser>(null);
+    }
+
+    private static IdentityUser FromDicToUser(IDictionary<string, object> user)
+    {
+        return new IdentityUser
+        {
+            UserName = user["UserName"]?.ToString(),
+            NormalizedUserName = user["NormalizedUserName"]?.ToString(),
+            Email = user["Email"]?.ToString(),
+            NormalizedEmail = user["NormalizedEmail"]?.ToString(),
+            PasswordHash = user["PasswordHash"]?.ToString(),
+            SecurityStamp = user["SecurityStamp"]?.ToString(),
+            ConcurrencyStamp = user["ConcurrencyStamp"]?.ToString(),
+            Id = user["Id"]?.ToString(),
+            EmailConfirmed = user["EmailConfirmed"]?.ToString() == "1"
+        };
     }
 
     public override Task<IdentityResult> UpdateAsync(IdentityUser user, CancellationToken cancellationToken = new CancellationToken())
