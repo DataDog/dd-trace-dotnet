@@ -140,6 +140,8 @@ namespace Datadog.Trace.AppSec
 
         internal bool TrackUserEvents => Enabled && Settings.UserEventsAutomatedTracking != "disabled";
 
+        internal bool IsExtendedUserTrackingEnabled => Settings.UserEventsAutomatedTracking == SecuritySettings.UserTrackingExtendedMode;
+
         internal void SubscribeToChanges(params string[] productNames)
         {
             if (_rcmSubscription is not null)

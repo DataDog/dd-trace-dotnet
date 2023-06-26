@@ -16,8 +16,10 @@ namespace Datadog.Trace.Tests.Telemetry.Collectors;
 
 public class MetricsTelemetryCollectorTests
 {
-    [Fact]
-    public void AllMetricsAreReturned()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("1.2.3")]
+    public void AllMetricsAreReturned(string wafVersion)
     {
         var collector = new MetricsTelemetryCollector();
         collector.Record(PublicApiUsage.Tracer_Configure);
@@ -28,10 +30,20 @@ public class MetricsTelemetryCollectorTests
         collector.RecordCountSpanCreated(MetricTags.IntegrationName.Aerospike);
         collector.RecordCountSpanDropped(MetricTags.DropReason.P0Drop, 23);
         collector.RecordCountLogCreated(MetricTags.LogLevel.Debug, 3);
+        collector.RecordCountWafInit(4);
+        collector.RecordCountWafRequests(MetricTags.WafAnalysis.Normal, 5);
         collector.RecordGaugeStatsBuckets(234);
         collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Total, 23);
         collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Total, 46);
         collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Managed, 52);
+
+        var expectedWafTag = "waf_version:unknown";
+
+        if (wafVersion is not null)
+        {
+            collector.SetWafVersion(wafVersion);
+            expectedWafTag = $"waf_version:{wafVersion}";
+        }
 
         using var scope = new AssertionScope();
 
@@ -105,6 +117,24 @@ public class MetricsTelemetryCollectorTests
                 Tags = new[] { "level:debug" },
                 Common = true,
                 Namespace = NS.General,
+            },
+            new
+            {
+                Metric = Count.WafInit.GetName(),
+                Points = new[] { new { Value = 4 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { expectedWafTag },
+                Common = true,
+                Namespace = NS.ASM,
+            },
+            new
+            {
+                Metric = Count.WafRequests.GetName(),
+                Points = new[] { new { Value = 5 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { expectedWafTag, "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:false" },
+                Common = true,
+                Namespace = NS.ASM,
             },
             new
             {

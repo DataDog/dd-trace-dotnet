@@ -28,8 +28,9 @@ namespace Samples.Security.AspNetCore5.Models
         public class InputModel
         {
             [Required]
-            [EmailAddress]
-            public string Email { get; set; }
+            [Display(Name = "Username")]
+
+            public string UserName { get; set; }
 
             [Required]
             [DataType(DataType.Password)]

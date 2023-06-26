@@ -19,6 +19,8 @@ namespace Datadog.Trace.AppSec
 {
     internal class SecuritySettings
     {
+        public const string UserTrackingExtendedMode = "extended";
+        public const string UserTrackingSafeMode = "safe";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecuritySettings>();
 
         public SecuritySettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
@@ -27,7 +29,7 @@ namespace Datadog.Trace.AppSec
             var config = new ConfigurationBuilder(source, telemetry);
             BlockedHtmlTemplate = config
                                  .WithKeys(ConfigurationKeys.AppSec.HtmlBlockedTemplate)
-                                 .AsString(SecurityConstants.BlockedHtmlTemplate);
+                                 .AsRedactedString(SecurityConstants.BlockedHtmlTemplate); // Redacted because it's huge
 
             BlockedJsonTemplate = config
                                  .WithKeys(ConfigurationKeys.AppSec.JsonBlockedTemplate)
@@ -68,10 +70,11 @@ namespace Datadog.Trace.AppSec
             UserEventsAutomatedTracking = config
                                          .WithKeys(ConfigurationKeys.AppSec.UserEventsAutomatedTracking)
                                          .AsString(
-                                              "safe",
-                                              val => val.Equals("safe", StringComparison.OrdinalIgnoreCase)
-                                                  || val.Equals("disabled", StringComparison.OrdinalIgnoreCase)
-                                                  || val.Equals("extended", StringComparison.OrdinalIgnoreCase))
+                                              UserTrackingSafeMode,
+                                              val =>
+                                                  val.Equals("disabled", StringComparison.OrdinalIgnoreCase)
+                                               || val.Equals(UserTrackingSafeMode, StringComparison.OrdinalIgnoreCase)
+                                               || val.Equals(UserTrackingExtendedMode, StringComparison.OrdinalIgnoreCase))
                                          .ToLowerInvariant();
         }
 
