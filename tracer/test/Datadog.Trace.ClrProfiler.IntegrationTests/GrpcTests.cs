@@ -399,7 +399,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     static void FixVerySlowClientSpans(IImmutableList<MockSpan> spans)
                     {
                         var verySlowGrpcClientSpans = spans
-                                                    .Where(x => x.Name == "grpc.request" && x.Resource.EndsWith("VerySlow") && x.Tags["span.kind"] == "client")
+                                                    .Where(x => x.Type == SpanTypes.Grpc && x.Resource.EndsWith("VerySlow") && x.Tags["span.kind"] == "client")
                                                     .ToList();
 
                         // Grpc.Core 2.45.0 started using very different paths and messages in the
