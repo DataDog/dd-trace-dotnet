@@ -622,7 +622,7 @@ public class StringAspects
     public static string Remove(string target, int startIndex)
     {
         string result = target.Remove(startIndex);
-        OnStringRemove(target, result, startIndex, target.Length);
+        PropagationModuleImpl.OnStringRemove(target, result, startIndex, target.Length);
         return result;
     }
 
@@ -637,7 +637,7 @@ public class StringAspects
     public static string Remove(string target, int startIndex, int count)
     {
         string result = target.Remove(startIndex, count);
-        OnStringRemove(target, result, startIndex, startIndex + count);
+        PropagationModuleImpl.OnStringRemove(target, result, startIndex, startIndex + count);
         return result;
     }
 

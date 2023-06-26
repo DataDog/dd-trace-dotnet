@@ -83,14 +83,17 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
                     value = int.MaxValue;
                 }
 
-                if (value > 0 && ((PublicApiUsage)i).ToStringFast() is { } metricName)
+                if (value > 0 && ((PublicApiUsage)i).ToStringFast() is { } tagName)
                 {
                     data.Add(
                         new MetricData(
-                            metricName,
+                            "public_api",
                             points: new MetricSeries { new(timestamp, value) },
                             common: false,
-                            type: TelemetryMetricType.Count));
+                            type: TelemetryMetricType.Count)
+                        {
+                            Tags = new[] { tagName }, // Annoying, should try to optimise this
+                        });
                 }
             }
         }
@@ -119,7 +122,11 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
                                 metricName,
                                 points: new MetricSeries { new(timestamp, value) },
                                 common: metric.IsCommon(),
-                                type: TelemetryMetricType.Count) { Tags = metricKey.Tags });
+                                type: TelemetryMetricType.Count)
+                            {
+                                Namespace = metric.GetNamespace(),
+                                Tags = metricKey.Tags,
+                            });
                     }
 
                     index--;
@@ -145,7 +152,11 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
                                 metricName,
                                 points: new MetricSeries { new(timestamp, value) },
                                 common: metric.IsCommon(),
-                                type: TelemetryMetricType.Gauge) { Tags = metricKey.Tags });
+                                type: TelemetryMetricType.Gauge)
+                            {
+                                Namespace = metric.GetNamespace(),
+                                Tags = metricKey.Tags
+                            });
                     }
 
                     index--;
@@ -188,7 +199,11 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
                         new DistributionMetricData(
                             metricName,
                             points: points,
-                            common: metric.IsCommon()) { Tags = metricKey.Tags, });
+                            common: metric.IsCommon())
+                        {
+                            Namespace = metric.GetNamespace(),
+                            Tags = metricKey.Tags,
+                        });
                 }
 
                 index--;
@@ -269,22 +284,22 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
 
         public void Clear()
         {
-            for (var i = 0; i < PublicApiUsageExtensions.Length; i++)
+            for (var i = 0; i < PublicApiCounts.Length; i++)
             {
                 PublicApiCounts[i] = 0;
             }
 
-            for (var i = 0; i < CountExtensions.Length; i++)
+            for (var i = 0; i < Counts.Length; i++)
             {
                 Counts[i].Value = 0;
             }
 
-            for (var i = 0; i < GaugeExtensions.Length; i++)
+            for (var i = 0; i < Gauges.Length; i++)
             {
                 Gauges[i].Value = 0;
             }
 
-            for (var i = 0; i < DistributionExtensions.Length; i++)
+            for (var i = 0; i < Distributions.Length; i++)
             {
                 while (Distributions[i].Values.TryDequeue(out _)) { }
             }

@@ -201,6 +201,7 @@ namespace Datadog.Trace.Debugger
                                     fetchProbeStatus.Add(new FetchProbeStatus(probe.Id));
                                     break;
                                 case LiveProbeResolveStatus.Unbound:
+                                    Log.Information("ProbeID {ProbeID} is unbound.", probe.Id);
                                     _unboundProbes.Add(probe);
 
                                     fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, new ProbeStatus(probe.Id, Sink.Models.Status.RECEIVED, errorMessage: null)));
@@ -329,13 +330,39 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
+                // Initialize these lists only when there is at least one unbound probe that becomes bound, to reduce unnecessary allocations.
+                List<NativeLineProbeDefinition> lineProbes = null;
+                List<ProbeDefinition> noLongerUnboundProbes = null;
+
                 foreach (var unboundProbe in _unboundProbes)
                 {
-                    var result = _lineProbeResolver.TryResolveLineProbe(unboundProbe, out var bytecodeLocation);
+                    var result = _lineProbeResolver.TryResolveLineProbe(unboundProbe, out var location);
                     if (result.Status == LiveProbeResolveStatus.Bound)
                     {
-                        // TODO: Install the line probe.
+                        lineProbes ??= new List<NativeLineProbeDefinition>();
+                        noLongerUnboundProbes ??= new List<ProbeDefinition>();
+
+                        noLongerUnboundProbes.Add(unboundProbe);
+                        lineProbes.Add(new NativeLineProbeDefinition(location.ProbeDefinition.Id, location.MVID, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
                     }
+                }
+
+                if (lineProbes?.Any() == true)
+                {
+                    Log.Information<int>("LiveDebugger.CheckUnboundProbes: {Count} unbound probes became bound.", noLongerUnboundProbes.Count);
+                    DebuggerNativeMethods.InstrumentProbes(Array.Empty<NativeMethodProbeDefinition>(), lineProbes.ToArray(), Array.Empty<NativeSpanProbeDefinition>(), Array.Empty<NativeRemoveProbeRequest>());
+
+                    foreach (var boundProbe in noLongerUnboundProbes)
+                    {
+                        _unboundProbes.Remove(boundProbe);
+                    }
+
+                    // Update probe statuses
+
+                    var probeIds = noLongerUnboundProbes.Select(p => p.Id).ToArray();
+                    var newProbeStatuses = noLongerUnboundProbes.Select(p => new FetchProbeStatus(p.Id)).ToArray();
+
+                    _probeStatusPoller.UpdateProbes(probeIds, newProbeStatuses);
                 }
             }
         }

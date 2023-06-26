@@ -1,6 +1,6 @@
 ﻿{
   "api_version": "v2",
-  "naming_schema_version": 1,
+  "naming_schema_version": "1",
   "request_type": "app-started",
   "tracer_time": 1628099086,
   "runtime_id": "20338dfd-f700-4e5c-b3f6-0d470f054ae8",
