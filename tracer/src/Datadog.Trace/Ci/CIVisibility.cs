@@ -152,7 +152,7 @@ namespace Datadog.Trace.Ci
             var benchmarkSpanId = EnvironmentHelpers.GetEnvironmentVariable("DD_CIVISIBILITY_BENCHMARK_SPANID");
             if (!string.IsNullOrEmpty(benchmarkTraceId) && !string.IsNullOrEmpty(benchmarkSpanId))
             {
-                Profiler.Instance.ContextTracker.SetEndpoint(ulong.Parse(benchmarkSpanId), "benchmark");
+                Profiler.Instance.ContextTracker.SetEndpoint(ulong.Parse(benchmarkSpanId), "/benchmark");
             }
         }
 
