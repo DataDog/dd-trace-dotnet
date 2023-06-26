@@ -180,9 +180,6 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
 
         lock (_syncRoot)
         {
-            _targetsVersion = response.Targets.Signed.Version;
-            _backendClientState = response.Targets.Signed.Custom?.OpaqueBackendState;
-
             var configByProducts = new Dictionary<string, List<RemoteConfiguration>>();
             var receivedPaths = new List<string>();
 
@@ -278,6 +275,9 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
                         break;
                 }
             }
+
+            _targetsVersion = response.Targets.Signed.Version;
+            _backendClientState = response.Targets.Signed.Custom?.OpaqueBackendState;
         }
     }
 
