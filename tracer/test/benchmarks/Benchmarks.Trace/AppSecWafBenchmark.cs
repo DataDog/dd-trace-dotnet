@@ -37,7 +37,31 @@ public class AppSecWafBenchmark
             _ => throw new Exception($"RID not detected or supported: {fDesc.OSPlatform} / {fDesc.ProcessArchitecture}")
         };
 
-        Environment.SetEnvironmentVariable("DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH", Path.Combine(Environment.CurrentDirectory, $"../../../../shared/bin/monitoring-home/{rid}/"));
+        var folder = new DirectoryInfo(Environment.CurrentDirectory);
+        var path = Environment.CurrentDirectory;
+        while (folder.Exists)
+        {
+            path = Path.Combine(folder.FullName, "./shared/bin/monitoring-home");
+            if (Directory.Exists(path))
+            {
+                break;
+            }
+
+            if (folder == folder.Parent)
+            {
+                break;
+            }
+
+            folder = folder.Parent;
+        }
+        
+        path = Path.Combine(path, $"./{rid}/");
+        if (!Directory.Exists(path))
+        {
+            throw new DirectoryNotFoundException($"The Path: '{path}' doesn't exist.");
+        }
+
+        Environment.SetEnvironmentVariable("DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH", path);
         var libInitResult = WafLibraryInvoker.Initialize();
         if (!libInitResult.Success)
         {
