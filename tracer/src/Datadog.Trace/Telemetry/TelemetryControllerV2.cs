@@ -38,7 +38,7 @@ internal class TelemetryControllerV2 : ITelemetryController
     private readonly TaskCompletionSource<bool> _processExit = new();
     private readonly Task _flushTask;
     private bool _fatalError;
-    private int? _namingVersion;
+    private string? _namingVersion;
     private bool _appStartedSent;
 
     internal TelemetryControllerV2(
@@ -90,7 +90,7 @@ internal class TelemetryControllerV2 : ITelemetryController
         // need to keep it around
         settings.Telemetry.CopyTo(_configuration);
         _application.RecordTracerSettings(settings, defaultServiceName);
-        _namingVersion = (int)settings.MetadataSchemaVersion;
+        _namingVersion = ((int)settings.MetadataSchemaVersion).ToString();
     }
 
     public void Start()
