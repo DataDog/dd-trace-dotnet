@@ -16,8 +16,10 @@ namespace Datadog.Trace.Telemetry;
 
 internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
 {
+    private readonly string[] _unknownWafVersionTags = { "waf_version:unknown" };
     private MetricBuffer _buffer;
     private MetricBuffer _reserveBuffer;
+    private string[]? _wafVersionTags;
 
     public MetricsTelemetryCollector()
     {
@@ -50,6 +52,12 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         return new(metricData, distributionData);
     }
 
+    public void SetWafVersion(string wafVersion)
+    {
+        // Setting this an array so we can reuse it for multiple metrics
+        _wafVersionTags = new[] { $"waf_version:{wafVersion}" };
+    }
+
     public void Clear()
     {
         _reserveBuffer.Clear();
@@ -57,7 +65,7 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         buffer.Clear();
     }
 
-    private static List<MetricData>? GetMetricData(int[] publicApis, MetricKey[] counts, MetricKey[] gauges)
+    private List<MetricData>? GetMetricData(int[] publicApis, MetricKey[] counts, MetricKey[] gauges)
     {
         var apiLength = publicApis.Count(x => x > 0);
         var countsLength = counts.Count(x => x.Value > 0);
@@ -117,6 +125,7 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
 
                     if (value > 0 && metric.GetName() is { } metricName)
                     {
+                        var ns = metric.GetNamespace();
                         data.Add(
                             new MetricData(
                                 metricName,
@@ -124,8 +133,8 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
                                 common: metric.IsCommon(),
                                 type: TelemetryMetricType.Count)
                             {
-                                Namespace = metric.GetNamespace(),
-                                Tags = metricKey.Tags,
+                                Namespace = ns,
+                                Tags = GetTags(ns, metricKey.Tags),
                             });
                     }
 
@@ -147,6 +156,7 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
                     var value = metricKey.Value;
                     if (value > 0 && metric.GetName() is { } metricName)
                     {
+                        var ns = metric.GetNamespace();
                         data.Add(
                             new MetricData(
                                 metricName,
@@ -154,8 +164,8 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
                                 common: metric.IsCommon(),
                                 type: TelemetryMetricType.Gauge)
                             {
-                                Namespace = metric.GetNamespace(),
-                                Tags = metricKey.Tags
+                                Namespace = ns,
+                                Tags = GetTags(ns, metricKey.Tags)
                             });
                     }
 
@@ -167,7 +177,7 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         return data;
     }
 
-    private static List<DistributionMetricData>? GetDistributionData(DistributionKey[] distributions)
+    private List<DistributionMetricData>? GetDistributionData(DistributionKey[] distributions)
     {
         var distributionsLength = distributions.Count(x => x.Values.Count > 0);
 
@@ -195,14 +205,15 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
                         points.Add(point);
                     }
 
+                    var ns = metric.GetNamespace();
                     data.Add(
                         new DistributionMetricData(
                             metricName,
                             points: points,
                             common: metric.IsCommon())
                         {
-                            Namespace = metric.GetNamespace(),
-                            Tags = metricKey.Tags,
+                            Namespace = ns,
+                            Tags = GetTags(ns, metricKey.Tags),
                         });
                 }
 
@@ -211,6 +222,24 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         }
 
         return data;
+    }
+
+    private string[]? GetTags(string? ns, string[]? metricKeyTags)
+    {
+        if (ns != MetricNamespaceConstants.ASM)
+        {
+            return metricKeyTags;
+        }
+
+        if (metricKeyTags is null)
+        {
+            return _wafVersionTags ?? _unknownWafVersionTags;
+        }
+
+        var wafVersionTag = (_wafVersionTags ?? _unknownWafVersionTags)[0];
+
+        metricKeyTags[0] = wafVersionTag;
+        return metricKeyTags;
     }
 
     private record struct MetricKey

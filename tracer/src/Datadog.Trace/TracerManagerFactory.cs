@@ -133,6 +133,7 @@ namespace Datadog.Trace
 
             var security = Security.Instance;
             telemetry.RecordSecuritySettings(security.Settings);
+            TelemetryFactory.Metrics.SetWafVersion(security.DdlibWafVersion);
             telemetry.RecordIastSettings(Datadog.Trace.Iast.Iast.Instance.Settings);
             ErrorData? initError = !string.IsNullOrEmpty(security.InitializationError)
                                        ? new ErrorData(TelemetryErrorCode.AppsecConfigurationError, security.InitializationError)
