@@ -18,7 +18,7 @@ public class TelemetryDataBuilderV2Tests
 {
     private readonly ApplicationTelemetryDataV2 _application;
     private readonly HostTelemetryDataV2 _host;
-    private readonly int? _namingSchemaVersion = 1;
+    private readonly string _namingSchemaVersion = "1";
 
     public TelemetryDataBuilderV2Tests()
     {

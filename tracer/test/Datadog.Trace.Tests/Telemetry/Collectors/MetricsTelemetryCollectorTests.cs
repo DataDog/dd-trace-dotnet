@@ -3,11 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Linq;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
+using NS = Datadog.Trace.Telemetry.MetricNamespaceConstants;
 
 namespace Datadog.Trace.Tests.Telemetry.Collectors;
 
@@ -24,6 +27,7 @@ public class MetricsTelemetryCollectorTests
         collector.RecordCountIntegrationsError(MetricTags.IntegrationName.Aerospike, MetricTags.InstrumentationError.Invoker);
         collector.RecordCountSpanCreated(MetricTags.IntegrationName.Aerospike);
         collector.RecordCountSpanDropped(MetricTags.DropReason.P0Drop, 23);
+        collector.RecordCountLogCreated(MetricTags.LogLevel.Debug, 3);
         collector.RecordGaugeStatsBuckets(234);
         collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Total, 23);
         collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Total, 46);
@@ -41,17 +45,21 @@ public class MetricsTelemetryCollectorTests
         {
             new
             {
-                Metric = PublicApiUsage.Tracer_Configure.ToStringFast(),
+                Metric = "public_api",
                 Points = new[] { new { Value = 2 } },
                 Type = TelemetryMetricType.Count,
-                Tags = (string[])null,
+                Tags = new[] { PublicApiUsage.Tracer_Configure.ToStringFast() },
+                Common = false,
+                Namespace = (string)null,
             },
             new
             {
-                Metric = PublicApiUsage.Tracer_Ctor.ToStringFast(),
+                Metric = "public_api",
                 Points = new[] { new { Value = 1 } },
                 Type = TelemetryMetricType.Count,
-                Tags = (string[])null,
+                Tags = new[] { PublicApiUsage.Tracer_Ctor.ToStringFast() },
+                Common = false,
+                Namespace = (string)null,
             },
             new
             {
@@ -59,6 +67,8 @@ public class MetricsTelemetryCollectorTests
                 Points = new[] { new { Value = 1 } },
                 Type = TelemetryMetricType.Count,
                 Tags = new[] { "integrations_name:aerospike", "error_type:invoker" },
+                Common = true,
+                Namespace = (string)null,
             },
             new
             {
@@ -66,6 +76,8 @@ public class MetricsTelemetryCollectorTests
                 Points = new[] { new { Value = 1 } },
                 Type = TelemetryMetricType.Count,
                 Tags = new[] { "integrations_name:aerospike" },
+                Common = true,
+                Namespace = (string)null,
             },
             new
             {
@@ -73,6 +85,8 @@ public class MetricsTelemetryCollectorTests
                 Points = new[] { new { Value = 15 } },
                 Type = TelemetryMetricType.Count,
                 Tags = (string[])null,
+                Common = true,
+                Namespace = (string)null,
             },
             new
             {
@@ -80,6 +94,17 @@ public class MetricsTelemetryCollectorTests
                 Points = new[] { new { Value = 23 } },
                 Type = TelemetryMetricType.Count,
                 Tags = new[] { "reason:p0_drop" },
+                Common = true,
+                Namespace = (string)null,
+            },
+            new
+            {
+                Metric = Count.LogCreated.GetName(),
+                Points = new[] { new { Value = 3 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "level:debug" },
+                Common = true,
+                Namespace = NS.General,
             },
             new
             {
@@ -87,6 +112,8 @@ public class MetricsTelemetryCollectorTests
                 Points = new[] { new { Value = 234 } },
                 Type = TelemetryMetricType.Gauge,
                 Tags = (string[])null,
+                Common = true,
+                Namespace = (string)null,
             },
         });
 
@@ -97,12 +124,16 @@ public class MetricsTelemetryCollectorTests
                 Metric = Distribution.InitTime.GetName(),
                 Tags = new[] { "component:total" },
                 Points = new[] { 23, 46 },
+                Common = true,
+                Namespace = NS.General,
             },
             new
             {
                 Metric = Distribution.InitTime.GetName(),
                 Tags = new[] { "component:managed" },
                 Points = new[] {  52 },
+                Common = true,
+                Namespace = NS.General,
             },
         });
     }

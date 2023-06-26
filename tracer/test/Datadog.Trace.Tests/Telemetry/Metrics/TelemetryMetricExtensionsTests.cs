@@ -6,7 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Processors;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
@@ -17,9 +20,7 @@ namespace Datadog.Trace.Tests.Telemetry.Metrics;
 public class TelemetryMetricExtensionsTests
 {
     public static IEnumerable<object[]> AllEnums
-        => GetEnums<PublicApiUsage>()
-          .Select(x => new object[] { x, x.ToStringFast() })
-          .Concat(GetEnums<Count>().Select(x => new object[] { x, x.GetName() }))
+        => GetEnums<Count>().Select(x => new object[] { x, x.GetName() })
           .Concat(GetEnums<Gauge>().Select(x => new object[] { x, x.GetName() }))
           .Concat(GetEnums<Distribution>().Select(x => new object[] { x, x.GetName() }))
           .ToList();
@@ -41,6 +42,14 @@ public class TelemetryMetricExtensionsTests
     {
         _ = api;
         metricName.Should().Be(metricName.ToLowerInvariant());
+    }
+
+    [Theory]
+    [MemberData(nameof(AllEnums))]
+    public void MustHaveNormalizedMetricNames(int api, string metricName)
+    {
+        _ = api;
+        metricName.Should().Be(TraceUtil.NormalizeMetricName(metricName, limit: 100));
     }
 
     [Fact]
@@ -70,6 +79,65 @@ public class TelemetryMetricExtensionsTests
            .OnlyHaveUniqueItems();
     }
 
+    [Fact]
+    public void MustHaveValidTagsForEveryPublicApi()
+    {
+        foreach (var tag in GetEnums<PublicApiUsage>().Select(x => x.ToStringFast()))
+        {
+            AssertValidTags(new[] { tag });
+        }
+    }
+
+    [Fact]
+    public void MustHaveValidTagsForEveryCount()
+    {
+        var keys = typeof(MetricsTelemetryCollector).GetMethod("GetCountBuffer", BindingFlags.Static | BindingFlags.NonPublic);
+        CheckTagsAreValid(keys);
+    }
+
+    [Fact]
+    public void MustHaveValidTagsForEveryGauge()
+    {
+        var keys = typeof(MetricsTelemetryCollector).GetMethod("GetGaugeBuffer", BindingFlags.Static | BindingFlags.NonPublic);
+        CheckTagsAreValid(keys);
+    }
+
+    [Fact]
+    public void MustHaveValidTagsForEveryDistribution()
+    {
+        var keys = typeof(MetricsTelemetryCollector).GetMethod("GetDistributionBuffer", BindingFlags.Static | BindingFlags.NonPublic);
+        CheckTagsAreValid(keys);
+    }
+
+    private static void CheckTagsAreValid(MethodInfo getMetricKeys)
+    {
+        var values = (Array)getMetricKeys.Invoke(null, Array.Empty<object>());
+        for (var i = 0; i < values.Length; i++)
+        {
+            var duckTyped = values.GetValue(i).DuckCast<MetricKeyDuckType>();
+            var tags = duckTyped.Tags;
+            if (tags is null)
+            {
+                continue;
+            }
+
+            AssertValidTags(tags);
+        }
+    }
+
+    private static void AssertValidTags(string[] tags)
+        => tags.Should()
+               .OnlyContain(x => x.ToLowerInvariant() == x, "should all be lowercase")
+               .And.OnlyContain(x => x.Trim() == x, "should not have any whitespace")
+               .And.OnlyContain(x => TraceUtil.NormalizeTag(x) == x, "should match normalized version");
+
     private static IEnumerable<T> GetEnums<T>()
         => Enum.GetValues(typeof(T)).Cast<T>();
+
+    [DuckCopy]
+    public struct MetricKeyDuckType
+    {
+        [DuckField]
+        public string[] Tags;
+    }
 }

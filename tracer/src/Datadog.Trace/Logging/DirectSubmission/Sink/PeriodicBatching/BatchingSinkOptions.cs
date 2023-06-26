@@ -65,9 +65,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         public TimeSpan CircuitBreakPeriod { get; }
 
         /// <summary>
-        /// Gets maximum number of events to hold in the sink's internal queue, or <c>null</c>
-        /// for an unbounded queue.
+        /// Gets maximum number of events to hold in the sink's internal queue
         /// </summary>
-        public int? QueueLimit { get; }
+        public int QueueLimit { get; }
     }
 }

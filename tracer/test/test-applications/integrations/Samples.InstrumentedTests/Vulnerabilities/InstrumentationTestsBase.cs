@@ -10,6 +10,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using Castle.Core.Internal;
 using FluentAssertions;
 
@@ -181,6 +182,11 @@ public class InstrumentationTestsBase
         return true;
     }
 
+    protected StringBuilder GetTaintedStringBuilder(string init)
+    {
+        return AddTainted(new StringBuilder(init)) as StringBuilder;
+    }
+
     private List<object> GetGeneratedVulnerabilities()
     {
         var vulnerabilityBatchField = _vulnerabilityBatchField.GetValue(_iastRequestContext);
@@ -208,14 +214,6 @@ public class InstrumentationTestsBase
         return spans;
     }
 
-    protected void AssertNotTaintedWithOriginalCallCheck(string instrumented, Expression<Func<Object>> notInstrumented)
-    {
-        AssertNotTainted(instrumented);
-        var notInstrumentedCompiled = notInstrumented.Compile();
-        var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
-        instrumented.Should().Be(notInstrumentedResult.ToString());
-    }
-
     protected void AssertTaintedFormatWithOriginalCallCheck(object expected, object instrumented, Expression<Func<Object>> notInstrumented)
     {
         AssertTainted(instrumented);
@@ -223,6 +221,15 @@ public class InstrumentationTestsBase
         var notInstrumentedCompiled = notInstrumented.Compile();
         var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
         instrumented.ToString().Should().Be(notInstrumentedResult.ToString());
+    }
+
+    protected void AssertUntaintedWithOriginalCallCheck(Action instrumented, Expression<Action> notInstrumented)
+    {
+        var instrumentedResult = ExecuteFunc(instrumented);
+        var notInstrumentedCompiled = notInstrumented.Compile();
+        var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
+        instrumentedResult.ToString().Should().Be(notInstrumentedResult.ToString());
+        AssertNotTainted(instrumentedResult);
     }
 
     protected void AssertUntaintedWithOriginalCallCheck(Func<object> instrumented, Expression<Func<object>> notInstrumented)
@@ -241,6 +248,20 @@ public class InstrumentationTestsBase
         var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
         instrumented.ToString().Should().Be(notInstrumentedResult.ToString());
         AssertNotTainted(instrumented);
+    }
+
+    private static object ExecuteFunc(Action function)
+    {
+        try
+        {
+            function.Invoke();
+        }
+        catch (Exception ex)
+        {
+            return ex.GetType().FullName;
+        }
+
+        return null;
     }
 
     private static object ExecuteFunc(Func<Object> function)
