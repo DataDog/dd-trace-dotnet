@@ -58,7 +58,7 @@ namespace Datadog.Trace.Tagging
                         ? "peer.service"
                         : DbName is not null
                             ? "db.instance"
-                            : "network.destination.name";
+                            : "out.host";
             }
         }
     }

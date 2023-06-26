@@ -18,7 +18,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("db.name")
                 .IsPresent("db.type")
                 .IsPresent("peer.service")
-                .MatchesOneOf("_dd.peer.service.source", "db.instance", "network.destination.name", "peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "db.instance", "out.host", "peer.service")
                 .Matches("component", "AdoNet")
                 .Matches("span.kind", "client"));
 
@@ -174,7 +174,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("db.type", "cosmosdb")
                 .IsPresent("out.host")
                 .IsPresent("peer.service")
-                .MatchesOneOf("_dd.peer.service.source", "db.instance", "network.destination.name", "peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "db.instance", "out.host", "peer.service")
                 .Matches("component", "CosmosDb")
                 .Matches("span.kind", "client"));
 
@@ -329,7 +329,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.host")
                 .Matches("db.type", "mysql")
                 .IsPresent("peer.service")
-                .MatchesOneOf("_dd.peer.service.source", "db.instance", "network.destination.name", "peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "db.instance", "out.host", "peer.service")
                 .Matches("component", "MySql")
                 .Matches("span.kind", "client"));
 
@@ -342,7 +342,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.host")
                 .Matches("db.type", "postgres")
                 .IsPresent("peer.service")
-                .MatchesOneOf("_dd.peer.service.source", "db.instance", "network.destination.name", "peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "db.instance", "out.host", "peer.service")
                 .Matches("component", "Npgsql")
                 .Matches("span.kind", "client"));
 
@@ -367,7 +367,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("db.name")
                 .Matches("db.type", "oracle")
                 .IsPresent("peer.service")
-                .MatchesOneOf("_dd.peer.service.source", "db.instance", "network.destination.name", "peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "db.instance", "out.host", "peer.service")
                 .Matches("component", "Oracle")
                 .Matches("span.kind", "client"));
 
@@ -449,7 +449,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.host")
                 .Matches("db.type", "sqlite")
                 .IsPresent("peer.service")
-                .MatchesOneOf("_dd.peer.service.source", "db.instance", "network.destination.name", "peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "db.instance", "out.host", "peer.service")
                 .Matches("component", "Sqlite")
                 .Matches("span.kind", "client"));
 
@@ -462,7 +462,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.host")
                 .Matches("db.type", "sql-server")
                 .IsPresent("peer.service")
-                .MatchesOneOf("_dd.peer.service.source", "db.instance", "network.destination.name", "peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "db.instance", "out.host", "peer.service")
                 .Matches("component", "SqlClient")
                 .Matches("span.kind", "client")
                 .IsOptional("_dd.dbm_trace_injected"));
