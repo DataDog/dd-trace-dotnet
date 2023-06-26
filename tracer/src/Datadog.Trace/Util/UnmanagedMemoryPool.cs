@@ -45,10 +45,14 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
             ThrowObjectDisposedException();
         }
 
-        var inst = Interlocked.Exchange(ref _firstItem, IntPtr.Zero);
+        var inst = _firstItem;
         if (inst == IntPtr.Zero)
         {
             inst = RentSlow();
+        }
+        else
+        {
+            _firstItem = IntPtr.Zero;
         }
 
         return inst;
@@ -60,10 +64,11 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
         var length = _length;
         for (var i = _initialSearchIndex; i < length; i++)
         {
-            var inst = Interlocked.Exchange(ref items[i], IntPtr.Zero);
+            var inst = items[i];
             if (inst != IntPtr.Zero)
             {
                 _initialSearchIndex = i + 1;
+                items[i] = IntPtr.Zero;
                 return inst;
             }
         }
@@ -78,9 +83,14 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
             ThrowObjectDisposedException();
         }
 
-        if (Interlocked.CompareExchange(ref _firstItem, block, IntPtr.Zero) != IntPtr.Zero)
+        var inst = _firstItem;
+        if (inst != IntPtr.Zero)
         {
             ReturnSlow(block);
+        }
+        else
+        {
+            _firstItem = block;
         }
     }
 
@@ -90,8 +100,9 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
         var length = _length;
         for (var i = 0; i < length; i++)
         {
-            if (Interlocked.CompareExchange(ref items[i], block, IntPtr.Zero) == IntPtr.Zero)
+            if (items[i] == IntPtr.Zero)
             {
+                items[i] = block;
                 _initialSearchIndex = 0;
                 return;
             }
