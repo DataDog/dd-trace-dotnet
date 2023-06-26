@@ -31,7 +31,7 @@ public class FormatProviderForTest : IFormatProvider, ICustomFormatter
 {
     public string Format(string format, object arg, IFormatProvider formatProvider)
     {
-        return (arg.ToString());
+        return (arg.ToString() + "customformat");
     }
 
     public object GetFormat(Type formatType)

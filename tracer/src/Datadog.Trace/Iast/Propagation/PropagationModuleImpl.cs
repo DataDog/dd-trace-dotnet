@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Logging;
@@ -43,6 +44,48 @@ internal static class PropagationModuleImpl
         {
             Log.Error(err, "PropagationModuleImpl.AddTainted exception");
         }
+    }
+
+    /// <summary> Taints a string.Remove operation </summary>
+    /// <param name="target"> original string </param>
+    /// <param name="result"> Result </param>
+    /// <param name="beginIndex"> start index </param>
+    /// <param name="endIndex"> end index </param>
+    /// <returns> result </returns>
+    public static object? OnStringRemove(object? target, object? result, int beginIndex, int endIndex)
+    {
+        try
+        {
+            if (result is null || target is null)
+            {
+                return result;
+            }
+
+            var iastContext = IastModule.GetIastContext();
+            if (iastContext == null)
+            {
+                return result;
+            }
+
+            var taintedObjects = iastContext.GetTaintedObjects();
+            var taintedSelf = PropagationModuleImpl.GetTainted(taintedObjects, target);
+            if (taintedSelf == null)
+            {
+                return result;
+            }
+
+            var newRanges = Ranges.ForRemove(beginIndex, endIndex, taintedSelf.Ranges);
+            if (newRanges != null && newRanges.Length > 0)
+            {
+                taintedObjects.Taint(result, newRanges);
+            }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "PropagationModuleImpl.OnStringRemove exception {Exception}", err.Message);
+        }
+
+        return result;
     }
 
     public static object? PropagateResultWhenInputTainted(string result, object? firstInput, object? secondInput = null, object? thirdInput = null, object? fourthInput = null)
@@ -331,5 +374,14 @@ internal static class PropagationModuleImpl
         }
 
         return newRanges;
+    }
+
+    // Helper method to convert IEnumerable to IEnumerable<object>
+    public static IEnumerable<object?> EnumerateAsObjects(IEnumerable enumerable)
+    {
+        foreach (var item in enumerable)
+        {
+            yield return item;
+        }
     }
 }
