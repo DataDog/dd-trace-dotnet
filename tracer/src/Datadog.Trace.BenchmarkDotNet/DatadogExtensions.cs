@@ -21,6 +21,7 @@ public static class DatadogExtensions
     {
         return config.HideColumns(DatadogColumnHidingRule.Default)
                      .AddLogger(DatadogLogger.Default)
-                     .AddDiagnoser(DatadogDiagnoser.Default);
+                     .AddDiagnoser(DatadogDiagnoser.Default)
+                     .AddDiagnoser(DatadogProfilerDiagnoser.Default);
     }
 }
