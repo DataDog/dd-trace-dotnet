@@ -48,6 +48,13 @@ namespace Datadog.Trace.Configuration.Schema
             };
         }
 
+        public string GetOutboundCommandOperationName(string messagingSystem)
+            => _version switch
+            {
+                SchemaVersion.V0 => $"{messagingSystem}.command",
+                _ => $"{messagingSystem}.send",
+            };
+
         public string GetOutboundOperationName(string messagingSystem)
             => _version switch
             {
@@ -74,6 +81,13 @@ namespace Datadog.Trace.Configuration.Schema
             {
                 SchemaVersion.V0 when !_peerServiceTagsEnabled => new KafkaTags(SpanKinds.Consumer),
                 _ => new KafkaV1Tags(SpanKinds.Consumer),
+            };
+
+        public MsmqTags CreateMsmqTags(string spanKind)
+            => _version switch
+            {
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new MsmqTags(spanKind),
+                _ => new MsmqV1Tags(spanKind),
             };
     }
 }

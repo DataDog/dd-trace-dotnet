@@ -90,6 +90,44 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Fact]
+        public void MsmqV1Tags_PeerService_PopulatesFromOutHost()
+        {
+            var host = ".";
+            var tags = new MsmqV1Tags(SpanKinds.Consumer);
+
+            tags.Host = host;
+
+            tags.PeerService.Should().Be(host);
+            tags.PeerServiceSource.Should().Be(Trace.Tags.OutHost);
+        }
+
+        [Fact]
+        public void MsmqV1Tags_PeerService_PopulatesFromCustom()
+        {
+            var customService = "client-service";
+            var tags = new MsmqV1Tags(SpanKinds.Consumer);
+
+            tags.SetTag("peer.service", customService);
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void MsmqV1Tags_PeerService_CustomTakesPrecedence()
+        {
+            var customService = "client-service";
+            var host = ".";
+            var tags = new MsmqV1Tags(SpanKinds.Consumer);
+
+            tags.SetTag("peer.service", customService);
+            tags.Host = host;
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
         public void ElasticsearchV1Tags_PeerService_PopulatesFromDestinationHost()
         {
             var hostName = "host";
