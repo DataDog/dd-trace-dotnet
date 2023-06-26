@@ -10,9 +10,10 @@ using System.Threading;
 
 namespace Datadog.Trace.Util;
 
-internal class UnmanagedMemoryPool : IDisposable
+internal unsafe class UnmanagedMemoryPool : IDisposable
 {
-    private readonly IntPtr[] _items;
+    private readonly IntPtr* _items;
+    private readonly int _length;
     private readonly int _blockSize;
     private IntPtr _firstItem;
     private int _initialSearchIndex;
@@ -21,9 +22,15 @@ internal class UnmanagedMemoryPool : IDisposable
     public UnmanagedMemoryPool(int blockSize, int poolSize)
     {
         _blockSize = blockSize;
-        _items = new IntPtr[poolSize];
+        _items = (IntPtr*)Marshal.AllocHGlobal(poolSize * sizeof(IntPtr));
+        _length = poolSize;
         _firstItem = IntPtr.Zero;
         _initialSearchIndex = 0;
+
+        for (var i = 0; i < _length; i++)
+        {
+            _items[i] = IntPtr.Zero;
+        }
     }
 
     ~UnmanagedMemoryPool()
@@ -50,7 +57,8 @@ internal class UnmanagedMemoryPool : IDisposable
     private IntPtr RentSlow()
     {
         var items = _items;
-        for (var i = _initialSearchIndex; i < items.Length; i++)
+        var length = _length;
+        for (var i = _initialSearchIndex; i < length; i++)
         {
             var inst = Interlocked.Exchange(ref items[i], IntPtr.Zero);
             if (inst != IntPtr.Zero)
@@ -79,7 +87,8 @@ internal class UnmanagedMemoryPool : IDisposable
     private void ReturnSlow(IntPtr block)
     {
         var items = _items;
-        for (var i = 0; i < items.Length; i++)
+        var length = _length;
+        for (var i = 0; i < length; i++)
         {
             if (Interlocked.CompareExchange(ref items[i], block, IntPtr.Zero) == IntPtr.Zero)
             {
@@ -106,7 +115,8 @@ internal class UnmanagedMemoryPool : IDisposable
         }
 
         var items = _items;
-        for (var i = 0; i < items.Length; i++)
+        var length = _length;
+        for (var i = 0; i < length; i++)
         {
             if (items[i] != IntPtr.Zero)
             {
@@ -114,6 +124,8 @@ internal class UnmanagedMemoryPool : IDisposable
                 items[i] = IntPtr.Zero;
             }
         }
+
+        Marshal.FreeHGlobal((IntPtr)_items);
 
         _isDisposed = true;
     }
