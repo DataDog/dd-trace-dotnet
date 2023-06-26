@@ -17,6 +17,7 @@ using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Validators;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
 
 #nullable enable
@@ -53,8 +54,6 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
     {
         if (signal == HostSignal.BeforeProcessStart)
         {
-            // Agentless support.
-            // DD_PROFILING_AGENTLESS
             var monitoringHome = EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
 
             // if the monitoringHome is defined but invalid, we clean the monitoringHome variable.
@@ -63,7 +62,7 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
                 monitoringHome = null;
             }
 
-            string? profiler32Path, profiler64Path, ldPreload, loaderConfig;
+            string? profiler32Path = null, profiler64Path = null, ldPreload = null, loaderConfig = null;
 
             // if monitoring home is not defined, then we try to locate it in the default path using relative path from the benchmark assembly.
             monitoringHome ??= Path.Combine(
@@ -82,7 +81,9 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
             // clean the path
             monitoringHome = Path.GetFullPath(monitoringHome);
 
-            if (FrameworkDescription.Instance.IsWindows())
+            var osPlatform = FrameworkDescription.Instance.OSPlatform;
+            var processArch = FrameworkDescription.Instance.ProcessArchitecture;
+            if (string.Equals(osPlatform, OSPlatformName.Windows, StringComparison.OrdinalIgnoreCase))
             {
                 // set required file paths
                 profiler32Path = Path.Combine(monitoringHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll");
@@ -90,13 +91,30 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
                 loaderConfig = Path.Combine(monitoringHome, "win-x64", "loader.conf");
                 ldPreload = null;
             }
-            else
+            else if (string.Equals(osPlatform, OSPlatformName.Linux, StringComparison.OrdinalIgnoreCase))
             {
                 // set required file paths
-                profiler32Path = null;
-                profiler64Path = Path.Combine(monitoringHome, "linux-x64", "Datadog.Trace.ClrProfiler.Native.so");
-                loaderConfig = Path.Combine(monitoringHome, "linux-x64", "loader.conf");
-                ldPreload = Path.Combine(monitoringHome, "linux-x64", "Datadog.Linux.ApiWrapper.x64.so");
+                if (string.Equals(processArch, "arm64", StringComparison.OrdinalIgnoreCase))
+                {
+                    const string rid = "linux-arm64";
+                    profiler32Path = null;
+                    profiler64Path = Path.Combine(monitoringHome, rid, "Datadog.Trace.ClrProfiler.Native.so");
+                    loaderConfig = Path.Combine(monitoringHome, rid, "loader.conf");
+                    ldPreload = Path.Combine(monitoringHome, rid, "Datadog.Linux.ApiWrapper.x64.so");
+                }
+                else
+                {
+                    const string rid = "linux-x64";
+                    profiler32Path = null;
+                    profiler64Path = Path.Combine(monitoringHome, rid, "Datadog.Trace.ClrProfiler.Native.so");
+                    loaderConfig = Path.Combine(monitoringHome, rid, "loader.conf");
+                    ldPreload = Path.Combine(monitoringHome, rid, "Datadog.Linux.ApiWrapper.x64.so");
+                }
+            }
+            else if (string.Equals(osPlatform, OSPlatformName.MacOS, StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine("Datadog Profiler is not supported in macOS");
+                return;
             }
 
             if (!File.Exists(profiler64Path))
@@ -115,19 +133,19 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
             }
 
             var environment = parameters.Process.StartInfo.Environment;
-            if (!environment.TryGetValue("DD_SERVICE", out _))
+            if (!environment.TryGetValue(ConfigurationKeys.ServiceName, out _))
             {
-                environment["DD_SERVICE"] = parameters.BenchmarkCase.Descriptor.FolderInfo;
+                environment[ConfigurationKeys.ServiceName] = parameters.BenchmarkCase.Descriptor.FolderInfo;
             }
 
-            if (!environment.TryGetValue("DD_ENV", out _))
+            if (!environment.TryGetValue(ConfigurationKeys.Environment, out _))
             {
-                environment["DD_ENV"] = "benchmarks";
+                environment[ConfigurationKeys.Environment] = "benchmarks";
             }
 
-            if (!environment.TryGetValue("DD_VERSION", out _))
+            if (!environment.TryGetValue(ConfigurationKeys.ServiceVersion, out _))
             {
-                environment["DD_VERSION"] = CIEnvironmentValues.Instance.Branch;
+                environment[ConfigurationKeys.ServiceVersion] = CIEnvironmentValues.Instance.Branch;
             }
 
             environment["COR_ENABLE_PROFILING"] = "1";
@@ -151,15 +169,56 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
             }
 
             environment["DD_NATIVELOADER_CONFIGFILE"] = loaderConfig;
-
             environment["DD_TRACE_ENABLED"] = "0";
-            environment["DD_PROFILING_ENABLED"] = "1";
-            environment["DD_PROFILING_WALLTIME_ENABLED"] = "1";
-            environment["DD_PROFILING_CPU_ENABLED"] = "1";
-            environment["DD_PROFILING_ALLOCATION_ENABLED"] = "1";
-            environment["DD_PROFILING_CONTENTION_ENABLED"] = "1";
-            environment["DD_PROFILING_EXCEPTION_ENABLED"] = "1";
-            environment["DD_PROFILING_HEAP_ENABLED"] = "1";
+
+            const string profilerEnabled = "DD_PROFILING_ENABLED";
+            if (!environment.TryGetValue(profilerEnabled, out _))
+            {
+                environment[profilerEnabled] = "1";
+            }
+
+            const string profilerWalltimeEnabled = "DD_PROFILING_WALLTIME_ENABLED";
+            if (!environment.TryGetValue(profilerWalltimeEnabled, out _))
+            {
+                environment[profilerWalltimeEnabled] = "1";
+            }
+
+            const string profilerCPUEnabled = "DD_PROFILING_CPU_ENABLED";
+            if (!environment.TryGetValue(profilerCPUEnabled, out _))
+            {
+                environment[profilerCPUEnabled] = "1";
+            }
+
+            const string profilerAllocationEnabled = "DD_PROFILING_ALLOCATION_ENABLED";
+            if (!environment.TryGetValue(profilerAllocationEnabled, out _))
+            {
+                environment[profilerAllocationEnabled] = "1";
+            }
+
+            const string profilerContentionEnabled = "DD_PROFILING_CONTENTION_ENABLED";
+            if (!environment.TryGetValue(profilerContentionEnabled, out _))
+            {
+                environment[profilerContentionEnabled] = "1";
+            }
+
+            const string profilerExceptionEnabled = "DD_PROFILING_EXCEPTION_ENABLED";
+            if (!environment.TryGetValue(profilerExceptionEnabled, out _))
+            {
+                environment[profilerExceptionEnabled] = "1";
+            }
+
+            const string profilerHeapEnabled = "DD_PROFILING_HEAP_ENABLED";
+            if (!environment.TryGetValue(profilerHeapEnabled, out _))
+            {
+                environment[profilerHeapEnabled] = "1";
+            }
+
+            var settings = CIVisibility.Settings;
+            const string profilerAgentless = "DD_PROFILING_AGENTLESS";
+            if (!environment.TryGetValue(profilerAgentless, out _) && settings.Agentless)
+            {
+                environment[profilerAgentless] = "1";
+            }
         }
     }
 
