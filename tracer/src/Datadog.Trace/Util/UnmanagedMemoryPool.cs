@@ -26,6 +26,11 @@ internal class UnmanagedMemoryPool : IDisposable
         _initialSearchIndex = 0;
     }
 
+    ~UnmanagedMemoryPool()
+    {
+        Dispose();
+    }
+
     public IntPtr Rent()
     {
         if (_isDisposed)

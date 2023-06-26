@@ -82,12 +82,13 @@ namespace Datadog.Trace.AppSec.Waf
             DDWAF_RET_CODE code;
             lock (_stopwatch)
             {
-                var pwArgs = Encoder.Encode(addresses, applySafetyLimits: true, argToFree: _argCache);
+                var pool = Encoder.Pool;
+                var pwArgs = Encoder.Encode(addresses, applySafetyLimits: true, argToFree: _argCache, pool: pool);
                 code = _waf.Run(_contextHandle, ref pwArgs, ref retNative, timeoutMicroSeconds);
 
                 foreach (var nMem in _argCache)
                 {
-                    Encoder.Pool.Return(nMem);
+                    pool.Return(nMem);
                 }
 
                 _argCache.Clear();

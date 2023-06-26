@@ -22,7 +22,23 @@ namespace Datadog.Trace.AppSec.Waf
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Encoder));
         private static readonly int ObjectStructSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
 
-        internal static readonly UnmanagedMemoryPool Pool = new(MaxBytesForMaxStringLength, 150);
+        [ThreadStatic]
+        private static UnmanagedMemoryPool? _pool;
+
+        internal static UnmanagedMemoryPool Pool
+        {
+            get
+            {
+                if (_pool is not null)
+                {
+                    return _pool;
+                }
+
+                var instance = new UnmanagedMemoryPool(MaxBytesForMaxStringLength, 100);
+                _pool = instance;
+                return instance;
+            }
+        }
 
         public static ObjType DecodeArgsType(DDWAF_OBJ_TYPE t)
         {
@@ -195,11 +211,17 @@ namespace Datadog.Trace.AppSec.Waf
         public static EncodeResult Encode<TInstance>(TInstance? o, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true)
         {
             var lstPointers = new List<IntPtr>();
-            return new EncodeResult(lstPointers, Encode(o, lstPointers, remainingDepth, key, applySafetyLimits));
+            var pool = Pool;
+            return new EncodeResult(lstPointers, pool, Encode(o, lstPointers, remainingDepth, key, applySafetyLimits, pool: pool));
         }
 
-        public static unsafe DdwafObjectStruct Encode<TInstance>(TInstance? o, List<IntPtr> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true)
+        public static unsafe DdwafObjectStruct Encode<TInstance>(TInstance? o, List<IntPtr> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true, UnmanagedMemoryPool? pool = null)
         {
+            if (pool is null)
+            {
+                pool = Pool;
+            }
+
             DdwafObjectStruct ProcessKeyValuePairs<TKey, TValue>(IEnumerable<KeyValuePair<TKey, TValue>> enumerableDic, int count, delegate*<KeyValuePair<TKey, TValue>, string?> getKey, delegate*<KeyValuePair<TKey, TValue>, object?> getValue)
                 where TKey : notnull
             {
@@ -228,7 +250,7 @@ namespace Datadog.Trace.AppSec.Waf
 
                 var childrenCount = count < WafConstants.MaxContainerSize ? count : WafConstants.MaxContainerSize;
                 var childrenFromPool = ObjectStructSize * childrenCount < MaxBytesForMaxStringLength;
-                var childrenData = childrenFromPool ? Pool.Rent() : Marshal.AllocHGlobal(ObjectStructSize * childrenCount);
+                var childrenData = childrenFromPool ? pool.Rent() : Marshal.AllocHGlobal(ObjectStructSize * childrenCount);
 
                 if (enumerableDic is System.Collections.IDictionary)
                 {
@@ -271,7 +293,7 @@ namespace Datadog.Trace.AppSec.Waf
                             continue;
                         }
 
-                        *(DdwafObjectStruct*)itemData = Encode(getValue(keyValue!), argToFree, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
+                        *(DdwafObjectStruct*)itemData = Encode(getValue(keyValue!), argToFree, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth, pool: pool);
                         itemData += ObjectStructSize;
 
                         idx++;
@@ -299,7 +321,7 @@ namespace Datadog.Trace.AppSec.Waf
                             continue;
                         }
 
-                        *(DdwafObjectStruct*)itemData = Encode(getValue(keyValue!), argToFree, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth);
+                        *(DdwafObjectStruct*)itemData = Encode(getValue(keyValue!), argToFree, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth, pool: pool);
                         itemData += ObjectStructSize;
 
                         idx++;
@@ -321,14 +343,13 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 IntPtr unmanagedMemory;
                 var bytesCount = Encoding.UTF8.GetMaxByteCount(s.Length) + 1;
+                var writtenBytes = 0;
                 if (bytesCount < MaxBytesForMaxStringLength)
                 {
-                    unmanagedMemory = Pool.Rent();
+                    unmanagedMemory = pool.Rent();
                     fixed (char* chrPtr = s)
                     {
-                        var writtenBytes = Encoding.UTF8.GetBytes(chrPtr, s.Length, (byte*)unmanagedMemory, MaxBytesForMaxStringLength);
-                        var lastCharPtr = (IntPtr)((byte*)unmanagedMemory + writtenBytes);
-                        Marshal.WriteByte(lastCharPtr, (byte)'\0');
+                        writtenBytes = Encoding.UTF8.GetBytes(chrPtr, s.Length, (byte*)unmanagedMemory, MaxBytesForMaxStringLength);
                     }
                 }
                 else
@@ -336,12 +357,12 @@ namespace Datadog.Trace.AppSec.Waf
                     unmanagedMemory = Marshal.AllocHGlobal(bytesCount);
                     fixed (char* chrPtr = s)
                     {
-                        var writtenBytes = Encoding.UTF8.GetBytes(chrPtr, s.Length, (byte*)unmanagedMemory, bytesCount);
-                        var lastCharPtr = (IntPtr)((byte*)unmanagedMemory + writtenBytes);
-                        Marshal.WriteByte(lastCharPtr, (byte)'\0');
+                        writtenBytes = Encoding.UTF8.GetBytes(chrPtr, s.Length, (byte*)unmanagedMemory, bytesCount);
                     }
                 }
 
+                var lastCharPtr = (IntPtr)((byte*)unmanagedMemory + writtenBytes);
+                Marshal.WriteByte(lastCharPtr, (byte)'\0');
                 argToFree.Add(unmanagedMemory);
                 return unmanagedMemory;
             }
@@ -455,7 +476,7 @@ namespace Datadog.Trace.AppSec.Waf
                     {
                         var childrenCount = count < WafConstants.MaxContainerSize ? count : WafConstants.MaxContainerSize;
                         var childrenFromPool = ObjectStructSize * childrenCount < MaxBytesForMaxStringLength;
-                        var childrenData = childrenFromPool ? Pool.Rent() : Marshal.AllocHGlobal(ObjectStructSize * childrenCount);
+                        var childrenData = childrenFromPool ? pool.Rent() : Marshal.AllocHGlobal(ObjectStructSize * childrenCount);
 
                         var itemData = childrenData;
                         for (var idx = 0; idx < count; idx++)
@@ -466,34 +487,32 @@ namespace Datadog.Trace.AppSec.Waf
                                 break;
                             }
 
-                            DdwafObjectStruct data;
                             // Avoid boxing of known values types from the switch above
                             if (listInstance is IList<bool> boolCollection)
                             {
-                                data = Encode(boolCollection[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                                *(DdwafObjectStruct*)itemData = Encode(boolCollection[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth, pool: pool);
                             }
                             else if (listInstance is IList<int> intCollection)
                             {
-                                data = Encode(intCollection[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                                *(DdwafObjectStruct*)itemData = Encode(intCollection[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth, pool: pool);
                             }
                             else if (listInstance is IList<uint> uintCollection)
                             {
-                                data = Encode(uintCollection[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                                *(DdwafObjectStruct*)itemData = Encode(uintCollection[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth, pool: pool);
                             }
                             else if (listInstance is IList<long> longCollection)
                             {
-                                data = Encode(longCollection[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                                *(DdwafObjectStruct*)itemData = Encode(longCollection[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth, pool: pool);
                             }
                             else if (listInstance is IList<ulong> ulongCollection)
                             {
-                                data = Encode(ulongCollection[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                                *(DdwafObjectStruct*)itemData = Encode(ulongCollection[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth, pool: pool);
                             }
                             else
                             {
-                                data = Encode(listInstance[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                                *(DdwafObjectStruct*)itemData = Encode(listInstance[idx], argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth, pool: pool);
                             }
 
-                            *(DdwafObjectStruct*)itemData = data;
                             itemData += ObjectStructSize;
                         }
 
@@ -518,11 +537,11 @@ namespace Datadog.Trace.AppSec.Waf
                         if (childrenCount > 0)
                         {
                             var childrenFromPool = ObjectStructSize * childrenCount < MaxBytesForMaxStringLength;
-                            var childrenData = childrenFromPool ? Pool.Rent() : Marshal.AllocHGlobal(ObjectStructSize * childrenCount);
+                            var childrenData = childrenFromPool ? pool.Rent() : Marshal.AllocHGlobal(ObjectStructSize * childrenCount);
                             var itemData = childrenData;
                             foreach (var val in list)
                             {
-                                *(DdwafObjectStruct*)itemData = Encode(val, argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth);
+                                *(DdwafObjectStruct*)itemData = Encode(val, argToFree, applySafetyLimits: applySafetyLimits, remainingDepth: remainingDepth, pool: pool);
                                 itemData += ObjectStructSize;
                             }
 
@@ -547,11 +566,13 @@ namespace Datadog.Trace.AppSec.Waf
         public readonly ref struct EncodeResult
         {
             private readonly List<IntPtr> _pointers;
+            private readonly UnmanagedMemoryPool _pool;
             public readonly DdwafObjectStruct Result;
 
-            internal EncodeResult(List<IntPtr> pointers, DdwafObjectStruct result)
+            internal EncodeResult(List<IntPtr> pointers, UnmanagedMemoryPool pool, DdwafObjectStruct result)
             {
                 _pointers = pointers;
+                _pool = pool;
                 Result = result;
             }
 
@@ -559,7 +580,7 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 foreach (var pointer in _pointers)
                 {
-                    Pool.Return(pointer);
+                    _pool.Return(pointer);
                 }
 
                 _pointers.Clear();
