@@ -7,6 +7,7 @@ using Samples.Security.Data;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Net;
+using System.Web;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -120,6 +121,64 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return Content("The provided file could not be opened");
             }
+        }
+
+        [Route("GetInsecureCookie")]
+        public ActionResult GetInsecureCookie()
+        {
+            var cookie = GetDefaultCookie("insecureKey", "insecureValue");
+            cookie.Secure = false;
+            Response.Cookies.Add(cookie);
+            return Content("Sending InsecureCookie");
+        }
+
+        [Route("NoHttpOnlyCookie")]
+        public ActionResult NoHttpOnlyCookie()
+        {
+            var cookie = GetDefaultCookie("NoHttpOnlyKey", "NoHttpOnlyValue");
+            cookie.HttpOnly = false;
+            Response.Cookies.Add(cookie);
+            return Content("Sending NoHttpOnlyCookie");
+        }
+
+        [Route("NoSameSiteCookie")]
+        public ActionResult NoSameSiteCookie()
+        {
+            var cookieNone = GetDefaultCookie("NoSameSiteKey", "NoSameSiteValue");
+            var cookieLax = GetDefaultCookie("NoSameSiteKeyLax", "NoSameSiteValueLax");
+            cookieNone.Values["SameSite"] = "None";
+            cookieLax.Values["SameSite"] = "Lax";
+            Response.Cookies.Add(cookieNone);
+            Response.Cookies.Add(cookieLax);
+            return Content("Sending NoSameSiteCookie");
+        }
+
+        [Route("AllVulnerabilitiesCookie")]
+        public ActionResult SafeCookie()
+        {
+            var cookie = GetDefaultCookie("SafeCookieKey", "SafeCookieValue");
+            Response.Cookies.Add(cookie);
+            return Content("Sending SafeCookie");
+        }
+
+        [Route("AllVulnerabilitiesCookie")]
+        public ActionResult AllVulnerabilitiesCookie()
+        {
+            HttpCookie cookie = new HttpCookie("AllVulnerabilitiesCookieKey", "AllVulnerabilitiesCookieValue");
+            cookie.Values["SameSite"] = "None";
+            cookie.HttpOnly = false;
+            cookie.Secure = false;
+            Response.Cookies.Add(cookie);
+            return Content("Sending AllVulnerabilitiesCookie");
+        }
+
+        private HttpCookie GetDefaultCookie(string key, string value)
+        {
+            var cookie = new HttpCookie(key, value);
+            cookie.Values["SameSite"] = "Strict";
+            cookie.HttpOnly = true;
+            cookie.Secure = true;
+            return cookie;
         }
     }
 }

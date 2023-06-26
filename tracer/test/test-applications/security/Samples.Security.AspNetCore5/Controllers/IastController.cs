@@ -241,12 +241,9 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("GetInsecureCookie")]
         public IActionResult GetInsecureCookie()
         {
-            var cookieOptions = new CookieOptions();
+            var cookieOptions = GetDefaultCookieOptionsInstance();
             cookieOptions.Secure = false;
             Response.Cookies.Append("insecureKey", "insecureValue", cookieOptions);
-            var cookieOptionsSafe = new CookieOptions();
-            cookieOptionsSafe.Secure = true;
-            Response.Cookies.Append("SecureKey", "SecureValue", cookieOptionsSafe);
             return Content("Sending InsecureCookie");
         }
 
@@ -254,12 +251,9 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("NoHttpOnlyCookie")]
         public IActionResult NoHttpOnlyCookie()
         {
-            var cookieOptions = new CookieOptions();
+            var cookieOptions = GetDefaultCookieOptionsInstance();
             cookieOptions.HttpOnly = false;
             Response.Cookies.Append("NoHttpOnlyKey", "NoHttpOnlyValue", cookieOptions);
-            var cookieOptionsSafe = new CookieOptions();
-            cookieOptionsSafe.HttpOnly = true;
-            Response.Cookies.Append("HttpOnlyKey", "HttpOnlyValue", cookieOptionsSafe);
             return Content("Sending NoHttpOnlyCookie");
         }
 
@@ -267,19 +261,53 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("NoSameSiteCookie")]
         public IActionResult NoSameSiteCookie()
         {
-            var cookieOptions = new CookieOptions();
+            var cookieOptions = GetDefaultCookieOptionsInstance();
             cookieOptions.SameSite = SameSiteMode.None;
             Response.Cookies.Append("NoSameSiteKey", "NoSameSiteValue", cookieOptions);
-            var cookieOptionsSafe = new CookieOptions();
-            cookieOptionsSafe.SameSite = SameSiteMode.Strict;
-            Response.Cookies.Append("SameSiteKey", "SameSiteValue", cookieOptionsSafe);
+            var cookieOptionsLax = GetDefaultCookieOptionsInstance();
+            cookieOptionsLax.SameSite = SameSiteMode.Lax;
+            Response.Cookies.Append("NoSameSiteKeyLax", "NoSameSiteValueLax", cookieOptionsLax);
             return Content("Sending NoSameSiteCookie");
+        }
+
+        [HttpGet("AllVulnerabilitiesCookie")]
+        [Route("AllVulnerabilitiesCookie")]
+        public IActionResult SafeCookie()
+        {
+            var cookieOptions = new CookieOptions();
+            cookieOptions.SameSite = SameSiteMode.Strict;
+            cookieOptions.HttpOnly = true;
+            cookieOptions.Secure = true;
+            Response.Cookies.Append("SafeCookieKey", "SafeCookieValue", cookieOptions);
+            return Content("Sending SafeCookie");
+        }
+
+        [HttpGet("AllVulnerabilitiesCookie")]
+        [Route("AllVulnerabilitiesCookie")]
+        public IActionResult AllVulnerabilitiesCookie()
+        {
+            var cookieOptions = new CookieOptions();
+            cookieOptions.SameSite = SameSiteMode.None;
+            cookieOptions.HttpOnly = false;
+            cookieOptions.Secure = false;
+            Response.Cookies.Append("AllVulnerabilitiesCookieKey", "AllVulnerabilitiesCookieValue", cookieOptions);
+            return Content("Sending AllVulnerabilitiesCookie");
         }
 
         private ActionResult ExecuteQuery(string query)
         {
             var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
             return Content($"Result: " + rname);
+        }
+
+        private CookieOptions GetDefaultCookieOptionsInstance()
+        {
+            var cookieOptions = new CookieOptions();
+            cookieOptions.SameSite = SameSiteMode.Strict;
+            cookieOptions.HttpOnly = true;
+            cookieOptions.Secure = true;
+
+            return cookieOptions;
         }
     }
 }
