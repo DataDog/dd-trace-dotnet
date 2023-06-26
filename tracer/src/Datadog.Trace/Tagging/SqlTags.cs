@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tagging
                 return _peerServiceOverride is not null
                         ? "peer.service"
                         : DbName is not null
-                            ? "db.instance"
+                            ? "db.name"
                             : "out.host";
             }
         }

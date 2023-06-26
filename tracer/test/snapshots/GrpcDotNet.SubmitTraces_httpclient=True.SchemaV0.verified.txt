@@ -63,6 +63,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingBothWays,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -190,6 +191,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingFromClient,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -319,6 +321,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -450,6 +453,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -581,6 +585,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -712,6 +717,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -847,6 +853,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -978,6 +985,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1109,6 +1117,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1240,6 +1249,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1373,6 +1383,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingFromServer,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1500,6 +1511,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/Unary,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1627,6 +1639,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/Unary,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1754,6 +1767,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/VerySlow,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1883,6 +1897,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/VerySlow,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client
     },

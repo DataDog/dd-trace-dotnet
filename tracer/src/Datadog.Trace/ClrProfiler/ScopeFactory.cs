@@ -113,11 +113,7 @@ namespace Datadog.Trace.ClrProfiler
                 if (requestUri is not null)
                 {
                     tags.HttpUrl = HttpRequestUtils.GetUrl(requestUri, tracer.TracerManager.QueryStringManager);
-
-                    if (tags is HttpV1Tags v1Tags)
-                    {
-                        v1Tags.SetHost(HttpRequestUtils.GetNormalizedHost(requestUri.Host));
-                    }
+                    tags.Host = HttpRequestUtils.GetNormalizedHost(requestUri.Host);
                 }
 
                 tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);

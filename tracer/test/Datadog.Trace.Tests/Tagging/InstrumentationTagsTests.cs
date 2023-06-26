@@ -20,10 +20,10 @@ namespace Datadog.Trace.Tests.Tagging
             var host = "localhost";
             var tags = new HttpV1Tags();
 
-            tags.SetHost(host);
+            tags.Host = host;
 
             tags.PeerService.Should().Be(host);
-            tags.PeerServiceSource.Should().Be("network.destination.name");
+            tags.PeerServiceSource.Should().Be("out.host");
         }
 
         [Fact]
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tests.Tagging
             var tags = new HttpV1Tags();
 
             tags.SetTag("peer.service", customService);
-            tags.SetHost(host);
+            tags.Host = host;
 
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");
@@ -137,7 +137,7 @@ namespace Datadog.Trace.Tests.Tagging
             tags.DbName = databaseName;
 
             tags.PeerService.Should().Be(databaseName);
-            tags.PeerServiceSource.Should().Be("db.instance");
+            tags.PeerServiceSource.Should().Be("db.name");
         }
 
         [Fact]
@@ -149,7 +149,7 @@ namespace Datadog.Trace.Tests.Tagging
             tags.Host = hostName;
 
             tags.PeerService.Should().Be(hostName);
-            tags.PeerServiceSource.Should().Be("network.destination.name");
+            tags.PeerServiceSource.Should().Be("out.host");
         }
 
         [Fact]
@@ -201,7 +201,7 @@ namespace Datadog.Trace.Tests.Tagging
             tags.DbName = databaseName;
 
             tags.PeerService.Should().Be(databaseName);
-            tags.PeerServiceSource.Should().Be("db.instance");
+            tags.PeerServiceSource.Should().Be("db.name");
         }
 
         [Fact]
@@ -243,7 +243,7 @@ namespace Datadog.Trace.Tests.Tagging
             tags.OutHost = host;
 
             tags.PeerService.Should().Be(databaseName);
-            tags.PeerServiceSource.Should().Be("db.instance");
+            tags.PeerServiceSource.Should().Be("db.name");
         }
 
         [Fact]
