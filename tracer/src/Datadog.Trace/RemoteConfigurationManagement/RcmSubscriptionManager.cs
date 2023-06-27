@@ -39,7 +39,6 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
 
     public RcmSubscriptionManager()
     {
-        DatadogLogging.GetLoggerFor<RcmSubscriptionManager>().Debug("New RcmSubscriptionManager");
         _id = Guid.NewGuid().ToString();
     }
 
