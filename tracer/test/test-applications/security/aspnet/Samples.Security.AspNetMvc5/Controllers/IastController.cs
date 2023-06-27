@@ -123,8 +123,8 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
         }
 
-        [Route("GetInsecureCookie")]
-        public ActionResult GetInsecureCookie()
+        [Route("InsecureCookie")]
+        public ActionResult InsecureCookie()
         {
             var cookie = GetDefaultCookie("insecureKey", "insecureValue");
             cookie.Secure = false;
@@ -153,12 +153,17 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content("Sending NoSameSiteCookie");
         }
 
-        [Route("AllVulnerabilitiesCookie")]
+        [Route("SafeCookie")]
         public ActionResult SafeCookie()
         {
             var cookie = GetDefaultCookie("SafeCookieKey", "SafeCookieValue");
             Response.Cookies.Add(cookie);
-            return Content("Sending SafeCookie");
+            var cookie2 = GetDefaultCookie("UnsafeEmptyCookie", string.Empty);
+            cookie2.Secure = false;
+            cookie2.HttpOnly = false;
+            cookie2.Values["SameSite"] = "None";
+            Response.Cookies.Add(cookie2);
+            return Content("Sending SafeCookies");
         }
 
         [Route("AllVulnerabilitiesCookie")]

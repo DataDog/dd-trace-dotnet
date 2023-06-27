@@ -41,8 +41,8 @@ namespace Datadog.Trace.IAST
 
         private static void ReportVulnerabilities(IntegrationId integrationId, HttpCookie cookie)
         {
-            var name = cookie.Name.ToString();
-            var value = cookie.Value.ToString();
+            var name = cookie.Name;
+            var value = cookie.Values[0];
 
             // Insecure cookies with empty values are allowed
             if (string.IsNullOrEmpty(value))
