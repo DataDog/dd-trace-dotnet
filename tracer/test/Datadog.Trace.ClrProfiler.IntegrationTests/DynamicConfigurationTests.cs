@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -205,30 +206,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private void AssertConfigurationChanged(ConcurrentStack<object> events, Config config)
         {
-            var latestConfig = new Dictionary<string, object>();
-
-            while (events.TryPop(out var obj))
-            {
-                if (!IsConfigurationChangedEvent(obj))
-                {
-                    continue;
-                }
-
-                var configurationChanged = ((TelemetryWrapper.V2)obj).TryGetPayload<AppClientConfigurationChangedPayloadV2>(TelemetryRequestTypes.AppClientConfigurationChanged);
-
-                foreach (var key in configurationChanged.Configuration)
-                {
-                    if (key.Origin == "remote_config")
-                    {
-                        key.Error.Should().BeNull();
-                        latestConfig[key.Name] = key.Value;
-                    }
-                }
-            }
-
-            using var context = new AssertionScope();
-            context.AddReportable("configuration", string.Join("; ", latestConfig));
-
             var expectedKeys = new (string Key, object Value)[]
             {
                 // (ConfigurationKeys.RuntimeMetricsEnabled, config.RuntimeMetricsEnabled),
@@ -242,6 +219,47 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // (ConfigurationKeys.ServiceNameMappings, config.ServiceNameMapping == null ? string.Empty : JToken.Parse(config.ServiceNameMapping).ToString())
             };
 
+            var expectedCount = expectedKeys.Count(k => k.Value is not null);
+
+            var latestConfig = new Dictionary<string, object>();
+
+            var now = DateTime.UtcNow;
+
+            while (latestConfig.Count < expectedCount)
+            {
+                while (events.TryPop(out var obj))
+                {
+                    if (!IsConfigurationChangedEvent(obj))
+                    {
+                        continue;
+                    }
+
+                    var configurationChanged = ((TelemetryWrapper.V2)obj).TryGetPayload<AppClientConfigurationChangedPayloadV2>(TelemetryRequestTypes.AppClientConfigurationChanged);
+
+                    foreach (var key in configurationChanged.Configuration)
+                    {
+                        if (key.Origin == "remote_config")
+                        {
+                            key.Error.Should().BeNull();
+                            latestConfig[key.Name] = key.Value;
+                        }
+                    }
+                }
+
+                if ((DateTime.UtcNow - now).TotalSeconds > 20)
+                {
+                    break;
+                }
+
+                if (latestConfig.Count < expectedCount)
+                {
+                    Thread.Sleep(500);
+                }
+            }
+
+            using var context = new AssertionScope();
+            context.AddReportable("configuration", string.Join("; ", latestConfig));
+
             foreach (var (key, value) in expectedKeys)
             {
                 if (value == null)
@@ -254,7 +272,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
             }
 
-            latestConfig.Should().HaveCount(expectedKeys.Count(k => k.Value is not null));
+            latestConfig.Should().HaveCount(expectedCount);
         }
 
         internal class PlainJsonStringConverter : JsonConverter
