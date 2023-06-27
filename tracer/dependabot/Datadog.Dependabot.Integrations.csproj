@@ -154,7 +154,7 @@
     <!-- Integration: OpenTelemetry -->
     <!-- Assembly: OpenTelemetry -->
     <!-- Latest package https://www.nuget.org/packages/OpenTelemetry/1.4.0 -->
-    <PackageReference Include="OpenTelemetry" Version="1.4.0" />
+    <PackageReference Include="OpenTelemetry" Version="1.5.1" />
 
     <!-- Integration: OpenTelemetry.Api -->
     <!-- Assembly: OpenTelemetry.Api -->
