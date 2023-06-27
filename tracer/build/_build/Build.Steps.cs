@@ -61,7 +61,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.10.0";
+    const string LibDdwafVersion = "1.11.0";
 
     const string OlderLibDdwafVersion = "1.4.0";
 
