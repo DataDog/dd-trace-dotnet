@@ -470,7 +470,6 @@ namespace Datadog.Trace.AppSec.Waf
                         if (applySafetyLimits && count > WafConstants.MaxContainerSize)
                         {
                             Log.Warning<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
-                            break;
                         }
 
                         var childrenCount = !applySafetyLimits || count < WafConstants.MaxContainerSize ? count : WafConstants.MaxContainerSize;
