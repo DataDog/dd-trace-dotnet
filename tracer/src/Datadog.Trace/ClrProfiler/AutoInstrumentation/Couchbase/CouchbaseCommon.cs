@@ -31,7 +31,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         internal const string IntegrationName = nameof(Configuration.IntegrationId.Couchbase);
 
         private const string DatabaseType = "couchbase";
-        private const string ServiceName = "couchbase";
         private const IntegrationId IntegrationId = Configuration.IntegrationId.Couchbase;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CouchbaseCommon));
         private static readonly ConditionalWeakTable<object, string> ClientSourceToNormalizedSeedNodesMap = new();
