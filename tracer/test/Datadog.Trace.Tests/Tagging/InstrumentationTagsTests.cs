@@ -129,18 +129,6 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Fact]
-        public void MongoDbV1Tags_PeerService_PopulatesFromDbName()
-        {
-            var databaseName = "database";
-            var tags = new MongoDbV1Tags();
-
-            tags.DbName = databaseName;
-
-            tags.PeerService.Should().Be(databaseName);
-            tags.PeerServiceSource.Should().Be("db.instance");
-        }
-
-        [Fact]
         public void CouchbaseV1Tags_PeerService_PopulatesFromSeedNodes()
         {
             var nodes = "node1:port1,node2:port2";
@@ -190,6 +178,33 @@ namespace Datadog.Trace.Tests.Tagging
 
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void CouchbaseV1Tags_PeerService_SeedNodesTakesPrecedenceOverOutHost()
+        {
+            var nodes = "node1:port1,node2:port2";
+            var hostName = "host";
+            var customService = "client-service";
+            var tags = new CouchbaseV1Tags();
+
+            tags.SeedNodes = nodes;
+            tags.Host = hostName;
+
+            tags.PeerService.Should().Be(nodes);
+            tags.PeerServiceSource.Should().Be("db.couchbase.seed.nodes");
+        }
+
+        [Fact]
+        public void MongoDbV1Tags_PeerService_PopulatesFromDbName()
+        {
+            var databaseName = "database";
+            var tags = new MongoDbV1Tags();
+
+            tags.DbName = databaseName;
+
+            tags.PeerService.Should().Be(databaseName);
+            tags.PeerServiceSource.Should().Be("db.instance");
         }
 
         [Fact]
