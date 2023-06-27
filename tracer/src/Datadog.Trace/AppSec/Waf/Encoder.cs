@@ -232,29 +232,32 @@ namespace Datadog.Trace.AppSec.Waf
                     FillParamName(ref ddWafObjectMap, key!);
                 }
 
-                if (applySafetyLimits && remainingDepth-- <= 0)
+                if (applySafetyLimits)
                 {
-                    IEnumerable<string> GetItemsAsString()
+                    if (remainingDepth-- <= 0)
                     {
-                        var lst = new List<string>();
-                        foreach (var x in enumerableDic)
+                        IEnumerable<string> GetItemsAsString()
                         {
-                            lst.Add($"{getKey(x!)}, {getValue(x!)}");
+                            var lst = new List<string>();
+                            foreach (var x in enumerableDic)
+                            {
+                                lst.Add($"{getKey(x!)}, {getValue(x!)}");
+                            }
+
+                            return lst;
                         }
 
-                        return lst;
+                        Log.Warning("EncodeDictionary: object graph too deep, truncating nesting {Items}", string.Join(", ", GetItemsAsString()));
+                        return ddWafObjectMap;
                     }
 
-                    Log.Warning("EncodeDictionary: object graph too deep, truncating nesting {Items}", string.Join(", ", GetItemsAsString()));
-                    return ddWafObjectMap;
+                    if (count > WafConstants.MaxContainerSize)
+                    {
+                        Log.Warning<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
+                    }
                 }
 
-                if (count > WafConstants.MaxContainerSize)
-                {
-                    Log.Warning<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
-                }
-
-                var childrenCount = count < WafConstants.MaxContainerSize ? count : WafConstants.MaxContainerSize;
+                var childrenCount = !applySafetyLimits || count < WafConstants.MaxContainerSize ? count : WafConstants.MaxContainerSize;
                 var childrenFromPool = ObjectStructSize * childrenCount < MaxBytesForMaxStringLength;
                 var childrenData = childrenFromPool ? pool.Rent() : Marshal.AllocHGlobal(ObjectStructSize * childrenCount);
 
@@ -464,13 +467,13 @@ namespace Datadog.Trace.AppSec.Waf
 
                     if (enumerable is IList { Count: { } count } listInstance)
                     {
-                        if (count > WafConstants.MaxContainerSize)
+                        if (applySafetyLimits && count > WafConstants.MaxContainerSize)
                         {
                             Log.Warning<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
                             break;
                         }
 
-                        var childrenCount = count < WafConstants.MaxContainerSize ? count : WafConstants.MaxContainerSize;
+                        var childrenCount = !applySafetyLimits || count < WafConstants.MaxContainerSize ? count : WafConstants.MaxContainerSize;
                         var childrenFromPool = ObjectStructSize * childrenCount < MaxBytesForMaxStringLength;
                         var childrenData = childrenFromPool ? pool.Rent() : Marshal.AllocHGlobal(ObjectStructSize * childrenCount);
 
@@ -528,7 +531,7 @@ namespace Datadog.Trace.AppSec.Waf
                         foreach (var val in enumerable)
                         {
                             childrenCount++;
-                            if (childrenCount == WafConstants.MaxContainerSize)
+                            if (applySafetyLimits && childrenCount == WafConstants.MaxContainerSize)
                             {
                                 Log.Warning<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
                                 break;
