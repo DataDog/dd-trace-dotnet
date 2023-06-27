@@ -7,7 +7,7 @@ internal static partial class CountExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> metric.
     /// </summary>
-    public const int Length = 28;
+    public const int Length = 31;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -45,6 +45,9 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiRequests => "direct_log_api.requests",
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiResponses => "direct_log_api.responses",
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiErrors => "direct_log_api.errors.responses",
+            Datadog.Trace.Telemetry.Metrics.Count.WafInit => "waf.init",
+            Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "waf.updates",
+            Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "waf.requests",
             _ => null!,
         };
 
@@ -76,6 +79,9 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiRequests => "telemetry",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiResponses => "telemetry",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiErrors => "telemetry",
+            Datadog.Trace.Telemetry.Metrics.Count.WafInit => "appsec",
+            Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "appsec",
+            Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "appsec",
             _ => null,
         };
 }

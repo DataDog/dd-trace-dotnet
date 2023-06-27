@@ -244,5 +244,57 @@ namespace Datadog.Trace.Tests.Tagging
             tags.PeerService.Should().Be(databaseName);
             tags.PeerServiceSource.Should().Be("db.instance");
         }
+
+        [Fact]
+        public void GrpcClientV1Tags_PeerService_PopulatesFromRpcService()
+        {
+            var service = "grpc-app";
+            var tags = new GrpcClientV1Tags();
+
+            tags.MethodService = service;
+
+            tags.PeerService.Should().Be(service);
+            tags.PeerServiceSource.Should().Be("rpc.service");
+        }
+
+        [Fact]
+        public void GrpcClientV1Tags_PeerService_PopulatesFromDestinationHost()
+        {
+            var hostName = "host";
+            var tags = new GrpcClientV1Tags();
+
+            tags.Host = hostName;
+
+            tags.PeerService.Should().Be(hostName);
+            tags.PeerServiceSource.Should().Be("network.destination.name");
+        }
+
+        [Fact]
+        public void GrpcClientV1Tags_PeerService_PopulatesFromCustom()
+        {
+            var customService = "client-service";
+            var tags = new GrpcClientV1Tags();
+
+            tags.SetTag("peer.service", customService);
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void GrpcClientV1Tags_PeerService_CustomTakesPrecedence()
+        {
+            var service = "grpc-app";
+            var hostName = "host";
+            var customService = "client-service";
+            var tags = new GrpcClientV1Tags();
+
+            tags.SetTag("peer.service", customService);
+            tags.MethodService = service;
+            tags.Host = hostName;
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
     }
 }

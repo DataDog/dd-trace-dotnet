@@ -25,7 +25,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         public AsyncDebuggerState()
         {
             SpanState = null;
-            LogState = null;
+            LogStates = null;
         }
 
         /// <summary>
@@ -40,10 +40,10 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncDebuggerState"/> struct.
         /// </summary>
-        /// <param name="logState">The log state</param>
-        public AsyncDebuggerState(AsyncMethodDebuggerState logState)
+        /// <param name="logStates">The log state</param>
+        public AsyncDebuggerState(AsyncMethodDebuggerState[] logStates)
         {
-            LogState = logState;
+            LogStates = logStates;
         }
 
         /// <summary>
@@ -52,8 +52,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
         public SpanDebuggerState? SpanState { get; set; }
 
         /// <summary>
-        /// Gets or sets the log state
+        /// Gets or sets the log states for multi-probe
         /// </summary>
-        public AsyncMethodDebuggerState LogState { get; set; }
+        public AsyncMethodDebuggerState[] LogStates { get; set; }
     }
 }

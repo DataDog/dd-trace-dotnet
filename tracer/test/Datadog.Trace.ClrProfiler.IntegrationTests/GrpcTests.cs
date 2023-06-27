@@ -231,7 +231,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], httpClientType, metadataSchemaVersion };
 
-        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsGrpc(metadataSchemaVersion, ExcludeTags);
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            span.Tags["span.kind"] switch
+            {
+                SpanKinds.Client => span.IsGrpcClient(metadataSchemaVersion, ExcludeTags),
+                SpanKinds.Server => span.IsGrpcServer(metadataSchemaVersion, ExcludeTags),
+                _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the gRPC integration: {span.Tags["span.kind"]}", nameof(span)),
+            };
 
         protected async Task RunSubmitTraces(
             string packageVersion,
@@ -393,7 +399,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     static void FixVerySlowClientSpans(IImmutableList<MockSpan> spans)
                     {
                         var verySlowGrpcClientSpans = spans
-                                                    .Where(x => x.Name == "grpc.request" && x.Resource.EndsWith("VerySlow") && x.Tags["span.kind"] == "client")
+                                                    .Where(x => x.Type == SpanTypes.Grpc && x.Resource.EndsWith("VerySlow") && x.Tags["span.kind"] == "client")
                                                     .ToList();
 
                         // Grpc.Core 2.45.0 started using very different paths and messages in the

@@ -12,7 +12,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -28,154 +27,58 @@ public class IastInstrumentationUnitTests : TestHelper
         typeof(string[]), typeof(HashAlgorithm), typeof(SymmetricAlgorithm)
     };
 
+    private string[] _replaceOverloadsToExclude = new string[]
+    {
+        // special case
+#if !NETCOREAPP3_1_OR_GREATER
+        "System.String::Replace(System.String,System.String,System.StringComparison)",
+        "System.String::Replace(System.String,System.String,System.Boolean,System.Globalization.CultureInfo)"
+#endif
+    };
+
     public IastInstrumentationUnitTests(ITestOutputHelper output)
         : base("InstrumentedTests", output)
     {
     }
 
-    [SkippableFact]
+    [Theory]
+    [InlineData(typeof(StringBuilder), "ToString")]
+    [InlineData(typeof(StringBuilder), "Append")]
+    [InlineData(typeof(StringBuilder), "AppendLine", null, true)]
+    [InlineData(typeof(StringBuilder), ".ctor", null, true)]
+    [InlineData(typeof(StringBuilder), "Insert", null, true)]
+#if NETCOREAPP3_1_OR_GREATER
+    [InlineData(typeof(StringBuilder), "AppendJoin", null, true)]
+#endif
+    [InlineData(typeof(StringBuilder), "Replace", null, true)]
+    [InlineData(typeof(StringBuilder), "Remove", null, true)]
+    [InlineData(typeof(StringBuilder), "CopyTo", null, true)]
+    [InlineData(typeof(StringBuilder), "AppendFormat", null, true)]
+    [InlineData(typeof(string), "Join")]
+    [InlineData(typeof(string), "Copy")]
+    [InlineData(typeof(string), "ToUpper")]
+    [InlineData(typeof(string), "ToUpperInvariant")]
+    [InlineData(typeof(string), "ToLower")]
+    [InlineData(typeof(string), "ToLowerInvariant")]
+    [InlineData(typeof(string), "Insert")]
+    [InlineData(typeof(string), "Remove")]
+    [InlineData(typeof(string), "ToCharArray")]
+    [InlineData(typeof(string), "TrimStart")]
+    [InlineData(typeof(string), "Trim")]
+    [InlineData(typeof(string), "Substring")]
+    [InlineData(typeof(string), "TrimEnd")]
+    [InlineData(typeof(string), "Format")]
+    [InlineData(typeof(string), "Split")]
+    [InlineData(typeof(string), "Concat", new string[] { "System.String Concat(System.Object)" })]
+    [InlineData(typeof(StreamReader), ".ctor")]
+    [InlineData(typeof(StreamWriter), ".ctor")]
+    [InlineData(typeof(FileStream), ".ctor")]
+    [InlineData(typeof(DirectoryInfo), null, new string[] { "void CreateAsSymbolicLink(System.String)" }, true)]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public void TestStringBuilderToStringMethodsAspectCover()
+    public void TestMethodsAspectCover(Type typeToCheck, string methodToCheck, string[] overloadsToExclude = null, bool excludeParameterlessMethods = false)
     {
-        TestMethodOverloads(typeof(StringBuilder), "ToString", null);
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestStringBuilderAppendLineMethodsAspectCover()
-    {
-        TestMethodOverloads(typeof(StringBuilder), "AppendLine", null, true);
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestStringBuilderAppendMethodsAspectCover()
-    {
-        TestMethodOverloads(typeof(StringBuilder), "Append");
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestStringBuilderConstructorMethodsAspectCover()
-    {
-        TestMethodOverloads(typeof(StringBuilder), ".ctor", null, true);
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestJoinMethodsAspectCover()
-    {
-        TestMethodOverloads(typeof(string), "Join");
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestStringCopyMethodsAspectCover()
-    {
-        TestMethodOverloads(typeof(string), "Copy");
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestToUpperMethodsAspectCover()
-    {
-        TestMethodOverloads(typeof(string), "ToUpper");
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestToUpperInvariantMethodsAspectCover()
-    {
-        TestMethodOverloads(typeof(string), "ToUpperInvariant");
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestToLowerArrayMethodsAspectCover()
-    {
-        TestMethodOverloads(typeof(string), "ToLower");
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestToLowerInvariantMethodsAspectCover()
-    {
-        TestMethodOverloads(typeof(string), "ToLowerInvariant");
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestInsertMethodsAspectCover()
-    {
-        TestMethodOverloads(typeof(string), "Insert");
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestRemoveMethodsAspectCover()
-    {
-        TestMethodOverloads(typeof(string), "Remove");
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestToCharArrayMethodsAspectCover()
-    {
-        TestMethodOverloads(typeof(string), "ToCharArray");
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestTrimStartMethodsAspectCover()
-    {
-        TestMethodOverloads(typeof(string), "TrimStart");
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestTrimEndMethodsAspectCover()
-    {
-        TestMethodOverloads(typeof(string), "TrimEnd");
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestTrimMethodsAspectCover()
-    {
-        TestMethodOverloads(typeof(string), "Trim");
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestSubstringMethodsAspectCover()
-    {
-        TestMethodOverloads(typeof(string), "Substring");
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestConcatMethodsAspectCover()
-    {
-        var overloadsToExclude = new List<string>() { "System.String Concat(System.Object)" };
-        TestMethodOverloads(typeof(string), "Concat", overloadsToExclude);
+        TestMethodOverloads(typeToCheck, methodToCheck, overloadsToExclude?.ToList(), excludeParameterlessMethods);
     }
 
     [SkippableFact]
@@ -192,38 +95,6 @@ public class IastInstrumentationUnitTests : TestHelper
 #endif
         };
         TestMethodOverloads(typeof(string), "Replace", overloadsToExclude);
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestFormatMethodsAspectCover()
-    {
-        TestMethodOverloads(typeof(string), "Format");
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestSplitMethodsAspectCover()
-    {
-        TestMethodOverloads(typeof(string), "Split");
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestAllStringAspectsHaveACorrespondingMethod()
-    {
-        CheckAllAspectHaveACorrespondingMethod(typeof(string));
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestAllStringBuilderAspectsHaveACorrespondingMethod()
-    {
-        CheckAllAspectHaveACorrespondingMethod(typeof(StringBuilder));
     }
 
     [SkippableFact]
@@ -315,17 +186,18 @@ public class IastInstrumentationUnitTests : TestHelper
         CheckAllAspectHaveACorrespondingMethod(typeof(File), aspectsToExclude);
     }
 
-    [SkippableFact]
+    [Theory]
+    [InlineData(typeof(StringBuilder))]
+    [InlineData(typeof(string))]
+    [InlineData(typeof(StreamWriter))]
+    [InlineData(typeof(StreamReader))]
+    [InlineData(typeof(FileStream))]
+    [InlineData(typeof(DirectoryInfo))]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public void TestDirectoryInfoClassMethodsAspectCover()
+    public void TestAllAspectsHaveACorrespondingMethod(Type type)
     {
-        var overloadsToExclude = new List<string>()
-        {
-            "void CreateAsSymbolicLink(System.String)"
-        };
-        TestMethodOverloads(typeof(DirectoryInfo), null, overloadsToExclude, true);
-        CheckAllAspectHaveACorrespondingMethod(typeof(DirectoryInfo));
+        CheckAllAspectHaveACorrespondingMethod(type);
     }
 
     [SkippableFact]
@@ -352,35 +224,6 @@ public class IastInstrumentationUnitTests : TestHelper
         };
 
         CheckAllAspectHaveACorrespondingMethod(typeof(FileInfo), aspectsToExclude);
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestFileStreamClassMethodsAspectCover()
-    {
-        var overloadsToExclude = new List<string>() { };
-        TestMethodOverloads(typeof(FileStream), ".ctor", overloadsToExclude);
-        CheckAllAspectHaveACorrespondingMethod(typeof(FileStream));
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestStreamReaderClassMethodsAspectCover()
-    {
-        var overloadsToExclude = new List<string>() { };
-        TestMethodOverloads(typeof(StreamReader), ".ctor", overloadsToExclude);
-        CheckAllAspectHaveACorrespondingMethod(typeof(StreamReader));
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestStreamWriterClassMethodsAspectCover()
-    {
-        TestMethodOverloads(typeof(StreamWriter), ".ctor");
-        CheckAllAspectHaveACorrespondingMethod(typeof(StreamWriter));
     }
 
     [SkippableFact]

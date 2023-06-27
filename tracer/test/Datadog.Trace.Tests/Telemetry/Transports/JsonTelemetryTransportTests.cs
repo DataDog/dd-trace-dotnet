@@ -115,7 +115,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                     }
                 })
             {
-                NamingSchemaVersion = 1
+                NamingSchemaVersion = "1"
             };
 
             var serialized = JsonTelemetryTransport.SerializeTelemetry(data);
@@ -316,7 +316,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                             })),
                     }))
             {
-                NamingSchemaVersion = 1
+                NamingSchemaVersion = "1"
             };
 
             var serialized = JsonTelemetryTransport.SerializeTelemetry(data);

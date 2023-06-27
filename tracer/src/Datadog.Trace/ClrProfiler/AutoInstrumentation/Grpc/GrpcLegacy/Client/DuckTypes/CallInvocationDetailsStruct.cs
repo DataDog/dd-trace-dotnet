@@ -16,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.D
     [DuckCopy]
     internal struct CallInvocationDetailsStruct
     {
+        public IChannel Channel;
         public string Method;
         public CallOptionsStruct Options;
     }

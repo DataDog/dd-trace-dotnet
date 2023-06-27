@@ -34,9 +34,9 @@ public class UserStoreMemory : UserStoreBase<IdentityUser, string, IdentityUserC
                 PasswordHash = "AQAAAAEAACcQAAAAEEo2WoXnHhwB9ZpopSiEVr6A5c9RxYEY7LznE9YhylcyDJM+neVHp3AZ+XjJLKWuaQ==",
                 Id = "9245fe4a-d402-451c-b9ed-9c1a04247482",
                 NormalizedEmail = "TEST@TEST.COM",
-                NormalizedUserName = "TEST@TEST.COM",
+                NormalizedUserName = "TESTUSER",
                 SecurityStamp = "PPJ7EANBPPIM25HTJRHDSZVPOBQJMP7Q",
-                UserName = "test@test.com",
+                UserName = "TestUser",
                 ConcurrencyStamp = "eeb5d586-783a-4a75-93e3-df74ef4d9f73"
             }
         };

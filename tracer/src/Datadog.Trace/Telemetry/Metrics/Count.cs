@@ -165,4 +165,22 @@ internal enum Count
     [TelemetryMetric<MetricTags.ApiError>("direct_log_api.errors.responses", isCommon: false)] DirectLogApiErrors,
 
 #endregion
+#region AppSec Namespace
+
+    /// <summary>
+    /// The number of times the waf is initialized
+    /// </summary>
+    [TelemetryMetric("waf.init", isCommon: true, NS.ASM)] WafInit,
+
+    /// <summary>
+    /// The number of times we reload the rules (startup + Remote Configuration)
+    /// </summary>
+    [TelemetryMetric("waf.updates", isCommon: true, NS.ASM)] WafUpdates,
+
+    /// <summary>
+    /// Requests analyzed by ddwaf
+    /// </summary>
+    [TelemetryMetric<MetricTags.WafAnalysis>("waf.requests", isCommon: true, NS.ASM)] WafRequests,
+
+#endregion
 }

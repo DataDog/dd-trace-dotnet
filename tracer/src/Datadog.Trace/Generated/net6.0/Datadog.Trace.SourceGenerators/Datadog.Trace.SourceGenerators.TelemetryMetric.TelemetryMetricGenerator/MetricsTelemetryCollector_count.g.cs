@@ -169,6 +169,22 @@ internal partial class MetricsTelemetryCollector
         Interlocked.Add(ref _buffer.Counts[index].Value, increment);
     }
 
+    public void RecordCountWafInit(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.Counts[413].Value, increment);
+    }
+
+    public void RecordCountWafUpdates(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.Counts[414].Value, increment);
+    }
+
+    public void RecordCountWafRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.WafAnalysis tag, int increment = 1)
+    {
+        var index = 415 + (int)tag;
+        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+    }
+
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> values.
     /// </summary>
@@ -616,6 +632,16 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "type:timeout" }),
             new(new[] { "type:network" }),
             new(new[] { "type:status_code" }),
+            // waf.init, index = 413
+            new(null),
+            // waf.updates, index = 414
+            new(null),
+            // waf.requests, index = 415
+            new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:false" }),
+            new(new[] { "waf_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "request_excluded:false" }),
+            new(new[] { "waf_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "request_excluded:false" }),
+            new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:true", "request_excluded:false" }),
+            new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:true" }),
         };
 
     /// <summary>
@@ -624,5 +650,5 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountEntryCounts { get; }
-        = new []{ 4, 150, 50, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 50, 1, 22, 3, };
+        = new []{ 4, 150, 50, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 50, 1, 22, 3, 1, 1, 5, };
 }

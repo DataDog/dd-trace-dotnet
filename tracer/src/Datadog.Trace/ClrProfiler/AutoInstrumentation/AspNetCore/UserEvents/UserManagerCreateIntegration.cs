@@ -52,7 +52,7 @@ public static class UserManagerCreateIntegration
         {
             var tracer = Tracer.Instance;
             var scope = tracer.InternalActiveScope;
-            return new CallTargetState(scope, user.Id);
+            return new CallTargetState(scope, user);
         }
 
         return CallTargetState.GetDefault();
@@ -62,24 +62,42 @@ public static class UserManagerCreateIntegration
         where TReturn : IIdentityResult
     {
         var security = Security.Instance;
+        var user = state.State as IIdentityUser;
         if (security.TrackUserEvents)
         {
             var span = state.Scope.Span;
             var setTag = TaggingUtils.GetSpanSetter(span, out _);
-            if (state.State is Guid)
-            {
-                setTag(Tags.User.Id, state.State.ToString());
-            }
+            var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
 
             if (returnValue.Succeeded)
             {
                 setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessTrack, "true");
                 setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessAutoMode, security.Settings.UserEventsAutomatedTracking);
+                if (security.IsExtendedUserTrackingEnabled)
+                {
+                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, user!.Id?.ToString());
+                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessEmail, user.Email);
+                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserName, user.UserName);
+                }
+                else if (user?.Id is Guid || Guid.TryParse(user?.Id?.ToString(), out _))
+                {
+                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, user!.Id!.ToString());
+                }
             }
             else
             {
                 setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureTrack, "true");
                 setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureAutoMode, security.Settings.UserEventsAutomatedTracking);
+                if (security.IsExtendedUserTrackingEnabled)
+                {
+                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserId, user!.Id?.ToString());
+                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureEmail, user.Email);
+                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserName, user.UserName);
+                }
+                else if (user?.Id is Guid || Guid.TryParse(user?.Id?.ToString(), out _))
+                {
+                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserId, user!.Id!.ToString());
+                }
             }
 
             security.SetTraceSamplingPriority(span);

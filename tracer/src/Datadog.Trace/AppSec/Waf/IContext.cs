@@ -8,6 +8,7 @@ using System.Collections.Generic;
 #nullable enable
 
 namespace Datadog.Trace.AppSec.Waf;
+
 internal interface IContext : IDisposable
 {
     IResult? Run(IDictionary<string, object> addresses, ulong timeoutMicroSeconds);
