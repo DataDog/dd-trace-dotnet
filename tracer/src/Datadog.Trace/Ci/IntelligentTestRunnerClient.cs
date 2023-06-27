@@ -194,9 +194,8 @@ internal class IntelligentTestRunnerClient
                 if (shallowLogArray.Length == 1)
                 {
                     // Just one commit SHA. Reconfiguring repo
-                    Log.Information("ITR: The current repo is a shallow clone, reconfiguring git repo and refetching data...");
-                    await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "config remote.origin.partialclonefilter \"blob:none\"", _workingDirectory)).ConfigureAwait(false);
-                    await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "fetch --shallow-since=\"1 month ago\" --update-shallow --refetch", _workingDirectory)).ConfigureAwait(false);
+                    Log.Information("ITR: The current repo is a shallow clone, refetching data...");
+                    await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no origin HEAD", _workingDirectory)).ConfigureAwait(false);
                 }
             }
         }
@@ -221,7 +220,8 @@ internal class IntelligentTestRunnerClient
 
         Log.Debug<int>("ITR: Local commits = {Count}", localCommits.Length);
         var remoteCommitsData = await SearchCommitAsync(localCommits).ConfigureAwait(false);
-        return await SendObjectsPackFileAsync(localCommits[0], remoteCommitsData).ConfigureAwait(false);
+        var localCommitsData = localCommits.Except(remoteCommitsData).ToArray();
+        return await SendObjectsPackFileAsync(localCommits[0], localCommitsData, remoteCommitsData).ConfigureAwait(false);
     }
 
     public async Task<SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false)
@@ -477,11 +477,11 @@ internal class IntelligentTestRunnerClient
         }
     }
 
-    public async Task<long> SendObjectsPackFileAsync(string commitSha, string[]? commitsToExclude)
+    public async Task<long> SendObjectsPackFileAsync(string commitSha, string[]? commitsToInclude, string[]? commitsToExclude)
     {
         Log.Debug("ITR: Packing and sending delta of commits and tree objects...");
 
-        var packFilesObject = await GetObjectsPackFileFromWorkingDirectoryAsync(commitsToExclude).ConfigureAwait(false);
+        var packFilesObject = await GetObjectsPackFileFromWorkingDirectoryAsync(commitsToInclude, commitsToExclude).ConfigureAwait(false);
         if (packFilesObject is null || packFilesObject.Files.Length == 0)
         {
             return 0;
@@ -544,14 +544,15 @@ internal class IntelligentTestRunnerClient
         }
     }
 
-    private async Task<ObjectPackFilesResult> GetObjectsPackFileFromWorkingDirectoryAsync(string[]? commitsToExclude)
+    private async Task<ObjectPackFilesResult> GetObjectsPackFileFromWorkingDirectoryAsync(string[]? commitsToInclude, string[]? commitsToExclude)
     {
         Log.Debug("ITR: Getting objects...");
+        commitsToInclude ??= Array.Empty<string>();
         commitsToExclude ??= Array.Empty<string>();
         var temporaryFolder = string.Empty;
         var temporaryPath = Path.GetTempFileName();
 
-        var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" HEAD " + string.Join(" ", commitsToExclude.Select(c => "^" + c));
+        var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" HEAD " + string.Join(" ", commitsToExclude.Select(c => "^" + c)) + " " + string.Join(" ", commitsToInclude);
         var getObjectsCommand = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", getObjectsArguments, _workingDirectory)).ConfigureAwait(false);
         if (string.IsNullOrEmpty(getObjectsCommand?.Output))
         {
