@@ -185,7 +185,6 @@ namespace Datadog.Trace.Tests.Tagging
         {
             var nodes = "node1:port1,node2:port2";
             var hostName = "host";
-            var customService = "client-service";
             var tags = new CouchbaseV1Tags();
 
             tags.SeedNodes = nodes;
