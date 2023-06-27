@@ -194,8 +194,9 @@ internal class IntelligentTestRunnerClient
                 if (shallowLogArray.Length == 1)
                 {
                     // Just one commit SHA. Reconfiguring repo
-                    Log.Information("ITR: The current repo is a shallow clone, refetching data...");
-                    await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no origin HEAD", _workingDirectory)).ConfigureAwait(false);
+                    var branchName = await _getBranchNameTask.ConfigureAwait(false);
+                    Log.Information("ITR: The current repo is a shallow clone, refetching data for {BranchName}", branchName);
+                    await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no origin {branchName}", _workingDirectory)).ConfigureAwait(false);
                 }
             }
         }
