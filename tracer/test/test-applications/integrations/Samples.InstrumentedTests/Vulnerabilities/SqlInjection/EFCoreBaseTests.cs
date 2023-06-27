@@ -37,7 +37,7 @@ public abstract class EFCoreBaseTests: InstrumentationTestsBase, IDisposable
         dbContext.Database.CloseConnection();
     }
 
-    #if NET5_0_OR_GREATER
+#if NET5_0_OR_GREATER
 
     [Fact]
     public void GivenACoreDatabase_WhenCallingExecuteSqlRawWithTainted_VulnerabilityIsReported()
