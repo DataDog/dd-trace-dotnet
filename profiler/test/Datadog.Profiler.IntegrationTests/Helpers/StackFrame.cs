@@ -13,7 +13,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public readonly string Module;
         public readonly string Namespace;
         public readonly string Type;
+        public readonly string TypeAdornment;
         public readonly string Function;
+        public readonly string FunctionAdornment;
         public readonly string Signature;
         public readonly string Filename;
         public readonly long StartLine;
@@ -26,7 +28,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public StackFrame(string rawStackFrame, string filename, long startLine)
         {
             // |lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw1_2
-            var match = Regex.Match(rawStackFrame, @"^\|lm:(?<module>.*) \|ns:(?<namespace>.*) \|ct:(?<type>.*) \|fn:(?<function>.*) \|sg:(?<signature>.*)$");
+            var match = Regex.Match(rawStackFrame, @"^\|lm:(?<module>.*) \|ns:(?<namespace>.*) \|ct:(?<type>.*) \|cg:(?<typeAdorn>.*) \|fn:(?<function>.*) \|fg:(?<functionArdorn>.*) \|sg:(?<signature>.*)$");
 
             if (!match.Success)
             {
@@ -36,7 +38,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             Module = match.Groups["module"].Value;
             Namespace = match.Groups["namespace"].Value;
             Type = match.Groups["type"].Value;
+            TypeAdornment = match.Groups["typeAdorn"].Value;
             Function = match.Groups["function"].Value;
+            FunctionAdornment = match.Groups["functionAdorn"].Value;
             Signature = match.Groups["signature"].Value;
             Filename = filename;
             StartLine = startLine;
@@ -51,13 +55,20 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             Signature = signature;
         }
 
-        public override string ToString() => $"|lm:{Module} |ns:{Namespace} |ct:{Type} |fn:{Function} |sg:{Signature}";
+        public override string ToString() => $"|lm:{Module} |ns:{Namespace} |ct:{Type} |cg:{TypeAdornment} |fn:{Function} |fg:{FunctionAdornment} |sg:{Signature}";
 
         public bool Equals(StackFrame other)
         {
             // for now we do not take into account Filename and StartLine.
             // Expecially Filename since the path can vary in CI
-            return Module == other.Module && Namespace == other.Namespace && Type == other.Type && Function == other.Function && Signature == other.Signature;
+            return
+                Module == other.Module &&
+                Namespace == other.Namespace &&
+                Type == other.Type &&
+                TypeAdornment == other.TypeAdornment &&
+                Function == other.Function &&
+                FunctionAdornment == other.FunctionAdornment &&
+                Signature == other.Signature;
         }
 
         public override bool Equals(object obj)
@@ -72,7 +83,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 var hashCode = (Module != null ? Module.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Namespace != null ? Namespace.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Type != null ? Type.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (TypeAdornment != null ? TypeAdornment.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Function != null ? Function.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (FunctionAdornment != null ? FunctionAdornment.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Signature != null ? Signature.GetHashCode() : 0);
                 return hashCode;
             }
