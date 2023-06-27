@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -28,7 +28,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_3,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/StreamingBothWays,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -45,9 +45,12 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: rpc.service
     },
     Metrics: {
       process_id: 0,
@@ -119,7 +122,7 @@
   {
     TraceId: Id_5,
     SpanId: Id_7,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/StreamingFromClient,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -136,9 +139,12 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: rpc.service
     },
     Metrics: {
       process_id: 0,
@@ -210,7 +216,7 @@
   {
     TraceId: Id_9,
     SpanId: Id_11,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -233,9 +239,12 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 1,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: rpc.service
     },
     Metrics: {
       process_id: 0,
@@ -309,7 +318,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_13,
     SpanId: Id_15,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -332,9 +341,12 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 15,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: rpc.service
     },
     Metrics: {
       process_id: 0,
@@ -408,7 +420,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_17,
     SpanId: Id_19,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -431,9 +443,12 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 5,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: rpc.service
     },
     Metrics: {
       process_id: 0,
@@ -507,7 +522,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_21,
     SpanId: Id_23,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -530,9 +545,12 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 2,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: rpc.service
     },
     Metrics: {
       process_id: 0,
@@ -606,7 +624,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_25,
     SpanId: Id_27,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -629,9 +647,12 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 1,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: rpc.service
     },
     Metrics: {
       process_id: 0,
@@ -705,7 +726,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_29,
     SpanId: Id_31,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -728,9 +749,12 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 15,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: rpc.service
     },
     Metrics: {
       process_id: 0,
@@ -804,7 +828,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_33,
     SpanId: Id_35,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -827,9 +851,12 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 5,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: rpc.service
     },
     Metrics: {
       process_id: 0,
@@ -903,7 +930,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_37,
     SpanId: Id_39,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -926,9 +953,12 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 2,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: rpc.service
     },
     Metrics: {
       process_id: 0,
@@ -1002,7 +1032,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_41,
     SpanId: Id_43,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/StreamingFromServer,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -1019,9 +1049,12 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: rpc.service
     },
     Metrics: {
       process_id: 0,
@@ -1093,7 +1126,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_45,
     SpanId: Id_47,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/Unary,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -1110,9 +1143,12 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: rpc.service
     },
     Metrics: {
       process_id: 0,
@@ -1184,7 +1220,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_49,
     SpanId: Id_51,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/Unary,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -1201,9 +1237,12 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: rpc.service
     },
     Metrics: {
       process_id: 0,
@@ -1275,7 +1314,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_53,
     SpanId: Id_55,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/VerySlow,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -1294,8 +1333,11 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.method.service: Greeter,
       grpc.request.metadata.client-value1: some-client-value,
       grpc.status.code: 4,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       span.kind: client,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: rpc.service
     },
     Metrics: {
       process_id: 0,
@@ -1369,7 +1411,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
   {
     TraceId: Id_57,
     SpanId: Id_59,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/VerySlow,
     Service: Samples.GrpcLegacy,
     Type: grpc,
@@ -1388,8 +1430,11 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.method.service: Greeter,
       grpc.request.metadata.client-value1: some-client-value,
       grpc.status.code: 4,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       span.kind: client,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: rpc.service
     },
     Metrics: {
       process_id: 0,
