@@ -197,9 +197,9 @@ internal class IntelligentTestRunnerClient
                     // git config --default origin --get clone.defaultRemoteName
                     // git rev-parse HEAD
                     var originNameOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "config --default origin --get clone.defaultRemoteName", _workingDirectory)).ConfigureAwait(false);
-                    var originName = originNameOutput?.Output ?? "origin";
+                    var originName = originNameOutput?.Output?.Replace("\n", string.Empty).Trim() ?? "origin";
                     var headOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "rev-parse HEAD", _workingDirectory)).ConfigureAwait(false);
-                    var head = headOutput?.Output ?? await _getBranchNameTask.ConfigureAwait(false);
+                    var head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? await _getBranchNameTask.ConfigureAwait(false);
                     Log.Information("ITR: The current repo is a shallow clone, refetching data for {OriginName}|{Head}", originName, head);
                     await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", _workingDirectory)).ConfigureAwait(false);
                 }
