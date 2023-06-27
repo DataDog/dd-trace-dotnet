@@ -190,7 +190,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("out.port")
                 .IsOptional("out.host")
                 .IsPresent("peer.service")
-                .MatchesOneOf("_dd.peer.service.source", "db.couchbase.seed.nodes", "network.destination.name", "peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "db.couchbase.seed.nodes", "out.host", "peer.service")
                 .Matches("component", "Couchbase")
                 .Matches("span.kind", "client"));
 

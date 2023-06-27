@@ -61,8 +61,8 @@ namespace Datadog.Trace.Tagging
                 return _peerServiceOverride is not null
                         ? "peer.service"
                         : SeedNodes is not null
-                            ? "db.couchbase.seed.nodes"
-                            : "network.destination.name";
+                            ? Trace.Tags.CouchbaseSeedNodes
+                            : Trace.Tags.OutHost;
             }
         }
     }
