@@ -230,7 +230,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("grpc.status.code")
                 .IsPresent("out.host")
                 .IsPresent("peer.service")
-                .MatchesOneOf("_dd.peer.service.source", "rpc.service", "network.destination.name", "peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "rpc.service", "out.host", "peer.service")
                 .Matches("component", "Grpc")
                 .Matches("span.kind", "client"));
 
@@ -366,6 +366,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 .IsPresent("db.name")
+                .IsPresent("out.host")
                 .Matches("db.type", "oracle")
                 .IsPresent("peer.service")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
