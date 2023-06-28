@@ -32,67 +32,58 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         {
             string containerId = null;
             string databaseId = null;
-            string host = null;
-            string port = null;
+            Uri endpoint = null;
             if (instance.TryDuckCast<ContainerNewStruct>(out var containerNew))
             {
                 containerId = containerNew.Id;
                 var database = containerNew.Database;
                 databaseId = database.Id;
-                host = database.Client.Endpoint?.Host;
-                port = database.Client.Endpoint?.Port.ToString();
+                endpoint = database.Client.Endpoint;
             }
             else if (instance.TryDuckCast<ContainerOldStruct>(out var containerOld))
             {
                 containerId = containerOld.Id;
                 var database = containerOld.Database;
                 databaseId = database.Id;
-                host = database.ClientContext.Client.Endpoint?.Host;
-                port = database.ClientContext.Client.Endpoint?.Port.ToString();
+                endpoint = database.ClientContext.Client.Endpoint;
             }
 
-            return CreateCosmosDbCallState(instance, queryDefinition, containerId, databaseId, host, port);
+            return CreateCosmosDbCallState(instance, queryDefinition, containerId, databaseId, endpoint);
         }
 
         public static CallTargetState CreateDatabaseCallStateExt<TTarget, TQueryDefinition>(TTarget instance, TQueryDefinition queryDefinition)
         {
             string databaseId = null;
-            string host = null;
-            string port = null;
+            Uri endpoint = null;
 
             if (instance.TryDuckCast<DatabaseNewStruct>(out var databaseNew))
             {
                 databaseId = databaseNew.Id;
                 var client = databaseNew.Client;
-                host = client.Endpoint?.Host;
-                port = client.Endpoint?.Port.ToString();
+                endpoint = client.Endpoint;
             }
             else if (instance.TryDuckCast<DatabaseOldStruct>(out var databaseOld))
             {
                 databaseId = databaseOld.Id;
                 var client = databaseOld.ClientContext.Client;
-                host = client.Endpoint?.Host;
-                port = client.Endpoint?.Port.ToString();
+                endpoint = client.Endpoint;
             }
 
-            return CreateCosmosDbCallState(instance, queryDefinition, null, databaseId, host, port);
+            return CreateCosmosDbCallState(instance, queryDefinition, null, databaseId, endpoint);
         }
 
         public static CallTargetState CreateClientCallStateExt<TTarget, TQueryDefinition>(TTarget instance, TQueryDefinition queryDefinition)
         {
-            string host = null;
-            string port = null;
-
+            Uri endpoint = null;
             if (instance.TryDuckCast<CosmosClientStruct>(out var c))
             {
-                host = c.Endpoint?.Host;
-                port = c.Endpoint?.Port.ToString();
+                endpoint = c.Endpoint;
             }
 
-            return CreateCosmosDbCallState(instance, queryDefinition, null, null, host, port);
+            return CreateCosmosDbCallState(instance, queryDefinition, null, null, endpoint);
         }
 
-        private static CallTargetState CreateCosmosDbCallState<TTarget, TQueryDefinition>(TTarget instance, TQueryDefinition queryDefinition, string containerId, string databaseId, string host, string port)
+        private static CallTargetState CreateCosmosDbCallState<TTarget, TQueryDefinition>(TTarget instance, TQueryDefinition queryDefinition, string containerId, string databaseId, Uri endpoint)
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -132,8 +123,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
                 CosmosDbTags tags = tracer.CurrentTraceSettings.Schema.Database.CreateCosmosDbTags();
                 tags.ContainerId = containerId;
                 tags.DatabaseId = databaseId;
-                tags.Host = host;
-                tags.Port = port;
+                tags.SetEndpoint(endpoint);
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
 

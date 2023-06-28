@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.SourceGenerators;
@@ -32,6 +33,11 @@ namespace Datadog.Trace.Tagging
 
         [Tag(Trace.Tags.OutPort)]
         public string Port { get; set; }
+
+        public virtual void SetEndpoint(Uri endpoint)
+        {
+            Host = endpoint?.ToString();
+        }
     }
 
     internal partial class CosmosDbV1Tags : CosmosDbTags
@@ -61,6 +67,12 @@ namespace Datadog.Trace.Tagging
                             ? "db.instance"
                             : "network.destination.name";
             }
+        }
+
+        public override void SetEndpoint(Uri endpoint)
+        {
+            Host = endpoint?.Host;
+            Port = endpoint?.Port.ToString();
         }
     }
 }
