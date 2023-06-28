@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -16,7 +17,6 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
     private readonly IntPtr* _items;
     private readonly int _length;
     private readonly int _blockSize;
-    private IntPtr _firstItem;
     private int _initialSearchIndex;
     private bool _isDisposed;
 
@@ -25,7 +25,6 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
         _blockSize = blockSize;
         _items = (IntPtr*)Marshal.AllocHGlobal(poolSize * sizeof(IntPtr));
         _length = poolSize;
-        _firstItem = IntPtr.Zero;
         _initialSearchIndex = 0;
 
         for (var i = 0; i < _length; i++)
@@ -46,21 +45,6 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
             ThrowObjectDisposedException();
         }
 
-        var inst = _firstItem;
-        if (inst == IntPtr.Zero)
-        {
-            inst = RentSlow();
-        }
-        else
-        {
-            _firstItem = IntPtr.Zero;
-        }
-
-        return inst;
-    }
-
-    private IntPtr RentSlow()
-    {
         var items = _items;
         var length = _length;
         for (var i = _initialSearchIndex; i < length; i++)
@@ -84,19 +68,6 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
             ThrowObjectDisposedException();
         }
 
-        var inst = _firstItem;
-        if (inst != IntPtr.Zero)
-        {
-            ReturnSlow(block);
-        }
-        else
-        {
-            _firstItem = block;
-        }
-    }
-
-    private void ReturnSlow(IntPtr block)
-    {
         var items = _items;
         var length = _length;
         for (var i = 0; i < length; i++)
@@ -109,6 +80,45 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
             }
         }
 
+        ReturnSlow(block);
+    }
+
+    public void Return(IList<IntPtr> blocks)
+    {
+        if (_isDisposed)
+        {
+            ThrowObjectDisposedException();
+        }
+
+        if (blocks.Count == 0)
+        {
+            return;
+        }
+
+        var items = _items;
+        var length = _length;
+        var blockIndex = 0;
+        for (var i = 0; i < length; i++)
+        {
+            if (items[i] == IntPtr.Zero)
+            {
+                items[i] = blocks[blockIndex++];
+                if (blockIndex == blocks.Count)
+                {
+                    _initialSearchIndex = 0;
+                    return;
+                }
+            }
+        }
+
+        for (var i = blockIndex; i < blocks.Count; i++)
+        {
+            ReturnSlow(blocks[i]);
+        }
+    }
+
+    private void ReturnSlow(IntPtr block)
+    {
         Marshal.FreeHGlobal(block);
     }
 
@@ -117,13 +127,6 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
         if (_isDisposed)
         {
             return;
-        }
-
-        var firstItem = _firstItem;
-        if (firstItem != IntPtr.Zero)
-        {
-            Marshal.FreeHGlobal(firstItem);
-            _firstItem = IntPtr.Zero;
         }
 
         var items = _items;

@@ -35,7 +35,7 @@ namespace Datadog.Trace.AppSec.Waf
                     return _pool;
                 }
 
-                var instance = new UnmanagedMemoryPool(MaxBytesForMaxStringLength, 100);
+                var instance = new UnmanagedMemoryPool(MaxBytesForMaxStringLength, 1000);
                 _pool = instance;
                 return instance;
             }
