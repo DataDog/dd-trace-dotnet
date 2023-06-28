@@ -39,7 +39,6 @@ internal class TelemetryControllerV2 : ITelemetryController
     private readonly Task _flushTask;
     private bool _fatalError;
     private string? _namingVersion;
-    private bool _appStartedSent;
 
     internal TelemetryControllerV2(
         IConfigurationTelemetry configuration,
@@ -79,6 +78,8 @@ internal class TelemetryControllerV2 : ITelemetryController
 
         _flushTask = Task.Run(PushTelemetryLoopAsync);
     }
+
+    public bool AppStartedSent { get; set; }
 
     public bool FatalError => Volatile.Read(ref _fatalError);
 
@@ -256,7 +257,7 @@ internal class TelemetryControllerV2 : ITelemetryController
             _metrics.GetMetrics(),
             _products.GetData());
 
-        var sendAppStarted = !_appStartedSent;
+        var sendAppStarted = !AppStartedSent;
         var data = _dataBuilder.BuildTelemetryData(application, host, in input, sendAppStarted, _namingVersion);
 
         Log.Debug("Pushing telemetry changes");
@@ -274,7 +275,7 @@ internal class TelemetryControllerV2 : ITelemetryController
             case TelemetryTransportResult.Success:
                 if (sendAppStarted)
                 {
-                    _appStartedSent = true;
+                    AppStartedSent = true;
                 }
 
                 return true;
