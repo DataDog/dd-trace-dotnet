@@ -445,12 +445,10 @@ namespace Datadog.Trace.AppSec
 
                 if (!fromRemoteConfig)
                 {
-                    // occurs the first time we have initialize the WAF
+                    // occurs the first time we initialize the WAF
                     TelemetryFactory.Metrics.SetWafVersion(_waf!.Version);
                     TelemetryFactory.Metrics.RecordCountWafInit();
                 }
-
-                TelemetryFactory.Metrics.RecordCountWafUpdates();
             }
             else
             {

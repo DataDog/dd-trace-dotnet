@@ -14,6 +14,7 @@ using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Waf
@@ -165,6 +166,7 @@ namespace Datadog.Trace.AppSec.Waf
                 // only if rules are provided will the waf give metrics
                 if (arguments.ContainsKey("rules"))
                 {
+                    TelemetryFactory.Metrics.RecordCountWafUpdates();
                     rulesetInfo = new DdwafRuleSetInfo();
                 }
 
