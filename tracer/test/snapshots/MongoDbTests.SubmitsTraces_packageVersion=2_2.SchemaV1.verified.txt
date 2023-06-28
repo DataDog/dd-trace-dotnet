@@ -200,7 +200,7 @@
       peer.service: mongo,
       span.kind: client,
       version: 1.0.0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -305,7 +305,7 @@
       peer.service: mongo,
       span.kind: client,
       version: 1.0.0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -324,7 +324,7 @@
       peer.service: mongo,
       span.kind: client,
       version: 1.0.0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   }
 ]
