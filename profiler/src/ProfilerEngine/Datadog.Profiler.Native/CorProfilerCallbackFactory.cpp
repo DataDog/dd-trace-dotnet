@@ -70,6 +70,17 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallbackFactory::CreateInstance(IUnknown* p
         return CLASS_E_NOAGGREGATION;
     }
 
+    // the scenario where different CLRs are loaded in the same process is not supported
+    auto currentProfiler = CorProfilerCallback::GetInstance();
+    if (currentProfiler != nullptr)
+    {
+        Log::Error(
+            "Impossible to initialize the Profiler a second time. The following runtime is already loaded: ",
+            currentProfiler->GetRuntimeDescription());
+
+        return E_INVALIDARG;
+    }
+
     CorProfilerCallback* profiler = new (std::nothrow) CorProfilerCallback();
     if (profiler == nullptr)
     {
