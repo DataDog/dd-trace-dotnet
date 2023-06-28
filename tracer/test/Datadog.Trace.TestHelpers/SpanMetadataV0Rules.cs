@@ -348,6 +348,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 .IsPresent("db.name")
+                .IsPresent("out.host")
                 .Matches("db.type", "oracle")
                 .Matches("component", "Oracle")
                 .Matches("span.kind", "client"));
