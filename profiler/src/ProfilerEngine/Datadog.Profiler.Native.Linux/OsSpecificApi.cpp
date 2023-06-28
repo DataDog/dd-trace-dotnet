@@ -207,8 +207,13 @@ std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
     }
     else
     {
-        auto errorNumber = errno;
-        Log::Debug("Failed at opendir ", dirname, " error: ", strerror(errorNumber));
+        static bool alreadyLogged = false;
+        if (!alreadyLogged)
+        {
+            alreadyLogged = true;
+            auto errorNumber = errno;
+            Log::Error("Failed at opendir ", dirname, " error: ", strerror(errorNumber));
+        }
     }
 
     return threads;

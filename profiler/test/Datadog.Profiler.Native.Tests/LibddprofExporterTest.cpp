@@ -475,7 +475,7 @@ TEST(LibddprofExporterTest, MustCreateAgentLessExporterIfAgentless)
                                       metricsRegistry, allocRecorder);
 }
 
-TEST(LibddprofExporterTest, MustCollectSamplesFromSamplesProvider)
+TEST(LibddprofExporterTest, MustCollectSamplesFromProcessProvider)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
 

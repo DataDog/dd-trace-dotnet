@@ -255,8 +255,12 @@ ScopedHandle GetThreadHandle(DWORD threadId)
 
         if (msgBuffer != NULL)
         {
-            Log::Debug("GetThreadHandle: Error getting thread handle for thread id '", threadId, "': ", (LPTSTR)msgBuffer);
+            Log::Debug("GetThreadHandle: Error getting thread handle for thread id '", threadId, "': ", (LPTSTR)msgBuffer, " (", errorCode, ")");
             LocalFree(msgBuffer);
+        }
+        else
+        {
+            Log::Debug("GetThreadHandle: Error getting thread handle for thread id '", threadId, "' (", errorCode, ")");
         }
     }
     return handle;
@@ -275,11 +279,12 @@ std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
         te.dwSize = sizeof(te);
         if (Thread32First(h, &te))
         {
+            auto processId = OpSysTools::GetProcId();
             do
             {
                 if (te.dwSize >= FIELD_OFFSET(THREADENTRY32, th32OwnerProcessID) +
                                      sizeof(te.th32OwnerProcessID) &&
-                    te.th32ThreadID != 0 && te.th32OwnerProcessID == OpSysTools::GetProcId())
+                    te.th32ThreadID != 0 && te.th32OwnerProcessID == processId)
                 {
                     auto threadHnd = GetThreadHandle(te.th32ThreadID);
 
