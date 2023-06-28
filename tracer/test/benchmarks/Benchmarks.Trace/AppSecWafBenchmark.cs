@@ -125,7 +125,54 @@ public class AppSecWafBenchmark
             { AddressesConstants.RequestMethod, "POST" },
         };
     }
-    
+
+    public IEnumerable<Dictionary<string, object>> Source2()
+    {
+        yield return MakeNestedMap(10);
+        yield return MakeNestedMap(100);
+        yield return MakeNestedMap(1000);
+    }
+
+    private static Dictionary<string, object> MakeNestedMap(int nestingDepth)
+    {
+        var root = new Dictionary<string, object>();
+        var map = root;
+
+        for (var i = 0; i < nestingDepth; i++)
+        {
+            if (i % 2 == 0)
+            {
+                var nextList = new List<object>
+                {
+                    true,
+                    false,
+                    false,
+                    false,
+                    true,
+                    123,
+                    "lorem",
+                    "ipsum",
+                    "dolor",
+                    AddressesConstants.RequestCookies, new Dictionary<string, string> { { "something", ".htaccess" }, { "something2", ";shutdown--" } }
+                };
+                map.Add("list", nextList);
+            }
+
+            var nextMap = new Dictionary<string, object>
+            {
+                { "lorem", "ipsum" },
+                { "dolor", "sit" },
+                { "amet", "amet" },
+                { "lorem2", "dolor2" },
+                { "sit2", true },
+                { "amet3", 4356 }
+            };
+            map.Add("item", nextMap);
+            map = nextMap;
+        }
+
+        return root;
+    }
 
     [GlobalSetup]
     public void Setup()
@@ -140,7 +187,7 @@ public class AppSecWafBenchmark
     }
 
     [Benchmark]
-    [ArgumentsSource(nameof(Source))]
+    [ArgumentsSource(nameof(Source2))]
     public void RunWaf(Dictionary<string, object> args)
     {
         _context.Run(args, TimeoutMicroSeconds);
