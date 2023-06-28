@@ -17,4 +17,9 @@ internal partial interface IMetricsTelemetryCollector
     public void Record(PublicApiUsage api);
 
     MetricResults GetMetrics();
+
+    /// <summary>
+    /// Sets the version of the WAF used for future metrics
+    /// </summary>
+    public void SetWafVersion(string wafVersion);
 }

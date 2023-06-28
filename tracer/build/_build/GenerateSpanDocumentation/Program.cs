@@ -83,7 +83,7 @@ The Integration Name (used for configuring individual integrations) of each span
                     case SpanModel.ModelState.ParsingTags:
                     case SpanModel.ModelState.ParsingAdditionalTags:
                     case SpanModel.ModelState.ParsingMetrics:
-                    case SpanModel.ModelState.ParsingIntegrationName:
+                    case SpanModel.ModelState.ParsingDescription:
                         var trimmedLine = line.Trim();
 
                         // Finish the section
@@ -136,7 +136,17 @@ The Integration Name (used for configuring individual integrations) of each span
                                 var nameStart = line.IndexOf("\"", functionStartIndex) + 1;
                                 var nameEnd = line.IndexOf("\"", nameStart) - 1;
                                 currentModel.IntegrationName = line.Substring(nameStart, nameEnd - nameStart + 1);
-                                currentModel.State = SpanModel.ModelState.ParsingIntegrationName;
+                                currentModel.State = SpanModel.ModelState.ParsingDescription;
+                            }
+
+                            functionStartIndex = line.IndexOf("WithMarkdownSection(");
+                            if (functionStartIndex > -1)
+                            {
+                                processRequirement = false;
+                                var nameStart = line.IndexOf("\"", functionStartIndex) + 1;
+                                var nameEnd = line.IndexOf("\"", nameStart) - 1;
+                                currentModel.SectionName = line.Substring(nameStart, nameEnd - nameStart + 1);
+                                currentModel.State = SpanModel.ModelState.ParsingDescription;
                             }
 
                             if (processRequirement)
@@ -249,7 +259,7 @@ The Integration Name (used for configuring individual integrations) of each span
             {
                 Missing,
                 Initialized,
-                ParsingIntegrationName,
+                ParsingDescription,
                 ParsingProperties,
                 ParsingTags,
                 ParsingAdditionalTags,

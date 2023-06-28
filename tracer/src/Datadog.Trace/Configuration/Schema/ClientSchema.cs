@@ -54,5 +54,12 @@ namespace Datadog.Trace.Configuration.Schema
                 SchemaVersion.V0 when !_peerServiceTagsEnabled => new HttpTags(),
                 _ => new HttpV1Tags(),
             };
+
+        public GrpcClientTags CreateGrpcClientTags()
+            => _version switch
+            {
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new GrpcClientTags(),
+                _ => new GrpcClientV1Tags(),
+            };
     }
 }

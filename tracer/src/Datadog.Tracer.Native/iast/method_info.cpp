@@ -109,7 +109,7 @@ namespace iast
 
     WSTRING MemberRefInfo::GetFullName(bool includeReturnType)
     {
-        if (_fullName.size() == 0)
+        if (_fullName.size() == 0 && _fullNameCounterLock.fetch_add(1, std::memory_order_acquire) == 0)
         {
             _fullName = GetTypeName() + WStr("::") + _name;
             auto signature = GetSignature();
@@ -383,11 +383,13 @@ namespace iast
         //auto Profiler = module->Profiler;
         bool verify = true; // Profiler->VerifyIL();
         bool dump = true; // Profiler->DumpIL();
+
         if (verify || dump)
         {
             if (!_rewriter) 
             {
                 trace::Logger::Debug("MethodInfo::SetMethodIL -> No rewritter present. Creating one to verify new IL...");
+                
                 _rewriter = new ILRewriter(this);
                 if (FAILED(_rewriter->Import(pMethodIL)))
                 {
