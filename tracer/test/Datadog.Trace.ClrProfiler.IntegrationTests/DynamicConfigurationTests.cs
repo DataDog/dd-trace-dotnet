@@ -225,18 +225,35 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var now = DateTime.UtcNow;
 
+            static IEnumerable<ConfigurationKeyValue> ExtractConfiguration(TelemetryWrapper wrapper)
+            {
+                if (wrapper.IsRequestType(TelemetryRequestTypes.AppStarted))
+                {
+                    var appStarted = wrapper.TryGetPayload<AppStartedPayloadV2>(TelemetryRequestTypes.AppStarted);
+                    return appStarted.Configuration;
+                }
+
+                if (wrapper.IsRequestType(TelemetryRequestTypes.AppClientConfigurationChanged))
+                {
+                    var configurationChanged = wrapper.TryGetPayload<AppClientConfigurationChangedPayloadV2>(TelemetryRequestTypes.AppClientConfigurationChanged);
+                    return configurationChanged.Configuration;
+                }
+
+                return Enumerable.Empty<ConfigurationKeyValue>();
+            }
+
             while (latestConfig.Count < expectedCount)
             {
                 while (events.TryPop(out var obj))
                 {
-                    if (!IsConfigurationChangedEvent(obj))
+                    var wrapper = ((TelemetryWrapper)obj);
+
+                    if (!wrapper.IsRequestType(TelemetryRequestTypes.AppStarted) && !wrapper.IsRequestType(TelemetryRequestTypes.AppClientConfigurationChanged))
                     {
                         continue;
                     }
 
-                    var configurationChanged = ((TelemetryWrapper.V2)obj).TryGetPayload<AppClientConfigurationChangedPayloadV2>(TelemetryRequestTypes.AppClientConfigurationChanged);
-
-                    foreach (var key in configurationChanged.Configuration)
+                    foreach (var key in ExtractConfiguration(wrapper))
                     {
                         if (key.Origin == "remote_config")
                         {
