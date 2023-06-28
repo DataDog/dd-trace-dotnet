@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
@@ -144,9 +145,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private static bool IsConfigurationChangedEvent(object obj)
+        private static IEnumerable<ConfigurationKeyValue> ExtractConfiguration(TelemetryWrapper wrapper)
         {
-            return ((TelemetryWrapper)obj).IsRequestType(TelemetryRequestTypes.AppClientConfigurationChanged);
+            if (wrapper.IsRequestType(TelemetryRequestTypes.AppStarted))
+            {
+                var appStarted = wrapper.TryGetPayload<AppStartedPayloadV2>(TelemetryRequestTypes.AppStarted);
+                return appStarted.Configuration ?? Enumerable.Empty<ConfigurationKeyValue>();
+            }
+
+            if (wrapper.IsRequestType(TelemetryRequestTypes.AppClientConfigurationChanged))
+            {
+                var configurationChanged = wrapper.TryGetPayload<AppClientConfigurationChangedPayloadV2>(TelemetryRequestTypes.AppClientConfigurationChanged);
+                return configurationChanged.Configuration;
+            }
+
+            return Enumerable.Empty<ConfigurationKeyValue>();
         }
 
         private async Task UpdateAndValidateConfig(MockTracerAgent agent, LogEntryWatcher logEntryWatcher, Config config, Config expectedConfig = null)
@@ -162,7 +175,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             request.Client.State.ConfigStates.Should().ContainSingle(f => f.Id == fileId)
                .Subject.ApplyState.Should().Be(ApplyStates.ACKNOWLEDGED);
 
-            var log = await logEntryWatcher.WaitForLogEntries(new[] { "Configuration updated, sending app-client-configuration-change", DiagnosticLog });
+            var log = await logEntryWatcher.WaitForLogEntries(new[] { DiagnosticLog });
 
             using var context = new AssertionScope();
 
@@ -199,9 +212,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             FlattenJsonArray(json["header_tags"]).Should().Be(expectedConfig.TraceHeaderTags ?? string.Empty);
             // FlattenJsonArray(json["service_mapping"]).Should().Be(expectedConfig.ServiceNameMapping ?? string.Empty);
 
-            agent.WaitForLatestTelemetry(IsConfigurationChangedEvent);
+            WaitForTelemetry(agent);
 
             AssertConfigurationChanged(agent.Telemetry, config);
+        }
+
+        private bool WaitForTelemetry(MockTracerAgent agent)
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(20);
+
+            while (DateTime.UtcNow < deadline)
+            {
+                foreach (var item in agent.Telemetry)
+                {
+                    if (ExtractConfiguration((TelemetryWrapper)item).Any(c => c.Origin == "remote_config"))
+                    {
+                        return true;
+                    }
+                }
+
+                Thread.Sleep(500);
+            }
+
+            return false;
         }
 
         private void AssertConfigurationChanged(ConcurrentStack<object> events, Config config)
@@ -224,23 +257,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var latestConfig = new Dictionary<string, object>();
 
             var now = DateTime.UtcNow;
-
-            static IEnumerable<ConfigurationKeyValue> ExtractConfiguration(TelemetryWrapper wrapper)
-            {
-                if (wrapper.IsRequestType(TelemetryRequestTypes.AppStarted))
-                {
-                    var appStarted = wrapper.TryGetPayload<AppStartedPayloadV2>(TelemetryRequestTypes.AppStarted);
-                    return appStarted.Configuration ?? Enumerable.Empty<ConfigurationKeyValue>();
-                }
-
-                if (wrapper.IsRequestType(TelemetryRequestTypes.AppClientConfigurationChanged))
-                {
-                    var configurationChanged = wrapper.TryGetPayload<AppClientConfigurationChangedPayloadV2>(TelemetryRequestTypes.AppClientConfigurationChanged);
-                    return configurationChanged.Configuration;
-                }
-
-                return Enumerable.Empty<ConfigurationKeyValue>();
-            }
 
             while (latestConfig.Count < expectedCount)
             {
