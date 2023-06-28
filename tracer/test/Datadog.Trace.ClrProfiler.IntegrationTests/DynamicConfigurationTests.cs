@@ -147,12 +147,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private static IEnumerable<ConfigurationKeyValue> ExtractConfiguration(TelemetryWrapper wrapper)
         {
-            if (wrapper.IsRequestType(TelemetryRequestTypes.AppStarted))
-            {
-                var appStarted = wrapper.TryGetPayload<AppStartedPayloadV2>(TelemetryRequestTypes.AppStarted);
-                return appStarted.Configuration ?? Enumerable.Empty<ConfigurationKeyValue>();
-            }
-
             if (wrapper.IsRequestType(TelemetryRequestTypes.AppClientConfigurationChanged))
             {
                 var configurationChanged = wrapper.TryGetPayload<AppClientConfigurationChangedPayloadV2>(TelemetryRequestTypes.AppClientConfigurationChanged);
@@ -264,7 +258,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     var wrapper = ((TelemetryWrapper)obj);
 
-                    if (!wrapper.IsRequestType(TelemetryRequestTypes.AppStarted) && !wrapper.IsRequestType(TelemetryRequestTypes.AppClientConfigurationChanged))
+                    if (!wrapper.IsRequestType(TelemetryRequestTypes.AppClientConfigurationChanged))
                     {
                         continue;
                     }
