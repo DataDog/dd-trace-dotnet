@@ -55,4 +55,5 @@ public:
     virtual bool UseBacktrace2() const = 0;
     virtual bool IsAllocationRecorderEnabled() const = 0;
     virtual bool IsDebugInfoEnabled() const = 0;
+    virtual bool IsGcThreadsCpuTimeEnabled() const = 0;
 };

@@ -72,6 +72,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.DisableRequireUniquePrefix();
                 settings.AddSimpleScrubber($" {TestPrefix}ServiceStack.Redis.", " ServiceStack.Redis.");
                 settings.AddSimpleScrubber($"out.host: {host}", "out.host: servicestackredis");
+                settings.AddSimpleScrubber($"peer.service: {host}", "peer.service: servicestackredis");
                 settings.AddSimpleScrubber($"out.port: {port}", "out.port: 6379");
 
                 // The test application runs the same RunServiceStack method X number of times

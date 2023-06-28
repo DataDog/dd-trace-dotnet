@@ -234,6 +234,8 @@ public class IastInstrumentationUnitTests : TestHelper
         using (var agent = EnvironmentHelper.GetMockAgent())
         {
             EnableIast(true);
+            var logDirectory = Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests");
+            SetDumpInfo(logDirectory);
             EnableEvidenceRedaction(false);
             string arguments = string.Empty;
 #if NET462
@@ -251,7 +253,7 @@ public class IastInstrumentationUnitTests : TestHelper
                 }
             }
 #endif
-            SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests"));
+            SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logDirectory);
             SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "0");
             ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);
             processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
@@ -352,5 +354,14 @@ public class IastInstrumentationUnitTests : TestHelper
                 }
             }
         }
+    }
+
+    private void SetDumpInfo(string logDirectory)
+    {
+        SetEnvironmentVariable("COMPlus_DbgEnableMiniDump", "1");
+        SetEnvironmentVariable("COMPlus_DbgMiniDumpType", "4");
+        // Getting: The pid argument is no longer supported when using this one
+        // SetEnvironmentVariable("COMPlus_DbgMiniDumpName", logDirectory);
+        SetEnvironmentVariable("MINIDUMP_PATH", logDirectory);
     }
 }

@@ -102,11 +102,18 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsGraphQLV0(),
             };
 
-        public static Result IsGrpc(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags) =>
+        public static Result IsGrpcClient(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags) =>
             metadataSchemaVersion switch
             {
-                "v1" => span.IsGrpcV1(excludeTags),
-                _ => span.IsGrpcV0(excludeTags),
+                "v1" => span.IsGrpcClientV1(excludeTags),
+                _ => span.IsGrpcClientV0(excludeTags),
+            };
+
+        public static Result IsGrpcServer(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsGrpcServerV1(excludeTags),
+                _ => span.IsGrpcServerV0(excludeTags),
             };
 
         public static Result IsHotChocolate(this MockSpan span, string metadataSchemaVersion) =>

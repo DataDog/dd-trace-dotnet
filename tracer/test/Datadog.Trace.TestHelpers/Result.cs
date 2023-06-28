@@ -50,6 +50,8 @@ namespace Datadog.Trace.TestHelpers
 
         public Result WithIntegrationName(string name) => this;
 
+        public Result WithMarkdownSection(string name) => this;
+
         public Result Properties(Action<SpanPropertyAssertion> propertyAssertions)
         {
             if (_propertiesInvoked)
