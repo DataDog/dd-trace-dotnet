@@ -87,7 +87,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 if (EnvironmentTools.IsOsx())
                 {
                     settings.AddSimpleScrubber("out.host: localhost", "out.host: stackexchangeredis");
+                    settings.AddSimpleScrubber("peer.service: localhost", "peer.service: stackexchangeredis");
                     settings.AddSimpleScrubber("out.host: 127.0.0.1", "out.host: stackexchangeredis-replica");
+                    settings.AddSimpleScrubber("peer.service: 127.0.0.1", "peer.service: stackexchangeredis-replica");
                     settings.AddSimpleScrubber("out.port: 6390", "out.port: 6379");
                     settings.AddSimpleScrubber("out.port: 6391", "out.port: 6379");
                     settings.AddSimpleScrubber("out.port: 6392", "out.port: 6379");
@@ -95,6 +97,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 else
                 {
                     settings.AddSimpleScrubber($"out.host: {host}", "out.host: stackexchangeredis");
+                    settings.AddSimpleScrubber($"peer.service: {host}", "peer.service: stackexchangeredis");
                     settings.AddSimpleScrubber($"out.port: {port}", "out.port: 6379");
                 }
 

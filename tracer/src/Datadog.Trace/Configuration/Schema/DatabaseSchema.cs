@@ -8,6 +8,7 @@
 using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Configuration.Schema
@@ -64,6 +65,13 @@ namespace Datadog.Trace.Configuration.Schema
             {
                 SchemaVersion.V0 when !_peerServiceTagsEnabled => new SqlTags(),
                 _ => new SqlV1Tags(),
+            };
+
+        public RedisTags CreateRedisTags()
+            => _version switch
+            {
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new RedisTags(),
+                _ => new RedisV1Tags(),
             };
     }
 }

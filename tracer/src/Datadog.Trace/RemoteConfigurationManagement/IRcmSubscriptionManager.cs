@@ -6,6 +6,7 @@
 #nullable enable
 using System.Collections.Generic;
 using System.Numerics;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 
 namespace Datadog.Trace.RemoteConfigurationManagement;
 
@@ -26,4 +27,8 @@ internal interface IRcmSubscriptionManager
     void SetCapability(BigInteger index, bool available);
 
     byte[] GetCapabilities();
+
+    GetRcmRequest BuildRequest(RcmClientTracer rcmTracer, string? lastPollError);
+
+    void ProcessResponse(GetRcmResponse response);
 }
