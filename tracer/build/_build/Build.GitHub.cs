@@ -411,7 +411,6 @@ partial class Build
         {
             var expectedFileChanges = new List<string>
             {
-                ".github/scripts/package_and_deploy.sh",
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt",
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc",
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
@@ -921,7 +920,7 @@ partial class Build
              var masterBuild = await GetCrankArtifacts(buildHttpClient, "refs/heads/master", masterDir);
              var oldBenchmarkBuild = await GetCrankArtifacts(buildHttpClient, "refs/heads/benchmarks/2.9.0", oldBenchmarksDir);
              var (newBenchmarkBuild, benchmarkVersion) = await GetCrankArtifactsForLatestBenchmarkBranch(buildHttpClient, latestBenchmarksDir);
-             
+
              var commitName = isPr ? $"This PR ({prNumber})" : $"This commit ({testedCommit.Substring(0, 6)})";
              var sources = new List<CrankResultSource>
              {
@@ -1030,7 +1029,7 @@ partial class Build
 
              // Grab the comparison artifacts
              var masterBuild = await GetExecutionBenchmarkArtifacts(buildHttpClient, "refs/heads/master", masterDir);
-             
+
              var commitName = isPr ? $"This PR ({prNumber})" : $"This commit ({testedCommit.Substring(0, 6)})";
              var sources = new List<ExecutionTimeResultSource>
              {
@@ -1455,7 +1454,7 @@ partial class Build
 
     static string GetCommitDetails()
     {
-        var testedCommit = Environment.GetEnvironmentVariable("OriginalCommitId"); 
+        var testedCommit = Environment.GetEnvironmentVariable("OriginalCommitId");
         if (string.IsNullOrEmpty(testedCommit))
         {
             testedCommit = GitTasks.Git($"rev-parse HEAD").FirstOrDefault().Text;
