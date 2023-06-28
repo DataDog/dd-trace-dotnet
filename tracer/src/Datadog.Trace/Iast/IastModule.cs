@@ -110,17 +110,17 @@ internal static class IastModule
 
     public static Scope? OnInsecureCookie(IntegrationId integrationId, string cookieName)
     {
-        return GetScopeWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.InsecureCookie, ("INSECURE_COOKIE:" + cookieName).GetStaticHashCode());
+        return GetScopeWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.InsecureCookie, (VulnerabilityTypeName.InsecureCookie.ToString() + ":" + cookieName).GetStaticHashCode());
     }
 
     public static Scope? OnNoHttpOnlyCookie(IntegrationId integrationId, string cookieName)
     {
-        return GetScopeWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoHttpOnlyCookie, ("NO_HTTPONLY_COOKIE:" + cookieName).GetStaticHashCode());
+        return GetScopeWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoHttpOnlyCookie, (VulnerabilityTypeName.NoHttpOnlyCookie.ToString() + ":" + cookieName).GetStaticHashCode());
     }
 
     public static Scope? OnNoSamesiteCookie(IntegrationId integrationId, string cookieName)
     {
-        return GetScopeWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoSameSiteCookie, ("NO_SAMESITE_COOKIE:" + cookieName).GetStaticHashCode());
+        return GetScopeWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoSameSiteCookie, (VulnerabilityTypeName.NoSameSiteCookie.ToString() + ":" + cookieName).GetStaticHashCode());
     }
 
     public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId)

@@ -23,18 +23,21 @@
   "vulnerabilities": [
     {
       "type": "NO_SAMESITE_COOKIE",
+      "hash": 845204325,
       "evidence": {
         "value": "AllVulnerabilitiesCookieKey"
       }
     },
     {
       "type": "NO_HTTPONLY_COOKIE",
+      "hash": 377812170,
       "evidence": {
         "value": "AllVulnerabilitiesCookieKey"
       }
     },
     {
       "type": "INSECURE_COOKIE",
+      "hash": -2037976906,
       "evidence": {
         "value": "AllVulnerabilitiesCookieKey"
       }
