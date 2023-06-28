@@ -198,6 +198,55 @@ public class ProbesTests : TestHelper
     [Fact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    public async Task MoveFromSimpleLogToSnapshotLogTest()
+    {
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(SimpleMethodWithLocalsAndArgsTest));
+        var probeId = new DeterministicGuidGenerator().New().ToString();
+        var expectedNumberOfSnapshots = 1;
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        SetDebuggerEnvironment(agent);
+        using var logEntryWatcher = CreateLogEntryWatcher();
+        using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+        try
+        {
+            await RunSingle(phaseNumber: 1, captureSnapshot: false);
+            await RunSingle(phaseNumber: 2, captureSnapshot: true);
+            await RunSingle(phaseNumber: 3, captureSnapshot: false);
+            await RunSingle(phaseNumber: 4, captureSnapshot: true);
+
+            async Task RunSingle(int phaseNumber, bool captureSnapshot)
+            {
+                var probes = new[]
+                {
+                    DebuggerTestHelper.CreateDefaultLogProbe(nameof(SimpleMethodWithLocalsAndArgsTest), "Method", guidGenerator: null, probeTestData: new LogMethodProbeTestDataAttribute(probeId: probeId, captureSnapshot: captureSnapshot))
+                };
+
+                SetProbeConfiguration(agent, probes);
+                await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+
+                await sample.RunCodeSample();
+
+                var statuses = await agent.WaitForProbesStatuses(probes.Length);
+                Assert.Equal(probes.Length, statuses?.Length);
+                await ApproveStatuses(statuses, testDescription, isMultiPhase: true, phaseNumber: phaseNumber);
+                agent.ClearProbeStatuses();
+
+                var snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
+                Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
+                await ApproveSnapshots(snapshots, testDescription, isMultiPhase: true, phaseNumber: phaseNumber);
+                agent.ClearSnapshots();
+            }
+        }
+        finally
+        {
+            await sample.StopSample();
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     public async Task LineProbeUnboundProbeBecomesBoundTest()
     {
         var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(UnboundProbeBecomesBoundTest));
