@@ -60,6 +60,7 @@ public:
     MOCK_METHOD(bool, UseBacktrace2, (), (const override));
     MOCK_METHOD(bool, IsAllocationRecorderEnabled, (), (const override));
     MOCK_METHOD(bool, IsDebugInfoEnabled, (), (const override));
+    MOCK_METHOD(bool, IsGcThreadsCpuTimeEnabled, (), (const override));
 };
 
 class MockExporter : public IExporter
@@ -69,6 +70,7 @@ public:
     MOCK_METHOD(bool, Export, (), (override));
     MOCK_METHOD(void, SetEndpoint, (const std::string& runtimeId, uint64_t traceId, const std::string& endpoint), (override));
     MOCK_METHOD(void, RegisterUpscaleProvider, (IUpscaleProvider * provider), (override));
+    MOCK_METHOD(void, RegisterProcessSamplesProvider, (ISamplesProvider * provider), (override));
 };
 
 class MockSamplesCollector : public ISamplesCollector
@@ -130,6 +132,13 @@ class MockRuntimeIdStore : public IRuntimeIdStore
 {
 public:
     MOCK_METHOD(const char*, GetId, (AppDomainID appDomainId), (override));
+};
+
+class MockProcessSamplesProvider : public ISamplesProvider
+{
+public:
+    MOCK_METHOD(std::list<std::shared_ptr<Sample>>, GetSamples, (), (override));
+    MOCK_METHOD(const char*, GetName, (), (override));
 };
 
 template <typename T, typename U, typename... Args>
