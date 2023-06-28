@@ -15,9 +15,9 @@ fpm --input-type deb \
   --name datadog-dotnet-apm \
   datadog-dotnet-apm.old
 
-echo -n $DOTNET_PACKAGE_VERSION > dotnet.version
+echo -n $DOTNET_PACKAGE_VERSION > auto_inject-dotnet.version
 
-cp dotnet.version datadog-dotnet-apm.dir/opt/datadog/version
+cp auto_inject-dotnet.version datadog-dotnet-apm.dir/opt/datadog/version
 
 # Build packages
 fpm_wrapper "datadog-apm-library-dotnet" "$DOTNET_PACKAGE_VERSION" \
