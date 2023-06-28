@@ -230,7 +230,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 if (wrapper.IsRequestType(TelemetryRequestTypes.AppStarted))
                 {
                     var appStarted = wrapper.TryGetPayload<AppStartedPayloadV2>(TelemetryRequestTypes.AppStarted);
-                    return appStarted.Configuration;
+                    return appStarted.Configuration ?? Enumerable.Empty<ConfigurationKeyValue>();
                 }
 
                 if (wrapper.IsRequestType(TelemetryRequestTypes.AppClientConfigurationChanged))
