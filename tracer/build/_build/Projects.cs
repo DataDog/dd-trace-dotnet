@@ -10,7 +10,8 @@ public static class Projects
     public const string ClrProfilerNative = "Datadog.Tracer.Native";
     public const string NativeLoader = "Datadog.Trace.ClrProfiler.Native";
     public const string NativeLoaderNativeTests = "Datadog.Trace.ClrProfiler.Native.Tests";
-
+    public const string DatadogTraceTrimming = "Datadog.Trace.Trimming";
+    
     public const string BenchmarksTrace = "Benchmarks.Trace";
 
     public const string TraceIntegrationTests = "Datadog.Trace.IntegrationTests";
@@ -28,6 +29,7 @@ public static class Projects
     public const string DebuggerIntegrationTests = "Datadog.Trace.Debugger.IntegrationTests";
     public const string DebuggerSamples = "Samples.Probes";
     public const string DebuggerSamplesTestRuns = "Samples.Probes.TestRuns";
+    public const string DebuggerUnreferencedExternal = "Samples.Probes.Unreferenced.External";
 
     public const string RazorPages = "Samples.AspNetCoreRazorPages";
 }

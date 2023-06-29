@@ -1,16 +1,22 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: Main(),
+    Name: Samples.MongoDB.internal,
     Resource: Main(),
     Service: Samples.MongoDB,
+    Type: custom,
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
+      otel.library.name: Samples.MongoDB,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      runtime-id: Guid_2,
+      span.kind: internal,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -23,52 +29,72 @@
   {
     TraceId: Id_1,
     SpanId: Id_3,
-    Name: sync-calls,
+    Name: Samples.MongoDB.internal,
     Resource: sync-calls,
     Service: Samples.MongoDB,
+    Type: custom,
     ParentId: Id_2,
     Tags: {
       env: integration_tests,
       language: dotnet,
+      otel.library.name: Samples.MongoDB,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      span.kind: internal,
       version: 1.0.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_4,
-    Name: async-calls,
+    Name: Samples.MongoDB.internal,
     Resource: async-calls,
     Service: Samples.MongoDB,
+    Type: custom,
     ParentId: Id_2,
     Tags: {
       env: integration_tests,
       language: dotnet,
+      otel.library.name: Samples.MongoDB,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      span.kind: internal,
       version: 1.0.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_5,
-    Name: sync-calls-execute,
+    Name: Samples.MongoDB.internal,
     Resource: sync-calls-execute,
     Service: Samples.MongoDB,
+    Type: custom,
     ParentId: Id_2,
     Tags: {
       env: integration_tests,
       language: dotnet,
+      otel.library.name: Samples.MongoDB,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      span.kind: internal,
       version: 1.0.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_6,
-    Name: async-calls-execute,
+    Name: Samples.MongoDB.internal,
     Resource: async-calls-execute,
     Service: Samples.MongoDB,
+    Type: custom,
     ParentId: Id_2,
     Tags: {
       env: integration_tests,
       language: dotnet,
+      otel.library.name: Samples.MongoDB,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      span.kind: internal,
       version: 1.0.0
     }
   },
@@ -88,8 +114,10 @@
       mongodb.query: { "delete" : "employees", "ordered" : true },
       out.host: mongo,
       out.port: 27017,
+      peer.service: test-db,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
     }
   },
   {
@@ -108,8 +136,10 @@
       mongodb.query: { "insert" : "employees", "ordered" : true },
       out.host: mongo,
       out.port: 27017,
+      peer.service: test-db,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
     }
   },
   {
@@ -128,8 +158,10 @@
       mongodb.query: { "aggregate" : "employees", "pipeline" : [{ "$match" : { } }, { "$group" : { "_id" : 1, "n" : { "$sum" : 1 } } }], "cursor" : { } },
       out.host: mongo,
       out.port: 27017,
+      peer.service: test-db,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
     }
   },
   {
@@ -148,8 +180,10 @@
       mongodb.query: { "find" : "employees", "filter" : { } },
       out.host: mongo,
       out.port: 27017,
+      peer.service: test-db,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
     }
   },
   {
@@ -165,8 +199,10 @@
       env: integration_tests,
       out.host: mongo,
       out.port: 27017,
+      peer.service: mongo,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -185,8 +221,10 @@
       mongodb.query: { "delete" : "employees", "ordered" : true },
       out.host: mongo,
       out.port: 27017,
+      peer.service: test-db,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
     }
   },
   {
@@ -205,8 +243,10 @@
       mongodb.query: { "insert" : "employees", "ordered" : true },
       out.host: mongo,
       out.port: 27017,
+      peer.service: test-db,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
     }
   },
   {
@@ -225,8 +265,10 @@
       mongodb.query: { "aggregate" : "employees", "pipeline" : [{ "$match" : { } }, { "$group" : { "_id" : 1, "n" : { "$sum" : 1 } } }], "cursor" : { } },
       out.host: mongo,
       out.port: 27017,
+      peer.service: test-db,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
     }
   },
   {
@@ -245,8 +287,10 @@
       mongodb.query: { "find" : "employees", "filter" : { } },
       out.host: mongo,
       out.port: 27017,
+      peer.service: test-db,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: db.name
     }
   },
   {
@@ -262,8 +306,10 @@
       env: integration_tests,
       out.host: mongo,
       out.port: 27017,
+      peer.service: mongo,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -279,8 +325,10 @@
       env: integration_tests,
       out.host: mongo,
       out.port: 27017,
+      peer.service: mongo,
       span.kind: client,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   }
 ]

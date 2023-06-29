@@ -17,6 +17,14 @@ namespace Datadog.Trace.Telemetry
         /// <c>false</c> if a fatal error occured, and no further telemetry should be sent.</returns>
         Task<TelemetryPushResult> PushTelemetry(TelemetryData data);
 
+        /// <summary>
+        /// Push telemetry data to the endpoint.
+        /// </summary>
+        /// <param name="data">The data to send</param>
+        /// <returns><c>true</c> if the data was sent successfully, or a non-fatal error occurred
+        /// <c>false</c> if a fatal error occured, and no further telemetry should be sent.</returns>
+        Task<TelemetryPushResult> PushTelemetry(TelemetryDataV2 data);
+
         string GetTransportInfo();
     }
 }

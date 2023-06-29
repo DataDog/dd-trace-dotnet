@@ -31,7 +31,7 @@ namespace Datadog.Trace.Telemetry
             Payload = payload;
         }
 
-        public string ApiVersion => TelemetryConstants.ApiVersion;
+        public string ApiVersion => TelemetryConstants.ApiVersionV1;
 
         /// <summary>
         /// Gets or sets requested API function

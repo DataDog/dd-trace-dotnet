@@ -20,7 +20,7 @@ namespace Datadog.Trace.Telemetry
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryController>();
         private readonly ConfigurationTelemetryCollector _configuration;
-        private readonly DependencyTelemetryCollector _dependencies;
+        private readonly IDependencyTelemetryCollector _dependencies;
         private readonly IntegrationTelemetryCollector _integrations;
         private readonly TelemetryDataBuilder _dataBuilder = new();
         private readonly TelemetryTransportManager _transportManager;
@@ -34,7 +34,7 @@ namespace Datadog.Trace.Telemetry
 
         internal TelemetryController(
             ConfigurationTelemetryCollector configuration,
-            DependencyTelemetryCollector dependencies,
+            IDependencyTelemetryCollector dependencies,
             IntegrationTelemetryCollector integrations,
             TelemetryTransportManager transportManager,
             TimeSpan flushInterval,

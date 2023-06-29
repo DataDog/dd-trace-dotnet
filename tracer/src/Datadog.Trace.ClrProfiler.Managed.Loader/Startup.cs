@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        private const string AssemblyName = "Datadog.Trace, Version=2.31.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+        private const string AssemblyName = "Datadog.Trace, Version=2.33.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
         private const string AzureAppServicesKey = "DD_AZURE_APP_SERVICES";
         private const string AasCustomTracingKey = "DD_AAS_ENABLE_CUSTOM_TRACING";
         private const string AasCustomMetricsKey = "DD_AAS_ENABLE_CUSTOM_METRICS";
@@ -29,6 +29,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         static Startup()
         {
             ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
+            if (ManagedProfilerDirectory is null)
+            {
+                StartupLogger.Log("Managed profiler directory doesn't exist. Automatic instrumentation will be disabled");
+                return;
+            }
+
             StartupLogger.Debug("Resolving managed profiler directory to: {0}", ManagedProfilerDirectory);
 
             try
@@ -67,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
         }
 
-        internal static string ManagedProfilerDirectory { get; }
+        internal static string? ManagedProfilerDirectory { get; }
 
         private static void TryInvokeManagedMethod(string typeName, string methodName, string? loaderHelperTypeName = null)
         {

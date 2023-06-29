@@ -3,11 +3,14 @@
 
 #pragma once
 
+#include "shared/src/native-src/string.h"
+
 #include <string>
 #include <thread>
 
 #ifdef _WINDOWS
 #include <atlbase.h>
+#include "ScopedHandle.h"
 #else
 #include "pal.h"
 #include "pal_mstypes.h"
@@ -36,7 +39,12 @@ public:
     static inline HANDLE GetCurrentProcess();
 
     static bool SetNativeThreadName(std::thread* pNativeThread, const WCHAR* description);
-    static bool GetNativeThreadName(HANDLE windowsThreadHandle, WCHAR* pThreadDescrBuff, std::uint32_t threadDescrBuffSize);
+#ifdef _WINDOWS
+    static shared::WSTRING GetNativeThreadName(HANDLE threadHandle);
+    static ScopedHandle GetThreadHandle(DWORD threadId);
+#else
+    static shared::WSTRING GetNativeThreadName(pid_t tid);
+#endif
 
     static bool GetModuleHandleFromInstructionPointer(void* nativeIP, std::uint64_t* pModuleHandle);
     static std::string GetModuleName(void* nativeIP);

@@ -111,7 +111,7 @@ namespace Datadog.Trace.Tests.Telemetry
             controller.Start();
 
             var requiredHeartbeats = 10;
-            var deadline = DateTimeOffset.UtcNow.AddSeconds(heartBeatInterval.TotalSeconds * 100);
+            var deadline = DateTimeOffset.UtcNow.AddSeconds(heartBeatInterval.TotalSeconds * 1000);
             while (DateTimeOffset.UtcNow < deadline)
             {
                 var heartBeatCount = transport.GetData().Count(x => x.RequestType == TelemetryRequestTypes.AppHeartbeat);
@@ -234,6 +234,12 @@ namespace Datadog.Trace.Tests.Telemetry
             {
                 _data.Push(data);
                 return Task.FromResult(_pushResult);
+            }
+
+            public async Task<TelemetryPushResult> PushTelemetry(TelemetryDataV2 data)
+            {
+                await Task.Yield();
+                throw new InvalidOperationException("Shouldn't be using v2 API");
             }
 
             public string GetTransportInfo() => nameof(TestTelemetryTransport);

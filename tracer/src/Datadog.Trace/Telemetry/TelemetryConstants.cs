@@ -9,14 +9,19 @@ namespace Datadog.Trace.Telemetry
 {
     internal class TelemetryConstants
     {
-        public const string ApiVersion = "v1";
+        public const string ApiVersionV1 = "v1";
+        public const string ApiVersionV2 = "v2";
         public const string TelemetryPath = "api/v2/apmtelemetry";
         public const string TelemetryIntakePrefix = "https://instrumentation-telemetry-intake";
         public const string AgentTelemetryEndpoint = "telemetry/proxy/";
 
         public const string ApiKeyHeader = "DD-API-KEY";
         public const string ApiVersionHeader = "DD-Telemetry-API-Version";
+        public const string DebugHeader = "DD-Telemetry-Debug-Enabled";
         public const string RequestTypeHeader = "DD-Telemetry-Request-Type";
+        public const string ClientLibraryLanguageHeader = "DD-Client-Library-Language";
+        public const string ClientLibraryVersionHeader = "DD-Client-Library-Version";
+        public const string ContainerIdHeader = "Datadog-Container-ID";
 
         public static readonly TimeSpan DefaultFlushInterval = TimeSpan.FromMinutes(1);
     }

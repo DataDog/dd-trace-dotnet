@@ -131,18 +131,18 @@ namespace Datadog.Trace.TestHelpers
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
 
-        public Process StartSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool? enableSecurity = null, string externalRulesFile = null)
+        public Process StartSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool? enableSecurity = null, string externalRulesFile = null, bool usePublishWithRID = false)
         {
             // get path to sample app that the profiler will attach to
-            var sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework);
+            var sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework, usePublishWithRID);
             if (!File.Exists(sampleAppPath))
             {
                 throw new Exception($"application not found: {sampleAppPath}");
             }
 
             Output.WriteLine($"Starting Application: {sampleAppPath}");
-            var executable = EnvironmentHelper.IsCoreClr() ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
-            var args = EnvironmentHelper.IsCoreClr() ? $"{sampleAppPath} {arguments ?? string.Empty}" : arguments;
+            var executable = EnvironmentHelper.IsCoreClr() && !usePublishWithRID ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
+            var args = EnvironmentHelper.IsCoreClr() && !usePublishWithRID ? $"{sampleAppPath} {arguments ?? string.Empty}" : arguments;
 
             var process = ProfilerHelper.StartProcessWithProfiler(
                 executable,
@@ -152,16 +152,17 @@ namespace Datadog.Trace.TestHelpers
                 aspNetCorePort: aspNetCorePort,
                 processToProfile: executable,
                 enableSecurity: enableSecurity,
-                externalRulesFile: externalRulesFile);
+                externalRulesFile: externalRulesFile,
+                ignoreProfilerProcessesVar: usePublishWithRID);
 
             Output.WriteLine($"ProcessId: {process.Id}");
 
             return process;
         }
 
-        public ProcessResult RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000)
+        public ProcessResult RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool usePublishWithRID = false)
         {
-            var process = StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework);
+            var process = StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework, usePublishWithRID: usePublishWithRID);
             using var helper = new ProcessHelper(process);
 
             return WaitForProcessResult(helper);
@@ -494,7 +495,7 @@ namespace Datadog.Trace.TestHelpers
             // disable tracing for this HttpClient request
             httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
             httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
-            var testStart = DateTime.UtcNow;
+            var testStart = DateTimeOffset.UtcNow;
             var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
             var content = await response.Content.ReadAsStringAsync();
             Output.WriteLine($"[http] {response.StatusCode} {content}");
@@ -534,7 +535,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 // disable tracing for this HttpClient request
                 httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
-                var testStart = DateTime.UtcNow;
+                var testStart = DateTimeOffset.UtcNow;
                 var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
                 var content = await response.Content.ReadAsStringAsync();
                 Output.WriteLine($"[http] {response.StatusCode} {content}");
@@ -609,7 +610,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 // disable tracing for this HttpClient request
                 httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
-                var testStart = DateTime.UtcNow;
+                var testStart = DateTimeOffset.UtcNow;
                 var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
                 var content = await response.Content.ReadAsStringAsync();
                 Output.WriteLine($"[http] {response.StatusCode} {content}");

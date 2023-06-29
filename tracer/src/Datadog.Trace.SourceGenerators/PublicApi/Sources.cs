@@ -22,7 +22,7 @@ internal class Sources
         /// allowing adding aspect-oriented changes such as telemetry etc.
         /// Any documentation added to the field is copied to the public API
         /// </summary>
-        [System.AttributeUsage(System.AttributeTargets.Field, AllowMultiple = false)]
+        [System.AttributeUsage(System.AttributeTargets.Property, AllowMultiple = false)]
         internal class GeneratePublicApiAttribute : System.Attribute
         {
             /// <summary>
@@ -101,6 +101,17 @@ internal class Sources
                 sb.AppendLine(property.LeadingTrivia.TrimEnd());
             }
 
+            if (property.ObsoleteMessage is { } obsolete)
+            {
+                sb.Append("    [System.Obsolete");
+                if (obsolete != string.Empty)
+                {
+                    sb.Append("(\"").Append(obsolete).Append("\")");
+                }
+
+                sb.Append(']').AppendLine();
+            }
+
             sb.AppendLine(
                 $$"""
                     [Datadog.Trace.SourceGenerators.PublicApi]
@@ -108,7 +119,7 @@ internal class Sources
                     {
                         get
                         {
-                            Datadog.Trace.Telemetry.Metrics.TelemetryMetrics.Instance.Record(
+                            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                                 (Datadog.Trace.Telemetry.Metrics.PublicApiUsage){{property.PublicApiGetter}});
                             return {{property.FieldName}};
                         }
@@ -119,7 +130,7 @@ internal class Sources
                     $$"""
                         set
                         {
-                            Datadog.Trace.Telemetry.Metrics.TelemetryMetrics.Instance.Record(
+                            Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                                 (Datadog.Trace.Telemetry.Metrics.PublicApiUsage){{property.PublicApiSetter}});
                             {{property.FieldName}} = value;
                         }

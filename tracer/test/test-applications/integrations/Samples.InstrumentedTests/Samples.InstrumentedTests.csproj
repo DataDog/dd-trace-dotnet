@@ -14,6 +14,10 @@
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <GenerateRuntimeConfigDevFile>true</GenerateRuntimeConfigDevFile>
     <RunSettingsFilePath>$(MSBuildProjectDirectory)\iast.runsettings</RunSettingsFilePath>
+    <ContentSQLiteInteropFiles>true</ContentSQLiteInteropFiles>
+    <CopySQLiteInteropFiles>false</CopySQLiteInteropFiles>
+    <CleanSQLiteInteropFiles>false</CleanSQLiteInteropFiles>
+    <CollectSQLiteInteropFiles>false</CollectSQLiteInteropFiles>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)'=='net462'">
@@ -29,12 +33,41 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.115.5" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.115.5" />
+    <PackageReference Include="linq2db" Version="3.1.5" />
+    <PackageReference Include="System.Data.OleDb" Version="4.7.1" />
+    <PackageReference Include="MySql.Data" Version="8.0.28" />
+    <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="2.19.110" />
   </ItemGroup>
 
   <ItemGroup>
     <None Update="xunit.runner.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
+    <PackageReference Include="EntityFramework" Version="6.4.4" />
+    <PackageReference Include="Dapper.StrongName" Version="1.60.1" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.5" />
+    <PackageReference Include="Npgsql" Version="4.0.11" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.1.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SQLite" Version="2.1.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.1.8" />
+    <PackageReference Include="Dapper.StrongName" Version="2.0.78" />
+    <PackageReference Include="Npgsql" Version="4.0.11" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0' OR '$(TargetFramework)'=='net5.0'">
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SQLite" Version="5.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="5.0.8" />
+    <PackageReference Include="Dapper.StrongName" Version="2.0.78" />
+    <PackageReference Include="Npgsql" Version="7.0.4" />
   </ItemGroup>
 
 </Project>

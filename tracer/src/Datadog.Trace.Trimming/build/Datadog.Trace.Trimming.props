@@ -1,0 +1,19 @@
+<!--
+***********************************************************************************************
+Datadog.Trace.Trimming.props
+Copyright 2017 Datadog, Inc.
+***********************************************************************************************
+-->
+<Project>
+
+  <PropertyGroup>
+    <!-- IL2007: Could not resolve assembly specified in descriptor file -->
+    <!-- IL2008: Could not resolve type specified in descriptor file -->
+    <NoWarn>IL2007;IL2008</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <TrimmerRootDescriptor Include="$(MSBuildThisFileDirectory)Datadog.Trace.Trimming.xml" />
+  </ItemGroup>
+
+</Project>

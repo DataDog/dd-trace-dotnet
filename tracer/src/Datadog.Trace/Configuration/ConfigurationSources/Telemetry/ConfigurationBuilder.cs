@@ -64,6 +64,9 @@ internal readonly struct ConfigurationBuilder
         public string? AsRedactedString()
             => AsString(getDefaultValue: null, validator: null, recordValue: false);
 
+        public string AsRedactedString(string defaultValue)
+            => AsString(() => defaultValue, validator: null, recordValue: false);
+
         public string? AsString() => AsString(getDefaultValue: null, validator: null, recordValue: true);
 
         public string AsString(string defaultValue) => AsString(defaultValue, validator: null);

@@ -177,6 +177,40 @@ EXTERN_C VOID STDAPICALLTYPE RegisterIastAspects(WCHAR** aspects, int aspectsLen
 }
 
 
+EXTERN_C long RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size, UINT32 enabledCategories)
+{
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in RegisterCallTargetDefinitions call. Tracer CLR Profiler was not initialized.");
+        return 0;
+    }
+
+    return trace::profiler->RegisterCallTargetDefinitions(id, items, size, enabledCategories);
+}
+
+EXTERN_C long EnableCallTargetDefinitions(UINT32 enabledCategories)
+{
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in EnableCallTargetDefinitions call. Tracer CLR Profiler was not initialized.");
+        return 0;
+    }
+
+    return trace::profiler->EnableCallTargetDefinitions(enabledCategories);
+}
+
+EXTERN_C long DisableCallTargetDefinitions(UINT32 disabledCategories)
+{
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in DisableCallTargetDefinitions call. Tracer CLR Profiler was not initialized.");
+        return 0;
+    }
+
+    return trace::profiler->DisableCallTargetDefinitions(disabledCategories);
+}
+
+
 
 #ifndef _WIN32
 EXTERN_C void *dddlopen (const char *__file, int __mode)

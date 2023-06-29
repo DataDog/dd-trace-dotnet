@@ -38,7 +38,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         public AspNetCore5TestsWithoutExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableSecurity, string testName)
             : base("AspNetCore5", fixture, outputHelper, "/shutdown", enableSecurity: enableSecurity, testName: testName)
         {
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "true");
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "false");
         }
 
         [SkippableTheory]
@@ -76,6 +76,16 @@ namespace Datadog.Trace.Security.IntegrationTests
     {
         public AspNetCore5TestsSecurityEnabledWithDefaultExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
             : base("AspNetCore5", fixture, outputHelper, "/shutdown", ruleFile: DefaultRuleFile, testName: "AspNetCore5.SecurityEnabled")
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    [Trait("Category", "LinuxUnsupported")]
+    public class AspNetCore5TestsSecurityEnabledWithDefaultExternalRulesFileIIS : AspNetCoreSecurityEnabledWithExternalRulesFileIIS
+    {
+        public AspNetCore5TestsSecurityEnabledWithDefaultExternalRulesFileIIS(IisFixture fixture, ITestOutputHelper outputHelper)
+            : base("AspNetCore5", fixture, outputHelper, "/shutdown", IisAppType.AspNetCoreInProcess, ruleFile: AppDomain.CurrentDomain.BaseDirectory + DefaultRuleFile, testName: "AspNetCore5.SecurityEnabledIIS")
         {
         }
     }

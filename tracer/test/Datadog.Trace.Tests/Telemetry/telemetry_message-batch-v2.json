@@ -1,0 +1,102 @@
+﻿{
+  "api_version": "v2",
+  "naming_schema_version": "1",
+  "request_type": "message-batch",
+  "tracer_time": 1628099086,
+  "runtime_id": "20338dfd-f700-4e5c-b3f6-0d470f054ae8",
+  "seq_id": 5672,
+  "application": {
+    "service_name": "myapp",
+    "env": "prod",
+    "tracer_version": "0.33.1",
+    "language_name": "node.js",
+    "service_version": "1.2.3",
+    "language_version": "14.16.1",
+    "runtime_name": "dotnet",
+    "runtime_version": "7.0.3"
+  },
+  "host": {
+    "hostname": "i-09ecf74c319c49be8",
+    "os": "GNU/Linux",
+    "os_version": "ubuntu 18.04.5 LTS (Bionic Beaver)",
+    "kernel_name": "Linux",
+    "kernel_release": "5.4.0-1037-gcp",
+    "kernel_version": "#40~18.04.1-Ubuntu SMP Fri Feb 5 15:41:35 UTC 2021",
+    "architecture": "x86_64"
+  },
+  "payload": [
+    {
+      "request_type": "app-integrations-change",
+      "payload": {
+        "integrations": [
+          {
+            "name": "express",
+            "enabled": true,
+            "auto_enabled": true
+          },
+          {
+            "name": "pg",
+            "enabled": false,
+            "auto_enabled": false,
+            "error": "there was an error"
+          }
+        ]
+      }
+    },
+    {
+      "request_type": "app-dependencies-loaded",
+      "payload": {
+        "dependencies": [
+          {
+            "name": "pg",
+            "version": "8.6.0"
+          },
+          {
+            "name": "express",
+            "version": "4.17.1"
+          },
+          {
+            "name": "body-parser",
+            "version": "1.19.0",
+            "hash": "646DF3C3-959F-4011-8673-EE58BD9291E2"
+          }
+        ]
+      }
+    },
+    {
+      "request_type": "app-client-configuration-change",
+      "payload": {
+        "configuration": [
+          {
+            "name": "DD_TRACE_AGENT_URL",
+            "origin": "env_var",
+            "value": "http://localhost:9126",
+            "seq_id": 1
+          },
+          {
+            "name": "DD_TRACE_DEBUG",
+            "origin": "env_var",
+            "value": "true",
+            "seq_id": 2
+          },
+          {
+            "name": "DD_TRACE_ENABLED",
+            "origin": "env_var",
+            "value": true,
+            "seq_id": 3
+          },
+          {
+            "name": "DD_API_KEY",
+            "origin": "env_var",
+            "value": "<redacted>",
+            "seq_id": 4,
+            "error": {
+              "code": 4,
+              "message": "Invalid value"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

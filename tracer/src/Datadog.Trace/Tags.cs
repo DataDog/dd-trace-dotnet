@@ -8,7 +8,7 @@ namespace Datadog.Trace
     /// <summary>
     /// Standard span tags used by integrations.
     /// </summary>
-    public static class Tags
+    public static partial class Tags
     {
         /// <summary>
         /// The environment of the instrumented service. Its value is usually constant for the lifetime of a process,
@@ -100,6 +100,20 @@ namespace Datadog.Trace
         /// The number of rows returned by a query
         /// </summary>
         public const string SqlRows = "sql.rows";
+
+        /// <summary>
+        /// The service name of a remote service.
+        /// </summary>
+        public const string PeerService = "peer.service";
+
+        /// <summary>
+        /// The name of the attribute that determined the peer.service tag value. Expected values are:
+        /// <ul>
+        ///   <li>{source_attribute} when the tag was set to a default value, using a defined precursor attribute</li>
+        ///   <li>peer.service when the tag was set by the user</li>
+        /// </ul>
+        /// </summary>
+        internal const string PeerServiceSource = "_dd.peer.service.source";
 
         /// <summary>
         /// The hostname of a outgoing server connection.
@@ -283,6 +297,11 @@ namespace Datadog.Trace
         internal const string AmqpDeliveryMode = "amqp.delivery_mode";
 
         /// <summary>
+        /// The bootstrap servers as defined in producer or consumer config
+        /// </summary>
+        internal const string KafkaBootstrapServers = "messaging.kafka.bootstrap.servers";
+
+        /// <summary>
         /// The partition associated with a record
         /// </summary>
         internal const string KafkaPartition = "kafka.partition";
@@ -330,7 +349,17 @@ namespace Datadog.Trace
         /// <summary>
         /// The queue name associated with the AWS SDK span.
         /// </summary>
+        internal const string AwsTopicName = "aws.topic.name";
+
+        /// <summary>
+        /// The queue name associated with the AWS SDK span.
+        /// </summary>
         internal const string AwsQueueName = "aws.queue.name";
+
+        /// <summary>
+        /// The topic arn associated with the AWS SDK span.
+        /// </summary>
+        internal const string AwsTopicArn = "aws.topic.arn";
 
         /// <summary>
         /// The queue URL associated with the AWS SDK span.
@@ -553,23 +582,6 @@ namespace Datadog.Trace
         /// Marks a span as injected when DBM data was propagated
         /// </summary>
         internal const string DbmDataPropagated = "_dd.dbm_trace_injected";
-
-        internal static class AppSec
-        {
-            internal const string Events = "appsec.events.";
-
-            internal static string Track(string eventName) => $"{Events}{eventName}.track";
-
-            internal static class EventsUsersLogin
-            {
-                internal const string Success = AppSec.Events + "users.login.success.";
-                internal const string Failure = AppSec.Events + "users.login.failure.";
-                internal const string SuccessTrack = Success + "track";
-                internal const string FailureTrack = Failure + "track";
-                internal const string FailureUserId = Failure + "usr.id";
-                internal const string FailureUserExists = Failure + "usr.exists";
-            }
-        }
 
         internal static class User
         {

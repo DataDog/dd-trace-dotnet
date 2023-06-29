@@ -45,6 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             var partition = topicPartition.DuckCast<ITopicPartition>();
             Scope scope = KafkaHelper.CreateProducerScope(
                 Tracer.Instance,
+                instance,
                 partition,
                 isTombstone: message.Value is null,
                 finishOnClose: true);

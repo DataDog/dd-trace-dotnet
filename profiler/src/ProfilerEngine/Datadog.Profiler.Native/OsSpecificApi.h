@@ -12,13 +12,15 @@ namespace shared {
 struct LoaderResourceMonikerIDs;
 }
 class IConfiguration;
+class IThreadInfo;
 
 // Those functions must be defined in the main projects (Linux and Windows)
 // Here are forward declarations to avoid hard coupling
 namespace OsSpecificApi
 {
    std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* pConfiguration);
-   uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo);
-   bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed);
+   uint64_t GetThreadCpuTime(IThreadInfo* pThreadInfo);
+   bool IsRunning(IThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed);
    int32_t GetProcessorCount();
+   std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads();
 } // namespace OsSpecificApi

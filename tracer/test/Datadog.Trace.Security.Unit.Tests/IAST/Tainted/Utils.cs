@@ -17,53 +17,52 @@ using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Security.Unit.Tests.Iast;
 using Xunit;
 
-namespace Datadog.Trace.Security.Unit.Tests.IAST.Tainted
+namespace Datadog.Trace.Security.Unit.Tests.IAST.Tainted;
+
+internal static class Utils
 {
-    internal static class Utils
+    public static EvidenceRedactor GetDefaultRedactor()
     {
-        public static EvidenceRedactor GetDefaultRedactor()
+        var settings = new CustomSettingsForTests(new Dictionary<string, object>()
         {
-            var settings = new CustomSettingsForTests(new Dictionary<string, object>()
-            {
-                { ConfigurationKeys.Iast.RedactionEnabled, true }
-            });
-            var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
+            { ConfigurationKeys.Iast.RedactionEnabled, true }
+        });
+        var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
 
-            var evidenceRedactor = IastModule.CreateRedactor(iastSettings);
-            Assert.NotNull(evidenceRedactor);
-            return evidenceRedactor;
+        var evidenceRedactor = IastModule.CreateRedactor(iastSettings);
+        Assert.NotNull(evidenceRedactor);
+        return evidenceRedactor;
+    }
+
+    public static VulnerabilityBatch GetRedactedBatch()
+    {
+        return new VulnerabilityBatch(GetDefaultRedactor());
+    }
+
+    public static System.Func<string, string, bool> GetRegexScrubber(params string[] rules)
+    {
+        List<Regex> regexes = new List<Regex>();
+        foreach (var rule in rules)
+        {
+            regexes.Add(new Regex(rule.Replace("[", "\\[").Replace("]", "\\]").Replace("$", "\\$").Replace(".", "\\.").Replace("*", ".*"), RegexOptions.IgnoreCase | RegexOptions.Compiled));
         }
 
-        public static VulnerabilityBatch GetRedactedBatch()
-        {
-            return new VulnerabilityBatch(GetDefaultRedactor());
-        }
+        return GetRegexScrubber(regexes.ToArray());
+    }
 
-        public static System.Func<string, string, bool> GetRegexScrubber(params string[] rules)
+    public static System.Func<string, string, bool> GetRegexScrubber(params Regex[] rules)
+    {
+        return (path, attr) =>
         {
-            List<Regex> regexes = new List<Regex>();
             foreach (var rule in rules)
             {
-                regexes.Add(new Regex(rule.Replace("[", "\\[").Replace("]", "\\]").Replace("$", "\\$").Replace(".", "\\.").Replace("*", ".*"), RegexOptions.IgnoreCase | RegexOptions.Compiled));
+                if (rule.IsMatch(path + "." + attr))
+                {
+                    return true;
+                }
             }
 
-            return GetRegexScrubber(regexes.ToArray());
-        }
-
-        public static System.Func<string, string, bool> GetRegexScrubber(params Regex[] rules)
-        {
-            return (path, attr) =>
-            {
-                foreach (var rule in rules)
-                {
-                    if (rule.IsMatch(path + "." + attr))
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
-            };
-        }
+            return false;
+        };
     }
 }

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>2.31.0</Version>
+    <Version>2.33.0</Version>
     <Title>Datadog APM Auto-instrumentation Runner</Title>
     <Copyright>Copyright 2020 Datadog, Inc.</Copyright>
     <Description>Auto-instrumentation dotnet global tool for Datadog APM</Description>
@@ -119,7 +119,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
-    <PackageReference Include="Mono.Cecil" Version="0.11.4" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.5" />
     <PackageReference Include="Spectre.Console" Version="0.43.0" />
     <PackageReference Include="StrongNamer" Version="0.2.5" />
     <PackageReference Include="Microsoft.Web.Administration" Version="11.1.0" />

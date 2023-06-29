@@ -34,12 +34,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 return null;
             }
 
-            string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
+            string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(ServiceName);
             Scope scope = null;
 
             try
             {
-                var tags = new RedisTags();
+                var tags = tracer.CurrentTraceSettings.Schema.Database.CreateRedisTags();
                 tags.InstrumentationName = integrationName;
 
                 scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);

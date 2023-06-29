@@ -664,3 +664,23 @@ TEST(ConfigurationTest, CheckDebugInfoIsDisabledIfEnvVarSetToFalse)
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.IsDebugInfoEnabled(), false);
 }
+
+TEST(ConfigurationTest, CheckGcThreadsCpuTimeIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsGcThreadsCpuTimeEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckGcThreadsCpuTimeIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::GcThreadsCpuTimeEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsGcThreadsCpuTimeEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckGcThreadsCpuTimeIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::GcThreadsCpuTimeEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsGcThreadsCpuTimeEnabled(), false);
+}

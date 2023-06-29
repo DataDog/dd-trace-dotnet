@@ -29,6 +29,34 @@ internal readonly partial struct SecurityCoordinator
 
     private static bool CanAccessHeaders => true;
 
+    public static Dictionary<string, string[]> ExtractHeadersFromRequest(IHeaderDictionary headers)
+    {
+        var headersDic = new Dictionary<string, string[]>(headers.Keys.Count);
+        foreach (var k in headers.Keys)
+        {
+            var currentKey = k ?? string.Empty;
+            if (!currentKey.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
+            {
+                currentKey = currentKey.ToLowerInvariant();
+#if NETCOREAPP
+                if (!headersDic.TryAdd(currentKey, headers[currentKey]))
+                {
+#else
+                if (!headersDic.ContainsKey(currentKey))
+                {
+                    headersDic.Add(currentKey, headers[currentKey]);
+                }
+                else
+                {
+#endif
+                    Log.Warning("Header {Key} couldn't be added as argument to the waf", currentKey);
+                }
+            }
+        }
+
+        return headersDic;
+    }
+
     internal void CheckAndBlock(IResult? result)
     {
         if (result?.ShouldBeReported is true)
@@ -45,28 +73,7 @@ internal readonly partial struct SecurityCoordinator
     private Dictionary<string, object> GetBasicRequestArgsForWaf()
     {
         var request = _context.Request;
-        var headersDic = new Dictionary<string, string[]>(request.Headers.Keys.Count);
-        foreach (var k in request.Headers.Keys)
-        {
-            var currentKey = k ?? string.Empty;
-            if (!currentKey.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
-            {
-                currentKey = currentKey.ToLowerInvariant();
-#if NETCOREAPP
-                if (!headersDic.TryAdd(currentKey, request.Headers[currentKey]))
-                {
-#else
-                if (!headersDic.ContainsKey(currentKey))
-                {
-                    headersDic.Add(currentKey, request.Headers[currentKey]);
-                }
-                else
-                {
-#endif
-                    Log.Warning("Header {Key} couldn't be added as argument to the waf", currentKey);
-                }
-            }
-        }
+        var headersDic = ExtractHeadersFromRequest(request.Headers);
 
         var cookiesDic = new Dictionary<string, List<string>>(request.Cookies.Keys.Count);
         for (var i = 0; i < request.Cookies.Count; i++)
@@ -105,7 +112,7 @@ internal readonly partial struct SecurityCoordinator
         {
             { AddressesConstants.RequestMethod, request.Method },
             { AddressesConstants.ResponseStatus, request.HttpContext.Response.StatusCode.ToString() },
-            { AddressesConstants.RequestUriRaw, request.GetUrl() },
+            { AddressesConstants.RequestUriRaw, request.GetUrlForWaf() },
             { AddressesConstants.RequestQuery, queryStringDic },
             { AddressesConstants.RequestHeaderNoCookies, headersDic },
             { AddressesConstants.RequestCookies, cookiesDic },

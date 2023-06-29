@@ -74,20 +74,19 @@ namespace Datadog.Trace.PlatformHelpers
             return null;
         }
 
-        private IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags(HttpRequest request, Tracer tracer)
+        private void AddHeaderTagsToSpan(ISpan span, HttpRequest request, Tracer tracer)
         {
             var settings = tracer.Settings;
 
-            if (!settings.HeaderTags.IsNullOrEmpty())
+            if (!settings.HeaderTagsInternal.IsNullOrEmpty())
             {
                 try
                 {
                     // extract propagation details from http headers
                     var requestHeaders = request.Headers;
-
                     if (requestHeaders != null)
                     {
-                        return SpanContextPropagator.Instance.ExtractHeaderTags(new HeadersCollectionAdapter(requestHeaders), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                        SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, new HeadersCollectionAdapter(requestHeaders), settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                     }
                 }
                 catch (Exception ex)
@@ -95,8 +94,6 @@ namespace Datadog.Trace.PlatformHelpers
                     _log.Error(ex, "Error extracting propagated HTTP headers.");
                 }
             }
-
-            return Enumerable.Empty<KeyValuePair<string, string>>();
         }
 
         public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, HttpContext httpContext, string resourceName)
@@ -104,16 +101,14 @@ namespace Datadog.Trace.PlatformHelpers
             var request = httpContext.Request;
             string host = request.Host.Value;
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-            string url = request.GetUrl(tracer.TracerManager.QueryStringManager);
+            string url = request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
 
             var userAgent = request.Headers[HttpHeaderNames.UserAgent];
             resourceName ??= GetDefaultResourceName(request);
 
             SpanContext propagatedContext = ExtractPropagatedContext(request);
-            var tagsFromHeaders = ExtractHeaderTags(request, tracer);
 
             AspNetCoreTags tags;
-
             if (tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
                 var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
@@ -126,7 +121,9 @@ namespace Datadog.Trace.PlatformHelpers
             }
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, propagatedContext, tags: tags);
-            scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags, tagsFromHeaders);
+            scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
+            AddHeaderTagsToSpan(scope.Span, request, tracer);
+
             if (tracer.Settings.IpHeaderEnabled || security.Enabled)
             {
                 var peerIp = new Headers.Ip.IpInfo(httpContext.Connection.RemoteIpAddress?.ToString(), httpContext.Connection.RemotePort);
@@ -169,7 +166,7 @@ namespace Datadog.Trace.PlatformHelpers
                     }
                 }
 
-                span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 if (security.Enabled)
                 {
                     var transport = new SecurityCoordinator(security, httpContext, span);

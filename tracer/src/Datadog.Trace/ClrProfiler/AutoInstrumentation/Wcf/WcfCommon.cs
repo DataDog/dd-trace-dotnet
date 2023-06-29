@@ -12,6 +12,7 @@ using System.Reflection;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -57,6 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 string host = null;
                 string userAgent = null;
                 string httpMethod = null;
+                WebHeadersCollection? headers = null;
 
                 IDictionary<string, object> requestProperties = requestMessage.Properties;
                 if (requestProperties.TryGetValue("httpRequest", out object httpRequestProperty) &&
@@ -75,9 +77,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     {
                         try
                         {
-                            var headers = webHeaderCollection.Wrap();
-                            propagatedContext = SpanContextPropagator.Instance.Extract(headers);
-                            tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                            headers = webHeaderCollection.Wrap();
+                            propagatedContext = SpanContextPropagator.Instance.Extract(headers.Value);
                         }
                         catch (Exception ex)
                         {
@@ -86,8 +87,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     }
                 }
 
+                string operationName = tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForComponent("wcf");
                 var tags = new WcfTags();
-                scope = tracer.StartActiveInternal("wcf.request", propagatedContext, tags: tags);
+                scope = tracer.StartActiveInternal(operationName, propagatedContext, tags: tags);
                 var span = scope.Span;
 
                 var requestHeaders = requestMessage.Headers;
@@ -100,8 +102,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     host,
                     httpUrl: requestHeadersTo?.AbsoluteUri,
                     userAgent,
-                    tags,
-                    tagsFromHeaders);
+                    tags);
+
+                if (headers is not null)
+                {
+                    var headerTagsProcessor = new SpanContextPropagator.SpanTagHeaderTagProcessor(span);
+                    SpanContextPropagator.Instance.ExtractHeaderTags(ref headerTagsProcessor, headers.Value, tracer.Settings.HeaderTagsInternal, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                }
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);

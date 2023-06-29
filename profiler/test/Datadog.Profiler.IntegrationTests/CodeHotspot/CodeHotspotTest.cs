@@ -22,8 +22,8 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 {
     public class CodeHotspotTest
     {
-        private const string ScenarioCodeHotspot = "--scenario 2";
-        private const string ScenarioExceptions = "--scenario 16";
+        private const string ScenarioCodeHotspot = "--scenario 256";
+        //private const string ScenarioExceptions = "--scenario 16";
         private static readonly Regex RuntimeIdPattern = new("runtime-id:(?<runtimeId>[A-Z0-9-]+)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
         private readonly ITestOutputHelper _output;
 
@@ -131,7 +131,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         [TestAppFact("Samples.BuggyBits")]
         public void CheckSpanContextAreAttachedForCpuProfiler(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioExceptions);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
             // By default, the codehotspot feature is activated
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
@@ -206,7 +206,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             var endpoints = GetEndpointsFromPprofFiles(runner.Environment.PprofDir);
 
-            endpoints.Distinct().Should().BeEquivalentTo("GET /products/builder");
+            endpoints.Distinct().Should().BeEquivalentTo("GET /products/indexslow");
         }
 
         [TestAppFact("Samples.BuggyBits")]

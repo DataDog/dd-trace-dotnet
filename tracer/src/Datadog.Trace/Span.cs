@@ -5,11 +5,15 @@
 
 using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -37,15 +41,11 @@ namespace Datadog.Trace
         {
             Tags = tags ?? new CommonTags();
             Context = context;
-            StartTime = start ?? Context.TraceContext.UtcNow;
+            StartTime = start ?? Context.TraceContext.Clock.UtcNow;
 
             if (IsLogLevelDebugEnabled)
             {
-                var tagsType = Tags.GetType();
-
-                Log.Debug(
-                    "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{TagsType}])",
-                    new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, Tags, tagsType });
+                WriteCtorDebugMessage();
             }
         }
 
@@ -76,8 +76,8 @@ namespace Datadog.Trace
         /// </summary>
         internal string ServiceName
         {
-            get => Context.ServiceName;
-            set => Context.ServiceName = value;
+            get => Context.ServiceNameInternal;
+            set => Context.ServiceNameInternal = value;
         }
 
         /// <summary>
@@ -122,7 +122,13 @@ namespace Datadog.Trace
 
         internal bool IsRootSpan => Context.TraceContext?.RootSpan == this;
 
-        internal bool IsTopLevel => Context.Parent == null || Context.Parent.SpanId == 0 || Context.Parent.ServiceName != ServiceName;
+        internal bool IsTopLevel => Context.ParentInternal == null
+                                 || Context.ParentInternal.SpanId == 0
+                                 || Context.ParentInternal switch
+                                    {
+                                        SpanContext s => s.ServiceNameInternal != ServiceName,
+                                        { } s => s.ServiceName != ServiceName,
+                                    };
 
         /// <summary>
         /// Record the end time of the span and flushes it to the backend.
@@ -145,7 +151,7 @@ namespace Datadog.Trace
             sb.AppendLine($"TraceId64: {Context.TraceId128.Lower}");
             sb.AppendLine($"TraceId128: {Context.TraceId128}");
             sb.AppendLine($"RawTraceId: {Context.RawTraceId}");
-            sb.AppendLine($"ParentId: {Context.ParentId}");
+            sb.AppendLine($"ParentId: {Context.ParentIdInternal}");
             sb.AppendLine($"SpanId: {Context.SpanId}");
             sb.AppendLine($"RawSpanId: {Context.RawSpanId}");
             sb.AppendLine($"Origin: {Context.Origin}");
@@ -153,8 +159,9 @@ namespace Datadog.Trace
             sb.AppendLine($"OperationName: {OperationName}");
             sb.AppendLine($"Resource: {ResourceName}");
             sb.AppendLine($"Type: {Type}");
-            sb.AppendLine($"Start: {StartTime}");
+            sb.AppendLine($"Start: {StartTime.ToString("O")}");
             sb.AppendLine($"Duration: {Duration}");
+            sb.AppendLine($"End: {StartTime.Add(Duration).ToString("O")}");
             sb.AppendLine($"Error: {Error}");
             sb.AppendLine($"Meta: {Tags}");
 
@@ -351,7 +358,7 @@ namespace Datadog.Trace
         /// </summary>
         internal void Finish()
         {
-            Finish(Context.TraceContext.ElapsedSince(StartTime));
+            Finish(Context.TraceContext.Clock.ElapsedSince(StartTime));
         }
 
         /// <summary>
@@ -429,10 +436,10 @@ namespace Datadog.Trace
 
                 if (IsLogLevelDebugEnabled)
                 {
-                    Log.Debug(
-                        "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])",
-                        new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, ServiceName, ResourceName, OperationName, Tags });
+                    WriteCloseDebugMessage();
                 }
+
+                TelemetryFactory.Metrics.RecordCountSpanFinished();
             }
         }
 
@@ -450,7 +457,7 @@ namespace Datadog.Trace
 
         internal void ResetStartTime()
         {
-            StartTime = Context.TraceContext.UtcNow;
+            StartTime = Context.TraceContext.Clock.UtcNow;
         }
 
         internal void SetStartTime(DateTimeOffset startTime)
@@ -461,6 +468,24 @@ namespace Datadog.Trace
         internal void SetDuration(TimeSpan duration)
         {
             Duration = duration;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void WriteCtorDebugMessage()
+        {
+            var tagsType = Tags.GetType();
+
+            Log.Debug(
+                "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{TagsType}])",
+                new object[] { Context.RawSpanId, Context.ParentIdInternal, Context.RawTraceId, Tags, tagsType });
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void WriteCloseDebugMessage()
+        {
+            Log.Debug(
+                "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])\nDetails:{ToString}",
+                new object[] { Context.RawSpanId, Context.ParentIdInternal, Context.RawTraceId, ServiceName, ResourceName, OperationName, Tags, ToString() });
         }
     }
 }

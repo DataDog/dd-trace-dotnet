@@ -281,6 +281,10 @@ namespace PrepareRelease
                     "src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj",
                     NugetVersionReplace);
 
+                SynchronizeVersion(
+                    "src/Datadog.Trace.Trimming/Datadog.Trace.Trimming.csproj",
+                    NugetVersionReplace);
+
                 // Fully qualified name updates
                 SynchronizeVersion(
                     "src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
@@ -362,10 +366,6 @@ namespace PrepareRelease
                     text => FullVersionReplace(text, ".", prefix: "VERSION "));
 
                 // Misc
-
-                SynchronizeVersion(
-                    "../.github/scripts/package_and_deploy.sh",
-                    text => FullVersionReplace(text, ".", prefix: "current_profiler_version=\""));
 
                 SynchronizeVersion(
                     "../profiler/src/ProfilerEngine/ProductVersion.props",

@@ -11,7 +11,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Datadog.Trace\ClrProfiler\InstrumentationCategory.cs" Link="InstrumentationDefinitions\InstrumentationCategory.cs" />
-    <Compile Include="..\Datadog.Trace\ClrProfiler\DefinitionsIdAttribute.cs" Link="InstrumentationDefinitions\DefinitionsIdAttribute.cs" />
     <Compile Include="..\Datadog.Trace\Iast\Dataflow\AspectType.cs" Link="AspectsDefinitions\AspectType.cs" />
     <Compile Include="..\Datadog.Trace\Iast\Dataflow\AspectAttribute.cs" Link="AspectsDefinitions\AspectAttribute.cs" />
     <Compile Include="..\Datadog.Trace\Iast\Dataflow\AspectClassAttribute.cs" Link="AspectsDefinitions\AspectClassAttribute.cs" />
@@ -250,6 +249,9 @@
     </Compile>
     <Compile Include="..\Datadog.Trace\Vendors\MessagePack\StringEncoding.cs">
       <Link>MessagePack\StringEncoding.cs</Link>
+    </Compile>
+    <Compile Update="TelemetryMetric\Sources.Attributes.cs">
+      <DependentUpon>Sources.cs</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>

@@ -17,12 +17,14 @@ namespace Datadog.Trace.Debugger.Configurations
             var addedLogs = incomingConfiguration.LogProbes.Where(ip => !currentConfiguration.LogProbes.Contains(ip));
             var addedMetrics = incomingConfiguration.MetricProbes.Where(ip => !currentConfiguration.MetricProbes.Contains(ip));
             var addedSpans = incomingConfiguration.SpanProbes.Where(ip => !currentConfiguration.SpanProbes.Contains(ip));
+            var addedSpansDecoration = incomingConfiguration.SpanDecorationProbes.Where(ip => !currentConfiguration.SpanDecorationProbes.Contains(ip));
 
             AddedDefinitions =
                 addedLogs
                    .Cast<ProbeDefinition>()
                    .Concat(addedMetrics)
                    .Concat(addedSpans)
+                   .Concat(addedSpansDecoration)
                    .ToList();
 
             var isFilteredListChanged =

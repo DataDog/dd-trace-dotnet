@@ -5,17 +5,25 @@
 
 #include "resource.h"
 
-#include <memory>
 #include "OsSpecificApi.h"
 
 #include "IConfiguration.h"
+#include "IThreadInfo.h"
+#include "Log.h"
+#include "OpSysTools.h"
+#include "ScopeFinalizer.h"
+#include "ScopedHandle.h"
 #include "StackFramesCollectorBase.h"
 #include "SystemTime.h"
 #include "Windows32BitStackFramesCollector.h"
 #include "Windows64BitStackFramesCollector.h"
-#include "Log.h"
-#include "ScopeFinalizer.h"
+#include "WindowsThreadInfo.h"
 #include "shared/src/native-src/loader.h"
+
+#include <memory>
+
+#include <tlhelp32.h>
+#include <windows.h>
 
 namespace OsSpecificApi {
 
@@ -30,7 +38,7 @@ std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
 #endif
 }
 
-uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
+uint64_t GetThreadCpuTime(IThreadInfo* pThreadInfo)
 {
     FILETIME creationTime, exitTime = {}; // not used here
     FILETIME kernelTime = {};
@@ -69,7 +77,6 @@ uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
     }
     return 0;
 }
-
 
 typedef LONG KPRIORITY;
 
@@ -123,7 +130,6 @@ NtQueryInformationThread_ NtQueryInformationThread = nullptr;
 typedef BOOL(WINAPI* GetLogicalProcessorInformation_)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, PDWORD);
 GetLogicalProcessorInformation_ GetLogicalProcessorInformation = nullptr;
 
-
 bool InitializeNtQueryInformationThreadCallback()
 {
     auto hModule = GetModuleHandleA("NtDll.dll");
@@ -145,18 +151,16 @@ bool InitializeNtQueryInformationThreadCallback()
 
 bool IsRunning(ULONG threadState)
 {
-    return
-        (THREAD_STATE::Running == threadState) ||
-        (THREAD_STATE::DeferredReady == threadState) ||
-        (THREAD_STATE::Standby == threadState)
-        ;
+    return (THREAD_STATE::Running == threadState) ||
+           (THREAD_STATE::DeferredReady == threadState) ||
+           (THREAD_STATE::Standby == threadState);
 
     // Note that THREAD_STATE::Standby, THREAD_STATE::Ready and THREAD_STATE::DeferredReady
     // indicate that threads are simply waiting for an available core to run.
     // If some callstacks show non cpu-bound frames at the top, return true only for Running state
 }
 
-bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
+bool IsRunning(IThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
 {
     failed = true;
     cpuTime = 0;
@@ -236,6 +240,65 @@ int32_t GetProcessorCount()
         return 1;
     }
     return nbProcs;
+}
+
+ScopedHandle GetThreadHandle(DWORD threadId)
+{
+    auto handle = ScopedHandle(::OpenThread(THREAD_QUERY_INFORMATION, FALSE, threadId));
+    if (handle == NULL)
+    {
+        LPVOID msgBuffer;
+        DWORD errorCode = GetLastError();
+
+        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                      NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgBuffer, 0, NULL);
+
+        if (msgBuffer != NULL)
+        {
+            Log::Debug("GetThreadHandle: Error getting thread handle for thread id '", threadId, "': ", (LPTSTR)msgBuffer, " (", errorCode, ")");
+            LocalFree(msgBuffer);
+        }
+        else
+        {
+            Log::Debug("GetThreadHandle: Error getting thread handle for thread id '", threadId, "' (", errorCode, ")");
+        }
+    }
+    return handle;
+}
+
+std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
+{
+    std::vector<std::shared_ptr<IThreadInfo>> result;
+    result.reserve(1024);
+
+    auto h = ScopedHandle(CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, OpSysTools::GetProcId()));
+
+    if (h.IsValid())
+    {
+        THREADENTRY32 te{};
+        te.dwSize = sizeof(te);
+        if (Thread32First(h, &te))
+        {
+            auto processId = OpSysTools::GetProcId();
+            do
+            {
+                if (te.dwSize >= FIELD_OFFSET(THREADENTRY32, th32OwnerProcessID) +
+                                     sizeof(te.th32OwnerProcessID) &&
+                    te.th32ThreadID != 0 && te.th32OwnerProcessID == processId)
+                {
+                    auto threadHnd = GetThreadHandle(te.th32ThreadID);
+
+                    if (threadHnd.IsValid())
+                    {
+                        auto name = OpSysTools::GetNativeThreadName(threadHnd);
+                        result.push_back(std::make_shared<WindowsThreadInfo>(te.th32ThreadID, std::move(threadHnd), std::move(name)));
+                    }
+                }
+                te.dwSize = sizeof(te);
+            } while (Thread32Next(h, &te));
+        }
+    }
+    return result;
 }
 
 } // namespace OsSpecificApi

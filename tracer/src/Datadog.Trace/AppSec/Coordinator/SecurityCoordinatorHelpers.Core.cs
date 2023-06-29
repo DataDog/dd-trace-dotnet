@@ -7,6 +7,8 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
+using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Routing;
@@ -15,6 +17,8 @@ namespace Datadog.Trace.AppSec.Coordinator;
 
 internal static class SecurityCoordinatorHelpers
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SecurityCoordinatorHelpers));
+
     internal static void CheckAndBlock(this Security security, HttpContext context, Span span)
     {
         if (security.Enabled)
@@ -26,6 +30,36 @@ internal static class SecurityCoordinatorHelpers
                 var result = securityCoordinator.Scan();
                 securityCoordinator.CheckAndBlock(result);
             }
+        }
+    }
+
+    internal static void CheckReturnedHeaders(this Security security, Span span, IHeaderDictionary headers)
+    {
+        try
+        {
+            if (security.Enabled && CoreHttpContextStore.Instance.Get() is { } httpContext)
+            {
+                var transport = new SecurityCoordinator.HttpTransport(httpContext);
+                if (!transport.IsBlocked)
+                {
+                    var securityCoordinator = new SecurityCoordinator(security, httpContext, span, transport);
+                    var args = new Dictionary<string, object>
+                    {
+                        { AddressesConstants.ResponseHeaderNoCookies, SecurityCoordinator.ExtractHeadersFromRequest(headers) },
+                        { AddressesConstants.ResponseStatus, httpContext.Response.StatusCode.ToString() },
+                    };
+                    var result = securityCoordinator.RunWaf(args);
+                    securityCoordinator.CheckAndBlock(result);
+                }
+            }
+        }
+        catch (BlockException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error extracting HTTP headers to create header tags.");
         }
     }
 
@@ -71,9 +105,14 @@ internal static class SecurityCoordinatorHelpers
                 for (var i = 0; i < actionPathParams.Count; i++)
                 {
                     var p = actionPathParams[i];
-                    if (routeValues.ContainsKey(p.Name))
+                    if (routeValues.TryGetValue(p.Name, out var value))
                     {
-                        pathParams.Add(p.Name, routeValues[p.Name]);
+                        pathParams.Add(p.Name, value);
+                    }
+
+                    if (pathParams.Count == 0)
+                    {
+                        return;
                     }
 
                     var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };

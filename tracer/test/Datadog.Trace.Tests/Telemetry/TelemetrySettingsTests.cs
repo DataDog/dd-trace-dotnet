@@ -283,15 +283,54 @@ namespace Datadog.Trace.Tests.Telemetry
         [InlineData(null, 60)]
         [InlineData("", 60)]
         [InlineData("invalid", 60)]
-        [InlineData("523", 523)]
+        [InlineData("523.5", 523.5)]
         [InlineData("3600", 3600)]
         [InlineData("3601", 60)]
-        public void HeartbeatInterval(string value, int expected)
+        public void HeartbeatInterval(string value, double expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds, value));
             var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, () => true);
 
             settings.HeartbeatInterval.Should().Be(TimeSpan.FromSeconds(expected));
+        }
+
+        [Theory]
+        [InlineData("0", false)]
+        [InlineData(null, false)]
+        [InlineData("", false)]
+        [InlineData("1", true)]
+        public void V2Enabled_DisabledByDefault(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.Telemetry.V2Enabled, value));
+            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, () => true);
+
+            settings.V2Enabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("0", false)]
+        [InlineData(null, false)]
+        [InlineData("", false)]
+        [InlineData("1", true)]
+        public void MetricsEnabled_DisabledByDefault(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.Telemetry.MetricsEnabled, value), (ConfigurationKeys.Telemetry.V2Enabled, "1"));
+            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, () => true);
+
+            settings.MetricsEnabled.Should().Be(expected);
+            settings.ConfigurationError.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void MetricsEnabled_CannotEnableIfV2Disabled()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.Telemetry.MetricsEnabled, "1"),
+                (ConfigurationKeys.Telemetry.V2Enabled, "0"));
+            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, () => true);
+
+            settings.MetricsEnabled.Should().BeFalse();
+            settings.ConfigurationError.Should().NotBeNullOrEmpty();
         }
     }
 }

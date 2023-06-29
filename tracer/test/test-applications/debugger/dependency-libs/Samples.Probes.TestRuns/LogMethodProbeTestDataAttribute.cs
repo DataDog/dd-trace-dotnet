@@ -2,7 +2,7 @@ using System;
 
 namespace Samples.Probes.TestRuns
 {
-    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor)]
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor, AllowMultiple = true)]
     public class LogMethodProbeTestDataAttribute : MethodProbeTestDataAttribute
     {
         public LogMethodProbeTestDataAttribute(

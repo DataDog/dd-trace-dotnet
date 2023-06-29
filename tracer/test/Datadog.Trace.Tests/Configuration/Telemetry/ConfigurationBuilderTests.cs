@@ -1,4 +1,4 @@
-﻿// <copyright file="ConfigurationBuilderTests.cs" company="Datadog">
+// <copyright file="ConfigurationBuilderTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.Configuration;
@@ -109,7 +110,7 @@ public class ConfigurationBuilderTests
             }
 
             telemetry
-               .GetLatest()
+               .GetQueueForTesting()
                .OrderBy(x => x.SeqId)
                .Should()
                .BeEquivalentTo(
@@ -129,8 +130,13 @@ public class ConfigurationBuilderTests
 
         public class Factory : IConfigurationSourceFactory
         {
+            private static JsonSerializerSettings _jsonSettings = new JsonSerializerSettings
+            {
+                Culture = CultureInfo.InvariantCulture
+            };
+
             public IConfigurationSource GetSource(IDictionary<string, object> collection)
-                => new JsonConfigurationSource(JsonConvert.SerializeObject(collection), ConfigurationOrigins.Code);
+                => new JsonConfigurationSource(JsonConvert.SerializeObject(collection, _jsonSettings), ConfigurationOrigins.Code);
         }
 
         public class StringTests : StringTestsBase
@@ -352,11 +358,11 @@ public class ConfigurationBuilderTests
                         Entry.Number(Key, d, ConfigurationOrigins.Code, error: TelemetryErrorCode.FailedValidation),
                         Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
                     },
-                    string s when double.TryParse(s, out var d) && d > 0 => new List<Entry>
+                    string s when TryParse(s, out var d) && d > 0 => new List<Entry>
                     {
                         Entry.Number(Key, d, ConfigurationOrigins.Code, error: null),
                     },
-                    string s when double.TryParse(s, out var d) => new List<Entry>
+                    string s when TryParse(s, out var d) => new List<Entry>
                     {
                         Entry.Number(Key, d, ConfigurationOrigins.Code, error: TelemetryErrorCode.FailedValidation),
                         Entry.Number(Key, Default, ConfigurationOrigins.Default, error: null),
@@ -788,6 +794,11 @@ public class ConfigurationBuilderTests
                       .WithKeys(key)
                       .AsDouble(Default, x => x > 0);
             }
+        }
+
+        protected static bool TryParse(string txt, out double value)
+        {
+            return double.TryParse(txt, NumberStyles.Number, CultureInfo.InvariantCulture, out value);
         }
     }
 

@@ -46,6 +46,8 @@ namespace Datadog.Trace.Tests.Debugger
                 Null = null,
                 Nested = new TestStruct.NestedObject { NestedString = "Hello from nested object", Nested = new TestStruct.NestedObject { NestedString = "Hello from another nested object" } }
             };
+
+            TestObject.Nested.CreateCircleRef();
         }
 
         internal TestStruct TestObject { get; set; }
@@ -125,6 +127,7 @@ namespace Datadog.Trace.Tests.Debugger
             DebuggerExpression? condition = null;
             DebuggerExpression[] templates;
             DebuggerExpression? metrics = null;
+            KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression[]>[]>[] spanDecorations = null;
             var dirName = new DirectoryInfo(Path.GetDirectoryName(expressionTestFilePath)).Name;
             if (dirName == ConditionsFolder)
             {
@@ -145,7 +148,7 @@ namespace Datadog.Trace.Tests.Debugger
                 throw new Exception($"{nameof(DebuggerExpressionLanguageTests)}.{nameof(GetEvaluator)}: Incorrect folder name");
             }
 
-            return (new ProbeExpressionEvaluator(templates, condition, metrics), scopeMembers);
+            return (new ProbeExpressionEvaluator(templates, condition, metrics, spanDecorations), scopeMembers);
         }
 
         private VerifySettings ConfigureVerifySettings(string expressionTestFilePath)
@@ -241,7 +244,7 @@ namespace Datadog.Trace.Tests.Debugger
                 builder.AppendLine("Template:");
                 builder.AppendLine($"Segments: {string.Join(Environment.NewLine, evaluator.Templates.Select(t => t.Json))}");
                 builder.AppendLine($"Expressions: {string.Join(Environment.NewLine, evaluator.CompiledTemplates.Select(t => t.ParsedExpression.ToReadableString()))}");
-                builder.AppendLine($"Result: {evaluationResult.Template}");
+                builder.AppendLine($"Result: {SanitizeEvaluationResult(evaluationResult.Template)}");
             }
 
             if (evaluationResult.Metric.HasValue)
@@ -259,6 +262,31 @@ namespace Datadog.Trace.Tests.Debugger
             }
 
             return builder.ToString();
+        }
+
+        private string SanitizeEvaluationResult(string template)
+        {
+            // remove corlib assembly name
+            template = template.Replace("mscorlib, ", string.Empty).Replace("System.Private.CoreLib, ", string.Empty);
+
+            // remove assembly PublicKeyToken
+            var tokenStartString = ", PublicKeyToken=";
+            var tokenIndex = template.IndexOf(tokenStartString);
+            if (tokenIndex >= 0)
+            {
+                const int guidLength = 16;
+                template = template.Substring(0, tokenIndex) + template.Substring(tokenIndex + tokenStartString.Length + guidLength, template.Length - (tokenIndex + tokenStartString.Length + guidLength));
+            }
+
+            // remove assembly version
+            const string versionExample = "Version=0.0.0.0, ";
+            var versionIndex = template.IndexOf("Version=");
+            if (versionIndex >= 0)
+            {
+                template = template.Substring(0, versionIndex) + template.Substring(versionIndex + versionExample.Length, template.Length - (versionIndex + versionExample.Length));
+            }
+
+            return template;
         }
 
         private EvaluationError SanitizeEvaluationErrorStrings(EvaluationError error)
@@ -279,11 +307,6 @@ namespace Datadog.Trace.Tests.Debugger
                 }
             }
 
-            return SanitizeExpressionMessage(error);
-        }
-
-        private EvaluationError SanitizeExpressionMessage(EvaluationError error)
-        {
             // The expression.ToString returns different string depend on runtime version
             error.Expression = error.Expression.Replace("Convert(CollectionLocal.get_Item(100), String))", "Convert(CollectionLocal.get_Item(100)))");
             return error;
@@ -307,9 +330,64 @@ namespace Datadog.Trace.Tests.Debugger
 
             internal class NestedObject
             {
+                private NestedObject _circleRef;
+
+                private TimeSpan _timeSpan = new TimeSpan();
+
+                private Dictionary<string, int> _dictionary = new Dictionary<string, int>() { { "one", 1 }, { "two", 2 }, { "three", 3 }, { "four", 4 } };
+
+                private IEnumerable<int> _ienumerable = Enumerable.Range(0, 4);
+
+                private IReadOnlyList<int> _readonlyList = new ArraySegment<int>(new int[] { 1, 2, 3, 4 });
+
+                private string _string = "I'm a string field";
+
+                private List<List<int>> _listOfLists = new List<List<int>>()
+                {
+                    new List<int>()
+                    {
+                        1,
+                        2,
+                        3,
+                        4,
+                    },
+                    new List<int>()
+                    {
+                        1,
+                        2,
+                        3,
+                        4,
+                    },
+                    new List<int>()
+                    {
+                        1,
+                        2,
+                        3,
+                        4,
+                    },
+                    new List<int>()
+                    {
+                        1,
+                        2,
+                        3,
+                        4,
+                    }
+                };
+
                 public string NestedString { get; set; }
 
                 public NestedObject Nested { get; set; }
+
+                public void CreateCircleRef()
+                {
+                    _circleRef = new NestedObject();
+                    _circleRef._circleRef = new NestedObject();
+                }
+
+                public override string ToString()
+                {
+                    return _string + _timeSpan.ToString() + _dictionary.ToString() + _ienumerable.ToString() + _listOfLists.ToString() + _readonlyList.ToString();
+                }
             }
         }
     }

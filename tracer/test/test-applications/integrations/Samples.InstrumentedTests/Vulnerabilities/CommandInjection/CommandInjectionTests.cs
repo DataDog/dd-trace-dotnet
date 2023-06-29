@@ -26,13 +26,6 @@ public class CommandInjectionTests : InstrumentationTestsBase
         Environment.SetEnvironmentVariable("PATH", "testPath");
     }
 
-    [Fact]
-    public void GivenAProcess_WhenStartTaintedProcess_ThenLocationIsCorrect()
-    {
-        TestProcessCall(() => Process.Start(new ProcessStartInfo(taintedProcessName) { UseShellExecute = true }));
-        AssertLocation(nameof(CommandInjectionTests));
-    }
-
     // Tests for method Process? Start(ProcessStartInfo startInfo)
 
     [Fact]

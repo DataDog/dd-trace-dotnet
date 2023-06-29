@@ -8,8 +8,10 @@ using System.Collections.Generic;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests
@@ -118,7 +120,7 @@ namespace Datadog.Trace.Tests
         private class LockedTracerManager : TracerManager, ILockedTracer
         {
             public LockedTracerManager()
-                : base(new ImmutableTracerSettings(new TracerSettings()), null, null, null, null, null, null, null, null, null, null, null)
+                : base(new ImmutableTracerSettings(new TracerSettings()), null, null, null, null, null, null, null, null, null, null, null, null, Mock.Of<IRemoteConfigurationManager>())
             {
             }
         }

@@ -174,8 +174,9 @@ void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemo
             std::shared_ptr<ProbeMetadata> probeMetadata;
             if (ProbesMetadataTracker::Instance()->TryGetMetadata(probeIdToRemove, probeMetadata))
             {
-                for (const auto& method : probeMetadata->methods)
+                for (const auto& methodToIndexPair : probeMetadata->methodIndexMap)
                 {
+                    const auto method = methodToIndexPair.first;
                     const auto moduleHandler = m_rejit_handler->GetOrAddModule(method.moduleId);
                     if (moduleHandler == nullptr)
                     {

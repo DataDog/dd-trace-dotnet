@@ -28,6 +28,13 @@ namespace Samples.AspNetMvc5.Controllers
             return View();
         }
 
+        public ActionResult LangHeader()
+        {
+            Response.AppendHeader("content-language", "krypton");
+
+            return Content("Setting content-language");
+        }
+
         [HttpPost]
         public ActionResult Upload(MiscModel miscModel)
         {

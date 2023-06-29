@@ -46,7 +46,7 @@ namespace AllocSimulator
             _totalSampledSize += size;
         }
 
-        public IEnumerable<AllocInfo> GetAllocs()
+        public IEnumerable<AllocInfo> GetUpscaledAllocs()
         {
             foreach (var group in _sampledAllocations.Keys)
             {
@@ -62,6 +62,30 @@ namespace AllocSimulator
 
                 yield return upscaled;
             }
+        }
+
+        public IEnumerable<AllocInfo> GetSampledAllocs()
+        {
+            foreach (var group in _sampledAllocations.Keys)
+            {
+                var sampled = _sampledAllocations[group];
+
+                // let the child class implement the upscaling strategy
+                var upscaled = new AllocInfo()
+                {
+                    Key = sampled.Key,
+                    Type = sampled.Type,
+                    Count = sampled.Count,
+                    Size = sampled.Size
+                };
+
+                yield return upscaled;
+            }
+        }
+
+        public void Upscale(AllocInfo sampled, ref AllocInfo upscaled)
+        {
+            OnUpscale(sampled, ref upscaled);
         }
 
         protected abstract void OnUpscale(AllocInfo sampled, ref AllocInfo upscaled);

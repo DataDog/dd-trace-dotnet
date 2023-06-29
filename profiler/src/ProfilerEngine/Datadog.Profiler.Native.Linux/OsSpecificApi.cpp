@@ -3,29 +3,35 @@
 
 // OsSpecificApi for LINUX
 
+#include "OsSpecificApi.h"
+
 #include <fstream>
 #include <string>
 
 #ifdef LINUX
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #endif
 
 #include <sys/syscall.h>
 #include <sys/sysinfo.h>
-#include "OsSpecificApi.h"
+
 #include "OpSysTools.h"
 #include "ScopeFinalizer.h"
 
 #include "IConfiguration.h"
-#include "Log.h"
+#include "IThreadInfo.h"
 #include "LinuxStackFramesCollector.h"
+#include "LinuxThreadInfo.h"
+#include "Log.h"
+#include "OpSysTools.h"
 #include "ProfilerSignalManager.h"
 #include "StackFramesCollectorBase.h"
 #include "shared/src/native-src/loader.h"
-
 
 namespace OsSpecificApi {
 std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration)
@@ -110,7 +116,7 @@ bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
 
     // 1023 + 1 to ensure that the last char is a null one
     // initialize the whole array slots to 0
-    char line[1024] = { 0 };
+    char line[1024] = {0};
 
     auto length = read(fd, line, sizeof(line) - 1);
     if (length <= 0)
@@ -143,7 +149,7 @@ bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
     return true;
 }
 
-uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
+uint64_t GetThreadCpuTime(IThreadInfo* pThreadInfo)
 {
     bool isRunning = false;
     uint64_t cpuTime = 0;
@@ -155,7 +161,7 @@ uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo)
     return cpuTime;
 }
 
-bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
+bool IsRunning(IThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
 {
     bool isRunning = false;
     if (!GetCpuInfo(pThreadInfo->GetOsThreadId(), isRunning, cpuTime))
@@ -176,5 +182,41 @@ int32_t GetProcessorCount()
     return get_nprocs();
 }
 
+std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
+{
+    DIR* proc_dir;
+    char dirname[100] = "/proc/self/task";
+    proc_dir = opendir(dirname);
+
+    std::vector<std::shared_ptr<IThreadInfo>> threads;
+
+    if (proc_dir != nullptr)
+    {
+        on_leave { closedir(proc_dir); };
+        threads.reserve(512);
+
+        /* /proc available, iterate through tasks... */
+        struct dirent* entry;
+        while ((entry = readdir(proc_dir)) != nullptr)
+        {
+            if (entry->d_name[0] == '.')
+                continue;
+            auto threadId = atoi(entry->d_name);
+            threads.push_back(std::make_shared<LinuxThreadInfo>(threadId, OpSysTools::GetNativeThreadName(threadId)));
+        }
+    }
+    else
+    {
+        static bool alreadyLogged = false;
+        if (!alreadyLogged)
+        {
+            alreadyLogged = true;
+            auto errorNumber = errno;
+            Log::Error("Failed at opendir ", dirname, " error: ", strerror(errorNumber));
+        }
+    }
+
+    return threads;
+}
 
 } // namespace OsSpecificApi

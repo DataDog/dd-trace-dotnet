@@ -21,11 +21,6 @@ namespace Datadog.Trace.Security.Unit.Tests
     {
         public const int TimeoutMicroSeconds = 1_000_000;
 
-        public WafTests(WafLibraryInvokerFixture wafLibraryInvokerFixture)
-            : base(wafLibraryInvokerFixture)
-        {
-        }
-
         [Theory]
         [InlineData("[$ne]", "arg", "nosql_injection", "crs-942-290")]
         [InlineData("attack", "appscan_fingerprint", "security_scanner", "crs-913-120")]
@@ -63,7 +58,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Theory]
-        [InlineData("user-agent", "Arachni/v1", "security_scanner", "ua0-600-12x")]
+        [InlineData("user-agent", "Arachni/v1", "attack_tool", "ua0-600-12x")]
         [InlineData("referer", "<script >", "xss", "crs-941-110")]
         [InlineData("x-file-name", "routing.yml", "command_injection", "crs-932-180")]
         [InlineData("x-filename", "routing.yml", "command_injection", "crs-932-180")]

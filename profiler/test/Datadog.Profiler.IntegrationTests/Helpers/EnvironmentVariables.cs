@@ -24,5 +24,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string GarbageCollectionProfilerEnabled = "DD_PROFILING_GC_ENABLED";
         public const string UseBacktrace2 = "DD_INTERNAL_USE_BACKTRACE2";
         public const string DebugInfoEnabled = "DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED";
+        public const string GcThreadsCpuTimeEnabled = "DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED";
     }
 }

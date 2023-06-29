@@ -96,7 +96,7 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
-                _settings ??= new(source: null, TelemetryFactoryV2.GetConfigTelemetry());
+                _settings ??= new(source: null, TelemetryFactory.Config);
                 _configurationStatus ??= new ConfigurationStatus(string.Empty);
                 Log.Error(ex, "DDAS-0001-01: AppSec could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
             }
@@ -137,6 +137,10 @@ namespace Datadog.Trace.AppSec
         internal SecuritySettings Settings => _settings;
 
         internal string? DdlibWafVersion => _waf?.Version;
+
+        internal bool TrackUserEvents => Enabled && Settings.UserEventsAutomatedTracking != "disabled";
+
+        internal bool IsExtendedUserTrackingEnabled => Settings.UserEventsAutomatedTracking == SecuritySettings.UserTrackingExtendedMode;
 
         internal void SubscribeToChanges(params string[] productNames)
         {
@@ -325,83 +329,21 @@ namespace Datadog.Trace.AppSec
             return blockingAction;
         }
 
-        private static void AddAppsecSpecificInstrumentations()
-        {
-            int defs = 0, derived = 0;
-            try
-            {
-                Log.Debug("Adding CallTarget AppSec integration definitions to native library.");
-                var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.AppSec);
-                NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-                defs = payload.Definitions.Length;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error adding CallTarget AppSec integration definitions to native library");
-            }
-
-            try
-            {
-                Log.Debug("Adding CallTarget appsec derived integration definitions to native library.");
-                var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.AppSec);
-                NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-                derived = payload.Definitions.Length;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error adding CallTarget appsec derived integration definitions to native library");
-            }
-
-            Log.Information<int, int>("{DefinitionCount} AppSec definitions and {DerivedCount} AppSec derived definitions added to the profiler.", defs, derived);
-        }
-
-        private static void RemoveAppsecSpecificInstrumentations()
-        {
-            int defs = 0, derived = 0;
-            try
-            {
-                Log.Debug("Removing CallTarget AppSec integration definitions from native library.");
-                var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.AppSec);
-                NativeMethods.RemoveCallTargetDefinitions(payload.DefinitionsId, payload.Definitions);
-                defs = payload.Definitions.Length;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error removing CallTarget AppSec integration definitions from native library");
-            }
-
-            try
-            {
-                Log.Debug("Removing CallTarget appsec derived integration definitions from native library.");
-                var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.AppSec);
-                NativeMethods.RemoveCallTargetDefinitions(payload.DefinitionsId, payload.Definitions);
-                derived = payload.Definitions.Length;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error removing CallTarget appsec derived integration definitions from native library");
-            }
-
-            Log.Information<int, int>("{DefinitionCount} AppSec definitions and {DerivedCount} AppSec derived definitions removed from the profiler.", defs, derived);
-        }
-
         /// <summary> Frees resources </summary>
         public void Dispose() => _waf?.Dispose();
 
         private void SetRemoteConfigCapabilites()
         {
-            RemoteConfigurationManager.CallbackWithInitializedInstance(
-                rcm =>
-                {
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeToggled);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, _noLocalRules);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, _noLocalRules);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusion, _noLocalRules);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmRequestBlocking, _noLocalRules);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmResponseBlocking, _noLocalRules);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomRules, _noLocalRules);
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _noLocalRules);
-                });
+            var rcm = RcmSubscriptionManager.Instance;
+
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeToggled);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusion, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRequestBlocking, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmResponseBlocking, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomRules, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _noLocalRules);
         }
 
         private void InitWafAndInstrumentations(bool fromRemoteConfig = false)
@@ -431,7 +373,7 @@ namespace Datadog.Trace.AppSec
                 oldWaf?.Dispose();
                 Log.Debug("Disposed old waf and affected new waf");
                 SubscribeToChanges(RcmProducts.AsmData, RcmProducts.Asm);
-                AddAppsecSpecificInstrumentations();
+                Instrumentation.EnableTracerInstrumentations(InstrumentationCategory.AppSec);
                 _rateLimiter ??= new(_settings.TraceRateLimit);
                 Enabled = true;
                 InitializationError = null;
@@ -439,6 +381,13 @@ namespace Datadog.Trace.AppSec
                 if (_wafInitResult.EmbeddedRules != null)
                 {
                     _configurationStatus.FallbackEmbeddedRuleSet ??= RuleSet.From(_wafInitResult.EmbeddedRules);
+                }
+
+                if (!fromRemoteConfig)
+                {
+                    // occurs the first time we initialize the WAF
+                    TelemetryFactory.Metrics.SetWafVersion(_waf!.Version);
+                    TelemetryFactory.Metrics.RecordCountWafInit();
                 }
             }
             else
@@ -476,7 +425,7 @@ namespace Datadog.Trace.AppSec
                     }
                 }
 
-                RemoveAppsecSpecificInstrumentations();
+                Instrumentation.DisableTracerInstrumentations(InstrumentationCategory.AppSec);
                 Enabled = false;
                 InitializationError = null;
                 Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);

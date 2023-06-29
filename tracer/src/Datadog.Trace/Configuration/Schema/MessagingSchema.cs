@@ -6,18 +6,23 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Configuration.Schema
 {
     internal class MessagingSchema
     {
         private readonly SchemaVersion _version;
+        private readonly bool _peerServiceTagsEnabled;
+        private readonly bool _removeClientServiceNamesEnabled;
         private readonly string _defaultServiceName;
         private readonly IDictionary<string, string>? _serviceNameMappings;
 
-        public MessagingSchema(SchemaVersion version, string defaultServiceName, IDictionary<string, string>? serviceNameMappings)
+        public MessagingSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IDictionary<string, string>? serviceNameMappings)
         {
             _version = version;
+            _peerServiceTagsEnabled = peerServiceTagsEnabled;
+            _removeClientServiceNamesEnabled = removeClientServiceNamesEnabled;
             _defaultServiceName = defaultServiceName;
             _serviceNameMappings = serviceNameMappings;
         }
@@ -38,7 +43,7 @@ namespace Datadog.Trace.Configuration.Schema
 
             return _version switch
             {
-                SchemaVersion.V0 => $"{_defaultServiceName}-{messagingSystem}",
+                SchemaVersion.V0 when !_removeClientServiceNamesEnabled => $"{_defaultServiceName}-{messagingSystem}",
                 _ => _defaultServiceName,
             };
         }
@@ -59,9 +64,16 @@ namespace Datadog.Trace.Configuration.Schema
 
             return _version switch
             {
-                SchemaVersion.V0 => $"{_defaultServiceName}-{messagingSystem}",
+                SchemaVersion.V0 when !_removeClientServiceNamesEnabled => $"{_defaultServiceName}-{messagingSystem}",
                 _ => _defaultServiceName,
             };
         }
+
+        public KafkaTags CreateKafkaTags(string spanKind)
+            => _version switch
+            {
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new KafkaTags(SpanKinds.Consumer),
+                _ => new KafkaV1Tags(SpanKinds.Consumer),
+            };
     }
 }

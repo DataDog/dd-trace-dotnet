@@ -95,14 +95,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 port = dnsEndPoint.Port.ToString();
             }
 
-            string operationName = tracer.Schema.Database.GetOperationName(DatabaseType);
-            string serviceName = tracer.Schema.Database.GetServiceName(DatabaseType);
+            string operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
+            string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
+            MongoDbTags tags = tracer.CurrentTraceSettings.Schema.Database.CreateMongoDbTags();
 
             Scope scope = null;
 
             try
             {
-                var tags = new MongoDbTags();
                 scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
                 var span = scope.Span;
                 span.Type = SpanTypes.MongoDb;

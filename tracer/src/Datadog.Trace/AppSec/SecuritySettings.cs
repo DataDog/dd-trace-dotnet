@@ -19,6 +19,8 @@ namespace Datadog.Trace.AppSec
 {
     internal class SecuritySettings
     {
+        public const string UserTrackingExtendedMode = "extended";
+        public const string UserTrackingSafeMode = "safe";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecuritySettings>();
 
         public SecuritySettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
@@ -27,7 +29,7 @@ namespace Datadog.Trace.AppSec
             var config = new ConfigurationBuilder(source, telemetry);
             BlockedHtmlTemplate = config
                                  .WithKeys(ConfigurationKeys.AppSec.HtmlBlockedTemplate)
-                                 .AsString(SecurityConstants.BlockedHtmlTemplate);
+                                 .AsRedactedString(SecurityConstants.BlockedHtmlTemplate); // Redacted because it's huge
 
             BlockedJsonTemplate = config
                                  .WithKeys(ConfigurationKeys.AppSec.JsonBlockedTemplate)
@@ -64,6 +66,16 @@ namespace Datadog.Trace.AppSec
             ObfuscationParameterValueRegex = config
                                             .WithKeys(ConfigurationKeys.AppSec.ObfuscationParameterValueRegex)
                                             .AsString(SecurityConstants.ObfuscationParameterValueRegexDefault, x => !string.IsNullOrWhiteSpace(x));
+
+            UserEventsAutomatedTracking = config
+                                         .WithKeys(ConfigurationKeys.AppSec.UserEventsAutomatedTracking)
+                                         .AsString(
+                                              UserTrackingSafeMode,
+                                              val =>
+                                                  val.Equals("disabled", StringComparison.OrdinalIgnoreCase)
+                                               || val.Equals(UserTrackingSafeMode, StringComparison.OrdinalIgnoreCase)
+                                               || val.Equals(UserTrackingExtendedMode, StringComparison.OrdinalIgnoreCase))
+                                         .ToLowerInvariant();
         }
 
         public bool Enabled { get; }
@@ -115,13 +127,18 @@ namespace Datadog.Trace.AppSec
         public string BlockedHtmlTemplate { get; }
 
         /// <summary>
+        /// Gets the automatic tracking of user events mode. Values can be disabled, safe or extended.
+        /// </summary>
+        public string UserEventsAutomatedTracking { get; }
+
+        /// <summary>
         /// Gets the response template for Json content. This template is used in combination with the status code to craft and send a response upon blocking the request.
         /// </summary>
         public string BlockedJsonTemplate { get; }
 
         public static SecuritySettings FromDefaultSources()
         {
-            return new SecuritySettings(GlobalConfigurationSource.Instance, TelemetryFactoryV2.GetConfigTelemetry());
+            return new SecuritySettings(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
         }
 
         private static ParsingResult<int> ParseWafTimeout(string wafTimeoutString)

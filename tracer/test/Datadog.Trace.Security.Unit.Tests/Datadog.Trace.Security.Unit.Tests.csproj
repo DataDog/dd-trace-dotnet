@@ -20,6 +20,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="IAST\Tainted\evidence-redaction-suite.yml" />
+    <EmbeddedResource Include="IAST\Tainted\evidence-redaction-suite.yml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="YamlDotNet" Version="13.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="wrong-tags-rule-set.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

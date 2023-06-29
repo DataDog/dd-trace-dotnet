@@ -27,13 +27,6 @@ public class FileTests : InstrumentationTestsBase
         AddTainted(taintedPathValue);
     }
 
-    [Fact]
-    public void GivenAFile_WhenWriteAllTextTaintedString_LocationIsCorrect()
-    {
-        ExecuteAction(() => { File.WriteAllText(taintedPathValue, notTaintedValue); });
-        AssertLocation(nameof(FileTests));
-    }
-
     // Cover System.IO.File::WriteAllText(System.String,System.String)
 
     [Fact]

@@ -24,7 +24,7 @@ partial class Build
        .Description("Sign the dlls produced by building the Tracer, Profiler, and Monitoring home directory")
        .Unlisted()
        .Requires(() => IsWin)
-       .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
+       .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader, CreateRootDescriptorsFile)
        .Before(PackNuGet, BuildMsi, ZipMonitoringHome)
        .Executes(async () =>
         {
@@ -45,8 +45,12 @@ partial class Build
        .After(PackageTracerHome)
        .Executes(async () =>
         {
-            var files = ArtifactsDirectory.GlobFiles("**/*.msi")
-                                         .Concat(ArtifactsDirectory.GlobFiles("**/*.nupkg"));
+            // We don't currently sign the NuGet packages because that would mean
+            // _all_ NuGet packages uploaded under the datadog owner would need to be signed.
+            // While that would be the best option, it requires everyone to switch across at the same time
+
+            var files = ArtifactsDirectory.GlobFiles("**/*.msi");
+                                         // .Concat(ArtifactsDirectory.GlobFiles("**/*.nupkg"));
             await SignFiles(files);
         });
 

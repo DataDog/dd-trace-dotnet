@@ -68,7 +68,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_5,
-    Name: http.request,
+    Name: http.client.request,
     Resource: POST localhost:00000/,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -79,13 +79,16 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
-      span.kind: client
+      out.host: aws_sqs,
+      peer.service: aws_sqs,
+      span.kind: client,
+      _dd.peer.service.source: out.host
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_6,
-    Name: http.request,
+    Name: http.client.request,
     Resource: POST localhost:00000/,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -96,13 +99,16 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
-      span.kind: client
+      out.host: aws_sqs,
+      peer.service: aws_sqs,
+      span.kind: client,
+      _dd.peer.service.source: out.host
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_7,
-    Name: http.request,
+    Name: http.client.request,
     Resource: POST localhost:00000/,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -113,13 +119,16 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
-      span.kind: client
+      out.host: aws_sqs,
+      peer.service: aws_sqs,
+      span.kind: client,
+      _dd.peer.service.source: out.host
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_8,
-    Name: http.request,
+    Name: http.client.request,
     Resource: POST localhost:00000/?/MyAsyncSQSQueue,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -130,13 +139,16 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      out.host: aws_sqs,
+      peer.service: aws_sqs,
+      span.kind: client,
+      _dd.peer.service.source: out.host
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_9,
-    Name: http.request,
+    Name: http.client.request,
     Resource: POST localhost:00000/?/MyAsyncSQSQueue2,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -147,7 +159,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      out.host: aws_sqs,
+      peer.service: aws_sqs,
+      span.kind: client,
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -791,7 +806,7 @@
   {
     TraceId: Id_36,
     SpanId: Id_40,
-    Name: http.request,
+    Name: http.client.request,
     Resource: POST localhost:00000/,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -802,13 +817,16 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
-      span.kind: client
+      out.host: aws_sqs,
+      peer.service: aws_sqs,
+      span.kind: client,
+      _dd.peer.service.source: out.host
     }
   },
   {
     TraceId: Id_36,
     SpanId: Id_41,
-    Name: http.request,
+    Name: http.client.request,
     Resource: POST localhost:00000/,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -819,13 +837,16 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
-      span.kind: client
+      out.host: aws_sqs,
+      peer.service: aws_sqs,
+      span.kind: client,
+      _dd.peer.service.source: out.host
     }
   },
   {
     TraceId: Id_36,
     SpanId: Id_42,
-    Name: http.request,
+    Name: http.client.request,
     Resource: POST localhost:00000/,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -836,13 +857,16 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
-      span.kind: client
+      out.host: aws_sqs,
+      peer.service: aws_sqs,
+      span.kind: client,
+      _dd.peer.service.source: out.host
     }
   },
   {
     TraceId: Id_36,
     SpanId: Id_43,
-    Name: http.request,
+    Name: http.client.request,
     Resource: POST localhost:00000/?/MySyncSQSQueue,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -853,13 +877,16 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MySyncSQSQueue,
-      span.kind: client
+      out.host: aws_sqs,
+      peer.service: aws_sqs,
+      span.kind: client,
+      _dd.peer.service.source: out.host
     }
   },
   {
     TraceId: Id_36,
     SpanId: Id_44,
-    Name: http.request,
+    Name: http.client.request,
     Resource: POST localhost:00000/?/MySyncSQSQueue2,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -870,7 +897,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
-      span.kind: client
+      out.host: aws_sqs,
+      peer.service: aws_sqs,
+      span.kind: client,
+      _dd.peer.service.source: out.host
     }
   },
   {

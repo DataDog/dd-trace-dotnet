@@ -11,8 +11,9 @@ namespace debugger
 
 // DebuggerRejitPreprocessor
 
-ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID>& modules,
-    const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes, std::vector<MethodIdentifier>& rejitRequests)
+ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
+    const std::vector<ModuleID>& modules, const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
+    std::vector<MethodIdentifier>& rejitRequests)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -133,9 +134,9 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(const std::vector<ModuleID
     return rejitCount;
 }
 
-void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(const std::vector<ModuleID>& modulesVector,
-                                                            const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
-                                                            std::promise<std::vector<MethodIdentifier>>* promise)
+void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(
+    const std::vector<ModuleID>& modulesVector, const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
+    std::promise<std::vector<MethodIdentifier>>* promise)
 {
     std::vector<MethodIdentifier> rejitRequests;
 
@@ -214,7 +215,8 @@ void DebuggerRejitPreprocessor::ProcessTypesForRejit(
     }
 }
 
-const MethodReference& DebuggerRejitPreprocessor::GetTargetMethod(const std::shared_ptr<MethodProbeDefinition>& methodProbe)
+const MethodReference&
+DebuggerRejitPreprocessor::GetTargetMethod(const std::shared_ptr<MethodProbeDefinition>& methodProbe)
 {
     return methodProbe->target_method;
 }
@@ -234,6 +236,16 @@ DebuggerRejitPreprocessor::GetIsExactSignatureMatch(const std::shared_ptr<Method
 {
     return methodProbe->is_exact_signature_match;
 }
+
+const bool DebuggerRejitPreprocessor::GetIsEnabled(const std::shared_ptr<MethodProbeDefinition>& definition)
+{
+    return true;
+}
+const bool DebuggerRejitPreprocessor::SupportsSelectiveEnablement()
+{
+    return false;
+}
+
 
 const std::unique_ptr<RejitHandlerModuleMethod>
 DebuggerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module,

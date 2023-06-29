@@ -115,7 +115,9 @@ variables:
   isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'))]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
   # Run code coverage on main branches only, on scheduled build only
-  runCodeCoverage: $[or(eq(variables['run_code_coverage'], 'true'), and(eq(variables['Build.Reason'], 'Schedule'), or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'))))] 
+  runCodeCoverage: $[or(eq(variables['run_code_coverage'], 'true'), and(eq(variables['Build.Reason'], 'Schedule'), or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'))))]
+  DD_INTERNAL_TELEMETRY_V2_ENABLED: $[eq(variables['enable_telemetry_v2'], 'true')]
+  DD_TELEMETRY_METRICS_ENABLED: $[eq(variables['enable_metrics'], 'true')]
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
   relativeNugetPackageDirectory: packages
@@ -1806,8 +1808,15 @@ stages:
           serverless-lambda-throwing-async-task \
           serverless-lambda-throwing-with-context \
           serverless-lambda-throwing-async-with-context \
-          serverless-lambda-throwing-async-task-with-context
-
+          serverless-lambda-throwing-async-task-with-context \
+          serverless-lambda-generic \
+          serverless-lambda-generic-async \
+          serverless-lambda-generic-virtual \
+          serverless-lambda-generic-virtual-async \
+          serverless-lambda-generic-abstract \
+          serverless-lambda-generic-abstract-async \
+          serverless-lambda-generic-complex \
+          serverless-lambda-generic-complex-nested
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)

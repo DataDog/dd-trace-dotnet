@@ -9,7 +9,6 @@ using System.IO;
 using System.Linq.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
-using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -23,6 +22,7 @@ internal partial class ProbeExpressionParser<T>
     private const string @Exceptions = "@exceptions";
     private const string @Duration = "@duration";
     private const string @It = "@it";
+    private const string @This = "this";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeExpressionParser<T>));
     private static readonly LabelTarget ReturnTarget = Expression.Label(typeof(T));
@@ -210,14 +210,14 @@ internal partial class ProbeExpressionParser<T>
                                         return Substring(reader, parameters, itParameter);
                                     }
 
-                                case "startWith":
+                                case "startsWith":
                                     {
-                                        return StartWith(reader, parameters, itParameter);
+                                        return StartsWith(reader, parameters, itParameter);
                                     }
 
-                                case "endWith":
+                                case "endsWith":
                                     {
-                                        return EndWith(reader, parameters, itParameter);
+                                        return EndsWith(reader, parameters, itParameter);
                                     }
 
                                 case "contains":
@@ -295,6 +295,11 @@ internal partial class ProbeExpressionParser<T>
                             {
                                 // skip comment
                                 return ParseTree(reader, parameters, itParameter);
+                            }
+
+                            if (readerValue == This)
+                            {
+                                return GetParameterExpression(parameters, ScopeMemberKind.This);
                             }
 
                             if (readerValue == Return)
@@ -395,7 +400,7 @@ internal partial class ProbeExpressionParser<T>
         }
     }
 
-    private Expression HandleReturnType(Expression finalExpr)
+    private Expression HandleReturnType(Expression finalExpr, List<ParameterExpression> scopeMembers)
     {
         if (typeof(T).IsAssignableFrom(finalExpr.Type))
         {
@@ -414,33 +419,7 @@ internal partial class ProbeExpressionParser<T>
             return finalExpr;
         }
 
-        // for string, call ToString when possible, build exception message or return the type name
-        if (SupportedTypesService.IsSafeToCallToString(finalExpr.Type))
-        {
-            finalExpr = Expression.Call(finalExpr, GetMethodByReflection(typeof(object), nameof(object.ToString), Type.EmptyTypes));
-        }
-        else if (IsMicrosoftException(finalExpr.Type))
-        {
-            var stringConcat = GetMethodByReflection(typeof(string), nameof(string.Concat), new[] { typeof(object[]) });
-            var typeNameExpression = Expression.Constant(finalExpr.Type.FullName, typeof(string));
-            var ifNull = Expression.Equal(finalExpr, Expression.Constant(null));
-            var exceptionAsString = Expression.Call(
-                stringConcat,
-                Expression.NewArrayInit(
-                    typeof(string),
-                    Expression.Constant(finalExpr.Type.FullName, typeof(string)),
-                    Expression.Constant(Environment.NewLine, typeof(string)),
-                    Expression.Property(finalExpr, nameof(Exception.Message)),
-                    Expression.Constant(Environment.NewLine, typeof(string)),
-                    Expression.Property(finalExpr, nameof(Exception.StackTrace))));
-            return Expression.Condition(ifNull, typeNameExpression, exceptionAsString);
-        }
-        else
-        {
-            finalExpr = Expression.Constant(finalExpr.Type.FullName, typeof(string));
-        }
-
-        return finalExpr;
+        return DumpExpression(finalExpr, scopeMembers);
     }
 
     private void AddLocalAndArgs(ScopeMember[] argsOrLocals, List<ParameterExpression> scopeMembers, List<Expression> expressions, ParameterExpression argsOrLocalsParameterExpression)
@@ -477,7 +456,15 @@ internal partial class ProbeExpressionParser<T>
         var thisType = @this.Type ?? @this.Value?.GetType();
         if (string.IsNullOrEmpty(expressionJson) || argsOrLocals == null || thisType == null)
         {
-            throw new ArgumentException($"{nameof(ParseProbeExpression)} has been called with an invalid argument");
+            var ex = new ArgumentException("Method has been called with an invalid argument");
+            Log.Error(
+                ex,
+                "{Method} has been called with an invalid argument. Expression: {Expression}, Type: {Type}",
+                nameof(ProbeExpressionParser<T>) + "." + nameof(ParseProbeExpression),
+                expressionJson ?? "expression is null",
+                thisType?.FullName ?? "type is null");
+
+            throw ex;
         }
 
         var scopeMembers = new List<ParameterExpression>();
@@ -524,7 +511,7 @@ internal partial class ProbeExpressionParser<T>
         SetReaderAtExpressionStart(reader);
 
         var finalExpr = ParseRoot(reader, scopeMembers);
-        finalExpr = HandleReturnType(finalExpr);
+        finalExpr = HandleReturnType(finalExpr, scopeMembers);
         expressions.Add(finalExpr is not GotoExpression ? Expression.Assign(result, finalExpr) : finalExpr);
         expressions.Add(Expression.Label(ReturnTarget, result));
         var body = (Expression)Expression.Block(scopeMembers, expressions);

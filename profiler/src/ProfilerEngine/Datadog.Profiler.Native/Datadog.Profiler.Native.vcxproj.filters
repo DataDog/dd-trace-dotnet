@@ -328,6 +328,10 @@
     <ClInclude Include="DebugInfoStore.h" />
     <ClInclude Include="IDebugInfoStore.h" />
     <ClInclude Include="IExceptionsRecorder.h" />
+    <ClInclude Include="IThreadInfo.h" />
+    <ClInclude Include="ScopedHandle.h" />
+    <ClInclude Include="GCThreadsCpuProvider.h" />
+    <ClInclude Include="NativeThreadsCpuProviderBase.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -490,6 +494,12 @@
       <Filter>Allocations</Filter>
     </ClCompile>
     <ClCompile Include="DebugInfoStore.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="GCThreadsCpuProvider.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="NativeThreadsCpuProviderBase.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>

@@ -51,6 +51,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://localhost:00000/api/trigger,
+      out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -143,6 +144,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://localhost:00000/api/simple,
+      out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -167,6 +169,7 @@
       http.method: GET,
       http.status_code: 500,
       http.url: http://localhost:00000/api/exception,
+      out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -191,6 +194,7 @@
       http.method: GET,
       http.status_code: 500,
       http.url: http://localhost:00000/api/error,
+      out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -217,6 +221,7 @@
       http.method: GET,
       http.status_code: 400,
       http.url: http://localhost:00000/api/badrequest,
+      out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client
     },

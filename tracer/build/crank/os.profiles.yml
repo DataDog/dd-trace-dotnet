@@ -19,6 +19,8 @@ profiles:
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_LOGGING_RATE: 6
           DD_TRACE_DEBUG: 0
+          DD_INTERNAL_TELEMETRY_V2_ENABLED: "{{ telemetry_v2 }}"
+          DD_TELEMETRY_METRICS_ENABLED: "{{ enable_metrics }}"
         options:
           requiredOperatingSystem: windows
           requiredArchitecture: x64
@@ -44,6 +46,8 @@ profiles:
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_LOGGING_RATE: 6
           DD_TRACE_DEBUG: 0
+          DD_INTERNAL_TELEMETRY_V2_ENABLED: "{{ telemetry_v2 }}"
+          DD_TELEMETRY_METRICS_ENABLED: "{{ enable_metrics }}"
         options:
           requiredOperatingSystem: linux
           requiredArchitecture: x64
@@ -69,6 +73,8 @@ profiles:
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_LOGGING_RATE: 6
           DD_TRACE_DEBUG: 0
+          DD_INTERNAL_TELEMETRY_V2_ENABLED: "{{ telemetry_v2 }}"
+          DD_TELEMETRY_METRICS_ENABLED: "{{ enable_metrics }}"
           DD_ENV: throughput-adhoc
         options:
           requiredOperatingSystem: linux
@@ -96,6 +102,8 @@ profiles:
           LD_LIBRARY_PATH: "{{ linuxProfilerPath }}/tracer-home-linux/linux-x64"
           LD_PRELOAD: "{{ linuxProfilerPath }}/tracer-home-linux/linux-x64/Datadog.Linux.ApiWrapper.x64.so"
           DD_PROFILING_ENABLED: 1
+          DD_INTERNAL_TELEMETRY_V2_ENABLED: "{{ telemetry_v2 }}"
+          DD_TELEMETRY_METRICS_ENABLED: "{{ enable_metrics }}"
         options:
           requiredOperatingSystem: linux
           requiredArchitecture: x64
@@ -121,6 +129,8 @@ profiles:
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_LOGGING_RATE: 6
           DD_TRACE_DEBUG: 0
+          DD_INTERNAL_TELEMETRY_V2_ENABLED: "{{ telemetry_v2 }}"
+          DD_TELEMETRY_METRICS_ENABLED: "{{ enable_metrics }}"
         options:
           requiredOperatingSystem: linux
           requiredArchitecture: arm64

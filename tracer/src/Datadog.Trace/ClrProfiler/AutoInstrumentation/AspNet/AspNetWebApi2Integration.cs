@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 var tracer = Tracer.Instance;
                 var request = controllerContext.Request;
                 SpanContext propagatedContext = null;
-                var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
+                HttpHeadersCollection? headersCollection = null;
                 tags = new AspNetTags();
 
                 if (request != null && tracer.InternalActiveScope == null)
@@ -58,10 +58,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     {
                         // extract propagated http headers
                         var headers = request.Headers;
-                        var headersCollection = new HttpHeadersCollection(headers);
-
-                        propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection);
-                        tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headersCollection, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix, request.Headers.UserAgent.ToString());
+                        headersCollection = new HttpHeadersCollection(headers);
+                        propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection.Value);
                     }
                     catch (Exception ex)
                     {
@@ -100,7 +98,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 }
 
                 scope = tracer.StartActiveInternal(OperationName, propagatedContext, tags: tags);
-                UpdateSpan(controllerContext, scope.Span, tags, tagsFromHeaders);
+                UpdateSpan(controllerContext, scope.Span, tags);
+                if (headersCollection is not null)
+                {
+                    SpanContextPropagator.Instance.AddHeadersToSpanAsTags(scope.Span, headersCollection.Value, tracer.Settings.HeaderTagsInternal, SpanContextPropagator.HttpRequestHeadersTagPrefix, request.Headers.UserAgent.ToString());
+                }
+
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
@@ -112,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             return scope;
         }
 
-        internal static void UpdateSpan(IHttpControllerContext controllerContext, Span span, AspNetTags tags, IEnumerable<KeyValuePair<string, string>> headerTags)
+        internal static void UpdateSpan(IHttpControllerContext controllerContext, Span span, AspNetTags tags)
         {
             try
             {
@@ -186,7 +189,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     }
                 }
 
-                var url = request.GetUrl(tracer.TracerManager.QueryStringManager);
+                var url = request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
 
                 span.DecorateWebServerSpan(
                     resourceName: resourceName,
@@ -194,8 +197,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     host: host,
                     httpUrl: url,
                     userAgent: userAgent,
-                    tags,
-                    headerTags);
+                    tags);
 
                 if (tags is not null)
                 {

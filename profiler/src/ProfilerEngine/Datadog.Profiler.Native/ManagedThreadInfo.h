@@ -8,6 +8,8 @@
 #include "cor.h"
 #include "corprof.h"
 
+#include "IThreadInfo.h"
+#include "ScopedHandle.h"
 #include "Semaphore.h"
 #include "shared/src/native-src/string.h"
 
@@ -27,7 +29,7 @@ public:
     std::uint64_t _currentSpanId;
 };
 
-struct ManagedThreadInfo
+struct ManagedThreadInfo : public IThreadInfo
 {
 private:
     ManagedThreadInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle, shared::WSTRING pThreadName);
@@ -41,11 +43,11 @@ public:
 
     inline ThreadID GetClrThreadId() const;
 
-    inline DWORD GetOsThreadId() const;
-    inline HANDLE GetOsThreadHandle() const;
+    inline DWORD GetOsThreadId() const override;
+    inline HANDLE GetOsThreadHandle() const override;
     inline void SetOsInfo(DWORD osThreadId, HANDLE osThreadHandle);
 
-    inline const shared::WSTRING& GetThreadName() const;
+    inline const shared::WSTRING& GetThreadName() const override;
     inline void SetThreadName(shared::WSTRING pThreadName);
 
     inline std::uint64_t GetLastSampleHighPrecisionTimestampNanoseconds() const;
@@ -89,49 +91,6 @@ private:
     inline void BuildProfileThreadName();
 
 private:
-    class ScopedHandle
-    {
-    public:
-        explicit ScopedHandle(HANDLE hnd) :
-            _handle(hnd)
-            {}
-
-        ~ScopedHandle()
-        {
-#ifdef _WINDOWS
-            ::CloseHandle(_handle);
-#endif
-        }
-
-        // Make it non copyable
-        ScopedHandle(ScopedHandle&) = delete;
-        ScopedHandle& operator=(ScopedHandle&) = delete;
-
-        ScopedHandle(ScopedHandle&& other) noexcept
-        {
-            // set the other handle to NULL and store its value in _handle
-            _handle = std::exchange(other._handle, static_cast<HANDLE>(NULL));
-        }
-
-        ScopedHandle& operator=(ScopedHandle&& other) noexcept
-        {
-            if (this != &other)
-            {
-                // set the other handle to NULL and store its value in _handle
-                _handle = std::exchange(other._handle, static_cast<HANDLE>(NULL));
-            }
-            return *this;
-        }
-
-        operator HANDLE() const
-        {
-            return _handle;
-        }
-
-    private:
-        HANDLE _handle;
-    };
-
     static constexpr std::uint32_t MaxProfilerThreadInfoId = 0xFFFFFF; // = 16,777,215
     static std::atomic<std::uint32_t> s_nextProfilerThreadInfoId;
 

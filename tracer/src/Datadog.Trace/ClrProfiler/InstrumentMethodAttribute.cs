@@ -13,6 +13,10 @@ namespace Datadog.Trace.ClrProfiler
     /// Attribute that indicates that the decorated class is meant to intercept a method
     /// by modifying the method body with callbacks. Used to generate the integration definitions file.
     /// </summary>
+    /// <remarks>
+    /// Beware that the fullname of this class is being used for App Trimming support in the _build/Build.Steps.cs file
+    /// as string. Avoid changing the name and/or namespace of this class.
+    /// </remarks>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Assembly, AllowMultiple = true, Inherited = false)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -129,7 +133,7 @@ namespace Datadog.Trace.ClrProfiler
         /// <summary>
         /// Gets or sets the CallTarget integration type
         /// </summary>
-        public IntegrationType CallTargetIntegrationType { get; set; } = IntegrationType.Default;
+        public CallTargetKind CallTargetIntegrationKind { get; set; } = CallTargetKind.Default;
 
         /// <summary>
         /// Gets or sets the InstrumentationFilter

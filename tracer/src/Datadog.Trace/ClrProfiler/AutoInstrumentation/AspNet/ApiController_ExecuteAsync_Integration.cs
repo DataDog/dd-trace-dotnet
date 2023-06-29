@@ -96,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             var controllerContext = (IHttpControllerContext)state.State;
 
             // some fields aren't set till after execution, so populate anything missing
-            AspNetWebApi2Integration.UpdateSpan(controllerContext, scope.Span, (AspNetTags)scope.Span.Tags, Enumerable.Empty<KeyValuePair<string, string>>());
+            AspNetWebApi2Integration.UpdateSpan(controllerContext, scope.Span, (AspNetTags)scope.Span.Tags);
 
             if (exception != null)
             {
@@ -111,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     // Additionally, update the scope so it does not finish the span on close. This allows
                     // us to defer finishing the span later while making sure callers of this method do not
                     // get this scope when calling Tracer.ActiveScope
-                    var now = scope.Span.Context.TraceContext.UtcNow;
+                    var now = scope.Span.Context.TraceContext.Clock.UtcNow;
                     httpContext.AddOnRequestCompleted(h => OnRequestCompletedAfterException(h, scope, now));
 
                     scope.SetFinishOnClose(false);

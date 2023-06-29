@@ -7,9 +7,12 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Coordinator;
@@ -45,11 +48,7 @@ internal readonly partial struct SecurityCoordinator
 
     private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string?> headersToCollect, string prefix)
     {
-        var tags = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headersToCollect, defaultTagPrefix: prefix);
-        foreach (var tag in tags)
-        {
-            span.SetTag(tag.Key, tag.Value);
-        }
+        SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, headers, headersToCollect, defaultTagPrefix: prefix);
     }
 
     private static void LogAddressIfDebugEnabled(IDictionary<string, object> args)
@@ -63,7 +62,7 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    public void Report(string triggerData, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings, bool blocked)
+    public void Report(string triggerData, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings, bool blocked, int? status = null)
     {
         _localRootSpan.SetTag(Tags.AppSecEvent, "true");
         if (blocked)
@@ -93,6 +92,11 @@ internal readonly partial struct SecurityCoordinator
         _localRootSpan.SetMetric(Metrics.AppSecWafAndBindingsDuration, aggregatedTotalRuntimeWithBindings);
         var headers = _httpTransport.GetRequestHeaders();
         AddHeaderTags(_localRootSpan, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+
+        if (status is not null)
+        {
+            _localRootSpan.SetHttpStatusCode(status.Value, isServer: true, Tracer.Instance.Settings);
+        }
     }
 
     public void AddResponseHeaderTags(bool canAccessHeaders)
