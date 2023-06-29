@@ -12,19 +12,19 @@ namespace Datadog.Trace.Util;
 
 internal static class UnsafeHelper
 {
-    private static readonly object Instance = new();
-
 #if NETCOREAPP3_1_OR_GREATER
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref TTo As<TFrom, TTo>(ref TFrom value)
+    public static TTo As<TFrom, TTo>(TFrom value)
     {
-        return ref Unsafe.As<TFrom, TTo>(ref value);
+        return Unsafe.As<TFrom, TTo>(ref value);
     }
 #else
+    private static readonly object Instance = new();
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TTo As<TFrom, TTo>(ref TFrom value)
+    public static TTo As<TFrom, TTo>(TFrom value)
     {
-        return Converter<TFrom, TTo>.Convert(ref value);
+        return Converter<TFrom, TTo>.Convert(value);
     }
 
     private static class Converter<TFrom, TTo>
@@ -43,6 +43,11 @@ internal static class UnsafeHelper
         private delegate TTo ConvertDelegate(TFrom value);
 
         public static TTo Convert(ref TFrom value)
+        {
+            return ConverterInstance(value);
+        }
+
+        public static TTo Convert(TFrom value)
         {
             return ConverterInstance(value);
         }

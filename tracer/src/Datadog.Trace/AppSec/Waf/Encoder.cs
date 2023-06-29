@@ -298,8 +298,7 @@ namespace Datadog.Trace.AppSec.Waf
                         var itemData = childrenData;
                         foreach (var originalKeyValue in (Dictionary<TKeySource, TValueSource>)enumerableDic)
                         {
-                            var item = originalKeyValue;
-                            var keyValue = UnsafeHelper.As<KeyValuePair<TKeySource, TValueSource>, KeyValuePair<TKey, TValue>>(ref item);
+                            var keyValue = UnsafeHelper.As<KeyValuePair<TKeySource, TValueSource>, KeyValuePair<TKey, TValue>>(originalKeyValue);
                             var key = getKey(keyValue!);
                             if (string.IsNullOrEmpty(key))
                             {

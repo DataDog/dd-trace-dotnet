@@ -15,8 +15,8 @@ using Datadog.Trace.AppSec.Waf.NativeBindings;
 namespace Benchmarks.Trace;
 
 [MemoryDiagnoser]
-[BenchmarkAgent2]
-[MaxIterationCount(40)]
+[BenchmarkAgent3]
+[MaxIterationCount(30)]
 [MaxWarmupCount(10)]
 public class AppSecWafBenchmark
 {
