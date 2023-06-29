@@ -225,7 +225,8 @@ namespace Datadog.Trace.AppSec.Waf
                 var ddWafObjectMap = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
                 if (!string.IsNullOrEmpty(key))
                 {
-                    FillParamName(ref ddWafObjectMap, key!);
+                    ddWafObjectMap.ParameterName = ConvertToUtf8(key!, false);
+                    ddWafObjectMap.ParameterNameLength = (ulong)key!.Length;
                 }
 
                 if (applySafetyLimits)
@@ -364,19 +365,13 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            void FillParamName(ref DdwafObjectStruct ddwafObjectStruct, string paramName)
-            {
-                ddwafObjectStruct.ParameterName = ConvertToUtf8(paramName, false);
-                ddwafObjectStruct.ParameterNameLength = (ulong)paramName.Length;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             DdwafObjectStruct GetStringObject(string? keyForObject, string value)
             {
                 var ddWafObject = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING, Array = ConvertToUtf8(value, applySafetyLimits), NbEntries = (ulong)value.Length };
                 if (keyForObject != null)
                 {
-                    FillParamName(ref ddWafObject, keyForObject);
+                    ddWafObject.ParameterName = ConvertToUtf8(keyForObject, false);
+                    ddWafObject.ParameterNameLength = (ulong)keyForObject.Length;
                 }
 
                 return ddWafObject;
@@ -403,7 +398,8 @@ namespace Datadog.Trace.AppSec.Waf
                     ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_BOOL, Boolean = b ? (byte)1 : (byte)0 };
                     if (key != null)
                     {
-                        FillParamName(ref ddwafObjectStruct, key);
+                        ddwafObjectStruct.ParameterName = ConvertToUtf8(key, false);
+                        ddwafObjectStruct.ParameterNameLength = (ulong)key.Length;
                     }
 
                     break;
@@ -458,7 +454,8 @@ namespace Datadog.Trace.AppSec.Waf
                     ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY };
                     if (!string.IsNullOrEmpty(key))
                     {
-                        FillParamName(ref ddwafObjectStruct, key!);
+                        ddwafObjectStruct.ParameterName = ConvertToUtf8(key!, false);
+                        ddwafObjectStruct.ParameterNameLength = (ulong)key!.Length;
                     }
 
                     if (applySafetyLimits && remainingDepth-- <= 0)
