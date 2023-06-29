@@ -42,6 +42,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             "attribute-boolArrayEmpty",
             "attribute-doubleArray",
             "attribute-doubleArrayEmpty",
+            "telemetry.sdk.name",
+            "telemetry.sdk.language",
+            "telemetry.sdk.version"
         };
 
         public OpenTelemetrySdkTests(ITestOutputHelper output)
