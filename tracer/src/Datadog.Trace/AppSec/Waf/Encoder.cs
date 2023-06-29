@@ -218,10 +218,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public static unsafe DdwafObjectStruct Encode<TInstance>(TInstance? o, List<IntPtr> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true, UnmanagedMemoryPool? pool = null)
         {
-            if (pool is null)
-            {
-                pool = Pool;
-            }
+            pool ??= Pool;
 
             DdwafObjectStruct ProcessKeyValuePairs<TKey, TValue>(IEnumerable<KeyValuePair<TKey, TValue>> enumerableDic, int count, delegate*<KeyValuePair<TKey, TValue>, string?> getKey, delegate*<KeyValuePair<TKey, TValue>, object?> getValue)
                 where TKey : notnull
@@ -339,28 +336,15 @@ namespace Datadog.Trace.AppSec.Waf
 
             IntPtr ConvertToUtf8(string s)
             {
-                IntPtr unmanagedMemory;
-                var bytesCount = Encoding.UTF8.GetMaxByteCount(s.Length) + 1;
+                // We assume the string has already a valid length due the truncating process.
+                var unmanagedMemory = pool.Rent();
                 int writtenBytes;
-                if (bytesCount < MaxBytesForMaxStringLength)
+                fixed (char* chrPtr = s)
                 {
-                    unmanagedMemory = pool.Rent();
-                    fixed (char* chrPtr = s)
-                    {
-                        writtenBytes = Encoding.UTF8.GetBytes(chrPtr, s.Length, (byte*)unmanagedMemory, MaxBytesForMaxStringLength);
-                    }
-                }
-                else
-                {
-                    unmanagedMemory = Marshal.AllocHGlobal(bytesCount);
-                    fixed (char* chrPtr = s)
-                    {
-                        writtenBytes = Encoding.UTF8.GetBytes(chrPtr, s.Length, (byte*)unmanagedMemory, bytesCount);
-                    }
+                    writtenBytes = Encoding.UTF8.GetBytes(chrPtr, s.Length, (byte*)unmanagedMemory, MaxBytesForMaxStringLength);
                 }
 
-                var lastCharPtr = (IntPtr)((byte*)unmanagedMemory + writtenBytes);
-                Marshal.WriteByte(lastCharPtr, (byte)'\0');
+                Marshal.WriteByte((IntPtr)((byte*)unmanagedMemory + writtenBytes), (byte)'\0');
                 argToFree.Add(unmanagedMemory);
                 return unmanagedMemory;
             }
