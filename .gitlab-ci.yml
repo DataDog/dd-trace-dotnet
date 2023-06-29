@@ -1,9 +1,13 @@
 
 stages:
   - build
+  - package
   - publish
   - deploy
-  
+
+include:
+  - remote: https://gitlab-templates.ddbuild.io/apm/packaging.yml
+
 variables:
   GIT_PROFILER_REF: master
   DEPLOY_TO_REL_ENV:
@@ -15,7 +19,9 @@ variables:
   DEPLOY_TO_DEBUGGER_BACKEND:
     value: "false"
     description: "Set to true to deploy to debugger backend demo application"
-    
+  DOTNET_PACKAGE_VERSION:
+    description: "Version to build for .deb and .rpm. Must be already published in NPM"
+
 build:
   only:
     - master
@@ -52,7 +58,7 @@ publish:
       - $DEPLOY_TO_REL_ENV == "true"
   stage: publish
   tags: ["runner:windows-docker", "windowsversion:1809"]
-  dependencies: 
+  dependencies:
     - build
   script:
     - $result =  aws sts assume-role --role-arn "arn:aws:iam::486234852809:role/ci-datadog-windows-filter" --role-session-name AWSCLI-Session
@@ -178,3 +184,18 @@ deploy_to_debugger_backend:
     UPSTREAM_BRANCH: $CI_COMMIT_BRANCH
     UPSTREAM_TAG: $DEPLOY_TAG
 
+
+package:
+  extends: .package
+  rules:
+    - if: $DOTNET_PACKAGE_VERSION
+      when: on_success
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
+      when: on_success
+  script:
+    - ../.gitlab/build-deb-rpm.sh
+
+.release-package:
+  stage: deploy
+  variables:
+    PRODUCT_NAME: auto_inject-dotnet
