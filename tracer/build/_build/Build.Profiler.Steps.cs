@@ -642,8 +642,10 @@ partial class Build
                 { "DD_PROFILING_ENABLED", "1" },
                 { "DD_PROFILING_EXCEPTION_ENABLED", "1" },
                 { "DD_PROFILING_ALLOCATION_ENABLED", "1"},
-                { "DD_PROFILING_CONTENTION_ENABLED","1" },
-                { "DD_TRACE_DEBUG", "1" },
+                { "DD_PROFILING_LOCK_ENABLED","1" },
+                { "DD_PROFILING_HEAP_ENABLED", "1"},
+                { "DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED", "1" },
+                { "DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED", "1" },
             };
 
         if (IsLinux)
