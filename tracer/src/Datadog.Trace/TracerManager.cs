@@ -216,21 +216,6 @@ namespace Datadog.Trace
         {
             try
             {
-                var telemetryReplaced = false;
-                if (oldManager.Telemetry != newManager.Telemetry && oldManager.Telemetry is not null)
-                {
-                    // This needs to be done as soon as possible (before awaiting anything) to avoid a race condition with TracerManager.Start
-                    if (oldManager.Telemetry is TelemetryControllerV2 oldV2 && newManager.Telemetry is TelemetryControllerV2 newV2)
-                    {
-                        if (oldV2.AppStartedSent)
-                        {
-                            newV2.AppStartedSent = true;
-                        }
-                    }
-
-                    telemetryReplaced = true;
-                }
-
                 var agentWriterReplaced = false;
                 if (oldManager.AgentWriter != newManager.AgentWriter && oldManager.AgentWriter is not null)
                 {
@@ -252,8 +237,10 @@ namespace Datadog.Trace
                     oldManager.Statsd?.Dispose();
                 }
 
-                if (telemetryReplaced)
+                var telemetryReplaced = false;
+                if (oldManager.Telemetry != newManager.Telemetry && oldManager.Telemetry is not null)
                 {
+                    telemetryReplaced = true;
                     await oldManager.Telemetry.DisposeAsync(sendAppClosingTelemetry: false).ConfigureAwait(false);
                 }
 
