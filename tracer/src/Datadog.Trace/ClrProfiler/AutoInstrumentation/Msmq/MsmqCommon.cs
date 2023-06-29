@@ -26,20 +26,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 
             try
             {
-                var tags = new MsmqTags(spanKind)
-                {
-                    Command = command,
-                    IsTransactionalQueue = messageQueue.Transactional.ToString(),
-                    Path = messageQueue.Path,
-                };
+                string operationName = tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundCommandOperationName(MsmqConstants.MessagingType);
+                string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundServiceName(MsmqConstants.MessagingType);
+                MsmqTags tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateMsmqTags(spanKind);
+
+                tags.Command = command;
+                tags.IsTransactionalQueue = messageQueue.Transactional.ToString();
+                tags.Host = messageQueue.MachineName;
+                tags.Path = messageQueue.Path;
                 if (messagePartofTransaction.HasValue)
                 {
                     tags.MessageWithTransaction = messagePartofTransaction.ToString();
                 }
 
-                var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, MsmqConstants.ServiceName);
-
-                scope = tracer.StartActiveInternal(MsmqConstants.OperationName, serviceName: serviceName, tags: tags);
+                scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
 
                 var span = scope.Span;
                 span.Type = SpanTypes.Queue;

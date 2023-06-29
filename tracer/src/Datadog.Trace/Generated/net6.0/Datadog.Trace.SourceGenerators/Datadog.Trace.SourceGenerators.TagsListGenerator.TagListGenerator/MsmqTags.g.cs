@@ -27,6 +27,12 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
 #endif
+        // HostBytes = MessagePack.Serialize("out.host");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> HostBytes => new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#else
+        private static readonly byte[] HostBytes = new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#endif
         // PathBytes = MessagePack.Serialize("msmq.queue.path");
 #if NETCOREAPP
         private static ReadOnlySpan<byte> PathBytes => new byte[] { 175, 109, 115, 109, 113, 46, 113, 117, 101, 117, 101, 46, 112, 97, 116, 104 };
@@ -53,6 +59,7 @@ namespace Datadog.Trace.Tagging
                 "msmq.command" => Command,
                 "span.kind" => SpanKind,
                 "component" => InstrumentationName,
+                "out.host" => Host,
                 "msmq.queue.path" => Path,
                 "msmq.message.transactional" => MessageWithTransaction,
                 "msmq.queue.transactional" => IsTransactionalQueue,
@@ -66,6 +73,9 @@ namespace Datadog.Trace.Tagging
             {
                 case "msmq.command": 
                     Command = value;
+                    break;
+                case "out.host": 
+                    Host = value;
                     break;
                 case "msmq.queue.path": 
                     Path = value;
@@ -101,6 +111,11 @@ namespace Datadog.Trace.Tagging
             if (InstrumentationName is not null)
             {
                 processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
+            }
+
+            if (Host is not null)
+            {
+                processor.Process(new TagItem<string>("out.host", Host, HostBytes));
             }
 
             if (Path is not null)
@@ -141,6 +156,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
+                  .Append(',');
+            }
+
+            if (Host is not null)
+            {
+                sb.Append("out.host (tag):")
+                  .Append(Host)
                   .Append(',');
             }
 

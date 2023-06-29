@@ -310,13 +310,16 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsMsmqV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .Matches(Name, "msmq.command")
+                .Matches(Name, "msmq.send")
                 .Matches(Type, "queue"))
             .Tags(s => s
                 .IsPresent("msmq.command")
                 .IsOptional("msmq.message.transactional")
                 .IsPresent("msmq.queue.path")
                 .IsOptional("msmq.queue.transactional")
+                .IsPresent("out.host")
+                .IsPresent("peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "msmq")
                 .MatchesOneOf("span.kind", "client", "producer", "consumer"));
 
