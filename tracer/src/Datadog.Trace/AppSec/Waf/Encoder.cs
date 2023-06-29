@@ -8,6 +8,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
@@ -263,7 +264,7 @@ namespace Datadog.Trace.AppSec.Waf
                 var childrenFromPool = ObjectStructSize * childrenCount < MaxBytesForMaxStringLength;
                 var childrenData = childrenFromPool ? pool.Rent() : Marshal.AllocHGlobal(ObjectStructSize * childrenCount);
 
-                if (enumerableDic is System.Collections.IDictionary)
+                if (enumerableDic is IDictionary)
                 {
                     var typeKVP = typeof(KeyValuePair<TKey, TValue>);
                     if (typeKVP == typeof(KeyValuePair<string, string>))
@@ -290,6 +291,26 @@ namespace Datadog.Trace.AppSec.Waf
                     {
                         EnumerateItems<TKey, TValue>();
                     }
+
+                    void EnumerateItems<TKeySource, TValueSource>()
+                        where TKeySource : notnull
+                    {
+                        var itemData = childrenData;
+                        foreach (var originalKeyValue in (Dictionary<TKeySource, TValueSource>)enumerableDic)
+                        {
+                            var item = originalKeyValue;
+                            var keyValue = UnsafeHelper.As<KeyValuePair<TKeySource, TValueSource>, KeyValuePair<TKey, TValue>>(ref item);
+                            var key = getKey(keyValue!);
+                            if (string.IsNullOrEmpty(key))
+                            {
+                                Log.Warning("EncodeDictionary: ignoring dictionary member with null name");
+                                continue;
+                            }
+
+                            *(DdwafObjectStruct*)itemData = Encode(getValue(keyValue!), argToFree, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth, pool: pool);
+                            itemData += ObjectStructSize;
+                        }
+                    }
                 }
                 else
                 {
@@ -308,32 +329,13 @@ namespace Datadog.Trace.AppSec.Waf
                     }
                 }
 
-                void EnumerateItems<TKeySource, TValueSource>()
-                    where TKeySource : notnull
-                {
-                    var itemData = childrenData;
-                    foreach (var originalKeyValue in (Dictionary<TKeySource, TValueSource>)enumerableDic)
-                    {
-                        var item = originalKeyValue;
-                        var keyValue = UnsafeHelper.As<KeyValuePair<TKeySource, TValueSource>, KeyValuePair<TKey, TValue>>(ref item);
-                        var key = getKey(keyValue!);
-                        if (string.IsNullOrEmpty(key))
-                        {
-                            Log.Warning("EncodeDictionary: ignoring dictionary member with null name");
-                            continue;
-                        }
-
-                        *(DdwafObjectStruct*)itemData = Encode(getValue(keyValue!), argToFree, applySafetyLimits: applySafetyLimits, key: key, remainingDepth: remainingDepth, pool: pool);
-                        itemData += ObjectStructSize;
-                    }
-                }
-
                 ddWafObjectMap.Array = childrenData;
                 ddWafObjectMap.NbEntries = (ulong)childrenCount;
                 argToFree.Add(childrenData);
                 return ddWafObjectMap;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             IntPtr ConvertToUtf8(string s)
             {
                 // We assume the string has already a valid length due the truncating process.
@@ -349,12 +351,14 @@ namespace Datadog.Trace.AppSec.Waf
                 return unmanagedMemory;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             void FillParamName(ref DdwafObjectStruct ddwafObjectStruct, string paramName)
             {
                 ddwafObjectStruct.ParameterName = ConvertToUtf8(paramName);
                 ddwafObjectStruct.ParameterNameLength = (ulong)paramName.Length;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             DdwafObjectStruct GetStringObject(string? keyForObject, string value)
             {
                 var ddWafObject = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING, Array = ConvertToUtf8(value), NbEntries = (ulong)value.Length };
