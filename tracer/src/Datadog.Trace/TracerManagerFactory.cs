@@ -1,4 +1,4 @@
- // <copyright file="TracerManagerFactory.cs" company="Datadog">
+// <copyright file="TracerManagerFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -60,6 +60,17 @@ namespace Datadog.Trace
                 discoveryService: null,
                 dataStreamsManager: null,
                 remoteConfigurationManager: null);
+
+            if (previous?.Telemetry != tracer.Telemetry)
+            {
+                if (previous?.Telemetry is TelemetryControllerV2 oldV2 && tracer.Telemetry is TelemetryControllerV2 newV2)
+                {
+                    if (oldV2.AppStartedSent)
+                    {
+                        newV2.AppStartedSent = true;
+                    }
+                }
+            }
 
             try
             {

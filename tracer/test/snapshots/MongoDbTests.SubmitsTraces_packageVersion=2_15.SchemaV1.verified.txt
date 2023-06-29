@@ -81,7 +81,7 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.peer.service.source: db.instance
+      _dd.peer.service.source: db.name
     }
   },
   {
@@ -103,7 +103,7 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.peer.service.source: db.instance
+      _dd.peer.service.source: db.name
     }
   },
   {
@@ -125,7 +125,7 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.peer.service.source: db.instance
+      _dd.peer.service.source: db.name
     }
   },
   {
@@ -147,7 +147,7 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.peer.service.source: db.instance
+      _dd.peer.service.source: db.name
     }
   },
   {
@@ -169,7 +169,7 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.peer.service.source: db.instance
+      _dd.peer.service.source: db.name
     }
   },
   {
@@ -191,7 +191,7 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.peer.service.source: db.instance
+      _dd.peer.service.source: db.name
     }
   },
   {
@@ -213,7 +213,7 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.peer.service.source: db.instance
+      _dd.peer.service.source: db.name
     }
   },
   {
@@ -235,7 +235,7 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.peer.service.source: db.instance
+      _dd.peer.service.source: db.name
     }
   },
   {
@@ -257,7 +257,7 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.peer.service.source: db.instance
+      _dd.peer.service.source: db.name
     }
   }
 ]

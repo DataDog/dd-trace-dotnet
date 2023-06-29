@@ -32,6 +32,7 @@
 #include "EnvironmentVariables.h"
 #include "ExceptionsProvider.h"
 #include "FrameStore.h"
+#include "GCThreadsCpuProvider.h"
 #include "IMetricsSender.h"
 #include "IMetricsSenderFactory.h"
 #include "LibddprofExporter.h"
@@ -340,6 +341,15 @@ bool CorProfilerCallback::InitializeServices()
         _metricsRegistry,
         _pAllocationsRecorder.get()
         );
+
+    if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
+        _pCpuTimeProvider != nullptr &&
+        _pRuntimeInfo->GetDotnetMajorVersion() >= 5)
+    {
+        _gcThreadsCpuProvider = std::make_unique<GCThreadsCpuProvider>(_pCpuTimeProvider);
+
+        _pExporter->RegisterProcessSamplesProvider(_gcThreadsCpuProvider.get());
+    }
 
     if (_pContentionProvider != nullptr)
     {

@@ -178,7 +178,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                 string? maximumVersion = null;
                 string[]? parameterTypeNames = null;
                 string? callTargetType = null;
-                int? integrationType = null;
+                int? integrationKind = null;
                 var instrumentationCategory = InstrumentationCategory.Tracing;
 
                 foreach (KeyValuePair<string, TypedConstant> namedArgument in attributeData.NamedArguments)
@@ -224,8 +224,8 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                         case nameof(Constants.InstrumentAttributeProperties.CallTargetType):
                             callTargetType = (namedArgument.Value.Value as INamedTypeSymbol)?.ToDisplayString();
                             break;
-                        case nameof(Constants.InstrumentAttributeProperties.CallTargetIntegrationType):
-                            integrationType = namedArgument.Value.Value as int?;
+                        case nameof(Constants.InstrumentAttributeProperties.CallTargetIntegrationKind):
+                            integrationKind = namedArgument.Value.Value as int?;
                             break;
                         case nameof(Constants.InstrumentAttributeProperties.InstrumentationCategory):
                             instrumentationCategory = (InstrumentationCategory)(namedArgument.Value.Value as int?).GetValueOrDefault();
@@ -358,7 +358,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                                 minimumVersion: minVersion,
                                 maximumVersion: maxVersion,
                                 instrumentationTypeName: callTargetType ?? classSymbol.ToDisplayString(),
-                                integrationType: integrationType ?? 0,
+                                integrationKind: integrationKind ?? 0,
                                 isAdoNetIntegration: false,
                                 instrumentationCategory: instrumentationCategory));
                     }
@@ -384,7 +384,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                 string? methodName = null;
                 string? returnTypeName = null;
                 string[]? parameterTypeNames = null;
-                int? integrationType = null;
+                int? integrationKind = null;
                 int? returnType = null;
                 string? callTargetType = null;
 
@@ -410,8 +410,8 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                         case nameof(Constants.AdoNetSignatureAttributeProperties.CallTargetType):
                             callTargetType = (namedArgument.Value.Value as INamedTypeSymbol)?.ToDisplayString();
                             break;
-                        case nameof(Constants.AdoNetSignatureAttributeProperties.CallTargetIntegrationType):
-                            integrationType = namedArgument.Value.Value as int?;
+                        case nameof(Constants.AdoNetSignatureAttributeProperties.CallTargetIntegrationKind):
+                            integrationKind = namedArgument.Value.Value as int?;
                             break;
                         case nameof(Constants.AdoNetSignatureAttributeProperties.ReturnType):
                             returnType = namedArgument.Value.Value as int?;
@@ -475,7 +475,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                         targetReturnType: returnTypeName,
                         targetParameterTypes: parameterTypeNames ?? Array.Empty<string>(),
                         instrumentationTypeName: callTargetType!.ToString(),
-                        callTargetIntegrationType: integrationType ?? 0,
+                        callTargetIntegrationKind: integrationKind ?? 0,
                         returnType: returnType ?? 0));
             }
         }
@@ -684,7 +684,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                         minimumVersion: minVersion,
                         maximumVersion: maxVersion,
                         instrumentationTypeName: signatureAttribute.InstrumentationTypeName,
-                        integrationType: signatureAttribute.CallTargetIntegrationType,
+                        integrationKind: signatureAttribute.CallTargetIntegrationKind,
                         isAdoNetIntegration: true,
                         instrumentationCategory: InstrumentationCategory.Tracing));
             }

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Perftools.Profiles;
@@ -103,6 +104,17 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             }
 
             return true;
+        }
+
+        internal static IEnumerable<(StackTrace StackTrace, Label[] Labels, long[] Values)> GetSamples(string directory)
+        {
+            foreach (var profile in GetProfiles(directory))
+            {
+                foreach (var sample in profile.Sample)
+                {
+                    yield return (sample.StackTrace(profile), sample.Label.ToArray(), sample.Value.ToArray());
+                }
+            }
         }
 
         internal static IEnumerable<(string Type, string Message, long Count, StackTrace Stacktrace)> ExtractExceptionSamples(string directory)

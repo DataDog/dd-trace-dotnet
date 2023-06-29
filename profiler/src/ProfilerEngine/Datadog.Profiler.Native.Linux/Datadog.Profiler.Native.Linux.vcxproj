@@ -113,6 +113,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\dotnet-runtime-coreclr\pal\prebuilt\idl\corprof_i.cpp" />
     <ClCompile Include="LinuxStackFramesCollector.cpp" />
+    <ClCompile Include="LinuxThreadInfo.cpp" />
     <ClCompile Include="LinuxThreadsCpuManager.cpp" />
     <ClCompile Include="OsSpecificApi.cpp" />
     <ClCompile Include="ProfilerSignalManager.cpp" />
@@ -122,6 +123,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LinuxStackFramesCollector.h" />
+    <ClInclude Include="LinuxThreadInfo.h" />
     <ClInclude Include="ProfilerSignalManager.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

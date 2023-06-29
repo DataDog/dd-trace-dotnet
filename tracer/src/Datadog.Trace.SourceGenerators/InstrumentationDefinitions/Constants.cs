@@ -25,7 +25,7 @@ internal static class Constants
         public const string MaximumVersion = nameof(MaximumVersion);
         public const string IntegrationName = nameof(IntegrationName);
         public const string CallTargetType = nameof(CallTargetType);
-        public const string CallTargetIntegrationType = nameof(CallTargetIntegrationType);
+        public const string CallTargetIntegrationKind = nameof(CallTargetIntegrationKind);
         public const string InstrumentationCategory = nameof(InstrumentationCategory);
     }
 
@@ -35,7 +35,7 @@ internal static class Constants
         public const string ReturnTypeName = nameof(ReturnTypeName);
         public const string ParameterTypeNames = nameof(ParameterTypeNames);
         public const string CallTargetType = nameof(CallTargetType);
-        public const string CallTargetIntegrationType = nameof(CallTargetIntegrationType);
+        public const string CallTargetIntegrationKind = nameof(CallTargetIntegrationKind);
         public const string ReturnType = nameof(ReturnType);
     }
 

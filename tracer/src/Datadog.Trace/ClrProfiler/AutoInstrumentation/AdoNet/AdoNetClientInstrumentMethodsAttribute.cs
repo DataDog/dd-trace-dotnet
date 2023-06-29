@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             /// <summary>
             /// Gets or sets the CallTarget integration type
             /// </summary>
-            public IntegrationType CallTargetIntegrationType { get; set; } = IntegrationType.Default;
+            public CallTargetKind CallTargetIntegrationKind { get; set; } = CallTargetKind.Default;
 
             /// <summary>
             /// Gets or sets the return type to use with this signature
@@ -131,7 +131,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             MethodName = AdoNetConstants.MethodNames.ExecuteNonQuery,
             ReturnTypeName = ClrNames.Int32,
             CallTargetType = typeof(CommandExecuteNonQueryIntegration),
-            CallTargetIntegrationType = IntegrationType.Default)]
+            CallTargetIntegrationKind = CallTargetKind.Default)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class CommandExecuteNonQueryAttribute : Attribute
         {
@@ -141,7 +141,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             MethodName = AdoNetConstants.MethodNames.ExecuteNonQuery,
             ReturnTypeName = ClrNames.Int32,
             CallTargetType = typeof(CommandExecuteNonQueryIntegration),
-            CallTargetIntegrationType = IntegrationType.Derived)]
+            CallTargetIntegrationKind = CallTargetKind.Derived)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class CommandExecuteNonQueryDerivedAttribute : Attribute
         {
@@ -239,7 +239,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             MethodName = AdoNetConstants.MethodNames.ExecuteDbDataReader,
             ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderType,
             ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior },
-            CallTargetIntegrationType = IntegrationType.Derived,
+            CallTargetIntegrationKind = CallTargetKind.Derived,
             CallTargetType = typeof(CommandExecuteReaderWithBehaviorIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class CommandExecuteDbDataReaderWithBehaviorDerivedAttribute : Attribute
@@ -268,7 +268,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         [AdoNetTargetSignature(
             MethodName = AdoNetConstants.MethodNames.ExecuteScalar,
             ReturnTypeName = ClrNames.Object,
-            CallTargetIntegrationType = IntegrationType.Derived,
+            CallTargetIntegrationKind = CallTargetKind.Derived,
             CallTargetType = typeof(CommandExecuteScalarIntegration))]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class CommandExecuteScalarDerivedAttribute : Attribute
