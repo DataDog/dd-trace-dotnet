@@ -79,8 +79,8 @@ namespace Datadog.Trace.Configuration.Schema
         public KafkaTags CreateKafkaTags(string spanKind)
             => _version switch
             {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new KafkaTags(SpanKinds.Consumer),
-                _ => new KafkaV1Tags(SpanKinds.Consumer),
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new KafkaTags(spanKind),
+                _ => new KafkaV1Tags(spanKind),
             };
 
         public MsmqTags CreateMsmqTags(string spanKind)
