@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseTextForParameters($"Schema{metadataSchemaVersion.ToUpper()}")
+                                  .UseTextForParameters($"Schema{metadataSchemaVersion.ToUpper()}_v{packageVersion}")
                                   .DisableRequireUniquePrefix();
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.CosmosDb);
