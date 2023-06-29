@@ -642,6 +642,14 @@ bool LibddprofExporter::Export()
         additionalTags.Add("runtime-id", std::string(runtimeId));
         additionalTags.Add("profile_seq", std::to_string(exportsCount - 1));
         additionalTags.Add("number_of_cpu_cores", std::to_string(OsSpecificApi::GetProcessorCount()));
+        if (!applicationInfo.RepositoryUrl.empty())
+        {
+            additionalTags.Add("git.repository_url", applicationInfo.RepositoryUrl);
+        }
+        if (!applicationInfo.CommitSha.empty())
+        {
+            additionalTags.Add("git.commit.sha", applicationInfo.CommitSha);
+        }
 
         auto* request = CreateRequest(serializedProfile, exporter, additionalTags);
         // use on_leave here, in case Send throws an exception.

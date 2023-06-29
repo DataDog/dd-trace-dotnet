@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryDataBuilderV2.cs" company="Datadog">
+// <copyright file="TelemetryDataBuilderV2.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -28,6 +28,7 @@ internal class TelemetryDataBuilderV2
 
         if (sendAppStarted)
         {
+            Log.Debug("App started, sending app-started");
             data = new()
             {
                 new(TelemetryRequestTypes.AppStarted, new AppStartedPayloadV2()

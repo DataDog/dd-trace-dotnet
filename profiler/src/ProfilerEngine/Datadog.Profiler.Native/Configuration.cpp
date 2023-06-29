@@ -68,6 +68,8 @@ Configuration::Configuration()
     _isAllocationRecorderEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationRecorderEnabled, false);
     _isDebugInfoEnabled = GetEnvironmentValue(EnvironmentVariables::DebugInfoEnabled, false);
     _isGcThreadsCpuTimeEnabled = GetEnvironmentValue(EnvironmentVariables::GcThreadsCpuTimeEnabled, false);
+    _gitRepositoryUrl = GetEnvironmentValue(EnvironmentVariables::GitRepositoryUrl, DefaultEmptyString);
+    _gitCommitSha = GetEnvironmentValue(EnvironmentVariables::GitCommitSha, DefaultEmptyString);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -335,6 +337,16 @@ const std::string& Configuration::GetNamedPipeName() const
 bool Configuration::IsTimestampsAsLabelEnabled() const
 {
     return _isTimestampsAsLabelEnabled;
+}
+
+std::string const& Configuration::GetGitRepositoryUrl() const
+{
+    return _gitRepositoryUrl;
+}
+
+std::string const& Configuration::GetGitCommitSha() const
+{
+    return _gitCommitSha;
 }
 
 //

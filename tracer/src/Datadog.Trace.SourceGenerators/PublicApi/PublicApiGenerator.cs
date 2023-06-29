@@ -64,12 +64,12 @@ public class PublicApiGenerator : IIncrementalGenerator
         }
 
         var sb = new StringBuilder();
-        foreach (var partialClass in properties.GroupBy(x => (x.ClassName, x.Namespace)))
+        foreach (var partialClass in properties.GroupBy(x => (x.ClassName, x.Namespace, x.IsRecord)))
         {
             sb.Clear();
 
-            var (className, nameSpace) = partialClass.Key;
-            var source = Sources.CreatePartialClass(sb, nameSpace, className, partialClass);
+            var (className, nameSpace, isRecord) = partialClass.Key;
+            var source = Sources.CreatePartialClass(sb, nameSpace, className, isRecord, partialClass);
             context.AddSource($"{nameSpace}.{className}.g.cs", SourceText.From(source, Encoding.UTF8));
         }
     }
@@ -78,8 +78,21 @@ public class PublicApiGenerator : IIncrementalGenerator
         GeneratorAttributeSyntaxContext ctx, CancellationToken ct)
     {
         var property = (PropertyDeclarationSyntax)ctx.TargetNode;
-        var classDec = ctx.TargetNode.Parent as ClassDeclarationSyntax;
-        if (classDec is null)
+        var classDec = ctx.TargetNode.Parent as TypeDeclarationSyntax;
+
+        bool isReferenceType;
+
+        if (classDec is RecordDeclarationSyntax recordDeclaration)
+        {
+            var keyword = recordDeclaration.ClassOrStructKeyword.Text;
+            isReferenceType = string.IsNullOrEmpty(keyword) || keyword == "class";
+        }
+        else
+        {
+            isReferenceType = classDec is ClassDeclarationSyntax;
+        }
+
+        if (classDec is null || !isReferenceType)
         {
             // only support properties on classes
             return new Result<(PublicApiProperty PropertyTag, bool IsValid)>(
@@ -189,6 +202,7 @@ public class PublicApiGenerator : IIncrementalGenerator
         var tag = new PublicApiProperty(
             nameSpace: GetClassNamespace(classDec),
             className: classDec.Identifier.ToString() + classDec.TypeParameterList,
+            isRecord: classDec is RecordDeclarationSyntax,
             fieldName: fieldName,
             propertyName: propertyName!,
             publicApiGetter: publicApiGetter,
@@ -220,7 +234,7 @@ public class PublicApiGenerator : IIncrementalGenerator
         return null;
     }
 
-    private static string GetClassNamespace(ClassDeclarationSyntax classDec)
+    private static string GetClassNamespace(TypeDeclarationSyntax classDec)
     {
         string? nameSpace;
 
@@ -273,6 +287,7 @@ public class PublicApiGenerator : IIncrementalGenerator
     {
         public readonly string Namespace;
         public readonly string ClassName;
+        public readonly bool IsRecord;
         public readonly string FieldName;
         public readonly int? PublicApiGetter;
         public readonly int? PublicApiSetter;
@@ -281,10 +296,11 @@ public class PublicApiGenerator : IIncrementalGenerator
         public readonly string LeadingTrivia;
         public readonly string? ObsoleteMessage;
 
-        public PublicApiProperty(string nameSpace, string className, string fieldName, int? publicApiGetter, int? publicApiSetter, string propertyName, string returnType, string leadingTrivia, string? obsoleteMessage)
+        public PublicApiProperty(string nameSpace, string className, bool isRecord, string fieldName, int? publicApiGetter, int? publicApiSetter, string propertyName, string returnType, string leadingTrivia, string? obsoleteMessage)
         {
             Namespace = nameSpace;
             ClassName = className;
+            IsRecord = isRecord;
             FieldName = fieldName;
             PublicApiGetter = publicApiGetter;
             PublicApiSetter = publicApiSetter;

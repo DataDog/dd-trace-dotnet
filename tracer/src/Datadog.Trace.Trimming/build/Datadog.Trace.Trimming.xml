@@ -670,6 +670,7 @@
       <type fullname="System.Runtime.CompilerServices.INotifyCompletion" />
       <type fullname="System.Runtime.CompilerServices.InternalsVisibleToAttribute" />
       <type fullname="System.Runtime.CompilerServices.IsByRefLikeAttribute" />
+      <type fullname="System.Runtime.CompilerServices.IsExternalInit" />
       <type fullname="System.Runtime.CompilerServices.IsReadOnlyAttribute" />
       <type fullname="System.Runtime.CompilerServices.IsVolatile" />
       <type fullname="System.Runtime.CompilerServices.IteratorStateMachineAttribute" />

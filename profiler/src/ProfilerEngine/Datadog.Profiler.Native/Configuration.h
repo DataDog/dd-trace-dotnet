@@ -59,6 +59,8 @@ public:
     bool IsAllocationRecorderEnabled() const override;
     bool IsDebugInfoEnabled() const override;
     bool IsGcThreadsCpuTimeEnabled() const override;
+    std::string const& GetGitRepositoryUrl() const override;
+    std::string const& GetGitCommitSha() const override;
 
 private:
     static tags ExtractUserTags();
@@ -128,6 +130,8 @@ private:
     bool _useBacktrace2;
     bool _isAllocationRecorderEnabled;
     bool _isGcThreadsCpuTimeEnabled;
+    std::string _gitRepositoryUrl;
+    std::string _gitCommitSha;
 
     double _minimumCores;
     std::string _namedPipeName;
