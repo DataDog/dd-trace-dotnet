@@ -157,10 +157,9 @@ namespace Datadog.Trace.ClrProfiler
 
         public void Dispose()
         {
-            var ptr = TargetSignatureTypes;
             if (TargetSignatureTypesLength > 0)
             {
-                Marshal.FreeHGlobal(Marshal.ReadIntPtr(ptr));
+                Marshal.FreeHGlobal(Marshal.ReadIntPtr(TargetSignatureTypes));
             }
 
             Marshal.FreeHGlobal(TargetSignatureTypes);
