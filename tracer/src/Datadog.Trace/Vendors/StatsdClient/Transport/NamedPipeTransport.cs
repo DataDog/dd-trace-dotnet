@@ -15,7 +15,7 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
         private readonly TimeSpan _timeout;
         private byte[] _internalbuffer = new byte[0];
 
-        private object _lock = new();
+        private readonly object _lock = new();
 
         public NamedPipeTransport(string pipeName, TimeSpan? timeout = null)
         {
