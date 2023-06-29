@@ -23,7 +23,7 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
     public UnmanagedMemoryPool(int blockSize, int poolSize)
     {
         _blockSize = blockSize;
-        _items = (IntPtr*)Marshal.AllocHGlobal(poolSize * sizeof(IntPtr));
+        _items = (IntPtr*)Marshal.AllocCoTaskMem(poolSize * sizeof(IntPtr));
         _length = poolSize;
         _initialSearchIndex = 0;
 
@@ -63,7 +63,7 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     private IntPtr RentSlow()
     {
-        return Marshal.AllocHGlobal(_blockSize);
+        return Marshal.AllocCoTaskMem(_blockSize);
     }
 
     public void Return(IntPtr block)
@@ -124,7 +124,7 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     private void ReturnSlow(IntPtr block)
     {
-        Marshal.FreeHGlobal(block);
+        Marshal.FreeCoTaskMem(block);
     }
 
     public void Dispose()
@@ -140,12 +140,12 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
         {
             if (items[i] != IntPtr.Zero)
             {
-                Marshal.FreeHGlobal(items[i]);
+                Marshal.FreeCoTaskMem(items[i]);
                 items[i] = IntPtr.Zero;
             }
         }
 
-        Marshal.FreeHGlobal((IntPtr)_items);
+        Marshal.FreeCoTaskMem((IntPtr)_items);
 
         _isDisposed = true;
     }
