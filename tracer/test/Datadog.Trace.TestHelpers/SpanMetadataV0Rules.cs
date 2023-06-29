@@ -261,6 +261,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
+                .IsPresent("out.host")
                 .IsPresent("component")
                 .Matches("span.kind", "client"));
 
@@ -347,6 +348,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 .IsPresent("db.name")
+                .IsPresent("out.host")
                 .Matches("db.type", "oracle")
                 .Matches("component", "Oracle")
                 .Matches("span.kind", "client"));
@@ -459,6 +461,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
+                .IsPresent("out.host")
                 .MatchesOneOf("component", "HttpMessageHandler", "WebRequest")
                 .Matches("span.kind", "client"));
     }
