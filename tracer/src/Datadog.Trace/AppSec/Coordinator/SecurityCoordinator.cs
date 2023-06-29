@@ -10,6 +10,8 @@ using System.Collections.Generic;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -77,6 +79,7 @@ internal readonly partial struct SecurityCoordinator
             {
                 // run the WAF and execute the results
                 result = additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
+                RecordTelemetry(result);
             }
         }
         catch (Exception ex) when (ex is not BlockException)
@@ -91,6 +94,31 @@ internal readonly partial struct SecurityCoordinator
         }
 
         return result;
+    }
+
+    private static void RecordTelemetry(IResult? result)
+    {
+        if (result == null)
+        {
+            return;
+        }
+
+        if (result.Timeout)
+        {
+            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.WafTimeout);
+        }
+        else if (result.ShouldBlock)
+        {
+            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.RuleTriggeredAndBlocked);
+        }
+        else if (result.ShouldBeReported)
+        {
+            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.RuleTriggered);
+        }
+        else
+        {
+            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.Normal);
+        }
     }
 
     public void AddResponseHeadersToSpanAndCleanup()

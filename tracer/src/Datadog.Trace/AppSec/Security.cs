@@ -382,6 +382,13 @@ namespace Datadog.Trace.AppSec
                 {
                     _configurationStatus.FallbackEmbeddedRuleSet ??= RuleSet.From(_wafInitResult.EmbeddedRules);
                 }
+
+                if (!fromRemoteConfig)
+                {
+                    // occurs the first time we initialize the WAF
+                    TelemetryFactory.Metrics.SetWafVersion(_waf!.Version);
+                    TelemetryFactory.Metrics.RecordCountWafInit();
+                }
             }
             else
             {
