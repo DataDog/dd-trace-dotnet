@@ -6,6 +6,9 @@
 #include "CorProfilerCallbackFactory.h"
 #include "CorProfilerCallback.h"
 
+std::mutex CorProfilerCallbackFactory::_lock;
+
+
 CorProfilerCallbackFactory::~CorProfilerCallbackFactory()
 {
 }
@@ -71,7 +74,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallbackFactory::CreateInstance(IUnknown* p
     }
 
     // the scenario where different CLRs are loaded in the same process is not supported
-    std::lock_guard<std::mutex> lock(_lock);
+    std::lock_guard<std::mutex> lock(CorProfilerCallbackFactory::_lock);
 
     auto currentProfiler = CorProfilerCallback::GetInstance();
     if (currentProfiler != nullptr)

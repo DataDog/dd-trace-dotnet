@@ -22,5 +22,5 @@ public:
 
 private:
     std::atomic<ULONG> _refCount{0};
-    std::mutex _lock;
+    static std::mutex _lock;
 };
