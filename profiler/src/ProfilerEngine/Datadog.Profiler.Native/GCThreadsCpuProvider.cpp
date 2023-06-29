@@ -65,5 +65,5 @@ std::vector<std::shared_ptr<IThreadInfo>> const& GCThreadsCpuProvider::GetThread
 
 FrameInfoView GCThreadsCpuProvider::GetFrameInfo()
 {
-    return {"CLR", "|lm: |ns: |ct: |fn:Garbage Collector", "", 0};
+    return {"CLR", "|lm: |ns: |ct: |cg: |fn:Garbage Collector |fg:", "", 0};
 }
