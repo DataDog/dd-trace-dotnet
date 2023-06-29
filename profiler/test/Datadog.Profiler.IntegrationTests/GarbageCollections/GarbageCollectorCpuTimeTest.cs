@@ -15,7 +15,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
     public class GarbageCollectorCpuTimeTest
     {
         private const string ScenarioGenerics = "--scenario 12";
-        private const string GcFrame = "|lm: |ns: |ct: |cg: |fn:Garbage Collector |fg:";
+        private const string GcFrame = "|lm: |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:";
 
         private readonly ITestOutputHelper _output;
 
