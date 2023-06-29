@@ -24,6 +24,7 @@ namespace Datadog.Trace.AppSec.Waf
             AggregatedTotalRuntime = aggregatedTotalRuntime;
             AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
             Data = ShouldBeReported ? Marshal.PtrToStringAnsi(returnStruct.Data) : string.Empty;
+            Timeout = returnStruct.Timeout;
         }
 
         public ReturnCode ReturnCode => Encoder.DecodeReturnCode(_returnCode);
@@ -45,6 +46,8 @@ namespace Datadog.Trace.AppSec.Waf
         public bool ShouldBlock { get; }
 
         public bool ShouldBeReported { get; }
+
+        public bool Timeout { get; }
 
         private void ReadActions(DdwafResultStruct returnStruct)
         {

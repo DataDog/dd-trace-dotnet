@@ -1084,6 +1084,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerNoParamSync,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1104,6 +1105,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerOneParamSync,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_2,
       span.kind: client
     },
@@ -1124,6 +1126,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerTwoParamsSync,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_3,
       span.kind: client
     },
@@ -1144,6 +1147,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerNoParamAsync,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_4,
       span.kind: client
     },
@@ -1164,6 +1168,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerOneParamAsync,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_5,
       span.kind: client
     },
@@ -1184,6 +1189,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerTwoParamsAsync,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_6,
       span.kind: client
     },
@@ -1204,6 +1210,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerNoParamVoid,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_7,
       span.kind: client
     },
@@ -1224,6 +1231,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerOneParamVoid,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_8,
       span.kind: client
     },
@@ -1244,6 +1252,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerTwoParamsVoid,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_9,
       span.kind: client
     },
@@ -1264,6 +1273,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerNoParamSyncWithContext,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_10,
       span.kind: client
     },
@@ -1284,6 +1294,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerOneParamSyncWithContext,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_11,
       span.kind: client
     },
@@ -1304,6 +1315,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerTwoParamsSyncWithContext,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_12,
       span.kind: client
     },
@@ -1324,6 +1336,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/BaseHandlerNoParamSync,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_13,
       span.kind: client
     },
@@ -1344,6 +1357,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/BaseHandlerTwoParamsSync,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_14,
       span.kind: client
     },
@@ -1364,6 +1378,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/BaseHandlerOneParamSyncWithContext,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_15,
       span.kind: client
     },
@@ -1384,6 +1399,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/BaseHandlerOneParamAsync,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_16,
       span.kind: client
     },
@@ -1404,6 +1420,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/BaseHandlerTwoParamsVoid,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_17,
       span.kind: client
     },
@@ -1424,6 +1441,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerStructParam,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_18,
       span.kind: client
     },
@@ -1444,6 +1462,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerNestedClassParam,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_19,
       span.kind: client
     },
@@ -1464,6 +1483,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerNestedStructParam,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_20,
       span.kind: client
     },
@@ -1484,6 +1504,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerGenericDictionaryParam,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_21,
       span.kind: client
     },
@@ -1504,6 +1525,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerNestedGenericDictionaryParam,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_22,
       span.kind: client
     },
@@ -1524,6 +1546,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/HandlerDoublyNestedGenericDictionaryParam,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_23,
       span.kind: client
     },
@@ -1547,6 +1570,7 @@
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/ThrowingHandler,
+      out.host: localhost,
       runtime-id: Guid_24,
       span.kind: client
     },
@@ -1570,6 +1594,7 @@
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/ThrowingHandlerAsync,
+      out.host: localhost,
       runtime-id: Guid_25,
       span.kind: client
     },
@@ -1593,6 +1618,7 @@
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/ThrowingHandlerAsyncTask,
+      out.host: localhost,
       runtime-id: Guid_26,
       span.kind: client
     },
@@ -1616,6 +1642,7 @@
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/ThrowingHandler,
+      out.host: localhost,
       runtime-id: Guid_27,
       span.kind: client
     },
@@ -1639,6 +1666,7 @@
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/ThrowingHandlerAsync,
+      out.host: localhost,
       runtime-id: Guid_28,
       span.kind: client
     },
@@ -1662,6 +1690,7 @@
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/ThrowingHandlerAsyncTask,
+      out.host: localhost,
       runtime-id: Guid_29,
       span.kind: client
     },
@@ -1682,6 +1711,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/GenericBaseType1,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_30,
       span.kind: client
     },
@@ -1702,6 +1732,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/GenericBaseType2,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_31,
       span.kind: client
     },
@@ -1722,6 +1753,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/VirtualGenericBaseType3,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_32,
       span.kind: client
     },
@@ -1742,6 +1774,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/VirtualGenericBaseType4,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_33,
       span.kind: client
     },
@@ -1762,6 +1795,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/AbstractGenericBaseType5,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_34,
       span.kind: client
     },
@@ -1782,6 +1816,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/AbstractGenericBaseType6,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_35,
       span.kind: client
     },
@@ -1802,6 +1837,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/ComplexNestedGeneric,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_36,
       span.kind: client
     },
@@ -1822,6 +1858,7 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://serverless-dummy-api:9005/function/ComplexNestedGeneric,
+      out.host: serverless-dummy-api,
       runtime-id: Guid_37,
       span.kind: client
     },
