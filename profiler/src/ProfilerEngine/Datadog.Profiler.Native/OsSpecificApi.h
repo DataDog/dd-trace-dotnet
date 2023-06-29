@@ -22,4 +22,5 @@ namespace OsSpecificApi
    uint64_t GetThreadCpuTime(IThreadInfo* pThreadInfo);
    bool IsRunning(IThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed);
    int32_t GetProcessorCount();
+   std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads();
 } // namespace OsSpecificApi

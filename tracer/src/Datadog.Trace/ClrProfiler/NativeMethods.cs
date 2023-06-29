@@ -174,14 +174,63 @@ namespace Datadog.Trace.ClrProfiler
 
             if (IsWindows)
             {
-                Windows.RegisterIastAspects(aspects, aspects.Length);
+                return Windows.RegisterIastAspects(aspects, aspects.Length);
             }
             else
             {
-                NonWindows.RegisterIastAspects(aspects, aspects.Length);
+                return NonWindows.RegisterIastAspects(aspects, aspects.Length);
+            }
+        }
+
+        public static int RegisterCallTargetDefinitions(string id, NativeCallTargetDefinition2[] items, uint enabledCategories)
+        {
+            if (items == null || items.Length == 0)
+            {
+                return 0;
             }
 
-            return aspects.Length;
+            if (IsWindows)
+            {
+                return Windows.RegisterCallTargetDefinitions(id, items, items.Length, enabledCategories);
+            }
+            else
+            {
+                return NonWindows.RegisterCallTargetDefinitions(id, items, items.Length, enabledCategories);
+            }
+        }
+
+        public static int EnableCallTargetDefinitions(uint enabledCategories)
+        {
+            if (enabledCategories == 0)
+            {
+                return 0;
+            }
+
+            if (IsWindows)
+            {
+                return Windows.EnableCallTargetDefinitions(enabledCategories);
+            }
+            else
+            {
+                return NonWindows.EnableCallTargetDefinitions(enabledCategories);
+            }
+        }
+
+        public static int DisableCallTargetDefinitions(uint disabledCategories)
+        {
+            if (disabledCategories == 0)
+            {
+                return 0;
+            }
+
+            if (IsWindows)
+            {
+                return Windows.DisableCallTargetDefinitions(disabledCategories);
+            }
+            else
+            {
+                return NonWindows.DisableCallTargetDefinitions(disabledCategories);
+            }
         }
 
         // the "dll" extension is required on .NET Framework
@@ -220,7 +269,16 @@ namespace Datadog.Trace.ClrProfiler
             public static extern void DisableTracerCLRProfiler();
 
             [DllImport("Datadog.Tracer.Native.dll")]
-            public static extern void RegisterIastAspects([In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr, SizeParamIndex = 1)] string[] aspects, int aspectsLength);
+            public static extern int RegisterIastAspects([In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr, SizeParamIndex = 1)] string[] aspects, int aspectsLength);
+
+            [DllImport("Datadog.Tracer.Native.dll")]
+            public static extern int RegisterCallTargetDefinitions([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition2[] methodArrays, int size, uint enabledCategories);
+
+            [DllImport("Datadog.Tracer.Native.dll")]
+            public static extern int EnableCallTargetDefinitions(uint enabledCategories);
+
+            [DllImport("Datadog.Tracer.Native.dll")]
+            public static extern int DisableCallTargetDefinitions(uint disabledCategories);
         }
 
         // assume .NET Core if not running on Windows
@@ -258,7 +316,16 @@ namespace Datadog.Trace.ClrProfiler
             public static extern void DisableTracerCLRProfiler();
 
             [DllImport("Datadog.Tracer.Native")]
-            public static extern void RegisterIastAspects([In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr, SizeParamIndex = 1)] string[] aspects, int aspectsLength);
+            public static extern int RegisterIastAspects([In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr, SizeParamIndex = 1)] string[] aspects, int aspectsLength);
+
+            [DllImport("Datadog.Tracer.Native")]
+            public static extern int RegisterCallTargetDefinitions([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition2[] methodArrays, int size, uint enabledCategories);
+
+            [DllImport("Datadog.Tracer.Native")]
+            public static extern int EnableCallTargetDefinitions(uint enabledCategories);
+
+            [DllImport("Datadog.Tracer.Native")]
+            public static extern int DisableCallTargetDefinitions(uint disabledCategories);
         }
     }
 }

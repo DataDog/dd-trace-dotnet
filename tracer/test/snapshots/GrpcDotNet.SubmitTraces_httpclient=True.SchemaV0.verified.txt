@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -39,6 +39,7 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
@@ -165,6 +166,7 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
@@ -293,6 +295,7 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 1,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
@@ -423,6 +426,7 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 15,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
@@ -553,6 +557,7 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 5,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
@@ -683,6 +688,7 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 2,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
@@ -817,6 +823,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 1,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
@@ -947,6 +954,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 15,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
@@ -1077,6 +1085,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 5,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
@@ -1207,6 +1216,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 2,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
@@ -1339,6 +1349,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
@@ -1465,6 +1476,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
@@ -1591,6 +1603,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client
@@ -1718,6 +1731,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.method.service: Greeter,
       grpc.request.metadata.client-value1: some-client-value,
       grpc.status.code: 4,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1846,6 +1860,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.method.service: Greeter,
       grpc.request.metadata.client-value1: some-client-value,
       grpc.status.code: 4,
+      out.host: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: client
     },

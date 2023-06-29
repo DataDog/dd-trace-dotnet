@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Perftools.Profiles;
 using Xunit;
 
@@ -102,6 +103,17 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             }
 
             return true;
+        }
+
+        internal static IEnumerable<(StackTrace StackTrace, Label[] Labels, long[] Values)> GetSamples(string directory)
+        {
+            foreach (var profile in GetProfiles(directory))
+            {
+                foreach (var sample in profile.Sample)
+                {
+                    yield return (sample.StackTrace(profile), sample.Label.ToArray(), sample.Value.ToArray());
+                }
+            }
         }
 
         private static bool HaveSamplesValueCount(string directory, int valuesCount)
