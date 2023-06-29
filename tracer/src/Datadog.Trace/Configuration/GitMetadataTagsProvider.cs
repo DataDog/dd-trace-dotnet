@@ -90,18 +90,14 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
         {
             // Avoid P/Invoke if the profiler is not ready (for obvious reason)
             // but also if both repository url and commit sha are empty
-            if (Profiler.Instance.Status.IsProfilerReady &&
-                (!string.IsNullOrWhiteSpace(gitMetadata.RepositoryUrl) || !string.IsNullOrWhiteSpace(gitMetadata.CommitSha)))
+            if (Profiler.Instance.Status.IsProfilerReady && !gitMetadata.IsEmpty)
             {
                 NativeInterop.SetGitMetadata(RuntimeId.Get(), gitMetadata.RepositoryUrl, gitMetadata.CommitSha);
             }
         }
         catch (Exception ex)
         {
-            // We failed to retrieve the runtime from native this can be because:
-            // - P/Invoke issue (unknown dll, unknown entrypoint...)
-            // - We are running in a partial trust environment
-            Log.Warning(ex, "Failed to set git metadata for native.");
+            Log.Warning(ex, "Failed to share git metadata with the Continuous Profiler.");
         }
     }
 
