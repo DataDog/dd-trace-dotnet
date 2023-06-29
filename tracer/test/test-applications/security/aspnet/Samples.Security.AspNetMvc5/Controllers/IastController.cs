@@ -144,13 +144,17 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("NoSameSiteCookie")]
         public ActionResult NoSameSiteCookie()
         {
-            var cookieNone = GetDefaultCookie("NoSameSiteKey", "NoSameSiteValue");
+            var cookieDefault = new HttpCookie("NoSameSiteKeyDefault", "NoSameSiteValueDefault");
+            cookieDefault.HttpOnly = true;
+            cookieDefault.Secure = true;
+            var cookieNone = GetDefaultCookie("NoSameSiteKeyNone", "NoSameSiteValueNOne");
             var cookieLax = GetDefaultCookie("NoSameSiteKeyLax", "NoSameSiteValueLax");
             cookieNone.Values["SameSite"] = "None";
             cookieLax.Values["SameSite"] = "Lax";
+            Response.Cookies.Add(cookieDefault);
             Response.Cookies.Add(cookieNone);
             Response.Cookies.Add(cookieLax);
-            return Content("Sending NoSameSiteCookie");
+            return Content("Sending NoSameSiteCookies");
         }
 
         [Route("SafeCookie")]

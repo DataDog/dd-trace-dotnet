@@ -267,6 +267,10 @@ namespace Samples.Security.AspNetCore5.Controllers
             var cookieOptionsLax = GetDefaultCookieOptionsInstance();
             cookieOptionsLax.SameSite = SameSiteMode.Lax;
             Response.Cookies.Append("NoSameSiteKeyLax", "NoSameSiteValueLax", cookieOptionsLax);
+            var cookieOptionsDefault = new CookieOptions();
+            cookieOptionsDefault.HttpOnly = true;
+            cookieOptionsDefault.Secure = true;
+            Response.Cookies.Append("NoSameSiteKeyDef", "NoSameSiteValueDef", cookieOptionsDefault);
             return Content("Sending NoSameSiteCookie");
         }
 

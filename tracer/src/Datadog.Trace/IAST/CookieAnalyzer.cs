@@ -16,7 +16,7 @@ using Microsoft.Net.Http.Headers;
 using System.Web;
 #endif
 
-namespace Datadog.Trace.IAST;
+namespace Datadog.Trace.Iast;
 
 internal static class CookieAnalyzer
 {
@@ -29,8 +29,7 @@ internal static class CookieAnalyzer
         {
             foreach (string cookieKey in cookies)
             {
-                var cookie = cookies[cookieKey];
-                ReportVulnerabilities(integrationId, cookie);
+                ReportVulnerabilities(integrationId, cookies[cookieKey]);
             }
         }
         catch (Exception error)
@@ -41,10 +40,15 @@ internal static class CookieAnalyzer
 
     private static void ReportVulnerabilities(IntegrationId integrationId, HttpCookie cookie)
     {
+        if (cookie.Values.Count == 0)
+        {
+            return;
+        }
+
         var name = cookie.Name;
         var value = cookie.Values[0];
 
-        // Insecure cookies with empty values are allowed
+        // Insecure cookies with empty values are allowed, but not vulnerable
         if (string.IsNullOrEmpty(value))
         {
             return;
@@ -92,7 +96,7 @@ internal static class CookieAnalyzer
 
     private static void AnalyzeCookie(string cookieHeaderValue, IntegrationId integrationId)
     {
-        if (!string.IsNullOrEmpty(cookieHeaderValue))
+        if (!string.IsNullOrWhiteSpace(cookieHeaderValue))
         {
             var cookieHeader = SetCookieHeaderValue.Parse(cookieHeaderValue);
             ReportVulnerabilities(integrationId, cookieHeader);
@@ -104,7 +108,7 @@ internal static class CookieAnalyzer
         var name = cookie.Name.ToString();
         var value = cookie.Value.ToString();
 
-        // Insecure cookies with empty values are allowed
+        // Insecure cookies with empty values are allowed but not vulnerable
         if (string.IsNullOrWhiteSpace(value))
         {
             return;
