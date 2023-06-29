@@ -9,6 +9,12 @@ namespace Datadog.Trace.Tagging
 {
     partial class CosmosDbV1Tags
     {
+        // PortBytes = MessagePack.Serialize("out.port");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> PortBytes => new byte[] { 168, 111, 117, 116, 46, 112, 111, 114, 116 };
+#else
+        private static readonly byte[] PortBytes = new byte[] { 168, 111, 117, 116, 46, 112, 111, 114, 116 };
+#endif
         // PeerServiceBytes = MessagePack.Serialize("peer.service");
 #if NETCOREAPP
         private static ReadOnlySpan<byte> PeerServiceBytes => new byte[] { 172, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101 };
@@ -26,6 +32,7 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
+                "out.port" => Port,
                 "peer.service" => PeerService,
                 "_dd.peer.service.source" => PeerServiceSource,
                 _ => base.GetTag(key),
@@ -36,6 +43,9 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
+                case "out.port": 
+                    Port = value;
+                    break;
                 case "peer.service": 
                     PeerService = value;
                     break;
@@ -50,6 +60,11 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
+            if (Port is not null)
+            {
+                processor.Process(new TagItem<string>("out.port", Port, PortBytes));
+            }
+
             if (PeerService is not null)
             {
                 processor.Process(new TagItem<string>("peer.service", PeerService, PeerServiceBytes));
@@ -65,6 +80,13 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
+            if (Port is not null)
+            {
+                sb.Append("out.port (tag):")
+                  .Append(Port)
+                  .Append(',');
+            }
+
             if (PeerService is not null)
             {
                 sb.Append("peer.service (tag):")
