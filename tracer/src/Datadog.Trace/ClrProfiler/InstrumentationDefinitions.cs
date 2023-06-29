@@ -82,10 +82,8 @@ namespace Datadog.Trace.ClrProfiler
 
         internal static void Dispose()
         {
-            foreach (var def in Instrumentations)
-            {
-                def.Dispose();
-            }
+            UnmanagedMemorySegment.Free();
+            Instrumentations = Array.Empty<NativeCallTargetDefinition2>();
         }
 
         internal struct Payload

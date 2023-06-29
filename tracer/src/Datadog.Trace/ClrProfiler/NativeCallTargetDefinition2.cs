@@ -39,14 +39,11 @@ namespace Datadog.Trace.ClrProfiler
     {
         private static readonly int SizeOfPointer = Marshal.SizeOf(typeof(IntPtr));
 
-        [MarshalAs(UnmanagedType.LPWStr)]
-        public string TargetAssembly;
+        public IntPtr TargetAssembly;
 
-        [MarshalAs(UnmanagedType.LPWStr)]
-        public string TargetType;
+        public IntPtr TargetType;
 
-        [MarshalAs(UnmanagedType.LPWStr)]
-        public string TargetMethod;
+        public IntPtr TargetMethod;
 
         public IntPtr TargetSignatureTypes;
 
@@ -64,17 +61,15 @@ namespace Datadog.Trace.ClrProfiler
 
         public ushort TargetMaximumPatch;
 
-        [MarshalAs(UnmanagedType.LPWStr)]
-        public string IntegrationAssembly;
+        public IntPtr IntegrationAssembly;
 
-        [MarshalAs(UnmanagedType.LPWStr)]
-        public string IntegrationType;
+        public IntPtr IntegrationType;
 
         public byte Kind;
 
         public uint Categories;
 
-        public unsafe NativeCallTargetDefinition2(
+        public NativeCallTargetDefinition2(
                 string targetAssembly,
                 string targetType,
                 string targetMethod,
@@ -90,33 +85,17 @@ namespace Datadog.Trace.ClrProfiler
                 byte kind,
                 uint categories)
         {
-            TargetAssembly = targetAssembly;
-            TargetType = targetType;
-            TargetMethod = targetMethod;
+            TargetAssembly = UnmanagedMemorySegment.AllocateAndWriteUtf16String(targetAssembly);
+            TargetType = UnmanagedMemorySegment.AllocateAndWriteUtf16String(targetType);
+            TargetMethod = UnmanagedMemorySegment.AllocateAndWriteUtf16String(targetMethod);
             TargetSignatureTypes = IntPtr.Zero;
             if (targetSignatureTypes?.Length > 0)
             {
-                TargetSignatureTypes = Marshal.AllocHGlobal(targetSignatureTypes.Length * SizeOfPointer);
-                var stringPtrSize = 0;
-                for (var i = 0; i < targetSignatureTypes.Length; i++)
-                {
-                    stringPtrSize += (targetSignatureTypes[i].Length * 2) + 1;
-                }
-
-                var targetSignatureTypesPointers = Marshal.AllocHGlobal(stringPtrSize);
-                var stringPtr = targetSignatureTypesPointers;
+                TargetSignatureTypes = UnmanagedMemorySegment.Allocate(targetSignatureTypes.Length * SizeOfPointer);
                 var ptr = TargetSignatureTypes;
                 for (var i = 0; i < targetSignatureTypes.Length; i++)
                 {
-                    var str = targetSignatureTypes[i];
-                    fixed (char* sPointer = str)
-                    {
-                        var writtenBytes = Encoding.Unicode.GetBytes(sPointer, str.Length, (byte*)stringPtr, str.Length * 2);
-                        Marshal.WriteByte(stringPtr, writtenBytes, (byte)'\0');
-                        Marshal.WriteIntPtr(ptr, stringPtr);
-                        stringPtr = (IntPtr)((byte*)stringPtr + writtenBytes + 1);
-                    }
-
+                    Marshal.WriteIntPtr(ptr, UnmanagedMemorySegment.AllocateAndWriteUtf16String(targetSignatureTypes[i]));
                     ptr += SizeOfPointer;
                 }
             }
@@ -128,8 +107,8 @@ namespace Datadog.Trace.ClrProfiler
             TargetMaximumMajor = targetMaximumMajor;
             TargetMaximumMinor = targetMaximumMinor;
             TargetMaximumPatch = targetMaximumPatch;
-            IntegrationAssembly = integrationAssembly;
-            IntegrationType = integrationType;
+            IntegrationAssembly = UnmanagedMemorySegment.AllocateAndWriteUtf16String(integrationAssembly);
+            IntegrationType = UnmanagedMemorySegment.AllocateAndWriteUtf16String(integrationType);
             Kind = kind;
             Categories = categories;
         }
@@ -153,16 +132,6 @@ namespace Datadog.Trace.ClrProfiler
             res.IntegrationType = callTarget.IntegrationType;
 
             return res;
-        }
-
-        public void Dispose()
-        {
-            if (TargetSignatureTypesLength > 0)
-            {
-                Marshal.FreeHGlobal(Marshal.ReadIntPtr(TargetSignatureTypes));
-            }
-
-            Marshal.FreeHGlobal(TargetSignatureTypes);
         }
 
         public bool HasCategory(InstrumentationCategory category)
