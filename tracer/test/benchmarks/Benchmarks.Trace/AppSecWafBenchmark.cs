@@ -16,7 +16,7 @@ namespace Benchmarks.Trace;
 
 [MemoryDiagnoser]
 [BenchmarkAgent2]
-[MaxIterationCount(30)]
+[MaxIterationCount(40)]
 [MaxWarmupCount(10)]
 public class AppSecWafBenchmark
 {
@@ -124,10 +124,7 @@ public class AppSecWafBenchmark
             { AddressesConstants.RequestUriRaw, "http://localhost:54587/lalallala" },
             { AddressesConstants.RequestMethod, "POST" },
         };
-    }
 
-    public IEnumerable<Dictionary<string, object>> Source2()
-    {
         yield return MakeNestedMap(10);
         yield return MakeNestedMap(100);
         yield return MakeNestedMap(1000);
@@ -187,7 +184,7 @@ public class AppSecWafBenchmark
     }
 
     [Benchmark]
-    [ArgumentsSource(nameof(Source2))]
+    [ArgumentsSource(nameof(Source))]
     public void RunWaf(Dictionary<string, object> args)
     {
         _context.Run(args, TimeoutMicroSeconds);
