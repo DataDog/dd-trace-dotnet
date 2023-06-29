@@ -25,7 +25,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         private readonly Waf _waf;
 
-        private readonly List<IntPtr> _argCache = new();
+        private readonly List<IntPtr> _argCache;
         private readonly Stopwatch _stopwatch;
         private readonly WafLibraryInvoker _wafLibraryInvoker;
 
@@ -39,6 +39,7 @@ namespace Datadog.Trace.AppSec.Waf
             _waf = waf;
             _wafLibraryInvoker = wafLibraryInvoker;
             _stopwatch = new Stopwatch();
+            _argCache = new(64);
         }
 
         ~Context() => Dispose(false);
