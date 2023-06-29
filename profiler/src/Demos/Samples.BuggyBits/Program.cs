@@ -2,7 +2,6 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
-
 using System;
 using System.Diagnostics;
 using System.Threading;
@@ -11,6 +10,12 @@ using Datadog.Demos.Util;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+
+// Those attributes are required to validate the git repository url and commit sha propagation from
+// the tracer to the profiler.
+// See Datadog.Profiler.IntegrationTests.GitMetadata.CheckGitMetataFromEnvironmentVariablesFromBinary
+[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "http://github.com/DataDog/dd-trace-dotnet")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1234567890ABCDEF")]
 
 namespace BuggyBits
 {
