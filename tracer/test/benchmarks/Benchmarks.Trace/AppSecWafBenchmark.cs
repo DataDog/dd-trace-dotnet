@@ -75,6 +75,7 @@ public class AppSecWafBenchmark
 
     public IEnumerable<Dictionary<string, object>> Source()
     {
+/*
        yield return new Dictionary<string, object>
         {
             { AddressesConstants.RequestCookies, new Dictionary<string, string> { { "something", ".htaccess" }, { "something2", ";shutdown--" } } },
@@ -124,7 +125,7 @@ public class AppSecWafBenchmark
             { AddressesConstants.RequestUriRaw, "http://localhost:54587/lalallala" },
             { AddressesConstants.RequestMethod, "POST" },
         };
-
+*/
         yield return MakeNestedMap(10);
         yield return MakeNestedMap(100);
         yield return MakeNestedMap(1000);
