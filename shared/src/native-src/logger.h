@@ -39,7 +39,7 @@ public:
 
     inline void Flush();
 
-    inline void EnableDebug();
+    inline void EnableDebug(bool enable);
     inline bool IsDebugEnabled() const;
 
 
@@ -214,9 +214,9 @@ inline void Logger::Flush()
     _internalLogger->flush();
 }
 
-inline void Logger::EnableDebug()
+inline void Logger::EnableDebug(bool enable)
 {
-    m_debug_logging_enabled = true;
+    m_debug_logging_enabled = enable;
 }
 
 inline bool Logger::IsDebugEnabled() const

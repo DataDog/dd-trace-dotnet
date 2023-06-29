@@ -213,6 +213,11 @@ public:
     //
     void DisableTracerCLRProfiler();
 
+    //
+    // Propagate settings from RCM
+    //
+    void UpdateSettings(WCHAR* keys[], WCHAR* values[], int length);
+
     friend class debugger::DebuggerProbesInstrumentationRequester;
     friend class debugger::DebuggerMethodRewriter;
     friend class TracerMethodRewriter;
