@@ -219,10 +219,12 @@
     <ClInclude Include="SystemTime.h" />
     <ClInclude Include="Windows64BitStackFramesCollector.h" />
     <ClInclude Include="Windows32BitStackFramesCollector.h" />
+    <ClInclude Include="WindowsThreadInfo.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Datadog.Profiler.Native\DllMain.cpp" />
     <ClCompile Include="SystemTime.cpp" />
+    <ClCompile Include="WindowsThreadInfo.cpp" />
     <ClCompile Include="WindowsThreadsCpuManager.cpp" />
     <ClCompile Include="OsSpecificApi.cpp" />
     <ClCompile Include="Windows64BitStackFramesCollector.cpp" />

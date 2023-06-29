@@ -15,7 +15,7 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.Debugger.Instrumentation
 {
     /// <summary>
-    /// MethodDebuggerInvoker for multiple probes scenario (where there is more than one _method_ probe).
+    /// MethodDebuggerInvoker for multiple probes scenario (where there are more than one _method_ probe).
     /// </summary>
     public static partial class MethodDebuggerInvoker
     {

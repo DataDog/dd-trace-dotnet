@@ -9,6 +9,7 @@
 #include "IEnabledProfilers.h"
 #include "IMetricsSender.h"
 #include "IRuntimeInfo.h"
+#include "ISamplesProvider.h"
 #include "IUpscaleProvider.h"
 #include "Log.h"
 #include "OpSysTools.h"
@@ -150,6 +151,12 @@ void LibddprofExporter::RegisterUpscaleProvider(IUpscaleProvider* provider)
 {
     assert(provider != nullptr);
     _upscaledProviders.push_back(provider);
+}
+
+void LibddprofExporter::RegisterProcessSamplesProvider(ISamplesProvider* provider)
+{
+    assert(provider != nullptr);
+    _processSamplesProviders.push_back(provider);
 }
 
 LibddprofExporter::Tags LibddprofExporter::CreateTags(
@@ -334,17 +341,8 @@ LibddprofExporter::ProfileInfoScope LibddprofExporter::GetOrCreateInfo(std::stri
     return profileInfo;
 }
 
-void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
+void LibddprofExporter::Add(ddog_prof_Profile* profile, std::shared_ptr<Sample> const& sample)
 {
-    auto profileInfoScope = GetOrCreateInfo(sample->GetRuntimeId());
-
-    if (profileInfoScope.profileInfo.profile == nullptr)
-    {
-        profileInfoScope.profileInfo.profile = CreateProfile();
-    }
-
-    auto* profile = profileInfoScope.profileInfo.profile;
-
     auto const& callstack = sample->GetCallstack();
     auto nbFrames = callstack.size();
 
@@ -411,6 +409,18 @@ void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
         Log::Warn("Failed to add a sample: ", std::string_view(errorMessage.ptr, errorMessage.len));
         return;
     }
+}
+
+void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
+{
+    auto profileInfoScope = GetOrCreateInfo(sample->GetRuntimeId());
+
+    if (profileInfoScope.profileInfo.profile == nullptr)
+    {
+        profileInfoScope.profileInfo.profile = CreateProfile();
+    }
+    auto* profile = profileInfoScope.profileInfo.profile;
+    Add(profile, sample);
     profileInfoScope.profileInfo.samplesCount++;
 }
 
@@ -504,6 +514,24 @@ void LibddprofExporter::AddUpscalingRules(ddog_prof_Profile* profile, std::vecto
     }
 }
 
+std::list<std::shared_ptr<Sample>> LibddprofExporter::GetProcessSamples()
+{
+    std::list<std::shared_ptr<Sample>> samples;
+    for (auto const& provider : _processSamplesProviders)
+    {
+        samples.splice(samples.end() , provider->GetSamples());
+    }
+    return samples;
+}
+
+void LibddprofExporter::AddProcessSamples(ddog_prof_Profile* profile, std::list<std::shared_ptr<Sample>> const& samples)
+{
+    for (auto const& sample : samples)
+    {
+        Add(profile, sample);
+    }
+}
+
 bool LibddprofExporter::Export()
 {
     bool exported = false;
@@ -543,6 +571,9 @@ bool LibddprofExporter::Export()
     // for all applications.
     auto upscalingInfos = GetUpscalingInfos();
 
+    // Process-level samples
+    auto processSamples = GetProcessSamples();
+
     for (auto& runtimeId : keys)
     {
         ddog_prof_Profile* profile;
@@ -579,6 +610,8 @@ bool LibddprofExporter::Export()
             Log::Debug("The profiler for application ", applicationInfo.ServiceName, " (runtime id:", runtimeId, ") have empty profile. Nothing will be sent.");
             continue;
         }
+
+        AddProcessSamples(profile, processSamples);
 
         AddUpscalingRules(profile, upscalingInfos);
 
