@@ -371,7 +371,7 @@ namespace Datadog.Trace.Activity
             where TInner : IActivity
         {
             // OpenTelemetry stores the exception attributes in Activity.Events
-            // Activity.Events was only added in .NET 5+, which maps to out IActivity5 & IActivity6
+            // Activity.Events was only added in .NET 5+, which maps to our IActivity5 & IActivity6
             if (activity is not IActivity5 activity5)
             {
                 return;
