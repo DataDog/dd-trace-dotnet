@@ -35,8 +35,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         /// </summary>
         /// <param name="writer">writer</param>
         /// <param name="settings">settings</param>
-        public CompactJsonWriter(TextWriter writer, JsonWriterSettings settings)
-            : base(writer, settings)
+        public CompactJsonWriter(TextWriter writer, object settings)
+            : base(writer, (JsonWriterSettings)settings)
         {
             if (writer == null)
             {

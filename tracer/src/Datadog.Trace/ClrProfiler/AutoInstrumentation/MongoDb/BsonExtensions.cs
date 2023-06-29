@@ -5,17 +5,18 @@
 
 using System;
 using System.IO;
+using System.Reflection;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 
-namespace Datadog.Trace.ExtensionMethods
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
     internal static class BsonExtensions
     {
         public static string ToJson(
            this object obj,
            Type nominalType,
-           JsonWriterSettings writerSettings = null,
+           object writerSettings = null,
            IBsonSerializer serializer = null,
            Action<BsonSerializationContext.Builder> configurator = null,
            BsonSerializationArgs args = default(BsonSerializationArgs))
@@ -38,9 +39,16 @@ namespace Datadog.Trace.ExtensionMethods
                 throw new ArgumentException(message, "serializer");
             }
 
+            Type type = Type.GetType("MongoDB.Bson.IO.JsonWriterSettings, MongoDB.Bson", throwOnError: false);
+            PropertyInfo defaultsProperty = type.GetProperty("Defaults");
+            object defaultsValue = defaultsProperty.GetValue(null);
+
+            Console.WriteLine("defaultsValue:" + defaultsValue);
+            Console.WriteLine("JsonWriterSettings.Defaults:" + JsonWriterSettings.Defaults);
+
             using (var stringWriter = new StringWriter())
             {
-                using (var bsonWriter = new ClrProfiler.AutoInstrumentation.MongoDb.CompactJsonWriter(stringWriter, writerSettings ?? JsonWriterSettings.Defaults))
+                using (var bsonWriter = new CompactJsonWriter(stringWriter, writerSettings ?? defaultsValue))
                 {
                     var context = BsonSerializationContext.CreateRoot(bsonWriter, configurator);
                     serializer.Serialize(context, args, obj);
@@ -48,6 +56,20 @@ namespace Datadog.Trace.ExtensionMethods
 
                 return stringWriter.ToString();
             }
+        }
+
+        internal static object ReflectObject(string typeName,  string methodName)
+        {
+            var returnedType = Type.GetType(typeName, throwOnError: false);
+
+            if (typeName == null)
+            {
+                return null;
+            }
+
+            var returnedMethod = returnedType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
+
+            return returnedMethod.Invoke(null, null);
         }
     }
 }
