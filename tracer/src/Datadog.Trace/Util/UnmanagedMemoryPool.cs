@@ -58,6 +58,11 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
             }
         }
 
+        return RentSlow();
+    }
+
+    private IntPtr RentSlow()
+    {
         return Marshal.AllocHGlobal(_blockSize);
     }
 

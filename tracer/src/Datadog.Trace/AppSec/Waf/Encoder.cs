@@ -236,18 +236,23 @@ namespace Datadog.Trace.AppSec.Waf
                 {
                     if (remainingDepth-- <= 0)
                     {
-                        IEnumerable<string> GetItemsAsString()
+                        string GetItemsAsString()
                         {
-                            var lst = new List<string>();
+                            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
                             foreach (var x in enumerableDic)
                             {
-                                lst.Add($"{getKey(x!)}, {getValue(x!)}");
+                                sb.Append($"{getKey(x)}, {getValue(x)}, ");
                             }
 
-                            return lst;
+                            if (sb.Length > 0)
+                            {
+                                sb.Remove(sb.Length - 2, 2);
+                            }
+
+                            return StringBuilderCache.GetStringAndRelease(sb);
                         }
 
-                        Log.Warning("EncodeDictionary: object graph too deep, truncating nesting {Items}", string.Join(", ", GetItemsAsString()));
+                        Log.Warning("EncodeDictionary: object graph too deep, truncating nesting {Items}", GetItemsAsString());
                         return ddWafObjectMap;
                     }
 
