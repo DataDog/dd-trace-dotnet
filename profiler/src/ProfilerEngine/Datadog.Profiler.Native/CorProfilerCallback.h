@@ -181,7 +181,7 @@ public:
         return _this;
     }
 
-    std::string GetRuntimeDescription()
+    std::string const& GetRuntimeDescription()
     {
         return _runtimeDescription;
     }

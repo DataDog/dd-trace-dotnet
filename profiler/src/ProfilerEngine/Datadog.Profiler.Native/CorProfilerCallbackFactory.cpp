@@ -71,6 +71,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallbackFactory::CreateInstance(IUnknown* p
     }
 
     // the scenario where different CLRs are loaded in the same process is not supported
+    std::lock_guard<std::mutex> lock(_lock);
+
     auto currentProfiler = CorProfilerCallback::GetInstance();
     if (currentProfiler != nullptr)
     {
