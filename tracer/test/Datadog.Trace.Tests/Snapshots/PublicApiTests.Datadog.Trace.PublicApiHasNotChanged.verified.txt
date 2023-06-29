@@ -246,7 +246,7 @@ namespace Datadog.Trace.Configuration
     {
         public Datadog.Trace.Configuration.ImmutableIntegrationSettings this[string integrationName] { get; }
     }
-    public class ImmutableTracerSettings
+    public class ImmutableTracerSettings : System.IEquatable<Datadog.Trace.Configuration.ImmutableTracerSettings>
     {
         public ImmutableTracerSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
         public ImmutableTracerSettings(Datadog.Trace.Configuration.TracerSettings settings) { }

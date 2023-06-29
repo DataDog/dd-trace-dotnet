@@ -77,7 +77,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
                 if (EnableSecurity != null)
                 {
                     associatedRcmRequest.CachedTargetFiles.Should().BeEmpty();
-                    associatedRcmRequest.Client.Products.Should().HaveCount(EnableSecurity == false ? 0 : 3);
+                    // Expected: APM_PRODUCT + the 3 ASM products
+                    associatedRcmRequest.Client.Products.Should().HaveCount(EnableSecurity == false ? 1 : 4);
                 }
                 else
                 {

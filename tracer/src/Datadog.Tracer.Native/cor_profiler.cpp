@@ -46,7 +46,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     // check if debug mode is enabled
     if (IsDebugEnabled())
     {
-        Logger::EnableDebug();
+        Logger::EnableDebug(true);
     }
 
     CorProfilerBase::Initialize(cor_profiler_info_unknown);
@@ -1175,7 +1175,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             if (status != std::future_status::timeout)
             {
                 const auto& numReJITs = future.get();
-                Logger::Debug("[Tracer] Total number of ReJIT Requested: ", numReJITs);
+            Logger::Debug("[Tracer] Total number of ReJIT Requested: ", numReJITs);
             }
             else
             {
@@ -1284,6 +1284,39 @@ void CorProfiler::DisableTracerCLRProfiler()
     // https://docs.microsoft.com/en-us/dotnet/framework/unmanaged-api/profiling/icorprofilerinfo3-requestprofilerdetach-method
     Logger::Info("Disabling Tracer CLR Profiler...");
     Shutdown();
+}
+
+void CorProfiler::UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
+{
+    const WSTRING debugVarName = WStr("DD_TRACE_DEBUG");
+
+    for (int i = 0; i < length; i++)
+    {
+        if (WSTRING(keys[i]) == debugVarName)
+        {
+            if (values[i] == nullptr || *values[i] == WStr('\0'))
+            {
+                continue;
+            }
+
+            WSTRING value(values[i]);
+
+            if (IsTrue(value))
+            {
+                Logger::EnableDebug(true);
+                Logger::Info("Debug logging has been turned on by remote configuration");
+            }
+            else if (IsFalse(value))
+            {
+                Logger::EnableDebug(false);
+                Logger::Info("Debug logging has been turned off by remote configuration");
+            }
+            else
+            {
+                Logger::Warn("Received an invalid value for DD_TRACE_DEBUG: ", value);
+            }
+        }
+    }
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
@@ -1504,11 +1537,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         }
 
         Logger::Debug("JITCompilationStarted: Startup hook registered.");
-        hr = this->info_->ApplyMetaData(module_id);
-        if (FAILED(hr))
-        {
-            Logger::Warn("JITCompilationStarted: Error applying metadata to module_id: ", module_id);
-        }
     }
 
     return S_OK;

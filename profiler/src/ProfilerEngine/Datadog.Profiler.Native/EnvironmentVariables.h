@@ -26,6 +26,8 @@ public:
     inline static const shared::WSTRING ApiKey                      = WStr("DD_API_KEY");
     inline static const shared::WSTRING Hostname                    = WStr("DD_HOSTNAME");
     inline static const shared::WSTRING Tags                        = WStr("DD_TAGS");
+    inline static const shared::WSTRING GitRepositoryUrl            = WStr("DD_GIT_REPOSITORY_URL");
+    inline static const shared::WSTRING GitCommitSha                = WStr("DD_GIT_COMMIT_SHA");
     inline static const shared::WSTRING NativeFramesEnabled         = WStr("DD_PROFILING_FRAMES_NATIVE_ENABLED");
     inline static const shared::WSTRING CpuProfilingEnabled         = WStr("DD_PROFILING_CPU_ENABLED");
     inline static const shared::WSTRING WallTimeProfilingEnabled    = WStr("DD_PROFILING_WALLTIME_ENABLED");
