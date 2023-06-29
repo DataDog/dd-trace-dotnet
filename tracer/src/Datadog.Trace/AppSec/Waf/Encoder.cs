@@ -20,7 +20,7 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal static class Encoder
     {
-        private const int MaxBytesForMaxStringLength = WafConstants.MaxStringLength * 4;
+        private const int MaxBytesForMaxStringLength = (WafConstants.MaxStringLength * 4) + 1;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Encoder));
         private static readonly int ObjectStructSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
 
