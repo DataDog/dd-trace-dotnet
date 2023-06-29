@@ -5,6 +5,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -36,6 +37,8 @@ namespace Datadog.Trace.ClrProfiler
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     internal struct NativeCallTargetDefinition2
     {
+        private static readonly int SizeOfPointer = Marshal.SizeOf(typeof(IntPtr));
+
         [MarshalAs(UnmanagedType.LPWStr)]
         public string TargetAssembly;
 
@@ -71,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler
 
         public uint Categories;
 
-        public NativeCallTargetDefinition2(
+        public unsafe NativeCallTargetDefinition2(
                 string targetAssembly,
                 string targetType,
                 string targetMethod,
@@ -93,12 +96,28 @@ namespace Datadog.Trace.ClrProfiler
             TargetSignatureTypes = IntPtr.Zero;
             if (targetSignatureTypes?.Length > 0)
             {
-                TargetSignatureTypes = Marshal.AllocHGlobal(targetSignatureTypes.Length * Marshal.SizeOf(typeof(IntPtr)));
+                TargetSignatureTypes = Marshal.AllocHGlobal(targetSignatureTypes.Length * SizeOfPointer);
+                var stringPtrSize = 0;
+                for (var i = 0; i < targetSignatureTypes.Length; i++)
+                {
+                    stringPtrSize += (targetSignatureTypes[i].Length * 2) + 1;
+                }
+
+                var targetSignatureTypesPointers = Marshal.AllocHGlobal(stringPtrSize);
+                var stringPtr = targetSignatureTypesPointers;
                 var ptr = TargetSignatureTypes;
                 for (var i = 0; i < targetSignatureTypes.Length; i++)
                 {
-                    Marshal.WriteIntPtr(ptr, Marshal.StringToHGlobalUni(targetSignatureTypes[i]));
-                    ptr += Marshal.SizeOf(typeof(IntPtr));
+                    var str = targetSignatureTypes[i];
+                    fixed (char* sPointer = str)
+                    {
+                        var writtenBytes = Encoding.Unicode.GetBytes(sPointer, str.Length, (byte*)stringPtr, str.Length * 2);
+                        Marshal.WriteByte(stringPtr, writtenBytes, (byte)'\0');
+                        Marshal.WriteIntPtr(ptr, stringPtr);
+                        stringPtr = (IntPtr)((byte*)stringPtr + writtenBytes + 1);
+                    }
+
+                    ptr += SizeOfPointer;
                 }
             }
 
@@ -139,10 +158,9 @@ namespace Datadog.Trace.ClrProfiler
         public void Dispose()
         {
             var ptr = TargetSignatureTypes;
-            for (var i = 0; i < TargetSignatureTypesLength; i++)
+            if (TargetSignatureTypesLength > 0)
             {
                 Marshal.FreeHGlobal(Marshal.ReadIntPtr(ptr));
-                ptr += Marshal.SizeOf(typeof(IntPtr));
             }
 
             Marshal.FreeHGlobal(TargetSignatureTypes);
