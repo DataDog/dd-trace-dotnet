@@ -581,11 +581,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             public void Dispose()
             {
-                foreach (var pointer in _pointers)
-                {
-                    _pool.Return(pointer);
-                }
-
+                _pool.Return(_pointers);
                 _pointers.Clear();
             }
         }
