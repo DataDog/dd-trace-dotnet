@@ -37,8 +37,6 @@ namespace Datadog.Trace.ClrProfiler
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     internal struct NativeCallTargetDefinition
     {
-        private static readonly int SizeOfPointer = Marshal.SizeOf(typeof(IntPtr));
-
         public IntPtr TargetAssembly;
 
         public IntPtr TargetType;
@@ -85,12 +83,12 @@ namespace Datadog.Trace.ClrProfiler
             TargetSignatureTypes = IntPtr.Zero;
             if (targetSignatureTypes?.Length > 0)
             {
-                TargetSignatureTypes = UnmanagedMemorySegment.Allocate(targetSignatureTypes.Length * SizeOfPointer);
+                TargetSignatureTypes = UnmanagedMemorySegment.Allocate(targetSignatureTypes.Length * UnmanagedMemorySegment.SizeOfPointer);
                 var ptr = TargetSignatureTypes;
                 for (var i = 0; i < targetSignatureTypes.Length; i++)
                 {
                     Marshal.WriteIntPtr(ptr, UnmanagedMemorySegment.AllocateAndWriteUtf16String(targetSignatureTypes[i]));
-                    ptr += SizeOfPointer;
+                    ptr += UnmanagedMemorySegment.SizeOfPointer;
                 }
             }
 

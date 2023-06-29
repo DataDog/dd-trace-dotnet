@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.ClrProfiler;
@@ -12,29 +13,45 @@ namespace Datadog.Trace.ClrProfiler;
 internal static class UnmanagedMemorySegment
 {
     private const int SizeOfMemorySegment = 1 * 1024 * 1024;
-    private static readonly List<IntPtr> Segments = new(5);
-    private static IntPtr _currentSegment = IntPtr.Zero;
+    private static readonly List<IntPtr> Segments;
+    private static IntPtr _currentSegment;
     private static int _segmentOffset;
 
-    public static unsafe IntPtr Allocate(int bytesCount)
-    {
-        if (_currentSegment == IntPtr.Zero || SizeOfMemorySegment - _segmentOffset < bytesCount)
-        {
-            _currentSegment = Marshal.AllocHGlobal(SizeOfMemorySegment);
-            _segmentOffset = 0;
-            Segments.Add(_currentSegment);
-        }
+    public static readonly int SizeOfPointer = Marshal.SizeOf(typeof(IntPtr));
 
-        var allocation = (IntPtr)((byte*)_currentSegment + _segmentOffset);
-        _segmentOffset += bytesCount;
-        return allocation;
+    static UnmanagedMemorySegment()
+    {
+        Segments = new(5);
+        CreateSegment();
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void CreateSegment()
+    {
+        _currentSegment = Marshal.AllocCoTaskMem(SizeOfMemorySegment);
+        _segmentOffset = 0;
+        Segments.Add(_currentSegment);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static IntPtr Allocate(int bytesCount)
+    {
+        var offset = _segmentOffset;
+        if (SizeOfMemorySegment - offset < bytesCount)
+        {
+            CreateSegment();
+        }
+
+        _segmentOffset = offset + bytesCount;
+        return _currentSegment + offset;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Free()
     {
         for (var i = 0; i < Segments.Count; i++)
         {
-            Marshal.FreeHGlobal(Segments[i]);
+            Marshal.FreeCoTaskMem(Segments[i]);
         }
 
         _currentSegment = IntPtr.Zero;
@@ -42,6 +59,7 @@ internal static class UnmanagedMemorySegment
         Segments.Clear();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe IntPtr AllocateAndWriteUtf16String(string value)
     {
         var stringPtrSize = value.Length * 2;

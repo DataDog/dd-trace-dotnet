@@ -82,7 +82,6 @@ namespace Datadog.Trace.ClrProfiler
 
         internal static void Dispose()
         {
-            UnmanagedMemorySegment.Free();
             Instrumentations = Array.Empty<NativeCallTargetDefinition2>();
         }
 
