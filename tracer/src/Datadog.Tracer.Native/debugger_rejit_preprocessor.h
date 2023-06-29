@@ -33,6 +33,8 @@ protected:
     const bool GetIsDerived(const std::shared_ptr<MethodProbeDefinition>& definition) final;
     const bool GetIsInterface(const std::shared_ptr<MethodProbeDefinition>& definition) final;
     const bool GetIsExactSignatureMatch(const std::shared_ptr<MethodProbeDefinition>& definition) final;
+    const bool GetIsEnabled(const std::shared_ptr<MethodProbeDefinition>& definition) final;
+    const bool SupportsSelectiveEnablement() final;
     const std::unique_ptr<RejitHandlerModuleMethod>
     CreateMethod(mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo,
                  const std::shared_ptr<MethodProbeDefinition>& methodProbe) final;
