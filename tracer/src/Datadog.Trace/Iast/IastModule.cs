@@ -6,17 +6,13 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Process;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Iast.SensitiveData;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util.Http;
-using Datadog.Trace.Vendors.dnlib.DotNet;
 
 namespace Datadog.Trace.Iast;
 
@@ -110,17 +106,20 @@ internal static class IastModule
 
     public static Scope? OnInsecureCookie(IntegrationId integrationId, string cookieName)
     {
-        return GetScopeWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.InsecureCookie, (VulnerabilityTypeName.InsecureCookie.ToString() + ":" + cookieName).GetStaticHashCode());
+        // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
+        return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.InsecureCookie, (VulnerabilityTypeName.InsecureCookie.ToString() + ":" + cookieName).GetStaticHashCode());
     }
 
     public static Scope? OnNoHttpOnlyCookie(IntegrationId integrationId, string cookieName)
     {
-        return GetScopeWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoHttpOnlyCookie, (VulnerabilityTypeName.NoHttpOnlyCookie.ToString() + ":" + cookieName).GetStaticHashCode());
+        // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
+        return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoHttpOnlyCookie, (VulnerabilityTypeName.NoHttpOnlyCookie.ToString() + ":" + cookieName).GetStaticHashCode());
     }
 
     public static Scope? OnNoSamesiteCookie(IntegrationId integrationId, string cookieName)
     {
-        return GetScopeWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoSameSiteCookie, (VulnerabilityTypeName.NoSameSiteCookie.ToString() + ":" + cookieName).GetStaticHashCode());
+        // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
+        return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoSameSiteCookie, (VulnerabilityTypeName.NoSameSiteCookie.ToString() + ":" + cookieName).GetStaticHashCode());
     }
 
     public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId)
@@ -163,7 +162,8 @@ internal static class IastModule
         return new VulnerabilityBatch(EvidenceRedactorLazy.Value);
     }
 
-    private static Scope? GetScopeWebVulnerability(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, int hashId)
+    // This method adds web vulnerabilities, with no location, only on web environments
+    private static Scope? AddWebVulnerability(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, int hashId)
     {
         var tracer = Tracer.Instance;
         if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))

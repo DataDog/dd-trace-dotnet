@@ -16,115 +16,114 @@ using Microsoft.Net.Http.Headers;
 using System.Web;
 #endif
 
-namespace Datadog.Trace.IAST
+namespace Datadog.Trace.IAST;
+
+internal static class CookieAnalyzer
 {
-    internal static class CookieAnalyzer
-    {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CookieAnalyzer));
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CookieAnalyzer));
 
 #if NETFRAMEWORK
-        public static void AnalyzeCookies(HttpCookieCollection cookies, IntegrationId integrationId)
+    public static void AnalyzeCookies(HttpCookieCollection cookies, IntegrationId integrationId)
+    {
+        try
         {
-            try
+            foreach (string cookieKey in cookies)
             {
-                foreach (string cookieKey in cookies)
-                {
-                    var cookie = cookies[cookieKey];
-                    ReportVulnerabilities(integrationId, cookie);
-                }
-            }
-            catch (Exception error)
-            {
-                Log.Error(error, $"{nameof(CookieAnalyzer)}.{nameof(AnalyzeCookies)}.net461 exception");
+                var cookie = cookies[cookieKey];
+                ReportVulnerabilities(integrationId, cookie);
             }
         }
-
-        private static void ReportVulnerabilities(IntegrationId integrationId, HttpCookie cookie)
+        catch (Exception error)
         {
-            var name = cookie.Name;
-            var value = cookie.Values[0];
-
-            // Insecure cookies with empty values are allowed
-            if (string.IsNullOrEmpty(value))
-            {
-                return;
-            }
-
-            string? samesiteCookie = cookie.Values["SameSite"];
-            if (samesiteCookie?.Equals("Strict", System.StringComparison.InvariantCultureIgnoreCase) is not true)
-            {
-                IastModule.OnNoSamesiteCookie(integrationId, name);
-            }
-
-            if (!cookie.HttpOnly)
-            {
-                IastModule.OnNoHttpOnlyCookie(integrationId, name);
-            }
-
-            if (!cookie.Secure)
-            {
-                IastModule.OnInsecureCookie(integrationId, name);
-            }
+            Log.Error(error, $"{nameof(CookieAnalyzer)}.{nameof(AnalyzeCookies)}.net461 exception");
         }
+    }
+
+    private static void ReportVulnerabilities(IntegrationId integrationId, HttpCookie cookie)
+    {
+        var name = cookie.Name;
+        var value = cookie.Values[0];
+
+        // Insecure cookies with empty values are allowed
+        if (string.IsNullOrEmpty(value))
+        {
+            return;
+        }
+
+        string? samesiteCookie = cookie.Values["SameSite"];
+        if (samesiteCookie?.Equals("Strict", System.StringComparison.InvariantCultureIgnoreCase) is not true)
+        {
+            IastModule.OnNoSamesiteCookie(integrationId, name);
+        }
+
+        if (!cookie.HttpOnly)
+        {
+            IastModule.OnNoHttpOnlyCookie(integrationId, name);
+        }
+
+        if (!cookie.Secure)
+        {
+            IastModule.OnInsecureCookie(integrationId, name);
+        }
+    }
 #endif
 
 #if !NETFRAMEWORK
-        // Extract the cookie information of a request from a IHeaderDictionary
-        public static void AnalyzeCookies(IHeaderDictionary headers, IntegrationId integrationId)
+    // Extract the cookie information of a request from a IHeaderDictionary
+    public static void AnalyzeCookies(IHeaderDictionary headers, IntegrationId integrationId)
+    {
+        try
         {
-            try
-            {
-                if (!headers.TryGetValue(HeaderNames.SetCookie, out var cookieHeaderValues))
-                {
-                    return;
-                }
-
-                foreach (var cookieHeaderValue in cookieHeaderValues)
-                {
-                    AnalyzeCookie(cookieHeaderValue, integrationId);
-                }
-            }
-            catch (Exception error)
-            {
-                Log.Error(error, $"{nameof(CookieAnalyzer)}.{nameof(AnalyzeCookies)}.netcore exception");
-            }
-        }
-
-        private static void AnalyzeCookie(string cookieHeaderValue, IntegrationId integrationId)
-        {
-            if (!string.IsNullOrEmpty(cookieHeaderValue))
-            {
-                var cookieHeader = SetCookieHeaderValue.Parse(cookieHeaderValue);
-                ReportVulnerabilities(integrationId, cookieHeader);
-            }
-        }
-
-        private static void ReportVulnerabilities(IntegrationId integrationId, SetCookieHeaderValue cookie)
-        {
-            var name = cookie.Name.ToString();
-            var value = cookie.Value.ToString();
-
-            // Insecure cookies with empty values are allowed
-            if (string.IsNullOrEmpty(value))
+            if (!headers.TryGetValue(HeaderNames.SetCookie, out var cookieHeaderValues))
             {
                 return;
             }
 
-            if (cookie.SameSite != Microsoft.Net.Http.Headers.SameSiteMode.Strict)
+            foreach (var cookieHeaderValue in cookieHeaderValues)
             {
-                IastModule.OnNoSamesiteCookie(integrationId, name);
-            }
-
-            if (!cookie.HttpOnly)
-            {
-                IastModule.OnNoHttpOnlyCookie(integrationId, name);
-            }
-
-            if (!cookie.Secure)
-            {
-                IastModule.OnInsecureCookie(integrationId, name);
+                AnalyzeCookie(cookieHeaderValue, integrationId);
             }
         }
-#endif
+        catch (Exception error)
+        {
+            Log.Error(error, $"{nameof(CookieAnalyzer)}.{nameof(AnalyzeCookies)}.netcore exception");
+        }
     }
+
+    private static void AnalyzeCookie(string cookieHeaderValue, IntegrationId integrationId)
+    {
+        if (!string.IsNullOrEmpty(cookieHeaderValue))
+        {
+            var cookieHeader = SetCookieHeaderValue.Parse(cookieHeaderValue);
+            ReportVulnerabilities(integrationId, cookieHeader);
+        }
+    }
+
+    private static void ReportVulnerabilities(IntegrationId integrationId, SetCookieHeaderValue cookie)
+    {
+        var name = cookie.Name.ToString();
+        var value = cookie.Value.ToString();
+
+        // Insecure cookies with empty values are allowed
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        if (cookie.SameSite != Microsoft.Net.Http.Headers.SameSiteMode.Strict)
+        {
+            IastModule.OnNoSamesiteCookie(integrationId, name);
+        }
+
+        if (!cookie.HttpOnly)
+        {
+            IastModule.OnNoHttpOnlyCookie(integrationId, name);
+        }
+
+        if (!cookie.Secure)
+        {
+            IastModule.OnInsecureCookie(integrationId, name);
+        }
+    }
+#endif
 }
