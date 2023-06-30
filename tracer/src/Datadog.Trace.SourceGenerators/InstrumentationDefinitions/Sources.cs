@@ -249,7 +249,7 @@ namespace Datadog.Trace.ClrProfiler
               .Append(@"""), ");
 
             var paramLengths = (definition.TargetParameterTypes?.Length ?? 0) + 1;
-            if (paramLengths > 8)
+            if (paramLengths > 9)
             {
                 sb.Append(@"NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray(new[] { """)
                   .Append(definition.TargetReturnType)

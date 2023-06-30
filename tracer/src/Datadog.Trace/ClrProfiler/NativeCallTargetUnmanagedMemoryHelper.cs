@@ -215,4 +215,29 @@ internal static class NativeCallTargetUnmanagedMemoryHelper
         Marshal.WriteIntPtr(unmanagedArray, 7 * SizeOfPointer, AllocateAndWriteUtf16String(arrayItem8));
         return unmanagedArray;
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static IntPtr AllocateAndWriteUtf16StringArray(
+        string arrayItem1,
+        string arrayItem2,
+        string arrayItem3,
+        string arrayItem4,
+        string arrayItem5,
+        string arrayItem6,
+        string arrayItem7,
+        string arrayItem8,
+        string arrayItem9)
+    {
+        var unmanagedArray = Allocate(9 * SizeOfPointer);
+        Marshal.WriteIntPtr(unmanagedArray, 0, AllocateAndWriteUtf16String(arrayItem1));
+        Marshal.WriteIntPtr(unmanagedArray, 1 * SizeOfPointer, AllocateAndWriteUtf16String(arrayItem2));
+        Marshal.WriteIntPtr(unmanagedArray, 2 * SizeOfPointer, AllocateAndWriteUtf16String(arrayItem3));
+        Marshal.WriteIntPtr(unmanagedArray, 3 * SizeOfPointer, AllocateAndWriteUtf16String(arrayItem4));
+        Marshal.WriteIntPtr(unmanagedArray, 4 * SizeOfPointer, AllocateAndWriteUtf16String(arrayItem5));
+        Marshal.WriteIntPtr(unmanagedArray, 5 * SizeOfPointer, AllocateAndWriteUtf16String(arrayItem6));
+        Marshal.WriteIntPtr(unmanagedArray, 6 * SizeOfPointer, AllocateAndWriteUtf16String(arrayItem7));
+        Marshal.WriteIntPtr(unmanagedArray, 7 * SizeOfPointer, AllocateAndWriteUtf16String(arrayItem8));
+        Marshal.WriteIntPtr(unmanagedArray, 8 * SizeOfPointer, AllocateAndWriteUtf16String(arrayItem9));
+        return unmanagedArray;
+    }
 }
