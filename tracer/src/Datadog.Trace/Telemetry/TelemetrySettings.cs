@@ -143,8 +143,14 @@ namespace Datadog.Trace.Telemetry
                                    .Value;
 
             var dependencyCollectionEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DependencyCollectionEnabled).AsBool(true);
-            // Currently disabled, will be flipped to true in later versions as part of the rollout
-            var v2Enabled = config.WithKeys(ConfigurationKeys.Telemetry.V2Enabled).AsBool(false);
+
+            // TODO: Remove when we rollout telemetry v2. As of now, it will be activated by default only in AAS.
+            // we already fetch this, so this will overwrite the telemetry.... no biggy as temporary
+            var isRunningInAzureAppService = config
+                                        .WithKeys(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)
+                                        .AsBool(false);
+
+            var v2Enabled = config.WithKeys(ConfigurationKeys.Telemetry.V2Enabled).AsBool(defaultValue: isRunningInAzureAppService);
 
             // For testing purposes only
             var debugEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DebugEnabled).AsBool(false);
@@ -154,7 +160,7 @@ namespace Datadog.Trace.Telemetry
             var metricsEnabled = config
                                 .WithKeys(ConfigurationKeys.Telemetry.MetricsEnabled)
                                 .AsBool(
-                                     defaultValue: false,
+                                     defaultValue: isRunningInAzureAppService,
                                      validator: enabled =>
                                      {
                                          if (v2Enabled || !enabled)
