@@ -59,7 +59,19 @@ namespace Datadog.Trace
                 telemetry: null,
                 discoveryService: null,
                 dataStreamsManager: null,
-                remoteConfigurationManager: null);
+                remoteConfigurationManager: null,
+                dynamicConfigurationManager: null);
+
+            if (previous?.Telemetry != tracer.Telemetry)
+            {
+                if (previous?.Telemetry is TelemetryControllerV2 oldV2 && tracer.Telemetry is TelemetryControllerV2 newV2)
+                {
+                    if (oldV2.AppStartedSent)
+                    {
+                        newV2.AppStartedSent = true;
+                    }
+                }
+            }
 
             if (previous?.Telemetry != tracer.Telemetry)
             {
@@ -105,7 +117,8 @@ namespace Datadog.Trace
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
             DataStreamsManager dataStreamsManager,
-            IRemoteConfigurationManager remoteConfigurationManager)
+            IRemoteConfigurationManager remoteConfigurationManager,
+            IDynamicConfigurationManager dynamicConfigurationManager)
         {
             settings ??= new ImmutableTracerSettings(TracerSettings.FromDefaultSourcesInternal(), true);
 
@@ -127,6 +140,10 @@ namespace Datadog.Trace
             if (runtimeMetricsEnabled)
             {
                 runtimeMetrics ??= new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService);
+            }
+            else
+            {
+                runtimeMetrics = null;
             }
 
             var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, scopeManager);
@@ -174,6 +191,8 @@ namespace Datadog.Trace
                 TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.Rcm, sw.ElapsedMilliseconds);
             }
 
+            dynamicConfigurationManager ??= new DynamicConfigurationManager(RcmSubscriptionManager.Instance);
+
             return CreateTracerManagerFrom(
                 settings,
                 agentWriter,
@@ -188,7 +207,8 @@ namespace Datadog.Trace
                 gitMetadataTagsProvider,
                 sampler,
                 GetSpanSampler(settings),
-                remoteConfigurationManager);
+                remoteConfigurationManager,
+                dynamicConfigurationManager);
         }
 
         protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager)
@@ -213,8 +233,9 @@ namespace Datadog.Trace
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
-            IRemoteConfigurationManager remoteConfigurationManager)
-            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager);
+            IRemoteConfigurationManager remoteConfigurationManager,
+            IDynamicConfigurationManager dynamicConfigurationManager)
+            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager);
 
         protected virtual ITraceSampler GetSampler(ImmutableTracerSettings settings)
         {

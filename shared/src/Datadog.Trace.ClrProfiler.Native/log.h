@@ -37,9 +37,9 @@ public:
         return Instance->IsDebugEnabled();
     }
 
-    static void EnableDebug()
+    static void EnableDebug(bool enable)
     {
-        Instance->EnableDebug();
+        Instance->EnableDebug(enable);
     }
 
     template <typename... Args>

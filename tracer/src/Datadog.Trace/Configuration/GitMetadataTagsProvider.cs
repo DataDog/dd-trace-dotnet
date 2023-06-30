@@ -1,4 +1,4 @@
-﻿ // <copyright file="GitMetadataTagsProvider.cs" company="Datadog">
+// <copyright file="GitMetadataTagsProvider.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,8 +6,10 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
+using Datadog.Trace.Util;
 
 #nullable enable
 
@@ -60,12 +62,14 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
                 !string.IsNullOrWhiteSpace(_immutableTracerSettings.GitRepositoryUrl))
             {
                 gitMetadata = _cachedGitTags = new GitMetadata(_immutableTracerSettings.GitCommitSha!, _immutableTracerSettings.GitRepositoryUrl!);
+                // For now, we do not need to call the profiler here. The profiler is able to get those information from the environment.
                 return true;
             }
 
             if (TryGetGitTagsFromSourceLink(out gitMetadata))
             {
                 _cachedGitTags = gitMetadata;
+                PropagateGitMetadataToTheProfiler(gitMetadata);
                 return true;
             }
 
@@ -77,6 +81,23 @@ internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
             Log.Error(e, "Error while extracting SourceLink information");
             gitMetadata = _cachedGitTags = GitMetadata.Empty;
             return true;
+        }
+    }
+
+    private void PropagateGitMetadataToTheProfiler(GitMetadata gitMetadata)
+    {
+        try
+        {
+            // Avoid P/Invoke if the profiler is not ready (for obvious reason)
+            // but also if both repository url and commit sha are empty
+            if (Profiler.Instance.Status.IsProfilerReady && !gitMetadata.IsEmpty)
+            {
+                NativeInterop.SetGitMetadata(RuntimeId.Get(), gitMetadata.RepositoryUrl, gitMetadata.CommitSha);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to share git metadata with the Continuous Profiler.");
         }
     }
 

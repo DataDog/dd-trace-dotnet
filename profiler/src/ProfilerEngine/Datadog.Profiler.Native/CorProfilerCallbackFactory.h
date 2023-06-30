@@ -5,6 +5,7 @@
 
 #include "unknwn.h"
 #include <atomic>
+#include <mutex>
 
 class CorProfilerCallbackFactory : public IClassFactory
 {
@@ -21,4 +22,5 @@ public:
 
 private:
     std::atomic<ULONG> _refCount{0};
+    static std::mutex _lock;
 };
