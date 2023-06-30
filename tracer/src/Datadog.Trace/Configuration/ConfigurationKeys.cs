@@ -631,9 +631,10 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Configuration key to enabling or disabling the collection of shell commands executions.
-            /// Default value is <c>false</c> (disabled).
+            /// Default value is <c>false</c> (disabled). Will change in the future to <c>true</c>
+            /// when an obfuscation mechanism will be implemented in the agent.
             /// </summary>
-            internal const string CommandsCollectionEnabled = "DD_COMMANDS_COLLECTION_ENABLED";
+            internal const string CommandsCollectionEnabled = "DD_TRACE_COMMANDS_COLLECTION_ENABLED";
         }
 
         internal static class Telemetry

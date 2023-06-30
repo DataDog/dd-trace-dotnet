@@ -74,12 +74,6 @@ namespace Datadog.Trace.Configuration
             /// Automatic tracking of user events mode. Values can be disabled, safe or extended.
             /// </summary>
             internal const string UserEventsAutomatedTracking = "DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING";
-
-            /// <summary>
-            /// Configuration key to enabling or disabling the collection of shell commands executions.
-            /// Default is value is false (disabled).
-            /// </summary>
-            internal const string EnableShellCollection = "DD_APPSEC_ENABLE_SHELL_COLLECTION";
         }
     }
 }

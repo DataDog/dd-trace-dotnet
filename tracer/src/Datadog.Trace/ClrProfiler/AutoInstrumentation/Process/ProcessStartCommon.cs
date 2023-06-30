@@ -101,10 +101,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                 }
                 else if (argumentList != null)
                 {
-                    foreach (var argument in argumentList)
-                    {
-                        commandLine += " " + argument;
-                    }
+                    commandLine += " " + string.Join(" ", argumentList);
                 }
 
                 // Truncate the command line if needed
