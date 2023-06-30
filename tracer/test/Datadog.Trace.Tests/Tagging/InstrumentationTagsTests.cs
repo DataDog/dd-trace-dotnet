@@ -246,7 +246,7 @@ namespace Datadog.Trace.Tests.Tagging
             tags.PeerServiceSource.Should().Be("db.instance");
         }
 
-[Fact]
+        [Fact]
         public void GrpcClientV1Tags_PeerService_PopulatesFromRpcService()
         {
             var service = "grpc-app";
