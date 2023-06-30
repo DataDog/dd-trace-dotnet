@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -18,7 +18,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: db.instance
+      _dd.peer.service.source: db.name
     },
     Metrics: {
       process_id: 0,
@@ -47,7 +47,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: db.instance
+      _dd.peer.service.source: db.name
     },
     Metrics: {
       process_id: 0,
@@ -76,7 +76,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: db.instance
+      _dd.peer.service.source: db.name
     },
     Metrics: {
       process_id: 0,
@@ -105,7 +105,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: db.instance
+      _dd.peer.service.source: db.name
     },
     Metrics: {
       process_id: 0,
@@ -135,7 +135,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: db.instance
+      _dd.peer.service.source: db.name
     },
     Metrics: {
       process_id: 0,
@@ -165,7 +165,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: db.instance
+      _dd.peer.service.source: db.name
     },
     Metrics: {
       process_id: 0,
@@ -195,7 +195,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: db.instance
+      _dd.peer.service.source: db.name
     },
     Metrics: {
       process_id: 0,
@@ -225,7 +225,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: db.instance
+      _dd.peer.service.source: db.name
     },
     Metrics: {
       process_id: 0,
@@ -253,7 +253,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -281,7 +281,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -309,7 +309,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -337,7 +337,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -366,7 +366,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: db.instance
+      _dd.peer.service.source: db.name
     },
     Metrics: {
       process_id: 0,
@@ -395,7 +395,7 @@
       span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0,
-      _dd.peer.service.source: db.instance
+      _dd.peer.service.source: db.name
     },
     Metrics: {
       process_id: 0,

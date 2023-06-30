@@ -31,9 +31,6 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.OutHost)]
         public string Host { get; set; }
 
-        [Tag(Trace.Tags.OutPort)]
-        public string Port { get; set; }
-
         public virtual void SetEndpoint(Uri endpoint)
         {
             Host = endpoint?.ToString();
@@ -43,6 +40,9 @@ namespace Datadog.Trace.Tagging
     internal partial class CosmosDbV1Tags : CosmosDbTags
     {
         private string _peerServiceOverride = null;
+
+        [Tag(Trace.Tags.OutPort)]
+        public string Port { get; set; }
 
         // Use a private setter for setting the "peer.service" tag so we avoid
         // accidentally setting the value ourselves and instead calculate the
@@ -64,8 +64,8 @@ namespace Datadog.Trace.Tagging
                 return _peerServiceOverride is not null
                         ? "peer.service"
                         : DatabaseId is not null
-                            ? "db.instance"
-                            : "network.destination.name";
+                            ? "db.name"
+                            : "out.host";
             }
         }
 

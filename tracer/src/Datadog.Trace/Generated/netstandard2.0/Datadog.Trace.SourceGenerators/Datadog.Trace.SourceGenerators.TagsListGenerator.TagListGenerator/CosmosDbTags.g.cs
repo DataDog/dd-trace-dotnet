@@ -45,12 +45,6 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] HostBytes = new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
 #endif
-        // PortBytes = MessagePack.Serialize("out.port");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> PortBytes => new byte[] { 168, 111, 117, 116, 46, 112, 111, 114, 116 };
-#else
-        private static readonly byte[] PortBytes = new byte[] { 168, 111, 117, 116, 46, 112, 111, 114, 116 };
-#endif
 
         public override string? GetTag(string key)
         {
@@ -62,7 +56,6 @@ namespace Datadog.Trace.Tagging
                 "cosmosdb.container" => ContainerId,
                 "db.name" => DatabaseId,
                 "out.host" => Host,
-                "out.port" => Port,
                 _ => base.GetTag(key),
             };
         }
@@ -79,9 +72,6 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "out.host": 
                     Host = value;
-                    break;
-                case "out.port": 
-                    Port = value;
                     break;
                 case "span.kind": 
                 case "component": 
@@ -124,11 +114,6 @@ namespace Datadog.Trace.Tagging
             if (Host is not null)
             {
                 processor.Process(new TagItem<string>("out.host", Host, HostBytes));
-            }
-
-            if (Port is not null)
-            {
-                processor.Process(new TagItem<string>("out.port", Port, PortBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -175,13 +160,6 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("out.host (tag):")
                   .Append(Host)
-                  .Append(',');
-            }
-
-            if (Port is not null)
-            {
-                sb.Append("out.port (tag):")
-                  .Append(Port)
                   .Append(',');
             }
 
