@@ -450,7 +450,10 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        internal static void SplitTraceStateValues(string header, out string? ddValues, out string? additionalValues)
+#if NETCOREAPP3_1_OR_GREATER
+        [SkipLocalsInit]
+#endif
+        internal static unsafe void SplitTraceStateValues(string header, out string? ddValues, out string? additionalValues)
         {
             // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
 
@@ -462,7 +465,7 @@ namespace Datadog.Trace.Propagators
             }
 
             header = header.Trim();
-            int ddStartIndex;
+            int ddStartIndex = 0;
 
             if (header.StartsWith("dd=", StringComparison.Ordinal))
             {
@@ -532,9 +535,21 @@ namespace Datadog.Trace.Propagators
                 var otherValuesLeft = header.Substring(0, ddStartIndex - 1);
                 var otherValuesRight = header.Substring(ddEndIndex + 1, header.Length - ddEndIndex - 1);
 
+#if NETCOREAPP3_1_OR_GREATER
+                var chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+                var sb = new Util.ValueStringBuilder(chars, StringBuilderCache.MaxBuilderSize);
+#else
                 var sb = StringBuilderCache.Acquire(otherValuesLeft.Length + otherValuesRight.Length + 1);
-                sb.Append(otherValuesLeft).Append(TraceStateHeaderValuesSeparator).Append(otherValuesRight);
+#endif
+                sb.Append(otherValuesLeft);
+                sb.Append(TraceStateHeaderValuesSeparator);
+                sb.Append(otherValuesRight);
+
+#if NETCOREAPP3_1_OR_GREATER
+                additionalValues = sb.ToString();
+#else
                 additionalValues = StringBuilderCache.GetStringAndRelease(sb);
+#endif
             }
         }
 
@@ -693,9 +708,25 @@ namespace Datadog.Trace.Propagators
                    _ => TrimAndJoinStringsRare(values),
                };
 
-        private static string TrimAndJoinStringsRare(IEnumerable<string?> values)
+#if NETCOREAPP3_1_OR_GREATER
+        [SkipLocalsInit]
+#endif
+        private static unsafe string TrimAndJoinStringsRare(IEnumerable<string?> values)
         {
-            static void AppendIfNotNullOrWhiteSpace(StringBuilder sb, string? value)
+#if NETCOREAPP3_1_OR_GREATER
+            static void AppendIfNotNullOrWhiteSpace(ref Util.ValueStringBuilder sb, string? value)
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    sb.Append(value!.Trim());
+                    sb.Append(TraceStateHeaderValuesSeparator);
+                }
+            }
+
+            var chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+            var sb = new Util.ValueStringBuilder(chars, StringBuilderCache.MaxBuilderSize);
+#else
+            static void AppendIfNotNullOrWhiteSpace(ref StringBuilder sb, string? value)
             {
                 if (!string.IsNullOrWhiteSpace(value))
                 {
@@ -704,6 +735,7 @@ namespace Datadog.Trace.Propagators
             }
 
             var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+#endif
 
             switch (values)
             {
@@ -711,7 +743,7 @@ namespace Datadog.Trace.Propagators
                     // converts into a `for` loop
                     foreach (var value in array)
                     {
-                        AppendIfNotNullOrWhiteSpace(sb, value);
+                        AppendIfNotNullOrWhiteSpace(ref sb, value);
                     }
 
                     break;
@@ -720,7 +752,7 @@ namespace Datadog.Trace.Propagators
                     // uses List<T>'s struct enumerator
                     foreach (var value in list)
                     {
-                        AppendIfNotNullOrWhiteSpace(sb, value);
+                        AppendIfNotNullOrWhiteSpace(ref sb, value);
                     }
 
                     break;
@@ -728,7 +760,7 @@ namespace Datadog.Trace.Propagators
                 default:
                     foreach (var value in values)
                     {
-                        AppendIfNotNullOrWhiteSpace(sb, value);
+                        AppendIfNotNullOrWhiteSpace(ref sb, value);
                     }
 
                     break;
@@ -736,7 +768,9 @@ namespace Datadog.Trace.Propagators
 
             if (sb.Length == 0)
             {
+#if !NETCOREAPP3_1_OR_GREATER
                 StringBuilderCache.GetStringAndRelease(sb);
+#endif
                 return string.Empty;
             }
 
@@ -746,7 +780,11 @@ namespace Datadog.Trace.Propagators
                 sb.Length--;
             }
 
+#if NETCOREAPP3_1_OR_GREATER
+            return sb.ToString();
+#else
             return StringBuilderCache.GetStringAndRelease(sb);
+#endif
         }
 
 #if NETCOREAPP

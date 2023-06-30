@@ -152,12 +152,17 @@ internal class LambdaHandler
         return type.IsNested ? type.Name : type.ToString();
     }
 
-    private static string GetGenericTypeArguments(Type type)
+    private static unsafe string GetGenericTypeArguments(Type type)
     {
         // This isn't ideal, as if we have nested type arguments we
         // Get the SB twice and concatenate but it avoids annoying
         // recursive complexity, and is an edge case, so I think it's fine
+#if NETCOREAPP3_1_OR_GREATER
+        var chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+        var sb = new Util.ValueStringBuilder(chars, StringBuilderCache.MaxBuilderSize);
+#else
         var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+#endif
 
         var doneFirst = false;
         foreach (var argument in type.GetGenericArguments())
@@ -174,6 +179,10 @@ internal class LambdaHandler
             sb.Append(GetParameterTypeFullName(argument));
         }
 
+#if NETCOREAPP3_1_OR_GREATER
+        return sb.ToString();
+#else
         return StringBuilderCache.GetStringAndRelease(sb);
+#endif
     }
 }

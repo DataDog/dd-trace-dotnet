@@ -6,6 +6,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Util;
 using Microsoft.AspNetCore.Routing;
@@ -15,7 +16,10 @@ namespace Datadog.Trace.DiagnosticListeners;
 
 internal class AspNetCoreResourceNameHelper
 {
-    internal static string SimplifyRoutePattern(
+#if NETCOREAPP3_1_OR_GREATER
+    [SkipLocalsInit]
+#endif
+    internal static unsafe string SimplifyRoutePattern(
         RoutePattern routePattern,
         RouteValueDictionary routeValueDictionary,
         string areaName,
@@ -23,6 +27,10 @@ internal class AspNetCoreResourceNameHelper
         string actionName,
         bool expandRouteParameters)
     {
+#if NETCOREAPP3_1_OR_GREATER
+        var chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+        var sb = new Util.ValueStringBuilder(chars, StringBuilderCache.MaxBuilderSize);
+#else
         var maxSize = routePattern.RawText.Length
                     + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
                     + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName.Length - 10, 0)) // "controller".Length
@@ -30,6 +38,7 @@ internal class AspNetCoreResourceNameHelper
                     + 1; // '/' prefix
 
         var sb = StringBuilderCache.Acquire(maxSize);
+#endif
 
         foreach (var pathSegment in routePattern.PathSegments)
         {
@@ -121,12 +130,19 @@ internal class AspNetCoreResourceNameHelper
             }
         }
 
+#if NETCOREAPP3_1_OR_GREATER
+        var simplifiedRoute = sb.ToString();
+#else
         var simplifiedRoute = StringBuilderCache.GetStringAndRelease(sb);
+#endif
 
         return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
     }
 
-    internal static string SimplifyRouteTemplate(
+#if NETCOREAPP3_1_OR_GREATER
+    [SkipLocalsInit]
+#endif
+    internal static unsafe string SimplifyRouteTemplate(
         RouteTemplate routePattern,
         RouteValueDictionary routeValueDictionary,
         string areaName,
@@ -134,6 +150,10 @@ internal class AspNetCoreResourceNameHelper
         string actionName,
         bool expandRouteParameters)
     {
+#if NETCOREAPP3_1_OR_GREATER
+        var chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+        var sb = new Util.ValueStringBuilder(chars, StringBuilderCache.MaxBuilderSize);
+#else
         var maxSize = routePattern.TemplateText.Length
                     + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
                     + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName.Length - 10, 0)) // "controller".Length
@@ -141,6 +161,7 @@ internal class AspNetCoreResourceNameHelper
                     + 1; // '/' prefix
 
         var sb = StringBuilderCache.Acquire(maxSize);
+#endif
 
         foreach (var pathSegment in routePattern.Segments)
         {
@@ -223,7 +244,11 @@ internal class AspNetCoreResourceNameHelper
             }
         }
 
+#if NETCOREAPP3_1_OR_GREATER
+        var simplifiedRoute = sb.ToString();
+#else
         var simplifiedRoute = StringBuilderCache.GetStringAndRelease(sb);
+#endif
 
         return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
     }

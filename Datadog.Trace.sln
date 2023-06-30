@@ -516,9 +516,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Security.AspNetCore
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Security.AspNetCore2", "tracer\test\test-applications\security\Samples.Security.AspNetCore2\Samples.Security.AspNetCore2.csproj", "{C5E7978A-DE2A-4944-86DB-4721A110E720}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.Trimming", "tracer\src\Datadog.Trace.Trimming\Datadog.Trace.Trimming.csproj", "{CEAC4ECE-1BFA-4C88-BED5-E4DE054D70A4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Trimming", "tracer\src\Datadog.Trace.Trimming\Datadog.Trace.Trimming.csproj", "{CEAC4ECE-1BFA-4C88-BED5-E4DE054D70A4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Trimming", "tracer\test\test-applications\integrations\Samples.Trimming\Samples.Trimming.csproj", "{289713D4-5259-4CC4-8CAA-DBF3BDCDCBC0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Trimming", "tracer\test\test-applications\integrations\Samples.Trimming\Samples.Trimming.csproj", "{289713D4-5259-4CC4-8CAA-DBF3BDCDCBC0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ActivitySampleHelper", "tracer\test\test-applications\integrations\dependency-libs\ActivitySampleHelper\ActivitySampleHelper.csproj", "{51AF3B29-D107-4E22-8A85-DF02A8A898E5}"
 EndProject

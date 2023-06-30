@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AerospikeCommon));
 
-        public static Scope CreateScope<TTarget>(Tracer tracer, TTarget target)
+        public static unsafe Scope CreateScope<TTarget>(Tracer tracer, TTarget target)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -49,7 +49,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
                 }
                 else if (target.TryDuckCast<HasKeys>(out var hasKeys))
                 {
-                    var sb = StringBuilderCache.Acquire(0);
+#if NETCOREAPP3_1_OR_GREATER
+                    var chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+                    var sb = new Util.ValueStringBuilder(chars, StringBuilderCache.MaxBuilderSize);
+#else
+                    var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+#endif
 
                     foreach (var obj in hasKeys.Keys)
                     {
@@ -63,7 +68,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
                         sb.Append(FormatKey(key));
                     }
 
+#if NETCOREAPP3_1_OR_GREATER
+                    tags.Key = sb.ToString();
+#else
                     tags.Key = StringBuilderCache.GetStringAndRelease(sb);
+#endif
                 }
                 else if (target.TryDuckCast<HasStatement>(out var hasStatement))
                 {

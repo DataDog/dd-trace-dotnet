@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ExtensionMethods
@@ -94,7 +95,10 @@ namespace Datadog.Trace.ExtensionMethods
         /// <param name="normalizePeriods">True if we replace dots by underscores</param>
         /// <param name="normalizedTagName">If the method returns true, the normalized tag name</param>
         /// <returns>Returns whether the conversion was successful</returns>
-        public static bool TryConvertToNormalizedTagName(this string value, bool normalizePeriods, out string normalizedTagName)
+#if NETCOREAPP3_1_OR_GREATER
+        [SkipLocalsInit]
+#endif
+        public static unsafe bool TryConvertToNormalizedTagName(this string value, bool normalizePeriods, out string normalizedTagName)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
@@ -109,7 +113,12 @@ namespace Datadog.Trace.ExtensionMethods
                 return false;
             }
 
+#if NETCOREAPP3_1_OR_GREATER
+            var chars = stackalloc char[StringBuilderCache.MaxBuilderSize];
+            var sb = new Util.ValueStringBuilder(chars, StringBuilderCache.MaxBuilderSize);
+#else
             var sb = StringBuilderCache.Acquire(trimmedValue.Length);
+#endif
             sb.Append(trimmedValue.ToLowerInvariant());
 
             for (var x = 0; x < sb.Length; x++)
@@ -126,7 +135,11 @@ namespace Datadog.Trace.ExtensionMethods
                 }
             }
 
+#if NETCOREAPP3_1_OR_GREATER
+            normalizedTagName = sb.ToString();
+#else
             normalizedTagName = StringBuilderCache.GetStringAndRelease(sb);
+#endif
             return true;
         }
     }
