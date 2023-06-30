@@ -37,31 +37,61 @@ namespace Datadog.Trace.ClrProfiler
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     internal struct NativeCallTargetDefinition
     {
-        public IntPtr TargetAssembly;
+        public readonly IntPtr TargetAssembly;
 
-        public IntPtr TargetType;
+        public readonly IntPtr TargetType;
 
-        public IntPtr TargetMethod;
+        public readonly IntPtr TargetMethod;
 
-        public IntPtr TargetSignatureTypes;
+        public readonly IntPtr TargetSignatureTypes;
 
-        public ushort TargetSignatureTypesLength;
+        public readonly ushort TargetSignatureTypesLength;
 
-        public ushort TargetMinimumMajor;
+        public readonly ushort TargetMinimumMajor;
 
-        public ushort TargetMinimumMinor;
+        public readonly ushort TargetMinimumMinor;
 
-        public ushort TargetMinimumPatch;
+        public readonly ushort TargetMinimumPatch;
 
-        public ushort TargetMaximumMajor;
+        public readonly ushort TargetMaximumMajor;
 
-        public ushort TargetMaximumMinor;
+        public readonly ushort TargetMaximumMinor;
 
-        public ushort TargetMaximumPatch;
+        public readonly ushort TargetMaximumPatch;
 
-        public IntPtr IntegrationAssembly;
+        public readonly IntPtr IntegrationAssembly;
 
-        public IntPtr IntegrationType;
+        public readonly IntPtr IntegrationType;
+
+        public NativeCallTargetDefinition(
+            IntPtr targetAssembly,
+            IntPtr targetType,
+            IntPtr targetMethod,
+            IntPtr targetSignatureTypes,
+            ushort targetSignatureTypesLength,
+            ushort targetMinimumMajor,
+            ushort targetMinimumMinor,
+            ushort targetMinimumPatch,
+            ushort targetMaximumMajor,
+            ushort targetMaximumMinor,
+            ushort targetMaximumPatch,
+            IntPtr integrationAssembly,
+            IntPtr integrationType)
+        {
+            TargetAssembly = targetAssembly;
+            TargetType = targetType;
+            TargetMethod = targetMethod;
+            TargetSignatureTypes = targetSignatureTypes;
+            TargetSignatureTypesLength = targetSignatureTypesLength;
+            TargetMinimumMajor = targetMinimumMajor;
+            TargetMinimumMinor = targetMinimumMinor;
+            TargetMinimumPatch = targetMinimumPatch;
+            TargetMaximumMajor = targetMaximumMajor;
+            TargetMaximumMinor = targetMaximumMinor;
+            TargetMaximumPatch = targetMaximumPatch;
+            IntegrationAssembly = integrationAssembly;
+            IntegrationType = integrationType;
+        }
 
         public NativeCallTargetDefinition(
                 string targetAssembly,
@@ -77,21 +107,10 @@ namespace Datadog.Trace.ClrProfiler
                 string integrationAssembly,
                 string integrationType)
         {
-            TargetAssembly = UnmanagedMemorySegment.AllocateAndWriteUtf16String(targetAssembly);
-            TargetType = UnmanagedMemorySegment.AllocateAndWriteUtf16String(targetType);
-            TargetMethod = UnmanagedMemorySegment.AllocateAndWriteUtf16String(targetMethod);
-            TargetSignatureTypes = IntPtr.Zero;
-            if (targetSignatureTypes?.Length > 0)
-            {
-                TargetSignatureTypes = UnmanagedMemorySegment.Allocate(targetSignatureTypes.Length * UnmanagedMemorySegment.SizeOfPointer);
-                var ptr = TargetSignatureTypes;
-                for (var i = 0; i < targetSignatureTypes.Length; i++)
-                {
-                    Marshal.WriteIntPtr(ptr, UnmanagedMemorySegment.AllocateAndWriteUtf16String(targetSignatureTypes[i]));
-                    ptr += UnmanagedMemorySegment.SizeOfPointer;
-                }
-            }
-
+            TargetAssembly = NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(targetAssembly);
+            TargetType = NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(targetType);
+            TargetMethod = NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(targetMethod);
+            TargetSignatureTypes = NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray(targetSignatureTypes);
             TargetSignatureTypesLength = (ushort)(targetSignatureTypes?.Length ?? 0);
             TargetMinimumMajor = targetMinimumMajor;
             TargetMinimumMinor = targetMinimumMinor;
@@ -99,8 +118,8 @@ namespace Datadog.Trace.ClrProfiler
             TargetMaximumMajor = targetMaximumMajor;
             TargetMaximumMinor = targetMaximumMinor;
             TargetMaximumPatch = targetMaximumPatch;
-            IntegrationAssembly = UnmanagedMemorySegment.AllocateAndWriteUtf16String(integrationAssembly);
-            IntegrationType = UnmanagedMemorySegment.AllocateAndWriteUtf16String(integrationType);
+            IntegrationAssembly = NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(integrationAssembly);
+            IntegrationType = NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(integrationType);
         }
     }
 }

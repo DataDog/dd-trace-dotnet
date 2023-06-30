@@ -240,30 +240,56 @@ namespace Datadog.Trace.ClrProfiler
 
             sb.Append(
                @"
-                new (""")
+                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(""")
               .Append(definition.AssemblyName)
-              .Append(@""", """)
+              .Append(@"""), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(""")
               .Append(definition.TargetTypeName)
-              .Append(@""", """)
+              .Append(@"""), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(""")
               .Append(definition.TargetMethodName)
-              .Append(@""",  new[] { """)
-              .Append(definition.TargetReturnType)
-              .Append(@"""");
+              .Append(@"""), ");
 
-            if (definition.TargetParameterTypes is { Length: > 0 } types)
+            var paramLengths = (definition.TargetParameterTypes?.Length ?? 0) + 1;
+            if (paramLengths > 8)
             {
-                foreach (var parameterType in types)
+                sb.Append(@"NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray(new[] { """)
+                  .Append(definition.TargetReturnType)
+                  .Append(@"""");
+
+                foreach (var parameterType in definition.TargetParameterTypes!)
                 {
                     sb.Append(@", """)
                       .Append(parameterType)
                       .Append('"');
                 }
+
+                sb.Append(" }), ")
+                  .Append(paramLengths)
+                  .Append(", ");
+            }
+            else
+            {
+                sb.Append(@"NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray(""")
+                  .Append(definition.TargetReturnType)
+                  .Append(@"""");
+
+                if (definition.TargetParameterTypes is { Length: > 0 } types)
+                {
+                    foreach (var parameterType in types)
+                    {
+                        sb.Append(@", """)
+                          .Append(parameterType)
+                          .Append('"');
+                    }
+                }
+
+                sb.Append("), ")
+                  .Append(paramLengths)
+                  .Append(", ");
             }
 
             var min = definition.MinimumVersion;
             var max = definition.MaximumVersion;
-            sb.Append(" }, ")
-              .Append(min.Major)
+            sb.Append(min.Major)
               .Append(", ")
               .Append(min.Minor)
               .Append(", ")
@@ -275,10 +301,10 @@ namespace Datadog.Trace.ClrProfiler
               .Append(", ")
               .Append(max.Patch);
 
-            sb.Append(@", assemblyFullName, """)
+            sb.Append(@", NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(""")
               .Append(definition.InstrumentationTypeName)
-              .Append(@""",")
-              .Append($"{definition.IntegrationKind},")
+              .Append(@"""), ")
+              .Append($"{definition.IntegrationKind}, ")
               .Append($"{(int)definition.InstrumentationCategory}),");
             return integrationName;
         }
