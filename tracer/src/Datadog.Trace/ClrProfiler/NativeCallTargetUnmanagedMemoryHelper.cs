@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler;
 
 internal static class NativeCallTargetUnmanagedMemoryHelper
 {
-    private const int SizeOfMemorySegment = 1 * 1024 * 1024;
+    private const int SizeOfMemorySegment = 750 * 1024; // 750Kb
     private static readonly int SizeOfPointer = Marshal.SizeOf(typeof(IntPtr));
     private static readonly List<IntPtr> Segments;
     private static IntPtr _currentSegment;
