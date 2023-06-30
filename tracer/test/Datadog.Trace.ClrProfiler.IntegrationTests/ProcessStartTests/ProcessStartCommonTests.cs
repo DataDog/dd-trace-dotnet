@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             if (collectCommands)
             {
-                SetEnvironmentVariable("DD_COMMANDS_COLLECTION_ENABLED", "true");
+                SetEnvironmentVariable("DD_TRACE_COMMANDS_COLLECTION_ENABLED", "true");
             }
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);

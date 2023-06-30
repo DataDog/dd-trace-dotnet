@@ -12,7 +12,7 @@ namespace Samples.ProcessStart
         {
             Environment.SetEnvironmentVariable("PATH", "testPath");
 
-            if (Environment.GetEnvironmentVariable("DD_COMMANDS_COLLECTION_ENABLED") == "true")
+            if (Environment.GetEnvironmentVariable("DD_TRACE_COMMANDS_COLLECTION_ENABLED") == "true")
             {
                 ProcessStartCollectionTests();
             }

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Text;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -113,38 +114,51 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             else
             {
                 // cmd.exec
-                var commandExec = new List<string> { filename };
+
+                // Truncate filename if needed
+                filename = Truncate(filename, MaxCommandLineLength, out var truncated);
+                var maxCommandLineLength = MaxCommandLineLength - filename.Length;
+
+                Collection<string> finalCommandExec = null;
+
                 if (!string.IsNullOrWhiteSpace(arguments))
                 {
-                    // Arguments are provided in a raw strings, we need to lex them
-                    var split = SplitStringIntoArguments(arguments);
-                    commandExec.AddRange(split);
+                    if (!truncated)
+                    {
+                        // Arguments are provided in a raw strings, we need to lex them
+                        finalCommandExec = SplitStringIntoArguments(arguments, maxCommandLineLength, out truncated);
+                    }
+                    else
+                    {
+                        finalCommandExec = new Collection<string>();
+                    }
+
+                    finalCommandExec.Insert(0, filename);
                 }
                 else if (argumentList is not null)
                 {
                     // Arguments are provided as a list of strings
+                    var commandExec = new List<string> { filename };
                     commandExec.AddRange(argumentList);
-                }
 
-                // The cumulated size of the strings in the array shall not exceed 4kB
-                var size = MaxCommandLineLength;
-                var truncated = false;
-                var finalCommandExec = new Collection<string>();
-                foreach (var arg in commandExec)
-                {
-                    if (truncated)
+                    // The cumulated size of the strings in the array shall not exceed 4kB
+                    finalCommandExec = new Collection<string>();
+                    foreach (var arg in commandExec)
                     {
-                        finalCommandExec.Add(string.Empty);
-                        continue;
-                    }
+                        if (truncated)
+                        {
+                            finalCommandExec.Add(string.Empty);
+                            continue;
+                        }
 
-                    var truncatedArg = Truncate(arg, MaxCommandLineLength, out truncated);
-                    finalCommandExec.Add(truncatedArg);
-                    size -= truncatedArg.Length;
+                        var truncatedArg = Truncate(arg, maxCommandLineLength, out truncated);
+                        finalCommandExec.Add(truncatedArg);
+                        maxCommandLineLength -= truncatedArg.Length;
 
-                    if (size <= 0)
-                    {
-                        truncated = true;
+                        if (maxCommandLineLength <= 0)
+                        {
+                            truncated = true;
+                        }
                     }
                 }
 
@@ -168,19 +182,46 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             return value.Substring(0, maxLength);
         }
 
-        private static List<string> SplitStringIntoArguments(string input)
+        private static Collection<string> SplitStringIntoArguments(string input, int maxLength, out bool truncated)
         {
-            var result = new List<string>();
-            var currentArgument = string.Empty;
+            var result = new Collection<string>();
+            var currentArgument = new StringBuilder();
             var inSingleQuotes = false;
             var inDoubleQuotes = false;
             var escapeNextCharacter = false;
+            var currentLength = 0;
+            truncated = false;
+
+            bool AddArgument(string argument)
+            {
+                // Check if the max length is reached when we add the argument
+                // Split the argument if needed to not exceed the max length
+                // Return true if the max length is reached and the argument is truncated
+                var argumentLength = argument.Length;
+                if (currentLength + argumentLength > maxLength)
+                {
+                    var nbrCharToKeep = maxLength - currentLength;
+                    if (nbrCharToKeep <= 0)
+                    {
+                        return true;
+                    }
+
+                    var truncatedArgument = argument.Substring(0, nbrCharToKeep);
+                    result.Add(truncatedArgument);
+                    currentLength += truncatedArgument.Length;
+                    return true;
+                }
+
+                result.Add(argument);
+                currentLength += argumentLength;
+                return false;
+            }
 
             foreach (var currentChar in input)
             {
                 if (escapeNextCharacter)
                 {
-                    currentArgument += currentChar;
+                    currentArgument.Append(currentChar);
                     escapeNextCharacter = false;
                 }
                 else if (currentChar == '\\')
@@ -192,8 +233,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                     inDoubleQuotes = !inDoubleQuotes;
                     if (!inDoubleQuotes)
                     {
-                        result.Add(currentArgument);
-                        currentArgument = string.Empty;
+                        if (AddArgument(currentArgument.ToString()))
+                        {
+                            truncated = true;
+                            return result;
+                        }
+
+                        currentArgument.Clear();
                     }
                 }
                 else if (currentChar == '\'' && !inDoubleQuotes)
@@ -201,28 +247,38 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                     inSingleQuotes = !inSingleQuotes;
                     if (!inSingleQuotes)
                     {
-                        result.Add(currentArgument);
-                        currentArgument = string.Empty;
+                        if (AddArgument(currentArgument.ToString()))
+                        {
+                            truncated = true;
+                            return result;
+                        }
+
+                        currentArgument.Clear();
                     }
                 }
                 else if (currentChar == ' ' && !inSingleQuotes && !inDoubleQuotes)
                 {
                     if (currentArgument.Length > 0)
                     {
-                        result.Add(currentArgument);
-                        currentArgument = string.Empty;
+                        if (AddArgument(currentArgument.ToString()))
+                        {
+                            truncated = true;
+                            return result;
+                        }
+
+                        currentArgument.Clear();
                     }
                 }
                 else
                 {
-                    currentArgument += currentChar;
+                    currentArgument.Append(currentChar);
                 }
             }
 
             // Add the last argument if it's not empty
             if (currentArgument.Length > 0)
             {
-                result.Add(currentArgument);
+                result.Add(currentArgument.ToString());
             }
 
             return result;
