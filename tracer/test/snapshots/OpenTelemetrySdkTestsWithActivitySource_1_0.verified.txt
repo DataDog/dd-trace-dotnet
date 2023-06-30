@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -151,11 +151,18 @@
     Service: MyServiceName,
     Type: custom,
     ParentId: Id_2,
+    Error: 1,
     Tags: {
       env: integration_tests,
+      error.msg: Example argument exception,
+      error.stack:
+System.ArgumentException: Example argument exception
+at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
+      error.type: ArgumentException,
       language: dotnet,
       otel.library.name: MyServiceName,
-      otel.status_code: STATUS_CODE_UNSET,
+      otel.status_code: STATUS_CODE_ERROR,
+      otel.status_description: Example argument exception,
       otel.trace_id: Guid_1,
       service.instance.id: Guid_3,
       service.name: MyServiceName,
