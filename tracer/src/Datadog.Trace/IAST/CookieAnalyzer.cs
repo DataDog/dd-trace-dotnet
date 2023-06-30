@@ -70,9 +70,7 @@ internal static class CookieAnalyzer
             IastModule.OnInsecureCookie(integrationId, name);
         }
     }
-#endif
-
-#if !NETFRAMEWORK
+#else
     // Extract the cookie information of a request from a IHeaderDictionary
     public static void AnalyzeCookies(IHeaderDictionary headers, IntegrationId integrationId)
     {
