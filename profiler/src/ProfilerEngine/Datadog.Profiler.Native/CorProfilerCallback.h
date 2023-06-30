@@ -181,6 +181,11 @@ public:
         return _this;
     }
 
+    std::string const& GetRuntimeDescription()
+    {
+        return _runtimeDescription;
+    }
+
     IClrLifetime* GetClrLifetime() const;
 
 // Access to global services
@@ -196,6 +201,7 @@ public:
 
 private :
     static CorProfilerCallback* _this;
+    std::string _runtimeDescription;
     std::unique_ptr<IClrLifetime> _pClrLifetime = nullptr;
 
     std::atomic<ULONG> _refCount{0};
@@ -247,10 +253,10 @@ private:
     static void ConfigureDebugLog();
     static void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk, uint16_t& runtimeMajor, uint16_t& runtimeMinor);
     static void InspectProcessorInfo();
-    static void InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor, COR_PRF_RUNTIME_TYPE& runtimeType);
     static const char* SysInfoProcessorArchitectureToStr(WORD wProcArch);
     static void PrintEnvironmentVariables();
 
+    void InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor, COR_PRF_RUNTIME_TYPE& runtimeType);
     void DisposeInternal();
     bool InitializeServices();
     bool DisposeServices();
