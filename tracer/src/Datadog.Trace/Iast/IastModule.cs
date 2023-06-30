@@ -6,16 +6,13 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Process;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Iast.SensitiveData;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.Iast;
 
@@ -107,6 +104,24 @@ internal static class IastModule
         }
     }
 
+    public static Scope? OnInsecureCookie(IntegrationId integrationId, string cookieName)
+    {
+        // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
+        return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.InsecureCookie, (VulnerabilityTypeName.InsecureCookie.ToString() + ":" + cookieName).GetStaticHashCode());
+    }
+
+    public static Scope? OnNoHttpOnlyCookie(IntegrationId integrationId, string cookieName)
+    {
+        // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
+        return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoHttpOnlyCookie, (VulnerabilityTypeName.NoHttpOnlyCookie.ToString() + ":" + cookieName).GetStaticHashCode());
+    }
+
+    public static Scope? OnNoSamesiteCookie(IntegrationId integrationId, string cookieName)
+    {
+        // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
+        return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoSameSiteCookie, (VulnerabilityTypeName.NoSameSiteCookie.ToString() + ":" + cookieName).GetStaticHashCode());
+    }
+
     public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId)
     {
         var algorithm = type.BaseType?.Name;
@@ -147,6 +162,49 @@ internal static class IastModule
         return new VulnerabilityBatch(EvidenceRedactorLazy.Value);
     }
 
+    // This method adds web vulnerabilities, with no location, only on web environments
+    private static Scope? AddWebVulnerability(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, int hashId)
+    {
+        var tracer = Tracer.Instance;
+        if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
+        {
+            // integration disabled, don't create a scope, skip this span
+            return null;
+        }
+
+        var currentSpan = (tracer.ActiveScope as Scope)?.Span;
+        var traceContext = currentSpan?.Context?.TraceContext;
+
+        if (traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
+        {
+            // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
+            // not activated for this particular request
+            return null;
+        }
+
+        var vulnerability = new Vulnerability(
+            vulnerabilityType,
+            hashId,
+            new Evidence(evidenceValue, null),
+            integrationId);
+
+        if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
+        {
+            traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
+            return null;
+        }
+
+        return null;
+    }
+
+    public static bool AddRequestVulnerabilitiesAllowed()
+    {
+        var currentSpan = (Tracer.Instance.ActiveScope as Scope)?.Span;
+        var traceContext = currentSpan?.Context?.TraceContext;
+        var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
+        return isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() == true;
+    }
+
     private static Scope? GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, bool taintedFromEvidenceRequired = false)
     {
         var tracer = Tracer.Instance;
@@ -166,6 +224,13 @@ internal static class IastModule
             return null;
         }
 
+        if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
+        {
+            // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
+            // not activated for this particular request
+            return null;
+        }
+
         TaintedObject? tainted = null;
         if (taintedFromEvidenceRequired)
         {
@@ -174,13 +239,6 @@ internal static class IastModule
             {
                 return null;
             }
-        }
-
-        if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
-        {
-            // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
-            // not activated for this particular request
-            return null;
         }
 
         var frameInfo = StackWalker.GetFrame();
