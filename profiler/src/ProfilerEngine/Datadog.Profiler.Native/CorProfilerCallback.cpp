@@ -764,20 +764,25 @@ void CorProfilerCallback::InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerI
     if (FAILED(hr))
     {
         Log::Info("Initializing the Profiler: Exact runtime version could not be obtained (0x", std::hex, hr, std::dec, ")");
+        CorProfilerCallback::_runtimeDescription = "Unknown version of the .NET runtime";
     }
     else
     {
-        Log::Info("Initializing the Profiler: Reported runtime version : { clrInstanceId: ", clrInstanceId,
-                  ", runtimeType:",
-                  ((runtimeType == COR_PRF_DESKTOP_CLR) ? "DESKTOP_CLR"
-                   : (runtimeType == COR_PRF_CORE_CLR)
-                       ? "CORE_CLR"
-                       : (std::string("unknown(") + std::to_string(runtimeType) + std::string(")"))),
-                  ", majorVersion: ", major,
-                  ", minorVersion: ", minor,
-                  ", buildNumber: ", buildNumber,
-                  ", qfeVersion: ", qfeVersion,
-                  " }.");
+        std::stringstream buffer;
+        buffer << "{ "
+               << "clrInstanceId:" << clrInstanceId
+               << ", runtimeType:" <<
+                    ((runtimeType == COR_PRF_DESKTOP_CLR) ? "DESKTOP_CLR" :
+                    (runtimeType == COR_PRF_CORE_CLR) ? "CORE_CLR" :
+                    (std::string("unknown(") + std::to_string(runtimeType) + std::string(")")))
+                << ", majorVersion: " << major
+                << ", minorVersion: " << minor
+                << ", buildNumber: " << buildNumber
+                << ", qfeVersion: " << qfeVersion
+                << " }";
+
+        CorProfilerCallback::_runtimeDescription = buffer.str();
+        Log::Info("Initializing the Profiler: Reported runtime version :", CorProfilerCallback::_runtimeDescription);
     }
 }
 

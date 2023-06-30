@@ -6,6 +6,9 @@
 #include "CorProfilerCallbackFactory.h"
 #include "CorProfilerCallback.h"
 
+std::mutex CorProfilerCallbackFactory::_lock;
+
+
 CorProfilerCallbackFactory::~CorProfilerCallbackFactory()
 {
 }
@@ -68,6 +71,19 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallbackFactory::CreateInstance(IUnknown* p
     {
         *ppvObject = nullptr;
         return CLASS_E_NOAGGREGATION;
+    }
+
+    // the scenario where different CLRs are loaded in the same process is not supported
+    std::lock_guard<std::mutex> lock(CorProfilerCallbackFactory::_lock);
+
+    auto currentProfiler = CorProfilerCallback::GetInstance();
+    if (currentProfiler != nullptr)
+    {
+        Log::Error(
+            "Impossible to initialize the Profiler a second time. The following runtime is already loaded: ",
+            currentProfiler->GetRuntimeDescription());
+
+        return E_INVALIDARG;
     }
 
     CorProfilerCallback* profiler = new (std::nothrow) CorProfilerCallback();
