@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Net;
 using System.Web;
+using Microsoft.Ajax.Utilities;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -100,6 +101,29 @@ namespace Samples.Security.AspNetCore5.Controllers
             // we test two different ways of obtaining a cookie
             var argumentValue = Request.Cookies["argumentLine"].Values[0];
             return ExecuteCommandInternal(Request.Cookies["file"].Value, argumentValue);
+        }
+
+        [Route("GetDirectoryContent")]
+        public ActionResult GetDirectoryContent(string directory)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    var result = System.IO.Directory.GetFiles(directory);
+                    var resultfiles = string.Empty;
+                    result.ForEach(x => resultfiles += x.ToString() + Environment.NewLine);
+                    return Content($"directory content: " + resultfiles);
+                }
+                else
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, $"No directory was provided");
+                }
+            }
+            catch
+            {
+                return Content("The provided directory could not be opened");
+            }
         }
 
         [Route("GetFileContent")]

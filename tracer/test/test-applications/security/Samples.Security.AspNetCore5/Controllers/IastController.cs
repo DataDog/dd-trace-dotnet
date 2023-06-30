@@ -215,6 +215,30 @@ namespace Samples.Security.AspNetCore5.Controllers
             return ExecuteCommandInternal(Request.Cookies["file"], Request.Cookies["argumentLine"]);
         }
 
+        [HttpGet("GetDirectoryContent")]
+        [Route("GetDirectoryContent")]
+        public IActionResult GetDirectoryContent(string directory)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    var result = System.IO.Directory.GetFiles(directory);
+                    var resultfiles = string.Empty;
+                    Array.ForEach(result, x => resultfiles += x.ToString() + Environment.NewLine);
+                    return Content($"directory content: " + resultfiles);
+                }
+                else
+                {
+                    return BadRequest($"No directory was provided");
+                }
+            }
+            catch
+            {
+                return Content("The provided directory could not be opened");
+            }
+        }
+
         [HttpGet("GetFileContent")]
         [Route("GetFileContent")]
         public IActionResult GetFileContent(string file)
