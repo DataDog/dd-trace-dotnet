@@ -373,5 +373,71 @@ namespace Datadog.Trace.Tests.Tagging
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");
         }
+
+        [Fact]
+        public void CosmosDbV1Tags_PeerService_PopulatesFromOutHost()
+        {
+            var host = "localhost";
+            var tags = new CosmosDbV1Tags();
+
+            tags.Host = host;
+
+            tags.PeerService.Should().Be(host);
+            tags.PeerServiceSource.Should().Be("out.host");
+        }
+
+        [Fact]
+        public void CosmosDbV1Tags_PeerService_PopulatesFromDbName()
+        {
+            var databaseName = "database";
+            var tags = new CosmosDbV1Tags();
+
+            tags.DatabaseId = databaseName;
+
+            tags.PeerService.Should().Be(databaseName);
+            tags.PeerServiceSource.Should().Be("db.name");
+        }
+
+        [Fact]
+        public void CosmosDbV1Tags_PeerService_PopulatesFromCustom()
+        {
+            var customService = "client-service";
+            var tags = new CosmosDbV1Tags();
+
+            tags.SetTag("peer.service", customService);
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void CosmosDbV1Tags_PeerService_CustomTakesPrecedenceOverRest()
+        {
+            var customService = "client-service";
+            var host = "localhost";
+            var databaseName = "database";
+            var tags = new CosmosDbV1Tags();
+
+            tags.SetTag("peer.service", customService);
+            tags.DatabaseId = databaseName;
+            tags.Host = host;
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void CosmosDbV1Tags_PeerService_DbNameTakesPrecedenceOverOutHost()
+        {
+            var host = "localhost";
+            var databaseName = "database";
+            var tags = new CosmosDbV1Tags();
+
+            tags.DatabaseId = databaseName;
+            tags.Host = host;
+
+            tags.PeerService.Should().Be(databaseName);
+            tags.PeerServiceSource.Should().Be("db.name");
+        }
     }
 }
