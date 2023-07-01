@@ -33,19 +33,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
             string containerId = null;
             string databaseId = null;
             Uri endpoint = null;
-            if (instance.TryDuckCast<ContainerNewStruct>(out var containerNew))
+
+            if (instance.TryDuckCast<ContainerStruct>(out var container))
             {
-                containerId = containerNew.Id;
-                var database = containerNew.Database;
-                databaseId = database.Id;
-                endpoint = database.Client.Endpoint;
-            }
-            else if (instance.TryDuckCast<ContainerOldStruct>(out var containerOld))
-            {
-                containerId = containerOld.Id;
-                var database = containerOld.Database;
-                databaseId = database.Id;
-                endpoint = database.ClientContext.Client.Endpoint;
+                containerId = container.Id;
+                if (container.Database.TryDuckCast<DatabaseNewStruct>(out var databaseNew))
+                {
+                    databaseId = databaseNew.Id;
+                    endpoint = databaseNew.Client.Endpoint;
+                }
+                else if (container.Database.TryDuckCast<DatabaseOldStruct>(out var databaseOld))
+                {
+                    databaseId = databaseOld.Id;
+                    endpoint = databaseOld.ClientContext.Client.Endpoint;
+                }
             }
 
             return CreateCosmosDbCallState(instance, queryDefinition, containerId, databaseId, endpoint);
