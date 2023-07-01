@@ -8,13 +8,13 @@
 
 using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Reflection;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Iast;
 using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
@@ -40,6 +40,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
     MaximumVersion = "7.*.*.*",
     IntegrationName = IntegrationName,
     InstrumentationCategory = InstrumentationCategory.AppSec)]
+[InstrumentMethod(
+    AssemblyName = "Microsoft.AspNetCore.Server.Kestrel.Core",
+    TypeName = "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol",
+    MethodName = "FireOnStarting",
+    ReturnTypeName = ClrNames.Task,
+    MinimumVersion = "2.0.0.0",
+    MaximumVersion = "7.*.*.*",
+    IntegrationName = IntegrationName,
+    InstrumentationCategory = InstrumentationCategory.Iast)]
+[InstrumentMethod(
+    AssemblyName = "Microsoft.AspNetCore.Server.IIS",
+    TypeName = "Microsoft.AspNetCore.Server.IIS.Core.IISHttpContext",
+    MethodName = "FireOnStarting",
+    ReturnTypeName = ClrNames.Task,
+    MinimumVersion = "2.0.0.0",
+    MaximumVersion = "7.*.*.*",
+    IntegrationName = IntegrationName,
+    InstrumentationCategory = InstrumentationCategory.Iast)]
 
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
@@ -60,16 +78,26 @@ public static class FireOnStartCommon
     public static CallTargetReturn<TResponseContext> OnMethodEnd<TTarget, TResponseContext>(TTarget instance, TResponseContext responseContext, Exception exception, in CallTargetState state)
     {
         var security = Security.Instance;
-        if (security.Enabled)
+        var iastEnabled = Iast.Iast.Instance.Settings.Enabled;
+
+        if (security.Enabled || iastEnabled)
         {
             var responseHeaders = instance.DuckCast<HttpProtocolStruct>().ResponseHeaders;
             if (responseHeaders is not null)
             {
-                var span = Tracer.Instance.InternalActiveScope?.Root?.Span;
-
-                if (span is not null)
+                if (security.Enabled)
                 {
-                    SecurityCoordinatorHelpers.CheckReturnedHeaders(security, span, responseHeaders);
+                    var span = Tracer.Instance.InternalActiveScope?.Root?.Span;
+
+                    if (span is not null)
+                    {
+                        SecurityCoordinatorHelpers.CheckReturnedHeaders(security, span, responseHeaders);
+                    }
+                }
+
+                if (iastEnabled && IastModule.AddRequestVulnerabilitiesAllowed())
+                {
+                    CookieAnalyzer.AnalyzeCookies(responseHeaders, IntegrationId.AspNetCore);
                 }
             }
         }

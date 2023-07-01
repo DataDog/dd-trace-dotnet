@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
             {
                 return _peerServiceOverride is not null
                         ? "peer.service"
-                        : "network.destination.name";
+                        : "out.host";
             }
         }
     }

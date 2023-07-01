@@ -41,7 +41,7 @@ public:
 
     static void EnableDebug()
     {
-        Instance->EnableDebug();
+        Instance->EnableDebug(true);
     }
 
     template <typename... Args>

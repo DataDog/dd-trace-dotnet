@@ -90,7 +90,7 @@ namespace Datadog.Trace.Tagging
                         ? "peer.service"
                         : MethodService is not null
                             ? "rpc.service"
-                            : "network.destination.name";
+                            : "out.host";
             }
         }
     }

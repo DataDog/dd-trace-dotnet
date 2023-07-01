@@ -40,14 +40,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
                 if (container.Database.TryDuckCast<DatabaseNewStruct>(out var databaseNew))
                 {
                     databaseId = databaseNew.Id;
-                    var client = databaseNew.Client;
-                    endpoint = client.Endpoint;
+                    endpoint = databaseNew.Client.Endpoint;
                 }
                 else if (container.Database.TryDuckCast<DatabaseOldStruct>(out var databaseOld))
                 {
                     databaseId = databaseOld.Id;
-                    var client = databaseOld.ClientContext.Client;
-                    endpoint = client.Endpoint;
+                    endpoint = databaseOld.ClientContext.Client.Endpoint;
                 }
             }
 

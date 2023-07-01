@@ -241,7 +241,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
                                                         bool enqueueInSameThread)
 {
     std::vector<MethodIdentifier> rejitRequests {};
-    const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests);
+    const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests, false);
     RequestRejit(rejitRequests, enqueueInSameThread);
     return rejitCount;
 }
@@ -252,7 +252,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRevertForLoadedModules(
     bool enqueueInSameThread)
 {
     std::vector<MethodIdentifier> rejitRequests{};
-    const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests);
+    const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests, true);
     RequestRevert(rejitRequests, enqueueInSameThread);
     return rejitCount;
 }
@@ -466,7 +466,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRevertForLoadedMod
 template <class RejitRequestDefinition>
 ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
     const std::vector<ModuleID>& modules, const std::vector<RejitRequestDefinition>& definitions,
-    std::vector<MethodIdentifier>& rejitRequests)
+    std::vector<MethodIdentifier>& rejitRequests, bool isRevert)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -493,6 +493,19 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
             const auto target_method = GetTargetMethod(definition);
             const auto is_derived = GetIsDerived(definition);
             const auto is_interface = GetIsInterface(definition);
+            const auto is_enabled = GetIsEnabled(definition);
+
+            if (SupportsSelectiveEnablement())
+            {
+                if (!isRevert && !is_enabled)
+                {
+                    continue; // Disabled calltarget
+                }
+                else if (isRevert && is_enabled)
+                {
+                    continue; // Enabled calltarget
+                }
+            }
 
             if (is_derived || is_interface)
             {
@@ -787,7 +800,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueuePreprocessRejitRequests(c
                                     localPromise = promise]() mutable {
 
         // Process modules for rejit
-        const auto rejitCount = PreprocessRejitRequests(modules, definitions, localRejitRequests);
+        const auto rejitCount = PreprocessRejitRequests(modules, definitions, localRejitRequests, true);
 
         // Resolve promise
         if (localPromise != nullptr)
@@ -827,6 +840,17 @@ const bool TracerRejitPreprocessor::GetIsExactSignatureMatch(const IntegrationDe
 {
     return integrationDefinition.is_exact_signature_match;
 }
+
+const bool TracerRejitPreprocessor::GetIsEnabled(const IntegrationDefinition& integrationDefinition)
+{
+    return integrationDefinition.GetEnabled();
+}
+
+const bool TracerRejitPreprocessor::SupportsSelectiveEnablement()
+{
+    return true;
+}
+
 
 const std::unique_ptr<RejitHandlerModuleMethod> TracerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module,
                                                 const FunctionInfo& functionInfo,

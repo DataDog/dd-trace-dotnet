@@ -61,9 +61,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingBothWays,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -184,9 +185,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingFromClient,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -309,9 +311,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -436,9 +439,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -563,9 +567,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -690,9 +695,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -821,9 +827,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -948,9 +955,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -1075,9 +1083,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -1202,9 +1211,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -1331,9 +1341,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingFromServer,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -1454,9 +1465,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/Unary,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -1577,9 +1589,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/Unary,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -1700,9 +1713,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/VerySlow,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -1825,9 +1839,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/VerySlow,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {

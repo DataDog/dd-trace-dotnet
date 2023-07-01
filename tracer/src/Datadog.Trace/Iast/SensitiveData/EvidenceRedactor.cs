@@ -103,6 +103,12 @@ internal class EvidenceRedactor
             sensitive = tokenizer.GetTokens(vulnerability.Evidence.Value!, vulnerability.GetIntegrationId());
         }
 
+        // We can skip new vulnerabilities creeation for vulnerability types without redaction
+        if (sensitive == null)
+        {
+            return vulnerability;
+        }
+
         return new Vulnerability(vulnerability.Type, vulnerability.Location, new Evidence(vulnerability.Evidence.Value!, vulnerability.Evidence.Ranges, sensitive?.ToArray()), vulnerability.GetIntegrationId());
     }
 }

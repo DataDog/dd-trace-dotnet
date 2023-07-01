@@ -79,9 +79,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -98,9 +99,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -117,9 +119,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -136,9 +139,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -155,9 +159,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -812,9 +817,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -831,9 +837,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -850,9 +857,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -869,9 +877,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -888,9 +897,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {

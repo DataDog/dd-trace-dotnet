@@ -5,6 +5,7 @@
 
 #if NETFRAMEWORK
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
@@ -79,6 +80,25 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
                  + (classicMode ? ".Classic" : ".Integrated")
                  + ".enableIast=" + enableIast;
         SetHttpPort(iisFixture.HttpPort);
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/SafeCookie")]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/AllVulnerabilitiesCookie")]
+    public async Task TestIastInsecureCookieRequest(string test, string url)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing(false);
+        var sanitisedPath = VerifyHelper.SanitisePathsForVerify(url);
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName($"{_testName}.path={sanitisedPath}")
+                          .DisableRequireUniquePrefix();
     }
 
     [Trait("Category", "EndToEnd")]

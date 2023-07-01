@@ -16,12 +16,16 @@ namespace Datadog.Trace.Security.IntegrationTests.IAST
         private static readonly Regex NetworkClientIp = new(@"["" ""]*network.client.ip: .*,(\r|\n){1,2}");
         private static readonly Regex HashRegex = new(@"(\S)*""hash"": (-){0,1}([0-9]){1,12},(\r|\n){1,2}      ");
 
-        public static VerifySettings AddIastScrubbing(this VerifySettings settings)
+        public static VerifySettings AddIastScrubbing(this VerifySettings settings, bool scrubHash = true)
         {
             settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
             settings.AddRegexScrubber(ClientIp, string.Empty);
             settings.AddRegexScrubber(NetworkClientIp, string.Empty);
-            settings.AddRegexScrubber(HashRegex, string.Empty);
+
+            if (scrubHash)
+            {
+                settings.AddRegexScrubber(HashRegex, string.Empty);
+            }
 
             return settings;
         }

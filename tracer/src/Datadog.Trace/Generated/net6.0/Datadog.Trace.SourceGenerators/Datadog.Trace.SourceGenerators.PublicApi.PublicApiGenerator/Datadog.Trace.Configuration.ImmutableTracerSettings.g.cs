@@ -2,7 +2,7 @@
 #nullable enable
 
 namespace Datadog.Trace.Configuration;
-partial class ImmutableTracerSettings
+partial record ImmutableTracerSettings
 {
 
         /// <summary>

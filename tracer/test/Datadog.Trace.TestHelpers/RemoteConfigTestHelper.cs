@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -60,6 +61,42 @@ namespace Datadog.Trace.TestHelpers
                     // prefer a request that has been processed, meaning the config states have been filled in
                     request = JsonConvert.DeserializeObject<GetRcmRequest>(lastRemoteConfigPayload);
                     if (request.Matches(response))
+                    {
+                        return request;
+                    }
+                }
+            }
+
+            // eventually return a request that might be null or has no config states
+            return request;
+        }
+
+        internal static async Task<GetRcmRequest> WaitForAcknowledgment(this MockTracerAgent agent, string product, int timeoutInMilliseconds = WaitForAcknowledgmentTimeout)
+        {
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
+
+            GetRcmRequest request = null;
+            while (DateTime.UtcNow < deadline)
+            {
+                while (agent.RemoteConfigRequests.IsEmpty && DateTime.UtcNow < deadline)
+                {
+                    await Task.Delay(200);
+                }
+
+                string lastRemoteConfigPayload = null;
+                while (agent.RemoteConfigRequests.TryDequeue(out var next))
+                {
+                    lastRemoteConfigPayload = next;
+                }
+
+                if (lastRemoteConfigPayload != null)
+                {
+                    // prefer a request that has been processed, meaning the config states have been filled in
+                    request = JsonConvert.DeserializeObject<GetRcmRequest>(lastRemoteConfigPayload);
+
+                    var configState = request.Client.State.ConfigStates.SingleOrDefault(s => s.Product == product);
+
+                    if (configState != null && configState.ApplyState != ApplyStates.UNACKNOWLEDGED)
                     {
                         return request;
                     }

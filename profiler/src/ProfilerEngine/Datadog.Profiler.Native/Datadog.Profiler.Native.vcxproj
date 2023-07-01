@@ -340,7 +340,6 @@
     <ClCompile Include="AllocationsProvider.cpp" />
     <ClCompile Include="AllocationsRecorder.cpp" />
     <ClCompile Include="AppDomainStore.cpp" />
-    <ClCompile Include="ApplicationInfo.cpp" />
     <ClCompile Include="ApplicationStore.cpp" />
     <ClCompile Include="ClrEventsParser.cpp" />
     <ClCompile Include="cgroup.cpp" />
