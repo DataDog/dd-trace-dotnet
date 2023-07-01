@@ -167,6 +167,72 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Fact]
+        public void CouchbaseV1Tags_PeerService_PopulatesFromSeedNodes()
+        {
+            var nodes = "node1:port1,node2:port2";
+            var tags = new CouchbaseV1Tags();
+
+            tags.SeedNodes = nodes;
+
+            tags.PeerService.Should().Be(nodes);
+            tags.PeerServiceSource.Should().Be("db.couchbase.seed.nodes");
+        }
+
+        [Fact]
+        public void CouchbaseV1Tags_PeerService_PopulatesFromDestinationHost()
+        {
+            var hostName = "host";
+            var tags = new CouchbaseV1Tags();
+
+            tags.Host = hostName;
+
+            tags.PeerService.Should().Be(hostName);
+            tags.PeerServiceSource.Should().Be("out.host");
+        }
+
+        [Fact]
+        public void CouchbaseV1Tags_PeerService_PopulatesFromCustom()
+        {
+            var customService = "client-service";
+            var tags = new CouchbaseV1Tags();
+
+            tags.SetTag("peer.service", customService);
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void CouchbaseV1Tags_PeerService_CustomTakesPrecedence()
+        {
+            var nodes = "node1:port1,node2:port2";
+            var hostName = "host";
+            var customService = "client-service";
+            var tags = new CouchbaseV1Tags();
+
+            tags.SetTag("peer.service", customService);
+            tags.SeedNodes = nodes;
+            tags.Host = hostName;
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void CouchbaseV1Tags_PeerService_SeedNodesTakesPrecedenceOverOutHost()
+        {
+            var nodes = "node1:port1,node2:port2";
+            var hostName = "host";
+            var tags = new CouchbaseV1Tags();
+
+            tags.SeedNodes = nodes;
+            tags.Host = hostName;
+
+            tags.PeerService.Should().Be(nodes);
+            tags.PeerServiceSource.Should().Be("db.couchbase.seed.nodes");
+        }
+
+        [Fact]
         public void MongoDbV1Tags_PeerService_PopulatesFromDbName()
         {
             var databaseName = "database";

@@ -1,6 +1,6 @@
 ﻿{
   "profiles": {
-    "Samples.Couchbase": {
+    "Samples.Couchbase3": {
       "commandName": "Project",
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "1",

@@ -79,6 +79,21 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
         [Theory]
         [MemberData(nameof(GetAllConfigs))]
+        public void CreateCouchbaseTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var expectedType = schemaVersion switch
+            {
+                SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(CouchbaseTags),
+                _ => typeof(CouchbaseV1Tags),
+            };
+
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            namingSchema.Database.CreateCouchbaseTags().Should().BeOfType(expectedType);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
         public void CreateElasticsearchTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally

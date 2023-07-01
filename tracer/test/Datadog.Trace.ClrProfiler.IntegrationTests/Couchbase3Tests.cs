@@ -60,6 +60,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 // this is a random id
                 settings.AddRegexScrubber(new Regex(@"couchbase.operation.key: {.*},"), "couchbase.operation.key: obfuscated,");
+                // normalise between running directly against localhost and against couchbase container
+                settings.AddSimpleScrubber("db.couchbase.seed.nodes: localhost", "db.couchbase.seed.nodes: couchbase");
+                settings.AddSimpleScrubber("out.host: localhost", "out.host: couchbase");
+                settings.AddSimpleScrubber("peer.service: localhost", "peer.service: couchbase");
 
                 // theres' a fair amount less in 3.0.7 - fewer spans, different terminology etc
 
