@@ -439,5 +439,43 @@ namespace Datadog.Trace.Tests.Tagging
             tags.PeerService.Should().Be(databaseName);
             tags.PeerServiceSource.Should().Be("db.name");
         }
+
+        [Fact]
+        public void AerospikeV1Tags_PeerService_PopulatesFromOutHost()
+        {
+            var ns = "ns1";
+            var tags = new AerospikeV1Tags();
+
+            tags.Namespace = ns;
+
+            tags.PeerService.Should().Be(ns);
+            tags.PeerServiceSource.Should().Be("aerospike.namespace");
+        }
+
+        [Fact]
+        public void AerospikeV1Tags_PeerService_PopulatesFromCustom()
+        {
+            var customService = "client-service";
+            var tags = new AerospikeV1Tags();
+
+            tags.SetTag("peer.service", customService);
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void AerospikeV1Tags_PeerService_CustomTakesPrecedenceOverRest()
+        {
+            var customService = "client-service";
+            var ns = "ns1";
+            var tags = new AerospikeV1Tags();
+
+            tags.SetTag("peer.service", customService);
+            tags.Namespace = ns;
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
     }
 }

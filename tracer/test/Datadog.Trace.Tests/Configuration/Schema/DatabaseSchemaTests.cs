@@ -151,5 +151,20 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
             namingSchema.Database.CreateCosmosDbTags().Should().BeOfType(expectedType);
         }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void CreateAerospikeTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var expectedType = schemaVersion switch
+            {
+                SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(AerospikeTags),
+                _ => typeof(AerospikeV1Tags),
+            };
+
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            namingSchema.Database.CreateAerospikeTags().Should().BeOfType(expectedType);
+        }
     }
 }
