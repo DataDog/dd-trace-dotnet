@@ -66,8 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         internal static CallTargetState OnMethodBegin<TTarget, TOperation, TCancellationToken>(TTarget instance, TOperation operation, TCancellationToken cancellationToken)
             where TTarget : IClusterNode
         {
-            var normalizedSeedNodes = CouchbaseCommon.GetNormalizedSeedNodesFromConnectionString(instance.Context.ClusterOptions.ConnectionStringValue);
-            return CouchbaseCommon.CommonOnMethodBeginV3(operation, normalizedSeedNodes);
+            return CouchbaseCommon.CommonOnMethodBeginV3(operation, instance);
         }
 
         /// <summary>

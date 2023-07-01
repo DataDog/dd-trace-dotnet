@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CouchbaseCommon));
         private static readonly ConditionalWeakTable<object, string> ClientSourceToNormalizedSeedNodesMap = new();
 
-        internal static CallTargetState CommonOnMethodBeginV3<TOperation>(TOperation tOperation, string normalizedSeedNodes)
+        internal static CallTargetState CommonOnMethodBeginV3<TOperation>(TOperation tOperation, IClusterNode clusterNode)
         {
             var tracer = Tracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
@@ -44,9 +44,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
                 return CallTargetState.GetDefault();
             }
 
+            var normalizedSeedNodes = GetNormalizedSeedNodesFromConnectionString(clusterNode.Context.ClusterOptions.ConnectionStringValue);
             var operation = tOperation.DuckCast<OperationStructV3>();
 
-            CouchbaseTags tags = tracer.CurrentTraceSettings.Schema.Database.CreateCouchbaseTags();
+            var tags = tracer.CurrentTraceSettings.Schema.Database.CreateCouchbaseTags();
             tags.OperationCode = operation.OpCode.ToString();
             tags.Bucket = operation.BucketName;
             tags.Key = operation.Key;
