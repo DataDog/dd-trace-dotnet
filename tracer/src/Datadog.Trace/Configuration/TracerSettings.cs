@@ -163,6 +163,8 @@ namespace Datadog.Trace.Configuration
                .WithKeys(ConfigurationKeys.RemoveClientServiceNamesEnabled)
                .AsBool(defaultValue: false);
 
+            PeerServiceNameMappings = InitializeServiceNameMappings(config, ConfigurationKeys.PeerServiceNameMappings);
+
             MetadataSchemaVersion = config
                                    .WithKeys(ConfigurationKeys.MetadataSchemaVersion)
                                    .GetAs(
@@ -745,6 +747,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         [IgnoreForSnapshot] // Changes are recorded in SetServiceNameMappings
         internal IDictionary<string, string>? ServiceNameMappings { get; private set; }
+
+        /// <summary>
+        /// Gets configuration values for changing peer service names based on configuration
+        /// </summary>
+        [IgnoreForSnapshot] // Changes are recorded in SetServiceNameMappings
+        internal IDictionary<string, string>? PeerServiceNameMappings { get; private set; }
 
         /// <summary>
         /// Gets a value indicating the size in bytes of the trace buffer

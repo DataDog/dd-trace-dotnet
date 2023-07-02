@@ -15,6 +15,12 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] PeerServiceBytes = new byte[] { 172, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101 };
 #endif
+        // PeerServiceRemappedFromBytes = MessagePack.Serialize("peer.service.remapped_from");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> PeerServiceRemappedFromBytes => new byte[] { 186, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101, 46, 114, 101, 109, 97, 112, 112, 101, 100, 95, 102, 114, 111, 109 };
+#else
+        private static readonly byte[] PeerServiceRemappedFromBytes = new byte[] { 186, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101, 46, 114, 101, 109, 97, 112, 112, 101, 100, 95, 102, 114, 111, 109 };
+#endif
         // PeerServiceSourceBytes = MessagePack.Serialize("_dd.peer.service.source");
 #if NETCOREAPP
         private static ReadOnlySpan<byte> PeerServiceSourceBytes => new byte[] { 183, 95, 100, 100, 46, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101, 46, 115, 111, 117, 114, 99, 101 };
@@ -27,6 +33,7 @@ namespace Datadog.Trace.Tagging
             return key switch
             {
                 "peer.service" => PeerService,
+                "peer.service.remapped_from" => PeerServiceRemappedFrom,
                 "_dd.peer.service.source" => PeerServiceSource,
                 _ => base.GetTag(key),
             };
@@ -39,6 +46,7 @@ namespace Datadog.Trace.Tagging
                 case "peer.service": 
                     PeerService = value;
                     break;
+                case "peer.service.remapped_from": 
                 case "_dd.peer.service.source": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(GrpcClientV1Tags));
                     break;
@@ -55,6 +63,11 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("peer.service", PeerService, PeerServiceBytes));
             }
 
+            if (PeerServiceRemappedFrom is not null)
+            {
+                processor.Process(new TagItem<string>("peer.service.remapped_from", PeerServiceRemappedFrom, PeerServiceRemappedFromBytes));
+            }
+
             if (PeerServiceSource is not null)
             {
                 processor.Process(new TagItem<string>("_dd.peer.service.source", PeerServiceSource, PeerServiceSourceBytes));
@@ -69,6 +82,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("peer.service (tag):")
                   .Append(PeerService)
+                  .Append(',');
+            }
+
+            if (PeerServiceRemappedFrom is not null)
+            {
+                sb.Append("peer.service.remapped_from (tag):")
+                  .Append(PeerServiceRemappedFrom)
                   .Append(',');
             }
 

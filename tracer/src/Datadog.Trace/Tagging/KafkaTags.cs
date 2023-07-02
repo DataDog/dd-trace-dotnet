@@ -82,14 +82,20 @@ namespace Datadog.Trace.Tagging
             private set => _peerServiceOverride = value;
         }
 
+        [Tag(Trace.Tags.PeerServiceRemappedFrom)]
+        public string PeerServiceRemappedFrom
+        {
+            get => _peerServiceOverride is null ? null : BootstrapServers;
+        }
+
         [Tag(Trace.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get
             {
                 return _peerServiceOverride is not null
-                        ? "peer.service"
-                        : Trace.Tags.KafkaBootstrapServers;
+                           ? "peer.service"
+                           : Trace.Tags.KafkaBootstrapServers;
             }
         }
     }
