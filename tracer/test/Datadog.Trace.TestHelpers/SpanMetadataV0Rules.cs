@@ -179,6 +179,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "couchbase.query")
                 .Matches(Type, "db"))
             .Tags(s => s
+                .IsPresent("db.couchbase.seed.nodes")
                 .IsOptional("couchbase.operation.bucket")
                 .IsPresent("couchbase.operation.code")
                 .IsPresent("couchbase.operation.key")
@@ -265,9 +266,10 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("component")
                 .Matches("span.kind", "client"));
 
-        public static Result IsKafkaV0(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsKafkaInboundV0(this MockSpan span) => Result.FromSpan(span)
+            .WithMarkdownSection("Kafka - Inbound")
             .Properties(s => s
-                .MatchesOneOf(Name, "kafka.consume", "kafka.produce")
+                .Matches(Name, "kafka.consume")
                 .Matches(Type, "queue"))
             .Metrics(s => s
                 .IsPresent("_dd.measured")
@@ -279,7 +281,24 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("kafka.tombstone")
                 .IsPresent("messaging.kafka.bootstrap.servers")
                 .Matches("component", "kafka")
-                .IsPresent("span.kind"));
+                .Matches("span.kind", "consumer"));
+
+        public static Result IsKafkaOutboundV0(this MockSpan span) => Result.FromSpan(span)
+            .WithMarkdownSection("Kafka - Outbound")
+            .Properties(s => s
+                .Matches(Name, "kafka.produce")
+                .Matches(Type, "queue"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured")
+                .IsOptional("message.queue_time_ms"))
+            .Tags(s => s
+                .IsOptional("kafka.group")
+                .IsOptional("kafka.offset")
+                .IsOptional("kafka.partition")
+                .IsOptional("kafka.tombstone")
+                .IsPresent("messaging.kafka.bootstrap.servers")
+                .Matches("component", "kafka")
+                .Matches("span.kind", "producer"));
 
         public static Result IsMongoDbV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s

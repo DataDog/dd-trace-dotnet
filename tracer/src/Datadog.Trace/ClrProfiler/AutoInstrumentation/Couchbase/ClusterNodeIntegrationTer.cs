@@ -44,8 +44,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         /// <typeparam name="TOperation">Type of the operation</typeparam>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TOperation>(TTarget instance, TOperation operation)
+            where TTarget : IClusterNode
         {
-            return CouchbaseCommon.CommonOnMethodBeginV3(operation);
+            return CouchbaseCommon.CommonOnMethodBeginV3(operation, instance);
         }
 
         /// <summary>
