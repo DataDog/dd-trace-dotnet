@@ -77,6 +77,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string metadataSchemaVersion,
             bool traceId128Enabled)
         {
+            if (EnvironmentHelper.IsCoreClr() && EnvironmentHelper.GetTargetFramework() == "netcoreapp2.1")
+            {
+                throw new SkipException("This test is flaky on netcoreapp 2.1");
+            }
+
             SetInstrumentationVerification();
             ConfigureInstrumentation(instrumentation, socketsHandlerEnabled);
             SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING", queryStringCaptureEnabled ? "true" : "false");
@@ -179,6 +184,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(IntegrationConfig))]
         public void TracingDisabled_DoesNotSubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
         {
+            if (EnvironmentHelper.IsCoreClr() && EnvironmentHelper.GetTargetFramework() == "netcoreapp2.1")
+            {
+                throw new SkipException("This test is flaky on netcoreapp 2.1");
+            }
+
             SetInstrumentationVerification();
             ConfigureInstrumentation(instrumentation, enableSocketsHandler);
 
