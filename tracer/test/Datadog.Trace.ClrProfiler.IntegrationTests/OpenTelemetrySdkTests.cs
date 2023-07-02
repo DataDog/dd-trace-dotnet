@@ -158,7 +158,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 #endif
 
-            return string.Empty; // default is >= 1.2.0
+            // New tags added in v1.5.1
+            if (!string.IsNullOrEmpty(packageVersion)
+            && new Version(packageVersion) <= new Version("1.5.0"))
+            {
+                return "up_to_1_5_0";
+            }
+
+            return string.Empty;
         }
     }
 }
