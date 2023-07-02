@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -46,6 +47,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             "telemetry.sdk.language",
             "telemetry.sdk.version"
         };
+
+        private readonly Regex _versionRegex = new(@"telemetry.sdk.version: (0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)");
 
         public OpenTelemetrySdkTests(ITestOutputHelper output)
             : base("OpenTelemetrySdk", output)
@@ -88,6 +91,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var filename = nameof(OpenTelemetrySdkTests) + GetSuffix(packageVersion);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
+                settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(filename)
                                   .DisableRequireUniquePrefix();
@@ -121,6 +125,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var filename = nameof(OpenTelemetrySdkTests) + "WithActivitySource" + GetSuffix(packageVersion);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
+                settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(filename)
                                   .DisableRequireUniquePrefix();
@@ -162,7 +167,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (!string.IsNullOrEmpty(packageVersion)
             && new Version(packageVersion) <= new Version("1.5.0"))
             {
-                return "up_to_1_5_0";
+                return "_up_to_1_5_0";
             }
 
             return string.Empty;

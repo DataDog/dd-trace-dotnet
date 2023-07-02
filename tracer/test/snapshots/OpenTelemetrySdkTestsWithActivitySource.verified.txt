@@ -29,7 +29,7 @@
       span.kind: internal,
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: 1.5.1,
+      telemetry.sdk.version: sdk-version,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -63,7 +63,7 @@
       span.kind: internal,
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: 1.5.1
+      telemetry.sdk.version: sdk-version
     }
   },
   {
@@ -86,7 +86,7 @@
       span.kind: internal,
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: 1.5.1
+      telemetry.sdk.version: sdk-version
     }
   },
   {
@@ -109,7 +109,7 @@
       span.kind: internal,
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: 1.5.1
+      telemetry.sdk.version: sdk-version
     }
   },
   {
@@ -132,7 +132,7 @@
       span.kind: internal,
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: 1.5.1
+      telemetry.sdk.version: sdk-version
     }
   },
   {
@@ -158,7 +158,7 @@
       span.kind: internal,
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: 1.5.1
+      telemetry.sdk.version: sdk-version
     }
   },
   {
@@ -188,7 +188,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       span.kind: internal,
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: 1.5.1
+      telemetry.sdk.version: sdk-version
     }
   },
   {
@@ -212,7 +212,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       span.kind: internal,
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: 1.5.1
+      telemetry.sdk.version: sdk-version
     }
   },
   {
@@ -235,7 +235,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       span.kind: internal,
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: 1.5.1
+      telemetry.sdk.version: sdk-version
     }
   },
   {
@@ -258,7 +258,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       span.kind: internal,
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: 1.5.1,
+      telemetry.sdk.version: sdk-version,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -290,7 +290,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       span.kind: internal,
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: 1.5.1,
+      telemetry.sdk.version: sdk-version,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -322,7 +322,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       span.kind: internal,
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: 1.5.1,
+      telemetry.sdk.version: sdk-version,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
