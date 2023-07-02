@@ -15,7 +15,7 @@ namespace Samples.AzureFunctions.AllTriggers
     public class AllTriggers
     {
         private const string AtMidnightOnFirstJan = "0 0 0 1 Jan *";
-        private static readonly HttpClient HttpClient = new(); 
+        private static readonly HttpClient HttpClient = new();
 
         [FunctionName("TriggerAllTimer")]
         public async Task TriggerAllTimer([TimerTrigger(AtMidnightOnFirstJan, RunOnStartup = true)] TimerInfo myTimer, ILogger log)
@@ -31,8 +31,8 @@ namespace Samples.AzureFunctions.AllTriggers
         [FunctionName("ExitApp")]
         public async Task ExitApp([TimerTrigger(AtMidnightOnFirstJan, RunOnStartup = true)] TimerInfo myTimer, ILogger log)
         {
-            log.LogInformation($"Pausing for 10s");
-            await Task.Delay(10_000);
+            log.LogInformation($"Pausing for 30s");
+            await Task.Delay(30_000);
             log.LogInformation($"Calling Environment.Exit");
             Environment.Exit(0);
         }
@@ -87,7 +87,7 @@ namespace Samples.AzureFunctions.AllTriggers
 
             return new BadRequestResult();
         }
-        
+
         [FunctionName("TriggerCaller")]
         public async Task<IActionResult> Trigger(
                 [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "trigger")] HttpRequest req,
