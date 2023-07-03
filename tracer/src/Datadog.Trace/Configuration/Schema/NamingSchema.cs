@@ -61,6 +61,7 @@ namespace Datadog.Trace.Configuration.Schema
 
             if (_peerServiceNameMappings.TryGetValue(peerService, out var mappedServiceName))
             {
+                tags.SetTag(Tags.PeerServiceRemappedFrom, peerService);
                 tags.SetTag(Tags.PeerService, mappedServiceName);
             }
         }

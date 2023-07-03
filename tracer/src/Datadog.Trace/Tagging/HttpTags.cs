@@ -50,12 +50,6 @@ namespace Datadog.Trace.Tagging
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceRemappedFrom)]
-        public string PeerServiceRemappedFrom
-        {
-            get => _peerServiceOverride is null ? null : Host;
-        }
-
         [Tag(Trace.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {

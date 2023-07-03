@@ -516,7 +516,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets configuration values for changing service names based on configuration
         /// </summary>
-        internal IReadOnlyDictionary<string, string> PeerServiceNameMappings => _serviceNameMappings;
+        internal IReadOnlyDictionary<string, string> PeerServiceNameMappings => _peerServiceNameMappings;
 
         /// <summary>
         /// Gets a value indicating whether to remove the service names when using the v0 schema.
