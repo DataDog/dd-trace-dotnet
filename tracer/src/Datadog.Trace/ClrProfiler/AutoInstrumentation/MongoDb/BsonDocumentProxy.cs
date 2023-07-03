@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.ExtensionMethods;
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
     /// <summary>
@@ -26,9 +24,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         /// Returns a string representation of the document.
         /// </summary>
         /// <returns>String representation of the document.</returns>
-        public override string ToString()
+        public string ToString(object target)
         {
-            return this.ToJson(GetType());
+            return target.ToJson(target.GetType());
         }
     }
 }
