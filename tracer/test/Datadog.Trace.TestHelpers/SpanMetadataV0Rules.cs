@@ -179,6 +179,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "couchbase.query")
                 .Matches(Type, "db"))
             .Tags(s => s
+                .IsPresent("db.couchbase.seed.nodes")
                 .IsOptional("couchbase.operation.bucket")
                 .IsPresent("couchbase.operation.code")
                 .IsPresent("couchbase.operation.key")
