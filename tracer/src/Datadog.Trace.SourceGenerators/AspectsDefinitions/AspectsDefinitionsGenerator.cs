@@ -142,6 +142,7 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
             }
         }
 
+        results.Sort();
         return results;
     }
 
