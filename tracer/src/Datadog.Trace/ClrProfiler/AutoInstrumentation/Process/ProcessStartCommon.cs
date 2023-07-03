@@ -100,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                 {
                     commandLine += " " + arguments;
                 }
-                else if (argumentList != null)
+                else if (argumentList != null && argumentList.Count > 0)
                 {
                     commandLine += " " + string.Join(" ", argumentList);
                 }
@@ -119,7 +119,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                 filename = Truncate(filename, MaxCommandLineLength, out var truncated);
                 var maxCommandLineLength = MaxCommandLineLength - filename.Length;
 
-                Collection<string> finalCommandExec = null;
+                var finalCommandExec = new Collection<string> { filename };
 
                 if (!string.IsNullOrWhiteSpace(arguments))
                 {
@@ -133,17 +133,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                         finalCommandExec = new Collection<string>();
                     }
 
+                    // Add the filename at the beginning of the array
+                    // (re-add it because the original collection was overwritten)
                     finalCommandExec.Insert(0, filename);
                 }
-                else if (argumentList is not null)
+                else if (argumentList is not null && argumentList.Count > 0)
                 {
-                    // Arguments are provided as a list of strings
-                    var commandExec = new List<string> { filename };
-                    commandExec.AddRange(argumentList);
-
                     // The cumulated size of the strings in the array shall not exceed 4kB
-                    finalCommandExec = new Collection<string>();
-                    foreach (var arg in commandExec)
+                    foreach (var arg in argumentList)
                     {
                         if (truncated)
                         {
@@ -192,7 +189,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             var currentLength = 0;
             truncated = false;
 
-            bool AddArgument(string argument)
+            bool AddArgument(StringBuilder argument)
             {
                 // Check if the max length is reached when we add the argument
                 // Split the argument if needed to not exceed the max length
@@ -206,13 +203,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                         return true;
                     }
 
-                    var truncatedArgument = argument.Substring(0, nbrCharToKeep);
+                    var truncatedArgument = argument.ToString(0, nbrCharToKeep);
                     result.Add(truncatedArgument);
                     currentLength += truncatedArgument.Length;
                     return true;
                 }
 
-                result.Add(argument);
+                result.Add(argument.ToString());
                 currentLength += argumentLength;
                 return false;
             }
@@ -233,7 +230,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                     inDoubleQuotes = !inDoubleQuotes;
                     if (!inDoubleQuotes)
                     {
-                        if (AddArgument(currentArgument.ToString()))
+                        if (AddArgument(currentArgument))
                         {
                             truncated = true;
                             return result;
@@ -247,7 +244,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                     inSingleQuotes = !inSingleQuotes;
                     if (!inSingleQuotes)
                     {
-                        if (AddArgument(currentArgument.ToString()))
+                        if (AddArgument(currentArgument))
                         {
                             truncated = true;
                             return result;
@@ -260,7 +257,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                 {
                     if (currentArgument.Length > 0)
                     {
-                        if (AddArgument(currentArgument.ToString()))
+                        if (AddArgument(currentArgument))
                         {
                             truncated = true;
                             return result;
@@ -276,9 +273,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             }
 
             // Add the last argument if it's not empty
-            if (currentArgument.Length > 0)
+            if (currentArgument.Length > 0 && AddArgument(currentArgument))
             {
-                result.Add(currentArgument.ToString());
+                truncated = true;
             }
 
             return result;
