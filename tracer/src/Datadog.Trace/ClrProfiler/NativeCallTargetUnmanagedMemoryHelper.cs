@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler;
 
@@ -38,7 +39,13 @@ internal static class NativeCallTargetUnmanagedMemoryHelper
         var offset = _segmentOffset;
         if (SizeOfMemorySegment - offset < bytesCount)
         {
+            if (bytesCount > SizeOfMemorySegment)
+            {
+                ThrowHelper.ThrowArgumentOutOfRangeException("The number of bytes is bigger than the max size of the memory segment.");
+            }
+
             CreateSegment();
+            offset = 0;
         }
 
         _segmentOffset = offset + bytesCount;
@@ -61,6 +68,11 @@ internal static class NativeCallTargetUnmanagedMemoryHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe IntPtr AllocateAndWriteUtf16String(string value)
     {
+        if (value is null)
+        {
+            return IntPtr.Zero;
+        }
+
         var stringPtrSize = value.Length * 2;
         var stringPtr = Allocate(stringPtrSize + 2);
         fixed (char* sPointer = value)

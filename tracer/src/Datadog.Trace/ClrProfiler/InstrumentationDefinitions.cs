@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler
 
         internal static void Dispose()
         {
-            Instrumentations = Array.Empty<NativeCallTargetDefinition2>();
+            Instrumentations = null!;
         }
 
         internal struct Payload

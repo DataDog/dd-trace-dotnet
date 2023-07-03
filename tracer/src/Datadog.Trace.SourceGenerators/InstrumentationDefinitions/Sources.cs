@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler
 {{
     internal static partial class InstrumentationDefinitions
     {{
-        internal static NativeCallTargetDefinition2[] {InstrumentationsCollectionName} = Array.Empty<NativeCallTargetDefinition2>();
+        internal static NativeCallTargetDefinition2[] {InstrumentationsCollectionName};
 
         static InstrumentationDefinitions()
         {{");
