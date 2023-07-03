@@ -113,7 +113,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 return InitResult.FromUnusableRuleFile();
             }
 
-            var ruleSetInfo = new DdwafRuleSetInfo();
+            var diagnostics = IntPtr.Zero;
             var keyRegex = IntPtr.Zero;
             var valueRegex = IntPtr.Zero;
 
@@ -126,13 +126,14 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 args.ValueRegex = valueRegex;
                 args.FreeWafFunction = _wafLibraryInvoker.ObjectFreeFuncPtr;
 
-                var wafHandle = _wafLibraryInvoker.Init(rulesObj.RawPtr, ref args, ruleSetInfo);
+                diagnostics = _wafLibraryInvoker.ObjectMap();
+                var wafHandle = _wafLibraryInvoker.Init(rulesObj.RawPtr, ref args, diagnostics);
                 if (wafHandle == IntPtr.Zero)
                 {
                     Log.Warning("DDAS-0005-00: WAF initialization failed.");
                 }
 
-                var initResult = InitResult.From(ruleSetInfo, wafHandle, _wafLibraryInvoker);
+                var initResult = InitResult.From(diagnostics, wafHandle, _wafLibraryInvoker);
                 if (initResult.LoadedRules == 0)
                 {
                     Log.Error("DDAS-0003-03: AppSec could not read the rule file {RulesFile}. Reason: All rules are invalid. AppSec will not run any protections in this application.", rulesFile);
@@ -168,7 +169,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     Marshal.FreeHGlobal(valueRegex);
                 }
 
-                _wafLibraryInvoker.RuleSetInfoFree(ruleSetInfo);
+                _wafLibraryInvoker.ObjectFreePtr(diagnostics);
                 _wafLibraryInvoker.ObjectFreePtr(rulesObj.RawPtr);
                 rulesObj.Dispose();
                 foreach (var arg in argsToDispose)

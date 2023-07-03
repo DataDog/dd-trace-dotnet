@@ -67,12 +67,17 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal static InitResult FromUnusableRuleFile() => new(0, 0, string.Empty, new Dictionary<string, string[]>(), unusableRuleFile: true);
 
-        internal static InitResult From(DdwafRuleSetInfo ddwaRuleSetInfo, IntPtr? wafHandle, WafLibraryInvoker wafLibraryInvoker)
+        internal static InitResult From(IntPtr diagnostics, IntPtr? wafHandle, WafLibraryInvoker wafLibraryInvoker)
         {
-            var ddwafObjectStruct = ddwaRuleSetInfo.Errors;
-            var errors = ddwafObjectStruct.Decode();
-            var ruleFileVersion = Marshal.PtrToStringAnsi(ddwaRuleSetInfo.Version);
-            return new(ddwaRuleSetInfo.Failed, ddwaRuleSetInfo.Loaded, ruleFileVersion!, errors, wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker);
+            /*
+                        var ddwafObjectStruct = ddwaRuleSetInfo.Errors;
+                        var errors = ddwafObjectStruct.Decode();
+                        var ruleFileVersion = Marshal.PtrToStringAnsi(ddwaRuleSetInfo.Version);
+                        return new(ddwaRuleSetInfo.Failed, ddwaRuleSetInfo.Loaded, ruleFileVersion!, errors, wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker);
+            */
+            var diagnosticsData = Encoder.Decode(new Obj(diagnostics));
+            var errors = new Dictionary<string, string[]>();
+            return new(0, 10, "1.11.0", errors, wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker);
         }
     }
 }
