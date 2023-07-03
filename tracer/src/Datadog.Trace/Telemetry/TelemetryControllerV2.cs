@@ -79,8 +79,6 @@ internal class TelemetryControllerV2 : ITelemetryController
         _flushTask = Task.Run(PushTelemetryLoopAsync);
     }
 
-    public bool AppStartedSent { get; set; }
-
     public bool FatalError => Volatile.Read(ref _fatalError);
 
     public void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName)
@@ -257,7 +255,6 @@ internal class TelemetryControllerV2 : ITelemetryController
             _metrics.GetMetrics(),
             _products.GetData());
 
-        var sendAppStarted = !AppStartedSent;
         var data = _dataBuilder.BuildTelemetryData(application, host, in input, _namingVersion);
 
         Log.Debug("Pushing telemetry changes");
@@ -269,15 +266,8 @@ internal class TelemetryControllerV2 : ITelemetryController
             case TelemetryTransportResult.FatalError:
                 return false; // big problem, abandon hope
 
-            case TelemetryTransportResult.TransientError:
-                return true; // there was an error, but try again next time
-
-            case TelemetryTransportResult.Success:
-                if (sendAppStarted)
-                {
-                    AppStartedSent = true;
-                }
-
+            case TelemetryTransportResult.TransientError: // there was an error, but try again next time
+            case TelemetryTransportResult.Success: // woo-hoo!
                 return true;
             default:
                 // Should never happen

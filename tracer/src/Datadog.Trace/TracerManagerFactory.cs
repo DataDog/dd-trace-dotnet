@@ -62,28 +62,6 @@ namespace Datadog.Trace
                 remoteConfigurationManager: null,
                 dynamicConfigurationManager: null);
 
-            if (previous?.Telemetry != tracer.Telemetry)
-            {
-                if (previous?.Telemetry is TelemetryControllerV2 oldV2 && tracer.Telemetry is TelemetryControllerV2 newV2)
-                {
-                    if (oldV2.AppStartedSent)
-                    {
-                        newV2.AppStartedSent = true;
-                    }
-                }
-            }
-
-            if (previous?.Telemetry != tracer.Telemetry)
-            {
-                if (previous?.Telemetry is TelemetryControllerV2 oldV2 && tracer.Telemetry is TelemetryControllerV2 newV2)
-                {
-                    if (oldV2.AppStartedSent)
-                    {
-                        newV2.AppStartedSent = true;
-                    }
-                }
-            }
-
             try
             {
                 if (Profiler.Instance.Status.IsProfilerReady)
