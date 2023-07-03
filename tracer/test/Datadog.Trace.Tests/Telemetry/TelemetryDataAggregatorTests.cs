@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
@@ -18,10 +19,9 @@ public class TelemetryDataAggregatorTests
     public void GetCombinedConfiguration_WhenHavePrevious_AndNoCurrent_ReturnsPrevious()
     {
         var previous = GetPopulatedTelemetryInput();
-        var next = new TelemetryInput();
         var aggregator = new TelemetryDataAggregator(previous);
 
-        var result = aggregator.Combine(next);
+        var result = aggregator.Combine(null, null, null, null, null);
 
         result.Configuration.Should().BeSameAs(previous.Configuration);
         result.Dependencies.Should().BeSameAs(previous.Dependencies);
@@ -37,10 +37,15 @@ public class TelemetryDataAggregatorTests
     public void GetCombinedConfiguration_WhenHaveCurrent_AndNoPrevious_ReturnsCurrent(bool previousIsNull)
     {
         TelemetryInput? previous = previousIsNull ? null : new TelemetryInput();
-        var next = GetPopulatedTelemetryInput();
         var aggregator = new TelemetryDataAggregator(previous);
 
-        var result = aggregator.Combine(next);
+        var next = GetPopulatedTelemetryInput();
+        var result = aggregator.Combine(
+            next.Configuration,
+            next.Dependencies,
+            next.Integrations,
+            new MetricResults(next.Metrics?.ToList(), next.Distributions?.ToList()),
+            next.Products);
 
         result.Configuration.Should().BeSameAs(next.Configuration);
         result.Dependencies.Should().BeSameAs(next.Dependencies);
@@ -71,13 +76,6 @@ public class TelemetryDataAggregatorTests
         var previousDistributions = new List<DistributionMetricData> { new("span.serialize.ms", new() { 12.5, 354 }, false) };
         var currentDistributions = new List<DistributionMetricData> { new("span.send.ms", new() { 12.5, 354 }, false) };
 
-        var current = new TelemetryInput(
-            currentConfig,
-            currentDeps,
-            currentIntegrations,
-            new MetricResults(currentMetrics, currentDistributions),
-            currentProducts);
-
         var previous = new TelemetryInput(
             previousConfig,
             previousDeps,
@@ -87,7 +85,12 @@ public class TelemetryDataAggregatorTests
 
         var aggregator = new TelemetryDataAggregator(previous);
 
-        var results = aggregator.Combine(current);
+        var results = aggregator.Combine(
+            currentConfig,
+            currentDeps,
+            currentIntegrations,
+            new MetricResults(currentMetrics, currentDistributions),
+            currentProducts);
 
         results.Configuration
                .Should()
@@ -143,13 +146,6 @@ public class TelemetryDataAggregatorTests
             new("current.dist", new() { 3, 4 }, false),
         };
 
-        var current = new TelemetryInput(
-            null,
-            null,
-            null,
-            new MetricResults(currentMetrics, currentDistributions),
-            null);
-
         var previous = new TelemetryInput(
             null,
             null,
@@ -159,7 +155,12 @@ public class TelemetryDataAggregatorTests
 
         var aggregator = new TelemetryDataAggregator(previous);
 
-        var results = aggregator.Combine(current);
+        var results = aggregator.Combine(
+            null,
+            null,
+            null,
+            new MetricResults(currentMetrics, currentDistributions),
+            null);
 
         results.Configuration.Should().BeNull();
         results.Dependencies.Should().BeNull();
@@ -252,7 +253,7 @@ public class TelemetryDataAggregatorTests
 
     private void AssertStoredValues(TelemetryDataAggregator aggregator, TelemetryInput expected)
     {
-        var result = aggregator.Combine(new TelemetryInput());
+        var result = aggregator.Combine(null, null, null, null, null);
 
         if (expected.Configuration is { } expectedConfig)
         {

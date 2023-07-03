@@ -24,22 +24,21 @@ internal class TelemetryDataAggregator
     /// <summary>
     /// Gets the configuration values that should be sent to telemetry, including any previous, retained, values
     /// </summary>
-    /// <param name="newValues">Changes to configuration values since the last telemetry flush</param>
     /// <returns>The combined configuration values that should be sent, including data that previously failed to send</returns>
-    public TelemetryInput Combine(in TelemetryInput newValues)
+    public TelemetryInput Combine(
+        ICollection<ConfigurationKeyValue>? configuration,
+        ICollection<DependencyTelemetryData>? dependencies,
+        ICollection<IntegrationTelemetryData>? integrations,
+        in MetricResults? metrics,
+        ProductsData? products)
     {
-        if (_previous is null)
-        {
-            return newValues;
-        }
-
         return new TelemetryInput(
-            CombineWith(newValues.Configuration),
-            CombineWith(newValues.Dependencies),
-            CombineWith(newValues.Integrations),
-            CombineWith(newValues.Metrics),
-            CombineWith(newValues.Distributions),
-            CombineWith(newValues.Products));
+            CombineWith(configuration),
+            CombineWith(dependencies),
+            CombineWith(integrations),
+            CombineWith(metrics?.Metrics),
+            CombineWith(metrics?.Distributions),
+            CombineWith(products));
     }
 
     public void SaveDataIfRequired(

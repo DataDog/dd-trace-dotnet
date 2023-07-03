@@ -250,7 +250,7 @@ internal class TelemetryControllerV2 : ITelemetryController
     private async Task<bool> PushTelemetry(ApplicationTelemetryDataV2 application, HostTelemetryDataV2 host)
     {
         // use values from previous failed attempt if necessary
-        var input = new TelemetryInput(
+        var input = _aggregator.Combine(
             _configuration.GetData(),
             _dependencies.GetData(),
             _integrations.GetData(),
