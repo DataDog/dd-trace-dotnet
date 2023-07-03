@@ -258,7 +258,7 @@ internal class TelemetryControllerV2 : ITelemetryController
             _products.GetData());
 
         var sendAppStarted = !AppStartedSent;
-        var data = _dataBuilder.BuildTelemetryData(application, host, in input, sendAppStarted, _namingVersion);
+        var data = _dataBuilder.BuildTelemetryData(application, host, in input, _namingVersion);
 
         Log.Debug("Pushing telemetry changes");
         var result = await _transportManager.TryPushTelemetry(data).ConfigureAwait(false);

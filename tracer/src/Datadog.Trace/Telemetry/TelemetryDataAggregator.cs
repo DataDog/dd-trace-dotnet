@@ -6,12 +6,14 @@
 #nullable enable
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Telemetry;
 
 internal class TelemetryDataAggregator
 {
     private TelemetryInput? _previous;
+    private bool _appStartedSent;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TelemetryDataAggregator"/> class. For testing only.
@@ -38,7 +40,8 @@ internal class TelemetryDataAggregator
             CombineWith(integrations),
             CombineWith(metrics?.Metrics),
             CombineWith(metrics?.Distributions),
-            CombineWith(products));
+            CombineWith(products),
+            sendAppStarted: !_appStartedSent);
     }
 
     public void SaveDataIfRequired(
@@ -53,6 +56,11 @@ internal class TelemetryDataAggregator
                 // (as we are currently, using message-batch), but needs to be
                 // updated to be more granular if this changes
                 _previous = null;
+                if (input.SendAppStarted)
+                {
+                    _appStartedSent = true;
+                }
+
                 break;
 
             case TelemetryTransportResult.FatalError:

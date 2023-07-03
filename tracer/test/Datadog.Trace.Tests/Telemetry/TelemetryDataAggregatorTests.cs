@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
@@ -44,7 +43,7 @@ public class TelemetryDataAggregatorTests
             next.Configuration,
             next.Dependencies,
             next.Integrations,
-            new MetricResults(next.Metrics?.ToList(), next.Distributions?.ToList()),
+            new MetricResults((List<MetricData>)next.Metrics, (List<DistributionMetricData>)next.Distributions),
             next.Products);
 
         result.Configuration.Should().BeSameAs(next.Configuration);
@@ -81,7 +80,8 @@ public class TelemetryDataAggregatorTests
             previousDeps,
             previousIntegrations,
             new MetricResults(previousMetrics, previousDistributions),
-            previousProducts);
+            previousProducts,
+            sendAppStarted: false);
 
         var aggregator = new TelemetryDataAggregator(previous);
 
@@ -151,7 +151,8 @@ public class TelemetryDataAggregatorTests
             null,
             null,
             new MetricResults(previousMetrics, previousDistributions),
-            null);
+            null,
+            sendAppStarted: false);
 
         var aggregator = new TelemetryDataAggregator(previous);
 
@@ -248,7 +249,8 @@ public class TelemetryDataAggregatorTests
             Array.Empty<DependencyTelemetryData>(),
             Array.Empty<IntegrationTelemetryData>(),
             new MetricResults(new List<MetricData>(), new List<DistributionMetricData>()),
-            new ProductsData());
+            new ProductsData(),
+            sendAppStarted: false);
     }
 
     private void AssertStoredValues(TelemetryDataAggregator aggregator, TelemetryInput expected)
