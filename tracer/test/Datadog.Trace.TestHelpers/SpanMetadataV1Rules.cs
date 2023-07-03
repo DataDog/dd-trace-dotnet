@@ -173,6 +173,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("db.name")
                 .Matches("db.type", "cosmosdb")
                 .IsPresent("out.host")
+                .IsPresent("out.port")
                 .IsPresent("peer.service")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "CosmosDb")
@@ -183,11 +184,14 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "couchbase.query")
                 .Matches(Type, "db"))
             .Tags(s => s
+                .IsPresent("db.couchbase.seed.nodes")
                 .IsOptional("couchbase.operation.bucket")
                 .IsPresent("couchbase.operation.code")
                 .IsPresent("couchbase.operation.key")
                 .IsOptional("out.port")
                 .IsOptional("out.host")
+                .IsPresent("peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "db.couchbase.seed.nodes", "out.host", "peer.service")
                 .Matches("component", "Couchbase")
                 .Matches("span.kind", "client"));
 

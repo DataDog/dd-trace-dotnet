@@ -46,6 +46,13 @@ namespace Datadog.Trace.Configuration.Schema
             };
         }
 
+        public CouchbaseTags CreateCouchbaseTags()
+            => _version switch
+            {
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new CouchbaseTags(),
+                _ => new CouchbaseV1Tags(),
+            };
+
         public ElasticsearchTags CreateElasticsearchTags()
             => _version switch
             {
@@ -72,6 +79,13 @@ namespace Datadog.Trace.Configuration.Schema
             {
                 SchemaVersion.V0 when !_peerServiceTagsEnabled => new RedisTags(),
                 _ => new RedisV1Tags(),
+            };
+
+        public CosmosDbTags CreateCosmosDbTags()
+            => _version switch
+            {
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new CosmosDbTags(),
+                _ => new CosmosDbV1Tags(),
             };
     }
 }
