@@ -14,21 +14,23 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 {
     internal class UpdateResult
     {
-        internal UpdateResult(DdwafRuleSetInfo? ruleSetInfo, bool success, bool unusableRules = false)
+        internal UpdateResult(IntPtr diagnostics, bool success, bool unusableRules = false)
         {
-            if (ruleSetInfo != null)
+            if (diagnostics != IntPtr.Zero)
             {
-                var errors = ruleSetInfo.Errors.Decode();
+/*
+                var errors = diagnostics.Errors.Decode();
                 HasErrors = errors.Count > 0;
                 Errors = errors;
-                FailedToLoadRules = ruleSetInfo.Failed;
-                LoadedRules = ruleSetInfo.Loaded;
-                RuleFileVersion = Marshal.PtrToStringAnsi(ruleSetInfo.Version);
+                FailedToLoadRules = diagnostics.Failed;
+                LoadedRules = diagnostics.Loaded;
+                RuleFileVersion = Marshal.PtrToStringAnsi(diagnostics.Version);
                 if (errors.Count > 0)
                 {
                     HasErrors = true;
                     ErrorMessage = JsonConvert.SerializeObject(errors);
                 }
+*/
             }
 
             Success = success;
@@ -54,8 +56,8 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal string? RuleFileVersion { get; }
 
-        public static UpdateResult FromUnusableRules() => new UpdateResult(null, false, true);
+        public static UpdateResult FromUnusableRules() => new UpdateResult(IntPtr.Zero, false, true);
 
-        public static UpdateResult FromFailed() => new UpdateResult(null, false);
+        public static UpdateResult FromFailed() => new UpdateResult(IntPtr.Zero, false);
     }
 }

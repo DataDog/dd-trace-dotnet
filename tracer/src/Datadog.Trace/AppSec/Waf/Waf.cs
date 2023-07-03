@@ -72,11 +72,11 @@ namespace Datadog.Trace.AppSec.Waf
             return initResult;
         }
 
-        private UpdateResult UpdateWafAndDisposeItems(Obj updateData, IEnumerable<Obj> argsToDispose, DdwafRuleSetInfo? ruleSetInfo = null)
+        private UpdateResult UpdateWafAndDisposeItems(Obj updateData, IEnumerable<Obj> argsToDispose, IntPtr diagnostics)
         {
             try
             {
-                var newHandle = _wafLibraryInvoker.Update(_wafHandle, updateData.RawPtr, ruleSetInfo);
+                var newHandle = _wafLibraryInvoker.Update(_wafHandle, updateData.RawPtr, diagnostics);
 
                 if (newHandle != IntPtr.Zero)
                 {
@@ -86,7 +86,7 @@ namespace Datadog.Trace.AppSec.Waf
                         _wafHandle = newHandle;
                         _wafLocker.ExitWriteLock();
                         _wafLibraryInvoker.Destroy(oldHandle);
-                        return new UpdateResult(ruleSetInfo, true);
+                        return new UpdateResult(diagnostics, true);
                     }
 
                     _wafLibraryInvoker.Destroy(newHandle);
@@ -96,23 +96,22 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 Log.Error(e, "An exception occurred while trying to update waf with new data");
             }
-            finally
+
+            var res = new UpdateResult(diagnostics, false);
+            if (diagnostics != IntPtr.Zero)
             {
-                if (ruleSetInfo != null)
-                {
-                    _wafLibraryInvoker.RuleSetInfoFree(ruleSetInfo);
-                }
-
-                _wafLibraryInvoker.ObjectFreePtr(updateData.RawPtr);
-                updateData.Dispose();
-
-                foreach (var arg in argsToDispose)
-                {
-                    arg.Dispose();
-                }
+                _wafLibraryInvoker.ObjectFreePtr(diagnostics);
             }
 
-            return new UpdateResult(ruleSetInfo, false);
+            _wafLibraryInvoker.ObjectFreePtr(updateData.RawPtr);
+            updateData.Dispose();
+
+            foreach (var arg in argsToDispose)
+            {
+                arg.Dispose();
+            }
+
+            return res;
         }
 
         public UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus)
@@ -162,15 +161,17 @@ namespace Datadog.Trace.AppSec.Waf
             try
             {
                 var encodedArgs = Encoder.Encode(arguments, _wafLibraryInvoker, argsToDispose, false);
-                DdwafRuleSetInfo? rulesetInfo = null;
+                IntPtr diagnostics = IntPtr.Zero;
+                // DdwafRuleSetInfo? rulesetInfo = null;
+
                 // only if rules are provided will the waf give metrics
                 if (arguments.ContainsKey("rules"))
                 {
                     TelemetryFactory.Metrics.RecordCountWafUpdates();
-                    rulesetInfo = new DdwafRuleSetInfo();
+                    // rulesetInfo = new DdwafRuleSetInfo();
                 }
 
-                updated = UpdateWafAndDisposeItems(encodedArgs, argsToDispose, rulesetInfo);
+                updated = UpdateWafAndDisposeItems(encodedArgs, argsToDispose, diagnostics);
             }
             catch
             {
