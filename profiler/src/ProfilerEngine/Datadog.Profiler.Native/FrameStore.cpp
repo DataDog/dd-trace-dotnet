@@ -231,7 +231,7 @@ bool FrameStore::GetTypeName(ClassID classId, std::string_view& name)
         if (typeEntry != _fullTypeNames.end())
         {
             // ensure that the string_view is pointing to the string in the cache
-            name = _fullTypeNames.at(classId);
+            name = {typeEntry->second.data(), typeEntry->second.size()};
             return true;
         }
     }
@@ -249,10 +249,9 @@ bool FrameStore::GetTypeName(ClassID classId, std::string_view& name)
 
     {
         std::lock_guard<std::mutex> lock(_fullTypeNamesLock);
-        _fullTypeNames[classId] = pTypeDesc->Type + pTypeDesc->Parameters;
 
         // ensure that the string_view is pointing to the string in the cache
-        name = _fullTypeNames.at(classId);
+        name = _fullTypeNames[classId] = pTypeDesc->Type + pTypeDesc->Parameters;
     }
 
     return true;
@@ -267,7 +266,8 @@ bool FrameStore::GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc)
         auto typeEntry = _types.find(classId);
         if (typeEntry != _types.end())
         {
-            typeDesc = &(_types.at(classId));
+            //typeDesc = &(_types.at(classId));
+            typeDesc = &typeEntry->second;
             return true;
         }
     }
@@ -361,8 +361,7 @@ bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc*& pTypeDesc)
         {
             std::lock_guard<std::mutex> lock(_typesLock);
 
-            _types[originalClassId] = typeDesc;
-            pTypeDesc = &(_types.at(originalClassId));
+            pTypeDesc = &(_types[originalClassId] = typeDesc);
         }
         else
         {
