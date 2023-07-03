@@ -346,7 +346,7 @@ namespace Datadog.Trace
                     break;
                 case Trace.Tags.PeerService:
                     Tags.SetTag(key, value);
-                    Tracer.Instance.CurrentTraceSettings.Schema.RemapPeerService(Tags);
+                    Context.TraceContext.CurrentTraceSettings.Schema.RemapPeerService(Tags);
                     break;
                 default:
                     Tags.SetTag(key, value);
