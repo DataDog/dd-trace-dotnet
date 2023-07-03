@@ -6,8 +6,6 @@
 using System;
 using System.IO;
 using System.Reflection;
-using MongoDB.Bson.IO;
-using MongoDB.Bson.Serialization;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
@@ -17,59 +15,54 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
            this object obj,
            Type nominalType,
            object writerSettings = null,
-           IBsonSerializer serializer = null,
-           Action<BsonSerializationContext.Builder> configurator = null,
-           BsonSerializationArgs args = default(BsonSerializationArgs))
+           object serializer = null,
+           object configurator = null,
+           object args = default(object))
         {
             if (nominalType == null)
             {
                 throw new ArgumentNullException("nominalType");
             }
 
-            args.NominalType = nominalType;
+            PropertyInfo nominalTypeProperty = args?.GetType().GetProperty("NominalType");
+            nominalTypeProperty?.SetValue(args, nominalType);
+
+            Type bsonSerializerType = Type.GetType("MongoDB.Bson.Serialization.BsonSerializer, MongoDB.Bson");
+            var lookupSerializerMethod = bsonSerializerType?.GetMethod("LookupSerializer", BindingFlags.Public | BindingFlags.Static);
 
             if (serializer == null)
             {
-                serializer = BsonSerializer.LookupSerializer(nominalType);
+                serializer = lookupSerializerMethod?.Invoke(null, new object[] { nominalType });
             }
 
-            if (serializer.ValueType != nominalType)
+            if ((Type)bsonSerializerType.GetProperty("ValueType").GetValue(serializer) != nominalType)
             {
                 var message = string.Format("Serializer type {0} value type does not match document types {1}.", serializer.GetType().FullName, nominalType.FullName);
                 throw new ArgumentException(message, "serializer");
             }
 
-            Type type = Type.GetType("MongoDB.Bson.IO.JsonWriterSettings, MongoDB.Bson", throwOnError: false);
-            PropertyInfo defaultsProperty = type.GetProperty("Defaults");
-            object defaultsValue = defaultsProperty.GetValue(null);
-
-            Console.WriteLine("defaultsValue:" + defaultsValue);
-            Console.WriteLine("JsonWriterSettings.Defaults:" + JsonWriterSettings.Defaults);
-
             using (var stringWriter = new StringWriter())
             {
-                using (var bsonWriter = new CompactJsonWriter(stringWriter, writerSettings ?? defaultsValue))
-                {
-                    var context = BsonSerializationContext.CreateRoot(bsonWriter, configurator);
-                    serializer.Serialize(context, args, obj);
-                }
+                Type typeJsonWriterSettings = Type.GetType("MongoDB.Bson.IO.JsonWriterSettings, MongoDB.Bson", throwOnError: false);
+                var defaultsValueJsonWriterSettings = new[] { typeJsonWriterSettings?.GetProperty("Defaults")?.GetValue(writerSettings) };
+
+                Type[] types = { typeof(StringWriter), typeJsonWriterSettings };
+
+                Type typeJsonWriter = Type.GetType("MongoDB.Bson.IO.JsonWriter, MongoDB.Bson", throwOnError: false);
+                ConstructorInfo constructorJsonWriter = typeJsonWriter?.GetConstructor(types);
+
+                var bsonWriter = constructorJsonWriter?.Invoke(stringWriter, defaultsValueJsonWriterSettings);
+
+                var contextType = Type.GetType("MongoDB.Bson.BsonSerializationContext, MongoDB.Bson", throwOnError: false);
+                var createRootMethod = contextType?.GetMethod("CreateRoot", BindingFlags.Static | BindingFlags.Public);
+
+                var context = createRootMethod?.Invoke(null, new object[] { bsonWriter, configurator });
+                var serializeMethod = bsonSerializerType?.GetMethod("Serialize", BindingFlags.Public | BindingFlags.Static);
+
+                serializeMethod?.Invoke(serializer, new[] { context, args, obj });
 
                 return stringWriter.ToString();
             }
-        }
-
-        internal static object ReflectObject(string typeName,  string methodName)
-        {
-            var returnedType = Type.GetType(typeName, throwOnError: false);
-
-            if (typeName == null)
-            {
-                return null;
-            }
-
-            var returnedMethod = returnedType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
-
-            return returnedMethod.Invoke(null, null);
         }
     }
 }
