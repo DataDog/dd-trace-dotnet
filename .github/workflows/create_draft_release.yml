@@ -54,6 +54,11 @@ jobs:
         env:
           Version: ${{steps.versions.outputs.full_version}}
 
+      - name: "Create and push git tag"
+        run: |
+          git tag "v${{steps.versions.outputs.full_version}}"
+          git push origin "v${{steps.versions.outputs.full_version}}"
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -71,13 +76,6 @@ jobs:
             ${{steps.assets.outputs.gitlab_artifacts_path}}/*.msi
             ${{steps.assets.outputs.gitlab_artifacts_path}}/*.zip
             ${{steps.assets.outputs.sha_path}}
-
-      # Done after creating the release as some packaging ran on gitlab are triggered by the tag creation and rely
-      # on the assets present in the github release.
-      - name: "Create and push git tag"
-        run: |
-          git tag "v${{steps.versions.outputs.full_version}}"
-          git push origin "v${{steps.versions.outputs.full_version}}"
 
       - name: "Trigger Docker Base Images Github Pipeline"
         run: |
