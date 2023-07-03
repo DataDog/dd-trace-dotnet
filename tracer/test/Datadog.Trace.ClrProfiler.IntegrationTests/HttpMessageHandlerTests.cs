@@ -77,103 +77,110 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string metadataSchemaVersion,
             bool traceId128Enabled)
         {
-            if (EnvironmentHelper.IsCoreClr() && EnvironmentHelper.GetTargetFramework() == "netcoreapp2.1")
+            try
             {
-                throw new SkipException("This test is flaky on netcoreapp 2.1");
-            }
+                SetInstrumentationVerification();
+                ConfigureInstrumentation(instrumentation, socketsHandlerEnabled);
+                SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING", queryStringCaptureEnabled ? "true" : "false");
+                SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED", traceId128Enabled ? "true" : "false");
+                SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
 
-            SetInstrumentationVerification();
-            ConfigureInstrumentation(instrumentation, socketsHandlerEnabled);
-            SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING", queryStringCaptureEnabled ? "true" : "false");
-            SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED", traceId128Enabled ? "true" : "false");
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-
-            if (queryStringSize.HasValue)
-            {
-                SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE", queryStringSize.ToString());
-            }
-
-            var expectedAsyncCount = CalculateExpectedAsyncSpans(instrumentation);
-            var expectedSyncCount = CalculateExpectedSyncSpans(instrumentation);
-
-            var expectedSpanCount = expectedAsyncCount + expectedSyncCount;
-
-            int httpPort = TcpPortProvider.GetOpenPort();
-            Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
-
-            // metadata schema version
-            var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-http-client" : EnvironmentHelper.FullSampleName;
-
-            using var telemetry = this.ConfigureTelemetry();
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
-            {
-                agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
-                var spans = agent.WaitForSpans(expectedSpanCount);
-                Assert.Equal(expectedSpanCount, spans.Count);
-                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
-
-                foreach (var span in spans)
+                if (queryStringSize.HasValue)
                 {
-                    if (span.Tags[Tags.HttpStatusCode] == "502")
-                    {
-                        Assert.Equal(1, span.Error);
-                    }
+                    SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE", queryStringSize.ToString());
+                }
 
-                    if (span.Tags.TryGetValue(Tags.HttpUrl, out var url))
+                var expectedAsyncCount = CalculateExpectedAsyncSpans(instrumentation);
+                var expectedSyncCount = CalculateExpectedSyncSpans(instrumentation);
+
+                var expectedSpanCount = expectedAsyncCount + expectedSyncCount;
+
+                int httpPort = TcpPortProvider.GetOpenPort();
+                Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
+
+                // metadata schema version
+                var isExternalSpan = metadataSchemaVersion == "v0";
+                var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-http-client" : EnvironmentHelper.FullSampleName;
+
+                using var telemetry = this.ConfigureTelemetry();
+                using (var agent = EnvironmentHelper.GetMockAgent())
+                using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+                {
+                    agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
+                    var spans = agent.WaitForSpans(expectedSpanCount);
+                    Assert.Equal(expectedSpanCount, spans.Count);
+                    ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+
+                    foreach (var span in spans)
                     {
-                        if (queryStringCaptureEnabled)
+                        if (span.Tags[Tags.HttpStatusCode] == "502")
                         {
-                            url.Should().EndWith(expectedQueryString);
+                            Assert.Equal(1, span.Error);
                         }
-                        else
+
+                        if (span.Tags.TryGetValue(Tags.HttpUrl, out var url))
                         {
-                            new Uri(url).Query.Should().BeNullOrEmpty();
+                            if (queryStringCaptureEnabled)
+                            {
+                                url.Should().EndWith(expectedQueryString);
+                            }
+                            else
+                            {
+                                new Uri(url).Query.Should().BeNullOrEmpty();
+                            }
                         }
                     }
-                }
 
-                // parse http headers from stdout
-                var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
-                var propagatedTags = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.PropagatedTags);
+                    // parse http headers from stdout
+                    var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
+                    var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+                    var propagatedTags = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.PropagatedTags);
 
-                var firstSpan = spans.First();
-                Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
-                Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
+                    var firstSpan = spans.First();
+                    Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
+                    Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
 
-                var traceTags = TagPropagation.ParseHeader(propagatedTags);
-                var traceIdUpperTagFromHeader = traceTags.GetTag(Tags.Propagated.TraceIdUpper);
-                var traceIdUpperTagFromSpan = firstSpan.GetTag(Tags.Propagated.TraceIdUpper);
+                    var traceTags = TagPropagation.ParseHeader(propagatedTags);
+                    var traceIdUpperTagFromHeader = traceTags.GetTag(Tags.Propagated.TraceIdUpper);
+                    var traceIdUpperTagFromSpan = firstSpan.GetTag(Tags.Propagated.TraceIdUpper);
 
-                if (traceId128Enabled)
-                {
-                    // assert that "_dd.p.tid" was added to the "x-datadog-tags" header (horizontal propagation)
-                    // note this assumes Datadog propagation headers are enabled (which is the default).
-                    Assert.NotNull(traceIdUpperTagFromHeader);
-
-                    // not all spans will have this tag, but if it is present,
-                    // it should match the value in the "x-datadog-tags" header
-                    if (traceIdUpperTagFromSpan != null)
+                    if (traceId128Enabled)
                     {
-                        Assert.Equal(traceIdUpperTagFromHeader, traceIdUpperTagFromSpan);
+                        // assert that "_dd.p.tid" was added to the "x-datadog-tags" header (horizontal propagation)
+                        // note this assumes Datadog propagation headers are enabled (which is the default).
+                        Assert.NotNull(traceIdUpperTagFromHeader);
+
+                        // not all spans will have this tag, but if it is present,
+                        // it should match the value in the "x-datadog-tags" header
+                        if (traceIdUpperTagFromSpan != null)
+                        {
+                            Assert.Equal(traceIdUpperTagFromHeader, traceIdUpperTagFromSpan);
+                        }
                     }
+                    else
+                    {
+                        // assert that "_dd.p.tid" was NOT added
+                        Assert.Null(traceIdUpperTagFromHeader);
+                        Assert.Null(traceIdUpperTagFromSpan);
+                    }
+
+                    using var scope = new AssertionScope();
+                    telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+                    // ignore for now auto enabled for simplicity
+                    telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: IsUsingSocketHandler(instrumentation), autoEnabled: null);
+                    telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: IsUsingWinHttpHandler(instrumentation), autoEnabled: null);
+                    telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: IsUsingCurlHandler(instrumentation), autoEnabled: null);
+                    VerifyInstrumentation(processResult.Process);
                 }
-                else
+            }
+            catch (ExitCodeException)
+            {
+                if (EnvironmentHelper.IsCoreClr() && EnvironmentHelper.GetTargetFramework() == "netcoreapp2.1")
                 {
-                    // assert that "_dd.p.tid" was NOT added
-                    Assert.Null(traceIdUpperTagFromHeader);
-                    Assert.Null(traceIdUpperTagFromSpan);
+                    throw new SkipException("Exit code exception. This test is flaky on netcoreapp 2.1 so skipping it.");
                 }
 
-                using var scope = new AssertionScope();
-                telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
-                // ignore for now auto enabled for simplicity
-                telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: IsUsingSocketHandler(instrumentation), autoEnabled: null);
-                telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: IsUsingWinHttpHandler(instrumentation), autoEnabled: null);
-                telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: IsUsingCurlHandler(instrumentation), autoEnabled: null);
-                VerifyInstrumentation(processResult.Process);
+                throw;
             }
         }
 
@@ -184,39 +191,46 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(IntegrationConfig))]
         public void TracingDisabled_DoesNotSubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
         {
-            if (EnvironmentHelper.IsCoreClr() && EnvironmentHelper.GetTargetFramework() == "netcoreapp2.1")
+            try
             {
-                throw new SkipException("This test is flaky on netcoreapp 2.1");
+                SetInstrumentationVerification();
+                ConfigureInstrumentation(instrumentation, enableSocketsHandler);
+
+                using var telemetry = this.ConfigureTelemetry();
+                int httpPort = TcpPortProvider.GetOpenPort();
+
+                using (var agent = EnvironmentHelper.GetMockAgent())
+                using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
+                {
+                    agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
+                    var spans = agent.WaitForSpans(1, 2000);
+                    Assert.Equal(0, spans.Count);
+
+                    var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
+                    var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+                    var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
+
+                    Assert.Null(traceId);
+                    Assert.Null(parentSpanId);
+                    Assert.Equal("false", tracingEnabled);
+
+                    using var scope = new AssertionScope();
+                    // ignore auto enabled for simplicity
+                    telemetry.AssertIntegrationDisabled(IntegrationId.HttpMessageHandler);
+                    telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: false, autoEnabled: null);
+                    telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: false, autoEnabled: null);
+                    telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: false, autoEnabled: null);
+                    VerifyInstrumentation(processResult.Process);
+                }
             }
-
-            SetInstrumentationVerification();
-            ConfigureInstrumentation(instrumentation, enableSocketsHandler);
-
-            using var telemetry = this.ConfigureTelemetry();
-            int httpPort = TcpPortProvider.GetOpenPort();
-
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
+            catch (ExitCodeException)
             {
-                agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
-                var spans = agent.WaitForSpans(1, 2000);
-                Assert.Equal(0, spans.Count);
+                if (EnvironmentHelper.IsCoreClr() && EnvironmentHelper.GetTargetFramework() == "netcoreapp2.1")
+                {
+                    throw new SkipException("Exit code exception. This test is flaky on netcoreapp 2.1 so skipping it.");
+                }
 
-                var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
-                var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
-
-                Assert.Null(traceId);
-                Assert.Null(parentSpanId);
-                Assert.Equal("false", tracingEnabled);
-
-                using var scope = new AssertionScope();
-                // ignore auto enabled for simplicity
-                telemetry.AssertIntegrationDisabled(IntegrationId.HttpMessageHandler);
-                telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: false, autoEnabled: null);
-                telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: false, autoEnabled: null);
-                telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: false, autoEnabled: null);
-                VerifyInstrumentation(processResult.Process);
+                throw;
             }
         }
 
