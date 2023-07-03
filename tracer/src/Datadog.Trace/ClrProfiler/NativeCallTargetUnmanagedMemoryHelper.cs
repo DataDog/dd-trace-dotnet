@@ -92,7 +92,7 @@ internal static class NativeCallTargetUnmanagedMemoryHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IntPtr AllocateAndWriteUtf16StringArray(string arrayItem1)
     {
-        var unmanagedArray = Allocate(1 * SizeOfPointer);
+        var unmanagedArray = Allocate(SizeOfPointer);
         Marshal.WriteIntPtr(unmanagedArray, 0, AllocateAndWriteUtf16String(arrayItem1));
         return unmanagedArray;
     }
