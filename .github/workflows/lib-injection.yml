@@ -146,6 +146,7 @@ jobs:
       DOCKER_IMAGE_WEBLOG_TAG: ${{ github.sha }}-${{ matrix.runtime }}
       RUNTIME: ${{ matrix.runtime }}
       BUILDX_PLATFORMS: linux/amd64
+      MODE: manual
     steps:
       - name: lib-injection test runner
         id: lib-injection-test-runner
