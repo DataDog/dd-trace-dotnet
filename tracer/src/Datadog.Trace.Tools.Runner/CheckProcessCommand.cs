@@ -27,6 +27,8 @@ namespace Datadog.Trace.Tools.Runner
                 return 1;
             }
 
+            AnsiConsole.WriteLine("Process name: " + process.Name);
+
             var mainModule = process.MainModule != null ? Path.GetFileName(process.MainModule) : null;
 
             if (mainModule == "w3wp.exe" || mainModule == "iisexpress.exe")
