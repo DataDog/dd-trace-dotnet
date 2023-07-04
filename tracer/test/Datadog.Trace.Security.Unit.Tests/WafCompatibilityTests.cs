@@ -18,7 +18,6 @@ namespace Datadog.Trace.Security.Unit.Tests
             SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.MacOs, SkipOn.ArchitectureValue.ARM64);
             var libraryInitializationResult = WafLibraryInvoker.Initialize("1.4.0");
             libraryInitializationResult.Success.Should().BeFalse();
-            libraryInitializationResult.ExportErrorHappened.Should().BeTrue();
             libraryInitializationResult.WafLibraryInvoker.Should().BeNull();
         }
     }

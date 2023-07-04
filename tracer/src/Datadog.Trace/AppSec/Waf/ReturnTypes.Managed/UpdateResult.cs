@@ -6,8 +6,6 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
@@ -18,19 +16,16 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
         {
             if (diagnostics != IntPtr.Zero)
             {
-/*
-                var errors = diagnostics.Errors.Decode();
-                HasErrors = errors.Count > 0;
-                Errors = errors;
-                FailedToLoadRules = diagnostics.Failed;
-                LoadedRules = diagnostics.Loaded;
-                RuleFileVersion = Marshal.PtrToStringAnsi(diagnostics.Version);
-                if (errors.Count > 0)
+                var result = InitResult.From(diagnostics, null, null);
+                FailedToLoadRules = result.FailedToLoadRules;
+                LoadedRules = result.LoadedRules;
+                Errors = result.Errors;
+                RuleFileVersion = RuleFileVersion;
+                if (Errors.Count > 0)
                 {
                     HasErrors = true;
-                    ErrorMessage = JsonConvert.SerializeObject(errors);
+                    ErrorMessage = JsonConvert.SerializeObject(Errors);
                 }
-*/
             }
 
             Success = success;
@@ -48,7 +43,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
         /// </summary>
         internal ushort? LoadedRules { get; }
 
-        internal IReadOnlyDictionary<string, string[]>? Errors { get; }
+        internal IReadOnlyDictionary<string, object>? Errors { get; }
 
         internal string? ErrorMessage { get; }
 
