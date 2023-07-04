@@ -23,4 +23,5 @@ private:
     virtual std::vector<std::shared_ptr<IThreadInfo>> const& GetThreads() = 0;
 
     CpuTimeProvider* _cpuTimeProvider;
+    std::uint64_t _previousTotalCpuTime;
 };

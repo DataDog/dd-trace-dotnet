@@ -9,7 +9,8 @@
 #include "RawCpuSample.h"
 
 NativeThreadsCpuProviderBase::NativeThreadsCpuProviderBase(CpuTimeProvider* cpuTimeProvider) :
-    _cpuTimeProvider{cpuTimeProvider}
+    _cpuTimeProvider{cpuTimeProvider},
+    _previousTotalCpuTime{0}
 {
 }
 
@@ -20,6 +21,11 @@ std::list<std::shared_ptr<Sample>> NativeThreadsCpuProviderBase::GetSamples()
     {
         cpuTime += OsSpecificApi::GetThreadCpuTime(thread.get());
     }
+
+    // For native threads, we need to keep the last cpu time
+    auto currentTotalCpuTime = cpuTime;
+    cpuTime = currentTotalCpuTime - _previousTotalCpuTime;
+    _previousTotalCpuTime = currentTotalCpuTime;
 
     auto samples = std::list<std::shared_ptr<Sample>>();
     if (cpuTime == 0)
