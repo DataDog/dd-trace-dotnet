@@ -132,8 +132,8 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
 
         foreach (var classSymbol in classSymbols.OrderBy(c => c.Item1))
         {
-            var methods = new List<string>();
-            foreach (var member in classSymbol.Item2.GetMembers().OrderBy(m => m.MetadataName))
+            results.Add(classSymbol.Item1);
+            foreach (var member in classSymbol.Item2.GetMembers())
             {
                 var memberAttributes = member.GetAttributes();
                 foreach (var memberAttribute in memberAttributes)
@@ -142,14 +142,10 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
                     if (attribute != null)
                     {
                         string functionName = GetFullName(member);
-                        methods.Add("  " + attribute.ToString() + " " + functionName);
+                        results.Add("  " + attribute.ToString() + " " + functionName);
                     }
                 }
             }
-
-            results.Add(classSymbol.Item1);
-            methods.Sort();
-            results.AddRange(methods);
         }
 
         return results;
