@@ -54,12 +54,14 @@ public static class UnitTestRunnerRunSingleTestIntegration
                 unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult) &&
                 objTestMethodInfo.TryDuckCast<ITestMethod>(out var testMethodInfo))
             {
-                var outcome = unitTestResult.Outcome;
-                if (outcome is UnitTestResultOutcome.Inconclusive or UnitTestResultOutcome.NotRunnable or UnitTestResultOutcome.Ignored)
+                if (unitTestResult.Outcome is UnitTestResultOutcome.Inconclusive or UnitTestResultOutcome.NotRunnable or UnitTestResultOutcome.Ignored)
                 {
-                    // This instrumentation catches all tests being ignored
-                    var test = MsTestIntegration.OnMethodBegin(testMethodInfo, instance.GetType());
-                    test.Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
+                    if (!MsTestIntegration.ShouldSkip(testMethodInfo))
+                    {
+                        // This instrumentation catches all tests being ignored
+                        MsTestIntegration.OnMethodBegin(testMethodInfo, instance.GetType())
+                                         .Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
+                    }
                 }
             }
         }

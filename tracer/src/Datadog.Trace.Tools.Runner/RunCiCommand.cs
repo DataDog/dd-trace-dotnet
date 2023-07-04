@@ -108,6 +108,15 @@ namespace Datadog.Trace.Tools.Runner
 
                 // Upload git metadata by default (unless is disabled explicitly) or if ITR is enabled (required).
                 Log.Debug("RunCiCommand: Uploading repository changes.");
+
+                // Change the .git search folder to the CurrentDirectory or WorkingFolder
+                CIEnvironmentValues.Instance.GitSearchFolder = Environment.CurrentDirectory;
+                if (string.IsNullOrEmpty(CIEnvironmentValues.Instance.WorkspacePath))
+                {
+                    // In case we cannot get the WorkspacePath we fallback to the default configuration.
+                    CIEnvironmentValues.Instance.GitSearchFolder = null;
+                }
+
                 var lazyItrClient = new Lazy<IntelligentTestRunnerClient>(() => new(CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings));
                 if (ciVisibilitySettings.GitUploadEnabled != false || ciVisibilitySettings.IntelligentTestRunnerEnabled)
                 {

@@ -51,12 +51,14 @@ public static class TestMethodRunnerExecuteIntegration
 
             if (unitTestResultObject != null && unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult))
             {
-                var outcome = unitTestResult.Outcome;
-                if (outcome is UnitTestResultOutcome.Inconclusive or UnitTestResultOutcome.NotRunnable or UnitTestResultOutcome.Ignored)
+                if (unitTestResult.Outcome is UnitTestResultOutcome.Inconclusive or UnitTestResultOutcome.NotRunnable or UnitTestResultOutcome.Ignored)
                 {
-                    // This instrumentation catches all tests being ignored
-                    var test = MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType());
-                    test.Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
+                    if (!MsTestIntegration.ShouldSkip(instance.TestMethodInfo))
+                    {
+                        // This instrumentation catches all tests being ignored
+                        MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType())
+                                         .Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
+                    }
                 }
             }
         }
