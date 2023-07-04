@@ -6,7 +6,6 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -18,7 +17,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InitResult));
 
-        private InitResult(ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, string[]> errors, JToken? embeddedRules = null, bool unusableRuleFile = false, IntPtr? wafHandle = null, WafLibraryInvoker? wafLibraryInvoker = null)
+        private InitResult(ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, object> errors, JToken? embeddedRules = null, bool unusableRuleFile = false, IntPtr? wafHandle = null, WafLibraryInvoker? wafLibraryInvoker = null)
         {
             HasErrors = errors.Count > 0;
             Errors = errors;
@@ -51,7 +50,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
         /// </summary>
         internal ushort LoadedRules { get; }
 
-        internal IReadOnlyDictionary<string, string[]> Errors { get; }
+        internal IReadOnlyDictionary<string, object> Errors { get; }
 
         public JToken? EmbeddedRules { get; set; }
 
@@ -65,19 +64,31 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal bool Reported { get; set; }
 
-        internal static InitResult FromUnusableRuleFile() => new(0, 0, string.Empty, new Dictionary<string, string[]>(), unusableRuleFile: true);
+        internal static InitResult FromUnusableRuleFile() => new(0, 0, string.Empty, new Dictionary<string, object>(), unusableRuleFile: true);
 
-        internal static InitResult From(IntPtr diagnostics, IntPtr? wafHandle, WafLibraryInvoker wafLibraryInvoker)
+        internal static InitResult From(IntPtr diagnostics, IntPtr? wafHandle, WafLibraryInvoker? wafLibraryInvoker)
         {
-            /*
-                        var ddwafObjectStruct = ddwaRuleSetInfo.Errors;
-                        var errors = ddwafObjectStruct.Decode();
-                        var ruleFileVersion = Marshal.PtrToStringAnsi(ddwaRuleSetInfo.Version);
-                        return new(ddwaRuleSetInfo.Failed, ddwaRuleSetInfo.Loaded, ruleFileVersion!, errors, wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker);
-            */
-            var diagnosticsData = Encoder.Decode(new Obj(diagnostics));
-            var errors = new Dictionary<string, string[]>();
-            return new(0, 10, "1.11.0", errors, wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker);
+            ushort failedCount = 0;
+            ushort loadedCount = 0;
+            string rulesetVersion = string.Empty;
+            Dictionary<string, object>? errors = null;
+            string errorMsg = string.Empty;
+            try
+            {
+                var diagnosticsData = (Dictionary<string, object>)Encoder.Decode(new Obj(diagnostics));
+                var rules = (Dictionary<string, object>)diagnosticsData["rules"];
+                failedCount = (ushort)((object[])rules["failed"]).Length;
+                loadedCount = (ushort)((object[])rules["loaded"]).Length;
+                errors = (Dictionary<string, object>)rules["errors"];
+                rulesetVersion = (string)diagnosticsData["ruleset_version"];
+            }
+            catch (Exception err)
+            {
+                errorMsg = err.ToString();
+                errors = new Dictionary<string, object> { { "Diagnostics Parsing Error", errorMsg } };
+            }
+
+            return new(failedCount, loadedCount, rulesetVersion, errors ?? new(), wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker);
         }
     }
 }
