@@ -63,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations = Array.Empty<NativeCallTargetDefinition2>();
+        internal static NativeCallTargetDefinition2[] Instrumentations;
 
         static InstrumentationDefinitions()
         {
@@ -160,7 +160,7 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations = Array.Empty<NativeCallTargetDefinition2>();
+        internal static NativeCallTargetDefinition2[] Instrumentations;
 
         static InstrumentationDefinitions()
         {
@@ -259,7 +259,7 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations = Array.Empty<NativeCallTargetDefinition2>();
+        internal static NativeCallTargetDefinition2[] Instrumentations;
 
         static InstrumentationDefinitions()
         {
@@ -359,7 +359,7 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations = Array.Empty<NativeCallTargetDefinition2>();
+        internal static NativeCallTargetDefinition2[] Instrumentations;
 
         static InstrumentationDefinitions()
         {
@@ -459,7 +459,7 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations = Array.Empty<NativeCallTargetDefinition2>();
+        internal static NativeCallTargetDefinition2[] Instrumentations;
 
         static InstrumentationDefinitions()
         {
@@ -558,7 +558,7 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations = Array.Empty<NativeCallTargetDefinition2>();
+        internal static NativeCallTargetDefinition2[] Instrumentations;
 
         static InstrumentationDefinitions()
         {
@@ -651,7 +651,7 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations = Array.Empty<NativeCallTargetDefinition2>();
+        internal static NativeCallTargetDefinition2[] Instrumentations;
 
         static InstrumentationDefinitions()
         {
@@ -762,7 +762,7 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations = Array.Empty<NativeCallTargetDefinition2>();
+        internal static NativeCallTargetDefinition2[] Instrumentations;
 
         static InstrumentationDefinitions()
         {
@@ -877,7 +877,7 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations = Array.Empty<NativeCallTargetDefinition2>();
+        internal static NativeCallTargetDefinition2[] Instrumentations;
 
         static InstrumentationDefinitions()
         {
@@ -980,7 +980,7 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations = Array.Empty<NativeCallTargetDefinition2>();
+        internal static NativeCallTargetDefinition2[] Instrumentations;
 
         static InstrumentationDefinitions()
         {
