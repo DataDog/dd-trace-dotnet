@@ -100,7 +100,7 @@ internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
 
         public override bool CanRead => false;
 
-        public override bool CanSeek => false;
+        public override bool CanSeek => true;
 
         public override bool CanWrite => true;
 
@@ -193,12 +193,12 @@ internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public override void SetLength(long value)
