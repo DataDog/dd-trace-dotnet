@@ -21,13 +21,12 @@ namespace Datadog.Trace.Telemetry
 
         // V1 integration only
         private ConfigurationTelemetryCollector? _configuration;
+        private IntegrationTelemetryCollector? _integrations;
 
         // v2 integration only
-        private ProductsTelemetryCollector? _products;
-        private ApplicationTelemetryCollectorV2? _application;
+        private TelemetryControllerV2? _controllerV2;
 
         // shared
-        private IntegrationTelemetryCollector? _integrations;
         private IDependencyTelemetryCollector? _dependencies;
 
         private TelemetryFactory()
@@ -154,20 +153,23 @@ namespace Datadog.Trace.Telemetry
             TelemetrySettings settings)
         {
             var transportManager = new TelemetryTransportManagerV2(telemetryTransports);
+            // The telemetry controller must be a singleton, so we initialize once
+            // Note that any dependencies initialized inside the controller are also singletons (by design)
             // Initialized once so if we create a new controller from this factory we get the same collector instances
-            var integrations = LazyInitializer.EnsureInitialized(ref _integrations)!;
-            var products = LazyInitializer.EnsureInitialized(ref _products)!;
-            var application = LazyInitializer.EnsureInitialized(ref _application)!;
+            var controller = LazyInitializer.EnsureInitialized(
+                ref _controllerV2,
+                () => new TelemetryControllerV2(
+                    Config,
+                    _dependencies!,
+                    Metrics,
+                    transportManager,
+                    settings.HeartbeatInterval))!;
 
-            return new TelemetryControllerV2(
-                Config,
-                _dependencies!,
-                integrations,
-                Metrics,
-                products,
-                application,
-                transportManager,
-                settings.HeartbeatInterval);
+            controller.DisableSending(); // disable sending until fully configured
+            controller.SetTransportManager(transportManager);
+            controller.SetFlushInterval(settings.HeartbeatInterval);
+
+            return controller;
         }
     }
 }
