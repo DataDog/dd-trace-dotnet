@@ -82,10 +82,7 @@ namespace Datadog.Trace.ClrProfiler
 
         internal static void Dispose()
         {
-            foreach (var def in Instrumentations)
-            {
-                def.Dispose();
-            }
+            Instrumentations = null!;
         }
 
         internal struct Payload

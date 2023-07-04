@@ -228,6 +228,7 @@ namespace Datadog.Trace.ClrProfiler
         private static void RunShutdown()
         {
             InstrumentationDefinitions.Dispose();
+            NativeCallTargetUnmanagedMemoryHelper.Free();
         }
 
         internal static void InitializeNoNativeParts(Stopwatch sw = null)
