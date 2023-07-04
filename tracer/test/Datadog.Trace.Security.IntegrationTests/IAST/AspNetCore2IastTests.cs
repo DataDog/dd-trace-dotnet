@@ -57,7 +57,7 @@ public abstract class AspNetCore2IastTestsVariableVulnerabilityPerRequestIastEna
 public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullSampling
 {
     public AspNetCore2IastTestsFullSamplingEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore2IastTestsEnabled", isIastDeduplicationEnabled: false)
+        : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore2IastTestsEnabled", isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 200)
     {
     }
 }
@@ -73,7 +73,7 @@ public class AspNetCore2IastTestsFullSamplingDisabled : AspNetCore2IastTestsFull
 public class AspNetCore2IastTestsFullSamplingRedactionEnabled : AspNetCore2IastTestsFullSampling
 {
     public AspNetCore2IastTestsFullSamplingRedactionEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture, outputHelper, enableIast: true, isIastDeduplicationEnabled: false, testName: "AspNetCore2IastTestsRedactionEnabled", redactionEnabled: true)
+        : base(fixture, outputHelper, enableIast: true, isIastDeduplicationEnabled: false, testName: "AspNetCore2IastTestsRedactionEnabled", redactionEnabled: true, vulnerabilitiesPerRequest: 200)
     {
     }
 }
@@ -221,6 +221,28 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [SkippableTheory]
+    [InlineData("/Iast/SafeCookie")]
+    [InlineData("/Iast/AllVulnerabilitiesCookie")]
+    public async Task TestIastInsecureCookieRequest(string url)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var filename = $"Security.AspNetCore2.enableIast={IastEnabled}.path ={sanitisedUrl}";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing(scrubHash: false);
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
     }
 
     [SkippableFact]

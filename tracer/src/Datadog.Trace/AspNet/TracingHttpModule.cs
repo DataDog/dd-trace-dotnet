@@ -275,6 +275,11 @@ namespace Datadog.Trace.AspNet
                             securityContextCleaned = true;
                         }
 
+                        if (Iast.Iast.Instance.Settings.Enabled && IastModule.AddRequestVulnerabilitiesAllowed())
+                        {
+                            CookieAnalyzer.AnalyzeCookies(app.Context.Response.Cookies, IntegrationId);
+                        }
+
                         // HttpServerUtility.TransferRequest presents an issue: The IIS request pipeline is run a second time
                         // from the same incoming HTTP request, but the HttpContext and HttpRequest objects from the two pipeline
                         // requests are completely isolated. Fortunately, the second request (somehow) maintains the original

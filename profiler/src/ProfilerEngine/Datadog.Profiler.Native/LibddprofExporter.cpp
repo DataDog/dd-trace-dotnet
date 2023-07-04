@@ -399,15 +399,19 @@ void LibddprofExporter::Add(ddog_prof_Profile* profile, std::shared_ptr<Sample> 
     auto const& values = sample->GetValues();
     ffiSample.values = {values.data(), values.size()};
 
-    // TODO: add timestamps when available
-
     auto add_res = ddog_prof_Profile_add(profile, ffiSample);
     if (add_res.tag == DDOG_PROF_PROFILE_ADD_RESULT_ERR)
     {
         on_leave { ddog_Error_drop(&add_res.err); };
-        auto errorMessage = ddog_Error_message(&add_res.err);
-        Log::Warn("Failed to add a sample: ", std::string_view(errorMessage.ptr, errorMessage.len));
-        return;
+
+        static bool firstTimeError = true;
+        if (firstTimeError)
+        {
+            auto errorMessage = ddog_Error_message(&add_res.err);
+            Log::Error("Failed to add a sample: ", std::string_view(errorMessage.ptr, errorMessage.len));
+
+            firstTimeError = false;
+        }
     }
 }
 
