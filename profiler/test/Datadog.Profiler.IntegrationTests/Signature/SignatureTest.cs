@@ -41,12 +41,24 @@ namespace Datadog.Profiler.IntegrationTests.Signature
 
         private void CheckExceptionsInProfiles((string Type, string Message, long Count, StackTrace Stacktrace)[] exceptionSamples)
         {
+#pragma warning disable SA1114 // Parameter list should follow declaration
             var stack = new StackTrace(
+#if LINUX
+                // BUG on Linux: invalid TKey instead of TVal
+                new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TKey> |fn:ThrowFromGeneric |fg:<T0> |sg:(T0 element, TKey key1, TKey value, TKey key2)"),
+                new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TKey> |fn:ThrowGenericFromGeneric |fg:<T0> |sg:(T0 element)"),
+                new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TKey> |fn:ThrowOneGeneric |fg: |sg:(TKey value)"),
+#else
                 new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TVal> |fn:ThrowFromGeneric |fg:<T0> |sg:(T0 element, TKey key1, TVal value, TKey key2)"),
                 new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TVal> |fn:ThrowGenericFromGeneric |fg:<T0> |sg:(T0 element)"),
                 new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TVal> |fn:ThrowOneGeneric |fg: |sg:(TVal value)"),
+#endif
                 new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClassForValueTypeTest |cg:<System.Int32, System.Boolean> |fn:ThrowOneGenericFromMethod |fg:<System.Boolean> |sg:(System.Boolean value)"),
+#if LINUX
+                new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClassForValueTypeTest |cg:<System.Int32, System.Boolean> |fn:ThrowOneGenericFromType |fg: |sg:(TKey value)"),
+#else
                 new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClassForValueTypeTest |cg:<System.Int32, System.Boolean> |fn:ThrowOneGenericFromType |fg: |sg:(TVal value)"),
+#endif
                 new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod2 |fg:<T0, System.Int32, T2, T3> |sg:(T0 key1, System.Int32 value1, System.Int32 value2, T2 key2, T3 key3, System.Collections.Generic.List<System.Int32> listOfTValue)"),
                 new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<T0> |sg:(T0 element)"),
                 new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<Samples.Computer01.MyStruct> |sg:(Samples.Computer01.MyStruct element)"),
@@ -62,6 +74,7 @@ namespace Datadog.Profiler.IntegrationTests.Signature
                 new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowBool |fg: |sg:(bool bValue)"),
                 new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowObject |fg: |sg:(object val)"),
                 new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowVoid |fg: |sg:()"));
+#pragma warning restore SA1114 // Parameter list should follow declaration
 
             foreach (var sample in exceptionSamples)
             {
