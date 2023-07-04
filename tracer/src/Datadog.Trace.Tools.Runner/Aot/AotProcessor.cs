@@ -157,7 +157,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     // Extract direct definitions
                     foreach (var definition in Definitions)
                     {
-                        if (definition.TargetAssembly != assemblyDefinition.Name.Name)
+                        if (Marshal.PtrToStringUni(definition.TargetAssembly) != assemblyDefinition.Name.Name)
                         {
                             continue;
                         }
@@ -178,10 +178,10 @@ namespace Datadog.Trace.Tools.Runner.Aot
                             }
                         }
 
-                        var typeDefinition = moduleDefinition.Types.FirstOrDefault(t => t.FullName == definition.TargetType);
+                        var typeDefinition = moduleDefinition.Types.FirstOrDefault(t => t.FullName == Marshal.PtrToStringUni(definition.TargetType));
                         if (typeDefinition is null && moduleDefinition.HasExportedTypes)
                         {
-                            var exportedType = moduleDefinition.ExportedTypes.FirstOrDefault(eType => eType.FullName == definition.TargetType);
+                            var exportedType = moduleDefinition.ExportedTypes.FirstOrDefault(eType => eType.FullName == Marshal.PtrToStringUni(definition.TargetType));
                             if (exportedType is not null)
                             {
                                 try
@@ -207,7 +207,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     {
                         foreach (var definition in DerivedDefinitions)
                         {
-                            if (definition.TargetAssembly != assemblyReference.Name)
+                            if (Marshal.PtrToStringUni(definition.TargetAssembly) != assemblyReference.Name)
                             {
                                 continue;
                             }
@@ -230,7 +230,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                             foreach (var typeDefinition in moduleDefinition.Types)
                             {
                                 var baseTypeReference = typeDefinition.BaseType;
-                                if (baseTypeReference != null && baseTypeReference.FullName == definition.TargetType)
+                                if (baseTypeReference != null && baseTypeReference.FullName == Marshal.PtrToStringUni(definition.TargetType))
                                 {
                                     RetrieveMethodsInTypeDefinition(typeDefinition, definition, lstDefinitionsDefs, assemblyDefinition);
                                 }
@@ -279,7 +279,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
 
             void RetrieveMethodsInTypeDefinition(TypeDefinition typeDefinition, NativeCallTargetDefinition definition, List<DefinitionItem> lstDefinitionsDefs, AssemblyDefinition assemblyDefinition)
             {
-                foreach (var mDefinition in typeDefinition.Methods.Where(m => m.Name == definition.TargetMethod))
+                foreach (var mDefinition in typeDefinition.Methods.Where(m => m.Name == Marshal.PtrToStringUni(definition.TargetMethod)))
                 {
                     var lstParameters = mDefinition.Parameters;
                     if (lstParameters.Count != definition.TargetSignatureTypesLength - 1)
@@ -318,7 +318,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     if (parameters)
                     {
                         var methodDefinition = mDefinition;
-                        var integrationType = TracerAssembly.GetType(definition.IntegrationType, false);
+                        var integrationType = TracerAssembly.GetType(Marshal.PtrToStringUni(definition.IntegrationType), false);
                         if (integrationType is not null)
                         {
                             lstDefinitionsDefs.Add(new DefinitionItem(assemblyDefinition, typeDefinition, methodDefinition, integrationType, definition));
