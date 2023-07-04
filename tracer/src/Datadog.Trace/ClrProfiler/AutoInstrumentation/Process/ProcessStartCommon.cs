@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
@@ -51,8 +52,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 
             Scope scope = null;
 
-            // Arguments > ArgumentList : If Arguments is used, ArgumentList is ignored. ArgumentsList is only used if Arguments is an empty string.
-
             try
             {
                 var tags = PopulateTags(filename, environmentVariables, useShellExecute, arguments, argumentList);
@@ -72,6 +71,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             return scope;
         }
 
+        /// <summary>
+        /// Arguments > ArgumentList : If Arguments is used, ArgumentList is ignored. ArgumentsList is only used if Arguments is an empty string.
+        /// </summary>
         private static ProcessCommandStartTags PopulateTags(string filename, IDictionary<string, string> environmentVariables, bool useShellExecute, string arguments, Collection<string> argumentList)
         {
             // Environment variables
@@ -93,23 +95,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             if (useShellExecute)
             {
                 // cmd.shell
-                var commandLine = filename;
+                var commandLine = StringBuilderCache.Acquire(filename.Length);
+                commandLine.Append(filename);
 
                 // Append the arguments to the command line
                 if (!string.IsNullOrWhiteSpace(arguments))
                 {
-                    commandLine += " " + arguments;
+                    commandLine.Append($" {arguments}");
                 }
-                else if (argumentList != null && argumentList.Count > 0)
+                else if (argumentList is { Count: > 0 })
                 {
-                    commandLine += " " + string.Join(" ", argumentList);
+                    commandLine.Append($" {string.Join(" ", argumentList)}");
                 }
 
                 // Truncate the command line if needed
-                commandLine = Truncate(commandLine, MaxCommandLineLength, out var truncated);
+                var commandLineResult = Truncate(StringBuilderCache.GetStringAndRelease(commandLine), MaxCommandLineLength, out var truncated);
                 tags.Truncated = truncated ? "true" : null;
 
-                tags.CommandShell = commandLine;
+                tags.CommandShell = commandLineResult;
             }
             else
             {
@@ -182,7 +185,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         private static Collection<string> SplitStringIntoArguments(string input, int maxLength, out bool truncated)
         {
             var result = new Collection<string>();
-            var currentArgument = new StringBuilder();
+            var currentArgument = StringBuilderCache.Acquire(0);
             var inSingleQuotes = false;
             var inDoubleQuotes = false;
             var escapeNextCharacter = false;
@@ -277,6 +280,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             {
                 truncated = true;
             }
+
+            // Release the StringBuilder
+            StringBuilderCache.Release(currentArgument);
 
             return result;
         }
