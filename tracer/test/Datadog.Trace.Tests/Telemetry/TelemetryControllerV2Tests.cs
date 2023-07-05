@@ -45,7 +45,7 @@ public class TelemetryControllerV2Tests
     }
 
     [Fact]
-    public void TelemetryControllerRecordsConfigurationFromTracerSettings()
+    public async Task TelemetryControllerRecordsConfigurationFromTracerSettings()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
         var transportManager = new TelemetryTransportManagerV2(new ITelemetryTransport[] { transport });
@@ -72,6 +72,7 @@ public class TelemetryControllerV2Tests
                                   .And.Subject;
 
         collector.GetQueueForTesting().Count.Should().Be(configCount);
+        await controller.DisposeAsync();
     }
 
     [Fact]
