@@ -38,7 +38,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly FreeResultDelegate _freeResultField;
         private readonly FreeObjectDelegate _freeObjectield;
         private readonly IntPtr _freeObjectFuncField;
-        // private readonly FreeRulesetInfoDelegate _rulesetInfoFreeField;
         private readonly SetupLoggingDelegate _setupLogging;
         private readonly SetupLogCallbackDelegate _setupLogCallbackField;
         private readonly UpdateDelegate _updateField;
@@ -255,14 +254,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         internal void ObjectFreePtr(IntPtr input) => _freeObjectield(input);
 
         internal void ResultFree(ref DdwafResultStruct output) => _freeResultField(ref output);
-
-/*
-        /// <summary>
-        /// Only this function needs to be called on DdwafRuleSetInfoStruct, no need to dispose the Errors object inside because waf takes care of it
-        /// </summary>
-        /// <param name="output">the ruleset info structure</param>
-        internal void RuleSetInfoFree(DdwafRuleSetInfo output) => _rulesetInfoFreeField(output);
-*/
 
         private void LoggingCallback(
             DDWAF_LOG_LEVEL level,
