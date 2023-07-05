@@ -53,9 +53,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 if (defaultSamples)
                 {
                     // LogsInjection.NLog uses different versions depending on framework
-                    version = EnvironmentHelper.IsNetFramework() ?
-                                  new Version("2.1.0") :
-                                  new Version("5.0.0");
+                    version = EnvironmentHelper.IsCoreClr() ?
+                                  new Version("5.0.0") :
+                                  new Version("2.1.0");
                 }
                 else
                 {
