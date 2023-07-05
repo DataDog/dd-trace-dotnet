@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
@@ -209,19 +208,15 @@ internal class TelemetryControllerV2 : ITelemetryController
                 }
             }
 
+            var isFinalPush = _processExit.Task.IsCompleted;
             if (_sendTelemetry)
             {
-                await PushTelemetry().ConfigureAwait(false);
+                await PushTelemetry(sendAppClosing: isFinalPush).ConfigureAwait(false);
             }
 
-            if (_processExit.Task.IsCompleted)
+            if (isFinalPush)
             {
                 Log.Debug("Process exit requested, ending telemetry loop");
-                if (_sendTelemetry)
-                {
-                    await PushClosingTelemetry().ConfigureAwait(false);
-                }
-
                 TerminateLoop();
                 return;
             }
@@ -236,7 +231,7 @@ internal class TelemetryControllerV2 : ITelemetryController
         }
     }
 
-    private async Task PushTelemetry()
+    private async Task PushTelemetry(bool sendAppClosing)
     {
         try
         {
@@ -268,7 +263,7 @@ internal class TelemetryControllerV2 : ITelemetryController
                 in metrics,
                 _products.GetData());
 
-            var data = _dataBuilder.BuildTelemetryData(application, host, in input, _namingVersion);
+            var data = _dataBuilder.BuildTelemetryData(application, host, in input, _namingVersion, sendAppClosing);
 
             Log.Debug("Pushing telemetry changes");
             var result = await _transportManager.TryPushTelemetry(data).ConfigureAwait(false);
@@ -277,29 +272,6 @@ internal class TelemetryControllerV2 : ITelemetryController
         catch (Exception ex)
         {
             Log.Warning(ex, "Error pushing telemetry");
-        }
-    }
-
-    private async Task PushClosingTelemetry()
-    {
-        try
-        {
-            var application = _application.GetApplicationData();
-            var host = _application.GetHostData();
-            if (application is null || host is null)
-            {
-                Log.Debug("Telemetry not initialized, skipping");
-                return;
-            }
-
-            var closingTelemetryData = _dataBuilder.BuildAppClosingTelemetryData(application, host, _namingVersion);
-
-            Log.Debug("Pushing app-closing telemetry");
-            await _transportManager.TryPushTelemetry(closingTelemetryData).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "Error sending app-closing telemetry");
         }
     }
 
