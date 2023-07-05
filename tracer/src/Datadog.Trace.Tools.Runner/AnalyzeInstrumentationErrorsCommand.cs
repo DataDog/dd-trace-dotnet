@@ -78,7 +78,13 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
             return;
         }
 
-        var generatorArgs = new AssemblyGeneratorArgs(processLogDir, modulesToVerify: null);
+        bool hasOriginalAssemblies = false;
+        if (!string.IsNullOrEmpty(settings.OriginalAssemblies))
+        {
+            hasOriginalAssemblies = bool.TryParse(settings.OriginalAssemblies, out hasOriginalAssemblies);
+        }
+
+        var generatorArgs = new AssemblyGeneratorArgs(processLogDir, copyOriginalModulesToDisk: hasOriginalAssemblies, modulesToVerify: null);
 
         var exportedModulesPathsAndMethods = InstrumentedAssemblyGeneration.Generate(generatorArgs);
 
