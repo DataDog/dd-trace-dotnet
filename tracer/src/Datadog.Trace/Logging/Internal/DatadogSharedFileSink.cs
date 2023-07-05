@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Debugging;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.Serilog.Formatting;
@@ -14,8 +15,13 @@ using Datadog.Trace.Vendors.Serilog.Sinks.File;
 
 namespace Datadog.Trace.Logging;
 
+/// <summary>
+/// Datadog Shared File Sink is based on SharedFileSink code but instead of mutex locking for every log item
+/// the mutex is acquire in each flush, reducing the impact of the logger while keeping the mutex logic
+/// </summary>
 internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
 {
+    private const int BufferSize = 4192;
     private readonly TextWriter _output;
     private readonly MutexStream _mutexStream;
     private readonly ITextFormatter _textFormatter;
@@ -25,12 +31,12 @@ internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
     {
         if (path == null)
         {
-            throw new ArgumentNullException(nameof(path));
+            ThrowHelper.ThrowArgumentNullException(nameof(path));
         }
 
         if (fileSizeLimitBytes is < 0)
         {
-            throw new ArgumentException("Negative value provided; file size limit must be non-negative");
+            ThrowHelper.ThrowArgumentException("Negative value provided; file size limit must be non-negative");
         }
 
         _textFormatter = textFormatter ?? throw new ArgumentNullException(nameof(textFormatter));
@@ -42,23 +48,25 @@ internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
             Directory.CreateDirectory(directory);
         }
 
-        _mutexStream = new MutexStream(path, File.Open(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite));
-        _output = new StreamWriter(_mutexStream, encoding ?? new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        _mutexStream = new MutexStream(path, new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite, bufferSize: BufferSize));
+        _output = new StreamWriter(_mutexStream, encoding ?? new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), bufferSize: BufferSize);
+    }
+
+    ~DatadogSharedFileSink()
+    {
+        Dispose();
     }
 
     bool IFileSink.EmitOrOverflow(LogEvent logEvent)
     {
-        if (logEvent == null)
+        if (logEvent is null)
         {
-            throw new ArgumentNullException(nameof(logEvent));
+            ThrowHelper.ThrowArgumentNullException(nameof(logEvent));
         }
 
-        if (_fileSizeLimitBytes != null)
+        if (_fileSizeLimitBytes != null && _mutexStream.Length >= _fileSizeLimitBytes.Value)
         {
-            if (_mutexStream.Length >= _fileSizeLimitBytes.Value)
-            {
-                return false;
-            }
+            return false;
         }
 
         _textFormatter.Format(logEvent, _output);
@@ -67,7 +75,15 @@ internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
 
     public void Emit(LogEvent logEvent)
     {
-        ((IFileSink)this).EmitOrOverflow(logEvent);
+        if (logEvent is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(logEvent));
+        }
+
+        if (_fileSizeLimitBytes == null || _mutexStream.Length < _fileSizeLimitBytes.Value)
+        {
+            _textFormatter.Format(logEvent, _output);
+        }
     }
 
     public void Dispose()
@@ -78,7 +94,7 @@ internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
 
     public void FlushToDisk()
     {
-        _mutexStream.Flush();
+        _output.Flush();
     }
 
     private class MutexStream : Stream
@@ -87,12 +103,10 @@ internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
         private const int MutexWaitTimeout = 10000;
         private readonly FileStream _stream;
         private readonly Mutex _mutex;
-        private readonly object _syncRoot;
-        private long _mutexCount;
+        private int _mutexCount;
 
         public MutexStream(string path, FileStream stream)
         {
-            _syncRoot = new object();
             _stream = stream;
             var mutexName = Path.GetFullPath(path).Replace(Path.DirectorySeparatorChar, ':') + MutexNameSuffix;
             _mutex = new Mutex(false, mutexName);
@@ -108,7 +122,7 @@ internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
         {
             get
             {
-                lock (_syncRoot)
+                lock (_mutex)
                 {
                     if (!TryAcquireMutex())
                     {
@@ -131,7 +145,7 @@ internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
         {
             get
             {
-                lock (_syncRoot)
+                lock (_mutex)
                 {
                     if (!TryAcquireMutex())
                     {
@@ -151,7 +165,7 @@ internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
 
             set
             {
-                lock (_syncRoot)
+                lock (_mutex)
                 {
                     if (!TryAcquireMutex())
                     {
@@ -172,23 +186,7 @@ internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
 
         public override void Flush()
         {
-            lock (_syncRoot)
-            {
-                if (!TryAcquireMutex())
-                {
-                    return;
-                }
-
-                try
-                {
-                    _stream.Seek(0, SeekOrigin.End);
-                    _stream.Flush(true);
-                }
-                finally
-                {
-                    ReleaseMutex();
-                }
-            }
+            // Flush is done in every write so is nothing is needed here.
         }
 
         public override int Read(byte[] buffer, int offset, int count)
@@ -203,7 +201,7 @@ internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
 
         public override void SetLength(long value)
         {
-            lock (_syncRoot)
+            lock (_mutex)
             {
                 if (!TryAcquireMutex())
                 {
@@ -223,7 +221,7 @@ internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            lock (_syncRoot)
+            lock (_mutex)
             {
                 if (!TryAcquireMutex())
                 {
@@ -234,6 +232,7 @@ internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
                 {
                     _stream.Seek(0, SeekOrigin.End);
                     _stream.Write(buffer, offset, count);
+                    _stream.Flush(true);
                 }
                 finally
                 {
@@ -244,7 +243,7 @@ internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
 
         public new void Dispose()
         {
-            lock (_syncRoot)
+            lock (_mutex)
             {
                 _stream.Dispose();
                 _mutex.Dispose();

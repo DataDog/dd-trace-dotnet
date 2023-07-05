@@ -85,15 +85,31 @@ internal static class DatadogLoggingFactory
         {
             // Ends in a dash because of the date postfix
             var managedLogPath = Path.Combine(fileConfig.LogDirectory, $"dotnet-tracer-managed-{domainMetadata.ProcessName}-.log");
-
-            loggerConfiguration
-               .WriteTo.File(
-                    managedLogPath,
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Exception} {Properties}{NewLine}",
-                    rollingInterval: RollingInterval.Day,
-                    rollOnFileSizeLimit: true,
-                    fileSizeLimitBytes: fileConfig.MaxLogFileSizeBytes,
-                    shared: true);
+            if (GlobalSettings.Instance.DebugEnabled)
+            {
+                // Use the normal shared logger with mutex acquire for each log item.
+                loggerConfiguration
+                   .WriteTo.File(
+                        path: managedLogPath,
+                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Exception} {Properties}{NewLine}",
+                        rollingInterval: RollingInterval.Day,
+                        rollOnFileSizeLimit: true,
+                        fileSizeLimitBytes: fileConfig.MaxLogFileSizeBytes,
+                        shared: true);
+            }
+            else
+            {
+                // Use the datadog shared logger with mutex acquire for each flush (after 4kb buffer) or every 100ms
+                // This reduces the impact of the logger for each callsite.
+                loggerConfiguration
+                   .WriteTo.DatadogSharedFile(
+                        path: managedLogPath,
+                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Exception} {Properties}{NewLine}",
+                        rollingInterval: RollingInterval.Day,
+                        rollOnFileSizeLimit: true,
+                        fileSizeLimitBytes: fileConfig.MaxLogFileSizeBytes,
+                        flushToDiskInterval: TimeSpan.FromMilliseconds(100));
+            }
         }
 
         try
