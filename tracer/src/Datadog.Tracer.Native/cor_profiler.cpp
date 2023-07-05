@@ -3175,7 +3175,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
             return hr;
         }
 
-        // Get a mdMemberRef for System.AppDomain.get_IsFullyTrusted()
+        // Get a mdMemberRef for System.AppDomain.get_IsHomogenous()
         COR_SIGNATURE appdomain_get_ishomogenous_signature[] = {IMAGE_CEE_CS_CALLCONV_HASTHIS, 0,
                                                                   ELEMENT_TYPE_BOOLEAN};
         hr = metadata_emit->DefineMemberRef(
