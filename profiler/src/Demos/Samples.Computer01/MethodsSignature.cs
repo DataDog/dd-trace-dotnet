@@ -27,43 +27,43 @@ namespace Samples.Computer01
 
         // call methods with different signatures
         // Note: return type is not meaningful
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void TriggerExceptions()
         {
             ThrowVoid();
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void ThrowVoid()
         {
             ThrowObject("this is the end");
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void ThrowObject(object val)
         {
             ThrowBool(true);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void ThrowBool(bool bValue)
         {
             ThrowNumbers(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void ThrowNumbers(byte b, sbyte sb, Int16 i16, UInt16 ui16, Int32 i32, UInt32 ui32, Int64 i64, UInt64 ui64, float s, double d)
         {
             ThrowStringAndChar("this is the end...", '.');
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void ThrowStringAndChar(string v, char c)
         {
             ThrowNative(IntPtr.Zero, UIntPtr.Zero);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void ThrowNative(IntPtr ptr, UIntPtr uptr)
         {
             var matrix2 = new int[2, 2, 2];
@@ -86,7 +86,7 @@ namespace Samples.Computer01
                 jagged);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void ThrowArrays(string[] a1, int[,,] matrix2, byte[][] jaggedArray)
         {
             MyStruct ms;
@@ -94,7 +94,7 @@ namespace Samples.Computer01
             ThrowStruct(ms);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void ThrowStruct(MyStruct ms)
         {
             var mc = new MyClass();
@@ -102,7 +102,7 @@ namespace Samples.Computer01
             ThrowClass(mc);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void ThrowClass(MyClass mc)
         {
             MyStruct ms;
@@ -110,13 +110,13 @@ namespace Samples.Computer01
             ThrowWithRefs(ref mc, ref ms);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void ThrowWithRefs(ref MyClass mc, ref MyStruct ms)
         {
             ThrowGenericMethod1(true);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void ThrowGenericMethod1<T>(T element)
         {
             if (element is bool)
@@ -142,7 +142,7 @@ namespace Samples.Computer01
             }
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         // TKey1 = string
         // TValue = int
         // TKey2 = string
@@ -157,13 +157,13 @@ namespace Samples.Computer01
 
     internal class GenericClassForValueTypeTest<TKey, TValue>
     {
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         public void ThrowOneGenericFromType(TValue value)
         {
             ThrowOneGenericFromMethod(value);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         public void ThrowOneGenericFromMethod<T>(T value)
         {
             var generator = new GenericClass<string, T>();
@@ -173,19 +173,19 @@ namespace Samples.Computer01
 
     internal class GenericClass<TKey, TValue>
     {
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         public void ThrowOneGeneric(TValue value)
         {
             ThrowGenericFromGeneric("this is the end...");
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void ThrowGenericFromGeneric<T>(T element)
         {
             ThrowFromGeneric(element, default(TKey), default(TValue), default(TKey));
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private void ThrowFromGeneric<T>(T element, TKey key1, TValue value, TKey key2)
         {
             try
