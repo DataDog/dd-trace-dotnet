@@ -18,6 +18,7 @@ namespace Datadog.Trace.Telemetry
         // need to start collecting these immediately
         private static IMetricsTelemetryCollector _metrics = new MetricsTelemetryCollector();
         private static IConfigurationTelemetry _configurationV2 = new ConfigurationTelemetry();
+        private readonly object _sync = new();
 
         // V1 integration only
         private ConfigurationTelemetryCollector? _configuration;
@@ -155,21 +156,28 @@ namespace Datadog.Trace.Telemetry
             var transportManager = new TelemetryTransportManagerV2(telemetryTransports);
             // The telemetry controller must be a singleton, so we initialize once
             // Note that any dependencies initialized inside the controller are also singletons (by design)
-            // Initialized once so if we create a new controller from this factory we get the same collector instances
-            var controller = LazyInitializer.EnsureInitialized(
-                ref _controllerV2,
-                () => new TelemetryControllerV2(
-                    Config,
-                    _dependencies!,
-                    Metrics,
-                    transportManager,
-                    settings.HeartbeatInterval))!;
+            // Initialized once so if we create a new controller from this factory we get the same collector instances.
+            // (can't use LazyInitializer because that doesn't guarantee only a single instance is created,
+            // and we start the task immediately)
 
-            controller.DisableSending(); // disable sending until fully configured
-            controller.SetTransportManager(transportManager);
-            controller.SetFlushInterval(settings.HeartbeatInterval);
+            if (_controllerV2 is null)
+            {
+                lock (_sync)
+                {
+                    _controllerV2 ??= new TelemetryControllerV2(
+                        Config,
+                        _dependencies!,
+                        Metrics,
+                        transportManager,
+                        settings.HeartbeatInterval);
+                }
+            }
 
-            return controller;
+            _controllerV2.DisableSending(); // disable sending until fully configured
+            _controllerV2.SetTransportManager(transportManager);
+            _controllerV2.SetFlushInterval(settings.HeartbeatInterval);
+
+            return _controllerV2;
         }
     }
 }
