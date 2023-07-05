@@ -258,6 +258,7 @@ internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
             {
                 if (Interlocked.Increment(ref _mutexCount) == 1 && !_mutex.WaitOne(MutexWaitTimeout))
                 {
+                    Interlocked.Decrement(ref _mutexCount);
                     SelfLog.WriteLine("Shared file mutex could not be acquired within {0} ms", MutexWaitTimeout);
                     return false;
                 }
