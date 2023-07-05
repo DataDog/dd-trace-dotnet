@@ -90,7 +90,8 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
             catch (Exception err)
             {
                 var errorMsg = err.ToString();
-                Log.Warning("AppSec could not read Waf diagnostics : {ErrorMsg}", errorMsg);
+                Log.Warning("AppSec could not read Waf diagnostics. Disabling AppSec : {ErrorMsg}", errorMsg);
+                wafHandle = null;
             }
 
             return new(failedCount, loadedCount, rulesetVersion, errors ?? new(), wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker);
