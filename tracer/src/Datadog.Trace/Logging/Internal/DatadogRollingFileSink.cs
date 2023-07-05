@@ -80,7 +80,7 @@ internal sealed class DatadogRollingFileSink : ILogEventSink, IFlushableFileSink
                     ThrowHelper.ThrowObjectDisposedException("The log file has been disposed.");
                 }
 
-                var now = Clock.DateTimeNow;
+                var now = TraceClock.Instance.UtcNow.ToLocalTime().DateTime;
                 AlignCurrentFileTo(now);
 
                 while (_currentFile?.EmitOrOverflow(logEvent) == false && _rollOnFileSizeLimit)
