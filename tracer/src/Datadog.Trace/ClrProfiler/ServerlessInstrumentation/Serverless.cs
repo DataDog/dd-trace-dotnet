@@ -118,11 +118,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
         private static void RunShutdown()
         {
-            foreach (var def in callTargetDefinitions)
-            {
-                def.Dispose();
-            }
-
             callTargetDefinitions = null;
         }
 
