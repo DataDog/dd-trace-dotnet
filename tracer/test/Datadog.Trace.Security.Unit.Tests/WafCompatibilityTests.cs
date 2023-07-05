@@ -16,7 +16,8 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void ShouldNotInitialize()
         {
             SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.MacOs, SkipOn.ArchitectureValue.ARM64);
-            var libraryInitializationResult = WafLibraryInvoker.Initialize("1.4.0");
+            var libraryInitializationResult = WafLibraryInvoker.Initialize("1.3.0");
+            libraryInitializationResult.ExportErrorHappened.Should().BeTrue();
             libraryInitializationResult.Success.Should().BeFalse();
             libraryInitializationResult.WafLibraryInvoker.Should().BeNull();
         }
