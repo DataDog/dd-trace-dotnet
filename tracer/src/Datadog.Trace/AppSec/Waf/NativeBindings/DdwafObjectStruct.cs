@@ -48,6 +48,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             {
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING => Marshal.PtrToStringAnsi(Array, (int)NbEntries),
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_SIGNED => IntValue,
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_UNSIGNED => UintValue,
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY => DecodeArray<object>(),
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP => DecodeMap(),
                 _ => null
