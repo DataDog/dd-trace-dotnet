@@ -66,7 +66,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 Environment.Is64BitProcess ? null : GetDelegateForNativeFunction<ObjectMapAddDelegateX86>(libraryHandle, "ddwaf_object_map_addl");
             _freeObjectield = GetDelegateForNativeFunction<FreeObjectDelegate>(libraryHandle, "ddwaf_object_free", out _freeObjectFuncField);
             _freeResultField = GetDelegateForNativeFunction<FreeResultDelegate>(libraryHandle, "ddwaf_result_free");
-            // _rulesetInfoFreeField = GetDelegateForNativeFunction<FreeRulesetInfoDelegate>(libraryHandle, "ddwaf_ruleset_info_free");
             _getVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(libraryHandle, "ddwaf_get_version");
             // setup logging
             _setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(libraryHandle, "ddwaf_set_log_cb");
@@ -79,8 +78,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private delegate IntPtr GetVersionDelegate();
 
         private delegate void FreeResultDelegate(ref DdwafResultStruct output);
-
-        // private delegate void FreeRulesetInfoDelegate(DdwafRuleSetInfo output);
 
         private delegate IntPtr InitDelegate(IntPtr wafRule, ref DdwafConfigStruct config, IntPtr diagnostics);
 
