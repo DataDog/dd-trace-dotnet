@@ -163,6 +163,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 scope.Root.Span.Type = SpanType;
                 scope.Span.ResourceName = $"{triggerType} {functionName}";
                 scope.Span.Type = SpanType;
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
             {
@@ -268,6 +269,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 scope.Root.Span.Type = SpanType;
                 scope.Span.ResourceName = $"{triggerType} {functionName}";
                 scope.Span.Type = SpanType;
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
             {
