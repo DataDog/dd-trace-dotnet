@@ -20,7 +20,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
                 FailedToLoadRules = result.FailedToLoadRules;
                 LoadedRules = result.LoadedRules;
                 Errors = result.Errors;
-                RuleFileVersion = RuleFileVersion;
+                RuleFileVersion = result.RuleFileVersion;
                 if (Errors.Count > 0)
                 {
                     HasErrors = true;
