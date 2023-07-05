@@ -92,7 +92,6 @@ namespace Datadog.Profiler.IntegrationTests.Signature
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowBool |fg: |sg:(bool bValue)"),
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowObject |fg: |sg:(object val)"),
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowVoid |fg: |sg:()"));
-
             }
 
             foreach (var sample in exceptionSamples)
