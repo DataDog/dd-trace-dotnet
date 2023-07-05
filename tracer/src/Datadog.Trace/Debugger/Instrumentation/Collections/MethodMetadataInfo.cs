@@ -24,9 +24,9 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, AsyncHelper.FieldInfoNameSanitized[] asyncMethodHoistedLocals, FieldInfo[] asyncMethodHoistedArguments, Type type, MethodBase method, Type kickoffType, MethodBase kickoffMethod)
         {
             ParameterNames = parameterNames;
-            LocalVariableNames = localVariableNames;
-            AsyncMethodHoistedLocals = asyncMethodHoistedLocals;
-            AsyncMethodHoistedArguments = asyncMethodHoistedArguments;
+            LocalVariableNames = localVariableNames ?? Array.Empty<string>();
+            AsyncMethodHoistedLocals = asyncMethodHoistedLocals ?? Array.Empty<AsyncHelper.FieldInfoNameSanitized>();
+            AsyncMethodHoistedArguments = asyncMethodHoistedArguments ?? Array.Empty<FieldInfo>();
             DeclaringType = type;
             Method = method;
             KickoffInvocationTargetType = kickoffType;

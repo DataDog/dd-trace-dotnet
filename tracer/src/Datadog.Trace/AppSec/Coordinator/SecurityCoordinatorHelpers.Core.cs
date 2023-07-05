@@ -114,11 +114,11 @@ internal static class SecurityCoordinatorHelpers
                     {
                         return;
                     }
-
-                    var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
-                    var result = securityCoordinator.RunWaf(args);
-                    securityCoordinator.CheckAndBlock(result);
                 }
+
+                var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
+                var result = securityCoordinator.RunWaf(args);
+                securityCoordinator.CheckAndBlock(result);
             }
         }
     }

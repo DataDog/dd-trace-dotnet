@@ -2,6 +2,95 @@
 
 
 
+
+## [Release 2.33.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.33.0)
+
+## Summary
+
+- [Serverless] AWS SDK SNS context propagation (broken in 2.32.0) has been fixed.
+- [Tracer] Preparatory work for Dynamic Configuration and new service representation.
+- [Tracer] Telemetry about the tracer's health can now be collected. It is disabled for now but will be rolled out slowly in the coming weeks.
+- [Profiler] Report GC CPU time (disabled by default for now)
+
+## Changes
+
+### Tracer
+
+#### v1 Schema
+* [Tracer] v1 Schema: Update gRPC client spans (#4243)
+* [Tracer] v1 Schema: Update CosmosDb spans (#4247)
+* [Tracer] v1 Schema: Add peer.service tag to StackExchange and ServiceStack spans (#4261)
+* [Tracer] v1 Schema: Update Couchbase spans (#4278)
+* [Tracer] v1 Schema: Use existing tags for `_dd.peer.service.source` (#4306)
+* [Tracer] v1 Schema: Update MSMQ spans (#4309)
+
+#### Dynamic configuration
+* [Tracer] Implement dynamic configuration (#4235)
+* [Tracer] Move RCM state to the subscription manager (#4304)
+
+#### Telemetry
+* [Tracer] Send the telemetry app-started event only once (#4319)
+* [Tracer] Add more telemetry metrics (#4269)
+* [Tracer] Fixes for telemetry (#4291)
+* [Tracer] Fix integration_name tag name (#4334)
+
+#### Fixes
+* Extract OpenTelemetry exception attributes (#4273)
+* [Tracer] Fix Kafka span.kind tag regression (#4310)
+* [Tracer] Fix `DuckTypeException` in earlier CosmosDb versions (#4325)
+
+### CI Visibility
+* [CIVisibility] Improving client side commands for git metadata upload (#4312)
+
+### ASM
+* [ASM] Instrument all the string builder methods (#4276)
+* [ASM] Fix: avoid racing condition errors in IAST. (#4281)
+* [ASM] Change the server.request.uri.raw WAF address (#4283)
+* [ASM] path params: Dont run waf if no data (#4284)
+* [ASM] Add support for ASM metrics (#4293)
+* [ASM] Implement WAF metrics - part 1 (#4297)
+* [ASM]  User events auto instrumentation in .Net Core: extended mode (#4301)
+* [ASM] Insecure cookies vulnerability (#4317)
+
+### Continuous Profiler
+* [Profiler] Add CPU time for GC threads (#4256)
+* [Profiler] Adjust label value to make it cleaner to display (#4280)
+* [Profiler] Propagate git repository url and commit hash from tracer to profiler (#4298)
+* [Profiler] Remove Profiler Github Actions CI (#4300)
+* [Profiler] Enable new profiler and internal features for sanitizer jobs (#4318)
+* [Profiler] Avoid loading more than 1 profiler instance (#4321)
+* Fix compilation warnings (#4324)
+
+### Debugger
+* [Dynamic Instrumentation] Installing unbound probes upon module load (#4132)
+* [Dynamic Instrumentation] Enable mixed instrumentation types on the same method (#4231)
+* [Dynamic Instrumentation] Fixed update of probes (#4315)
+
+### Serverless
+* Fix SNS Context Propagation (#4305)
+
+### Miscellaneous
+* Use string create if net6.0 or greater (#4183)
+* Allow shared call targets instrumentation with flags  (#4271)
+* Revert removing IL2026 warning from customer trimming process. (#4295)
+* Add CorProfilerInfo7::ApplyMetadata call (#4296)
+* Handle new StyleCop errors (#4299)
+* [Release] Sign and upload our packages to the agent repository for libinjection (docker/bare metal) (#4303)
+* Fixup Datadog.Trace.sln file so it loads correctly on VS 2022 (#4314)
+
+### Build / Test
+* Add Windows support for -TestAllPackageVersions (#4277)
+* Fix more trim warnings (#4282)
+* [Tooling] Use pagination for code freeze (#4285)
+* [Release] Deploy AAS test apps twice a week to monitor memory leaks (#4286)
+* [Build] Remove the 3rd party pipeline (#4307)
+* Bump NuGet.CommandLine from 5.9.2 to 5.11.5 in /tracer/build/_build (#4323)
+* Fix the namedpipes runtime metrics tests (#4329)
+* [Release] Move git tag creation back to before creating the release (#4339)
+
+
+[Changes since 2.32.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.32.0...v2.33.0)
+
 ## [Release 2.32.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.32.0)
 
 ## Summary
