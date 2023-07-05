@@ -31,6 +31,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("aerospike.namespace")
                 .IsOptional("aerospike.setname")
                 .IsOptional("aerospike.userkey")
+                .IsOptional("peer.service")
+                .IsOptional("_dd.peer.service.source")
                 .Matches("component", "aerospike")
                 .Matches("span.kind", "client"));
 
