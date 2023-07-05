@@ -1,4 +1,4 @@
-name: Deploy AAS test apps
+name: Auto deploy AAS test apps
 
 on:
   workflow_dispatch:
@@ -13,6 +13,9 @@ jobs:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
     steps:
+      - name: Clone dd-trace-dotnet repository
+        uses: actions/checkout@v3
+
       - uses: octokit/request-action@v2.x
         name: 'Open Code Freeze Milestone'
         id: milestones
@@ -36,10 +39,12 @@ jobs:
           if addr=$(echo $json | jq -er '.[] | select(.title == "Code Freeze")'); then
             echo "A code freeze is in place, we should not trigger a deployment."
             echo "stop=true" >> "$GITHUB_ENV"
+          else
+            echo "No code freeze in place. Triggering a deployment."
           fi
 
       - uses: ./.github/actions/deploy-aas-dev-apps
         name: 'Trigger AAS deploy'
         if: env.stop != 'true'
         with:
-          aas_github_token: ${{ secrets.GITHUB_TOKEN }}
+          aas_github_token: ${{ secrets.GH_TOKEN_PIERO }}
