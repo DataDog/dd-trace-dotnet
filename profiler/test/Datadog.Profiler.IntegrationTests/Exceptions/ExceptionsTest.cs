@@ -39,25 +39,25 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             if (framework == "net45")
             {
                 expectedStack = new StackTrace(
-                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"),
-                    new StackFrame("|lm:mscorlib |ns:System.Threading |ct:ThreadHelper |fn:ThreadStart"));
+                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
+                    new StackFrame("|lm:mscorlib |ns:System.Threading |ct:ThreadHelper |cg: |fn:ThreadStart |fg: |sg:(object obj)"));
             }
             else if (framework == "net6.0")
             {
                 expectedStack = new StackTrace(
-                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"),
-                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |fn:StartCallback"));
+                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
+                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |cg: |fn:StartCallback |fg: |sg:()"));
             }
             else if (framework == "net7.0")
             {
                 expectedStack = new StackTrace(
-                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"));
+                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
             }
             else
             {
                 expectedStack = new StackTrace(
-                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"),
-                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:ThreadHelper |fn:ThreadStart"));
+                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
+                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:ThreadHelper |cg: |fn:ThreadStart |fg: |sg:(object obj)"));
             }
 
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario2);
@@ -75,7 +75,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            var exceptionSamples = ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+            var exceptionSamples = SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
 
             long total = 0;
 
@@ -124,7 +124,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
 
-            var exceptionSamples = ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+            var exceptionSamples = SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
 
             var exceptionCounts = exceptionSamples.GroupBy(s => s.Type)
                 .ToDictionary(g => g.Key, g => g.Sum(s => s.Count));
@@ -238,7 +238,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            var exceptionSamples = ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+            var exceptionSamples = SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
             exceptionSamples.Should().NotBeEmpty();
 
             // this test always succeeds: it is used to display the differences between sampled and real exceptions
@@ -418,56 +418,22 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             return profiledExceptions;
         }
 
-        private static IEnumerable<(string Type, string Message, long Count, StackTrace Stacktrace)> ExtractExceptionSamples(string directory)
-        {
-            static IEnumerable<(string Type, string Message, long Count, StackTrace Stacktrace, long Time)> SamplesWithTimestamp(string directory)
-            {
-                foreach (var file in Directory.EnumerateFiles(directory, "*.pprof", SearchOption.AllDirectories))
-                {
-                    using var stream = File.OpenRead(file);
-
-                    var profile = Profile.Parser.ParseFrom(stream);
-
-                    foreach (var sample in profile.Sample)
-                    {
-                        var count = sample.Value[0];
-
-                        if (count == 0)
-                        {
-                            continue;
-                        }
-
-                        var labels = sample.Labels(profile).ToArray();
-
-                        var type = labels.Single(l => l.Name == "exception type").Value;
-                        var message = labels.Single(l => l.Name == "exception message").Value;
-
-                        yield return (type, message, count, sample.StackTrace(profile), profile.TimeNanos);
-                    }
-                }
-            }
-
-            return SamplesWithTimestamp(directory)
-                .OrderBy(s => s.Time)
-                .Select(s => (s.Type, s.Message, s.Count, s.Stacktrace));
-        }
-
         private void CheckExceptionProfiles(TestApplicationRunner runner, bool withTimestamps)
         {
             var stack1 = new StackTrace(
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw1_2"),
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw1_1"),
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw1"),
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Run"),
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:Program |fn:Main"));
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Throw1_2 |fg: |sg:(System.Exception ex)"),
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Throw1_1 |fg: |sg:(System.Exception ex)"),
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Throw1 |fg: |sg:(System.Exception ex)"),
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Run |fg: |sg:()"),
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:Program |cg: |fn:Main |fg: |sg:(string[] args)"));
 
             var stack2 = new StackTrace(
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw2_3"),
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw2_2"),
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw2_1"),
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw2"),
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Run"),
-                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:Program |fn:Main"));
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Throw2_3 |fg: |sg:(System.Exception ex)"),
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Throw2_2 |fg: |sg:(System.Exception ex)"),
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Throw2_1 |fg: |sg:(System.Exception ex)"),
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Throw2 |fg: |sg:(System.Exception ex)"),
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Run |fg: |sg:()"),
+                new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:Program |cg: |fn:Main |fg: |sg:(string[] args)"));
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -475,7 +441,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            var exceptionSamples = ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+            var exceptionSamples = SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
 
             if (withTimestamps)
             {
