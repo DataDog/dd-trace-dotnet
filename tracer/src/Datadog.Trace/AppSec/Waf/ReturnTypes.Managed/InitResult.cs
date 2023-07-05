@@ -75,17 +75,22 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
             string errorMsg = string.Empty;
             try
             {
-                var diagnosticsData = (Dictionary<string, object>)Encoder.Decode(new Obj(diagnostics));
-                var rules = (Dictionary<string, object>)diagnosticsData["rules"];
-                failedCount = (ushort)((object[])rules["failed"]).Length;
-                loadedCount = (ushort)((object[])rules["loaded"]).Length;
-                errors = (Dictionary<string, object>)rules["errors"];
-                rulesetVersion = (string)diagnosticsData["ruleset_version"];
+                if (diagnostics != IntPtr.Zero)
+                {
+                    var diagnosticsData = (Dictionary<string, object>)Encoder.Decode(new Obj(diagnostics));
+                    if (diagnosticsData.Count > 0)
+                    {
+                        var rules = (Dictionary<string, object>)diagnosticsData["rules"];
+                        failedCount = (ushort)((object[])rules["failed"]).Length;
+                        loadedCount = (ushort)((object[])rules["loaded"]).Length;
+                        errors = (Dictionary<string, object>)rules["errors"];
+                        rulesetVersion = (string)diagnosticsData["ruleset_version"];
+                    }
+                }
             }
-            catch (Exception err)
+            catch
             {
-                errorMsg = err.ToString();
-                errors = new Dictionary<string, object> { { "Diagnostics Parsing Error", errorMsg } };
+                Log.Error("DDAS-0003-04: AppSec could not read the Waf diagnostics.");
             }
 
             return new(failedCount, loadedCount, rulesetVersion, errors ?? new(), wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker);
