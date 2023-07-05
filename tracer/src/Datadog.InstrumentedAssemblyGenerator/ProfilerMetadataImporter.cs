@@ -251,12 +251,20 @@ namespace Datadog.InstrumentedAssemblyGenerator
 
             MethodDef existingMethod = null;
             var existingMethods = GetTypeRefMethodsByName(imported, tokensAndName.Value.MethodOrField);
-
+            // List<Parameter> existingMethodParameters = new List<Parameter>();
             foreach (MethodDef method in existingMethods)
             {
-                var existingMethodParameters = method.Parameters.Where(p => p.HasParamDef).ToList();
-                if (existingMethodParameters.Count != parametersTypes.Count ||
-                    method.GenericParameters.Count != tokensAndName.Value.MethodGenericParameters.Length)
+                var existingMethodParameters = method.Parameters.Where(p => !p.IsHiddenThisParameter).ToList();
+
+                if (existingMethodParameters.Count != parametersTypes.Count)
+                {
+                    continue;
+                }
+
+                var genericFounded = _instrumentedAssemblyGeneratorContext.ValidateGenericParams(
+                    OriginalModule, tokensAndName.Value, method, _importedTypes);
+
+                if (!genericFounded)
                 {
                     continue;
                 }
