@@ -10,6 +10,7 @@ runs:
   using: "composite"
   steps:
     - name: Trigger AAS deploy
+      shell: bash
       run: |
         curl -X POST \
         -H "Accept: application/vnd.github.v3+json" \

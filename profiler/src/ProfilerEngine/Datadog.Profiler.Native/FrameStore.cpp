@@ -13,6 +13,15 @@
 #include "shared/src/native-src/dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 
+#define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
+
+void StrAppend(std::stringstream& builder, const char* str);
+
+void FixGenericSyntax(WCHAR* name);
+void FixGenericSyntax(char* name);
+
+PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte);
+
 FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* debugInfoStore) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _resolveNativeFrames{pConfiguration->IsNativeFramesEnabled()},
@@ -118,44 +127,39 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
     }
 
     // method name is resolved first because we also get the mdDefToken of its class
-    auto [methodName, mdTokenType] = GetMethodName(pMetadataImport.Get(), mdTokenFunc, genericParametersCount, genericParameters.get());
+    auto [methodName, methodGenericParameters, mdTokenType] = GetMethodName(functionId, pMetadataImport.Get(), mdTokenFunc, genericParametersCount, genericParameters.get());
     if (methodName.empty())
     {
         return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
     }
+
+    // get the method signature
+     std::string signature = GetMethodSignature(_pCorProfilerInfo, pMetadataImport.Get(), mdTokenType, functionId, mdTokenFunc);
 
     // get type related description (assembly, namespace and type name)
     // look into the cache first
     TypeDesc* pTypeDesc = nullptr;  // if already in the cache
     TypeDesc typeDesc;              // if needed to be built from a given classId
     bool isEncoded = true;
-    bool typeInCache = GetCachedTypeDesc(classId, pTypeDesc, isEncoded);
+    bool typeInCache = GetCachedTypeDesc(classId, pTypeDesc);
     // TODO: would it be interesting to have a (moduleId + mdTokenDef) -> TypeDesc cache for the non cached generic types?
 
     if (!typeInCache)
     {
         // try to get the type description
-        if (!BuildTypeDesc(pMetadataImport.Get(), classId, moduleId, mdTokenType, typeDesc, false, nullptr, isEncoded))
+        if (!BuildTypeDesc(pMetadataImport.Get(), classId, moduleId, mdTokenType, typeDesc, false, nullptr))
         {
             // This should never happen but in case it happens, we cache the module/frame value.
             // It's safe to cache, because there is no reason that the next calls to
             // BuildTypeDesc will succeed.
             auto& value = _methods[functionId];
-            value = {UnknownManagedAssembly, UnknownManagedType + " |fn:" + std::move(methodName), "", 0};
+            std::stringstream builder;
+            builder << UnknownManagedType << " |fn:" << std::move(methodName) << "|fg:" << std::move(methodGenericParameters) << " |sg:" << std::move(signature);
+            value = {UnknownManagedAssembly, builder.str(), "", 0};
             return value;
         }
 
-        if (classId != 0)
-        {
-            std::lock_guard<std::mutex> lock(_encodedTypesLock);
-            pTypeDesc = &typeDesc;
-            _encodedTypes[classId] = typeDesc;
-        }
-        else
-        {
-            pTypeDesc = &typeDesc;
-        }
-        // TODO: would it be interesting to have a (moduleId + mdTokenDef) -> TypeDesc cache for the non cached generic types?
+        pTypeDesc = &typeDesc;
     }
 
     // build the frame from assembly, namespace, type and method names
@@ -166,7 +170,10 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
     }
     builder << " |ns:" << pTypeDesc->Namespace;
     builder << " |ct:" << pTypeDesc->Type;
+    builder << " |cg:" << pTypeDesc->Parameters;
     builder << " |fn:" << methodName;
+    builder << " |fg:" << methodGenericParameters;
+    builder << " |sg:" << signature;
 
     auto debugInfo = _pDebugInfoStore->Get(moduleId, mdTokenFunc);
 
@@ -184,11 +191,8 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
 
 bool FrameStore::GetTypeName(ClassID classId, std::string& name)
 {
-    // no backend encoding --> C# like
-    bool isEncoded = false;
-
     TypeDesc* pTypeDesc = nullptr;
-    if (!GetTypeDesc(classId, pTypeDesc, isEncoded))
+    if (!GetTypeDesc(classId, pTypeDesc))
     {
         return false;
     }
@@ -202,9 +206,17 @@ bool FrameStore::GetTypeName(ClassID classId, std::string& name)
         name = pTypeDesc->Namespace + "." + pTypeDesc->Type;
     }
 
+    // generic and array if any
+    if (!pTypeDesc->Parameters.empty())
+    {
+        name += pTypeDesc->Parameters;
+    }
+
     return true;
 }
 
+// FOR ALLOCATIONS RECORDER ONLY
+//
 // This method is supposed to return a string_view over a string in the types cache
 // It is used by the allocations recorder to avoid duplicating type name strings
 // For example if 4 instances of MyType are allocated, the string_view for these 4 allocations
@@ -212,51 +224,51 @@ bool FrameStore::GetTypeName(ClassID classId, std::string& name)
 // This is why it is needed to get a pointer to the TypeDesc held by the cache
 bool FrameStore::GetTypeName(ClassID classId, std::string_view& name)
 {
-    // no backend encoding --> C# like
-    bool isEncoded = false;
+    {
+        std::lock_guard<std::mutex> lock(_fullTypeNamesLock);
+
+        auto typeEntry = _fullTypeNames.find(classId);
+        if (typeEntry != _fullTypeNames.end())
+        {
+            // ensure that the string_view is pointing to the string in the cache
+            name = {typeEntry->second.data(), typeEntry->second.size()};
+            return true;
+        }
+    }
 
     TypeDesc* pTypeDesc = nullptr;
-    if (!GetTypeDesc(classId, pTypeDesc, isEncoded))
+    if (!GetTypeDesc(classId, pTypeDesc))
     {
         return false;
     }
 
-    if (!GetCachedTypeDesc(classId, pTypeDesc, isEncoded))
+    if (!GetCachedTypeDesc(classId, pTypeDesc))
     {
         return false;
     }
 
-    // ensure that the string_view is pointing to the string in the cache
-    name = pTypeDesc->Type;
+    {
+        std::lock_guard<std::mutex> lock(_fullTypeNamesLock);
+
+        // ensure that the string_view is pointing to the string in the cache
+        name = _fullTypeNames[classId] = pTypeDesc->Type + pTypeDesc->Parameters;
+    }
 
     return true;
 }
 
-bool FrameStore::GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc, bool isEncoded)
+bool FrameStore::GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc)
 {
     if (classId != 0)
     {
-        if (isEncoded)
-        {
-            std::lock_guard<std::mutex> lock(_encodedTypesLock);
+        std::lock_guard<std::mutex> lock(_typesLock);
 
-            auto typeEntry = _encodedTypes.find(classId);
-            if (typeEntry != _encodedTypes.end())
-            {
-                typeDesc = &(_encodedTypes.at(classId));
-                return true;
-            }
-        }
-        else
+        auto typeEntry = _types.find(classId);
+        if (typeEntry != _types.end())
         {
-            std::lock_guard<std::mutex> lock(_typesLock);
-
-            auto typeEntry = _types.find(classId);
-            if (typeEntry != _types.end())
-            {
-                typeDesc = &(_types.at(classId));
-                return true;
-            }
+            //typeDesc = &(_types.at(classId));
+            typeDesc = &typeEntry->second;
+            return true;
         }
     }
 
@@ -283,11 +295,11 @@ void AppendArrayRank(std::string& arrayBuilder, ULONG rank)
     }
 }
 
-bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc*& pTypeDesc, bool isEncoded)
+bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc*& pTypeDesc)
 {
     // get type related description (assembly, namespace and type name)
     // look into the cache first
-    bool typeInCache = GetCachedTypeDesc(classId, pTypeDesc, isEncoded);
+    bool typeInCache = GetCachedTypeDesc(classId, pTypeDesc);
     // TODO: would it be interesting to have a (moduleId + mdTokenDef) -> TypeDesc cache for the non cached generic types?
 
     if (!typeInCache)
@@ -340,27 +352,16 @@ bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc*& pTypeDesc, bool isEncod
 
         // try to get the type description
         TypeDesc typeDesc;
-        if (!BuildTypeDesc(metadataImport.Get(), classId, moduleId, typeDefToken, typeDesc, isArray, arrayBuilder.c_str(), isEncoded))
+        if (!BuildTypeDesc(metadataImport.Get(), classId, moduleId, typeDefToken, typeDesc, isArray, arrayBuilder.c_str()))
         {
             return false;
         }
 
         if (originalClassId != 0)
         {
-            if (isEncoded)
-            {
-                std::lock_guard<std::mutex> lock(_encodedTypesLock);
+            std::lock_guard<std::mutex> lock(_typesLock);
 
-                _encodedTypes[originalClassId] = typeDesc;
-                pTypeDesc = &(_encodedTypes.at(originalClassId));
-            }
-            else
-            {
-                std::lock_guard<std::mutex> lock(_typesLock);
-
-                _types[originalClassId] = typeDesc;
-                pTypeDesc = &(_types.at(originalClassId));
-            }
+            pTypeDesc = &(_types[originalClassId] = typeDesc);
         }
         else
         {
@@ -381,8 +382,7 @@ bool FrameStore::BuildTypeDesc(
     mdTypeDef mdTokenType,
     TypeDesc& typeDesc,
     bool isArray,
-    const char* arraySuffix,
-    bool isEncoded)
+    const char* arraySuffix)
 {
     // 1. Get the assembly from the module
     if (!GetAssemblyName(_pCorProfilerInfo, moduleId, typeDesc.Assembly))
@@ -391,9 +391,10 @@ bool FrameStore::BuildTypeDesc(
     }
 
     // 2. Look for the type name including namespace (need to take into account nested types and generic types)
-    auto [ns, ct] = GetManagedTypeName(_pCorProfilerInfo, pMetadataImport, moduleId, classId, mdTokenType, isArray, arraySuffix, isEncoded);
+    auto [ns, ct, cg] = GetManagedTypeName(_pCorProfilerInfo, pMetadataImport, moduleId, classId, mdTokenType, isArray, arraySuffix);
     typeDesc.Namespace = ns;
     typeDesc.Type = ct;
+    typeDesc.Parameters = cg;
 
     return true;
 }
@@ -475,13 +476,13 @@ bool FrameStore::GetFunctionInfo(
 
 bool FrameStore::GetMetadataApi(ModuleID moduleId, FunctionID functionId, ComPtr<IMetaDataImport2>& pMetadataImport)
 {
-    HRESULT hr = _pCorProfilerInfo->GetModuleMetaData(moduleId, CorOpenFlags::ofRead, IID_IMetaDataImport2, (IUnknown**)&pMetadataImport);
+    HRESULT hr = _pCorProfilerInfo->GetModuleMetaData(moduleId, CorOpenFlags::ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(pMetadataImport.GetAddressOf()));
     if (FAILED(hr))
     {
         Log::Debug("GetModuleMetaData() failed with HRESULT = ", HResultConverter::ToStringWithCode(hr));
         mdToken mdTokenFunc; // not used
         hr = _pCorProfilerInfo->GetTokenAndMetaDataFromFunction(
-            functionId, IID_IMetaDataImport2, (IUnknown**)&pMetadataImport, &mdTokenFunc);
+            functionId, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(pMetadataImport.GetAddressOf()), &mdTokenFunc);
         if (FAILED(hr))
         {
             Log::Debug("GetTokenAndMetaDataFromFunction() failed with HRESULT = ", HResultConverter::ToStringWithCode(hr));
@@ -492,7 +493,8 @@ bool FrameStore::GetMetadataApi(ModuleID moduleId, FunctionID functionId, ComPtr
     return true;
 }
 
-std::pair<std::string, mdTypeDef> FrameStore::GetMethodName(
+std::tuple<std::string, std::string, mdTypeDef> FrameStore::GetMethodName(
+    FunctionID functionId,
     IMetaDataImport2* pMetadataImport,
     mdMethodDef mdTokenFunc,
     ULONG32 genericParametersCount,
@@ -501,19 +503,19 @@ std::pair<std::string, mdTypeDef> FrameStore::GetMethodName(
     auto [methodName, mdTokenType] = GetMethodNameFromMetadata(pMetadataImport, mdTokenFunc);
     if ((methodName.empty()) || (genericParametersCount == 0))
     {
-        return std::make_pair(std::move(methodName), mdTokenType);
+        return std::make_tuple(std::move(methodName), std::string(), mdTokenType);
     }
 
-    // Append generic parameters if any
+    // Get generic parameters if any
     //
     // bool LongGenericParameterList<MT1, MT2, MT3, MT4, MT5, MT6, MT7, MT8>(K key, out V val)
     // called as: LongGenericParameterList<byte, bool, bool, bool, string, bool, bool, bool>(i, out _)
     // -->
-    // |fn:LongGenericParameterList{ |ns:System |ct:Byte,  |ns:System |ct:Boolean,  |ns:System |ct:Boolean,  |ns:System |ct:Boolean,  |ns: |ct:T5,  |ns:System |ct:Boolean,  |ns:System |ct:Boolean,  |ns:System |ct:Boolean}
+    // |fn:LongGenericParameterList |fg:<System.Byte, System.Boolean, System.Boolean, System.Boolean, T5, System.Boolean, System.Boolean, System.Boolean>
     // since string is a reference type, the __canon implementation is used and we can't know it is a string
     // --> this is why T5 (from the metadata) is used
     std::stringstream builder;
-    builder << "{";
+    builder << "<";
     for (ULONG32 i = 0; i < genericParametersCount; i++)
     {
         auto [ns, typeName] = GetManagedTypeName(_pCorProfilerInfo, genericParameters[i]);
@@ -521,17 +523,16 @@ std::pair<std::string, mdTypeDef> FrameStore::GetMethodName(
         // deal with System.__Canon case
         if (typeName == "__Canon")
         {
-            builder << "|ns: |ct:T" << i;
+            builder << "T" << i;
         }
         else // normal namespace.type case
         {
-            builder << "|ns:";
             if (!ns.empty())
             {
                 builder << ns;
             }
 
-            builder << " |ct:" << typeName;
+            builder << "." << typeName;
         }
 
         if (i < genericParametersCount - 1)
@@ -539,9 +540,9 @@ std::pair<std::string, mdTypeDef> FrameStore::GetMethodName(
             builder << ", ";
         }
     }
-    builder << "}";
+    builder << ">";
 
-    return std::make_pair(methodName + builder.str(), mdTokenType);
+    return std::make_tuple(methodName, builder.str(), mdTokenType);
 }
 
 bool FrameStore::GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, std::string& assemblyName)
@@ -559,7 +560,7 @@ bool FrameStore::GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, st
     INVOKE(pInfo->GetAssemblyInfo(assemblyId, nameCharCount, &nameCharCount, buffer.get(), nullptr, nullptr));
 
     // convert from UTF16 to UTF8
-    assemblyName = shared::ToString(shared::WSTRING(buffer.get()));
+    assemblyName = shared::ToString(buffer.get());
     return true;
 }
 
@@ -602,10 +603,10 @@ std::string FrameStore::GetTypeNameFromMetadata(IMetaDataImport2* pMetadata, mdT
     FixTrailingGeneric(pBuffer);
 
     // convert from UTF16 to UTF8
-    return shared::ToString(shared::WSTRING(pBuffer));
+    return shared::ToString(pBuffer);
 }
 
-std::pair<std::string, std::string> FrameStore::GetTypeWithNamespace(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType, bool isArray, const char* arraySuffix)
+std::pair<std::string, std::string> FrameStore::GetTypeWithNamespace(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType)
 {
     mdTypeDef mdEnclosingType = 0;
     HRESULT hr = pMetadata->GetNestedClassProps(mdTokenType, &mdEnclosingType);
@@ -615,7 +616,7 @@ std::pair<std::string, std::string> FrameStore::GetTypeWithNamespace(IMetaDataIm
     std::string ns;
     if (isNested)
     {
-        std::tie(ns, enclosingType) = GetTypeWithNamespace(pMetadata, mdEnclosingType, false, nullptr);
+        std::tie(ns, enclosingType) = GetTypeWithNamespace(pMetadata, mdEnclosingType);
     }
 
     // Get type name
@@ -649,11 +650,11 @@ std::pair<std::string, std::string> FrameStore::GetTypeWithNamespace(IMetaDataIm
     }
 }
 
-std::string FrameStore::FormatGenericTypeParameters(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType, bool isEncoded)
+std::vector<std::string> GetGenericTypeParameters(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType)
 {
-    std::stringstream builder;
+    std::vector<std::string> parameters;
 
-    // Get all generic parameters definition (ex: "{|ct:K, |ct:V}" for Dictionary<K,V>)
+        // Get all generic parameters definition (ex: "{|ct:K, |ct:V}" for Dictionary<K,V>)
     // --> need to iterate on the generic arguments definition with metadata API
     HCORENUM hEnum = nullptr;
 
@@ -671,67 +672,71 @@ std::string FrameStore::FormatGenericTypeParameters(IMetaDataImport2* pMetadata,
         WCHAR paramName[64];
         ULONG paramNameLen = 64;
 
-        builder << (isEncoded ? "{" : "<");
         for (size_t currentParam = 0; currentParam < genericParamsCount; currentParam++)
         {
-            if (isEncoded)
-            {
-                builder << "|ns: |ct:";
-            }
-
             ULONG index;
             DWORD flags;
             hr = pMetadata->GetGenericParamProps(genericParams[currentParam], &index, &flags, nullptr, nullptr, paramName, paramNameLen, &paramNameLen);
             if (SUCCEEDED(hr))
             {
                 // need to convert from UTF16 to UTF8
-                builder << shared::ToString(shared::WSTRING(paramName));
+                parameters.push_back(shared::ToString(paramName));
             }
             else
             {
                 // this should never happen if the enum succeeded: no need to count the parameters
-                builder << "T";
+                parameters.push_back("T");
             }
 
-            if (currentParam < genericParamsCount - 1)
-            {
-                builder << ", ";
-            }
         }
-        builder << (isEncoded ? "}" : ">");
         pMetadata->CloseEnum(hEnum);
     }
+
+    return parameters;
+}
+
+std::string FrameStore::FormatGenericTypeParameters(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType)
+{
+    std::stringstream builder;
+    builder << "<";
+
+    // Get all generic parameters definition (ex: "{K, V}" for Dictionary<K,V>)
+    // --> need to iterate on the generic arguments definition with metadata API
+    std::vector<std::string> parameters = GetGenericTypeParameters(pMetadata, mdTokenType);
+    size_t genericParamsCount = parameters.size();
+    for (size_t currentParam = 0; currentParam < genericParamsCount; currentParam++)
+    {
+        builder << parameters[currentParam];
+
+        if (currentParam < genericParamsCount - 1)
+        {
+            builder << ", ";
+        }
+    }
+    builder << ">";
 
     return builder.str();
 }
 
-void FrameStore::ConcatUnknownGenericType(std::stringstream& builder, bool isEncoded)
+void FrameStore::ConcatUnknownGenericType(std::stringstream& builder)
 {
-    if (isEncoded)
-    {
-        builder << "|ns: |ct:T";
-    }
-    else
-    {
-        builder << "T";
-    }
+    builder << "T";
 }
 
 std::string FrameStore::FormatGenericParameters(
     ICorProfilerInfo4* pInfo,
     ULONG32 numGenericTypeArgs,
-    ClassID* genericTypeArgs,
-    bool isEncoded)
+    ClassID* genericTypeArgs)
 {
     std::stringstream builder;
-    builder << (isEncoded ? "{" : "<");
+    builder << "<";
 
     for (size_t currentGenericArg = 0; currentGenericArg < numGenericTypeArgs; currentGenericArg++)
     {
         ClassID argClassId = genericTypeArgs[currentGenericArg];
         if (argClassId == 0)
         {
-            ConcatUnknownGenericType(builder, isEncoded);
+            ConcatUnknownGenericType(builder);
         }
         else
         {
@@ -740,33 +745,26 @@ std::string FrameStore::FormatGenericParameters(
             HRESULT hr = pInfo->GetClassIDInfo2(argClassId, &argModuleId, &mdType, nullptr, 0, nullptr, nullptr);
             if (FAILED(hr))
             {
-                ConcatUnknownGenericType(builder, isEncoded);
+                ConcatUnknownGenericType(builder);
             }
             else
             {
                 ComPtr<IMetaDataImport2> pMetadata;
-                hr = pInfo->GetModuleMetaData(argModuleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(&pMetadata));
+                hr = pInfo->GetModuleMetaData(argModuleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(pMetadata.GetAddressOf()));
                 if (FAILED(hr))
                 {
-                    ConcatUnknownGenericType(builder, isEncoded);
+                    ConcatUnknownGenericType(builder);
                 }
                 else
                 {
-                    auto [ns, ct] = GetManagedTypeName(pInfo, pMetadata.Get(), argModuleId, argClassId, mdType, false, nullptr, isEncoded);
-                    if (isEncoded)
+                    auto [ns, ct, cg] = GetManagedTypeName(pInfo, pMetadata.Get(), argModuleId, argClassId, mdType, false, nullptr);
+                    if (ns.empty())
                     {
-                        builder << "|ns:" << ns << " |ct:" << ct;
+                        builder << ct;
                     }
                     else
                     {
-                        if (ns.empty())
-                        {
-                            builder << ct;
-                        }
-                        else
-                        {
-                            builder << ns << "." << ct;
-                        }
+                        builder << ns << "." << ct;
                     }
                 }
             }
@@ -778,7 +776,7 @@ std::string FrameStore::FormatGenericParameters(
         }
     }
 
-    builder << (isEncoded ? "}" : ">");
+    builder << ">";
 
     return builder.str();
 }
@@ -787,17 +785,16 @@ std::string FrameStore::FormatGenericParameters(
 //      the namespace (if any)
 //      outer types (if any) without generic information
 //      inner type with generic information (if any)
-std::pair<std::string, std::string> FrameStore::GetManagedTypeName(
+std::tuple<std::string, std::string, std::string> FrameStore::GetManagedTypeName(
     ICorProfilerInfo4* pInfo,
     IMetaDataImport2* pMetadata,
     ModuleID moduleId,
     ClassID classId,
     mdTypeDef mdTokenType,
     bool isArray,
-    const char* arraySuffix,
-    bool isEncoded)
+    const char* arraySuffix)
 {
-    auto [ns, typeName] = GetTypeWithNamespace(pMetadata, mdTokenType, isArray, arraySuffix);
+    auto [ns, typeName] = GetTypeWithNamespace(pMetadata, mdTokenType);
     // we have everything we need if not a generic type
 
     // if classId == 0 (i.e. one generic parameter is a reference type), no way to get the exact generic parameters
@@ -805,15 +802,15 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(
     if (classId == 0)
     {
         // concat the generic parameter types from metadata based on mdTokenType
-        auto genericParameters = FormatGenericTypeParameters(pMetadata, mdTokenType, isEncoded);
+        auto genericParameters = FormatGenericTypeParameters(pMetadata, mdTokenType);
 
         if (isArray)
         {
-            return std::make_pair(std::move(ns), typeName + genericParameters + arraySuffix);
+            return std::make_tuple(std::move(ns), typeName, genericParameters + arraySuffix);
         }
         else
         {
-            return std::make_pair(std::move(ns), typeName + genericParameters);
+            return std::make_tuple(std::move(ns), typeName, genericParameters);
         }
     }
 
@@ -828,10 +825,10 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(
         // this happens when the given classId is 0 so should not occur
         if (isArray)
         {
-            typeName += arraySuffix;
+            return std::make_tuple(std::move(ns), std::move(typeName), arraySuffix);
         }
 
-        return std::make_pair(std::move(ns), std::move(typeName));
+        return std::make_tuple(std::move(ns), std::move(typeName), std::string());
     }
 
     // nothing else to do if not a generic
@@ -839,10 +836,10 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(
     {
         if (isArray)
         {
-            typeName += arraySuffix;
+            return std::make_tuple(std::move(ns), std::move(typeName), arraySuffix);
         }
 
-        return std::make_pair(std::move(ns), std::move(typeName));
+        return std::make_tuple(std::move(ns), std::move(typeName), std::string());
     }
 
     // list generic parameters
@@ -855,27 +852,28 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(
 
         if (isArray)
         {
-            typeName += arraySuffix;
+            return std::make_tuple(std::move(ns), std::move(typeName), arraySuffix);
         }
 
-        return std::make_pair(std::move(ns), std::move(typeName));
+        return std::make_tuple(std::move(ns), std::move(typeName), std::string()); // should "<>" be added anyway?
     }
 
     // concat the generic parameter types
-    auto genericParameters = FormatGenericParameters(pInfo, numGenericTypeArgs, genericTypeArgs.get(), isEncoded);
+    auto genericParameters = FormatGenericParameters(pInfo, numGenericTypeArgs, genericTypeArgs.get());
 
     if (isArray)
     {
-        return std::make_pair(std::move(ns), std::move(typeName + genericParameters + arraySuffix));
+        return std::make_tuple(std::move(ns), std::move(typeName), std::move(genericParameters + arraySuffix));
     }
     else
     {
-        return std::make_pair(std::move(ns), std::move(typeName + genericParameters));
+        return std::make_tuple(std::move(ns), std::move(typeName), std::move(genericParameters));
     }
 }
 
 std::pair<std::string, mdTypeDef> FrameStore::GetMethodNameFromMetadata(IMetaDataImport2* pMetadataImport, mdMethodDef mdTokenFunc)
 {
+    // get the method name
     ULONG nameCharCount = 0;
     HRESULT hr = pMetadataImport->GetMethodProps(mdTokenFunc, nullptr, nullptr, 0, &nameCharCount, nullptr, nullptr, nullptr, nullptr, nullptr);
     if (FAILED(hr))
@@ -893,7 +891,137 @@ std::pair<std::string, mdTypeDef> FrameStore::GetMethodNameFromMetadata(IMetaDat
     }
 
     // convert from UTF16 to UTF8
-    return std::make_pair(shared::ToString(shared::WSTRING(buffer.get())), mdTokenType);
+    return std::make_pair(shared::ToString(buffer.get()), mdTokenType);
+}
+
+std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataImport2* pMetaData, mdTypeDef mdTokenType, FunctionID functionId, mdMethodDef mdTokenFunc)
+{
+    PCCOR_SIGNATURE pSigBlob;
+    ULONG blobSize, attributes;
+    DWORD flags;
+    ULONG codeRva;
+
+    // get the coded signature from metadata
+    ULONG nameCharCount = 0;
+    HRESULT hr = pMetaData->GetMethodProps(mdTokenFunc, nullptr, nullptr, 0, nullptr, &attributes, &pSigBlob, &blobSize, &codeRva, &flags);
+    if (FAILED(hr))
+    {
+        return "(?)";
+    }
+
+    // read https://chnasarre.medium.com/decyphering-method-signature-with-clr-profiling-api-8328a72a216e for more details
+    ULONG elementType;
+    ULONG callConv;
+    std::stringstream builder;
+
+    // get the calling convention
+    pSigBlob += CorSigUncompressData(pSigBlob, &callConv);
+
+    ULONG argCount = 0;
+    ClassID classId = 0;
+    // for generic support
+    std::unique_ptr<ClassID[]> methodTypeArgs = nullptr;
+    ULONG genericArgCount = 0;
+    UINT32 methodTypeArgCount = 0;
+    ULONG32 classTypeArgCount = 0;
+    std::vector<std::string> classTypeArgs;
+    if ((callConv & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0)
+    {
+        ModuleID moduleId;
+
+        //
+        // Grab the generic type argument count
+        //
+        pSigBlob += CorSigUncompressData(pSigBlob, &genericArgCount);
+
+        // get the generic details for the function
+        methodTypeArgs = std::make_unique<ClassID[]>(genericArgCount);
+        hr = pInfo->GetFunctionInfo2(functionId, (COR_PRF_FRAME_INFO)NULL, &classId, &moduleId, NULL, genericArgCount, &methodTypeArgCount, methodTypeArgs.get());
+        assert(FAILED(hr) || (genericArgCount == methodTypeArgCount));
+        if (FAILED(hr))
+        {
+            methodTypeArgs = nullptr;
+        }
+    }
+
+    // Get the generic details for the type implementing the function
+    // In case of generic with a reference type parameter, classId will be null:
+    // --> get type name from metadata to match the types name shown for the type
+    if (classId == 0)
+    {
+        classTypeArgs = GetGenericTypeParameters(pMetaData, mdTokenType);
+    }
+
+    //
+    // Grab the argument count
+    //
+    pSigBlob += CorSigUncompressData(pSigBlob, &argCount);
+
+    //
+    // Get the return type
+    //
+    mdToken returnTypeToken;
+    std::stringstream returnTypeBuilder; // it is not used today
+    pSigBlob = ParseElementType(pMetaData, pSigBlob, classTypeArgs, methodTypeArgs.get(), &elementType, returnTypeBuilder, &returnTypeToken);
+    // if the return type returned back empty, should correspond to "void"
+    // NOTE: elementType should be ELEMENT_TYPE_VOID in that case
+
+    if (argCount == 0)
+    {
+        return "()";
+    }
+
+
+    // To get the parameters types and name, it is needed to:
+    // - decypher the function binary blob signature to get each parameter type
+    // - fetch each parameter properties to get its name
+    // NOTE: in case of non static method, the implicit 'this' parameter is not part of the parameters
+    //       neither in the signature nor in the metadata enumeration EnumParams
+    hr = S_OK;
+    HCORENUM hEnum = 0;
+    ULONG paramCount;
+
+    // Note: calling EnumParams with NULL, 0 to get the size does not seem to work
+    //       so rely on the count provided by the blob
+    auto paramDefs = std::make_unique<mdParamDef[]>(argCount);
+    hr = pMetaData->EnumParams(&hEnum, mdTokenFunc, paramDefs.get(), argCount, &paramCount);
+    pMetaData->CloseEnum(hEnum);
+
+    ULONG pos;
+    WCHAR name[260];
+    ULONG length;
+
+    DWORD bIsValueType;
+    builder << "(";
+    for (ULONG i = 0;
+         (SUCCEEDED(hr) && (pSigBlob != NULL) && (i < (argCount)));
+         i++)
+    {
+        // get the parameter name
+        hr = pMetaData->GetParamProps(paramDefs[i], NULL, &pos, name, ARRAY_LEN(name) - 1, &length, &attributes, &bIsValueType, NULL, NULL);
+        // note that we need to convert from WCHAR* to char* for the name
+
+        // get the parameter type
+        //
+        // In case of generic function, get the type details from the runtime and not from the metadata
+        // We don't know in advance which parameter is a generic parameter and this is given by elementType == MVAR
+        mdToken parameterTypeToken = mdTypeDefNil;
+        std::stringstream parameterBuilder;
+        pSigBlob = ParseElementType(pMetaData, pSigBlob, classTypeArgs, methodTypeArgs.get(), &elementType, parameterBuilder, &parameterTypeToken);
+        builder << parameterBuilder.str();
+
+        builder << " ";
+        // convert from UTF16 to UTF8
+        builder << shared::ToString(name);
+
+        if (i < argCount - 1)
+        {
+            builder << ", ";
+        }
+    }
+    builder << ")";
+
+    return builder.str();
 }
 
 std::pair<std::string, std::string> FrameStore::GetManagedTypeName(ICorProfilerInfo4* pInfo, ClassID classId)
@@ -931,4 +1059,423 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(ICorProfilerI
 
     // need to split to get the namespace and type name
     return std::make_pair(typeName.substr(0, pos), typeName.substr(pos + 1));
+}
+
+// use Peter Sollich way in ClrProfiler to parse the binary signature
+// https://github.com/microsoftarchive/clrprofiler/blob/master/CLRProfiler/profilerOBJ/ProfilerInfo.cpp#L1838
+PCCOR_SIGNATURE FrameStore::ParseElementType(IMetaDataImport* pMDImport,
+                                 PCCOR_SIGNATURE signature,
+                                 std::vector<std::string>& classTypeArgs,
+                                 ClassID* methodTypeArgs,
+                                 ULONG* elementType,
+                                 std::stringstream& builder,
+                                 mdToken* typeToken // type ref/def token for reference and value types
+)
+{
+    ULONG eType = *signature++;
+    *elementType = eType;
+    switch (*elementType)
+    {
+        // Picking the C# keywords for the built-in types
+        // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/built-in-types
+        case ELEMENT_TYPE_VOID:
+            StrAppend(builder, "void");
+            break;
+
+        case ELEMENT_TYPE_BOOLEAN:
+            StrAppend(builder, "bool");
+            break;
+
+        case ELEMENT_TYPE_CHAR:
+            StrAppend(builder, "char");
+            break;
+
+        case ELEMENT_TYPE_I1:
+            StrAppend(builder, "sbyte");
+            break;
+
+        case ELEMENT_TYPE_U1:
+            StrAppend(builder, "byte");
+            break;
+
+        case ELEMENT_TYPE_I2:
+            StrAppend(builder, "short");
+            break;
+
+        case ELEMENT_TYPE_U2:
+            StrAppend(builder, "ushort");
+            break;
+
+        case ELEMENT_TYPE_I4:
+            StrAppend(builder, "int");
+            break;
+
+        case ELEMENT_TYPE_U4:
+            StrAppend(builder, "uint");
+            break;
+
+        case ELEMENT_TYPE_I8:
+            StrAppend(builder, "long");
+            break;
+
+        case ELEMENT_TYPE_U8:
+            StrAppend(builder, "ulong");
+            break;
+
+        case ELEMENT_TYPE_R4:
+            StrAppend(builder, "float");
+            break;
+
+        case ELEMENT_TYPE_R8:
+            StrAppend(builder, "double");
+            break;
+
+        case ELEMENT_TYPE_U:
+            StrAppend(builder, "nuint");
+            break;
+
+        case ELEMENT_TYPE_I:
+            StrAppend(builder, "nint");
+            break;
+
+        case ELEMENT_TYPE_OBJECT:
+            StrAppend(builder, "object");
+            break;
+
+        case ELEMENT_TYPE_STRING:
+            StrAppend(builder, "string");
+            break;
+
+        case ELEMENT_TYPE_TYPEDBYREF:
+            StrAppend(builder, "refany");
+            break;
+
+        case ELEMENT_TYPE_CLASS:
+        case ELEMENT_TYPE_VALUETYPE:
+        case ELEMENT_TYPE_CMOD_REQD:
+        case ELEMENT_TYPE_CMOD_OPT:
+        {
+            mdToken token;
+            char classname[260];
+
+            classname[0] = '\0';
+            signature += CorSigUncompressToken(signature, &token);
+            if (typeToken != NULL)
+            {
+                *typeToken = token;
+            }
+
+            HRESULT hr;
+            WCHAR zName[260];
+            if (TypeFromToken(token) == mdtTypeRef)
+            {
+                mdToken resScope;
+                ULONG length;
+                hr = pMDImport->GetTypeRefProps(token,
+                                                &resScope,
+                                                zName,
+                                                ARRAY_LEN(classname),
+                                                &length);
+            }
+            else
+            {
+                hr = pMDImport->GetTypeDefProps(token,
+                                                zName,
+                                                ARRAY_LEN(classname),
+                                                NULL,
+                                                NULL,
+                                                NULL);
+            }
+            if (SUCCEEDED(hr))
+            {
+                StrAppend(builder, shared::ToString(zName).c_str());
+            }
+            else
+            {
+                StrAppend(builder, "?");
+            }
+        }
+        break;
+
+        case ELEMENT_TYPE_SZARRAY:
+            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, builder, typeToken);
+            StrAppend(builder, "[]");
+            break;
+
+        case ELEMENT_TYPE_ARRAY:
+        {
+            ULONG rank;
+            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, builder, typeToken);
+            rank = CorSigUncompressData(signature);
+
+            // The second condition is to guard against overflow bugs & shut up PREFAST
+            if (rank == 0 || rank >= 65536)
+            {
+                StrAppend(builder, "[?]");
+            }
+            else
+            {
+                ULONG* lower;
+                ULONG* sizes;
+                ULONG numsizes;
+                ULONG arraysize = (sizeof(ULONG) * 2 * rank);
+
+                lower = (ULONG*)_alloca(arraysize);
+                memset(lower, 0, arraysize);
+                sizes = &lower[rank];
+
+                numsizes = CorSigUncompressData(signature);
+                if (numsizes <= rank)
+                {
+                    ULONG numlower;
+                    ULONG i;
+
+                    for (i = 0; i < numsizes; i++)
+                    {
+                        sizes[i] = CorSigUncompressData(signature);
+                    }
+
+                    numlower = CorSigUncompressData(signature);
+                    if (numlower <= rank)
+                    {
+                        for (i = 0; i < numlower; i++)
+                        {
+                            lower[i] = CorSigUncompressData(signature);
+                        }
+
+                        StrAppend(builder, "[");
+                        for (i = 0; i < rank; i++)
+                        {
+                            if ((sizes[i] != 0) && (lower[i] != 0))
+                            {
+                                char sizeBuffer[100];
+                                if (lower[i] == 0)
+                                {
+#ifdef _WINDOWS
+                                    sprintf_s(sizeBuffer, ARRAY_LEN(sizeBuffer), "%d", sizes[i]);
+#else
+                                    sprintf(sizeBuffer, "%d", sizes[i]);
+#endif
+                                }
+                                else
+                                {
+#ifdef _WINDOWS
+                                    sprintf_s(sizeBuffer, ARRAY_LEN(sizeBuffer), "%d...", lower[i]);
+#else
+                                    sprintf(sizeBuffer, "%d...", lower[i]);
+#endif
+                                    if (sizes[i] != 0)
+                                    {
+#ifdef _WINDOWS
+                                        sprintf_s(sizeBuffer, ARRAY_LEN(sizeBuffer), "%d...%d", lower[i], (lower[i] + sizes[i] + 1));
+#else
+                                        sprintf(sizeBuffer, "%d...%d", lower[i], (lower[i] + sizes[i] + 1));
+#endif
+                                    }
+                                }
+                                StrAppend(builder, sizeBuffer);
+                            }
+
+                            if (i < (rank - 1))
+                            {
+                                StrAppend(builder, ",");
+                            }
+                        }
+
+                        StrAppend(builder, "]");
+                    }
+                }
+            }
+        }
+        break;
+
+        case ELEMENT_TYPE_PINNED:
+            // I'm not sure what to do with this...
+            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, builder, typeToken);
+            StrAppend(builder, "* ");
+            break;
+
+        case ELEMENT_TYPE_PTR:
+            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, builder, typeToken);
+            StrAppend(builder, "*");
+            break;
+
+        case ELEMENT_TYPE_BYREF:
+            // keep in mind that it is a parameter passed by reference; i.e. its value is the address of the variable
+            // that contains the real object address in case of reference type.
+            // --> we need to return if it is a BYREF parameter as an 'isReference' out parameter in this method
+            // Note that the "real" type just follows
+            signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, builder, typeToken);
+            StrAppend(builder, "&");
+            break;
+
+        // handle generics
+        case ELEMENT_TYPE_VAR: // for type
+        {
+            // read the number
+            ULONG n = CorSigUncompressData(signature);
+            if (n < classTypeArgs.size())
+            {
+                builder << classTypeArgs[n];
+            }
+            else
+            {
+                StrAppend(builder, "T");
+                builder << n;
+            }
+        }
+        break;
+        case ELEMENT_TYPE_MVAR: // for method
+        {
+            ULONG n = CorSigUncompressData(signature);
+            std::string sTypeName;
+            if (GetTypeName(methodTypeArgs[n], sTypeName))
+            {
+                // this happens when a reference type is passed as generic parameter
+                // --> we prefer to show in the signature the "Txx" name shown in the method name
+                // |fn:ThrowGenericFromGeneric{|ns: |ct:T0} |sg:(System.__Canon element)
+                // -->
+                // |fn:ThrowGenericFromGeneric{|ns: |ct:T0} |sg:(T0 element)
+                if (sTypeName == "System.__Canon")
+                {
+                    StrAppend(builder, "T");
+                    builder << n;
+                }
+                else
+                {
+                    builder << sTypeName;
+                }
+            }
+            else
+            {
+                StrAppend(builder, "M");
+                builder << n;
+            }
+        }
+        break;
+
+        case ELEMENT_TYPE_GENERICINST:
+            // https://docs.microsoft.com/en-us/archive/blogs/davbr/sigparse-cpp line 834
+            //
+            {
+                // is it value/reference type?
+                ULONG eType = CorSigUncompressData(signature);
+                BYTE elementType = (BYTE)eType;
+                // signature = ParseByte(signature, &elementType);
+                if ((elementType != ELEMENT_TYPE_CLASS) && (elementType != ELEMENT_TYPE_VALUETYPE))
+                {
+                    StrAppend(builder, "<T?>");
+                    break;
+                }
+
+                // get the mdToken corresponding to the generic type and get it's name
+                // Note that the name ends with `xx where xx is the count of generic parameters
+                mdToken token;
+                signature += CorSigUncompressToken(signature, &token);
+
+                // close to ELEMENT_TYPE_CLASS except for generic processing
+                HRESULT hr;
+                char classname[260];
+                classname[0] = '\0';
+                WCHAR zName[260];
+                if (TypeFromToken(token) == mdtTypeRef)
+                {
+                    mdToken resScope;
+                    ULONG length;
+                    hr = pMDImport->GetTypeRefProps(token,
+                                                    &resScope,
+                                                    zName,
+                                                    260,
+                                                    &length);
+                }
+                else
+                {
+                    hr = pMDImport->GetTypeDefProps(token,
+                                                    zName,
+                                                    260,
+                                                    NULL,
+                                                    NULL,
+                                                    NULL);
+                }
+                if (SUCCEEDED(hr))
+                {
+#ifdef _WINDOWS
+                    strncpy_s(classname, shared::ToString(zName).c_str(), ARRAY_LEN(classname));
+#else
+                    strncpy(classname, shared::ToString(zName).c_str(), ARRAY_LEN(classname));
+#endif
+                }
+
+                FixGenericSyntax((char*)classname);
+                StrAppend(builder, classname);
+
+                StrAppend(builder, "<");
+
+                // get generic parameters count
+                ULONG genericParameterCount = CorSigUncompressData(signature);
+
+                // get each generic parameter
+                for (ULONG current = 1; current <= genericParameterCount; current++)
+                {
+                    signature = ParseElementType(pMDImport, signature, classTypeArgs, methodTypeArgs, &eType, builder, NULL);
+
+                    if (current != genericParameterCount)
+                    {
+                        StrAppend(builder, ", ");
+                    }
+                }
+                StrAppend(builder, ">");
+                break;
+            }
+
+        default:
+        case ELEMENT_TYPE_END:
+        case ELEMENT_TYPE_SENTINEL:
+            StrAppend(builder, "UNKNOWN");
+            break;
+
+    } // switch
+
+    return signature;
+}
+
+void FixGenericSyntax(WCHAR* name)
+{
+    ULONG currentCharPos = 0;
+    while (name[currentCharPos] != WStr('\0'))
+    {
+        if (name[currentCharPos] == WStr('`'))
+        {
+            // skip `xx
+            name[currentCharPos] = WStr('\0');
+            return;
+        }
+        currentCharPos++;
+    }
+}
+
+void FixGenericSyntax(char* name)
+{
+    ULONG currentCharPos = 0;
+    while (name[currentCharPos] != '\0')
+    {
+        if (name[currentCharPos] == '`')
+        {
+            // skip `xx
+            name[currentCharPos] = '\0';
+            return;
+        }
+        currentCharPos++;
+    }
+}
+
+void StrAppend(std::stringstream& builder, const char* str)
+{
+    builder << str;
+}
+
+PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte)
+{
+    *pByte = *pbSig++;
+    return pbSig;
 }
