@@ -23,58 +23,58 @@ internal class MetadataNameParser
         switch (token.Table)
         {
             case MetadataTable.MethodSpec:
-            {
-                var parsedName = ParseName(name);
-                if (parsedName.HasValue == false)
                 {
-                    throw new TypeNameParserException(name);
-                }
+                    var parsedName = ParseName(name);
+                    if (parsedName.HasValue == false)
+                    {
+                        throw new TypeNameParserException(name);
+                    }
 
-                var (method, methodGenericArgs) = ParseGenericTypeOrMethod(parsedName.Value.member);
-                var (type, typeGenericArgs) = ParseGenericTypeOrMethod(parsedName.Value.type);
-                if (methodGenericArgs.Length <= 0 && name.Contains("<"))
-                {
-                    Logger.Warn($"{name}: It seems that the method should be generic but failed to parse it");
-                    throw new TypeNameParserException(name);
-                }
-                SigMemberType[] typeGenericArgsSig = Array.Empty<SigMemberType>();
-                SigMemberType[] methodGenericArgsSig = Array.Empty<SigMemberType>();
-                SigMemberType[] methodParametersSig = Array.Empty<SigMemberType>();
-                SigMemberType returnTypeSig = null;
+                    var (method, methodGenericArgs) = ParseGenericTypeOrMethod(parsedName.Value.member);
+                    var (type, typeGenericArgs) = ParseGenericTypeOrMethod(parsedName.Value.type);
+                    if (methodGenericArgs.Length <= 0 && name.Contains("<"))
+                    {
+                        Logger.Warn($"{name}: It seems that the method should be generic but failed to parse it");
+                        throw new TypeNameParserException(name);
+                    }
+                    SigMemberType[] typeGenericArgsSig = Array.Empty<SigMemberType>();
+                    SigMemberType[] methodGenericArgsSig = Array.Empty<SigMemberType>();
+                    SigMemberType[] methodParametersSig = Array.Empty<SigMemberType>();
+                    SigMemberType returnTypeSig = null;
 
-                if (typeGenericArgs.Length > 0)
-                {
-                    typeGenericArgsSig = typeGenericArgs.Select(arg => new SigMemberType(arg)).ToArray();
-                }
+                    if (typeGenericArgs.Length > 0)
+                    {
+                        typeGenericArgsSig = typeGenericArgs.Select(arg => new SigMemberType(arg)).ToArray();
+                    }
 
-                if (methodGenericArgs.Length > 0)
-                {
-                    methodGenericArgsSig = methodGenericArgs.Select(arg => new SigMemberType(arg)).ToArray();
-                }
+                    if (methodGenericArgs.Length > 0)
+                    {
+                        methodGenericArgsSig = methodGenericArgs.Select(arg => new SigMemberType(arg)).ToArray();
+                    }
 
-                if (!string.IsNullOrEmpty(parsedName.Value.returnType))
-                {
-                    returnTypeSig = new SigMemberType(parsedName.Value.returnType);
-                }
+                    if (!string.IsNullOrEmpty(parsedName.Value.returnType))
+                    {
+                        returnTypeSig = new SigMemberType(parsedName.Value.returnType);
+                    }
 
-                if (parsedName.Value.parameters.Length > 0)
-                {
-                    methodParametersSig = parsedName.Value.parameters.Select(p => new SigMemberType(p)).ToArray();
+                    if (parsedName.Value.parameters.Length > 0)
+                    {
+                        methodParametersSig = parsedName.Value.parameters.Select(p => new SigMemberType(p)).ToArray();
+                    }
+                    return new MetadataMember(type ?? parsedName.Value.type, method ?? parsedName.Value.member, name, methodParametersSig, null, typeGenericArgsSig, methodGenericArgsSig, returnTypeSig, 0);
                 }
-                return new MetadataMember(type ?? parsedName.Value.type, method ?? parsedName.Value.member, name, methodParametersSig, null, typeGenericArgsSig, methodGenericArgsSig, returnTypeSig, 0);
-            }
 
             case MetadataTable.TypeSpec:
-            {
-                var (type, typeGenericArgs) = ParseGenericTypeOrMethod(name);
-                if (typeGenericArgs.Length <= 0 && name.Contains("<"))
                 {
-                    Logger.Warn($"{name}: It seems that the ype should be generic but failed to parse it");
-                    throw new TypeNameParserException(name);
+                    var (type, typeGenericArgs) = ParseGenericTypeOrMethod(name);
+                    if (typeGenericArgs.Length <= 0 && name.Contains("<"))
+                    {
+                        Logger.Warn($"{name}: It seems that the ype should be generic but failed to parse it");
+                        throw new TypeNameParserException(name);
+                    }
+                    var typeGenericArgsSig = typeGenericArgs.Select(arg => new SigMemberType(arg)).ToArray();
+                    return new MetadataMember(type, fullName: name, Array.Empty<SigMemberType>(), typeGenericArgsSig);
                 }
-                var typeGenericArgsSig = typeGenericArgs.Select(arg => new SigMemberType(arg)).ToArray();
-                return new MetadataMember(type, fullName: name, Array.Empty<SigMemberType>(), typeGenericArgsSig);
-            }
 
             case MetadataTable.TypeRef:
             case MetadataTable.TypeDef:
@@ -86,64 +86,64 @@ internal class MetadataNameParser
             case MetadataTable.Field:
             case MetadataTable.Method:
             case MetadataTable.MemberRef:
-            {
-                var parsedName = ParseName(name);
-                if (!parsedName.HasValue)
                 {
-                    throw new TypeNameParserException(name);
-                }
-
-                var (type, typeGenericArgs) = ParseGenericTypeOrMethod(parsedName.Value.type);
-                var (method, methodGenericArgs) = ParseGenericTypeOrMethod(parsedName.Value.member);
-                SigMemberType typeSig = null;
-                SigMemberType returnTypeSig = null;
-                SigMemberType[] typeGenericArgsSig = Array.Empty<SigMemberType>();
-                SigMemberType[] methodGenericArgsSig = Array.Empty<SigMemberType>();
-                SigMemberType[] methodParametersSig = Array.Empty<SigMemberType>();
-                if (typeGenericArgs.Length > 0)
-                {
-                    typeGenericArgsSig = typeGenericArgs.Select(arg => new SigMemberType(arg)).ToArray();
-                    // if type is signature from the instrumentation log
-                    if (parsedName.Value.type.Contains("?"))
+                    var parsedName = ParseName(name);
+                    if (!parsedName.HasValue)
                     {
-                        // Replace generic sign '<>' with '?'
-                        // In this case is just one type so take the first (locals can have more than one)
-                        string sanitized = SanitizeGenericSig(parsedName.Value.type).First();
-                        typeSig = new SigMemberType(sanitized);
+                        throw new TypeNameParserException(name);
                     }
-                }
 
-                typeSig ??= new SigMemberType(parsedName.Value.type);
-
-                if (methodGenericArgs.Length > 0)
-                {
-                    methodGenericArgsSig = methodGenericArgs.Select(arg => new SigMemberType(arg)).ToArray();
-                }
-
-                int methodOrFieldAttr = 0;
-                if (!string.IsNullOrEmpty(parsedName.Value.returnType))
-                {
-                    returnTypeSig = new SigMemberType(parsedName.Value.returnType);
-                }
-                else if (token.Table == MetadataTable.Field)
-                {
-                    string field = method ?? parsedName.Value.member;
-                    if (field.Contains("?"))
+                    var (type, typeGenericArgs) = ParseGenericTypeOrMethod(parsedName.Value.type);
+                    var (method, methodGenericArgs) = ParseGenericTypeOrMethod(parsedName.Value.member);
+                    SigMemberType typeSig = null;
+                    SigMemberType returnTypeSig = null;
+                    SigMemberType[] typeGenericArgsSig = Array.Empty<SigMemberType>();
+                    SigMemberType[] methodGenericArgsSig = Array.Empty<SigMemberType>();
+                    SigMemberType[] methodParametersSig = Array.Empty<SigMemberType>();
+                    if (typeGenericArgs.Length > 0)
                     {
-                        string[] parts = field.Split('?');
-                        method = parts[0];
-                        returnTypeSig = new SigMemberType(parts[1]);
-                        methodOrFieldAttr = Convert.ToInt32(parts[2], 16);
+                        typeGenericArgsSig = typeGenericArgs.Select(arg => new SigMemberType(arg)).ToArray();
+                        // if type is signature from the instrumentation log
+                        if (parsedName.Value.type.Contains("?"))
+                        {
+                            // Replace generic sign '<>' with '?'
+                            // In this case is just one type so take the first (locals can have more than one)
+                            string sanitized = SanitizeGenericSig(parsedName.Value.type).First();
+                            typeSig = new SigMemberType(sanitized);
+                        }
                     }
-                }
 
-                if (parsedName.Value.parameters.Length > 0)
-                {
-                    methodParametersSig = parsedName.Value.parameters.Select(p => new SigMemberType(p)).ToArray();
-                }
+                    typeSig ??= new SigMemberType(parsedName.Value.type);
 
-                return new MetadataMember(type ?? parsedName.Value.type, method ?? parsedName.Value.member, name, methodParametersSig, typeSig, typeGenericArgsSig, methodGenericArgsSig, returnTypeSig, methodOrFieldAttr);
-            }
+                    if (methodGenericArgs.Length > 0)
+                    {
+                        methodGenericArgsSig = methodGenericArgs.Select(arg => new SigMemberType(arg)).ToArray();
+                    }
+
+                    int methodOrFieldAttr = 0;
+                    if (!string.IsNullOrEmpty(parsedName.Value.returnType))
+                    {
+                        returnTypeSig = new SigMemberType(parsedName.Value.returnType);
+                    }
+                    else if (token.Table == MetadataTable.Field)
+                    {
+                        string field = method ?? parsedName.Value.member;
+                        if (field.Contains("?"))
+                        {
+                            string[] parts = field.Split('?');
+                            method = parts[0];
+                            returnTypeSig = new SigMemberType(parts[1]);
+                            methodOrFieldAttr = Convert.ToInt32(parts[2], 16);
+                        }
+                    }
+
+                    if (parsedName.Value.parameters.Length > 0)
+                    {
+                        methodParametersSig = parsedName.Value.parameters.Select(p => new SigMemberType(p)).ToArray();
+                    }
+
+                    return new MetadataMember(type ?? parsedName.Value.type, method ?? parsedName.Value.member, name, methodParametersSig, typeSig, typeGenericArgsSig, methodGenericArgsSig, returnTypeSig, methodOrFieldAttr);
+                }
 
             case MetadataTable.AssemblyRef:
             case MetadataTable.ModuleRef:
@@ -227,6 +227,19 @@ internal class MetadataNameParser
         if (!isGenericMethod)
         {
             lastSeparator = fullMethodName.LastIndexOf(separator);
+            if (lastSeparator >= 1 &&
+                fullMethodName[lastSeparator] == '.' &&
+                fullMethodName[lastSeparator - 1] == '.')
+            {
+                if (fullMethodName.EndsWith("ctor")) // explicit for .ctor and .cctor
+                {
+                    lastSeparator--;
+                }
+                else
+                {
+                    Logger.Debug($"Weird member name: {fullMethodName}");
+                }
+            }
         }
         else
         {

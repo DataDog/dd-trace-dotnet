@@ -23,5 +23,9 @@ namespace Datadog.Trace.Tools.Runner
         [Description("Sets the instrumentation log folder path.")]
         [CommandOption("--log-path <PATH>")]
         public string? LogDirectory { get; set; }
+
+        [Description("Sets if the original assemblies has copied during the app running.")]
+        [CommandOption("--original-assemblies <ASSEMBLIES>")]
+        public string? OriginalAssemblies { get; set; }
     }
 }
