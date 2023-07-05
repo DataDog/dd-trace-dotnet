@@ -72,7 +72,6 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
             ushort loadedCount = 0;
             string rulesetVersion = string.Empty;
             Dictionary<string, object>? errors = null;
-            string errorMsg = string.Empty;
             try
             {
                 if (diagnostics != IntPtr.Zero)
@@ -88,9 +87,10 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
                     }
                 }
             }
-            catch
+            catch (Exception err)
             {
-                Log.Error("DDAS-0003-04: AppSec could not read the Waf diagnostics.");
+                var errorMsg = err.ToString();
+                Log.Warning("AppSec could not read Waf diagnostics : {ErrorMsg}", errorMsg);
             }
 
             return new(failedCount, loadedCount, rulesetVersion, errors ?? new(), wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker);
