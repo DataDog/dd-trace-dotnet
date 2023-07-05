@@ -186,45 +186,45 @@ namespace Datadog.InstrumentedAssemblyGenerator
             switch (originalToken.Table)
             {
                 case MetadataTable.TypeDef:
-                {
-                    type = module.GetTypes().FirstOrDefault(t => t.FullName.Equals(metadataMember.Type, StringComparison.InvariantCultureIgnoreCase));
-                    break;
-                }
-                case MetadataTable.TypeRef:
-                {
-                    importedTypes?.TryGetValue(metadataMember.Type, out type);
-                    type ??= module.GetTypeRefs().FirstOrDefault(t => t.FullName.Equals(metadataMember.Type, StringComparison.InvariantCultureIgnoreCase));
-                    break;
-                }
-                case MetadataTable.TypeSpec:
-                {
-                    var module2 = module as ModuleDefMD;
-                    for (uint i = 0; i <= module2?.Metadata.TablesStream.TypeSpecTable.Rows; i++)
                     {
-                        if (!module2.Metadata.TablesStream.TryReadTypeSpecRow(i, out var row))
-                        {
-                            continue;
-                        }
-
-                        var typeSpec = module2.ResolveTypeSpec(i);
-                        if (typeSpec.FullName.Equals(metadataMember.FullName, StringComparison.InvariantCultureIgnoreCase) ||
-                            typeSpec.FullName.Equals(metadataMember.Type, StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            type = typeSpec;
-                            break;
-                        }
-
-                        if (typeSpec.ScopeType?.FullName.Equals(metadataMember.Type, StringComparison.InvariantCultureIgnoreCase) == true &&
-                            typeSpec.TypeSig is GenericInstSig instSig &&
-                            string.Join(",", instSig.GenericArguments.Select(ga => ga.FullName))
-                                  .Equals(string.Join(",", metadataMember.TypeGenericParameters.Select(ga => ga.GetTypeSig(module2, this).FullName))))
-                        {
-                            type = typeSpec;
-                            break;
-                        }
+                        type = module.GetTypes().FirstOrDefault(t => t.FullName.Equals(metadataMember.Type, StringComparison.InvariantCultureIgnoreCase));
+                        break;
                     }
-                    break;
-                }
+                case MetadataTable.TypeRef:
+                    {
+                        importedTypes?.TryGetValue(metadataMember.Type, out type);
+                        type ??= module.GetTypeRefs().FirstOrDefault(t => t.FullName.Equals(metadataMember.Type, StringComparison.InvariantCultureIgnoreCase));
+                        break;
+                    }
+                case MetadataTable.TypeSpec:
+                    {
+                        var module2 = module as ModuleDefMD;
+                        for (uint i = 0; i <= module2?.Metadata.TablesStream.TypeSpecTable.Rows; i++)
+                        {
+                            if (!module2.Metadata.TablesStream.TryReadTypeSpecRow(i, out var row))
+                            {
+                                continue;
+                            }
+
+                            var typeSpec = module2.ResolveTypeSpec(i);
+                            if (typeSpec.FullName.Equals(metadataMember.FullName, StringComparison.InvariantCultureIgnoreCase) ||
+                                typeSpec.FullName.Equals(metadataMember.Type, StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                type = typeSpec;
+                                break;
+                            }
+
+                            if (typeSpec.ScopeType?.FullName.Equals(metadataMember.Type, StringComparison.InvariantCultureIgnoreCase) == true &&
+                                typeSpec.TypeSig is GenericInstSig instSig &&
+                                string.Join(",", instSig.GenericArguments.Select(ga => ga.FullName))
+                                      .Equals(string.Join(",", metadataMember.TypeGenericParameters.Select(ga => ga.GetTypeSig(module2, this).FullName))))
+                            {
+                                type = typeSpec;
+                                break;
+                            }
+                        }
+                        break;
+                    }
 
                 default:
                     Logger.Error($"{nameof(ResolveInstrumentedMappedType)}: Case {originalToken.Table} is not implemented. {metadataMember}");
@@ -253,22 +253,22 @@ namespace Datadog.InstrumentedAssemblyGenerator
             switch (originalToken.Table)
             {
                 case MetadataTable.Method:
-                {
-                    method = ResolveMethodDef(module, metadataMember);
-                    break;
-                }
+                    {
+                        method = ResolveMethodDef(module, metadataMember);
+                        break;
+                    }
 
                 case MetadataTable.MemberRef:
-                {
-                    method = ResolveMemberRef(module, metadataMember);
-                    break;
-                }
+                    {
+                        method = ResolveMemberRef(module, metadataMember);
+                        break;
+                    }
 
                 case MetadataTable.MethodSpec:
-                {
-                    method = ResolveMethodSpec(module, metadataMember);
-                    break;
-                }
+                    {
+                        method = ResolveMethodSpec(module, metadataMember);
+                        break;
+                    }
 
                 default:
                     Logger.Error($"{nameof(ResolveInstrumentedMappedMethod)}: Case {originalToken.Table} is not implemented. {metadataMember}");
@@ -294,7 +294,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
                     break;
 
                 case MetadataTable.Field:
-                    var all  = module.GetTypes().SelectMany(t => t.Fields).ToList();
+                    var all = module.GetTypes().SelectMany(t => t.Fields).ToList();
                     field = all.FirstOrDefault(f => f.FullName.Equals(metadataMember.FullName, StringComparison.InvariantCultureIgnoreCase) ||
                                                     f.Name.String.Equals(metadataMember.MethodOrField, StringComparison.InvariantCultureIgnoreCase) &&
                                                     (f.DeclaringType.FullName.Equals(metadataMember.Type, StringComparison.InvariantCultureIgnoreCase) ||
@@ -335,7 +335,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
             }
 
             MethodDef method = null;
-            var parametersTypes = metadataMember.Parameters.Select(p => (IFullName) p.GetTypeSig(module, this)).ToList();
+            var parametersTypes = metadataMember.Parameters.Select(p => (IFullName)p.GetTypeSig(module, this)).ToList();
             foreach (var candidatesDef in candidatesDefs)
             {
                 var candidateParams = candidatesDef.GetParams();
@@ -361,7 +361,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
 
         private MemberRef ResolveMemberRef(ModuleDef module, MetadataMember metadataMember)
         {
-            var parametersTypes = metadataMember.Parameters.Select(p => (IFullName) p.GetTypeSig(module, this)).ToList();
+            var parametersTypes = metadataMember.Parameters.Select(p => (IFullName)p.GetTypeSig(module, this)).ToList();
             foreach (var memberRef in module.GetMemberRefs())
             {
                 if (!memberRef.Name.String.Equals(metadataMember.MethodOrField, StringComparison.InvariantCultureIgnoreCase))
@@ -381,7 +381,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
                         continue;
                     }
 
-                    if (!memberRef.DeclaringType.FullName.Equals(((IFullName) metadataMember.TypeSig.GetTypeSig(module, this))?.FullName ?? metadataMember.Type, StringComparison.InvariantCultureIgnoreCase))
+                    if (!memberRef.DeclaringType.FullName.Equals(((IFullName)metadataMember.TypeSig.GetTypeSig(module, this))?.FullName ?? metadataMember.Type, StringComparison.InvariantCultureIgnoreCase))
                     {
                         continue;
                     }
@@ -436,7 +436,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
         private MethodSpec ResolveMethodSpec(ModuleDef module, MetadataMember metadataMember)
         {
             var module2 = module as ModuleDefMD;
-            var parametersTypes = metadataMember.Parameters.Select(p => (IFullName) p.GetTypeSig(module, this)).ToList();
+            var parametersTypes = metadataMember.Parameters.Select(p => (IFullName)p.GetTypeSig(module, this)).ToList();
             for (uint i = 0; i <= module2?.Metadata.TablesStream.MethodSpecTable.Rows; i++)
             {
                 if (!module2.Metadata.TablesStream.TryReadMethodSpecRow(i, out _))
@@ -447,9 +447,15 @@ namespace Datadog.InstrumentedAssemblyGenerator
                 // check equality for name, number of params and number of generic params
                 var methodSpec = module2.ResolveMethodSpec(i);
                 if (methodSpec.Name.String.Equals(metadataMember.MethodOrField, StringComparison.InvariantCultureIgnoreCase) &&
-                    methodSpec.Method.NumberOfGenericParameters == metadataMember.MethodGenericParameters.Length &&
                     methodSpec.Method.GetParamCount() == metadataMember.Parameters.Length)
                 {
+                    if (methodSpec.Method.NumberOfGenericParameters != metadataMember.MethodGenericParameters.Length)
+                    {
+                        if (!ValidateGenericParams(module2, metadataMember, methodSpec.Method, null))
+                        {
+                            return null;
+                        }
+                    }
                     // existing types full name are equals, there is match
                     if (methodSpec.FullName.Equals(metadataMember.FullName, StringComparison.InvariantCultureIgnoreCase))
                     {
@@ -507,7 +513,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
                     if (isMatch)
                     {
                         // check for generic parameters
-                        var genericArgsTypes = metadataMember.MethodGenericParameters.Select(p => (IFullName) p.GetTypeSig(module, this)).ToList();
+                        var genericArgsTypes = metadataMember.MethodGenericParameters.Select(p => (IFullName)p.GetTypeSig(module, this)).ToList();
                         for (int j = 0; j < metadataMember.MethodGenericParameters.Length; j++)
                         {
                             if (instMethodSpecParams[j].FullName != genericArgsTypes[j].FullName)
@@ -526,6 +532,33 @@ namespace Datadog.InstrumentedAssemblyGenerator
             }
 
             return null;
+        }
+
+        internal bool ValidateGenericParams(ModuleDef module, MetadataMember metadataMember, IMethodDefOrRef method, Dictionary<string, ITypeDefOrRef> importedTypes = null)
+        {
+            // should not happen but we want to enforce the process to create an assembly even if we have a wrong method signature in our hand
+            // so in case there is a difference in the number of generic params (which can happen if the signature is corrupt) let's try to find a match in another way
+            // e.g. M<T>(T t) == M(T t) even though the second one is not correct
+            if (metadataMember.MethodGenericParameters.Length > method.NumberOfGenericParameters)
+            {
+                foreach (var pGeneric in metadataMember.MethodGenericParameters)
+                {
+                    var pTypeSig1 = pGeneric.GetTypeSig(module, this, importedTypes);
+                    var pTypeSig2 = method.GetParams().SingleOrDefault(par => par.FullName == pTypeSig1?.FullName);
+                    if (pTypeSig2 == null)
+                    {
+                        return false;
+                    }
+
+                    if (pTypeSig1?.IsGenericParameter != pTypeSig2?.IsGenericParameter ||
+                        pTypeSig1?.ElementType != pTypeSig2?.ElementType)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
     }
 }
