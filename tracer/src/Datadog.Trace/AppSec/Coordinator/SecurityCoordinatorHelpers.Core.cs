@@ -109,11 +109,11 @@ internal static class SecurityCoordinatorHelpers
                     {
                         pathParams.Add(p.Name, value);
                     }
+                }
 
-                    if (pathParams.Count == 0)
-                    {
-                        return;
-                    }
+                if (pathParams.Count == 0)
+                {
+                    return;
                 }
 
                 var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
