@@ -351,15 +351,10 @@ namespace Datadog.Trace.ClrProfiler
 
             Log.Debug("Initialization of non native parts finished.");
 
-            var tracer = Tracer.Instance;
-            if (tracer is null)
-            {
-                Log.Debug("Tracer.Instance is null after InitializeNoNativeParts was invoked");
-            }
-
             if (sw != null)
             {
                 TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.Managed, sw.ElapsedMilliseconds);
+                Console.WriteLine("No Native Parts: {0}", sw.Elapsed.TotalMilliseconds);
                 sw.Restart();
             }
         }

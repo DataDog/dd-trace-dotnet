@@ -34,7 +34,7 @@ internal readonly struct ConfigurationBuilder
 
     public HasKeys WithKeys(string key, string fallbackKey1, string fallbackKey2, string fallbackKey3) => new(_source, _telemetry, key, fallbackKey1, fallbackKey2, fallbackKey3);
 
-    internal readonly struct HasKeys
+    internal readonly ref struct HasKeys
     {
         public HasKeys(ITelemeteredConfigurationSource source, IConfigurationTelemetry telemetry, string key, string? fallbackKey1 = null, string? fallbackKey2 = null, string? fallbackKey3 = null)
         {

@@ -33,6 +33,7 @@ internal static class DatadogSharedFileSinkExtensions
     /// <param name="rollOnFileSizeLimit">If <code>true</code>, a new file will be created when the file size limit is reached. Filenames
     /// will have a number appended in the format <code>_NNN</code>, with the first filename given no number.</param>
     /// <param name="encoding">Character encoding used to write the text file. The default is UTF-8 without BOM.</param>
+    /// <param name="deferred">Use deferred logger.</param>
     /// <returns>Configuration object allowing method chaining.</returns>
     public static LoggerConfiguration DatadogSharedFile(
         this LoggerSinkConfiguration sinkConfiguration,
@@ -42,7 +43,8 @@ internal static class DatadogSharedFileSinkExtensions
         TimeSpan? flushToDiskInterval = null,
         RollingInterval rollingInterval = RollingInterval.Infinite,
         bool rollOnFileSizeLimit = false,
-        Encoding encoding = null)
+        Encoding encoding = null,
+        bool deferred = false)
     {
         if (sinkConfiguration == null)
         {
@@ -84,6 +86,11 @@ internal static class DatadogSharedFileSinkExtensions
 #pragma warning disable 618
             sink = new PeriodicFlushToDiskSink(sink, flushToDiskInterval.Value);
 #pragma warning restore 618
+        }
+
+        if (deferred)
+        {
+            sink = new DatadogDeferredSink(sink);
         }
 
         return sinkConfiguration.Sink(sink, LevelAlias.Minimum, null);

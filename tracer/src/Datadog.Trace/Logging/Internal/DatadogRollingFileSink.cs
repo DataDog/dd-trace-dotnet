@@ -14,7 +14,6 @@ using Datadog.Trace.Vendors.Serilog.Debugging;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.Serilog.Formatting;
 using Datadog.Trace.Vendors.Serilog.Sinks.File;
-using Clock = Datadog.Trace.Vendors.Serilog.Sinks.File.Clock;
 
 namespace Datadog.Trace.Logging;
 
@@ -66,32 +65,25 @@ internal sealed class DatadogRollingFileSink : ILogEventSink, IFlushableFileSink
 
     public void Emit(LogEvent logEvent)
     {
-        try
+        if (logEvent == null)
         {
-            if (logEvent == null)
-            {
-                ThrowHelper.ThrowArgumentNullException(nameof(logEvent));
-            }
-
-            lock (_roller)
-            {
-                if (_isDisposed)
-                {
-                    ThrowHelper.ThrowObjectDisposedException("The log file has been disposed.");
-                }
-
-                var now = TraceClock.Instance.UtcNow.ToLocalTime().DateTime;
-                AlignCurrentFileTo(now);
-
-                while (_currentFile?.EmitOrOverflow(logEvent) == false && _rollOnFileSizeLimit)
-                {
-                    AlignCurrentFileTo(now, nextSequence: true);
-                }
-            }
+            ThrowHelper.ThrowArgumentNullException(nameof(logEvent));
         }
-        catch (Exception ex)
+
+        lock (_roller)
         {
-            Console.WriteLine(ex);
+            if (_isDisposed)
+            {
+                ThrowHelper.ThrowObjectDisposedException("The log file has been disposed.");
+            }
+
+            var now = TraceClock.Instance.UtcNow.ToLocalTime().DateTime;
+            AlignCurrentFileTo(now);
+
+            while (_currentFile?.EmitOrOverflow(logEvent) == false && _rollOnFileSizeLimit)
+            {
+                AlignCurrentFileTo(now, nextSequence: true);
+            }
         }
     }
 

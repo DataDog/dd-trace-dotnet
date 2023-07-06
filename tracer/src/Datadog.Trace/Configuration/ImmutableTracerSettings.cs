@@ -78,11 +78,7 @@ namespace Datadog.Trace.Configuration
             // create dictionary copy without "env", "version", "git.commit.sha" or "git.repository.url" tags
             // these value are used for "Environment" and "ServiceVersion", "GitCommitSha" and "GitRepositoryUrl" properties
             // or overriden with DD_ENV, DD_VERSION, DD_GIT_COMMIT_SHA and DD_GIT_REPOSITORY_URL respectively
-            var globalTags = settings.GlobalTagsInternal
-                                     .Where(kvp => kvp.Key is not (Tags.Env or Tags.Version or CommonTags.GitCommit or CommonTags.GitRepository))
-                                     .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-
-            GlobalTagsInternal = new ReadOnlyDictionary<string, string>(globalTags);
+            GlobalTagsInternal = FilterGlobalTags(settings.GlobalTagsInternal);
 
             GitMetadataEnabled = settings.GitMetadataEnabled;
             ServiceNameInternal = settings.ServiceNameInternal;
@@ -151,25 +147,38 @@ namespace Datadog.Trace.Configuration
             TraceId128BitGenerationEnabled = settings.TraceId128BitGenerationEnabled;
             TraceId128BitLoggingEnabled = settings.TraceId128BitLoggingEnabled;
 
-            static string? GetExplicitSettingOrTag(string? explicitSetting, IDictionary<string, string> globalTags, string tag)
-            {
-                if (!string.IsNullOrWhiteSpace(explicitSetting))
-                {
-                    return explicitSetting!.Trim();
-                }
-                else
-                {
-                    var version = globalTags.GetValueOrDefault(tag);
-                    return string.IsNullOrWhiteSpace(version) ? null : version.Trim();
-                }
-            }
-
             DbmPropagationMode = settings.DbmPropagationMode;
 
             // We need to take a snapshot of the config telemetry for the tracer settings,
             // but we can't send it to the static collector, as this settings object may never be "activated"
             Telemetry = new ConfigurationTelemetry();
             settings.CollectTelemetry(Telemetry);
+
+            static string? GetExplicitSettingOrTag(string? explicitSetting, IDictionary<string, string> globalTags, string tag)
+            {
+                if (!string.IsNullOrWhiteSpace(explicitSetting))
+                {
+                    return explicitSetting!.Trim();
+                }
+
+                var version = globalTags.GetValueOrDefault(tag);
+                return string.IsNullOrWhiteSpace(version) ? null : version.Trim();
+            }
+
+            static ReadOnlyDictionary<string, string> FilterGlobalTags(IDictionary<string, string> value)
+            {
+                Dictionary<string, string>? result = null;
+                foreach (var kvp in value)
+                {
+                    if (kvp.Key is not (Tags.Env or Tags.Version or CommonTags.GitCommit or CommonTags.GitRepository))
+                    {
+                        result ??= new Dictionary<string, string>(value.Count);
+                        result.Add(kvp.Key, kvp.Value);
+                    }
+                }
+
+                return new ReadOnlyDictionary<string, string>(result ?? value);
+            }
         }
 
         /// <summary>

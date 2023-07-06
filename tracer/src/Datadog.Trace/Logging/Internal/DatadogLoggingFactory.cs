@@ -99,7 +99,7 @@ internal static class DatadogLoggingFactory
             }
             else
             {
-                // Use the datadog shared logger with mutex acquire for each flush (after 4kb buffer) or every 100ms
+                // Use the datadog shared logger with deferred write and mutex acquire for each flush (after 4kb buffer) or every 100ms
                 // This reduces the impact of the logger for each callsite.
                 loggerConfiguration
                    .WriteTo.DatadogSharedFile(
@@ -108,7 +108,8 @@ internal static class DatadogLoggingFactory
                         rollingInterval: RollingInterval.Day,
                         rollOnFileSizeLimit: true,
                         fileSizeLimitBytes: fileConfig.MaxLogFileSizeBytes,
-                        flushToDiskInterval: TimeSpan.FromMilliseconds(100));
+                        flushToDiskInterval: TimeSpan.FromMilliseconds(100),
+                        deferred: true);
             }
         }
 
