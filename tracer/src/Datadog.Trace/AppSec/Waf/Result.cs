@@ -17,8 +17,9 @@ namespace Datadog.Trace.AppSec.Waf
         {
             this.returnCode = returnCode;
             Actions = returnStruct.Actions.DecodeArray<string>();
+            ShouldBeReported = returnCode >= DDWAF_RET_CODE.DDWAF_MATCH;
             var events = returnStruct.Events.DecodeArray<object>();
-            if (events.Count == 0) { Data = string.Empty; }
+            if (events.Count == 0 || !ShouldBeReported) { Data = string.Empty; }
             else
             {
                 // Serialize all the events
@@ -26,7 +27,6 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             ShouldBlock = Actions.Contains("block");
-            ShouldBeReported = returnCode >= DDWAF_RET_CODE.DDWAF_MATCH;
             AggregatedTotalRuntime = aggregatedTotalRuntime;
             AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
             Timeout = returnStruct.Timeout;

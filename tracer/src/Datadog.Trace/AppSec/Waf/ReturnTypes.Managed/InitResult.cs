@@ -17,7 +17,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InitResult));
 
-        private InitResult(ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, object> errors, JToken? embeddedRules = null, bool unusableRuleFile = false, IntPtr? wafHandle = null, WafLibraryInvoker? wafLibraryInvoker = null)
+        private InitResult(ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, object> errors, JToken? embeddedRules = null, bool unusableRuleFile = false, IntPtr? wafHandle = null, WafLibraryInvoker? wafLibraryInvoker = null, bool shouldEnableWaf = true)
         {
             HasErrors = errors.Count > 0;
             Errors = errors;
@@ -32,9 +32,10 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
                 ErrorMessage = JsonConvert.SerializeObject(errors);
             }
 
-            if (!unusableRuleFile && wafHandle.HasValue && wafHandle.Value != IntPtr.Zero)
+            shouldEnableWaf &= !unusableRuleFile && wafHandle.HasValue && wafHandle.Value != IntPtr.Zero;
+            if (shouldEnableWaf)
             {
-                Waf = new Waf(wafHandle.Value, wafLibraryInvoker!);
+                Waf = new Waf(wafHandle!.Value, wafLibraryInvoker!);
                 Success = true;
             }
         }
@@ -76,10 +77,30 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
             {
                 if (diagnostics != IntPtr.Zero)
                 {
-                    var diagnosticsData = (Dictionary<string, object>)Encoder.Decode(new Obj(diagnostics));
+                    var diagObject = new Obj(diagnostics);
+                    if (diagObject.ArgsType == ObjType.Invalid)
+                    {
+                        errors = new Dictionary<string, object> { { "diagnostics-error", "Waf didn't provide a valid diagnostics object at initialization, most likely due to an older waf version < 1.11.0" } };
+                        return new(failedCount, loadedCount, rulesetVersion, errors, wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker, shouldEnableWaf: false);
+                    }
+
+                    var diagnosticsData = (Dictionary<string, object>)Encoder.Decode(diagObject);
                     if (diagnosticsData.Count > 0)
                     {
-                        var rules = (Dictionary<string, object>)diagnosticsData["rules"];
+                        var valueExist = diagnosticsData.TryGetValue("rules", out var rulesObj);
+                        if (!valueExist)
+                        {
+                            errors = new Dictionary<string, object> { { "diagnostics-error", "Waf could not provide diagnostics on rules" } };
+                            return new(failedCount, loadedCount, rulesetVersion, errors, wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker, shouldEnableWaf: false);
+                        }
+
+                        var rules = rulesObj as Dictionary<string, object>;
+                        if (rules == null)
+                        {
+                            errors = new Dictionary<string, object> { { "diagnostics-error", "Waf could not provide diagnostics on rules as a dictionary key-value" } };
+                            return new(failedCount, loadedCount, rulesetVersion, errors, wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker, shouldEnableWaf: false);
+                        }
+
                         failedCount = (ushort)((object[])rules["failed"]).Length;
                         loadedCount = (ushort)((object[])rules["loaded"]).Length;
                         errors = (Dictionary<string, object>)rules["errors"];
@@ -89,9 +110,9 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
             }
             catch (Exception err)
             {
-                var errorMsg = err.ToString();
-                Log.Warning("AppSec could not read Waf diagnostics. Disabling AppSec : {ErrorMsg}", errorMsg);
-                wafHandle = null;
+                Log.Warning(err, "AppSec could not read Waf diagnostics. Disabling AppSec");
+                errors ??= new Dictionary<string, object>();
+                errors.Add("diagnostics-error", err.Message);
             }
 
             return new(failedCount, loadedCount, rulesetVersion, errors ?? new(), wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker);
